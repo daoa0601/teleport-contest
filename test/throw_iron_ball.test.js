@@ -29,7 +29,7 @@ async function holdAttachedBall() {
     return ball;
 }
 void test('a strong hero throws a loose heavy iron ball its rolling range', async () => {
-    freshObjectRoom({ right: 35 });
+    await freshObjectRoom({ right: 35 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const ball = await addInventoryObject(HEAVY_IRON_BALL);
@@ -40,7 +40,7 @@ void test('a strong hero throws a loose heavy iron ball its rolling range', asyn
     assert.equal(ball.oy, 10);
 });
 void test('a punished hero throws the chained ball no further than the chain', async () => {
-    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
+    const level = await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const ball = await holdAttachedBall();
@@ -55,14 +55,14 @@ void test('a punished hero throws the chained ball no further than the chain', a
 });
 void test('a hero held by a monster throws the chained ball only one square', async () => {
     // The same throw without a holder reaches the chain limit of five squares.
-    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const freeBall = await holdAttachedBall();
     initRng(912n);
     await throwInventoryObject(freeBall);
     assert.equal(freeBall.ox, 15, 'an unheld hero throws the chained ball five squares');
-    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const heldBall = await holdAttachedBall();
@@ -77,14 +77,14 @@ void test('a hero held by a monster throws the chained ball only one square', as
 });
 void test('a hero stuck in the floor throws the chained ball one square', async () => {
     // The same throw without the trap reaches the chain limit of five squares.
-    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const freeBall = await holdAttachedBall();
     initRng(913n);
     await throwInventoryObject(freeBall);
     assert.equal(freeBall.ox, 15, 'an untrapped hero throws the chained ball five squares');
-    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const trappedBall = await holdAttachedBall();
@@ -97,7 +97,7 @@ void test('a hero stuck in the floor throws the chained ball one square', async 
     assert.equal(trappedBall.oy, 10);
 });
 void test('a chained ball thrown through a tight Sokoban diagonal jerks to a halt', async () => {
-    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
+    const level = await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     level.flags.sokoban_rules = true;
@@ -106,7 +106,7 @@ void test('a chained ball thrown through a tight Sokoban diagonal jerks to a hal
         level.requireAt(x, y).typ = STONE;
         vision_note_blocker_change(x, y);
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
@@ -119,7 +119,7 @@ void test('a chained ball thrown through a tight Sokoban diagonal jerks to a hal
     assert.equal(ball.oy, 9);
 });
 void test('a thrown iron ball stops on a boulder square and reports the hit', async () => {
-    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     await floorObject(BOULDER, 13, 10);
@@ -136,7 +136,7 @@ void test('a thrown iron ball stops on a boulder square and reports the hit', as
     assert.equal(ball.oy, 10);
 });
 void test('a chained ball thrown across a Sokoban pit stops on the pit', async () => {
-    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
+    const level = await freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     level.flags.sokoban_rules = true;

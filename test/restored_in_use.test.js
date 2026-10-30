@@ -13,7 +13,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('restoring an interrupted in-use inventory stack announces and consumes one item', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Interrupted';
     const food = await addInventoryObject(FOOD_RATION, { quan: 3 });
     const storage = memoryStorage();
@@ -26,7 +26,7 @@ void test('restoring an interrupted in-use inventory stack announces and consume
     // ordinary dosave0() clears it with done_object_cleanup() before writing.
     savedFood.in_use = true;
     storage.setItem(key, encodeSavedGraph(snapshot));
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };

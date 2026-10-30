@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a mirror shattered by tipping into a bag of holding does not cost luck', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uluck: 0 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uluck: 0 } });
     const source = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const target = await addInventoryObject(BAG_OF_HOLDING, { initialize: false, cknown: true });
     const wand = await knownObject(WAN_CANCELLATION, { initialize: false, spe: 1 });

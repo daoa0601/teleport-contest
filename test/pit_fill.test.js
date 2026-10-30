@@ -16,8 +16,8 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
-function pitRoom(context = {}) {
-    freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 }, context,
+async function pitRoom(context = {}) {
+    await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 }, context,
         flags: { verbose: true }, gameplaySeed: 9n });
     requirePlayingGame(game);
     const input = resetInputState();
@@ -37,7 +37,7 @@ async function trappedMonster(species, hitPoints = 100) {
     return monster;
 }
 void test('a settling boulder fills a pit through real deletion and buries the remaining pile', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     const pit = addTrap(requireGameLevel(), PIT, 11, 10);
     const dagger = await floorObject(DAGGER, 11, 10);
@@ -49,7 +49,7 @@ void test('a settling boulder fills a pit through real deletion and buries the r
     assert.equal(dagger.where, 'buried');
 });
 void test('a boulder damages and releases a hero trapped beneath it', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     addTrap(requireGameLevel(), PIT, 10, 10);
     game.u.utrap = 4;
@@ -61,7 +61,7 @@ void test('a boulder damages and releases a hero trapped beneath it', async () =
     assert.equal(boulder.where, 'gone');
 });
 void test('hero life saving resumes the settling boulder cleanup', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     addTrap(requireGameLevel(), PIT, 10, 10);
     game.u.utrap = 4;
@@ -77,7 +77,7 @@ void test('hero life saving resumes the settling boulder cleanup', async () => {
     assert.equal(requireGameLevel().traps.length, 0);
 });
 void test('a rock-throwing hero form is released without being crushed', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     await polymonHero(MONSTER_NAME.indexOf('hill giant'));
     const before = game.u.mh;
@@ -91,7 +91,7 @@ void test('a rock-throwing hero form is released without being crushed', async (
 });
 for (const moving of [false, true]) {
     void test(`a ${moving ? 'monster' : 'hero'} turn settling boulder damages a trapped monster and frees it`, async () => {
-        pitRoom({ mon_moving: moving });
+        await pitRoom({ mon_moving: moving });
         requirePlayingGame(game);
         const monster = await trappedMonster('jackal');
         addTrap(requireGameLevel(), PIT, 11, 10);
@@ -104,7 +104,7 @@ for (const moving of [false, true]) {
 }
 for (const species of ['hill giant', 'xorn']) {
     void test(`${species} is freed from a filled pit without boulder damage`, async () => {
-        pitRoom();
+        await pitRoom();
         requirePlayingGame(game);
         const monster = await trappedMonster(species);
         addTrap(requireGameLevel(), PIT, 11, 10);
@@ -116,7 +116,7 @@ for (const species of ['hill giant', 'xorn']) {
 }
 for (const moving of [false, true]) {
     void test(`a fatal boulder on a ${moving ? 'monster' : 'hero'} turn assigns its actual kill credit`, async () => {
-        pitRoom({ mon_moving: moving });
+        await pitRoom({ mon_moving: moving });
         requirePlayingGame(game);
         const monster = await trappedMonster('jackal', 1);
         addTrap(requireGameLevel(), PIT, 11, 10);
@@ -130,7 +130,7 @@ for (const moving of [false, true]) {
     });
 }
 void test('a life-saved trapped monster survives while the boulder still fills its pit', async () => {
-    pitRoom({ mon_moving: true });
+    await pitRoom({ mon_moving: true });
     requirePlayingGame(game);
     const monster = await trappedMonster('jackal', 1);
     const amulet = await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -144,7 +144,7 @@ void test('a life-saved trapped monster survives while the boulder still fills i
     assert.equal(boulder.where, 'gone');
 });
 void test('shop-owned boulders remain represented by used-up bills after filling a pit', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
     addTrap(requireGameLevel(), PIT, 11, 10);
@@ -154,7 +154,7 @@ void test('shop-owned boulders remain represented by used-up bills after filling
     assert.ok(!(requireGameLevel().objects[11]?.[10] || []).includes(boulder));
 });
 void test('a free boulder landing in a pit uses the same occupant damage and cleanup', async () => {
-    pitRoom();
+    await pitRoom();
     requirePlayingGame(game);
     const monster = await trappedMonster('jackal');
     addTrap(requireGameLevel(), PIT, 11, 10);

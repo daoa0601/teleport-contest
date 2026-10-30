@@ -16,14 +16,14 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 
 for (const excalibur of [false, true]) {
     void test(`an eyeless pudding ${excalibur ? 'tracks Excalibur' : 'cannot follow ordinary tracks'} around a corner`, async () => {
-        const level = freshObjectRoom({ left: 8, right: 16, top: 10, bottom: 10,
+        const level = await freshObjectRoom({ left: 8, right: 16, top: 10, bottom: 10,
             heroX: 9, heroY: 10 });
         requirePlayingGame(game);
         setTrack(game);
         game.u.ux = 15;
         game.u.uy = 12;
         for (const y of [11, 12]) level.requireAt(15, y).typ = ROOM;
-        vision_recalc(0);
+        await vision_recalc(0);
         if (excalibur) await setPrimaryWeapon(await addInventoryItem(await artifactObject('Excalibur')));
         const pudding = await createMonsterAt('black pudding', 10, 10, MM_ANGRY | NO_MINVENT);
         pudding.msleeping = 0;

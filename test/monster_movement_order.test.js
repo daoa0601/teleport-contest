@@ -15,7 +15,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const occupied of [false, true]) {
     void test(`a close dwarf readies a pick before ${occupied ? 'attacking at' : 'entering'} a closed door`, async () => {
-        const level = freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10,
+        const level = await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10,
             heroX: 12, heroY: 10 });
         requirePlayingGame(game);
         const dwarf = await createMonsterAt('dwarf', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -39,7 +39,7 @@ for (const occupied of [false, true]) {
     });
 }
 void test('a fleeing monster cannot leave a sticky hero holding it', async () => {
-    freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10,
         heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     installPolymorphedHero('large mimic', { hitPoints: 200 });
@@ -53,7 +53,7 @@ void test('a fleeing monster cannot leave a sticky hero holding it', async () =>
     assert.equal(game.u.ustuck, kobold);
 });
 void test('being held by a sticky hero does not prevent attacking that hero', async () => {
-    const level = freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10,
+    const level = await freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10,
         heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     installPolymorphedHero('large mimic', { hitPoints: 200 });
@@ -68,7 +68,7 @@ void test('being held by a sticky hero does not prevent attacking that hero', as
     assert.deepEqual([kobold.mx, kobold.my], [11, 10]);
 });
 void test('a Rider breaks a blocking boulder without entering its square', async () => {
-    const level = freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+    const level = await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
         heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const rider = await createMonsterAt('Famine', 13, 10, MM_ANGRY | NO_MINVENT);
@@ -80,7 +80,7 @@ void test('a Rider breaks a blocking boulder without entering its square', async
     assert.ok(floorObjectsAt(level, 12, 10).some(object => object.otyp === ROCK));
 });
 void test('a rock-throwing giant can step onto a boulder without fracturing it', async () => {
-    freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
         heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 13, 10, MM_ANGRY | NO_MINVENT);

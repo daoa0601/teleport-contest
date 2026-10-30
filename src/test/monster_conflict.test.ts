@@ -20,7 +20,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 
 for (const conflict of [false, true]) {
     void test(`an adjacent hostile ${conflict ? 'fights its neighbor under Conflict before approaching the hero' : 'leaves its neighbor alone without Conflict'}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 10, right: 13, top: 10, bottom: 10,
             hero: { ulevel: 30 },
         });
@@ -51,7 +51,7 @@ for (const conflict of [false, true]) {
 }
 
 void test('Conflict selects the first adjacent monster in native order, including allies', async () => {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const attacker = await createMonsterAt('human zombie', 11, 10, NO_MINVENT);
@@ -73,7 +73,7 @@ void test('Conflict selects the first adjacent monster in native order, includin
 
 for (const blinded of [false, true]) {
     void test(`Conflict can drive a ${blinded ? 'blind' : 'sighted'} monster into combat`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 10, right: 13, top: 10, bottom: 10,
             hero: { ulevel: 30 },
         });
@@ -97,7 +97,7 @@ for (const blinded of [false, true]) {
 }
 
 void test('a paralyzed monster cannot start a Conflict attack', async () => {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const attacker = await createMonsterAt('human zombie', 11, 10, NO_MINVENT);
@@ -114,7 +114,7 @@ void test('a paralyzed monster cannot start a Conflict attack', async () => {
 });
 
 void test('a holder releases the hero for Conflict without starting a re-hold cooldown', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 10, right: 13, top: 10, bottom: 10,
         hero: { ulevel: 30 },
     });
@@ -175,7 +175,7 @@ void test('the turn driver completes a successful Conflict fight without a secon
 
 for (const nymph of [false, true]) {
     void test(`Conflict resistance uses ${nymph ? "a nymph form's minimum Charisma" : "the human hero's low Charisma"}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 10, right: 13, top: 10, bottom: 10,
             hero: { ulevel: 1, acurr: { a: [12, 12, 12, 12, 12, 3] } },
         });
@@ -199,7 +199,7 @@ for (const nymph of [false, true]) {
 
 for (const movement of [0, 24]) {
     void test(`a Conflict defender ${movement ? 'spends a movement ration to retaliate' : 'cannot retaliate without movement'}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 10, right: 13, top: 10, bottom: 10,
             hero: { ulevel: 30 },
         });
@@ -225,7 +225,7 @@ for (const movement of [0, 24]) {
 }
 
 void test('a zero-damage petrifying touch counts as a Conflict hit and permits retaliation', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 10, right: 13, top: 10, bottom: 10,
         hero: { ulevel: 30 },
     });
@@ -252,7 +252,7 @@ void test('a zero-damage petrifying touch counts as a Conflict hit and permits r
 });
 
 void test('a missed Conflict attack still ends the action when a fatal passive triggers life saving', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 10, right: 13, top: 10, bottom: 10,
         hero: { ulevel: 30 },
     });

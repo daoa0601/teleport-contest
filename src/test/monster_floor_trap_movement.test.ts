@@ -17,7 +17,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const [species, trapType] of [['air elemental', DART_TRAP], ['wraith', RUST_TRAP]] as const) {
     void test(`a flying ${species} crosses a floor-triggered trap without setting it off`, async () => {
-        freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
+        await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 12, 10, NO_MINVENT);
         monster.mpeaceful = 0;
@@ -39,7 +39,7 @@ for (const [species, trapType] of [['air elemental', DART_TRAP], ['wraith', RUST
 
 for (const fatal of [true, false]) {
     void test(`a rolling boulder reports ${fatal ? 'death' : 'movement'} when the monster ${fatal ? 'dies' : 'survives'}`, async () => {
-        const level = freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10, heroX: 9 });
+        const level = await freshObjectRoom({ left: 9, right: 15, top: 10, bottom: 10, heroX: 9 });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
         goblin.mpeaceful = 0;

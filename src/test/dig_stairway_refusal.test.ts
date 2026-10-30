@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 // square with a sink, yet the stairway remains and digging downward must
 // refuse there instead of bursting the sink's pipes.
 void test('digging down refuses on a sink covering a stairway', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sink = game.level?.requireAt(game.u.ux, game.u.uy);
     assert.ok(sink, 'hero must stand on the room floor');
     sink.typ = SINK;
@@ -44,7 +44,7 @@ void test('digging down refuses on a sink covering a stairway', async () => {
 // The same refusal keeps a wished fountain intact over a ladder, and the
 // ladder wording wins over the furniture name.
 void test('digging down on a ladder reports the ladder refusal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const square = game.level?.requireAt(game.u.ux, game.u.uy);
     assert.ok(square, 'hero must stand on the room floor');
     square.typ = FOUNTAIN;

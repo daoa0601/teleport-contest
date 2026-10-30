@@ -43,7 +43,7 @@ const cases = [
 ];
 for (const { ring, overrides, line } of cases) {
     void test(`dropping a ${ring} ring into a sink: ${line}`, async () => {
-        freshObjectRoom({ gameplaySeed: 909n });
+        await freshObjectRoom({ gameplaySeed: 909n });
         requirePlayingGame(game);
         requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = SINK;
         const object = await addInventoryObject(OBJECT_NAMES.indexOf(ring), overrides);

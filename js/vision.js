@@ -4,6 +4,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { game } from './gstate.js';
 import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
 import { newsym } from './display.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
@@ -814,7 +815,7 @@ export function visibleCellsFrom(scol, srow, range) {
 // the shared vision matrix and scans the radius-clipped circle row-major,
 // retaining only couldsee() cells.  RNG-using callbacks such as fountain.c's
 // gush() make that otherwise-internal ordering observable.
-export function clearAreaCells(scol, srow, range, { ignoreBlockers = false } = {}) {
+export async function clearAreaCells(scol, srow, range, { ignoreBlockers = false } = {}) {
     if (!game.level || range < 1 || range >= circle_start.length
         || scol < 1 || scol >= COLNO || srow < 0 || srow >= ROWNO) {
         return [];
@@ -822,7 +823,7 @@ export function clearAreaCells(scol, srow, range, { ignoreBlockers = false } = {
     if (scol !== game.u?.ux || srow !== game.u?.uy)
         return visibleCellsFrom(scol, srow, range);
     if (game.vision_full_recalc)
-        vision_recalc(0);
+        await vision_recalc(0);
     const cells = [];
     const limitsStart = visionValue(circle_start, range);
     const minY = Math.max(0, srow - range);
@@ -882,7 +883,7 @@ export function clearPath(col1, row1, col2, row2) {
 }
 // C vision.c:rogue_vision(). Room boundaries are visible only from inside;
 // adjacent squares remain visible even around a dark doorway.
-function rogueVision(level, output) {
+async function rogueVision(level, output) {
     const { ux, uy } = game.u;
     const room = level.rooms[level.requireAt(ux, uy).roomno - ROOMOFFSET];
     if (isRoom(room)) {
@@ -904,11 +905,11 @@ function rogueVision(level, output) {
         for (let x = left; x <= right; x++) {
             visionRow(output.rows, y)[x] = COULD_SEE | IN_SIGHT;
             if (inDoor && (x === ux || y === uy))
-                newsym(x, y);
+                await newsym(x, y);
         }
     }
 }
-function extendHeroSight(output, range, xray) {
+async function extendHeroSight(output, range, xray) {
     if (range < 0)
         return;
     const { ux, uy } = game.u;
@@ -928,7 +929,7 @@ function extendHeroSight(output, range, xray) {
                 const oldSeen = location.seenv;
                 location.seenv = SVALL;
                 if (xray && range > 0 && (!(old & IN_SIGHT) || oldSeen !== SVALL))
-                    newsym(x, y);
+                    await newsym(x, y);
             }
         }
         output.left[y] = Math.min(visionValue(output.left, y), left);
@@ -937,7 +938,7 @@ function extendHeroSight(output, range, xray) {
 }
 // C vision.c:vision_recalc(). Build geometric sight, apply special vision
 // and lighting, then repaint only visibility or viewing-angle changes.
-export function vision_recalc(control = 0) {
+export async function vision_recalc(control = 0) {
     const u = game.u, level = game.level;
     if (!u || !level)
         return;
@@ -964,7 +965,7 @@ export function vision_recalc(control = 0) {
         if (blind)
             view_from(uy, ux, output);
         else if (Is_rogue_level(u.uz))
-            rogueVision(level, output);
+            await rogueVision(level, output);
         else {
             const underwater = (game.underwater || u.uinwater) && !Is_waterlevel(u.uz);
             if (underwater || u.utrap && u.utraptype === TT_PIT) {
@@ -981,9 +982,9 @@ export function vision_recalc(control = 0) {
             else
                 view_from(uy, ux, output);
             const xray = u.xray_range ?? -1, nightVision = u.nv_range ?? 1;
-            extendHeroSight(output, xray, true);
+            await extendHeroSight(output, xray, true);
             if (!underwater && xray < nightVision)
-                extendHeroSight(output, nightVision, false);
+                await extendHeroSight(output, nightVision, false);
         }
     }
     if (!blind)
@@ -1002,7 +1003,7 @@ export function vision_recalc(control = 0) {
             const previous = old?.[y]?.[x] ?? 0;
             if (blind) {
                 if (previous & IN_SIGHT)
-                    newsym(x, y);
+                    await newsym(x, y);
                 continue;
             }
             const bits = visionValue(row, x), location = level.requireAt(x, y);
@@ -1016,21 +1017,22 @@ export function vision_recalc(control = 0) {
                 const oldSeen = location.seenv;
                 set_seenv(location, ux, uy, x, y);
                 if (!(previous & IN_SIGHT) || oldSeen !== location.seenv)
-                    newsym(x, y);
+                    await newsym(x, y);
             }
             else if (bits & COULD_SEE && !litAt(x, y) && location.waslit) {
                 location.waslit = false;
-                newsym(x, y);
+                await newsym(x, y);
             }
             else if (previous & IN_SIGHT || ((bits & COULD_SEE) ^ (previous & COULD_SEE))) {
-                newsym(x, y);
+                await newsym(x, y);
             }
         }
     }
-    if (ux > 0)
-        newsym(ux, uy);
+    if (ux > 0 && !game.program_state.panicking)
+        await newsym(ux, uy);
     game._viz_rmin = next_rmin;
     game._viz_rmax = next_rmax;
+    await noticeAllMonsters(game);
 }
 export function cansee(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)

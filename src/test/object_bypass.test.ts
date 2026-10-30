@@ -20,7 +20,7 @@ import { floorObjectsAt } from './support/level-state.js';
 
 for (const damageType of ['fire', undefined] as const) {
     void test(`${damageType ?? 'magical blast'} inventory traversal protects a slain stone golem from a broken striking wand`, async () => {
-        freshObjectRoom({ gameplaySeed: 19, hero: { uhp: 500, uhpmax: 500 } });
+        await freshObjectRoom({ gameplaySeed: 19, hero: { uhp: 500, uhpmax: 500 } });
         requirePlayingGame(game);
         const input = resetInputState();
         installPagerInput(input, { limit: 100, expected: /wand|force|golem|kill|blast|caught|rock|shatter|damage|destroy/i });
@@ -41,7 +41,7 @@ for (const damageType of ['fire', undefined] as const) {
 }
 
 void test('a counted menu drop leaves the rest of its stack in inventory', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     requirePlayingGame(game);
     const daggers = await addInventoryObject(DAGGER, { quan: 5 });
     resetInputState().feed(`2${daggers.invlet}\n`);
@@ -55,7 +55,7 @@ void test('a counted menu drop leaves the rest of its stack in inventory', async
 });
 
 void test('combination-style multi-drop applies the requested object class', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, verbose: false } });
     const dagger = await addInventoryObject(DAGGER);
     const potion = await addInventoryObject(POT_WATER);
     resetInputState().feed(`)\n${dagger.invlet}\n`);
@@ -67,7 +67,7 @@ void test('combination-style multi-drop applies the requested object class', asy
 });
 
 void test('monster inventory damage protects new remains only until turn cleanup', async () => {
-    freshObjectRoom({ gameplaySeed: 23 });
+    await freshObjectRoom({ gameplaySeed: 23 });
     requirePlayingGame(game);
     const input = resetInputState();
     installPagerInput(input, { limit: 100, expected: /golem|kill|statue|shatter/i });
@@ -86,7 +86,7 @@ void test('monster inventory damage protects new remains only until turn cleanup
 });
 
 void test('saving and restoring discards object bypass marks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const storage = memoryStorage();
     game.plname = 'Bypasses';
     await addInventoryObject(DAGGER, { bypass: true });
@@ -94,7 +94,7 @@ void test('saving and restoring discards object bypass marks', async () => {
 
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Bypasses', storage), true);
+    assert.equal(await restoreGame('Bypasses', storage), true);
 
     assert.equal(!!game.inventory[0]?.bypass, false);
     clearBypasses();
@@ -103,7 +103,7 @@ void test('saving and restoring discards object bypass marks', async () => {
 
 for (const style of [MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL] as const) {
     void test(`multi-drop in menu style ${style} protects dropped items until its native cleanup boundary`, async () => {
-        freshObjectRoom({ flags: { menu_style: style, verbose: false } });
+        await freshObjectRoom({ flags: { menu_style: style, verbose: false } });
         requirePlayingGame(game);
         const dagger = await addInventoryObject(DAGGER, { spe: 4 });
         const club = await addInventoryObject(CLUB, { spe: 3, bknown: false });

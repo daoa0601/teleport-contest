@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('invalid hero-directed breath reports the bad type without launching a ray', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ heroX: 14, heroY: 10, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const dragon = await createMonsterAt('red dragon', 10, 10, MM_ANGRY | NO_MINVENT);
     dragon.mux = game.u.ux;

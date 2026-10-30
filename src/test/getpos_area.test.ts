@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('area filtering follows remembered walls through a secret door', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 5 }, iflags: { getloc_filter: 2 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 5 }, iflags: { getloc_filter: 2 } });
     for (const [offset, typ] of [STONE, SDOOR, STONE, VWALL].entries()) {
         const location = level.requireAt(10 + offset, 10);
         location.typ = typ;
@@ -24,7 +24,7 @@ void test('area filtering follows remembered walls through a secret door', async
 });
 
 void test('area filtering starts at the hero even when that square has not been seen', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 5 }, iflags: { getloc_filter: 2 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 5 }, iflags: { getloc_filter: 2 } });
     level.requireAt(10, 10).seenv = 0;
     resetInputState().feed('z.');
 

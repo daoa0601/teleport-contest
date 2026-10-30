@@ -43,7 +43,7 @@ export async function beginMonsterMealMimicry(monster, state = game) {
         return;
     const previousGlyph = glyphAt(monster.mx, monster.my, state);
     const description = disguiseDescription(disguise, monster.female);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     // All animal disguises in qm[] are leashable. Furniture and food are not.
     if (wasLeashed && disguise.type !== M_AP_MONSTER) {
         await plineWithContinuation('Your leash goes slack.');

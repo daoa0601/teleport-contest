@@ -11,7 +11,7 @@ import { cansee, vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('gold dragon armor reports its light dimming on merge and brightening on return', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { blessed: true });
     wearHeroArmor(armor);
     beginObjectBurn(armor);
@@ -32,12 +32,12 @@ void test('gold dragon armor reports its light dimming on merge and brightening 
     assert.match(messages.join('\n'), /much brighter\./);
 });
 void test('turning into a gold dragon lights the dark squares around the hero by the next message', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     const { ux, uy } = game.u;
     assert.equal(cansee(ux + 2, uy), false);
     resetInputState();

@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 void test('lethal gas damage ends a vulnerable polymorph without killing the hero', async () => {
-    freshRoomWithPolymorphedHero('wolf', { polymorph: { hitPoints: 1 } });
+    await freshRoomWithPolymorphedHero('wolf', { polymorph: { hitPoints: 1 } });
     const hp = game.u.uhp;
     await createGasCloudSelection(game, [{ x: 10, y: 10 }], 5, 8, async () => { });
     const messages = [];

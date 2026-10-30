@@ -38,7 +38,7 @@ function zombifyRemaining(corpse, state = game) {
 // C menudrop_split + drop(): a counted drop splits an uncursed wielded
 // stack; the requested quantity lands, the remainder stays wielded.
 void test('a counted drop from a wielded stack splits and keeps the remainder wielded', async () => {
-    freshObjectRoom({ gameplaySeed: 91 });
+    await freshObjectRoom({ gameplaySeed: 91 });
     requireFixtureGame(game);
     const daggers = await addInventoryObject(DAGGER, { invlet: 'a', quan: 5, quantity: 5 });
     await setPrimaryWeapon(daggers, game);
@@ -55,7 +55,7 @@ void test('a counted drop from a wielded stack splits and keeps the remainder wi
 // C do.c:685-698 canletgo: with a count below the stack size the getobj
 // kludge sets corpsenm, so the refusal names "any of" the stones.
 void test('a counted cursed loadstone refusal keeps the whole stack', async () => {
-    freshObjectRoom({ gameplaySeed: 92 });
+    await freshObjectRoom({ gameplaySeed: 92 });
     requireFixtureGame(game);
     const stones = await addInventoryObject(LOADSTONE, { invlet: 'a', quan: 2, quantity: 2, cursed: true, bknown: false });
     await dropCommand('1a');
@@ -68,7 +68,7 @@ void test('a counted cursed loadstone refusal keeps the whole stack', async () =
 // C do.c:736-751: selected gold dropped while swallowed joins the
 // engulfer's inventory instead of reaching a floor that is not there.
 void test('gold dropped while swallowed enters the engulfer inventory', async () => {
-    freshObjectRoom({ gameplaySeed: 93 });
+    await freshObjectRoom({ gameplaySeed: 93 });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux, game.u.uy);
     game.u.uswallow = 1;
@@ -85,12 +85,12 @@ void test('gold dropped while swallowed enters the engulfer inventory', async ()
 // place (down the drain, or backed up onto the floor), and a blind hero
 // observes it through state alone.
 void test('a ring dropped over a sink while levitating diverts to the sink', async () => {
-    freshObjectRoom({ gameplaySeed: 94 });
+    await freshObjectRoom({ gameplaySeed: 94 });
     requireFixtureGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK_TERRAIN;
     grantIntrinsicProperty('levitation', 'outside');
     setHeroBlindnessTurns(20, game);
-    vision_recalc(0);
+    await vision_recalc(0);
     const ring = await addInventoryObject(RIN_GAIN_STRENGTH, { invlet: 'a' });
     assert.equal(game.u.levitating, true);
     await dropCommand('a ');
@@ -110,7 +110,7 @@ void test('a ring dropped over a sink while levitating diverts to the sink', asy
 // impact, cutting the revival deadline of a buried zombie corpse nearby
 // to two thirds, then float_down lands the hero.
 void test('invoking then dropping the Heart of Ahriman lands item then hero', async () => {
-    freshObjectRoom({ gameplaySeed: 95 });
+    await freshObjectRoom({ gameplaySeed: 95 });
     requireFixtureGame(game);
     const corpse = await knownObject(CORPSE, { corpsenm: 0 });
     addBuriedObject(corpse, game.u.ux + 1, game.u.uy, game);

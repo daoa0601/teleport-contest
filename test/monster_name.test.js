@@ -20,7 +20,7 @@ for (const [role, name] of [
     ['caveman', 'Slasher'], ['ranger', 'Sirius'], ['samurai', 'Hachi'], ['barbarian', 'Idefix'],
 ]) {
     void test(`a ${role}'s starting dog is addressed as ${name}`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         game.preferred_pet = 'd';
         const pet = await makedog();
         assert.ok(pet);
@@ -28,14 +28,14 @@ for (const [role, name] of [
     });
 }
 void test('a barbarian choosing a kitten does not give it the default dog name', async () => {
-    freshObjectRoom({ role: 'barbarian' });
+    await freshObjectRoom({ role: 'barbarian' });
     game.preferred_pet = 'c';
     const pet = await makedog();
     assert.ok(pet);
     assert.equal(monsterName(pet, { article: 'your', suppressIt: true }), 'your kitten');
 });
 void test('an unseen monster becomes an identified invisible species when sensed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10);
     assert.equal(monsterName(stalker), 'it');
@@ -43,14 +43,14 @@ void test('an unseen monster becomes an identified invisible species when sensed
     assert.equal(monsterName(stalker), 'the invisible stalker');
 });
 void test('a named ghost keeps its possessive name without an extra article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ghost = await createMonsterAt('ghost', 11, 10);
     setMonsterGivenName(ghost, 'James');
     assert.equal(monsterName(ghost), "James' ghost");
 });
 void test('a player monster uses its rank and puts invisibility inside its given title', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const knight = await createMonsterAt('knight', 11, 10);
     knight.m_lev = 1;
@@ -61,7 +61,7 @@ void test('a player monster uses its rank and puts invisibility inside its given
     assert.equal(monsterName(knight), 'Alex the invisible Gallant');
 });
 void test('a saddle is named on an unnamed mount but not on a named one', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     assert.equal(monsterName(pony), 'the saddled pony');
@@ -69,13 +69,13 @@ void test('a saddle is named on an unnamed mount but not on a named one', async 
     assert.equal(monsterName(pony), 'Penny');
 });
 void test('the hero’s own mount name omits its redundant saddle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await createSaddledSteed();
     game.u.usteed = pony;
     assert.equal(monsterName(pony, { article: 'your' }), 'your pony');
 });
 void test('a pet quickmimic is named for its borrowed monster appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10);
     initializePet(pet, { state: game });
@@ -85,7 +85,7 @@ void test('a pet quickmimic is named for its borrowed monster appearance', async
     assert.equal(monsterName(pet), 'the kitten');
 });
 void test('a shopkeeper keeps its identity when invisible or polymorphed', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Izchak';
@@ -96,7 +96,7 @@ void test('a shopkeeper keeps its identity when invisible or polymorphed', async
     assert.equal(monsterName(shopkeeper), 'Izchak the blue dragon');
 });
 void test('hallucination can describe a monster with any possessive pronoun', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 11, 10);
     const pronouns = new Set();
@@ -106,7 +106,7 @@ void test('hallucination can describe a monster with any possessive pronoun', as
     assert.ok(pronouns.size > 1);
 });
 void test('the final game display identifies monsters without hallucinated names', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const leader = await createMonsterAt('Lord Carnarvon', 11, 10);
     game.program_state.gameover = true;
@@ -189,12 +189,12 @@ void test('Lua-assigned player-monster names remain visible after saving and res
     game.plname = 'NamedActors';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('NamedActors', storage), true);
+    assert.equal(await restoreGame('NamedActors', storage), true);
     assert.equal(monsterName(actor('rogue')), 'Pug');
     assert.equal(monsterName(actor('wizard')), 'Newt');
 });
 void test('changing a given name keeps direct-level whitespace and can remove the name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog, { state: game });
@@ -209,20 +209,20 @@ void test('changing a given name keeps direct-level whitespace and can remove th
     assert.equal(dog.edog.hungrytime, hunger);
 });
 void test('a normally generated ghost has a personal identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Visitor';
     const ghost = await createMonsterAt('ghost', 11, 10);
     assert.match(monsterName(ghost), /.+['’](?:s)? ghost$/);
 });
 void test('an adjective does not disclose an unseen monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10);
     assert.equal(monsterName(stalker, { adjective: 'immobile', capitalized: true }), 'It');
 });
 void test('a named mount hides its saddle and a proper name gains an adjective article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     setMonsterGivenName(pony, 'Penny');
@@ -231,7 +231,7 @@ void test('a named mount hides its saddle and a proper name gains an adjective a
     assert.equal(monsterName(medusa, { adjective: 'immobile', capitalized: true }), 'The immobile Medusa');
 });
 void test('a shopkeeper adjective suppresses its invisibility and changed species description', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Izchak';
@@ -250,7 +250,7 @@ void test('a priest title ignores an adjective unless it is mimicking another mo
     assert.equal(monsterName(priest, { adjective: 'immobile', capitalized: true }), 'The immobile kitten');
 });
 void test('explicit shopkeeper names change under hallucination but retain stored identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+KeeperControl';
@@ -267,7 +267,7 @@ void test('explicit shopkeeper names change under hallucination but retain store
     assert.equal(shopkeeperName(shopkeeper), 'KeeperControl');
 });
 void test('a forced-gender possessive identifies an unseen humanoid but not an animal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.minvis = true;
@@ -280,7 +280,7 @@ void test('a forced-gender possessive identifies an unseen humanoid but not an a
     assert.equal(monsterPossessive(dog, { noIt: true }), 'its');
 });
 void test('capitalizing a shopkeeper name does not change its stored spelling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '-lowercase';
@@ -313,7 +313,7 @@ void test('Minetown residents have identities and its lighting shop belongs to I
     assert.equal(lighting.female, false);
 });
 void test('indefinite monster names choose the article from the full description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const blob = await createMonsterAt('acid blob', 11, 10);
     const guard = await createMonsterAt('guard', 12, 10);
@@ -321,7 +321,7 @@ void test('indefinite monster names choose the article from the full description
     assert.equal(monsterName(guard, { article: 'a', adjective: 'angry' }), 'an angry guard');
 });
 void test('indefinite descriptions retain personal names and unique monster titles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     setMonsterGivenName(dog, 'Polaris');
@@ -331,7 +331,7 @@ void test('indefinite descriptions retain personal names and unique monster titl
     assert.equal(monsterName(medusa, { article: 'a', adjective: 'angry' }), 'the angry Medusa');
 });
 void test('explicit unseen names retain pet ownership without changing visibility', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10);
     const description = { article: 'your', suppressIt: true, capitalized: true };
@@ -342,7 +342,7 @@ void test('explicit unseen names retain pet ownership without changing visibilit
     assert.equal(monsterName(stalker), 'it');
 });
 void test('an explicit adjective projection can retain a named monster saddle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     setMonsterGivenName(pony, 'Penny');
@@ -351,7 +351,7 @@ void test('an explicit adjective projection can retain a named monster saddle', 
     }), 'an angry saddled Penny');
 });
 void test('naming an unseen creature explicitly still honors hallucination', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10);
     const names = new Set();
@@ -362,7 +362,7 @@ void test('naming an unseen creature explicitly still honors hallucination', asy
     assert.equal(monsterName(stalker), 'it');
 });
 void test('indefinite minion titles adjust articles for invisibility and renegades', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     const angel = await createMonsterAt('Angel', 11, 10);
     angel.isminion = 1;

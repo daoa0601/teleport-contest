@@ -11,7 +11,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('acid venom which burns the hero clears an observer’s stale acid resistance knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const observer = await createMonsterAt('soldier', 12, 10);
     const resistance = seenResistanceForDamage(AD_ACID);
@@ -25,7 +25,7 @@ void test('acid venom which burns the hero clears an observer’s stale acid res
     assert.equal((observer.seen_resistance ?? 0) & resistance, 0);
 });
 void test('acid resistance prevents venom damage and teaches observing monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('acidResistance', 'outside');
     const observer = await createMonsterAt('soldier', 12, 10);
     const venom = await knownObject(ACID_VENOM);
@@ -35,7 +35,7 @@ void test('acid resistance prevents venom damage and teaches observing monsters'
     assert.ok((observer.seen_resistance ?? 0) & seenResistanceForDamage(AD_ACID));
 });
 void test('acid venom cannot hurt an acid-resistant monster in its flight path', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const source = await createMonsterAt('soldier', 14, 10);
     const target = await createMonsterAt('ochre jelly', 12, 10);
     const hp = target.mhp;

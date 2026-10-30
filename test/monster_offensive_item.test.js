@@ -20,8 +20,8 @@ import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-function offensiveRoom() {
-    freshObjectRoom({ left: 1, right: 30, top: 1, bottom: 19, role: 'barbarian',
+async function offensiveRoom() {
+    await freshObjectRoom({ left: 1, right: 30, top: 1, bottom: 19, role: 'barbarian',
         flags: { verbose: true }, hero: { uhp: 1000, uhpmax: 1000 } });
     requirePlayingGame(game);
     game.context.mon_moving = true;
@@ -35,7 +35,7 @@ async function aimedOrc(x = 12, y = 10) {
     return orc;
 }
 void test('the first attack-wand shot misses and trains the next charged shot', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 2, typeKnown: false });
     await addObjectToMonsterInventory(orc, wand);
@@ -55,7 +55,7 @@ void test('the first attack-wand shot misses and trains the next charged shot', 
     assert.equal(wand.where, 'minvent');
 });
 void test('an experienced frost horn uses its rolled ray strength and spends one charge', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     orc.mwandexp = true;
     const horn = await knownObject(FROST_HORN, { spe: 2 });
@@ -70,7 +70,7 @@ void test('an experienced frost horn uses its rolled ray strength and spends one
     assert.equal(horn.spe, 1);
 });
 void test('immediate striking also learns from its first missed shot', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     const wand = await knownObject(WAN_STRIKING, { spe: 2 });
     await addObjectToMonsterInventory(orc, wand);
@@ -85,7 +85,7 @@ void test('immediate striking also learns from its first missed shot', async () 
     assert.equal(wand.spe, 0);
 });
 void test('teleporting at a remembered empty position spends a charge without learning attack-wand aim', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     orc.mux = 10;
     orc.muy = 8;
@@ -102,7 +102,7 @@ void test('teleporting at a remembered empty position spends a charge without le
 });
 for (const fatal of [false, true]) {
     void test(`a cursed attack wand ${fatal ? 'kills its user' : 'explodes without spending the ordinary attack'}`, async () => {
-        const state = offensiveRoom();
+        const state = await offensiveRoom();
         const orc = await aimedOrc();
         orc.mhp = fatal ? 1 : 200;
         const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 3, cursed: true });
@@ -122,7 +122,7 @@ for (const fatal of [false, true]) {
     });
 }
 void test('a thrown potion keeps its remaining stack and hits an intervening monster', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     const giant = await createMonsterAt('hill giant', 11, 10, MM_NOGRP | NO_MINVENT);
     giant.mhp = giant.mhpmax = 100;
@@ -145,7 +145,7 @@ for (const [label, blessed, cursed, count] of [
     ['ordinary', false, false, 9], ['blessed', true, false, 8], ['cursed', false, true, 1],
 ]) {
     void test(`a ${label} earth scroll drops its native pattern around the reader`, async () => {
-        const state = offensiveRoom();
+        const state = await offensiveRoom();
         const orc = await aimedOrc();
         const scroll = await knownObject(SCR_EARTH, { blessed, cursed, quan: 2 });
         await addObjectToMonsterInventory(orc, scroll);
@@ -165,7 +165,7 @@ for (const [label, blessed, cursed, count] of [
     });
 }
 void test('a confused earth reader drops rock stacks instead of boulders', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     orc.mconf = 1;
     const scroll = await knownObject(SCR_EARTH, { blessed: true });
@@ -179,7 +179,7 @@ void test('a confused earth reader drops rock stacks instead of boulders', async
     assert.equal(scroll.where, 'gone');
 });
 void test('a blessed earth scroll includes the adjacent hero while sparing its reader', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc(11, 10);
     const scroll = await knownObject(SCR_EARTH, { blessed: true });
     await addObjectToMonsterInventory(orc, scroll);
@@ -194,7 +194,7 @@ void test('a blessed earth scroll includes the adjacent hero while sparing its r
     assert.equal(floorObjects(state.level).filter(object => object.otyp === BOULDER).length, 8);
 });
 void test('earth scrolls skip closed doors, solid terrain and air squares', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     for (const [x, y, type] of [[11, 9, DOOR], [11, 10, AIR], [11, 11, STONE]]) {
         const location = state.level.at(x, y);
@@ -203,7 +203,7 @@ void test('earth scrolls skip closed doors, solid terrain and air squares', asyn
         if (type === DOOR)
             location.doormask = D_CLOSED;
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     const scroll = await knownObject(SCR_EARTH);
     await addObjectToMonsterInventory(orc, scroll);
     const input = resetInputState();
@@ -214,7 +214,7 @@ void test('earth scrolls skip closed doors, solid terrain and air squares', asyn
     assert.equal(floorObjects(state.level).filter(object => object.otyp === BOULDER).length, 6);
 });
 void test('a reader killed by its own earth scroll cannot drop the consumed scroll', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     orc.mhp = 1;
     const scroll = await knownObject(SCR_EARTH, { cursed: true });
@@ -230,7 +230,7 @@ void test('a reader killed by its own earth scroll cannot drop the consumed scro
     assert.equal(state.u.uexp, experience);
 });
 void test('camera charges and blindness wait for the actual picture message page', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     const orc = await aimedOrc();
     const camera = await knownObject(EXPENSIVE_CAMERA, { spe: 3 });
     await addObjectToMonsterInventory(orc, camera);
@@ -251,7 +251,7 @@ void test('camera charges and blindness wait for the actual picture message page
     assert.match(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '', /You are blinded by the flash of light!/);
 });
 void test('a camera still hurts a gremlin whose blindness resistance blocks the flash', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     installPolymorphedHero('gremlin', { hitPoints: 100 });
     grantIntrinsicProperty('blindResistance', 'outside');
     const orc = await aimedOrc();
@@ -264,7 +264,7 @@ void test('a camera still hurts a gremlin whose blindness resistance blocks the 
     assert.equal(camera.spe, 1);
 });
 void test('a hallucinating blind hero still hears the photographers native cheese line', async () => {
-    const state = offensiveRoom();
+    const state = await offensiveRoom();
     await makeBlinded(10, { talk: false });
     await makeHallucinated(20, { talk: false });
     const orc = await aimedOrc();

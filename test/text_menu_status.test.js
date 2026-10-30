@@ -14,7 +14,7 @@ function screenRow(row) {
 }
 for (const lineCount of [22, 28]) {
     void test(`dismissing a ${lineCount}-line Lua text menu leaves covered status rows blank`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await bot();
         assert.match(screenRow(22), /St:/);
         assert.match(screenRow(23), /Satiated/);
@@ -43,7 +43,7 @@ for (const lineCount of [22, 28]) {
     });
 }
 void test('dismissing wizard identify for identified items defers the status redraw', async () => {
-    freshObjectRoom({ flags: { debug: true, menu_overlay: false } });
+    await freshObjectRoom({ flags: { debug: true, menu_overlay: false } });
     fullyIdentifyObject(await addInventoryObject(DAGGER));
     await bot();
     assert.match(screenRow(22), /St:/);

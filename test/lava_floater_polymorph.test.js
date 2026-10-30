@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // the terrainstatus option off iflags.terrain_typ stays MAX_TYPE, so
 // switch_terrain() runs and float_up() reports the stuck lower body.
 void test('a hero stuck in lava who becomes a floater strains upward but stays stuck', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = LAVAPOOL;
     game.u.fireResistance = true;

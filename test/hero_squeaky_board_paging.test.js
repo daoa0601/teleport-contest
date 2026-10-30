@@ -8,7 +8,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a squeaky board announces a visible sleeper before waking it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const sleeper = await createMonsterAt('water nymph', 11, 10, NO_MINVENT);
     sleeper.msleeping = 1;
     const input = resetInputState();
@@ -24,7 +24,7 @@ void test('a squeaky board announces a visible sleeper before waking it', async 
     assert.equal(game._pending_message, 'The water nymph wakes up.');
 });
 void test('the hero board noise uses the hero level for its waking radius', async () => {
-    const level = freshObjectRoom({ right: 22, hero: { ulevel: 8 } });
+    const level = await freshObjectRoom({ right: 22, hero: { ulevel: 8 } });
     const sleeper = await createMonsterAt('newt', 20, 10, NO_MINVENT);
     sleeper.msleeping = 1;
     const input = resetInputState();

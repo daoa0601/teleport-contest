@@ -173,7 +173,7 @@ async function collideWithMonster(monster, x, y, options) {
         : `You find ${name} by bumping into ${monsterObjectPronoun(monster, { noIt: true })}.`);
     await wakeMonster(monster);
     if (!canSpotMonster(monster))
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
     await angerMonster(monster);
     // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
     if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()) {
@@ -321,8 +321,8 @@ async function moveOneSquare(x, y, options, remaining) {
     const oldx = hero.ux;
     const oldy = hero.uy;
     await placeHeroOnLevel(x, y);
-    newsym(oldx, oldy);
-    vision_recalc(1);
+    await newsym(oldx, oldy);
+    await vision_recalc(1);
     await flush_screen(1);
     const previousLocation = game.level.at(oldx, oldy);
     const currentLocation = game.level.at(x, y);

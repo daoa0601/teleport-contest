@@ -17,7 +17,7 @@ for (const [type, label] of [
     [STATUE, 'statue'],
 ]) {
     void test(`a ${label} requested at <0,0> lands on the level with its requested identity`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 19n });
+        const level = await freshObjectRoom({ gameplaySeed: 19n });
         requirePlayingGame(game);
         const species = MONSTER_NAME.indexOf('giant');
         const flags = CORPSTAT_INIT | CORPSTAT_FEMALE | (type === STATUE ? CORPSTAT_HISTORIC : 0);
@@ -30,7 +30,7 @@ for (const [type, label] of [
     });
 }
 void test('an explicit corpse square is kept instead of choosing a random square', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const species = MONSTER_NAME.indexOf('giant');
     const corpse = await mkcorpstat(CORPSE, null, species, 12, 10, CORPSTAT_INIT);
@@ -39,7 +39,7 @@ void test('an explicit corpse square is kept instead of choosing a random square
     assert.ok(floorObjectsAt(level, 12, 10).includes(corpse));
 });
 void test('a parked guard leaves one corpse on the level, not at its parking coordinates', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const guard = await createMonsterAt('guard', 12, 10);
     guard.mhp = 0;
@@ -52,7 +52,7 @@ void test('a parked guard leaves one corpse on the level, not at its parking coo
     assert.ok(floorObjectsAt(level, corpse.ox, corpse.oy).includes(corpse));
 });
 void test('requesting a Rider corpse does not revive it during initial placement', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const death = MONSTER_NAME.indexOf('Death');
     const corpse = await mkcorpstat(CORPSE, null, death, 0, 0, CORPSTAT_INIT);
@@ -66,7 +66,7 @@ void test('requesting a Rider corpse does not revive it during initial placement
 });
 for (const female of [false, true]) {
     void test(`petrification records a ${female ? 'female' : 'male'} monster in its statue`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 19n });
+        const level = await freshObjectRoom({ gameplaySeed: 19n });
         requirePlayingGame(game);
         const monster = await createMonsterAt('giant', 12, 10, NO_MINVENT | (female ? MM_FEMALE : MM_MALE));
         assert.equal(!!monster.female, female);

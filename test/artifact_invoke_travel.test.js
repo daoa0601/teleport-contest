@@ -8,7 +8,7 @@ import { invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('the Orb of Fate tries level teleport even when the Amulet prevents it', async () => {
-    freshObjectRoom({ role: 'valkyrie', hero: { uhave: { amulet: true } } });
+    await freshObjectRoom({ role: 'valkyrie', hero: { uhave: { amulet: true } } });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Fate', { invlet: 'a', where: 'inventory', age: 0 });
     game.inventory = [orb];
@@ -18,7 +18,7 @@ void test('the Orb of Fate tries level teleport even when the Amulet prevents it
     assert.equal(game.context.move, 1);
 });
 void test('the Eye cannot portal into the dungeon the hero already occupies', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',
             num_dunlevs: 20, dunlev_ureached: 8 })];
@@ -32,7 +32,7 @@ void test('the Eye cannot portal into the dungeon the hero already occupies', as
     assert.equal(game.context.move, 1);
 });
 void test('cancelling the Eye dungeon menu consumes its invocation and a turn', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20, dunlev_ureached: 8 }),
@@ -46,7 +46,7 @@ void test('cancelling the Eye dungeon menu consumes its invocation and a turn', 
     assert.equal(game.context.move, 1);
 });
 void test('the Eye dungeon menu shows its prompt in the menu heading style', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20, dunlev_ureached: 8 }),

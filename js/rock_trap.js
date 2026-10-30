@@ -46,14 +46,14 @@ export async function beginMonsterRockTrap(monster, trap, state = game, { random
         if (event.finished) {
             deleteTrap(trap, state);
             if (state === game)
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
         }
         return event;
     }
     trap.once = true;
     const rock = await makeTrapMissile(ROCK, trap);
     if (visibility.inSight)
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     return {
         kind: 'falling-rock',
         trap,
@@ -75,7 +75,7 @@ export async function finishMonsterRockTrap(monster, event, state = game, { publ
         await publish(`A trap door above ${canonicalMonsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
         if (state === game)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         event.finished = true;
         return event;
     }

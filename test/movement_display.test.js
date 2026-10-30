@@ -16,10 +16,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 void test('swapping with a pet redraws both positions before the swap message is acknowledged', async () => {
-    freshObjectRoom({ flags: { pickup: false } });
+    await freshObjectRoom({ flags: { pickup: false } });
     const kitten = await createMonsterAt('kitten', 11, 10, MM_NOGRP | NO_MINVENT);
     initializePet(kitten);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const input = resetInputState();
     let acknowledgments = 0;
@@ -40,15 +40,15 @@ void test('swapping with a pet redraws both positions before the swap message is
     assert.equal(kitten.mx, 10);
 });
 void test('automatic floor inspection flushes hero movement before acknowledging the previous message', async () => {
-    freshObjectRoom({ flags: { pickup: false } });
+    await freshObjectRoom({ flags: { pickup: false } });
     await floorObject(POT_HEALING, 11, 10);
     await floorObject(CORPSE, 11, 10, { corpsenm: nameToMonster('goblin') });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     await pline('You hear a distant howl.');
     game.u.ux = 11;
-    newsym(10, 10);
-    vision_recalc(1);
+    await newsym(10, 10);
+    await vision_recalc(1);
     const input = resetInputState();
     let acknowledgments = 0;
     input.display = {

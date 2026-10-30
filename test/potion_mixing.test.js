@@ -16,7 +16,7 @@ for (const { dippedType, sourceType } of [
     { dippedType: POT_GAIN_ENERGY, sourceType: POT_HEALING },
 ]) {
     void test(`mixing ${OBJECT_NAMES[dippedType]} into ${OBJECT_NAMES[sourceType]} makes diluted extra healing`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const dipped = await addInventoryObject(dippedType);
         const source = await addInventoryObject(sourceType);
@@ -31,7 +31,7 @@ for (const { dippedType, sourceType } of [
     });
 }
 void test('mixing a large magic stack treats only a rolled subset of bottles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_HEALING, { quan: 10 });
     const source = await addInventoryObject(POT_SPEED);
@@ -51,7 +51,7 @@ void test('mixing a large magic stack treats only a rolled subset of bottles', a
     assert.equal(game.context.move, 1);
 });
 void test('an incompatible pair reduces to water that bubbles clear', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_LEVITATION);
     const source = await addInventoryObject(POT_SPEED);
@@ -67,7 +67,7 @@ void test('an incompatible pair reduces to water that bubbles clear', async () =
     assert.equal(game.context.move, 1);
 });
 void test('an incompatible pair can glow brightly and evaporate', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_LEVITATION);
     const source = await addInventoryObject(POT_SPEED);
@@ -80,7 +80,7 @@ void test('an incompatible pair can glow brightly and evaporate', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('mixing diluted healing treats two bottles and leaves the rest of the stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_HEALING, { quan: 10, odiluted: true });
     const source = await addInventoryObject(POT_SPEED);
@@ -95,7 +95,7 @@ void test('mixing diluted healing treats two bottles and leaves the rest of the 
     assert.notEqual(mixture.invlet, dipped.invlet);
 });
 void test('a cursed dipped potion explodes, hurts the hero and destroys both ingredients', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_HEALING, { cursed: true });
     const source = await addInventoryObject(POT_SPEED);
@@ -107,7 +107,7 @@ void test('a cursed dipped potion explodes, hurts the hero and destroys both ing
     assert.match(game._pending_message, /They explode/);
 });
 void test('an exploding unknown see-invisible potion can be called before it is destroyed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dipped = await addInventoryObject(POT_SEE_INVISIBLE, {
         cursed: true, known: false, typeKnown: false,
@@ -127,7 +127,7 @@ void test('an exploding unknown see-invisible potion can be called before it is 
     assert.equal(game.context.move, 1);
 });
 void test('a unicorn horn clears one sickness bottle without consuming the horn or the other bottles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const horn = await addInventoryObject(UNICORN_HORN);
     const sickness = await addInventoryObject(POT_SICKNESS, { quan: 3, blessed: true });
@@ -141,7 +141,7 @@ void test('a unicorn horn clears one sickness bottle without consuming the horn 
     assert.equal(juice.blessed, false);
 });
 void test('an amethyst makes fruit juice whose curse follows the gem', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gem = await addInventoryObject(AMETHYST, { cursed: true });
     const booze = await addInventoryObject(POT_BOOZE, { blessed: true });
@@ -153,7 +153,7 @@ void test('an amethyst makes fruit juice whose curse follows the gem', async () 
     assert.equal(game.inventory.includes(gem), true);
 });
 void test('a cursed horn clears confusion into uncursed undiluted water', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const horn = await addInventoryObject(UNICORN_HORN, { cursed: true });
     const potion = await addInventoryObject(POT_CONFUSION, { cursed: true, odiluted: true });

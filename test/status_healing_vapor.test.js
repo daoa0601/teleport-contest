@@ -10,7 +10,7 @@ import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('healing vapor at full health keeps deferred hunger hidden when permanent senses remain unchanged', async () => {
-    freshObjectRoom({ hero: { uhs: NOT_HUNGRY, permaBlind: true } });
+    await freshObjectRoom({ hero: { uhs: NOT_HUNGRY, permaBlind: true } });
     assert.ok(game.u.uroleplay);
     game.u.uroleplay.deaf = true;
     syncBlindness();

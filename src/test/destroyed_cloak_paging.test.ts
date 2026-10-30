@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('destroying a displacement cloak pages its destruction before announcing lost displacement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { oeroded: 3, spe: 3 });
     wearHeroArmor(cloak);
     const armorClass = findArmorClass();

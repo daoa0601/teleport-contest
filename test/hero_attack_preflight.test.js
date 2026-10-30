@@ -40,7 +40,7 @@ async function target(overrides = {}) {
     return monster;
 }
 void test('an unspotted monster is marked and awakened instead of attacked', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const monster = await target({ minvis: true, msleeping: 1 });
     const result = await prepareAppliedWeaponAttack(monster, null);
@@ -51,7 +51,7 @@ void test('an unspotted monster is marked and awakened instead of attacked', asy
     assert.match(game._pending_message, /something there you can't see/);
 });
 void test('a disguised monster behind an invisible marker is revealed and attacked', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const monster = await target({
         mnum: 64,
@@ -59,14 +59,14 @@ void test('a disguised monster behind an invisible marker is revealed and attack
         mappearance: 18,
         minvis: true,
     });
-    map_invisible(monster.mx, monster.my);
+    await map_invisible(monster.mx, monster.my);
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: true, spentTime: false });
     assert.equal(monster.m_ap_type, 0);
     assert.equal(monster.mappearance, 0);
 });
 void test('a visible object mimic is stumbled onto without a pole-range grab', async () => {
-    freshObjectRoom({ hero: { warning: true } });
+    await freshObjectRoom({ hero: { warning: true } });
     requireFixtureGame(game);
     initRng(4500);
     const monster = await target({
@@ -75,7 +75,7 @@ void test('a visible object mimic is stumbled onto without a pole-range grab', a
         m_ap_type: M_AP_OBJECT,
         mappearance: 18,
     });
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: false, spentTime: true });
     assert.equal(monster.m_ap_type, 0);
@@ -84,21 +84,21 @@ void test('a visible object mimic is stumbled onto without a pole-range grab', a
     assert.notEqual(game.level.requireAt(12, 10).remembered_glyph?.kind, 'invisible');
 });
 void test('a visible monster disguise reports what it really is', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const monster = await target({
         mnum: 64,
         m_ap_type: 3,
         mappearance: 0,
     });
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: false, spentTime: true });
     assert.equal(monster.m_ap_type, 0);
     assert.match(game._pending_message, /Wait!  That giant ant is really a small mimic!/);
 });
 void test('a sensed disguised monster is revealed and awakened before attacking', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     const monster = await target({
         mnum: 64,
         m_ap_type: M_AP_OBJECT,
@@ -111,7 +111,7 @@ void test('a sensed disguised monster is revealed and awakened before attacking'
     assert.equal(monster.msleeping, 0);
 });
 void test('finding a visible hides-under monster spends the action without an invisible marker', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const concealer = MONSTER_FLAGS1.findIndex(flags => (flags & M1_CONCEAL) !== 0);
     assert.notEqual(concealer, -1);
@@ -125,7 +125,7 @@ void test('finding a visible hides-under monster spends the action without an in
     assert.match(game._pending_message, /hiding under an uncursed arrow/);
 });
 void test('an unseen hides-under monster is described as something under the object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const concealer = MONSTER_FLAGS1.findIndex(flags => (flags & M1_CONCEAL) !== 0);
     const monster = await target({
@@ -140,7 +140,7 @@ void test('an unseen hides-under monster is described as something under the obj
     assert.match(game._pending_message, /something hiding under an uncursed arrow/);
 });
 void test('hallucination uses the displayed monster name for a revealed hider', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requireFixtureGame(game);
     initRng(4500);
     const concealer = MONSTER_FLAGS1.findIndex(flags => (flags & M1_CONCEAL) !== 0);
@@ -152,16 +152,16 @@ void test('hallucination uses the displayed monster name for a revealed hider', 
     assert.doesNotMatch(game._pending_message, /creature is present/);
 });
 void test('an actually displayed warning permits an unseen attack', async () => {
-    freshObjectRoom({ hero: { warning: true } });
+    await freshObjectRoom({ hero: { warning: true } });
     requireFixtureGame(game);
     const monster = await target({ minvis: true, m_lev: 12 });
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: true, spentTime: false });
     assert.notEqual(game.level.requireAt(12, 10).remembered_glyph?.kind, 'invisible');
 });
 void test('declining a peaceful attack does not spend the action', async () => {
-    freshObjectRoom({ flags: { verbose: true, confirm: true } });
+    await freshObjectRoom({ flags: { verbose: true, confirm: true } });
     const monster = await target({ mpeaceful: 1 });
     pushKeys('n');
     const result = await prepareAppliedWeaponAttack(monster, null);
@@ -169,7 +169,7 @@ void test('declining a peaceful attack does not spend the action', async () => {
     assert.equal((monster.mstrategy ?? 0) & STRAT_WAITMASK, 0);
 });
 void test('peaceful confirmation uses the definite article for a tame target', async () => {
-    freshObjectRoom({ flags: { verbose: true, confirm: true } });
+    await freshObjectRoom({ flags: { verbose: true, confirm: true } });
     requireFixtureGame(game);
     const monster = await target({ mpeaceful: 1, mtame: 5 });
     pushKeys('n');
@@ -178,7 +178,7 @@ void test('peaceful confirmation uses the definite article for a tame target', a
     assert.match(game._last_message, /Really attack the giant ant\?/);
 });
 void test('forcefight bypasses discovery and peaceful confirmation', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: true, confirm: true },
         context: { move: 0, forcefight: true },
     });
@@ -189,7 +189,7 @@ void test('forcefight bypasses discovery and peaceful confirmation', async () =>
     assert.notEqual(game.level.requireAt(12, 10).remembered_glyph?.kind, 'invisible');
 });
 void test('an underwater telepath attacks a dry-land hider without a warning', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     // Worn telepathy still senses the monster (tp_sensemon); C's reveal
     // message is suppressed by telepathy or detection alone, not by the

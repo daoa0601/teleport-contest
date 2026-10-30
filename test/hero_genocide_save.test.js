@@ -21,8 +21,8 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
-function genocideRoom(debug = false) {
-    freshObjectRoom({
+async function genocideRoom(debug = false) {
+    await freshObjectRoom({
         hero: { urexp: 100 },
         flags: { debug, bones: false, disclose: '-i -a -v -c -o', tombstone: false },
     });
@@ -51,7 +51,7 @@ for (const { how, cause } of [
     { how: 3, cause: 'killed by genocidal confusion' },
 ]) {
     void test(`saving a doomed monster body retains ${cause} on reversion`, async () => {
-        const storage = genocideRoom();
+        const storage = await genocideRoom();
         requirePlayingGame(game);
         acknowledgeGenocideMessages();
         if (how !== 3)
@@ -62,7 +62,7 @@ for (const { how, cause } of [
         assert.equal(!!game.program_state.gameover, false);
         assert.equal(await saveGame(storage), true);
         resetGame();
-        assert.equal(restoreGame('Doomed', storage), true);
+        assert.equal(await restoreGame('Doomed', storage), true);
         game.storage = storage;
         game.nhDisplay = new GameDisplay(null);
         game.iflags.toptenwin = false;
@@ -79,7 +79,7 @@ for (const { how, cause } of [
     });
 }
 void test('an amulet cannot rescue a saved hero whose original species was genocided', async () => {
-    const storage = genocideRoom();
+    const storage = await genocideRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -92,7 +92,7 @@ void test('an amulet cannot rescue a saved hero whose original species was genoc
     await flushPendingTopline();
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Doomed', storage), true);
+    assert.equal(await restoreGame('Doomed', storage), true);
     game.storage = storage;
     game.nhDisplay = new GameDisplay(null);
     game.iflags.toptenwin = false;
@@ -110,7 +110,7 @@ void test('an amulet cannot rescue a saved hero whose original species was genoc
     assert.equal(loadScoreRecords()[0]?.death, 'killed by a scroll of genocide, while attempting to cheat Death');
 });
 void test('saving after refused genocide does not revive an old cause on restore', async () => {
-    const storage = genocideRoom(true);
+    const storage = await genocideRoom(true);
     requirePlayingGame(game);
     acknowledgeGenocideMessages();
     pushKeys('human\n');
@@ -144,12 +144,12 @@ void test('saving after refused genocide does not revive an old cause on restore
     assert.equal(await saveGame(storage), true);
     // Another running game has a delayed cause. Restoring the saved survivor
     // must replace that state even though its consumed cause is absent.
-    genocideRoom();
+    await genocideRoom();
     acknowledgeGenocideMessages();
     pushKeys('human\n');
     await doGenocide(1);
     await flushPendingTopline();
-    assert.equal(restoreGame('Doomed', storage), true);
+    assert.equal(await restoreGame('Doomed', storage), true);
     game.storage = storage;
     game.flags.debug = false;
     acknowledgeGenocideMessages();
@@ -160,7 +160,7 @@ void test('saving after refused genocide does not revive an old cause on restore
     assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide');
 });
 void test('restore rejects an unknown delayed genocide cause before replacing live state', async () => {
-    const storage = genocideRoom();
+    const storage = await genocideRoom();
     assert.equal(await saveGame(storage), true);
     const key = 'teleport-save:doomed';
     const encoded = storage.getItem(key);
@@ -171,7 +171,7 @@ void test('restore rejects an unknown delayed genocide cause before replacing li
     storage.setItem(key, encodeSavedGraph(saved));
     const hero = game.u;
     const level = game.level;
-    assert.equal(restoreGame('Doomed', storage), false);
+    assert.equal(await restoreGame('Doomed', storage), false);
     assert.equal(game.u, hero);
     assert.equal(game.level, level);
     assert.notEqual(storage.getItem(key), null);

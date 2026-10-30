@@ -194,7 +194,7 @@ export async function finishMonsterLandMine(
 
     if (event.discoveredTrigger) {
         await publish(`A trigger appears in a pile of soil below ${canonicalMonsterName(monster, { state })}.`);
-        seeTrap(event.trap, state);
+        await seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;
     }
@@ -204,7 +204,7 @@ export async function finishMonsterLandMine(
     }
     // Native redraws the visible victim before the detonation message can
     // pause for input, including monsters seen only through infravision.
-    if (event.inSight) newsym(monster.mx, monster.my);
+    if (event.inSight) await newsym(monster.mx, monster.my);
     if (event.airborne && event.inSight) {
         await publish(`The air currents set ${event.alreadySeen ? 'a land mine' : 'it'} off!`);
     } else if (event.inSight) {

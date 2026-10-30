@@ -23,7 +23,7 @@ const sources = [
 ] as const;
 
 async function preparePoison(source: (typeof sources)[number], { hp = 100, maximum = 100, lifeSaving = false } = {}) {
-    freshObjectRoom({ hero: { uhp: hp, uhpmax: maximum, ulevel: 1 } });
+    await freshObjectRoom({ hero: { uhp: hp, uhpmax: maximum, ulevel: 1 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     game.u.acurr.a[A_CON] = 12;

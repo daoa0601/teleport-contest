@@ -13,7 +13,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon } from './support/topology.js';
 
 void test('escaping pets use their given names and native companion order', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: 'none' } });
+    await freshObjectRoom({ flags: { bones: false, disclose: 'none' } });
     game.storage = memoryStorage();
     game.iflags.toptenwin = false;
     const first = await createMonsterAt('little dog', 11, 10);
@@ -38,7 +38,7 @@ void test('escaping pets use their given names and native companion order', asyn
 });
 
 void test('a diagonally adjacent grid bug cannot accompany an escape', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: 'none' } });
+    await freshObjectRoom({ flags: { bones: false, disclose: 'none' } });
     game.iflags.toptenwin = false;
     const bug = await createMonsterAt('grid bug', 11, 11);
     bug.mtame = 10;
@@ -53,7 +53,7 @@ void test('a diagonally adjacent grid bug cannot accompany an escape', async () 
 });
 
 void test('ascension pluralizes the final maximum hit point count', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 1 }, flags: { bones: false, disclose: 'none' } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 1 }, flags: { bones: false, disclose: 'none' } });
     game.iflags.toptenwin = false;
     let summary = '';
     const input = resetInputState();
@@ -72,7 +72,7 @@ void test('ascension pluralizes the final maximum hit point count', async () => 
 
 for (const outcome of ['escaped', 'ascended'] as const) {
     void test(`${outcome} awards the current HP of an adjacent tame pet after clearing restraints`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uz: { dnum: 0, dlevel: 1 }, urexp: 1000, ualignbase: [0, 0] },
             flags: { bones: false, disclose: 'none' },
         });

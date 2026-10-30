@@ -7,7 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('the naming category menu accepts its legacy individual-object alias', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
     const input = resetInputState();
     input.feed('name\r');

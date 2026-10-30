@@ -14,7 +14,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a pet seeks a fetchable object after its engulfed master browses terrain', async () => {
-    freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10,
         flags: { debug: true, tips: false, verbose: true } });
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 13, 10, NO_MINVENT);
@@ -26,7 +26,7 @@ void test('a pet seeks a fetchable object after its engulfed master browses terr
     const worm = await createMonsterAt('purple worm', 10, 10, NO_MINVENT);
     game.u.ustuck = worm;
     game.u.uswallow = 1;
-    vision_recalc(2);
+    await vision_recalc(2);
     const input = resetInputState();
     await answerPrompts(runExtendedCommand('terrain'), input, [
         { prompt: /View which\?/, keys: 'd' },

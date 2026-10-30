@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a disenchanter waits for its hit message before draining worn armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 3 });
     wearHeroArmor(armor);

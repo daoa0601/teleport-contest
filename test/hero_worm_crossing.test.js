@@ -9,9 +9,9 @@ import { freshObjectRoom } from './support/object-room.js';
 import { assertWormBody } from './support/worms.js';
 for (const consecutive of [true, false]) {
     void test(`a diagonal hero step ${consecutive ? 'cannot cross consecutive' : 'can pass nonconsecutive'} worm segments`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const worm = await createMonsterAt('long worm', 12, 9, NO_MINVENT | MM_NOTAIL);
-        initializeMonsterWormBody(worm, { segmentCount: 0 });
+        await initializeMonsterWormBody(worm, { segmentCount: 0 });
         assertWormBody(worm);
         worm.wormSegments = consecutive
             ? [{ x: 10, y: 9 }, { x: 11, y: 10 }]

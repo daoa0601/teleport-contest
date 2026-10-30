@@ -9,7 +9,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('killing a tame creature cannot lower natural Luck below its minimum', async () => {
-    freshObjectRoom({ hero: { uluck: LUCKMIN } });
+    await freshObjectRoom({ hero: { uluck: LUCKMIN } });
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     pet.mtame = 10;
@@ -20,7 +20,7 @@ void test('killing a tame creature cannot lower natural Luck below its minimum',
     assert.equal(game.u.uluck, LUCKMIN);
 });
 void test('breaking a Sokoban boulder records cheating without exceeding the Luck penalty limit', async () => {
-    const level = freshObjectRoom({ hero: { uluck: LUCKMIN } });
+    const level = await freshObjectRoom({ hero: { uluck: LUCKMIN } });
     requirePlayingGame(game);
     level.flags.sokoban_rules = true;
     const boulder = await floorObject(BOULDER, 11, 10);

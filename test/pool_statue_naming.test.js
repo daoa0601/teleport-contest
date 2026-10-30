@@ -9,7 +9,7 @@ import { STATUE } from '../js/object_data.js';
 import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('random Lua statues retain their birth gender for object descriptions', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await init_dungeons();
     await startLuaCore(t);

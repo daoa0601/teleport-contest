@@ -21,7 +21,7 @@ const maximumRoll = (range: number) => range;
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 
 void test('Magicbane still cancels when an artifact-hit caller supplies a zero die roll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const golem = await createMonsterAt('clay golem', 12, 10, TEST_MONSTER_FLAGS);
     const blade = await artifactObject('Magicbane', { spe: 0 });
 
@@ -34,7 +34,7 @@ void test('Magicbane still cancels when an artifact-hit caller supplies a zero d
 });
 
 void test('Fire Brand can burn a monster inventory and add its damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scroll = await uninitializedObject(SCR_IDENTIFY);
     const monster = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
@@ -58,7 +58,7 @@ void test('Fire Brand can burn a monster inventory and add its damage', async ()
 });
 
 void test('Mjollnir wakes monsters near a target struck by lightning', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     const sleeper = await createMonsterAt('lichen', 13, 10, TEST_MONSTER_FLAGS);
@@ -77,7 +77,7 @@ void test('Mjollnir wakes monsters near a target struck by lightning', async () 
 });
 
 void test('Stormbringer drains a monster level and heals its wielder', async () => {
-    freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
+    await freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('pony', 12, 10, TEST_MONSTER_FLAGS);
     monster.mhp = monster.mhpmax = 20;
@@ -99,7 +99,7 @@ void test('Stormbringer drains a monster level and heals its wielder', async () 
 });
 
 void test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uen: 2, uenmax: 3, uenpeak: 3 },
     });
     requirePlayingGame(game);
@@ -133,7 +133,7 @@ void test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
 });
 
 void test('Magicbane scares a surviving monster for three turns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     monster.mhp = monster.mhpmax = 30;
@@ -164,7 +164,7 @@ void test('Magicbane scares a surviving monster for three turns', async () => {
 });
 
 void test('the Tsurugi bisects small monsters and cuts deeply into large ones', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const weapon = await artifactObject('The Tsurugi of Muramasa');
     const messages: string[] = [];
@@ -199,7 +199,7 @@ void test('the Tsurugi bisects small monsters and cuts deeply into large ones', 
 });
 
 void test('Vorpal Blade misses a headless creature and beheads a jabberwock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const weapon = await artifactObject('Vorpal Blade');
     const messages: string[] = [];
@@ -236,7 +236,7 @@ void test('Vorpal Blade misses a headless creature and beheads a jabberwock', as
 
 for (const swallowed of [false, true]) {
     void test(`a blind hero feels Fire Brand strike ${swallowed ? 'the swallowing monster' : 'a held monster'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
         monster.mhp = monster.mhpmax = 500;
@@ -261,7 +261,7 @@ for (const swallowed of [false, true]) {
 
 for (const blind of [false, true]) {
     void test(`Stormbringer ${blind ? 'silently drains' : 'announces its drain against'} the hero's swallower`, async () => {
-        freshObjectRoom({ hero: { uhp: 5, uhpmax: 40 } });
+        await freshObjectRoom({ hero: { uhp: 5, uhpmax: 40 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
         monster.mhp = monster.mhpmax = 500;
@@ -284,7 +284,7 @@ for (const blind of [false, true]) {
 }
 
 void test('felt elemental damage does not reveal a blind target inventory being destroyed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
     const scroll = await addObjectToMonsterInventory(monster, await knownObject(SCR_IDENTIFY), game);
@@ -305,7 +305,7 @@ void test('felt elemental damage does not reveal a blind target inventory being 
 });
 
 void test('seeing a swallowed artifact strike does not expose the swallower\'s burning inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
     const scroll = await addObjectToMonsterInventory(monster, await knownObject(SCR_IDENTIFY), game);
@@ -327,7 +327,7 @@ void test('seeing a swallowed artifact strike does not expose the swallower\'s b
 });
 
 void test('visible fire ignites monster equipment with the carrier ownership', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const lamp = await addObjectToMonsterInventory(monster, await knownObject(OIL_LAMP, { age: 100 }), game);
@@ -344,7 +344,7 @@ void test('visible fire ignites monster equipment with the carrier ownership', a
 });
 
 void test('one hallucinated Magicbane hit keeps the same target identity in its effect feedback', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('gnomish wizard', 11, 10, TEST_MONSTER_FLAGS);
     await makeHallucinated(20, { talk: false });

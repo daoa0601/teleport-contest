@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('magical breathing removes the drowning bonus from giant-eel photograph experience', async () => {
     const awards = [];
     for (const breathing of [false, true]) {
-        const level = freshObjectRoom({ role: 'tourist', hero: { ulevel: 30, uexp: 0 } });
+        const level = await freshObjectRoom({ role: 'tourist', hero: { ulevel: 30, uexp: 0 } });
         requirePlayingGame(game);
         level.requireAt(12, 10).typ = POOL;
         const eel = await createMonsterAt('giant eel', 12, 10, NO_MINVENT);

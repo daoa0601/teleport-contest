@@ -23,10 +23,10 @@ import { createDungeon } from './support/topology.js';
 
 for (const trapX of [10, 11]) {
     void test(`an unseen monster uses a polymorph trap ${trapX === 10 ? 'beneath it' : 'beside it'} without interrupting pending prose`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { blindTurns: 20 } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { blindTurns: 20 } });
         requirePlayingGame(game);
         syncBlindness();
-        vision_recalc(0);
+        await vision_recalc(0);
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
         const oldSpecies = monster.mnum;
         addTrap(level, POLY_TRAP, trapX, 10);
@@ -54,7 +54,7 @@ for (const { wandType, effect } of [
     { wandType: WAN_SPEED_MONSTER, effect: 'speed' },
 ]) {
     void test(`the Wizard spends its ${effect} wand turn without insulting the hero`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         const wizard = await createMonsterAt('Wizard of Yendor', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
@@ -83,7 +83,7 @@ for (const { wandType, effect } of [
 }
 
 void test('a monster stepping onto a level teleport trap disappears without falling', async () => {
-    const level = freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10, heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -107,7 +107,7 @@ void test('a monster stepping onto a level teleport trap disappears without fall
 
 void test('the Wizard spends its healing turn without adding an insult', async () => {
     for (let seed = 1; seed <= 12; seed++) {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' })];
         level.flags.stasis_until = game.moves + 5;
@@ -135,7 +135,7 @@ void test('the Wizard spends its healing turn without adding an insult', async (
 });
 
 void test('voluntary teleport entry teaches the traveler and sighted witnesses', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10, context: { mon_moving: true } });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10, context: { mon_moving: true } });
     requirePlayingGame(game);
     const traveler = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     const witness = await createMonsterAt('orc', 9, 11, NO_MINVENT);
@@ -154,7 +154,7 @@ void test('voluntary teleport entry teaches the traveler and sighted witnesses',
 });
 
 void test('a monster recognizes the hero as the maker of a voluntarily entered teleport trap', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10, context: { mon_moving: true } });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10, context: { mon_moving: true } });
     requirePlayingGame(game);
     const traveler = await createMonsterAt('orc', 10, 10, NO_MINVENT);
     traveler.mpeaceful = 1;
@@ -173,7 +173,7 @@ void test('a monster recognizes the hero as the maker of a voluntarily entered t
 
 void test('a hallucinated monster keeps the appearance shown during its polymorph announcement', async () => {
     for (let seed = 1; seed <= 8; seed++) {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         const originalSpecies = monster.mnum;

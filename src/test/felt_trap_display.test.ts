@@ -20,13 +20,13 @@ for (const blind of [false, true]) {
         [HOLE, 'hole'], [MAGIC_PORTAL, 'magic portal'], [BEAR_TRAP, 'bear trap'],
     ] as const) {
         void test(`feeling a ${name} maps it before its message${blind ? ' while blind' : ' while invisible'}`, async () => {
-            const level = freshObjectRoom({ hero: { invisible: true, uhp: 1000, uhpmax: 1000 } });
+            const level = await freshObjectRoom({ hero: { invisible: true, uhp: 1000, uhpmax: 1000 } });
             game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
             if (blind) {
                 setHeroBlindnessTurns(20);
-                vision_recalc(0);
+                await vision_recalc(0);
             }
-            newsym(10, 10);
+            await newsym(10, 10);
             await flush_screen(1);
             const trap = addTrap(level, type, 10, 10, {
                 tseen: false, dst: { dnum: 0, dlevel: 9 },
@@ -50,10 +50,10 @@ for (const blind of [false, true]) {
 
 for (const seen of [false, true]) {
     void test(`a blind levitating hero feels a ${seen ? 'known' : 'new'} vibrating square`, async () => {
-        const level = freshObjectRoom({ hero: { levitating: true } });
+        const level = await freshObjectRoom({ hero: { levitating: true } });
         setHeroBlindnessTurns(20);
-        vision_recalc(0);
-        newsym(10, 10);
+        await vision_recalc(0);
+        await newsym(10, 10);
         await flush_screen(1);
         const trap = addTrap(level, VIBRATING_SQUARE, 10, 10, { tseen: seen });
 

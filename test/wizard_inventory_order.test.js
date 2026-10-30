@@ -71,7 +71,7 @@ void test('wizard identification lists an unnamed lowercase wand before a named 
     assert.equal(game.context.move, 0);
 });
 void test('wizard identification honors full loot ordering for tools instead of inventory letters', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=sortloot:full');
     await addInventoryObject(WAX_CANDLE, { invlet: 'a', bknown: false });
     await addInventoryObject(OIL_LAMP, { invlet: 'b', bknown: false });
@@ -79,7 +79,7 @@ void test('wizard identification honors full loot ordering for tools instead of 
     assert.match(text, /b - .*oil lamp[\s\S]*a - .*wax candle/);
 });
 void test('full wizard loot ordering ignores personal wand names and uses charge counts to break ties', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=sortloot:full');
     const named = await addInventoryObject(WAN_LIGHT, {
         invlet: 'a', spe: 2, bknown: false, oextra: { oname: 'Beacon' },
@@ -90,7 +90,7 @@ void test('full wizard loot ordering ignores personal wand names and uses charge
     assert.equal(named.oextra?.oname, 'Beacon');
 });
 void test('full wizard loot ordering uses revealed names without discovering potion types', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=sortloot:full');
     const healing = await addInventoryObject(POT_HEALING, { invlet: 'a', typeKnown: false });
     const blindness = await addInventoryObject(POT_BLINDNESS, { invlet: 'b', typeKnown: false });
@@ -100,7 +100,7 @@ void test('full wizard loot ordering uses revealed names without discovering pot
     assert.equal(objectTypeKnown(blindness), false);
 });
 void test('wizard identification without sortpack lists letters across classes without headings', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=!sortpack');
     await addInventoryObject(OIL_LAMP, { invlet: 'a', bknown: false });
     await addInventoryObject(FOOD_RATION, { invlet: 'b', bknown: false });
@@ -109,7 +109,7 @@ void test('wizard identification without sortpack lists letters across classes w
     assert.doesNotMatch(text, /Tools|Comestibles/);
 });
 void test('wizard identification reassigns unfixed inventory letters before displaying objects', async () => {
-    freshObjectRoom({ flags: { debug: true, fixinv: false } });
+    await freshObjectRoom({ flags: { debug: true, fixinv: false } });
     const lamp = await addInventoryObject(OIL_LAMP, { invlet: 'x', bknown: false });
     const candle = await addInventoryObject(WAX_CANDLE, { invlet: 'z', bknown: false });
     const text = await wizardInventoryText();

@@ -11,12 +11,12 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('stopping a run leaves hallucinated floor appearances until the next input refresh', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20, invisible: true } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20, invisible: true } });
     game._moveloopStarted = true;
     await floorObject(GOLD_PIECE, game.u.ux, game.u.uy);
     await createMonsterAt('kitten', 11, 10, MM_NOGRP | NO_MINVENT);
     initRng(17n);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     const before = glyphAt(game.u.ux, game.u.uy);
     assert.ok(before?.kind === 'object');
     startRun(1, 0);

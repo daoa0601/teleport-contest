@@ -35,7 +35,7 @@ for (const { roll, verbose, feedback } of [
     { roll: 11, verbose: false, feedback: 'The grid bug misses!' },
 ]) {
     void test(`grid bug miss with roll ${roll} and verbose=${verbose} uses ordinary miss rules`, async () => {
-        freshObjectRoom({ flags: { verbose }, hero: { uac: 0 } });
+        await freshObjectRoom({ flags: { verbose }, hero: { uac: 0 } });
         requirePlayingGame(game);
         const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         bug.m_lev = 1;
@@ -55,7 +55,7 @@ for (const { roll, verbose, feedback } of [
 
 for (const cancelled of [false, true]) {
     void test(`${cancelled ? 'cancelled' : 'uncancelled'} nymph misses preserve the native seduction distinction`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
         requirePlayingGame(game);
         const nymph = await createMonsterAt('mountain nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         nymph.m_lev = 1;
@@ -83,7 +83,7 @@ for (const cancelled of [false, true]) {
 
 for (const middleMiss of [true, false]) {
     void test(`a xorn's consecutive claw hits ${middleMiss ? 'lose' : 'retain'} repeated-hit wording${middleMiss ? ' across a miss' : ''}`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
         requirePlayingGame(game);
         const xorn = await createMonsterAt('xorn', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         xorn.m_lev = 1;
@@ -109,7 +109,7 @@ for (const middleMiss of [true, false]) {
 }
 
 void test('a barbed devil using a replacement claw does not call the hit a repeated attack', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 0 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 0 } });
     requirePlayingGame(game);
     const devil = await createMonsterAt('barbed devil', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     devil.mux = game.u.ux;
@@ -126,7 +126,7 @@ void test('a barbed devil using a replacement claw does not call the hit a repea
 });
 
 void test('an unseen ordinary miss marks its source before interrupting searching', async () => {
-    const level = freshObjectRoom({ hero: { uac: 0 } });
+    const level = await freshObjectRoom({ hero: { uac: 0 } });
     requirePlayingGame(game);
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     bug.m_lev = 1;
@@ -150,7 +150,7 @@ for (const { choice, feedback } of [
     { choice: 2, feedback: 'The grid bug strikes at thin air!' },
 ]) {
     void test(`a monster attacking an invisible hero's old location can say: ${feedback}`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: true } });
+        const level = await freshObjectRoom({ flags: { verbose: true } });
         requirePlayingGame(game);
         const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         bug.mux = 12;
@@ -170,7 +170,7 @@ for (const { choice, feedback } of [
 }
 
 void test('a blind attacker can miss wildly even when the hero is visible', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     bug.mcansee = false;
@@ -186,7 +186,7 @@ void test('a blind attacker can miss wildly even when the hero is visible', asyn
 });
 
 void test('a wild attack at a wall of water names the empty water', async () => {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     bug.mux = 12;
@@ -201,7 +201,7 @@ void test('a wild attack at a wall of water names the empty water', async () => 
 });
 
 void test('displacement miss feedback leaves searching active', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
     requirePlayingGame(game);
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     bug.mux = 12;
@@ -217,7 +217,7 @@ void test('displacement miss feedback leaves searching active', async () => {
 
 for (const species of ['killer bee', 'quivering blob']) {
     void test(`${species} stinging or touching a displaced image cannot damage the hero`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         monster.mux = 12;
@@ -235,7 +235,7 @@ for (const species of ['killer bee', 'quivering blob']) {
 }
 
 void test('a monster that sees invisibility attacks the invisible displaced image', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     stalker.mux = 12;
@@ -252,7 +252,7 @@ void test('a monster that sees invisibility attacks the invisible displaced imag
 });
 
 void test('an underwater miss describes reflections and preserves occupation', async () => {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const elemental = await createMonsterAt('water elemental', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     elemental.mux = 12;
@@ -260,7 +260,7 @@ void test('an underwater miss describes reflections and preserves occupation', a
     for (const x of [10, 11, 12]) level.requireAt(x, 10).typ = POOL;
     game.underwater = true;
     game.u.uinwater = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     const occupation = await startSearching();
     const messages = observeMessages(/water elemental/);
 
@@ -272,7 +272,7 @@ void test('an underwater miss describes reflections and preserves occupation', a
 
 for (const reason of ['invisibility', 'displacement', 'underwater']) {
     void test(`a seducer's ${reason} wild miss uses its own feedback without interrupting`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: true, female: false } });
+        const level = await freshObjectRoom({ flags: { verbose: true, female: false } });
         requirePlayingGame(game);
         const seducer = await createMonsterAt(reason === 'underwater' ? 'water nymph' : 'amorous demon',
             11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -285,7 +285,7 @@ for (const reason of ['invisibility', 'displacement', 'underwater']) {
             for (const x of [10, 11, 12]) level.requireAt(x, 10).typ = POOL;
             game.underwater = true;
             game.u.uinwater = true;
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         const occupation = await startSearching();
         const messages = observeMessages(/succubus|water nymph/);
@@ -304,7 +304,7 @@ for (const reason of ['invisibility', 'displacement', 'underwater']) {
 
 for (const quietReason of ['verbose disabled', 'attacker square unseen']) {
     void test(`a wild miss is silent with ${quietReason}`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: quietReason !== 'verbose disabled' } });
+        const level = await freshObjectRoom({ flags: { verbose: quietReason !== 'verbose disabled' } });
         requirePlayingGame(game);
         const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         bug.mux = 12;
@@ -331,7 +331,7 @@ for (const { species, unseen, deaf, feedback } of [
     { species: 'fog cloud', unseen: true, deaf: true, feedback: '' },
 ]) {
     void test(`${unseen ? 'unseen' : 'visible'} ${species} engulfing the wrong square${deaf ? ' while the hero is deaf' : ''} does not use ordinary miss effects`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: false }, hero: { displaced: true } });
+        const level = await freshObjectRoom({ flags: { verbose: false }, hero: { displaced: true } });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         monster.mux = 12;
@@ -354,7 +354,7 @@ for (const { species, unseen, deaf, feedback } of [
 }
 
 void test('accessiblemsg prefixes a displaced wild miss with the attacker square', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
     requirePlayingGame(game);
     game.flags.accessiblemsg = true;
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -368,7 +368,7 @@ void test('accessiblemsg prefixes a displaced wild miss with the attacker square
 });
 
 void test('accessiblemsg prefixes an ordinary miss with the attacker square', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
     requirePlayingGame(game);
     game.flags.accessiblemsg = true;
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -388,7 +388,7 @@ for (const { unseen, feedback } of [
     { unseen: true, feedback: 'You hear a rushing noise nearby.' },
 ]) {
     void test(`accessiblemsg locates a ${unseen ? 'heard' : 'seen'} engulf miss${unseen ? ' without a prefix' : ' at the attacker'}`, async () => {
-        freshObjectRoom({ flags: { verbose: false }, hero: { displaced: true } });
+        await freshObjectRoom({ flags: { verbose: false }, hero: { displaced: true } });
         requirePlayingGame(game);
         game.flags.accessiblemsg = true;
         const cloud = await createMonsterAt('fog cloud', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

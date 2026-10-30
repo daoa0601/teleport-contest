@@ -6,7 +6,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('trying to mount a named worm tail identifies the worm', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     const worm = await createMonsterAt('long worm', 13, 10);
     setMonsterGivenName(worm, 'Wriggly');
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];

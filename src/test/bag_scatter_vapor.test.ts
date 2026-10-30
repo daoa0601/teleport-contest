@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a scattered see invisible potion wakes a peaceful monster without angering it', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const soldier = await createMonsterAt('soldier', 7, 7);
     soldier.mhp = 10;
     soldier.mhpmax = 100;
@@ -39,7 +39,7 @@ void test('a scattered see invisible potion wakes a peaceful monster without ang
 });
 
 void test('burning oil scattered by a bag explosion still angers monsters during the hero turn', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const soldier = await createMonsterAt('soldier', 7, 7);
     soldier.mhp = soldier.mhpmax = 100;
     soldier.mpeaceful = 1;
@@ -69,7 +69,7 @@ for (const { name, x, y, seed } of [
     { name: 'the hero can avoid nearby potion vapors', x: 11, y: 11, seed: 266n },
 ]) {
     void test(`an exploding bag scatters a healing potion: ${name}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, blindTurns: 30 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, blindTurns: 30 } });
         const soldier = await createMonsterAt('soldier', x, y);
         soldier.mhp = 10;
         soldier.mhpmax = 100;

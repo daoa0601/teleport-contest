@@ -17,8 +17,8 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { trainSpellSkill } from './support/spells.js';
 const spellType = (name) => OBJECT_NAMES.findIndex((candidate, type) => candidate === name && OBJECT_SPELL_CATEGORY[type]);
-function learnSpell(type, { role = 'wizard', level = 30, intelligence = 18, wisdom = 18, energy = 100, nutrition = 900, strength = 12, } = {}) {
-    freshObjectRoom({ role, gameplaySeed: 41n, hero: {
+async function learnSpell(type, { role = 'wizard', level = 30, intelligence = 18, wisdom = 18, energy = 100, nutrition = 900, strength = 12, } = {}) {
+    await freshObjectRoom({ role, gameplaySeed: 41n, hero: {
             ulevel: level, uen: energy, uenmax: energy, uenpeak: energy,
             uhunger: nutrition,
         } });
@@ -35,7 +35,7 @@ function learnSpell(type, { role = 'wizard', level = 30, intelligence = 18, wisd
     return spell;
 }
 void test('an unmemorized spell cannot spend energy or nutrition', async () => {
-    learnSpell(SPE_FORCE_BOLT);
+    await learnSpell(SPE_FORCE_BOLT);
     requirePlayingGame(game);
     const result = await checkSpellCast({ otyp: SPE_HEALING });
     assert.equal(result.allowed, false);
@@ -44,7 +44,7 @@ void test('an unmemorized spell cannot spend energy or nutrition', async () => {
     assert.equal(game.u.uhunger, 900);
 });
 void test('stunning rejects casting before any resource expenditure', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT);
+    const spell = await learnSpell(SPE_FORCE_BOLT);
     requirePlayingGame(game);
     await makeStunned(8, { talk: false });
     const result = await checkSpellCast(spell);
@@ -55,14 +55,14 @@ void test('stunning rejects casting before any resource expenditure', async () =
     assert.match(game._pending_message, /too impaired to cast/);
 });
 void test('a form unable to chant cannot cast', async () => {
-    learnSpell(SPE_FORCE_BOLT);
+    await learnSpell(SPE_FORCE_BOLT);
     requirePlayingGame(game);
     installPolymorphedHero('fog cloud');
     assert.equal(await rejectCasting(), true);
     assert.match(game._pending_message, /unable to chant/);
 });
 void test('a welded two-handed sword prevents casting but a welded quarterstaff permits it', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT);
+    const spell = await learnSpell(SPE_FORCE_BOLT);
     requirePlayingGame(game);
     const sword = await addInventoryObject(TWO_HANDED_SWORD, { cursed: true });
     await setPrimaryWeapon(sword);
@@ -74,7 +74,7 @@ void test('a welded two-handed sword prevents casting but a welded quarterstaff 
     assert.equal((await checkSpellCast(spell)).allowed, true);
 });
 void test('hunger blocks ordinary casting without taking a turn', async () => {
-    const spell = learnSpell(SPE_HEALING, { nutrition: 10 });
+    const spell = await learnSpell(SPE_HEALING, { nutrition: 10 });
     requirePlayingGame(game);
     const result = await checkSpellCast(spell);
     assert.equal(result.allowed, false);
@@ -83,14 +83,14 @@ void test('hunger blocks ordinary casting without taking a turn', async () => {
     assert.equal(game.u.uen, 100);
 });
 void test('detect food remains castable while hungry and consumes no nutrition', async () => {
-    const spell = learnSpell(spellType('detect food'), { nutrition: 3 });
+    const spell = await learnSpell(spellType('detect food'), { nutrition: 3 });
     requirePlayingGame(game);
     const result = await checkSpellCast(spell);
     assert.equal(result.allowed, true);
     assert.equal(game.u.uhunger, 3);
 });
 void test('weak strength blocks ordinary casting but permits restore ability', async () => {
-    const ordinary = learnSpell(SPE_HEALING, { role: 'healer', strength: 3 });
+    const ordinary = await learnSpell(SPE_HEALING, { role: 'healer', strength: 3 });
     requirePlayingGame(game);
     assert.equal((await checkSpellCast(ordinary)).allowed, false);
     assert.match(game._pending_message, /lack the strength/);
@@ -101,7 +101,7 @@ void test('weak strength blocks ordinary casting but permits restore ability', a
     assert.equal((await checkSpellCast(restoring)).allowed, true);
 });
 void test('overburdened concentration consumes a turn without spending energy or food', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT);
+    const spell = await learnSpell(SPE_FORCE_BOLT);
     requirePlayingGame(game);
     await addInventoryObject(ROCK, { quan: 1000 });
     const result = await checkSpellCast(spell);
@@ -112,7 +112,7 @@ void test('overburdened concentration consumes a turn without spending energy or
     assert.match(game._pending_message, /concentration falters/);
 });
 void test('insufficient energy without the Amulet consumes neither food nor time', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { energy: 4 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { energy: 4 });
     requirePlayingGame(game);
     const result = await checkSpellCast(spell);
     assert.equal(result.allowed, false);
@@ -122,14 +122,14 @@ void test('insufficient energy without the Amulet consumes neither food nor time
     assert.match(game._pending_message, /that spell yet\./);
 });
 void test('a caster whose former maximum sufficed is told they lack energy anymore', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { energy: 4 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { energy: 4 });
     requirePlayingGame(game);
     game.u.uenpeak = 10;
     await checkSpellCast(spell);
     assert.match(game._pending_message, /that spell anymore\./);
 });
 void test('the real Amulet drains a viable casting attempt even when that prevents casting', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { energy: 5 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { energy: 5 });
     requirePlayingGame(game);
     await addInventoryObject(AMULET_OF_YENDOR);
     resetInputState().feed('  ');
@@ -140,7 +140,7 @@ void test('the real Amulet drains a viable casting attempt even when that preven
     assert.equal(game.u.uhunger, 900);
 });
 void test('the Amulet does not drain an attempt already short of energy', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { energy: 4 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { energy: 4 });
     requirePlayingGame(game);
     await addInventoryObject(AMULET_OF_YENDOR);
     const result = await checkSpellCast(spell);
@@ -148,7 +148,7 @@ void test('the Amulet does not drain an attempt already short of energy', async 
     assert.equal(game.u.uen, 4);
 });
 void test('confusion takes half the energy cost and still spends casting nutrition', async () => {
-    const spell = learnSpell(SPE_HASTE_SELF, { role: 'healer' });
+    const spell = await learnSpell(SPE_HASTE_SELF, { role: 'healer' });
     requirePlayingGame(game);
     await makeConfused(20, { talk: false });
     const result = await checkSpellCast(spell);
@@ -159,7 +159,7 @@ void test('confusion takes half the energy cost and still spends casting nutriti
     assert.equal(game.u.uhunger, 870);
 });
 void test('an impossible success chance still spends a turn and half the power', async () => {
-    const spell = learnSpell(SPE_FINGER_OF_DEATH, { level: 1, intelligence: 3, energy: 40 });
+    const spell = await learnSpell(SPE_FINGER_OF_DEATH, { level: 1, intelligence: 3, energy: 40 });
     requirePlayingGame(game);
     assert.equal(percentSuccess(spell), 0);
     const result = await checkSpellCast(spell);
@@ -169,7 +169,7 @@ void test('an impossible success chance still spends a turn and half the power',
 });
 for (const [intelligence, cost] of [[14, 10], [15, 5], [16, 2], [17, 0]]) {
     void test(`Wizard Intelligence ${intelligence} determines the casting nutrition cost`, async () => {
-        const spell = learnSpell(SPE_FORCE_BOLT, { intelligence });
+        const spell = await learnSpell(SPE_FORCE_BOLT, { intelligence });
         requirePlayingGame(game);
         const result = await checkSpellCast(spell);
         assert.equal(result.allowed, true);
@@ -179,7 +179,7 @@ for (const [intelligence, cost] of [[14, 10], [15, 5], [16, 2], [17, 0]]) {
     });
 }
 void test('casting can cause weakness immediately but never reduces nutrition below three', async () => {
-    const spell = learnSpell(spellType('restore ability'), { role: 'healer', nutrition: 51 });
+    const spell = await learnSpell(spellType('restore ability'), { role: 'healer', nutrition: 51 });
     requirePlayingGame(game);
     assert.equal(game.u.uhs, HUNGRY);
     resetInputState().feed('  ');
@@ -197,7 +197,7 @@ for (const [turns, message] of [
     [2000, 'Your recall of this spell is gradually fading.'],
 ]) {
     void test(`a spell with ${turns} turns left warns without changing its memory`, async () => {
-        const spell = learnSpell(SPE_FORCE_BOLT);
+        const spell = await learnSpell(SPE_FORCE_BOLT);
         requirePlayingGame(game);
         assert.ok(spell != null, 'Expected spell to be initialized');
         spell.know = game.moves - 1 + turns;
@@ -207,7 +207,7 @@ for (const [turns, message] of [
     });
 }
 void test('forgotten magic backfires before hunger rejection and preserves prior confusion', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { nutrition: 8 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { nutrition: 8 });
     requirePlayingGame(game);
     assert.ok(spell != null, 'Expected spell to be initialized');
     spell.know = game.moves - 1;
@@ -226,7 +226,7 @@ void test('forgotten magic backfires before hunger rejection and preserves prior
     assert.equal(game.u.uhunger, 8);
 });
 void test('advancing the live spell category improves success without changing the memorized entry', async () => {
-    const spell = learnSpell(SPE_FIREBALL, { level: 5, intelligence: 12 });
+    const spell = await learnSpell(SPE_FIREBALL, { level: 5, intelligence: 12 });
     requirePlayingGame(game);
     assert.ok(spell != null, 'Expected spell to be initialized');
     assert.equal(liveSpellSkill(spell.otyp), P_BASIC);
@@ -236,7 +236,7 @@ void test('advancing the live spell category improves success without changing t
     assert.ok(percentSuccess(spell) > before);
 });
 void test('metal armor penalizes casting and a robe over it halves the suit penalty', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10 });
     requirePlayingGame(game);
     const unarmored = percentSuccess(spell);
     wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
@@ -246,7 +246,7 @@ void test('metal armor penalizes casting and a robe over it halves the suit pena
     assert.ok(percentSuccess(spell) < unarmored);
 });
 void test('a heavy shield is worse than a small shield and a quarterstaff helps casting', async () => {
-    const spell = learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10 });
+    const spell = await learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10 });
     requirePlayingGame(game);
     const unarmed = percentSuccess(spell);
     await setPrimaryWeapon(await addInventoryObject(QUARTERSTAFF));
@@ -258,7 +258,7 @@ void test('a heavy shield is worse than a small shield and a quarterstaff helps 
     assert.ok(percentSuccess(spell) < smallShield);
 });
 void test('Knight clerical casting ignores metal suit and helmet penalties', async () => {
-    const clerical = learnSpell(SPE_TURN_UNDEAD, { role: 'knight' });
+    const clerical = await learnSpell(SPE_TURN_UNDEAD, { role: 'knight' });
     requirePlayingGame(game);
     assert.ok(clerical != null, 'Expected clerical to be initialized');
     await trainSpellSkill(clerical.otyp, P_BASIC);
@@ -277,28 +277,28 @@ void test('Knight clerical casting ignores metal suit and helmet penalties', asy
 // the special-spell adjustments into one exact percentage; the numbers below
 // are computed from the C formula for each configuration.
 void test('percent success matches the native role and armor tables exactly', async () => {
-    learnSpell(SPE_FORCE_BOLT, { level: 30, intelligence: 18, wisdom: 18 });
+    await learnSpell(SPE_FORCE_BOLT, { level: 30, intelligence: 18, wisdom: 18 });
     requirePlayingGame(game);
     await trainSpellSkill(SPE_FINGER_OF_DEATH, P_SKILLED);
     // Int 18: chance 99 - isqrt(2900) = 46; splcaster 1: 46*19/15 - 1.
     assert.equal(percentSuccess({ otyp: SPE_FINGER_OF_DEATH }), 57);
-    learnSpell(spellType('magic missile'), { level: 1 });
+    await learnSpell(spellType('magic missile'), { level: 1 });
     requirePlayingGame(game);
     assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 100);
     wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
     // The Wizard's special spell keeps splcaster at 1+3-4 = 0 despite the
     // shield and halves the heavy-shield chance: 119/2*20/15.
     assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 78);
-    learnSpell(spellType('cure sickness'), { role: 'healer', level: 1, intelligence: 15, wisdom: 15 });
+    await learnSpell(spellType('cure sickness'), { role: 'healer', level: 1, intelligence: 15, wisdom: 15 });
     requirePlayingGame(game);
     // Wisdom 15, basic healing skill: 82 - 53 = 29; splcaster 3-3-4 = -4.
     assert.equal(percentSuccess({ otyp: spellType('cure sickness') }), 50);
-    learnSpell(SPE_FORCE_BOLT, { role: 'valkyrie', level: 1, intelligence: 10, wisdom: 10 });
+    await learnSpell(SPE_FORCE_BOLT, { role: 'valkyrie', level: 1, intelligence: 10, wisdom: 10 });
     requirePlayingGame(game);
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 36);
     // A level 3 escape spell at experience level 1 is hopeless: 55 - isqrt(8300).
     assert.equal(percentSuccess({ otyp: SPE_HASTE_SELF }), 0);
-    learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10, wisdom: 10 });
+    await learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10, wisdom: 10 });
     requirePlayingGame(game);
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 94);
     wearHeroArmor(await addInventoryObject(CHAIN_MAIL));

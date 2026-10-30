@@ -35,7 +35,7 @@ for (const { name, role = 'caveman', race = 'human', blessed = false, cursed = f
     void test(`touchstone identification: ${name}`, async () => {
         const heroRace = races.find(candidate => candidate.name === race);
         assert.ok(heroRace);
-        freshObjectRoom({ role, race: heroRace });
+        await freshObjectRoom({ role, race: heroRace });
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, { blessed, cursed, typeKnown: false });
         const gem = await addInventoryObject(DIAMOND, { typeKnown: false });
@@ -51,7 +51,7 @@ for (const { name, role = 'caveman', race = 'human', blessed = false, cursed = f
     });
 }
 void test('an effective touchstone identifies glass instead of reporting scratch marks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE, { blessed: true, typeKnown: false });
     const gem = await addInventoryObject(GLASS_GEM, { typeKnown: false });
@@ -67,7 +67,7 @@ for (const [name, hero, message] of [
     ['blind and hallucinating', { blindTurns: 10, hallucinationTurns: 10 }, /"scritch, scritch"/],
 ]) {
     void test(`a ${name} hero cannot identify a gem with a blessed touchstone`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, {
             blessed: true, observed: false, dknown: false, typeKnown: false,
@@ -88,7 +88,7 @@ for (const [stoneType, expected] of [
     [FLINT, /You make white scratch marks on the stone/],
 ]) {
     void test(`diamond rubbing ${stoneType === TOUCHSTONE ? 'streaks a touchstone' : 'scratches flint'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const stone = await addInventoryObject(stoneType);
         const gem = await addInventoryObject(DIAMOND, { typeKnown: false });
@@ -99,7 +99,7 @@ for (const [stoneType, expected] of [
     });
 }
 void test('glass scratches an ineffective touchstone without leaving a colored streak', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE);
     const glass = await addInventoryObject(GLASS_GEM, { typeKnown: false });
@@ -110,7 +110,7 @@ void test('glass scratches an ineffective touchstone without leaving a colored s
 });
 for (const material of [20, 21]) {
     void test(`a ring made of ${material === 20 ? 'gemstone' : 'mineral'} leaves streaks but is not identified`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, { blessed: true });
         const ring = await addInventoryObject(ringMadeOf(material), { typeKnown: false });
@@ -132,7 +132,7 @@ for (const [name, type, overrides, expected] of [
     ['hard iron', DAGGER, {}, /"scritch, scritch"/],
 ]) {
     void test(`rubbing ${name} on a touchstone follows its material`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE);
         const object = await addInventoryObject(type, overrides);
@@ -144,7 +144,7 @@ for (const [name, type, overrides, expected] of [
     });
 }
 void test('hard iron scratches an ordinary gray stone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(FLINT);
     const dagger = await addInventoryObject(DAGGER);
@@ -153,7 +153,7 @@ void test('hard iron scratches an ordinary gray stone', async () => {
     assert.equal(game._pending_message, 'You make scratch marks on the stone.');
 });
 void test('a cursed touchstone destroys one gem and updates stack and carried weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE, { cursed: true });
     const gems = await addInventoryObject(DIAMOND, { quan: 3 });
@@ -176,7 +176,7 @@ for (const [name, hero, message] of [
     ['hallucinating', { hallucinationTurns: 10 }, /Oh, wow, look at the pretty shards/],
 ]) {
     void test(`cursed touchstone breakage happens before ${name} sensory feedback`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, { cursed: true });
         const gem = await addInventoryObject(DIAMOND);
@@ -190,7 +190,7 @@ for (const [name, hero, message] of [
 }
 for (const type of [LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE]) {
     void test(`a cursed touchstone cannot shatter ${OBJECT_NAMES[type]}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, { cursed: true });
         const target = await addInventoryObject(type, { quan: 3 });
@@ -203,7 +203,7 @@ for (const type of [LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE]) {
     });
 }
 void test('one gray stone cannot rub itself and takes no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE);
     resetInputState().feed(stone.invlet);
@@ -213,7 +213,7 @@ void test('one gray stone cannot rub itself and takes no time', async () => {
     assert.equal(stone.quan, 1);
 });
 void test('a stack of gray stones can rub against itself without losing a stone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stones = await addInventoryObject(FLINT, { quan: 2 });
     resetInputState().feed(stones.invlet);
@@ -223,7 +223,7 @@ void test('a stack of gray stones can rub against itself without losing a stone'
     assert.equal(stones.quan, 2);
 });
 void test('cancelling the rub target takes no time or changes to the stone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE);
     resetInputState().feed('\x1b');
@@ -234,7 +234,7 @@ void test('cancelling the rub target takes no time or changes to the stone', asy
 });
 for (const command of ['apply', 'rub']) {
     void test(`#${command} can select a gray stone and identify a gem`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const stone = await addInventoryObject(TOUCHSTONE, { blessed: true });
         const gem = await addInventoryObject(DIAMOND, { typeKnown: false });
@@ -248,7 +248,7 @@ for (const command of ['apply', 'rub']) {
     });
 }
 void test('#apply preserves the no-time refusal when a gray stone is rubbed on itself', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(TOUCHSTONE);
     assert.ok(stone.invlet !== null && stone.invlet !== undefined);

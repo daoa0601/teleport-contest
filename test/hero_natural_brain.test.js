@@ -18,7 +18,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function brainAttack(target, role = 'caveman') {
-    freshObjectRoom({ role, gameplaySeed: 71n });
+    await freshObjectRoom({ role, gameplaySeed: 71n });
     requirePlayingGame(game);
     game.plname = 'Ada';
     installPolymorphedHero('mind flayer');

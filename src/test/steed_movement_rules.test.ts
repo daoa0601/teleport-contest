@@ -12,8 +12,8 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function ridingRoom() {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
+async function ridingRoom() {
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
     installPagerInput(resetInputState(), {
         expected: /mount|dungeon on|boulder|ice|slippery/,
         limit: 8,
@@ -21,7 +21,7 @@ function ridingRoom() {
 }
 
 void test('mounting can reach a steed standing on a boulder without pushing it', async () => {
-    ridingRoom();
+    await ridingRoom();
     const pony = await createSaddledSteed();
     const boulder = await floorObject(BOULDER, pony.mx, pony.my);
 
@@ -36,7 +36,7 @@ void test('mounting can reach a steed standing on a boulder without pushing it',
 });
 
 void test('a dismount can land among boulders when every adjacent square has one', async () => {
-    ridingRoom();
+    await ridingRoom();
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
     assert.equal(game.u.usteed, pony);
@@ -56,7 +56,7 @@ void test('a dismount can land among boulders when every adjacent square has one
 });
 
 void test('a wall-passing rider can mount diagonally through a closed doorway', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed('pony', { x: 11, y: 11 });
     const door = game.level.requireAt(11, 11);
@@ -73,7 +73,7 @@ void test('a wall-passing rider can mount diagonally through a closed doorway', 
 });
 
 void test('iron bars prevent a rider from reaching a steed', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     await createSaddledSteed();
     game.level.requireAt(11, 10).typ = IRONBARS;
@@ -87,7 +87,7 @@ void test('iron bars prevent a rider from reaching a steed', async () => {
 });
 
 void test('a worm crossing blocks the diagonal reach to a steed', async () => {
-    ridingRoom();
+    await ridingRoom();
     await createSaddledSteed('pony', { x: 11, y: 11 });
     const worm = await createMonsterAt('long worm', 12, 10);
     worm.wormSegments = [{ x: 11, y: 10 }, { x: 10, y: 11 }];
@@ -101,7 +101,7 @@ void test('a worm crossing blocks the diagonal reach to a steed', async () => {
 });
 
 void test('dismounting can land on the ice beneath a raised drawbridge', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

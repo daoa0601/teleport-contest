@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C pickup.c:pickup(): a form that cannot take objects first looks at the
 // floor (check_here()), then explains why nothing was picked up.
 void test('a hero unable to take objects sees the floor item before the refusal', async () => {
-    freshObjectRoom({ flags: { pickup: true } });
+    await freshObjectRoom({ flags: { pickup: true } });
     requireFixtureGame(game);
     const paged: string[] = [];
     const input = resetInputState();
@@ -40,7 +40,7 @@ void test('a hero unable to take objects sees the floor item before the refusal'
 
 for (const blind of [false, true]) {
     void test(`manual pickup by a ${blind ? 'blind' : 'sighted'} handless hero describes the pile with pickup off`, async () => {
-        freshObjectRoom({ flags: { pickup: false } });
+        await freshObjectRoom({ flags: { pickup: false } });
         const messages: string[] = [];
         const input = resetInputState();
         input.display = { async readKey() { return ' '.charCodeAt(0); } };

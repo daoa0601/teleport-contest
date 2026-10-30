@@ -45,7 +45,7 @@ async function tunnelRoom(terrain: number) {
     const location = level.requireAt(12, 10);
     location.typ = terrain;
     vision_note_blocker_change(12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     return { level, monster, location, input: resetInputState() };
 }
 
@@ -105,7 +105,7 @@ for (const { pile, type } of [{ pile: 1, type: BOULDER }, { pile: 2, type: ROCK 
         assert.equal(debris[0]?.otyp, type);
         assert.equal(debris[0]?.where, 'floor');
         assert.equal(location.typ, CORR);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(couldsee(13, 10), type !== BOULDER,
             'only the boulder keeps the opened tunnel opaque');
     });

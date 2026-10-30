@@ -20,7 +20,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { createDungeon } from './support/topology.js';
 for (const name of ['The Orb of Detection', 'The Heart of Ahriman', 'Excalibur']) {
     void test(`a carrier of ${name} ${name === 'Excalibur' ? 'can' : 'cannot'} escape from the dungeon entrance`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { uz: { dnum: 0, dlevel: 1 } } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { uz: { dnum: 0, dlevel: 1 } } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         const artifact = await addObjectToMonsterInventory(monster, await artifactObject(name), game);
@@ -38,7 +38,7 @@ for (const name of ['The Orb of Detection', 'The Heart of Ahriman', 'Excalibur']
     });
 }
 void test('a bullwhip cannot release a wielded cursed loadstone and reveals its curse', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 10 });
+    await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
@@ -53,7 +53,7 @@ void test('a bullwhip cannot release a wielded cursed loadstone and reveals its 
 });
 for (const madeByHero of [true, false]) {
     void test(`a level teleport trap ${madeByHero ? 'made by the hero angers' : 'found in the dungeon does not anger'} its victim`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
         const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
@@ -70,7 +70,7 @@ for (const madeByHero of [true, false]) {
 }
 for (const adjacent of [true, false]) {
     void test(`container looting ${adjacent ? 'shows an adjacent item appearance' : 'keeps an unshown item appearance unknown'}`, async () => {
-        freshObjectRoom({ heroX: 10, heroY: 10 });
+        await freshObjectRoom({ heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', adjacent ? 11 : 14, 10, NO_MINVENT);
         const bag = await addObjectToMonsterInventory(monster, await knownObject(SACK, { contents: [] }), game);
@@ -88,7 +88,7 @@ for (const adjacent of [true, false]) {
     });
 }
 void test('watching a soldier play a bugle observes the instrument', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 10, 10, NO_MINVENT | MM_NOGRP);
     const bugle = await addObjectToMonsterInventory(monster, await knownObject(BUGLE, { dknown: false }), game);
@@ -101,7 +101,7 @@ void test('watching a soldier play a bugle observes the instrument', async () =>
     assert.match(messages[0] ?? '', /plays .*bugle!/);
 });
 void test('the mysterious force surrounding a nonhumanoid Amulet carrier refers to it', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 20, flags: { hellish: true } })];
     const monster = await createMonsterAt('red naga', 10, 10, NO_MINVENT);
@@ -117,7 +117,7 @@ void test('the mysterious force surrounding a nonhumanoid Amulet carrier refers 
 void test('hallucination varies the pronoun used for the mysterious force', async () => {
     const pronouns = new Set();
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 20, flags: { hellish: true } })];
         const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
@@ -136,7 +136,7 @@ void test('hallucination varies the pronoun used for the mysterious force', asyn
     assert.ok(pronouns.size > 1, 'Hallucination should vary the perceived gender across games');
 });
 void test('the Wizard ends a successful looting turn without insulting the hero', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const wizard = await createMonsterAt('Wizard of Yendor', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);

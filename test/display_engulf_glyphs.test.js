@@ -8,12 +8,12 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 for (const symset of ['ASCII', 'DECgraphics']) {
     void test(`an engulfing border uses ${symset} symbols and the swallower's glyphs`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.symset = symset;
         const monster = await createMonsterAt('purple worm', 10, 10);
         game.u.uswallow = 1;
         game.u.ustuck = monster;
-        swallowed(true);
+        await swallowed(true);
         await flush_screen(1);
         assert.equal(requireScreenCell(9, 10).ch, symset === 'ASCII' ? '-' : '⎺');
         assert.equal(requireScreenCell(8, 11).ch, symset === 'ASCII' ? '|' : '│');

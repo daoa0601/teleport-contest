@@ -21,7 +21,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function floorActionRoom(species: string, { verbose = true, corridor = false } = {}) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { verbose },
         ...(corridor ? { left: 10, right: 14, top: 10, bottom: 10 } : {}),
     });
@@ -191,7 +191,7 @@ void test('hallucinated pickup describes an unobserved sack as a bag', async () 
 
 void test('Conflict lets a peaceful monster consider the hero square when it has no other exit', async () => {
     for (const conflict of [false, true]) {
-        freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
+        await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
         const goblin = await createMonsterAt('goblin', 11, 10, MM_NOGRP | NO_MINVENT);
         goblin.msleeping = 0;
         goblin.mcanmove = 1;

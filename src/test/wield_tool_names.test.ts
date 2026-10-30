@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a welded weapon refusal names the lamp the hero tried to rub', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const dagger = await addInventoryObject(DAGGER, { cursed: true });
     const lamp = await addInventoryObject(OIL_LAMP, { oname: 'Night Light' });
     await setPrimaryWeapon(dagger);
@@ -32,7 +32,7 @@ for (const [name, quantity, phrase] of [
     ['PAIR OF LAMPS', 2, 'that oil lamps'],
 ] as const) {
     void test(`tool refusal treats plural wording in "${name}" without regard to case`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         const dagger = await addInventoryObject(DAGGER, { cursed: true });
         await setPrimaryWeapon(dagger);
         const lamp = await addInventoryObject(OIL_LAMP, { oname: name, quan: quantity });

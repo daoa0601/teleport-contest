@@ -92,7 +92,7 @@ export async function flyBoomerang(object, dx, dy, state, volley) {
                 }
                 else {
                     if (previous)
-                        newsym(previous.x, previous.y);
+                        await newsym(previous.x, previous.y);
                     previous = null;
                     await plineWithContinuation('You skillfully catch the boomerang.');
                     flight.caught = true;
@@ -101,10 +101,10 @@ export async function flyBoomerang(object, dx, dy, state, volley) {
             }
             flight.path.push({ x, y });
             if (previous)
-                newsym(previous.x, previous.y);
+                await newsym(previous.x, previous.y);
             previous = cansee(x, y) ? { x, y } : null;
             if (previous)
-                show_glyph_cell(x, y, curveLeft ? ')' : '(', CLR_BROWN, false, 0, {
+                await show_glyph_cell(x, y, curveLeft ? ')' : '(', CLR_BROWN, false, 0, {
                     kind: 'effect', glyph: cmapToGlyph(curveLeft ? CmapSymbol.boomleft : CmapSymbol.boomright),
                 });
             const cursor = lastDirtyMapCursor();
@@ -125,7 +125,7 @@ export async function flyBoomerang(object, dx, dy, state, volley) {
     }
     finally {
         if (previous)
-            newsym(previous.x, previous.y);
+            await newsym(previous.x, previous.y);
     }
     return flight;
 }

@@ -165,7 +165,7 @@ export async function continueForceLock(occupation, state = game) {
         await breakChestLock(box, destroyed, state);
         if (state.program_state?.gameover)
             return true;
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         resetPick(state);
         state._occupation = null;
     }

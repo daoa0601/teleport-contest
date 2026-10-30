@@ -6,7 +6,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a suppressed save flush retains the pending health update', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await bot();
     game.u.uhp = 35;
     game.context.botl = true;
@@ -20,7 +20,7 @@ void test('a suppressed save flush retains the pending health update', async () 
 });
 
 void test('a time update attempted during saving is consumed without redrawing', async () => {
-    freshObjectRoom({ moves: 40, flags: { time: true } });
+    await freshObjectRoom({ moves: 40, flags: { time: true } });
     await bot();
     game.moves = 41;
     game.context.time_botl = true;
@@ -35,7 +35,7 @@ void test('a time update attempted during saving is consumed without redrawing',
 });
 
 void test('a save flush defers a pending time update until saving ends', async () => {
-    freshObjectRoom({ moves: 40, flags: { time: true } });
+    await freshObjectRoom({ moves: 40, flags: { time: true } });
     await bot();
     game.moves = 41;
     game.context.time_botl = true;

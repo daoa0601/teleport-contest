@@ -15,7 +15,7 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 void test('wielding and unwielding the Staff enables and removes regeneration and drain resistance', async () => {
-    freshObjectRoom({ role: 'healer' });
+    await freshObjectRoom({ role: 'healer' });
     requirePlayingGame(game);
     const staff = await artifactObject('The Staff of Aesculapius', { invlet: 'a', where: 'inventory' });
     game.inventory = [staff];
@@ -29,7 +29,7 @@ void test('wielding and unwielding the Staff enables and removes regeneration an
     assert.equal(propertyIsActive('drainResistance'), false);
 });
 void test('picking up and dropping the Heart enables and removes its carried stealth', async () => {
-    freshObjectRoom({ role: 'barbarian' });
+    await freshObjectRoom({ role: 'barbarian' });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     const heart = await floorArtifact('The Heart of Ahriman', game.u.ux, game.u.uy);
@@ -40,7 +40,7 @@ void test('picking up and dropping the Heart enables and removes its carried ste
     assert.equal(propertyIsActive('stealth'), false);
 });
 void test('dropping one carried artifact retains the magic resistance granted by another', async () => {
-    freshObjectRoom({ role: 'knight', hero: { uhp: 200, uhpmax: 200, ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ role: 'knight', hero: { uhp: 200, uhpmax: 200, ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     await floorArtifact('The Magic Mirror of Merlin', game.u.ux, game.u.uy);
@@ -53,7 +53,7 @@ void test('dropping one carried artifact retains the magic resistance granted by
     assert.equal(propertyIsActive('antimagic'), true);
 });
 void test('wearing the Eyes grants x-ray sight and magic resistance, removing them ends both', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requirePlayingGame(game);
     const eyes = await artifactObject('The Eyes of the Overworld', { invlet: 'a', where: 'inventory' });
     game.inventory = [eyes];
@@ -65,7 +65,7 @@ void test('wearing the Eyes grants x-ray sight and magic resistance, removing th
     assert.equal(propertyIsActive('antimagic'), false);
 });
 void test('ordinary worn telepathy combines its range with carried artifact telepathy', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
@@ -80,7 +80,7 @@ void test('ordinary worn telepathy combines its range with carried artifact tele
 });
 for (const intrinsic of [false, true]) {
     void test(`wielding an ESP amulet does not reveal an invisible monster${intrinsic ? ' with intrinsic telepathy' : ''}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (intrinsic)
             grantIntrinsicProperty('telepathy', 'outside');
@@ -94,19 +94,19 @@ for (const intrinsic of [false, true]) {
         await rhack('w'.charCodeAt(0));
         assert.equal(game.uwep, amulet);
         assert.equal(canSenseMonster(goblin), false);
-        newsym(goblin.mx, goblin.my);
+        await newsym(goblin.mx, goblin.my);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, '.');
         pushKeys('a' + ' '.repeat(20));
         await rhack('P'.charCodeAt(0));
         assert.equal(canSenseMonster(goblin), true, 'wearing the amulet activates telepathy');
-        newsym(goblin.mx, goblin.my);
+        await newsym(goblin.mx, goblin.my);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, 'o');
     });
 }
 void test('a wielded ESP amulet extends telepathy supplied by a carried artifact', async () => {
-    freshObjectRoom({ right: 22, role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ right: 22, role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
@@ -122,7 +122,7 @@ void test('a wielded ESP amulet extends telepathy supplied by a carried artifact
     assert.equal(canSenseMonster(goblin), true);
 });
 void test('emptying an ESP amulet quiver stops sensing monsters beyond the worn amulet range', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const wornAmulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), {
         invlet: 'a', where: 'inventory',

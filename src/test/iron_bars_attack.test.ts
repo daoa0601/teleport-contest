@@ -32,7 +32,7 @@ async function strikeBars(seed = 71n): Promise<string> {
 }
 
 void test('force fighting bars strikes with the wielded dagger and wakes a nearby sleeper', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bars = level.requireAt(11, 10);
     bars.typ = IRONBARS;
     const dagger = await addInventoryObject(DAGGER);
@@ -53,7 +53,7 @@ void test('force fighting bars strikes with the wielded dagger and wakes a nearb
 
 for (const quantity of [1, 3]) {
     void test(`striking bars with ${quantity} wielded water potion${quantity === 1 ? '' : 's'} breaks just one`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(11, 10).typ = IRONBARS;
         const potion = await addInventoryObject(POT_WATER, { quan: quantity });
         await setPrimaryWeapon(potion);
@@ -78,7 +78,7 @@ for (const quantity of [1, 3]) {
 
 for (const protectedBars of [false, true]) {
     void test(`a wielded acid potion ${protectedBars ? 'leaves protected bars intact' : 'dissolves bars'} on impact`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const bars = level.requireAt(11, 10);
         bars.typ = IRONBARS;
         bars.wall_info = protectedBars ? W_NONDIGGABLE : 0;
@@ -96,7 +96,7 @@ for (const protectedBars of [false, true]) {
 }
 
 void test('breaking a wielded mirror against bars costs the hero luck', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = IRONBARS;
     const mirror = await addInventoryObject(MIRROR);
     await setPrimaryWeapon(mirror);
@@ -110,7 +110,7 @@ void test('breaking a wielded mirror against bars costs the hero luck', async ()
 });
 
 void test('a melee hammer blow can break bars without releasing the hammer', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bars = level.requireAt(11, 10);
     bars.typ = IRONBARS;
     const hammer = await addInventoryObject(WAR_HAMMER, { spe: 10 });

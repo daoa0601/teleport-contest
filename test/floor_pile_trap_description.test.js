@@ -8,7 +8,7 @@ import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('inspecting a small floor pile mentions its known trap first', async () => {
-    const level = freshObjectRoom({ flags: { pickup: false } });
+    const level = await freshObjectRoom({ flags: { pickup: false } });
     addTrap(level, RUST_TRAP, 10, 10, { tseen: true });
     await floorObject(APPLE, 10, 10);
     await autopickupAtHero();

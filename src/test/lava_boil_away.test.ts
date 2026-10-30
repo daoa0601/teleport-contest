@@ -11,7 +11,7 @@ import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 // cloud "boils away" in lava instead of burning to a crisp, and the
 // life-saving rescue at 6957 announces rescued_from_terrain(BURNING).
 void test('a water elemental in lava boils away and hears the burning rescue message', async () => {
-    const level = freshRoomWithPolymorphedHero('water elemental',
+    const level = await freshRoomWithPolymorphedHero('water elemental',
         { flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
     level.requireAt(10, 10).typ = LAVAPOOL;
     const lines: string[] = [];
@@ -40,7 +40,7 @@ void test('a water elemental in lava boils away and hears the burning rescue mes
 
 // Unpolymorphed heroes keep the ordinary crisp line (C trap.c:6933).
 void test('an unpolymorphed hero still burns to a crisp in lava', async () => {
-    freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
+    await freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
     const level = game.level;
     if (!level) throw new Error('the object room level is missing');
     level.requireAt(10, 10).typ = LAVAPOOL;

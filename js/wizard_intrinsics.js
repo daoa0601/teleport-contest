@@ -1,6 +1,6 @@
 // C wizcmds.c:wiz_intrinsic(), with menu order from timeout.c:propertynames.
 import { KILLED_BY, SICK_NONVOMITABLE, SICK_VOMITABLE } from './const.js';
-import { docrt, flushPendingTopline, plineWithContinuation } from './display.js';
+import { docrt, plineWithContinuation } from './display.js';
 import { restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
@@ -106,10 +106,9 @@ export async function wizIntrinsic() {
         pageLocalKeys: true,
         returnCounts: true,
     });
-    // Native destroy_nhwindow also removes the extended-command editor.
+    // Dismissing a full-screen menu redraws vision and can announce a
+    // monster. Keep that notice ahead of the intrinsic feedback.
     state.context.move = 0;
-    state._pending_message = '';
-    state._retained_message = '';
     for (const { value, count } of selections) {
         // tty stores a long count; wiz_intrinsic explicitly narrows it to int.
         const amount = count === -1 ? 30 : count | 0;
@@ -119,10 +118,6 @@ export async function wizIntrinsic() {
         if (state.program_state.gameover)
             return;
     }
-    if (selections.length)
-        await flushPendingTopline();
-    state._pending_message = '';
-    state._retained_message = '';
     await docrt();
 }
 async function increaseIntrinsic({ name, property }, amount, state) {

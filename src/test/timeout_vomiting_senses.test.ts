@@ -9,7 +9,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('nausea recognizes confusion that is not supplied by a countdown', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('confusion', 'outside');
     setPropertyTimeout('vomiting', 12);
     const messages: string[] = [];
@@ -20,7 +20,7 @@ void test('nausea recognizes confusion that is not supplied by a countdown', asy
 });
 
 void test('nausea recognizes the permanent stun of a bat body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('bat');
     setPropertyTimeout('vomiting', 9);
     const messages: string[] = [];
@@ -31,7 +31,7 @@ void test('nausea recognizes the permanent stun of a bat body', async () => {
 });
 
 void test('an untimed vomiting source survives the property countdown pass', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('vomiting', 'outside');
     assert.equal(heroIsVomiting(), true);
 

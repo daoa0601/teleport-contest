@@ -22,13 +22,13 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a wielded pick-axe uses the primary weapon hand description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pick = await addInventoryObject(PICK_AXE);
     await setPrimaryWeapon(pick);
     assert.match(await inventoryItemDescription(pick), /\(weapon in right hand\)$/);
 });
 void test('wielded ammunition, missiles, stacks, and ordinary tools use the abbreviated description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrow = await addInventoryObject(ARROW, { quan: 1 });
     const dart = await addInventoryObject(DART, { quan: 1 });
     const daggers = await addInventoryObject(DAGGER, { quan: 3 });
@@ -39,13 +39,13 @@ void test('wielded ammunition, missiles, stacks, and ordinary tools use the abbr
     }
 });
 void test('an aklys is tethered to the dominant hand', async () => {
-    freshObjectRoom({ hero: { rightHanded: false } });
+    await freshObjectRoom({ hero: { rightHanded: false } });
     const aklys = await addInventoryObject(AKLYS);
     await setPrimaryWeapon(aklys);
     assert.match(await inventoryItemDescription(aklys), /\(tethered to left hand\)$/);
 });
 void test('two-weapon descriptions follow the dominant hand on both sides', async () => {
-    freshObjectRoom({ role: 'barbarian', hero: { rightHanded: false } });
+    await freshObjectRoom({ role: 'barbarian', hero: { rightHanded: false } });
     const sword = await addInventoryObject(LONG_SWORD);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(sword);
@@ -55,20 +55,20 @@ void test('two-weapon descriptions follow the dominant hand on both sides', asyn
     assert.match(await inventoryItemDescription(dagger), /\(wielded in right hand\)$/);
 });
 void test('a two-handed weapon describes the current form\'s hands', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('troll');
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
     await setPrimaryWeapon(sword);
     assert.match(await inventoryItemDescription(sword), /\(weapon in claws\)$/);
 });
 void test('the alternate slot describes a stack as alternate weapons', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, { quan: 3 });
     await setSecondaryWeapon(daggers);
     assert.match(await inventoryItemDescription(daggers), /\(alternate weapons; not wielded\)$/);
 });
 void test('a rogue\'s quiver descriptions distinguish bow ammunition, bolts, and missiles', async () => {
-    freshObjectRoom({ role: 'rogue' });
+    await freshObjectRoom({ role: 'rogue' });
     const arrows = await addInventoryObject(ARROW, { quan: 4 });
     const bolts = await addInventoryObject(CROSSBOW_BOLT, { quan: 4 });
     const darts = await addInventoryObject(DART, { quan: 4 });
@@ -80,7 +80,7 @@ void test('a rogue\'s quiver descriptions distinguish bow ammunition, bolts, and
     assert.match(await inventoryItemDescription(darts), /\(at the ready\)$/);
 });
 void test('readied small objects use a quiver pouch while an ordinary tool stays at the ready', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const rock = await addInventoryObject(ROCK);
     const towel = await addInventoryObject(TOWEL);
     await setQuiverObject(rock);
@@ -89,7 +89,7 @@ void test('readied small objects use a quiver pouch while an ordinary tool stays
     assert.match(await inventoryItemDescription(towel), /\(at the ready\)$/);
 });
 void test('wielding feedback projects the primary hand before the weapon enters that slot', async () => {
-    freshObjectRoom({ hero: { rightHanded: false } });
+    await freshObjectRoom({ hero: { rightHanded: false } });
     const pick = await addInventoryObject(PICK_AXE);
     pushKey(pick.invlet);
     await rhack('w'.charCodeAt(0));
@@ -97,7 +97,7 @@ void test('wielding feedback projects the primary hand before the weapon enters 
     assert.match(game._pending_message, /\(weapon in left hand\)\./);
 });
 void test('rings and meat rings describe their actual side and current hand anatomy', async () => {
-    freshObjectRoom({ hero: { rightHanded: false } });
+    await freshObjectRoom({ hero: { rightHanded: false } });
     installPolymorphedHero('troll');
     const ring = await addInventoryObject(RIN_FIRE_RESISTANCE);
     const meatRing = await addInventoryObject(MEAT_RING);
@@ -107,7 +107,7 @@ void test('rings and meat rings describe their actual side and current hand anat
     assert.match(await inventoryItemDescription(meatRing), /\(on left claw\)$/);
 });
 void test('worn amulets, eyewear, and saddles carry the worn annotation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     const lenses = await addInventoryObject(LENSES);
     const pony = await createSaddledSteed();
@@ -120,7 +120,7 @@ void test('worn amulets, eyewear, and saddles carry the worn annotation', async 
     assert.match(await inventoryItemDescription(pony.saddle), /\(being worn\)$/);
 });
 void test('slippery hands annotate worn gloves', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gloves = await addInventoryObject(LEATHER_GLOVES);
     wearHeroArmor(gloves);
     setSlipperyHands(12);
@@ -128,14 +128,14 @@ void test('slippery hands annotate worn gloves', async () => {
     assert.match(await inventoryItemDescription(gloves), /\(being worn\); slippery\)$/);
 });
 void test('armor being put on is described as being donned', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await addInventoryObject(RING_MAIL);
     pushKey(armor.invlet);
     await rhack('W'.charCodeAt(0));
     assert.match(await inventoryItemDescription(armor), /\(being donned\)$/);
 });
 void test('armor being taken off is described as being doffed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await addInventoryObject(RING_MAIL);
     wearHeroArmor(armor);
     pushKey(armor.invlet);
@@ -143,7 +143,7 @@ void test('armor being taken off is described as being doffed', async () => {
     assert.match(await inventoryItemDescription(armor), /\(being doffed\)$/);
 });
 void test('dragon scales merged by polymorph are described as embedded in the hero\'s skin', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const scales = await addInventoryObject(GRAY_DRAGON_SCALES);
     wearHeroArmor(scales);
     const input = resetInputState();
@@ -153,7 +153,7 @@ void test('dragon scales merged by polymorph are described as embedded in the he
     assert.match(await inventoryItemDescription(scales), /\(embedded in your skin\)$/);
 });
 void test('worn luminous armor shows its light only while the hero can see', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const scales = await addInventoryObject(GOLD_DRAGON_SCALES, { blessed: false, cursed: false });
     wearHeroArmor(scales);
     beginObjectBurn(scales);
@@ -162,7 +162,7 @@ void test('worn luminous armor shows its light only while the hero can see', asy
     assert.match(await inventoryItemDescription(scales), /\(being worn\)$/);
 });
 void test('punishment describes the ball as chained and the chain as attached', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await punishHero();
     assert.ok(game.uball);
     assert.ok(game.uchain);
@@ -170,7 +170,7 @@ void test('punishment describes the ball as chained and the chain as attached', 
     assert.match(await inventoryItemDescription(game.uchain), /\(attached to you\)$/);
 });
 void test('the inventory menu adds visible artifact light inside the primary hand phrase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
     await setPrimaryWeapon(sword);

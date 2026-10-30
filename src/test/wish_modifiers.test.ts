@@ -14,7 +14,7 @@ async function wish(request: string) {
 }
 
 void test('a wished chest can be empty, locked, and trapped', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const chest = await wish('empty locked trapped chest');
 
@@ -25,7 +25,7 @@ void test('a wished chest can be empty, locked, and trapped', async () => {
 });
 
 void test('a broken lock removes a wished box trap', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const chest = await wish('trapped broken chest');
 
@@ -35,7 +35,7 @@ void test('a broken lock removes a wished box trap', async () => {
 });
 
 void test('a poison modifier applies to the requested arrows', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const arrows = await wish('20 poisoned arrows');
 
@@ -44,7 +44,7 @@ void test('a poison modifier applies to the requested arrows', async () => {
 });
 
 void test('a partly eaten wish supplies half the food nutrition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const ration = await wish('partly eaten food ration');
 
@@ -54,7 +54,7 @@ void test('a partly eaten wish supplies half the food nutrition', async () => {
 });
 
 void test('a diluted wish changes the potion and its inventory name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const potion = await wish('diluted potion of healing');
 
@@ -65,7 +65,7 @@ void test('a diluted wish changes the potion and its inventory name', async () =
 });
 
 void test('a lit candle starts burning with a full supply of fuel', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const candle = await wish('wax candle (lit)');
 
@@ -78,7 +78,7 @@ void test('a lit candle starts burning with a full supply of fuel', async () => 
 });
 
 void test('a wet towel wish selects native wetness and shows it in inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const towel = await wish('wet towel');
 
@@ -88,13 +88,13 @@ void test('a wet towel wish selects native wetness and shows it in inventory', a
 });
 
 void test('pair wording doubles a count of stackable objects', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     assert.equal((await wish('3 pair of arrows')).quan, 6);
 });
 
 void test('only an unmodified nothing request declines a wish', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const wand = await wish('blessed nothing');
 

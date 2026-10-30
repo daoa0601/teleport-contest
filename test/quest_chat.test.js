@@ -22,7 +22,7 @@ import { MAGIC_PORTAL } from '../js/const.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { gameLogEvents } from '../js/gamelog.js';
 async function questLeader(level = 14, record = 20) {
-    freshObjectRoom({ role: 'healer', hero: { ulevel: level, ualign: { type: 0, record }, ualignbase: [0, 0] } });
+    await freshObjectRoom({ role: 'healer', hero: { ulevel: level, ualign: { type: 0, record }, ualignbase: [0, 0] } });
     game.dungeons = [createDungeon({ dname: 'The Quest' })];
     game.u.uz = { dnum: 0, dlevel: 1 };
     game._activeSpecialLevel = { prototype: 'Hea-strt', file: 'Hea-strt.lua' };
@@ -92,7 +92,7 @@ void test('conversion earns banishment and angers the quest leader', async () =>
     assert.equal(game._questExpulsionPending?.seal, false);
 });
 void test('chatting with the nemesis provokes a threat and records the meeting', async () => {
-    freshObjectRoom({ role: 'healer' });
+    await freshObjectRoom({ role: 'healer' });
     const nemesis = await createMonsterAt('Cyclops', 11, 10);
     nemesis.msleeping = 0;
     await runExtendedCommand('chat', 'l');
@@ -101,7 +101,7 @@ void test('chatting with the nemesis provokes a threat and records the meeting',
     assert.equal(game.context.move, 1);
 });
 void test('the Tourist recognizes the Master of Thieves as the nemesis when chatting', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     const nemesis = await createMonsterAt('Master of Thieves', 11, 10);
     nemesis.msleeping = 0;
     await runExtendedCommand('chat', 'l');
@@ -109,7 +109,7 @@ void test('the Tourist recognizes the Master of Thieves as the nemesis when chat
     assert.match(game._pending_message, /^".+"$/);
 });
 void test('a quest guardian discusses the aftermath when the artifact has been recovered', async () => {
-    freshObjectRoom({ role: 'healer', hero: { uhave: { questart: 1 } } });
+    await freshObjectRoom({ role: 'healer', hero: { uhave: { questart: 1 } } });
     const guardian = await createMonsterAt('attendant', 11, 10);
     guardian.msleeping = 0;
     ensureQuestStatus().killed_nemesis = true;
@@ -118,7 +118,7 @@ void test('a quest guardian discusses the aftermath when the artifact has been r
     assert.equal(game.context.move, 1);
 });
 void test('picking up the quest artifact while blind describes it and records the touch', async () => {
-    freshObjectRoom({ role: 'healer', hero: { blindTurns: 100 } });
+    await freshObjectRoom({ role: 'healer', hero: { blindTurns: 100 } });
     assert.equal(heroIsBlind(), true);
     const artifact = await floorArtifact('The Staff of Aesculapius', 10, 10, { dknown: false });
     assert.equal(artifact.dknown, false);
@@ -140,7 +140,7 @@ void test('picking up the quest artifact while blind describes it and records th
     assert.equal(awaitingInventoryInsertion, true);
 });
 void test('a dying Archeologist nemesis leaves the noxious cloud described by the quest text', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     const nemesis = await createMonsterAt('Minion of Huhetotl', 11, 10);
     const input = resetInputState();
     input.display = { async readKey() { return 32; } };
@@ -152,7 +152,7 @@ void test('a dying Archeologist nemesis leaves the noxious cloud described by th
     assert.equal(cloud.damage, 8);
 });
 void test('a different role leader death counts as killing a leader without losing the hero own leader', async () => {
-    freshObjectRoom({ role: 'healer' });
+    await freshObjectRoom({ role: 'healer' });
     const leader = await createMonsterAt('Pelias', 11, 10);
     const input = resetInputState();
     input.display = { async readKey() { return 32; } };
@@ -161,7 +161,7 @@ void test('a different role leader death counts as killing a leader without losi
     assert.equal(ensureQuestStatus().leader_is_dead, false);
 });
 void test('a waiting prisoner frees itself when the hero approaches and pleases the hero deity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const prisoner = await createMonsterAt('prisoner', 11, 10);
     prisoner.mstrategy = STRAT_CLOSE;

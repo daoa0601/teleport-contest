@@ -107,7 +107,7 @@ void test('restored Oracle, Mines, and Tutorial retain their generation alignmen
     assert.equal(await saveGame(storage), true);
     freshGame();
     initRng(145n);
-    assert.equal(restoreGame('GenerationAlignments', storage), true);
+    assert.equal(await restoreGame('GenerationAlignments', storage), true);
 
     for (let selection = 0; selection < 20; selection++)
         assert.equal(inducedAlignment(100), A_NEUTRAL);

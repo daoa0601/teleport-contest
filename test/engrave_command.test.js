@@ -71,7 +71,7 @@ void test('escaping the writing prompt leaves no engraving', async () => {
 });
 // C u_can_engrave() rejects the fountain square before any prompt.
 void test('a fountain square refuses the engrave command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
     await rhack('E'.charCodeAt(0));
@@ -81,7 +81,7 @@ void test('a fountain square refuses the engrave command', async () => {
 });
 // C doengrave(): a bare finger on a grave only smudges the headstone.
 void test('a fingertip on a grave only smudges the surface', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = GRAVE;
     pushKeys('-');
@@ -92,7 +92,7 @@ void test('a fingertip on a grave only smudges the surface', async () => {
 // C doengrave_sfx_item(): a towel wipes an existing dust message instead of
 // writing, and the command ends having spent the turn without new text.
 void test('a towel wipes the dust message instead of engraving', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'X', null, 0, DUST);
     const towel = await addInventoryObject(TOWEL, { spe: 0 });
@@ -173,7 +173,7 @@ void test('answering the add prompt appends to an existing dust message', async 
 // The writing prompt suggests implements — weapons, wands, gems, rings,
 // towels, and markers — plus the bare hand, and downplays the rest.
 void test('the writing prompt suggests implements and the fingertip', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const dagger = await addInventoryWeapon(DAGGER);
     const wand = await addInventoryObject(WAN_DIGGING, { spe: 3 });
@@ -280,7 +280,7 @@ void test('force_invmenu answers the writing question from the inventory menu', 
 // (invent.c:391); the writing prompt lists the suggested letters in that
 // order, not plain ASCII order.
 void test('the writing prompt lists lowercase inventory letters before uppercase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const dagger = await addInventoryWeapon(DAGGER);
     const wand = await addInventoryObject(WAN_DIGGING, { spe: 3 });
@@ -295,7 +295,7 @@ void test('the writing prompt lists lowercase inventory letters before uppercase
 // stylus is cleared (de->otmp = 0) so the levitating writer is not told the
 // floor is out of reach for the wand that no longer exists.
 void test('a wand spent to dust while levitating does not report the floor out of reach', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.u.levitation = true;
     const wand = await addInventoryObject(WAN_NOTHING, { spe: 0 });
@@ -319,7 +319,7 @@ void test('a wand spent to dust while levitating does not report the floor out o
 // On a disturbed headstone the dust complaint is skipped (IS_GRAVE), so the
 // definite-article dust line itself is the command's final message.
 void test('a wand spent to dust is named with the definite article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.u.levitation = true;
     const location = game.level.requireAt(game.u.ux, game.u.uy);

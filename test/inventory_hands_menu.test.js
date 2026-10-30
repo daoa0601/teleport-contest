@@ -13,7 +13,7 @@ function menuText() {
 }
 for (const forced of [false, true]) {
     void test(`${forced ? 'forced' : 'question-mark'} dip menu offers only hands when carrying gold`, async () => {
-        freshObjectRoom({ flags: { force_invmenu: forced } });
+        await freshObjectRoom({ flags: { force_invmenu: forced } });
         const gold = await addInventoryObject(GOLD_PIECE, { quan: 50 });
         const input = resetInputState();
         input.feed(`dip\n${forced ? '' : '?'}`);
@@ -33,7 +33,7 @@ for (const forced of [false, true]) {
     });
 }
 void test('a dip menu with an empty pack still lists the downplayed hands choice in a window', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('dip\n?');
     const action = rhack('#'.charCodeAt(0));
@@ -49,7 +49,7 @@ void test('a dip menu with an empty pack still lists the downplayed hands choice
     assert.equal(game.context.move, 0);
 });
 void test('suggested hands with no suggested objects leave the dip menu showing full inventory', async () => {
-    const level = freshObjectRoom({ hero: { glibTurns: 7 } });
+    const level = await freshObjectRoom({ hero: { glibTurns: 7 } });
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const input = resetInputState();
@@ -67,7 +67,7 @@ void test('suggested hands with no suggested objects leave the dip menu showing 
     assert.equal(game.context.move, 0);
 });
 void test('applying with only gold offers its downplayed coin as a single message-line choice', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const input = resetInputState();
     await answerPrompts(rhack('a'.charCodeAt(0)), input, [
@@ -79,7 +79,7 @@ void test('applying with only gold offers its downplayed coin as a single messag
     assert.match(game._pending_message, /You flip a gold piece\./);
 });
 void test('a forced apply menu switches between its gold-only alternatives and full inventory', async () => {
-    freshObjectRoom({ flags: { force_invmenu: true } });
+    await freshObjectRoom({ flags: { force_invmenu: true } });
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
     await addInventoryObject(DAGGER);
     const input = resetInputState();
@@ -104,7 +104,7 @@ void test('a forced apply menu switches between its gold-only alternatives and f
     assert.equal(game.context.move, 0);
 });
 void test('wielding with only gold keeps hands and coins in the full-inventory fallback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const input = resetInputState();
     input.feed('?');

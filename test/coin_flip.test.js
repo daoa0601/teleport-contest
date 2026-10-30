@@ -18,7 +18,7 @@ for (const [seed, face] of [
     [4n, 'tails'],
 ]) {
     void test(`a caught coin shows ${face} and preserves the purse`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
         initRng(seed);
@@ -37,7 +37,7 @@ for (const [name, hero, message] of [
     ['while fumbling', { fumbling: true }, /It slips between your fingers/],
 ]) {
     void test(`a coin flipped ${name} removes and lands exactly one coin`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         requirePlayingGame(game);
         const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
         await flipCoin(purse);
@@ -53,7 +53,7 @@ for (const [name, hero, message] of [
     });
 }
 void test('losing the last coin removes the purse object from inventory', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     const coin = await addInventoryObject(GOLD_PIECE);
     await flipCoin(coin);
@@ -62,7 +62,7 @@ void test('losing the last coin removes the purse object from inventory', async 
     assert.ok(floorObjectsAt(requireGameLevel(), 10, 10).includes(coin));
 });
 void test('lost coins merge with the floor purse', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     await floorObject(GOLD_PIECE, 10, 10, { quan: 9 });
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -72,7 +72,7 @@ void test('lost coins merge with the floor purse', async () => {
     assert.equal(floorObjectsAt(requireGameLevel(), 10, 10)[0]?.quan, 10);
 });
 void test('a lost coin over a hole migrates to the lower level', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     addTrap(game.level, HOLE, 10, 10, { tseen: true });
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -92,7 +92,7 @@ void test('a lost coin over a hole migrates to the lower level', async () => {
     assert.equal(coin.migration.destination.dlevel, 9);
 });
 void test('a lost coin can stay beside a known hole', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     addTrap(game.level, HOLE, 10, 10, { tseen: true });
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -104,7 +104,7 @@ void test('a lost coin can stay beside a known hole', async () => {
     assert.equal(game.migratingObjects?.length ?? 0, 0);
 });
 void test('a lost coin while swallowed enters the real engulfer inventory', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 10, 10, NO_MINVENT);
     game.u.uswallow = 1;
@@ -124,7 +124,7 @@ for (const [seed, loses] of [
     [2n, false],
 ]) {
     void test(`low Dexterity can ${loses ? 'lose' : 'catch'} a flipped coin`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_DEX] = 3;
         const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -139,7 +139,7 @@ for (const [seed, message] of [
     [167n, /coin miraculously lands on its edge/],
 ]) {
     void test(`hallucinated coin flipping can show ${seed === 1n ? 'two heads' : 'an edge landing'}`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
         requirePlayingGame(game);
         const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
         initRng(seed);
@@ -149,7 +149,7 @@ for (const [seed, message] of [
     });
 }
 void test('a lost coin waits for flip prose to be dismissed before leaving the purse', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const input = resetInputState();
@@ -164,7 +164,7 @@ void test('a lost coin waits for flip prose to be dismissed before leaving the p
     assert.equal(heroGoldAmount(game), 49);
 });
 void test('wearing gloves still names fingers when a coin slips', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -172,7 +172,7 @@ void test('wearing gloves still names fingers when a coin slips', async () => {
     assert.match(game._pending_message, /slips between your fingers/);
 });
 void test('worn gauntlets of fumbling cause a coin to slip without low Dexterity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_FUMBLING));
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -181,7 +181,7 @@ void test('worn gauntlets of fumbling cause a coin to slip without low Dexterity
     assert.match(game._pending_message, /slips between your fingers/);
 });
 void test('a clawed humanoid still has fingers in coin-flip prose', async () => {
-    freshObjectRoom({ hero: { glibTurns: 10 } });
+    await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     installPolymorphedHero('troll');
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });

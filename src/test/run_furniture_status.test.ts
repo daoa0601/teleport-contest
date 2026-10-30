@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a run ending on furniture refreshes capacity before describing the pickup', async () => {
-    const level = freshObjectRoom({ flags: { pickup: true, pickup_types: '' } });
+    const level = await freshObjectRoom({ flags: { pickup: true, pickup_types: '' } });
     await addInventoryObject(LARGE_BOX);
     await floorObject(LARGE_BOX, 11, 10);
     level.requireAt(11, 10).typ = FOUNTAIN;

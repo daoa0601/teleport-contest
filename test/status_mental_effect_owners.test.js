@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('yellow mold contact displays its new stun condition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mold = await createMonsterAt('yellow mold', 11, 10, NO_MINVENT);
     await bot();
     await applyHeroContactPassive(mold, { hit: true, random: () => 1, rollDice: () => 3 });
@@ -26,7 +26,7 @@ void test('yellow mold contact displays its new stun condition', async () => {
 });
 for (const [turns, conditions] of [[10, /\bConf\b/], [7, /\bConf Stun\b/]]) {
     void test(`nausea with ${turns} turns remaining displays its new impairments`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         startHeroVomiting({ turns });
         await bot();
         await advanceHeroVomiting();
@@ -36,7 +36,7 @@ for (const [turns, conditions] of [[10, /\bConf\b/], [7, /\bConf Stun\b/]]) {
     });
 }
 void test('a giant knockback displays the resulting stun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('kobold');
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
     await bot();
@@ -49,7 +49,7 @@ void test('a giant knockback displays the resulting stun', async () => {
 });
 for (const effect of [10, 13]) {
     void test(`throne effect ${effect} displays confusion`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 8n, flags: { debug: true }, hero: { uluck: -1 } });
+        const level = await freshObjectRoom({ gameplaySeed: 8n, flags: { debug: true }, hero: { uluck: -1 } });
         level.flags.nommap = true;
         await bot();
         pushKeys(`${effect}\n${' '.repeat(10)}`);
@@ -60,7 +60,7 @@ for (const effect of [10, 13]) {
     });
 }
 void test('a throne curse displays the blindness it inflicts', async () => {
-    freshObjectRoom({ gameplaySeed: 8n, flags: { debug: true }, hero: { uluck: 1 } });
+    await freshObjectRoom({ gameplaySeed: 8n, flags: { debug: true }, hero: { uluck: 1 } });
     await bot();
     pushKeys(`9\n${' '.repeat(10)}`);
     await throneSitEffect();
@@ -73,7 +73,7 @@ for (const [trouble, hero, label] of [
     [Trouble.CONFUSED, { confusionTurns: 5 }, 'Conf'],
 ]) {
     void test(`prayer removes the displayed ${label} condition`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         await bot();
         await fixPrayerTrouble(trouble);
         await flush_screen(1);

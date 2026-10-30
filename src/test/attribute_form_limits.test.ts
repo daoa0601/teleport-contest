@@ -17,7 +17,7 @@ for (const [raceName, form, strength, maximum] of [
     void test(`gain ability respects a ${form}'s Strength limit for a ${raceName} hero`, async () => {
         const race = races.find(candidate => candidate.name === raceName);
         assert.ok(race);
-        freshObjectRoom({ race });
+        await freshObjectRoom({ race });
         requirePlayingGame(game);
         installPolymorphedHero(form);
         game.u.acurr.a[A_STR] = strength;

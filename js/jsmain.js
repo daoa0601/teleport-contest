@@ -300,7 +300,7 @@ export class Engine {
         g.context = { move: 0 };
         g.moves = 0;
         initializeFruitRegistry(opts.fruit, g);
-        const restored = restoreGame(playerName, this.storage);
+        const restored = await restoreGame(playerName, this.storage);
         // C dorecover() shows the refusal message and waits for its
         // dismissal key before the game falls through to a new character.
         if (restoreRefusedAsUnhealthy())

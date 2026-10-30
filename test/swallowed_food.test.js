@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 async function swallowedBy(species) {
-    freshObjectRoom({ hero: { uhitinc: 0, uluck: 0 }, context: { move: 0 } });
+    await freshObjectRoom({ hero: { uhitinc: 0, uluck: 0 }, context: { move: 0 } });
     requirePlayingGame(game);
     const engulfer = await createMonsterAt(species, 11, 10);
     engulfer.mx = game.u.ux;

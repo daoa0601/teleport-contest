@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('removing named lenses reports their blessing and name without a worn suffix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lenses = await addInventoryObject(LENSES, { blessed: true, oname: 'Sentinel' });
     const input = resetInputState();
     const messages: string[] = [];

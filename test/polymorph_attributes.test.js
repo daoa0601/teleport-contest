@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a constitution ring protects a potion drinker from polymorph system shock', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ hero: { uhp: 400, uhpmax: 400 } });
+        await freshObjectRoom({ hero: { uhp: 400, uhpmax: 400 } });
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain constitution'), { spe: 20 });
         await wearHeroAccessory(ring, 'uleft');
         const potion = await addInventoryObject(POT_POLYMORPH);
@@ -27,7 +27,7 @@ void test('a constitution ring protects a potion drinker from polymorph system s
 void test('human renewal includes a worn constitution ring in the new health gains', async () => {
     const health = [];
     for (const bonus of [0, 20]) {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requirePlayingGame(game);
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain constitution'), { spe: bonus });
         await wearHeroAccessory(ring, 'uleft');

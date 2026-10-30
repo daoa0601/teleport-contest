@@ -7,7 +7,7 @@ import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an artifact blast names and observes the unidentified base object', async () => {
-    freshObjectRoom({ role: 'knight', hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 10 } } });
+    await freshObjectRoom({ role: 'knight', hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 10 } } });
     const sword = await artifactObject('Excalibur', { dknown: false, where: 'inventory' });
     const messages: string[] = [];
 
@@ -21,7 +21,7 @@ void test('an artifact blast names and observes the unidentified base object', a
 });
 
 void test('a fatal artifact blast is recorded as killed by touching the artifact', async () => {
-    freshObjectRoom({ role: 'knight', hero: { uhp: 1, uhpmax: 1, ualign: { type: -1, record: 10 } } });
+    await freshObjectRoom({ role: 'knight', hero: { uhp: 1, uhpmax: 1, ualign: { type: -1, record: 10 } } });
     const sword = await artifactObject('Excalibur', { where: 'inventory' });
     let cause = '';
 

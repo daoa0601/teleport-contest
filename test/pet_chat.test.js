@@ -13,7 +13,7 @@ for (const [name, message] of [
     ['spot', 'Spot is eating noisily.'],
 ]) {
     void test(`chat uses the perceived name of an eating ${name ? 'named' : 'saddled'} pet`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const pony = await createSaddledSteed('pony', { x: 11, y: 10 });
         pony.meating = 3;
         if (name)
@@ -25,7 +25,7 @@ for (const [name, message] of [
     });
 }
 async function petLine(deaf, sound) {
-    freshObjectRoom();
+    await freshObjectRoom();
     if (deaf)
         game.u.deafTurns = 5;
     const dog = await createMonsterAt('little dog', 11, 10);

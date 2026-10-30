@@ -14,8 +14,8 @@ import { corpseName, foodObjectName, killerObjectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-test.beforeEach(() =>
-    freshObjectRoom({ gameplaySeed: 12n, hero: { ulevel: 1, uz: { dnum: 0, dlevel: 1 } } }),
+test.beforeEach(async () =>
+    await freshObjectRoom({ gameplaySeed: 12n, hero: { ulevel: 1, uz: { dnum: 0, dlevel: 1 } } }),
 );
 
 void test('a newly created corpse has a species name without learning its object type', async () => {
@@ -46,7 +46,7 @@ void test('generated ice-box corpses retain both sexes as separate stacks', asyn
 });
 
 void test('an uninitialized corpse represents living flesh while a statue retains its undead species', async () => {
-    freshObjectRoom({ gameplaySeed: 18n, hero: { ulevel: 30, uz: { dnum: 0, dlevel: 30 } } });
+    await freshObjectRoom({ gameplaySeed: 18n, hero: { ulevel: 30, uz: { dnum: 0, dlevel: 30 } } });
     requirePlayingGame(game);
     const statue = await mksobj(STATUE, false, false);
     initRng(18n);
@@ -58,7 +58,7 @@ void test('an uninitialized corpse represents living flesh while a statue retain
 });
 
 void test('unavailable living flesh falls back to the hero role corpse species', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 18n,
         role: 'monk',
         hero: { ulevel: 30, uz: { dnum: 0, dlevel: 30 } },

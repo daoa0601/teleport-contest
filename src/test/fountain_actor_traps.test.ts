@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const source of ['drink nymph', 'dip nymph', 'drink snakes'] as const) {
     void test(`${source} creatures fall into pits immediately on leaving the fountain`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(10, 10).typ = FOUNTAIN;
         for (let x = 9; x <= 11; x++) {
             for (let y = 9; y <= 11; y++) {

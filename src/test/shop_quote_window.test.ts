@@ -12,7 +12,7 @@ import { createStaffedShop } from './support/shop.js';
 for (const overlay of [true, false]) {
     for (const dismiss of [' ', '\u001b']) {
         void test(`multiple shop quotes restore the map after ${dismiss === ' ' ? 'Space' : 'Escape'} with overlay ${overlay}`, async () => {
-            freshObjectRoom({ flags: { menu_overlay: overlay } });
+            await freshObjectRoom({ flags: { menu_overlay: overlay } });
             await createStaffedShop();
             await floorObject(DAGGER, 10, 10);
             await floorObject(SACK, 10, 10);

@@ -294,9 +294,9 @@ async function moveHeroOutOfPit(destination: Position, state: GameState) {
     const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
         allowDrag: true,
         finishArrival: async movement => {
-            newsym(movement.oldx, movement.oldy);
+            await newsym(movement.oldx, movement.oldy);
             vision_reset();
-            vision_recalc(0);
+            await vision_recalc(0);
             return finishDestinationSpotEffects({
                 oldx: movement.oldx, oldy: movement.oldy,
                 newx: movement.x, newy: movement.y,
@@ -351,8 +351,8 @@ async function revealWhipTarget(monster: Monster, x: number, y: number, state: G
         : 'A monster';
     await pline(`${name} is there that you ${
         heroIsBlind(state) ? "hadn't noticed" : "couldn't see"}.`);
-    if (spotted) newsym(x, y);
-    else map_invisible(x, y);
+    if (spotted) await newsym(x, y);
+    else await map_invisible(x, y);
 }
 
 async function attackMonsterWithWhip(

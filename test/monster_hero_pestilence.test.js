@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const resistant of [false, true]) {
     void test(`Pestilence ${resistant ? 'still hurts a disease-resistant hero' : 'infects the hero once before substituting a stunning touch'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: resistant } });
+        await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: resistant } });
         requirePlayingGame(game);
         const rider = await createMonsterAt('Pestilence', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         rider.mux = game.u.ux;

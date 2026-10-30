@@ -12,7 +12,7 @@ import { planInput, withMessagePages } from './support/planned-input.js';
 import { requireScreenRow } from './support/screen.js';
 const GOLD_REPAIR_PROSE = /adjust: gold in wrong slot and multiple gold stacks|Program in disorder|Please report|You learn more about your items by comparing them/;
 void test('a normal gold purse has no inventory letter adjustment action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     let actions = '';
@@ -27,7 +27,7 @@ void test('a normal gold purse has no inventory letter adjustment action', async
     assert.equal(heroGoldObject(game)?.invlet, '$');
 });
 void test('#adjust cannot move an inventory containing only a normal gold purse', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     input.feed('adjust\r');
@@ -38,7 +38,7 @@ void test('#adjust cannot move an inventory containing only a normal gold purse'
     assert.equal(game.context.move, 0);
 });
 void test('#adjust rejects a typed normal purse alongside an adjustable weapon', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     await addInventoryObject(DAGGER);
     const input = resetInputState();
@@ -50,7 +50,7 @@ void test('#adjust rejects a typed normal purse alongside an adjustable weapon',
     assert.equal(game.context.move, 0);
 });
 void test('#adjust repairs a second gold stack without requesting a destination', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const misplaced = await knownObject(GOLD_PIECE, { quan: 12 });
     misplaced.where = 'inventory';
@@ -68,7 +68,7 @@ void test('#adjust repairs a second gold stack without requesting a destination'
     assert.equal(game.context.move, 0);
 });
 void test('gold repair keeps lowercase items first when inventory letters later float', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const dagger = await addInventoryObject(DAGGER, { invlet: 'b' });
     const club = await addInventoryObject(CLUB, { invlet: 'A' });
@@ -88,7 +88,7 @@ void test('gold repair keeps lowercase items first when inventory letters later 
     assert.equal(heroGoldObject(game)?.invlet, '$');
 });
 void test('moving a weapon keeps lowercase items first when inventory letters later float', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { invlet: 'b' });
     const club = await addInventoryObject(CLUB, { invlet: 'A' });
     const input = resetInputState();

@@ -65,7 +65,7 @@ void test('target input restores feedback for a queued polearm attack after Esca
     target.mhp = target.mhpmax = 100;
     target.mcanmove = 0;
     target.mfrozen = 10;
-    newsym(target.mx, target.my);
+    await newsym(target.mx, target.my);
     input.feed('ab');
     const swap = moveloop_core();
     await input.waitUntilBlocked();

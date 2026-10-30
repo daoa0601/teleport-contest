@@ -7,7 +7,7 @@ import { RIN_INVISIBILITY } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a Nazgul is born carrying a cursed unenchanted ring of invisibility', async () => {
-    freshObjectRoom({ gameplaySeed: 1 });
+    await freshObjectRoom({ gameplaySeed: 1 });
 
     const nazgul = await makemonAt(MONSTER_NAME.indexOf('Nazgul'), 11, 10, MM_NOMSG);
 

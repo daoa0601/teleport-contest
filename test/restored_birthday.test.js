@@ -8,13 +8,13 @@ import { freshObjectRoom } from './support/object-room.js';
 // daylight saving time records it.
 const WINTER_BIRTHDAY = Date.UTC(2002, 0, 12, 12) / 1000;
 async function restoredBirthdayAt(now) {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.ubirthday = WINTER_BIRTHDAY;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     test.mock.method(Date, 'now', () => now);
     try {
-        assert.equal(restoreGame(game.plname, storage), true);
+        assert.equal(await restoreGame(game.plname, storage), true);
     }
     finally {
         test.mock.restoreAll();
@@ -28,13 +28,13 @@ void test('a winter birth time restored during standard time is unchanged', asyn
     assert.equal(await restoredBirthdayAt(Date.UTC(2026, 11, 20, 12)), WINTER_BIRTHDAY);
 });
 void test('a birth year before 1970 is restored in the 2000s like the saved two-digit year', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.ubirthday = Date.UTC(1960, 0, 12, 12) / 1000;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     test.mock.method(Date, 'now', () => Date.UTC(2026, 11, 20, 12));
     try {
-        assert.equal(restoreGame(game.plname, storage), true);
+        assert.equal(await restoreGame(game.plname, storage), true);
     }
     finally {
         test.mock.restoreAll();
@@ -42,13 +42,13 @@ void test('a birth year before 1970 is restored in the 2000s like the saved two-
     assert.equal(game.ubirthday, Date.UTC(2060, 0, 12, 12) / 1000);
 });
 void test('an unrepresentable saved birth time is rejected before the live game changes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const level = game.level;
     game.ubirthday = Number.MAX_SAFE_INTEGER;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     game.ubirthday = WINTER_BIRTHDAY;
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.level, level);
     assert.equal(game.ubirthday, WINTER_BIRTHDAY);
 });

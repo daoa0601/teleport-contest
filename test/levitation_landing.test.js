@@ -23,7 +23,7 @@ const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 // C trap.c:float_down() case LEVITATION: the timeout portion of the intrinsic
 // ends the flight when nothing else holds the hero up.
 void test('ending timed levitation lands the hero and picks up the floor below', async () => {
-    freshObjectRoom({ gameplaySeed: 11 });
+    await freshObjectRoom({ gameplaySeed: 11 });
     requirePlayingGame(game);
     const gem = await floorObject(DIAMOND, 10, 10);
     game.flags.pickup = true;
@@ -38,7 +38,7 @@ void test('ending timed levitation lands the hero and picks up the floor below',
     assert.ok(game.inventory.includes(gem));
 });
 void test('a remaining levitation source keeps the hero aloft', async () => {
-    freshObjectRoom({ gameplaySeed: 12 });
+    await freshObjectRoom({ gameplaySeed: 12 });
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     game.u.levitationTurns = 5;
@@ -50,7 +50,7 @@ void test('a remaining levitation source keeps the hero aloft', async () => {
 });
 // C float_down(): BLevitation == I_SPECIAL alone reports the failed hold.
 void test('a bear-trap hold ends levitation without landing effects', async () => {
-    freshObjectRoom({ gameplaySeed: 13 });
+    await freshObjectRoom({ gameplaySeed: 13 });
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'potion');
     game.u.levitationTurns = 5;
@@ -70,7 +70,7 @@ void test('a bear-trap hold ends levitation without landing effects', async () =
 // C float_down(): when BLevitation holds more than I_SPECIAL (terrain plus a
 // floor trap) there is no end-of-levitation feedback at all.
 void test('terrain- and trap-blocked levitation ends silently', async () => {
-    freshObjectRoom({ gameplaySeed: 14 });
+    await freshObjectRoom({ gameplaySeed: 14 });
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     setPropertyTerrainBlocked('levitation', true, game);
@@ -84,7 +84,7 @@ void test('terrain- and trap-blocked levitation ends silently', async () => {
 });
 // C float_down(): BFlying clears and controlled flight resumes with feedback.
 void test('suppressed flight resumes when levitation ends', async () => {
-    freshObjectRoom({ gameplaySeed: 15 });
+    await freshObjectRoom({ gameplaySeed: 15 });
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
     grantIntrinsicProperty('levitation', 'potion');
@@ -99,7 +99,7 @@ void test('suppressed flight resumes when levitation ends', async () => {
 });
 // C float_down(): a swallowed levitator floats down inside the swallower.
 void test('a swallowed levitator stays swallowed while floating down', async () => {
-    freshObjectRoom({ gameplaySeed: 16 });
+    await freshObjectRoom({ gameplaySeed: 16 });
     requirePlayingGame(game);
     const purpleWorm = MONSTER_NAME.indexOf('purple worm');
     game.u.uswallow = 1;
@@ -114,7 +114,7 @@ void test('a swallowed levitator stays swallowed while floating down', async () 
 });
 // C float_down(): the punished hero is pulled onto a ball caught over a pit.
 void test('a punished levitator lands on the ball and falls into its pit', async () => {
-    freshObjectRoom({ gameplaySeed: 17 });
+    await freshObjectRoom({ gameplaySeed: 17 });
     requirePlayingGame(game);
     // An unseen pit cannot be avoided by C dotrap()'s known-trap roll.
     addTrap(game.level, PIT, 11, 10);
@@ -139,7 +139,7 @@ void test('a punished levitator lands on the ball and falls into its pit', async
 });
 // C float_down(): Sokoban air currents knock the ending levitator over.
 void test('ending levitation over a Sokoban trap knocks the hero down', async () => {
-    freshObjectRoom({ gameplaySeed: 18 });
+    await freshObjectRoom({ gameplaySeed: 18 });
     requirePlayingGame(game);
     game.level.flags.sokoban_rules = true;
     addTrap(game.level, PIT, 10, 10, { tseen: true });
@@ -154,7 +154,7 @@ void test('ending levitation over a Sokoban trap knocks the hero down', async ()
 // C hack.c:3362-3363: the spoteffects timeout-1 deferral only applies when
 // levitation is purely timed (timeout plus the potion at-will marker).
 void test('levitationIsPurelyTimed matches the C no-other-source test', async () => {
-    freshObjectRoom({ gameplaySeed: 24 });
+    await freshObjectRoom({ gameplaySeed: 24 });
     requirePlayingGame(game);
     game.u.levitationTurns = 1;
     assert.equal(levitationIsPurelyTimed(), true);
@@ -174,7 +174,7 @@ void test('levitationIsPurelyTimed matches the C no-other-source test', async ()
 // C float_down() -> drown() can be fatal; a dead hero gets no landing
 // message, trap activation, or autopickup.
 void test('a drowning death ends the fall without autopickup', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 21,
         flags: { bones: false, disclose: '-i -a -v -g -c -o' },
     });
@@ -201,7 +201,7 @@ void test('a drowning death ends the fall without autopickup', async () => {
     assert.ok(floorObjectsAt(game.level, 10, 10).includes(gem), 'fatal landing must leave the uncollected gem on the floor');
 });
 void test('a fatal riding accident stops the Sokoban fall before self-touch', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 54,
         flags: { bones: false, disclose: '-i -a -v -g -c -o' },
     });
@@ -233,7 +233,7 @@ void test('a fatal riding accident stops the Sokoban fall before self-touch', as
 // (teleport.c:568) gives the destination its full effects, including
 // auto-pickup.  This exercises the complete production owner end-to-end.
 void test('a crawl-out relocation picks up the real destination floor', async () => {
-    freshObjectRoom({ gameplaySeed: 51 });
+    await freshObjectRoom({ gameplaySeed: 51 });
     requirePlayingGame(game);
     game.flags.pickup = true;
     game.level.requireAt(10, 10).typ = POOL;
@@ -264,7 +264,7 @@ void test('a crawl-out relocation picks up the real destination floor', async ()
 // hero selects the landing square through the map cursor, and the landing
 // runs the full destination effects with auto-pickup.
 void test('a controlled teleport escape lands where the hero chooses', async (t) => {
-    freshObjectRoom({ gameplaySeed: 52 });
+    await freshObjectRoom({ gameplaySeed: 52 });
     requirePlayingGame(game);
     game.flags.pickup = true;
     game.level.requireAt(10, 10).typ = POOL;
@@ -293,7 +293,7 @@ void test('a controlled teleport escape lands where the hero chooses', async (t)
 // suppressed.  Observable: the hero survives on dry land, but the floor
 // under the landing stays unpicked.
 void test('a lava rescue triggers the landing trap without auto-pickup', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 53, left: 11, right: 11, top: 10, bottom: 10,
     });
     requirePlayingGame(game);
@@ -320,7 +320,7 @@ void test('a lava rescue triggers the landing trap without auto-pickup', async (
 // the landing message, not the landing itself.  Equipment setters pass the
 // pre-removal snapshot through `previous`.
 void test('a dismount landing suppresses the message but not the pickup', async () => {
-    freshObjectRoom({ gameplaySeed: 19 });
+    await freshObjectRoom({ gameplaySeed: 19 });
     requirePlayingGame(game);
     const gem = await floorObject(DIAMOND, 10, 10);
     game.flags.pickup = true;

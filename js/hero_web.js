@@ -101,13 +101,13 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
             await publish('You spin a web, covering up the pit.');
             deleteTrap(trap, state);
             await buryFloorObjectsAt(x, y, state, { publish });
-            refresh(x, y);
+            await refresh(x, y);
             return { used: true, spentTime: true };
         }
         if (trap.ttyp === SQKY_BOARD) {
             await publish('The squeaky board is muffled.');
             deleteTrap(trap, state);
-            refresh(x, y);
+            await refresh(x, y);
             return { used: true, spentTime: true };
         }
         if ([
@@ -123,13 +123,13 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
         if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
             await publish(`You web over the ${trap.ttyp === TRAPDOOR ? 'trap door' : 'hole'}.`);
             deleteTrap(trap, state);
-            refresh(x, y);
+            await refresh(x, y);
             return { used: true, spentTime: true };
         }
         if (trap.ttyp === ROLLING_BOULDER_TRAP) {
             await publish('You spin a web, jamming the trigger.');
             deleteTrap(trap, state);
-            refresh(x, y);
+            await refresh(x, y);
             return { used: true, spentTime: true };
         }
         if (TRAPS_TRIGGERED_BY_WEBBING.has(trap.ttyp)) {
@@ -148,7 +148,7 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
     if (web) {
         await publish('You spin a web.');
         web.madeby_u = 1;
-        feelTrap(web, state);
+        await feelTrap(web, state);
         if (roomsAt(state.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_WEB_COST, state);
     }

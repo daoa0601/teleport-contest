@@ -26,7 +26,7 @@ async function nameMonsterAt(t: TestContext, proposed: string) {
 }
 
 void test('a shopkeeper declines a nickname by introducing itself', async t => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const { shopkeeper } = await createStaffedShop({ keeperX: 11, keeperY: 10 });
     shopkeeper.eshk = { ...shopkeeper.eshk, shknam: 'Asidonhopo' };
     assert.ok(shopkeeper.isshk);
@@ -38,7 +38,7 @@ void test('a shopkeeper declines a nickname by introducing itself', async t => {
 });
 
 void test('a temple priest refuses a new personal name', async t => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     // priest.c:priest_init(): MM_EPRI prevents the roamer-minion conversion
     // makemon gives an ordinary cleric, then the caller finishes the temple
     // priest itself. Without ispriest this monster would be an isminion
@@ -64,7 +64,7 @@ void test('naming at the hero square declines without a steed', async t => {
     // C apply.c:beautiful(): charisma 25 (the ACURR(A_CHA) maximum) yields
     // "sublime", asserted literally so a broken port cannot echo itself.
     const attributes: AttributeValues = [12, 12, 12, 12, 12, 25];
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { tips: false, verbose: true },
         hero: { acurr: { a: [...attributes] }, amax: { a: [...attributes] } },
     });
@@ -83,7 +83,7 @@ void test('naming at the hero square declines without a steed', async t => {
 });
 
 void test('floor naming rejects an unnameable object type', async t => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     await floorObject(ELVEN_DAGGER, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
@@ -98,7 +98,7 @@ void test('floor naming rejects an unnameable object type', async t => {
 });
 
 void test('floor naming refuses an unrecognized object', async t => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const scroll = await floorObject(SCR_IDENTIFY, 10, 10, { typeKnown: false });
     scroll.dknown = false;
     const input = resetInputState();

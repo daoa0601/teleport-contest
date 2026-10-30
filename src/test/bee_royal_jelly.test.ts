@@ -18,7 +18,7 @@ const QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function beeRoom() {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bee = await createMonsterAt('killer bee', 12, 10, BIRTH_FLAGS);
     bee.msleeping = 0;
     const input = resetInputState();

@@ -15,7 +15,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const deathOwner of ['hero', 'dungeon']) {
     void test(`a hero escapes a petrified digestive engulfer during a ${deathOwner} kill`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
         await installSwallowedHero(worm);
         const x = worm.mx, y = worm.my;
@@ -44,7 +44,7 @@ for (const deathOwner of ['hero', 'dungeon']) {
 }
 for (const scenario of ['non-digestive', 'shapeshifter', 'life-saved']) {
     void test(`a ${scenario} engulfer does not announce escape through stone`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const engulfer = await createMonsterAt(scenario === 'non-digestive' ? 'energy vortex' : 'purple worm', 11, 10, NO_MINVENT);
         if (scenario === 'shapeshifter')
             engulfer.cham = MONSTER_NAME.indexOf('chameleon');
@@ -62,7 +62,7 @@ for (const scenario of ['non-digestive', 'shapeshifter', 'life-saved']) {
 }
 for (const visible of [false, true]) {
     void test(`${visible ? 'visible hero-caused' : 'unseen dungeon-caused'} petrification omits unseen kill-credit feedback after life saving`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
         await equipMonsterObject(worm, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
         if (!visible)

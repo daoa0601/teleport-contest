@@ -14,14 +14,14 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { floorObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 void test('a trapper can hide on the floor', async () => {
-    freshRoomWithPolymorphedHero('trapper');
+    await freshRoomWithPolymorphedHero('trapper');
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
     assert.equal(game.u.uundetected, 1);
     assert.equal(game.context.move, 1);
 });
 void test('a snake needs an object to hide underneath', async () => {
-    freshRoomWithPolymorphedHero('garter snake');
+    await freshRoomWithPolymorphedHero('garter snake');
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
     assert.equal(game.u.uundetected, 0);
@@ -33,7 +33,7 @@ void test('a snake needs an object to hide underneath', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('a hiding mimic is drawn as an object', async () => {
-    freshRoomWithPolymorphedHero('small mimic');
+    await freshRoomWithPolymorphedHero('small mimic');
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
     await flush_screen(1);
@@ -43,7 +43,7 @@ void test('a hiding mimic is drawn as an object', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('hiding under petrifying corpses is fatal', async () => {
-    freshRoomWithPolymorphedHero('garter snake');
+    await freshRoomWithPolymorphedHero('garter snake');
     requireFixtureGame(game);
     await floorObject(CORPSE, game.u.ux, game.u.uy, {
         corpsenm: MONSTER_NAME.indexOf('cockatrice'),
@@ -52,7 +52,7 @@ void test('hiding under petrifying corpses is fatal', async () => {
     const result = await useHeroHide({
         state: game,
         publish: async () => undefined,
-        refresh: () => undefined,
+        refresh: async () => undefined,
         die: async (details) => {
             deaths.push(details);
             return true;
@@ -72,7 +72,7 @@ for (const [typeName, dknown, description] of [
     ['shield of reflection', false, 'a smooth shield'],
 ]) {
     void test(`hiding describes ${dknown ? 'observed' : 'unobserved'} ${typeName} without call or individual names`, async () => {
-        freshRoomWithPolymorphedHero('garter snake');
+        await freshRoomWithPolymorphedHero('garter snake');
         requireFixtureGame(game);
         const type = OBJECT_NAMES.indexOf(typeName);
         const cover = await floorObject(type, game.u.ux, game.u.uy, {
@@ -88,7 +88,7 @@ for (const [typeName, dknown, description] of [
     });
 }
 void test('hiding under a stack uses its plural name without a count', async () => {
-    freshRoomWithPolymorphedHero('garter snake');
+    await freshRoomWithPolymorphedHero('garter snake');
     requireFixtureGame(game);
     await floorObject(ROCK, game.u.ux, game.u.uy, { quan: 3 });
     await runMonsterAbilityCommand();
@@ -96,7 +96,7 @@ void test('hiding under a stack uses its plural name without a count', async () 
     assert.equal(game.u.uundetected, 1);
 });
 void test('a scorpion that picks up its only cover is no longer hidden', async () => {
-    freshRoomWithPolymorphedHero('scorpion');
+    await freshRoomWithPolymorphedHero('scorpion');
     requireFixtureGame(game);
     await floorObject(DAGGER, game.u.ux, game.u.uy);
     await runMonsterAbilityCommand();
@@ -105,7 +105,7 @@ void test('a scorpion that picks up its only cover is no longer hidden', async (
     assert.equal(game.u.uundetected, 0);
 });
 void test('a scorpion autopicking up gold stays hidden under the remaining rock', async () => {
-    freshRoomWithPolymorphedHero('scorpion');
+    await freshRoomWithPolymorphedHero('scorpion');
     requireFixtureGame(game);
     game.flags.pickup = true;
     game.flags.pickup_types = '$';
@@ -119,7 +119,7 @@ void test('a scorpion autopicking up gold stays hidden under the remaining rock'
     assert.equal(game.u.uundetected, 1);
 });
 void test('a scorpion that cancels a traditional pickup stays exposed on the pile', async () => {
-    freshRoomWithPolymorphedHero('scorpion');
+    await freshRoomWithPolymorphedHero('scorpion');
     requireFixtureGame(game);
     game.flags.menu_style = MENU_TRADITIONAL;
     await floorObject(ROCK, game.u.ux, game.u.uy);

@@ -31,18 +31,18 @@ interface FinishTrapOptions {
     describeMonster?: (monster: Monster) => string;
 }
 
-export function beginMonsterSleepGasTrap(
+export async function beginMonsterSleepGasTrap(
     monster: Monster,
     trap: Trap,
     state: GameState = game,
     { rollOne = rnd } = {},
-): MonsterSleepGasTrapEvent {
+): Promise<MonsterSleepGasTrapEvent> {
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible =
         !monsterResistsSleep(monster) &&
         !monsterIsBreathless(monster) &&
         !monsterIsHelpless(monster);
-    const slept = susceptible ? putMonsterToSleep(monster, rollOne(25)) : false;
+    const slept = susceptible ? await putMonsterToSleep(monster, rollOne(25)) : false;
     return {
         kind: 'sleep-gas',
         trap,
@@ -65,7 +65,7 @@ export async function finishMonsterSleepGasTrap(
 ) {
     if (!event || event.finished) return event;
     await publish(`${describeMonster(monster)} suddenly falls asleep!`);
-    seeTrap(event.trap, state);
+    await seeTrap(event.trap, state);
     event.finished = true;
     return event;
 }

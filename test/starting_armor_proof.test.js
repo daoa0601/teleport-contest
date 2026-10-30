@@ -27,7 +27,7 @@ for (const { moves, quest, description } of [
     { moves: 80, quest: true, description: 'a later quest level creates armor' },
 ]) {
     void test(`a Samurai receives known lacquered splint mail when ${description}`, async () => {
-        freshObjectRoom({ role: 'samurai', moves });
+        await freshObjectRoom({ role: 'samurai', moves });
         game.in_mklev = true;
         game.quest_dnum = 1;
         game.u.uz = { dnum: quest ? 1 : 0, dlevel: 1 };
@@ -40,7 +40,7 @@ for (const { moves, quest, description } of [
     });
 }
 void test('a Samurai does not recognize ordinary later splint mail as lacquered', async () => {
-    freshObjectRoom({ role: 'samurai', moves: 80 });
+    await freshObjectRoom({ role: 'samurai', moves: 80 });
     game.quest_dnum = 1;
     game.u.uz = { dnum: 0, dlevel: 8 };
     const armor = await mksobj(SPLINT_MAIL, true, false);
@@ -61,7 +61,7 @@ void test('acquiring splint mail does not grant a Knight Samurai lacquer', async
     assert.doesNotMatch(await inventoryItemDescription(armor), /rustproof/);
 });
 void test('Samurai lacquer does not apply to other armor or uninitialized objects', async () => {
-    freshObjectRoom({ role: 'samurai', moves: 1 });
+    await freshObjectRoom({ role: 'samurai', moves: 1 });
     const ringMail = await mksobj(RING_MAIL, true, false);
     const uninitializedSplintMail = await mksobj(SPLINT_MAIL, false, false);
     assert.equal(Boolean(ringMail.oerodeproof), false);
@@ -70,7 +70,7 @@ void test('Samurai lacquer does not apply to other armor or uninitialized object
     assert.doesNotMatch(await inventoryItemDescription(uninitializedSplintMail), /rustproof/);
 });
 void test('randomly generated armor retains damage, grease, and proofing as physical state', async () => {
-    freshObjectRoom({ role: 'wizard', moves: 80, gameplaySeed: 741n });
+    await freshObjectRoom({ role: 'wizard', moves: 80, gameplaySeed: 741n });
     let rusty;
     let corroded;
     let greased;
@@ -106,7 +106,7 @@ void test('randomly generated armor retains damage, grease, and proofing as phys
     assert.match(await inventoryItemDescription(proofed), /rustproof/);
 });
 void test('plastic weapons can be generated burnt and can burn further without rotting', async () => {
-    freshObjectRoom({ moves: 80, gameplaySeed: 953n });
+    await freshObjectRoom({ moves: 80, gameplaySeed: 953n });
     const rubberHose = OBJECT_NAMES.indexOf('rubber hose');
     let burned;
     for (let count = 0; count < 2_000 && !burned; count++) {

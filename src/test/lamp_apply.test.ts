@@ -104,7 +104,7 @@ void test('magic lamp keeps untimed mobile light until explicitly switched off',
             location.lit = false;
         }
         vision_reset_new_level();
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), false);
 
         await applyInventoryA();
@@ -112,7 +112,7 @@ void test('magic lamp keeps untimed mobile light until explicitly switched off',
         assert.equal(lamp.lamplit, true);
         assert.equal(lamp.age, 40);
         assert.deepEqual(objectTimers(lamp), []);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), true);
 
         game.moves = 10000;
@@ -122,7 +122,7 @@ void test('magic lamp keeps untimed mobile light until explicitly switched off',
         assert.equal(lamp.lamplit, false);
         assert.equal(lamp.age, 40);
         assert.deepEqual(objectTimers(lamp), []);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), false);
     });
 

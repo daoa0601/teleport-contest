@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('an unskilled rider is told the named mount prevents reaching an object', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
     const pony = await createSaddledSteed();
     setMonsterGivenName(pony, 'Pip');
     await runExtendedCommand('ride', 'l');

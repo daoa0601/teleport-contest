@@ -13,7 +13,7 @@ export interface ObjectRoomOptions extends PlayableRoomOptions {
 }
 
 
-export function freshObjectRoom({
+export async function freshObjectRoom({
     objectInitializationSeed = 999n,
     gameplaySeed,
     moves = 40,
@@ -50,7 +50,7 @@ export function freshObjectRoom({
     });
     game.in_mklev = false;
     vision_reset_new_level();
-    if (recalculateVision) vision_recalc(0);
+    if (recalculateVision) await vision_recalc(0);
     // Opting out of initial sight also opts out of its pending refresh.
     else game.vision_full_recalc = 0;
     init_objects();

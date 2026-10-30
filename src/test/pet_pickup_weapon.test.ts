@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a weapon-using pet readies a fetched weapon before it can drop it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(goblin);

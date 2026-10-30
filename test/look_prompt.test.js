@@ -11,7 +11,7 @@ function topline() {
 }
 void test('ordinary look gives the verbose cursor request while quick look stays brief', async () => {
     for (const quick of [false, true]) {
-        freshObjectRoom({ flags: { tips: false, verbose: true } });
+        await freshObjectRoom({ flags: { tips: false, verbose: true } });
         const input = resetInputState();
         if (!quick)
             input.feed('/');
@@ -34,7 +34,7 @@ for (const [binding, key, label] of [
     ['C-a', '\x01', '^A'],
 ]) {
     void test(`ordinary look advertises and accepts the rebound ${label} help key`, async () => {
-        freshObjectRoom({ flags: { tips: false, verbose: true } });
+        await freshObjectRoom({ flags: { tips: false, verbose: true } });
         applyNethackrc(`BINDINGS=${binding}:getpos.help`);
         const input = resetInputState();
         input.feed('/');

@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const monsterTurn of [false, true]) {
     void test(`a gas spore dying during the ${monsterTurn ? 'monster' : 'hero'} turn assigns blast credit by that turn`, async () => {
-        freshObjectRoom({ context: { mon_moving: monsterTurn } });
+        await freshObjectRoom({ context: { mon_moving: monsterTurn } });
         requireFixtureGame(game);
         const spore = await createMonsterAt('gas spore', 14, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -28,7 +28,7 @@ for (const monsterTurn of [false, true]) {
 }
 
 void test('hero credit for a self-burning gas spore does not extend to its death blast during the monster turn', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requireFixtureGame(game);
     const spore = await createMonsterAt('gas spore', 14, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     spore.mhp = 1;
@@ -44,7 +44,7 @@ void test('hero credit for a self-burning gas spore does not extend to its death
 });
 
 void test('an elemental monster explosion during the hero turn gives the hero kill credit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     victim.mhp = 1;

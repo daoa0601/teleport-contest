@@ -200,7 +200,7 @@ void test('Lua special-level bones permissions survive saving and restoring the 
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     eligibleBonesRoom();
-    assert.equal(restoreGame('BonesEligibility', storage), true);
+    assert.equal(await restoreGame('BonesEligibility', storage), true);
 
     for (const [name, eligible] of [['oracle', true], ['medusa', false], ['minend', false]] as const) {
         const special = game.specialLevels?.get(name);
@@ -262,7 +262,7 @@ for (const [name, limit] of [
     ['Nazgul', 9],
 ] as const) {
     void test(`bones admission respects the ${name} birth limit`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         assert.ok(game.mvitals);
         const species = MONSTER_NAME.indexOf(name);
@@ -287,7 +287,7 @@ for (const [name, flags] of [
     ['genocided', G_GENOD],
 ] as const) {
     void test(`${name} bones actors are purged without tallying their births`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         assert.ok(game.mvitals);
         const newt = await createMonsterAt('newt', 12, 10, NO_MINVENT);
@@ -304,7 +304,7 @@ for (const [name, flags] of [
 }
 
 void test('bones admission checks a shapechanger base rather than its current form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const chameleon = await createMonsterAt('chameleon', 12, 10, NO_MINVENT);
@@ -322,7 +322,7 @@ void test('bones admission checks a shapechanger base rather than its current fo
 });
 
 void test('an admitted shapechanger tallies only its base species', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const chameleon = await createMonsterAt('chameleon', 12, 10, NO_MINVENT);
@@ -339,7 +339,7 @@ void test('an admitted shapechanger tallies only its base species', async () => 
 });
 
 void test('unique bones admission follows the native chain with newest monsters first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const medusa = MONSTER_NAME.indexOf('Medusa');
@@ -357,7 +357,7 @@ void test('unique bones admission follows the native chain with newest monsters 
 });
 
 void test('rejecting a genocided unique bones actor still marks unique extinction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const medusa = MONSTER_NAME.indexOf('Medusa');
@@ -372,7 +372,7 @@ void test('rejecting a genocided unique bones actor still marks unique extinctio
 });
 
 void test('bones high clerics keep the native exception to unique extinction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const species = MONSTER_NAME.indexOf('high cleric');
@@ -389,7 +389,7 @@ void test('bones high clerics keep the native exception to unique extinction', a
 });
 
 void test('bones birth limits also apply to species excluded from random generation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const species = MONSTER_NAME.indexOf('human');
@@ -405,7 +405,7 @@ void test('bones birth limits also apply to species excluded from random generat
 });
 
 void test('purging a bones actor drops protected cargo and deletes other cargo and timers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const troll = await createMonsterAt('troll', 12, 10, NO_MINVENT);

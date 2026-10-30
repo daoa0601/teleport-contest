@@ -11,7 +11,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const obstacle of ['rock', 'tree']) {
     void test(`a pet readies its digging tool before entering ${obstacle} to reach food`, async () => {
-        const level = freshObjectRoom({ left: 11, right: 16, top: 10, bottom: 10, heroX: 16 });
+        const level = await freshObjectRoom({ left: 11, right: 16, top: 10, bottom: 10, heroX: 16 });
         requirePlayingGame(game);
         for (let x = 0; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {

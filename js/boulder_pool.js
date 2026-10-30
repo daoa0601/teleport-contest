@@ -67,7 +67,7 @@ export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publi
                 return true;
         }
         await buryFloorObjectsAt(x, y, state, { publish });
-        newsym(x, y);
+        await newsym(x, y);
         if (pushing) {
             const who = state.u.usteed
                 ? monsterName(state.u.usteed, { state, article: 'your', capitalized: true }) : 'You';

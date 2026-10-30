@@ -77,7 +77,7 @@ void test("aggravate monsters halves a rescued pet's tameness on failure", async
 // C trap.c:5461-5469: the tight-diagonal refusal in try_disarm() uses plain
 // bigmonst(), so even a flexible amorphous large form cannot squeeze through.
 void test('a large amorphous form still cannot disarm across a tight diagonal', async () => {
-    const level = freshRoomWithPolymorphedHero('large mimic', {});
+    const level = await freshRoomWithPolymorphedHero('large mimic', {});
     level.requireAt(10, 11).typ = HWALL;
     level.requireAt(11, 10).typ = HWALL;
     addTrap(level, WEB, 11, 11, { tseen: true });

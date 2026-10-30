@@ -7,7 +7,7 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { NOT_HUNGRY } from '../js/const.js';
 void test('ordinary metabolism is suppressed for a non-eating monster form', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: {
             uhunger: 900, uhs: NOT_HUNGRY,
             mtimedone: 100,
@@ -20,7 +20,7 @@ void test('ordinary metabolism is suppressed for a non-eating monster form', asy
     assert.equal(game.u.uhunger, 900);
 });
 void test('ordinary human metabolism still consumes one nutrition', async () => {
-    freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY, mtimedone: 0 } });
+    await freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY, mtimedone: 0 } });
     requireFixtureGame(game);
     initRng(4500);
     await getHungry();

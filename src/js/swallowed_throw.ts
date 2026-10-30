@@ -225,7 +225,7 @@ export async function resolveSwallowedWeaponThrow({
         state.context.move = 1;
         return true;
     } finally {
-        tetherDisplay?.clear();
+        await tetherDisplay?.clear();
         if (state._thrownObject === thrown) state._thrownObject = null;
     }
 }

@@ -7,7 +7,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('the status purse stops at six digits without discarding carried gold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 1234567);
 
     await bot();

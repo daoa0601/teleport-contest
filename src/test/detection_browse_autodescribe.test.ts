@@ -15,7 +15,7 @@ import { requireScreenRow } from './support/screen.js';
 // branch sets need_to_look so pager.c:lookat() names the buried object with
 // its article and placement suffix (pager.c:look_at_object()).
 void test('object detection browse describes a buried object as buried', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     const gem = await uninitializedObject(BLACK_OPAL,
         { typeKnown: false, known: false, bknown: false, dknown: true });

@@ -19,7 +19,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('releasing a djinni identifies magic lamps without identifying the resulting oil lamp', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lamp = await addInventoryObject(MAGIC_LAMP, {
         spe: 1, age: 200, invlet: 'a',
@@ -44,7 +44,7 @@ void test('releasing a djinni identifies magic lamps without identifying the res
     assert.equal(objectNeedsFullIdentification(lamp), false);
 });
 void test('a failed rub lets a blind hero smell the smoke', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lamp = await addInventoryObject(MAGIC_LAMP, {
         spe: 0, invlet: 'a', wielded: true, owornmask: W_WEP,
@@ -60,7 +60,7 @@ void test('a failed rub lets a blind hero smell the smoke', async () => {
 });
 for (const oilKnown of [false, true]) {
     void test(`a converted magic lamp uses the ${oilKnown ? 'known oil type' : 'oil appearance and call name'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const lamp = await mksobj(MAGIC_LAMP, false, false);
         fullyIdentifyObject(lamp);
         lamp.blessed = true;
@@ -79,7 +79,7 @@ for (const oilKnown of [false, true]) {
 }
 for (const waterKnown of [false, true]) {
     void test(`cancelling an identified potion uses ${waterKnown ? 'the known water name' : 'the unlearned water appearance'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const potion = await mksobj(POT_HEALING, false, false);
         fullyIdentifyObject(potion);
         if (waterKnown)
@@ -95,7 +95,7 @@ for (const waterKnown of [false, true]) {
 }
 for (const type of [CLUB, LEATHER_ARMOR]) {
     void test(`disenchantment of ${type === CLUB ? 'a weapon' : 'armor'} distinguishes type knowledge from enchantment knowledge`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
         const object = await addInventoryObject(type, { spe: 3, known: false });
         const messages = [];

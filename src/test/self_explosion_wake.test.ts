@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a light exploding away from the hero announces a nearby visible sleeper waking', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sleeper = await createMonsterAt('goblin', 13, 10, MM_NOGRP | NO_MINVENT);
     sleeper.msleeping = 1;
     const light = await createMonsterAt('yellow light', 11, 10, MM_NOGRP | NO_MINVENT);

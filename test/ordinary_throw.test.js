@@ -38,7 +38,7 @@ async function carriedClub() {
 async function fireBowAtJackal({ role = 'caveman', race = 'human', bowType = BOW, arrowType = ARROW, glovesType = null, seed = 1n, heroLevel = 1, dexterity = 10, strength = 10, damageBonus = 0, } = {}) {
     const selectedRace = races.find(candidate => candidate.name === race);
     assert.ok(selectedRace);
-    freshObjectRoom({ right: 20, role, race: selectedRace, gameplaySeed: 4900n });
+    await freshObjectRoom({ right: 20, role, race: selectedRace, gameplaySeed: 4900n });
     requirePlayingGame(game);
     game.u.ulevel = heroLevel;
     game.u.acurr.a[A_DEX] = dexterity;
@@ -63,7 +63,7 @@ async function fireBowAtJackal({ role = 'caveman', race = 'human', bowType = BOW
     return 20 - jackal.mhp;
 }
 void test('throwing a club carries it across its strength-based range', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4101n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4101n });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
     const club = await carriedClub();
@@ -73,7 +73,7 @@ void test('throwing a club carries it across its strength-based range', async ()
     assert.deepEqual([club.ox, club.oy], [15, 10]);
 });
 void test('a thrown club can hit a monster and land on its square', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4102n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4102n });
     requirePlayingGame(game);
     game.u.ulevel = 20;
     game.u.acurr.a[A_DEX] = 18;
@@ -87,7 +87,7 @@ void test('a thrown club can hit a monster and land on its square', async () => 
     assert.deepEqual([club.ox, club.oy], [13, 10]);
 });
 void test('thrown blinding venom blinds a monster without hurting it', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4108n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4108n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const venom = await addInventoryObject(BLINDING_VENOM, { invlet: 'a' });
@@ -101,7 +101,7 @@ void test('thrown blinding venom blinds a monster without hurting it', async () 
     assert.equal(floorObjects(level).includes(venom), false);
 });
 void test('thrown acid venom burns and frightens a pet', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4109n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4109n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const venom = await addInventoryObject(ACID_VENOM, { invlet: 'a' });
@@ -118,7 +118,7 @@ void test('thrown acid venom burns and frightens a pet', async () => {
     assert.equal(floorObjects(level).includes(venom), false);
 });
 void test('an ordinary thrown egg splats and deals one point of damage', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4110n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4110n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const egg = await addInventoryObject(EGG, {
@@ -133,7 +133,7 @@ void test('an ordinary thrown egg splats and deals one point of damage', async (
     assert.equal(floorObjects(level).includes(egg), false);
 });
 void test('a cockatrice egg petrifies a monster and costs Luck', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4111n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4111n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     game.u.uluck = 0;
@@ -151,7 +151,7 @@ void test('a cockatrice egg petrifies a monster and costs Luck', async () => {
     assert.equal(game.u.uluck, -1);
 });
 void test('a fresh egg turns to rock when it hits a cockatrice', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4112n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4112n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const egg = await addInventoryObject(EGG, {
@@ -167,7 +167,7 @@ void test('a fresh egg turns to rock when it hits a cockatrice', async () => {
     assert.deepEqual([egg.ox, egg.oy], [13, 10]);
 });
 void test('a pyrolisk egg explodes around the monster it hits', async () => {
-    const level = freshObjectRoom({ right: 20, gameplaySeed: 4113n });
+    const level = await freshObjectRoom({ right: 20, gameplaySeed: 4113n });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 18;
     const egg = await addInventoryObject(EGG, {
@@ -185,7 +185,7 @@ void test('a pyrolisk egg explodes around the monster it hits', async () => {
     assert.equal(floorObjects(level).includes(egg), false);
 });
 void test('grease can make a thrown club slip away from its chosen path', async () => {
-    freshObjectRoom({ right: 20, gameplaySeed: 4103n });
+    await freshObjectRoom({ right: 20, gameplaySeed: 4103n });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
     const club = await carriedClub();
@@ -196,7 +196,7 @@ void test('grease can make a thrown club slip away from its chosen path', async 
     assert.match(game._pending_message, /slips as you throw it/);
 });
 void test('a crossbow sends its bolt eight squares regardless of Strength', async () => {
-    const level = freshObjectRoom({ right: 22, gameplaySeed: 4104n });
+    const level = await freshObjectRoom({ right: 22, gameplaySeed: 4104n });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
     const crossbow = await addInventoryWeapon(CROSSBOW, {
@@ -209,7 +209,7 @@ void test('a crossbow sends its bolt eight squares regardless of Strength', asyn
     assert.deepEqual([bolt.ox, bolt.oy], [18, 10]);
 });
 void test('a skilled Ranger can fire several crossbow bolts in one turn', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         right: 22,
         role: 'ranger',
         gameplaySeed: 4106n,
@@ -293,7 +293,7 @@ void test('gauntlets of power hinder a bow shot', async () => {
 });
 void test('a poisoned thrown dart harms the target and costs lawful alignment', async () => {
     const throwDart = async (poisoned) => {
-        freshObjectRoom({
+        await freshObjectRoom({
             right: 20,
             gameplaySeed: 4910n,
             hero: { ualign: { type: A_LAWFUL, record: 10 } },
@@ -321,7 +321,7 @@ void test('a poisoned thrown dart harms the target and costs lawful alignment', 
 });
 for (const lifesaving of [false, true]) {
     void test(`a gas-spore death blast ${lifesaving ? 'resumes wake and XP effects after life saving' : 'stops before wake and XP effects on fatal injury'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             right: 20, hero: { uhp: 1, uhpmax: 100, uexp: 0 },
             flags: { disclose: '-i -a -v -c -o' },
         });
@@ -353,7 +353,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('a fatal chained gas-spore blast stops the outer blast before its remaining victims', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         right: 20, hero: { uhp: 1, uhpmax: 100, uexp: 0 },
         flags: { disclose: '-i -a -v -c -o' },
     });

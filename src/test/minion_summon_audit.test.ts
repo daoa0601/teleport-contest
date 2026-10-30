@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a water demon summons another demon in vapor during its attack', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
     demon.mpeaceful = false;

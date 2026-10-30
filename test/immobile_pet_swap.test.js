@@ -8,7 +8,7 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a paralyzed pet cannot trade places with the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(kitten);
     kitten.mcanmove = 0;

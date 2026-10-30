@@ -39,6 +39,6 @@ export async function useFigurine(object: GameObject) {
     await makeFamiliar(object, x, y, false);
     stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
     await consumeInventoryItem(object, game);
-    if (heroIsBlind(game)) map_invisible(x, y);
+    if (heroIsBlind(game)) await map_invisible(x, y);
     return { spentTime: true, object: null };
 }

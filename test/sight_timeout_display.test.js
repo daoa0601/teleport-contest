@@ -29,8 +29,8 @@ void test('blindness expiry redraws a warm monster in a dark corridor through in
     grantIntrinsicProperty('infravision', 'outside');
     setHeroBlindnessTurns(1);
     vision_reset();
-    vision_recalc(0);
-    newsym(14, 10);
+    await vision_recalc(0);
+    await newsym(14, 10);
     assert.notEqual(game.level.requireAt(14, 10).disp_ch, 'd');
     input.feed('..');
     await moveloop_core();

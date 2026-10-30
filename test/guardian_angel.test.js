@@ -33,7 +33,7 @@ async function visibleMessage() {
     return requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }
 void test('a departing guardian disappears with ordinary inventory but leaves the real Amulet', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const state = requireInitializedGame();
     const angel = await guardian();
     const dagger = await knownObject(DAGGER);
@@ -62,7 +62,7 @@ void test('a departing guardian disappears with ordinary inventory but leaves th
     }
 });
 void test('the guardian and its inventory remain present while its rebuke waits for input', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const state = requireInitializedGame();
     const angel = await guardian();
     const dagger = await knownObject(DAGGER);
@@ -89,7 +89,7 @@ void test('the guardian and its inventory remain present while its rebuke waits 
     assert.equal(dagger.where, 'gone');
 });
 void test('a deaf hero sees the guardian vanish without hearing its rebuke', async () => {
-    const level = freshObjectRoom({ hero: { deafTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { deafTurns: 20 } });
     const state = requireInitializedGame();
     const angel = await guardian();
     await loseGuardianAngel(angel, state);
@@ -98,7 +98,7 @@ void test('a deaf hero sees the guardian vanish without hearing its rebuke', asy
     assert.ok(level.monsters.length >= 2 && level.monsters.length <= 4);
 });
 void test('an unspotted guardian departs without announcing itself', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const state = requireInitializedGame();
     const angel = await guardian();
     angel.minvis = true;
@@ -111,7 +111,7 @@ void test('an unspotted guardian departs without announcing itself', async () =>
 });
 for (const alignment of [-1, 0, 1]) {
     void test(`replacement angels serve hero alignment ${alignment} as hostile renegades`, async () => {
-        const level = freshObjectRoom({ hero: { ualign: { type: alignment, record: 0 } } });
+        const level = await freshObjectRoom({ hero: { ualign: { type: alignment, record: 0 } } });
         const state = requireInitializedGame();
         initRng(BigInt(alignment + 11));
         const result = await loseGuardianAngel(null, state);
@@ -130,7 +130,7 @@ for (const alignment of [-1, 0, 1]) {
     });
 }
 void test('replacement angels search past occupied adjacent squares without moving their occupants', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const state = requireInitializedGame();
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++) {
@@ -153,7 +153,7 @@ void test('replacement angels search past occupied adjacent squares without movi
     }
 });
 void test('only one replacement can occupy the lone legal square after a guardian departs', async () => {
-    const level = freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
+    const level = await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
         hero: { deafTurns: 20 } });
     const state = requireInitializedGame();
     const angel = await guardian();
@@ -167,14 +167,14 @@ void test('only one replacement can occupy the lone legal square after a guardia
     assert.equal(replacement.my, 10);
 });
 void test('hostile angels cannot appear when only the hero square is open', async () => {
-    const level = freshObjectRoom({ left: 10, right: 10, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 10, top: 10, bottom: 10 });
     const result = await loseGuardianAngel(null, requireInitializedGame());
     assert.equal(result.heroDied, false);
     assert.equal(level.monsters.length, 0);
     assert.equal(!!game.program_state.gameover, false);
 });
 void test('Conflict makes a guardian depart during its actual movement turn', async () => {
-    const level = freshObjectRoom({ hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ hero: { ulevel: 30 } });
     const state = requireInitializedGame();
     const angel = await guardian();
     const dagger = await knownObject(DAGGER);
@@ -193,7 +193,7 @@ void test('Conflict makes a guardian depart during its actual movement turn', as
     assert.equal(await visibleMessage(), '"Since you desire conflict, have some more!"');
 });
 void test('a non-steed guardian on the hero square stays put even under Conflict', async () => {
-    const level = freshObjectRoom({ hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ hero: { ulevel: 30 } });
     const state = requireInitializedGame();
     const angel = await guardian();
     placeMonsterAt(angel, state.u.ux, state.u.uy);
@@ -211,7 +211,7 @@ void test('a non-steed guardian on the hero square stays put even under Conflict
     assert.equal(await visibleMessage(), '');
 });
 void test('a guardian follows its hero instead of food and remains within four squares', async () => {
-    const level = freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10 });
     const state = requireInitializedGame();
     const angel = await guardian(14, 10);
     const food = await floorObject(FOOD_RATION, 15, 10);

@@ -36,7 +36,7 @@ async function prepareContactPoisonBook() {
 }
 
 void test('fatal contact poison stops book study without consuming the book', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 100, ulevel: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100, ulevel: 1 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     game.u.urexp = 100;
@@ -62,7 +62,7 @@ void test('fatal contact poison stops book study without consuming the book', as
 });
 
 void test('worn gloves absorb spellbook contact poison and corrode', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER);
@@ -79,7 +79,7 @@ void test('worn gloves absorb spellbook contact poison and corrode', async () =>
 });
 
 void test('poison resistance reduces contact poison without preventing its damage', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, poisonResistance: true } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, poisonResistance: true } });
     requirePlayingGame(game);
     await prepareContactPoisonBook();
 
@@ -92,7 +92,7 @@ void test('poison resistance reduces contact poison without preventing its damag
 });
 
 void test('life saving lets contact poison finish and then immobilizes the reader', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 100, ulevel: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100, ulevel: 1 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);

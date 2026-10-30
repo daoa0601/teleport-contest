@@ -7,7 +7,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an enlightenment bottle shatters against a monster without a magical effect', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('dog', game.u.ux + 1, game.u.uy);
     const potion = await knownObject(POT_ENLIGHTENMENT);
     const hp = monster.mhp;

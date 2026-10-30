@@ -16,7 +16,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { CLOAK_OF_PROTECTION } from '../js/object_data.js';
 import { installPagerInput } from './support/pager-input.js';
 async function attacker() {
-    const level = freshObjectRoom({ gameplaySeed: 314 });
+    const level = await freshObjectRoom({ gameplaySeed: 314 });
     requirePlayingGame(game);
     const monster = await createMonsterAt(263, 11, 10, NO_MINVENT);
     monster.mux = game.u.ux;
@@ -58,11 +58,11 @@ for (const reason of ['cancelled', 'shapechanger', 'distant-image']) {
 }
 for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake']) {
     void test(`${condition} heroes feel unseen werewolf helpers surrounding them`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 314 });
+        const level = await freshObjectRoom({ gameplaySeed: 314 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('human werewolf', 11, 10, NO_MINVENT);
         setHeroBlindnessTurns(5);
-        vision_recalc(0);
+        await vision_recalc(0);
         if (condition === 'sleeping')
             await putHeroToSleep(5);
         if (condition === 'fainted') {
@@ -87,7 +87,7 @@ for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake']) {
 }
 for (const protection of ['none', 'already infected', 'shapechanger protection', 'cancelled', 'magic negation', 'Werebane']) {
     void test(`a werejackal bite ${protection === 'none' ? 'infects' : 'respects ' + protection} after its hit message`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const jackal = await createMonsterAt('werejackal', 11, 10, NO_MINVENT);
         jackal.mpeaceful = false;

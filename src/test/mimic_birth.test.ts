@@ -31,7 +31,7 @@ function speciesVital(species: number) {
 
 void test('a loaded Sokoban graph excludes maze-statue mimic disguises', async () => {
     for (const seed of [1, 2, 3, 4, 5, 6]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.flags.debug = true;
         await init_dungeons();
@@ -53,7 +53,7 @@ void test('a loaded Sokoban graph excludes maze-statue mimic disguises', async (
 });
 
 void test('door mimics use furniture before any maze or room disguise', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.is_maze_lev = true;
     const location = game.level.requireAt(12, 10);
@@ -66,7 +66,7 @@ void test('door mimics use furniture before any maze or room disguise', async ()
 
     assert.equal(M_AP_TYPE(mimic), M_AP_FURNITURE);
     assert.equal(mimic.mappearance, 16); // S_hcdoor
-    newsym(12, 10);
+    await newsym(12, 10);
     const glyph = glyphAt(12, 10);
     assert.ok(glyph?.kind === 'terrain');
     assert.equal(glyph.terrainName, 'closed door');
@@ -74,7 +74,7 @@ void test('door mimics use furniture before any maze or room disguise', async ()
 });
 
 void test('a floor object takes precedence even when the mimic occupies a door', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await floorObject(CHEST, 12, 10);
     const location = game.level.requireAt(12, 10);
@@ -91,7 +91,7 @@ void test('a floor object takes precedence even when the mimic occupies a door',
 });
 
 void test('temple mimics appear as altars with a represented alignment', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.rooms = [{
         lx: 7, hx: 16, ly: 6, hy: 14, rtype: TEMPLE, rlit: 1,
@@ -110,7 +110,7 @@ void test('temple mimics appear as altars with a represented alignment', async (
 });
 
 void test('shapechanger protection suppresses a newborn mimic disguise', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);
     await wearHeroAccessory(ring, 'uleft');
@@ -123,7 +123,7 @@ void test('shapechanger protection suppresses a newborn mimic disguise', async (
 
 for (const appearance of [CORPSE, TIN]) {
     void test(`mimic object shape ${appearance} respects species which leave no corpse`, async () => {
-        freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 2 }, ulevel: 1 } });
+        await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 2 }, ulevel: 1 } });
         requirePlayingGame(game);
         await floorObject(appearance, 12, 10);
         const gasSpore = MONSTER_NAME.indexOf('gas spore');
@@ -143,7 +143,7 @@ for (const appearance of [CORPSE, TIN]) {
 }
 
 void test('native new-game vitals initialize no-corpse species without resetting restored birth history', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await initializeSourceStartup();
     const gasSpore = MONSTER_NAME.indexOf('gas spore');
@@ -154,7 +154,7 @@ void test('native new-game vitals initialize no-corpse species without resetting
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
 
-    assert.equal(restoreGame(game.plname || 'player', storage), true);
+    assert.equal(await restoreGame(game.plname || 'player', storage), true);
 
     assert.equal(speciesVital(gasSpore).born, born);
     assert.ok(speciesVital(gasSpore).mvflags & G_NOCORPSE);

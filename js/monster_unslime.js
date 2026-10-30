@@ -211,10 +211,10 @@ async function triggerCureTrap(monster, trap, visible, context) {
     else {
         const oldX = monster.mx, oldY = monster.my;
         await placeMonsterOnMap(monster, trap.tx, trap.ty);
-        newsym(oldX, oldY);
+        await newsym(oldX, oldY);
         if (monster.wormno)
-            advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
-        newsym(monster.mx, monster.my);
+            await advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
+        await newsym(monster.mx, monster.my);
         if (visible) {
             const floats = [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[monster.mnum] ?? -1);
             await publish(`${name} ${monsterLocomotion(monster)} ${floats ? 'over' : 'onto'} ${trap.tseen ? 'the' : 'a'} fire trap!`);

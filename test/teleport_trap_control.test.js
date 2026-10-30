@@ -8,7 +8,7 @@ import { finishTeleportArrival } from '../js/location_effects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a wizard chooses the destination of an ordinary teleport trap', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const input = resetInputState();
     const operation = triggerHeroTrap(addTrap(level, TELEP_TRAP, 10, 10), {

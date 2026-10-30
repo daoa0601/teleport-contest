@@ -59,7 +59,7 @@ async function editMessageTypes(script) {
     }
 }
 void test('adding a hide rule through options suppresses matching messages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const views = await editMessageTypes([
         { prompt: 'add new message type', keys: 'a' },
         { prompt: 'What new message pattern?', keys: '^A bell rings[.]$\n' },
@@ -76,7 +76,7 @@ void test('adding a hide rule through options suppresses matching messages', asy
     assert.match(screen(), /A gong rings\./);
 });
 void test('message type listing uses canonical names and newest rules first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=noshow "bell"\nMSGTYPE=more "gong"');
     const views = await editMessageTypes([
         { prompt: 'Do what?', keys: 'l' },
@@ -88,7 +88,7 @@ void test('message type listing uses canonical names and newest rules first', as
     assert.match(listing, /b - hide\s+"bell"/);
 });
 void test('removing several message types preserves the other rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=hide "bell"\nMSGTYPE=stop "gong"\nMSGTYPE=norep "chime"');
     const views = await editMessageTypes([
         { prompt: 'Do what?', keys: 'r' },
@@ -105,7 +105,7 @@ void test('removing several message types preserves the other rules', async () =
     assert.match(screen(), /A gong rings\./);
 });
 void test('invalid message patterns report their regex error and return to the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const views = await editMessageTypes([
         { prompt: 'Do what?', keys: 'a' },
         { prompt: 'What new message pattern?', keys: 'a**\n' },
@@ -115,7 +115,7 @@ void test('invalid message patterns report their regex error and return to the e
     assert.doesNotMatch(views[3] ?? '', /list message types/);
 });
 void test('cancelling the message type picker keeps existing rules and returns to the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=hide "bell"');
     const views = await editMessageTypes([
         { prompt: 'Do what?', keys: 'a' },
@@ -129,7 +129,7 @@ void test('cancelling the message type picker keeps existing rules and returns t
     assert.doesNotMatch(views[4] ?? '', /gong/);
 });
 void test('cancelling message pattern input exits the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await editMessageTypes([
         { prompt: 'Do what?', keys: 'a' },
         { prompt: 'What new message pattern?', keys: '\x1b' },

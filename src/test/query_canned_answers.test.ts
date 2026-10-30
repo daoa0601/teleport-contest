@@ -139,7 +139,7 @@ void test('a canned finger answer outside rl is reported and refuses the put-on'
 // means the answer comes from the terminal, so a response-free question
 // never takes the canned entry behind it (cmd.c:5496-5539).
 void test('a user-input canned entry leaves a single-key question live', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.queueCommandResponses(['user-input', 'k'.charCodeAt(0)]);
 

@@ -49,7 +49,7 @@ void test('a portal to a named special level remains usable after saving and res
     game.plname = 'PortalSaver';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('PortalSaver', storage), true, 'a named portal must survive the saved-state boundary');
+    assert.equal(await restoreGame('PortalSaver', storage), true, 'a named portal must survive the saved-state boundary');
     const portal = game.level?.traps.find(trap => trap.tx === 12 && trap.ty === 10);
     assert.deepEqual(portal?.dst, { dnum: 1, dlevel: 7 });
 });

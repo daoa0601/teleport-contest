@@ -177,15 +177,15 @@ export async function runRay({ state = game, direction, range, beamType, originX
                 if (canSee(x, y)) {
                     const monster = rayMonsterAt(x, y, state);
                     if (monster && !canSpotMonster(monster))
-                        map_invisible(x, y);
+                        await map_invisible(x, y);
                     else if (!monster)
-                        unmap_invisible(x, y);
+                        await unmap_invisible(x, y);
                 }
                 if (canSee(x, y)
                     && (rayPositionIsOpen(x, y, state)
                         || (rayPositionIsValid(previousX, previousY)
                             && canSee(previousX, previousY)))) {
-                    paintRayCell(beamCells, x, y, dx, dy, beamType);
+                    await paintRayCell(beamCells, x, y, dx, dy, beamType);
                     await captureRayTraversalFrame(state);
                 }
                 state.bhitpos = { x, y };
@@ -226,7 +226,7 @@ export async function runRay({ state = game, direction, range, beamType, originX
     }
     finally {
         if (!heroDied && !state.program_state?.gameover)
-            beamCells.clear();
+            await beamCells.clear();
     }
     return undefined;
 }
@@ -241,10 +241,10 @@ export async function captureRayTraversalFrame(state = game) {
         state.nhDisplay?.setCursor(...messageCursor);
     await state.animationFrame?.();
 }
-export function paintRayCell(effect, x, y, dx, dy, beamType) {
+export async function paintRayCell(effect, x, y, dx, dy, beamType) {
     const glyph = zapdir_to_glyph(dx, dy, beamType);
     effect.changeGlyph(glyph);
-    effect.draw(x, y);
+    await effect.draw(x, y);
 }
 function rayBouncebackChance(valid, location, state) {
     if (!valid || location?.typ === STONE)

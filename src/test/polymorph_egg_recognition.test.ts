@@ -14,7 +14,7 @@ for (const [form, eggSpecies] of [
     ['winged gargoyle', 'gargoyle'],
 ] as const) {
     void test(`becoming a ${form} teaches recognition of its ${eggSpecies} eggs`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         const egg = await addInventoryObject(EGG, {
             corpsenm: MONSTER_NAME.indexOf(eggSpecies), known: false,
         });

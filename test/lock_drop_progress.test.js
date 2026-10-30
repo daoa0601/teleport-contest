@@ -16,7 +16,7 @@ for (const action of ['picking', 'forcing']) {
         // do.c:dodrop() resets occupations for every nonzero drop() result,
         // and a refused drop is ECMD_FAIL.
         void test(`${successfulDrop ? 'dropping an item' : 'a refused drop'} clears interrupted ${action} progress`, async () => {
-            const level = freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
+            const level = await freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
             const door = level.requireAt(11, 10);
             door.typ = DOOR;
             door.doormask = D_LOCKED;

@@ -9,7 +9,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('wizard teleport through a seen random teleport trap takes time without costing nutrition', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     addTrap(level, TELEP_TRAP, 10, 10, { tseen: true });
     const hunger = game.u.uhunger;
@@ -34,7 +34,7 @@ void test('wizard teleport through a seen random teleport trap takes time withou
     assert.equal(game.context.move, 1);
 });
 void test('Ctrl-T deliberately triggers a level teleporter without teaching nearby monsters about it', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     const trap = addTrap(level, LEVEL_TELEP, 10, 10, { tseen: true });
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);

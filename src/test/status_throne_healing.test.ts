@@ -10,7 +10,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const health of [10, 38]) {
     void test(`throne healing displays restored health from ${health} HP`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             gameplaySeed: 8n,
             flags: { debug: true },
             hero: { uhp: health, uhpmax: 40 },
@@ -30,7 +30,7 @@ for (const health of [10, 38]) {
 }
 
 void test('throne healing displays restored monster health and its increased maximum', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 8n,
         flags: { debug: true },
         hero: {

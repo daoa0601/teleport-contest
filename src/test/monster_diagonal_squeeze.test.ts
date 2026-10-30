@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const species of ['fire elemental', 'air elemental', 'black pudding']) {
     void test(`${species} uses its actual body shape to squeeze between rocks`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         level.requireAt(10, 11).typ = STONE;

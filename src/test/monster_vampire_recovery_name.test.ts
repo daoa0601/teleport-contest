@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('hallucination changes the description of a vampire rising from its killed form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const bat = await createMonsterAt('vampire bat', 12, 10, NO_MINVENT);
     bat.cham = MONSTER_NAME.indexOf('vampire');

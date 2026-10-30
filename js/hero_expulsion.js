@@ -118,7 +118,7 @@ export async function expelHero(monster, { state = game, message = true, engulfi
     if (state.program_state.gameover)
         return { expelled: true, died: true };
     // mnexto() redraws the monster; expels() then redraws only the hero.
-    refresh(state.u.ux, state.u.uy);
+    await refresh(state.u.ux, state.u.uy);
     const distance = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
     if (distance > 1)
         await publish('Brrooaa...  You land hard at some distance.');

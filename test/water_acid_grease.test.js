@@ -10,7 +10,7 @@ import { dropInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('luck cannot save contained acid when dipping washes its grease off', async () => {
-    freshObjectRoom({ hero: { uluck: 13 } });
+    await freshObjectRoom({ hero: { uluck: 13 } });
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const sack = await addInventoryObject(SACK);
@@ -27,7 +27,7 @@ void test('luck cannot save contained acid when dipping washes its grease off', 
     assert.equal(game.context.move, 1);
 });
 void test('luck cannot save dropped acid when a pool washes its grease off', async () => {
-    freshObjectRoom({ hero: { uluck: 13 } });
+    await freshObjectRoom({ hero: { uluck: 13 } });
     requirePlayingGame(game);
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     location.typ = POOL;

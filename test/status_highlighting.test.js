@@ -11,9 +11,9 @@ import { requireScreenRow } from './support/screen.js';
 function rule(fld, behavior, value, rel, color, attr = HL_NONE, textmatch = '') {
     return { fld, behavior, value, rel, coloridx: color | (attr << 8), textmatch, set: true, anytype: 'int' };
 }
-function roomWithRules(rules) {
+async function roomWithRules(rules) {
     const thresholds = Array.from({ length: MAXBLSTATS }, (_, fld) => rules.filter(entry => entry.fld === fld));
-    freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 2 }, flags: { time: true } });
+    await freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 2 }, flags: { time: true } });
     requirePlayingGame(game);
 }
 function fieldCell(text, row = 23, offset = 0) {
@@ -25,7 +25,7 @@ function fieldCell(text, row = 23, offset = 0) {
     return cell;
 }
 void test('status fields use the closest threshold and exact values take precedence', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_HP, BL_TH_VAL_PERCENTAGE, 80, LT_VALUE, CLR_BLUE),
         rule(BL_HP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED, HL_BOLD),
@@ -42,7 +42,7 @@ void test('status fields use the closest threshold and exact values take precede
     assert.equal(fieldCell('HP:12').attr, ATR_INVERSE);
 });
 void test('temporary change highlights expire back to the persistent rule', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_HP, BL_TH_UPDOWN, 0, LT_VALUE, CLR_RED, HL_BOLD),
     ]);
@@ -63,7 +63,7 @@ void test('temporary change highlights expire back to the persistent rule', asyn
 });
 for (const hitpointbar of [false, true]) {
     void test(`expired HP highlights use ${hitpointbar ? 'the recalculated' : 'zero'} percentage with hitpointbar ${hitpointbar}`, async () => {
-        roomWithRules([
+        await roomWithRules([
             rule(BL_HP, BL_TH_VAL_PERCENTAGE, 30, LT_VALUE, CLR_RED),
             rule(BL_HP, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN, HL_BOLD),
         ]);
@@ -86,7 +86,7 @@ for (const hitpointbar of [false, true]) {
     });
 }
 void test('experience percentage highlights change while the level stays the same', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_XP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED),
     ]);
@@ -105,7 +105,7 @@ for (const { field, hitpointbar, label } of [
     { field: BL_EXP, hitpointbar: false, label: 'experience points' },
 ]) {
     void test(`${label} highlight direction after an unchanged status repaint`, async () => {
-        roomWithRules([
+        await roomWithRules([
             rule(field, BL_TH_UPDOWN, 0, LT_VALUE, CLR_RED),
             rule(field, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN),
         ]);
@@ -138,7 +138,7 @@ for (const { field, hitpointbar, label } of [
     });
 }
 void test('a time-only status update preserves the percentage used for the next HP change', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_HP, BL_TH_UPDOWN, 0, LT_VALUE, CLR_RED),
         rule(BL_HP, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN),
     ]);
@@ -156,7 +156,7 @@ void test('a time-only status update preserves the percentage used for the next 
     assert.equal(fieldCell('HP:31').color, CLR_GREEN);
 });
 void test('hidden experience points refresh the level highlight when a percentage rule changes', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
         rule(BL_XP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED),
     ]);
@@ -174,7 +174,7 @@ void test('hidden experience points refresh the level highlight when a percentag
     assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /Xp:1\//, 'Experience points remain hidden');
 });
 void test('the hitpoint bar uses the HP rule color only on its filled segment', async () => {
-    roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
+    await roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
     game.flags.hitpointbar = true;
     game.u.uhp = 20;
     await bot();
@@ -185,7 +185,7 @@ void test('the hitpoint bar uses the HP rule color only on its filled segment', 
     assert.equal(cells[16]?.color, NO_COLOR, 'The empty half has no HP color');
 });
 void test('critical HP rules override a persistent numeric rule', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_HP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_GREEN),
         rule(BL_HP, BL_TH_CRITICALHP, 0, NO_LTEQGT, CLR_RED, HL_BOLD),
     ]);
@@ -195,21 +195,21 @@ void test('critical HP rules override a persistent numeric rule', async () => {
     assert.equal(fieldCell('HP:1').attr, ATR_BOLD);
 });
 void test('text rules match the rank without the hero name and survive map flushes', async () => {
-    roomWithRules([rule(BL_TITLE, BL_TH_TEXTMATCH, 0, TXT_VALUE, CLR_BLUE, HL_BOLD, 'wanderer')]);
+    await roomWithRules([rule(BL_TITLE, BL_TH_TEXTMATCH, 0, TXT_VALUE, CLR_BLUE, HL_BOLD, 'wanderer')]);
     await bot();
     assert.equal(fieldCell('Hero the Wanderer', 22).color, CLR_BLUE);
     await flush_screen(1);
     assert.equal(fieldCell('Hero the Wanderer', 22).attr, ATR_BOLD);
 });
 void test('a hero name resembling a status field keeps its title highlight', async () => {
-    roomWithRules([rule(BL_TITLE, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_BLUE)]);
+    await roomWithRules([rule(BL_TITLE, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_BLUE)]);
     game.plname = 'St:12 Hero';
     await bot();
     assert.equal(fieldCell('St:12 Hero', 22).color, CLR_BLUE);
     assert.equal(fieldCell(' St:12', 22).color, NO_COLOR, 'The separator before real strength is uncolored');
 });
 void test('condition rules color active conditions without coloring the separator', async () => {
-    roomWithRules([]);
+    await roomWithRules([]);
     game.u.blindTurns = 5;
     game.iflags.condHilites = Array.from({ length: BL_ATTCLR_MAX }, (_, index) => index === CLR_RED || index === HL_ATTCLR_BOLD ? BL_MASK_BLIND : 0);
     await bot();
@@ -218,7 +218,7 @@ void test('condition rules color active conditions without coloring the separato
     assert.equal(fieldCell(' Blind').color, NO_COLOR);
 });
 void test('time-only updates retain other fields and evaluate the time highlight', async () => {
-    roomWithRules([
+    await roomWithRules([
         rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED),
         rule(BL_TIME, BL_TH_VAL_ABSOLUTE, 41, EQ_VALUE, CLR_BLUE, HL_BOLD),
         rule(BL_ENE, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
@@ -236,7 +236,7 @@ void test('time-only updates retain other fields and evaluate the time highlight
     assert.equal(fieldCell('HP:12').color, NO_COLOR);
 });
 void test('a cleared rule keeps its stale color until the hilite reset repaints every field', async () => {
-    roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
+    await roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
     await bot();
     assert.equal(fieldCell('HP:40').color, CLR_RED);
     clearStatusHilites();

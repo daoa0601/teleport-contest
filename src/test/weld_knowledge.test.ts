@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [type, freeHand] of [[DAGGER, true], [TWO_HANDED_SWORD, false]] as const) {
     void test(`checking ${freeHand ? 'a free hand' : 'occupied hands'} to use a towel reveals a welded weapon's curse`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const weapon = await addInventoryObject(type, { cursed: true, bknown: false });
         await setPrimaryWeapon(weapon);
         const towel = await addInventoryObject(TOWEL);
@@ -29,7 +29,7 @@ for (const [type, freeHand] of [[DAGGER, true], [TWO_HANDED_SWORD, false]] as co
 }
 
 void test('viewing attributes discovers a welded weapon while checking a ring of sustain ability', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const weapon = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
     await setPrimaryWeapon(weapon);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('sustain ability'));
@@ -44,7 +44,7 @@ void test('viewing attributes discovers a welded weapon while checking a ring of
 });
 
 void test('a free-hand check does not reveal the curse of an improvised weapon that cannot weld', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lamp = await addInventoryObject(OIL_LAMP, { cursed: true, bknown: false });
     await setPrimaryWeapon(lamp);
     const towel = await addInventoryObject(TOWEL);
@@ -57,7 +57,7 @@ void test('a free-hand check does not reveal the curse of an improvised weapon t
 });
 
 void test('putting a ring behind a welded weapon spends only the discovery turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const weapon = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
     await setPrimaryWeapon(weapon);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('sustain ability'));

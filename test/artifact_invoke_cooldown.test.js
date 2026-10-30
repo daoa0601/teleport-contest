@@ -5,7 +5,7 @@ import { artifactObject } from './support/game-objects.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an ignored invocation observes an artifact the sighted hero has not examined yet', async () => {
-    freshObjectRoom({ role: 'healer' });
+    await freshObjectRoom({ role: 'healer' });
     requirePlayingGame(game);
     const staff = await artifactObject('The Staff of Aesculapius', {
         invlet: 'a', where: 'inventory', age: 100, dknown: false,

@@ -30,7 +30,7 @@ import { requireScreenRow } from './support/screen.js';
 const engulf = (type: DamageType): AttackTuple => [AT_ENGL, type, 1, 6];
 
 void test('digestion consumes life saving, grants nutrition, and leaves the victim inventory but no corpse', async () => {
-    const { level, publish } = room('purple worm');
+    const { level, publish } = await room('purple worm');
     requirePlayingGame(game);
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
     const amulet = await equipMonsterObject(victim, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -58,7 +58,7 @@ for (const restored of [false, true]) {
     void test(restored
         ? 'restore loses the unsaved digestion callback that would grant telepathy'
         : 'a swallowed floating eye grants telepathy only when digestion finishes', async () => {
-        const { input, publish } = room('purple worm');
+        const { input, publish } = await room('purple worm');
         requirePlayingGame(game);
         const eye = await createMonsterAt('floating eye', 11, 10, NO_MINVENT);
         const storage = memoryStorage();
@@ -68,7 +68,7 @@ for (const restored of [false, true]) {
         assert.ok(!game.u.telepathy);
         if (restored) {
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
         }
         requirePlayingGame(game);
         await flushPendingTopline();
@@ -88,7 +88,7 @@ for (const restored of [false, true]) {
 }
 
 void test('slow digestion expels a living victim without food conduct or nutrition', async () => {
-    const { publish, messages } = room('purple worm');
+    const { publish, messages } = await room('purple worm');
     requirePlayingGame(game);
     game.u.slowDigestion = true;
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
@@ -107,7 +107,7 @@ void test('slow digestion expels a living victim without food conduct or nutriti
 
 for (const obstruction of ['large target', 'trapped target', 'closed doorway', 'full stomach']) {
     void test(`engulf admission refuses a ${obstruction}`, async () => {
-        const { level, publish, messages } = room('purple worm');
+        const { level, publish, messages } = await room('purple worm');
         requirePlayingGame(game);
         const victim = await createMonsterAt(obstruction === 'large target' ? 'giant' : 'kobold', 11, 10, NO_MINVENT);
         if (obstruction === 'trapped target') victim.mtrapped = 1;
@@ -129,7 +129,7 @@ for (const obstruction of ['large target', 'trapped target', 'closed doorway', '
 }
 
 void test('a named vampire returns to its own form and is expelled before digestion', async () => {
-    const { level, publish, messages } = room('purple worm');
+    const { level, publish, messages } = await room('purple worm');
     requirePlayingGame(game);
     const vampire = await createMonsterAt('vampire bat', 11, 10, NO_MINVENT);
     vampire.cham = MONSTER_NAME.indexOf('vampire');
@@ -147,7 +147,7 @@ void test('a named vampire returns to its own form and is expelled before digest
 
 for (const lifeSaved of [false, true]) {
     void test(`digesting a Rider ${lifeSaved ? 'can life-save the hero but leaves the Rider alive' : 'kills the hero without killing the Rider'}`, async () => {
-        const { level, publish } = room('purple worm');
+        const { level, publish } = await room('purple worm');
         requirePlayingGame(game);
         const rider = await createMonsterAt('Death', 11, 10, NO_MINVENT);
         const amulet = lifeSaved ? await addInventoryObject(AMULET_OF_LIFE_SAVING) : null;
@@ -167,7 +167,7 @@ for (const lifeSaved of [false, true]) {
 }
 
 void test('engulf contact with a cockatrice petrifies even with slow digestion', async () => {
-    const { level, publish } = room('purple worm');
+    const { level, publish } = await room('purple worm');
     requirePlayingGame(game);
     game.u.slowDigestion = true;
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
@@ -185,7 +185,7 @@ void test('engulf contact with a cockatrice petrifies even with slow digestion',
 });
 
 void test('a gas spore explodes inside the digesting hero without striking nearby monsters', async () => {
-    const { publish } = room('purple worm');
+    const { publish } = await room('purple worm');
     requirePlayingGame(game);
     const spore = await createMonsterAt('gas spore', 11, 10, NO_MINVENT);
     const bystander = await createMonsterAt('kobold', 12, 10, NO_MINVENT);
@@ -204,7 +204,7 @@ void test('a gas spore explodes inside the digesting hero without striking nearb
 });
 
 void test('digesting green slime starts sliming without nutrition or a digestion delay', async () => {
-    const { publish, messages } = room('purple worm');
+    const { publish, messages } = await room('purple worm');
     requirePlayingGame(game);
     const slime = await createMonsterAt('green slime', 11, 10, NO_MINVENT);
     const hunger = game.u.uhunger;
@@ -218,7 +218,7 @@ void test('digesting green slime starts sliming without nutrition or a digestion
 });
 
 void test('fog cannot smother a breathless target but extinguishes its carried lamp', async () => {
-    const { publish, messages } = room('fog cloud');
+    const { publish, messages } = await room('fog cloud');
     requirePlayingGame(game);
     const golem = await createMonsterAt('flesh golem', 11, 10, NO_MINVENT);
     const lamp = await knownObject(OIL_LAMP, { age: 200 });
@@ -235,7 +235,7 @@ void test('fog cannot smother a breathless target but extinguishes its carried l
 });
 
 void test('a fog attack hurts a breathing victim and restores both actors on the map after expulsion', async () => {
-    const { publish } = room('fog cloud');
+    const { publish } = await room('fog cloud');
     requirePlayingGame(game);
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
     victim.mhp = victim.mhpmax = 30;
@@ -254,7 +254,7 @@ void test('a fog attack hurts a breathing victim and restores both actors on the
 });
 
 void test('a flaming engulfer leaves the victim lamp burning', async () => {
-    const { publish } = room('fire vortex');
+    const { publish } = await room('fire vortex');
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
     const lamp = await knownObject(OIL_LAMP, { age: 200 });
     await addObjectToMonsterInventory(victim, lamp);
@@ -267,7 +267,7 @@ void test('a flaming engulfer leaves the victim lamp burning', async () => {
 });
 
 void test('a victim life-saved from physical engulf damage is expelled alive', async () => {
-    const { level, publish, messages } = room('fog cloud');
+    const { level, publish, messages } = await room('fog cloud');
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
     victim.mhp = 1;
     const amulet = await equipMonsterObject(victim, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -288,7 +288,7 @@ for (const [type, form, target] of [
     [AD_ACID, 'ochre jelly', 'acid blob'],
 ] satisfies Array<[DamageType, string, string]>) {
     void test(`engulf ${type} respects the resistance of a ${target}`, async () => {
-        const { publish } = room(form);
+        const { publish } = await room(form);
         requirePlayingGame(game);
         const victim = await createMonsterAt(target, 11, 10, NO_MINVENT);
         const hp = victim.mhp;
@@ -303,7 +303,7 @@ for (const [type, form, target] of [
 }
 
 void test('engulf blindness extends temporary blindness to its limit without hurting the victim', async () => {
-    const { publish } = room('dust vortex');
+    const { publish } = await room('dust vortex');
     requirePlayingGame(game);
     const victim = await createMonsterAt('kobold', 11, 10, NO_MINVENT);
     victim.mcansee = 0;
@@ -318,7 +318,7 @@ void test('engulf blindness extends temporary blindness to its limit without hur
 });
 
 void test('energy engulf delays a caster without reducing HP and stops draining above the native limit', async () => {
-    const { publish } = room('energy vortex');
+    const { publish } = await room('energy vortex');
     requirePlayingGame(game);
     const caster = await createMonsterAt('kobold shaman', 11, 10, NO_MINVENT);
     caster.mspec_used = 19;
@@ -332,8 +332,8 @@ void test('energy engulf delays a caster without reducing HP and stops draining 
     assert.equal(caster.mhp, hp);
 });
 
-function room(form: string) {
-    const level = freshObjectRoom({
+async function room(form: string) {
+    const level = await freshObjectRoom({
         gameplaySeed: 17n,
         flags: { verbose: true, disclose: '-i -a -v -c -o' },
     });

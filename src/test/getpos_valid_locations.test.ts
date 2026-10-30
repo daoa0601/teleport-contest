@@ -19,7 +19,7 @@ import { createMonsterAt } from './support/monsters.js';
 
 for (const key of ['z', 'Z']) {
     void test(`menu mode offers valid locations for '${key}'`, async () => {
-        freshObjectRoom({ flags: { tips: false, verbose: false } });
+        await freshObjectRoom({ flags: { tips: false, verbose: false } });
         const input = resetInputState();
         input.feed(`!${key}`);
 
@@ -124,14 +124,14 @@ async function driveSelection(keys: string, options: {
 }
 
 void test("'z' cycles to valid squares in gather_locs order", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const { selection } = await driveSelection('z.');
     assert.deepEqual(await selectedCoordinates(selection), EXPECTED_CYCLE[1]);
 });
 
 void test("successive 'z' and 'Z' step through and wrap the valid cycle", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const second = await driveSelection('zz.');
     assert.deepEqual(await selectedCoordinates(second.selection), EXPECTED_CYCLE[2]);
@@ -145,14 +145,14 @@ void test("successive 'z' and 'Z' step through and wrap the valid cycle", async 
 });
 
 void test("'@' restarts the valid cycle from the hero square", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const { selection } = await driveSelection('zz@z.');
     assert.deepEqual(await selectedCoordinates(selection), EXPECTED_CYCLE[1]);
 });
 
 void test("unseen valid squares stay reachable by cycling", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const { selection, views } = await driveSelection('Z.');
     assert.deepEqual(await selectedCoordinates(selection), UNSEEN_VALID);
@@ -162,7 +162,7 @@ void test("unseen valid squares stay reachable by cycling", async () => {
 
 void test("'$' marks visible valid squares and leaves unseen ones unmarked",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const { selection, views } = await driveSelection('$.');
         await selection;
@@ -176,7 +176,7 @@ void test("'$' marks visible valid squares and leaves unseen ones unmarked",
     });
 
 void test("area filtering limits cycling but '$' still marks visible valid squares outside the area", async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     for (let x = 13; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = CORR;
     }
@@ -198,7 +198,7 @@ void test("area filtering limits cycling but '$' still marks visible valid squar
 
 void test("marking leaves the hero '@' when the rule rejects the hero square",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         // The cycle injects the hero square as its anchor, but C's hilite
         // callback calls the validity predicate per spot, so the hero stays
@@ -212,7 +212,7 @@ void test("marking leaves the hero '@' when the rule rejects the hero square",
     });
 
 void test("a rule that accepts the hero square marks it too", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const { selection, views } = await driveSelection('$.', {
         sampleSpots: [{ x: 10, y: 10 }, { x: 12, y: 10 }],
@@ -227,7 +227,7 @@ void test("a rule that accepts the hero square marks it too", async () => {
 });
 
 void test("a second '$' removes the marking again", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const { selection, views } = await driveSelection('$$.');
     await selection;
@@ -239,7 +239,7 @@ void test("a second '$' removes the marking again", async () => {
 });
 
 void test("marking ends when the help screen redraws the map", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     // '?' draws the help menu; space dismisses it; '.' picks the spot.
     const { selection, views } = await driveSelection('$? .');
@@ -251,7 +251,7 @@ void test("marking ends when the help screen redraws the map", async () => {
 
 for (const key of [12, 18]) {
     void test(`help rebound to ^${String.fromCharCode(key + 64)} opens before redrawing the map`, async () => {
-        freshObjectRoom({ iflags: { bgcolors: false } });
+        await freshObjectRoom({ iflags: { bgcolors: false } });
         assert.equal(game.commandBindings.bindKey(key, 'redraw').accepted, true);
         assert.equal(game.commandBindings.bindSpecialKey(key, 'getpos.help'), true);
         const input = resetInputState();
@@ -285,7 +285,7 @@ for (const key of [12, 18]) {
 
 void test("getpos help lists the valid-location keys while a rule is active",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
 
         const input = resetInputState();
@@ -299,7 +299,7 @@ void test("getpos help lists the valid-location keys while a rule is active",
         input.feed(' ');
         await help;
 
-        freshObjectRoom();
+        await freshObjectRoom();
         const plainInput = resetInputState();
         const plainHelp = getposHelpUntilDismissed('the spot to hit');
         await plainInput.waitUntilBlocked();
@@ -312,7 +312,7 @@ void test("getpos help lists the valid-location keys while a rule is active",
 
 void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const picked = await driveSelection('$z.');
         await picked.selection;
         // exitgetpos queues restored glyphs; its caller flushes the map.
@@ -320,14 +320,14 @@ void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
         for (const { x, y } of VISIBLE_VALID)
             assert.equal(glyphAt(x, y), '.', `${x},${y}`);
 
-        freshObjectRoom();
+        await freshObjectRoom();
         const cancelled = await driveSelection('$\x1b');
         assert.equal(await cancelled.selection, null);
         await flush_screen(0);
         for (const { x, y } of VISIBLE_VALID)
             assert.equal(glyphAt(x, y), '.', `${x},${y}`);
 
-        freshObjectRoom();
+        await freshObjectRoom();
         const failing = await driveSelection('$ ', {
             selectMapPosition: {
                 describe: () => {
@@ -343,7 +343,7 @@ void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
 
 void test("without a validity rule '$' and 'z' keep plain getpos behavior",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
 
         const { selection, views } = await driveSelection('$z.', {
@@ -357,7 +357,7 @@ void test("without a validity rule '$' and 'z' keep plain getpos behavior",
 
 void test("cycling moves the visible cursor while valid squares remain marked",
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const { selection, views } = await driveSelection('$z.');
         await selection;
@@ -367,7 +367,7 @@ void test("cycling moves the visible cursor while valid squares remain marked",
     });
 
 void test("background highlighting cycles through plain map, symbols, and background again", async () => {
-    freshObjectRoom({ iflags: { bgcolors: true } });
+    await freshObjectRoom({ iflags: { bgcolors: true } });
 
     const { selection, views } = await driveSelection('$$$$.');
     await selection;
@@ -381,7 +381,7 @@ void test("background highlighting cycles through plain map, symbols, and backgr
 
 for (const keys of ['$$\x12$', '$$\x0c$', '$$? $']) {
     void test(`redrawing background-enabled targeting resets its highlight cycle (${JSON.stringify(keys)})`, async () => {
-        freshObjectRoom({ iflags: { bgcolors: true } });
+        await freshObjectRoom({ iflags: { bgcolors: true } });
 
         const { selection, views } = await driveSelection(keys + '.');
         await selection;
@@ -391,7 +391,7 @@ for (const keys of ['$$\x12$', '$$\x0c$', '$$? $']) {
 }
 
 void test('background highlighting takes precedence over a valid pet glyph until toggled off', async () => {
-    freshObjectRoom({ iflags: { bgcolors: true }, flags: { hilite_pet: true } });
+    await freshObjectRoom({ iflags: { bgcolors: true }, flags: { hilite_pet: true } });
     const pet = await createMonsterAt('little dog', 12, 10, MM_NOGRP | NO_MINVENT);
     pet.mtame = 10;
     pet.mpeaceful = true;
@@ -414,7 +414,7 @@ void test('background highlighting takes precedence over a valid pet glyph until
 });
 
 void test('a rebound valid-location key controls the highlight cycle', async () => {
-    freshObjectRoom({ iflags: { bgcolors: false } });
+    await freshObjectRoom({ iflags: { bgcolors: false } });
     assert.equal(game.commandBindings.bindSpecialKey(113, 'getpos.valid'), true);
 
     const { selection, views } = await driveSelection('q.');

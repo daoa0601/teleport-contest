@@ -24,7 +24,7 @@ for (const [description, flags, message] of [
     ['a silent runtime birth', MM_NOMSG, ''],
 ]) {
     void test(`${description} retains its map display`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const goblin = await makemonAt(species('goblin'), 11, 10, flags | NO_MINVENT);
         assert.ok(goblin);
@@ -35,13 +35,13 @@ for (const [description, flags, message] of [
     });
 }
 void test('a sensed invisible birth announces its actual monster', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     await makemonAt(species('stalker'), 11, 10, NO_MINVENT);
     assert.equal(game._pending_message, 'An invisible stalker suddenly appears next to you!');
 });
 void test('imposed invisibility redraws a hallucinated birth before its final appearance', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true, hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { seeInvisible: true, hallucinationTurns: 20 } });
     initRng(17n);
     // worn.c:mon_set_minvis() displays the monster immediately; makemon()
     // displays it again at completion. Each redraw picks a hallucinated form.
@@ -56,7 +56,7 @@ void test('imposed invisibility redraws a hallucinated birth before its final ap
     assert.equal(glyph.mnum, finalAppearance);
 });
 void test('a human created without inventory skips hallucinated armor names', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 17n });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 17n });
     const finalAppearance = rn2Display(MONSTER_NAME.length);
     initRng(17n);
     const human = await makemonAt(species('human'), 11, 10, NO_MINVENT | MM_NOMSG);
@@ -68,15 +68,15 @@ void test('a human created without inventory skips hallucinated armor names', as
     assert.equal(game._pending_message || '', '');
 });
 void test('an unseen birth does not announce its arrival', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     await makemonAt(species('goblin'), 11, 10, NO_MINVENT);
     assert.equal(game._pending_message || '', '');
 });
 void test('a mimic birth names the unknown potion it resembles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(POT_HEALING, 11, 10, { known: false, typeKnown: false });
     game._objectCallNames = { [POT_HEALING]: 'nectar' };
@@ -85,14 +85,14 @@ void test('a mimic birth names the unknown potion it resembles', async () => {
     assert.doesNotMatch(game._pending_message, /healing|nectar|mimic/);
 });
 void test('a coin disguise uses a plural arrival verb', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(GOLD_PIECE, 11, 10);
     await makemonAt(species('small mimic'), 11, 10, NO_MINVENT);
     assert.equal(game._pending_message, 'Gold pieces suddenly appear next to you!');
 });
 void test('a furniture disguise announces the displayed feature', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await makemonAt(species('small mimic'), 11, 10, MM_NOMSG | NO_MINVENT);
     assert.ok(mimic);
@@ -102,7 +102,7 @@ void test('a furniture disguise announces the displayed feature', async () => {
     assert.equal(game._pending_message, 'A closed door appears next to you.');
 });
 void test('a monster disguise retains the sudden exclamation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await makemonAt(species('small mimic'), 11, 10, MM_NOMSG | NO_MINVENT);
     assert.ok(mimic);
@@ -112,7 +112,7 @@ void test('a monster disguise retains the sudden exclamation', async () => {
     assert.equal(game._pending_message, 'A goblin suddenly appears next to you!');
 });
 void test('a shapechanged newborn can see the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const vampire = await makemonAt(species('vampire'), 11, 10, MM_NOMSG | NO_MINVENT);
     assert.ok(vampire);
@@ -122,7 +122,7 @@ void test('a shapechanged newborn can see the hero', async () => {
 });
 for (const protectedHero of [false, true]) {
     void test(`a hostile birth ${protectedHero ? 'respects Elbereth during' : 'interrupts'} occupation`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (protectedHero)
             makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
@@ -135,21 +135,21 @@ for (const protectedHero of [false, true]) {
     });
 }
 void test('a luminous birth lights nearby dark terrain on the next vision update', async () => {
-    const level = freshObjectRoom({ right: 24 });
+    const level = await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     for (let x = 14; x <= 24; x++) {
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).lit = false;
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), false);
     await makemonAt(species('flaming sphere'), 17, 10, MM_NOMSG | NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), true);
     assert.equal(cansee(18, 10), true);
 });
 void test('arrival input pauses after placement and before occupation interruption', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const binding = game.commandBindings.lookup('s'.charCodeAt(0));
     assert.ok(binding?.command, 'the search command is available');
@@ -178,7 +178,7 @@ void test('arrival input pauses after placement and before occupation interrupti
 void test('random group births initialize sight for every member', async () => {
     let group;
     for (let seed = 1; seed <= 50 && !group; seed++) {
-        freshObjectRoom({ right: 24, hero: { ulevel: 10 } });
+        await freshObjectRoom({ right: 24, hero: { ulevel: 10 } });
         requirePlayingGame(game);
         initRng(BigInt(seed));
         await makemonAt(null, 16, 10, MM_NOMSG | NO_MINVENT);
@@ -190,7 +190,7 @@ void test('random group births initialize sight for every member', async () => {
     assert.ok(group.every(monster => monster.mcanmove === 1 && monster.mhp > 0));
 });
 void test('terrain browsing does not teach the birth description a potion appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(POT_HEALING, 11, 10, { known: false, typeKnown: false });
     game.iflags.terrainmode = 1;
@@ -198,13 +198,13 @@ void test('terrain browsing does not teach the birth description a potion appear
     assert.equal(game._pending_message, 'A potion suddenly appears next to you!');
 });
 void test('remembered mimic knowledge does not identify its hallucinated temporary object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await makemonAt(species('small mimic'), 11, 10, MM_NOMSG | NO_MINVENT);
     assert.ok(mimic);
     game.u.hallucinationTurns = 20;
     initRng(1n);
-    newsym(11, 10);
+    await newsym(11, 10);
     const glyph = game.level.requireAt(11, 10).remembered_glyph;
     assert.ok(glyph?.kind === 'object', 'the hallucinated mimic has an object disguise');
     mimic.mappearance = glyph.otyp;
@@ -213,18 +213,18 @@ void test('remembered mimic knowledge does not identify its hallucinated tempora
     await finishMonsterBirth(mimic);
     assert.equal(game._pending_message, 'A spellbook suddenly appears next to you!');
     assert.equal(glyphAt(11, 10)?.kind, 'object');
-    newsym(11, 10);
+    await newsym(11, 10);
     assert.equal(glyphAt(11, 10)?.kind, 'object', 'remembered knowledge must retain the disguise on redraw');
 });
 void test('a hallucinated disguise matching real cargo uses and retains that stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(POT_HEALING, 11, 10, { known: false, typeKnown: false });
     const mimic = await makemonAt(species('small mimic'), 11, 10, MM_NOMSG | NO_MINVENT);
     assert.ok(mimic);
     game.u.hallucinationTurns = 20;
     initRng(1n);
-    newsym(11, 10);
+    await newsym(11, 10);
     const glyph = game.level.requireAt(11, 10).remembered_glyph;
     assert.ok(glyph?.kind === 'object', 'the hallucinated mimic has an object disguise');
     const shownType = glyph.otyp;
@@ -239,7 +239,7 @@ void test('a hallucinated disguise matching real cargo uses and retains that sta
     assert.ok(floorObjectsAt(game.level, 11, 10).includes(cargo));
 });
 void test('a level without terrain memory names the currently displayed disguise', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.hero_memory = false;
     await floorObject(POT_HEALING, 11, 10, { known: false, typeKnown: false });
@@ -250,7 +250,7 @@ void test('a level without terrain memory names the currently displayed disguise
 // C makemon.c: set_msg_xy(mtmp->mx, mtmp->my) before the birth Norep(), so
 // the accessiblemsg option prefixes the newcomer's square.
 void test('an accessible birth message names the monster square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.accessiblemsg = true;
     await makemonAt(species('goblin'), 11, 10, NO_MINVENT);

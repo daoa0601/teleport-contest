@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('Death recognizes a carried Discworld novel and speaks without quotation marks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createMonsterAt('Death', 11, 10);
     await addInventoryObject(SPE_NOVEL, { novelidx: 0 });
     const input = resetInputState();

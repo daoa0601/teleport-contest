@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an aggravating potion revelation names a tame drinker as your monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const drinker = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
     initializePet(drinker, { state: game });
@@ -41,7 +41,7 @@ void test('an aggravating potion revelation names a tame drinker as your monster
 
 for (const visible of [true, false]) {
     void test(`a cursed invisibility potion reveals its ${visible ? 'visible' : 'unseen'} drinker before the turn resumes`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game._moveloopStarted = true;
         game.u.umovement = 12;
@@ -89,7 +89,7 @@ for (const visible of [true, false]) {
 }
 
 void test('an aggravating potion revelation wakes a sleeping hero after its acknowledgment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const drinker = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
     await putHeroToSleep(10, { state: game });

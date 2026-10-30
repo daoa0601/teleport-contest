@@ -8,7 +8,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [x, y] of [[-1, 10], [COLNO, 10], [10, -1], [10, ROWNO]]) {
     void test(`stair arrival outside the map at ${x},${y} panics before moving the hero`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.stairs = {
             sx: x, sy: y, up: true, isladder: false, u_traversed: false,
@@ -24,7 +24,7 @@ for (const [x, y] of [[-1, 10], [COLNO, 10], [10, -1], [10, ROWNO]]) {
     });
 }
 void test('stair arrival in column zero reports an impossible position and continues', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game.stairs = {

@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('hallucinated gem flight looks the same when a unicorn catches it on the first or a later square', async () => {
     const catchNames: string[] = [];
     for (const distance of [1, 3]) {
-        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         level.flags.noteleport = true;
         await createMonsterAt('gray unicorn', 10 + distance, 10);
         const gem = await addInventoryObject(DIAMOND);

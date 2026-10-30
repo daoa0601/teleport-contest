@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('removing water-walking boots over water immediately submerges the hero and wets inventory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false });
     const towel = await addInventoryObject(TOWEL, { spe: 0 });
     wearHeroArmor(boots);
@@ -30,7 +30,7 @@ void test('removing water-walking boots over water immediately submerges the her
 });
 
 void test('removing water-walking boots over lava immediately burns and traps a fire-resistant hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false, oerodeproof: true });
     wearHeroArmor(boots);
     grantIntrinsicProperty('fireResistance', 'outside');
@@ -49,7 +49,7 @@ void test('removing water-walking boots over lava immediately burns and traps a 
 
 for (const protection of ['levitation', 'flying', 'ceiling', 'cancelled dressing', 'lava effects'] as const) {
     void test(`removing water-walking boots skips terrain effects during ${protection}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false });
         const towel = await addInventoryObject(TOWEL, { spe: 0 });
         wearHeroArmor(boots);

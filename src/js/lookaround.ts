@@ -185,10 +185,7 @@ export async function dolookaround(): Promise<void> {
                 // do_screen_description() with looked=TRUE: the detailed
                 // lookat() description replaces the symbol explanation
                 // whenever the screen symbol is ambiguous.
-                const screen = screenDescription(x, y, '');
-                const firstMatch = screen.needsDetail
-                    ? await farlookLocationDescription(x, y) || screen.firstMatch
-                    : screen.firstMatch;
+                const firstMatch = await describeMapLocation(x, y);
                 await pline_xy(x, y, `${firstMatch}.`);
             }
         }
@@ -199,4 +196,13 @@ export async function dolookaround(): Promise<void> {
         else game.flags.accessiblemsg = savedAccessible;
     }
     game.context.move = 0;
+}
+
+// C do_screen_description(looked=TRUE) supplies the same firstmatch to
+// #lookaround and show_glyph()'s accessibility notice.
+export async function describeMapLocation(x: number, y: number): Promise<string> {
+    const screen = screenDescription(x, y, '');
+    return screen.needsDetail
+        ? await farlookLocationDescription(x, y) || screen.firstMatch
+        : screen.firstMatch;
 }

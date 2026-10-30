@@ -17,7 +17,7 @@ void test('getpos distinguishes default cmap keys from unknown directions', () =
 });
 
 void test('a lowercase DEC drawing letter remains an unknown direction during selection', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     game.symset = 'DECgraphics';
     const input = resetInputState();
 

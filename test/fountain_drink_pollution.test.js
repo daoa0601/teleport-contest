@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // fountain.c:drinkfountain() fate 20: morehungry(rn1(20, 11)) then vomit()
 // leaves the hero helpless for two turns.
 void test('foul fountain water costs nutrition and gags the hero for two turns', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = FOUNTAIN;
     const hunger = game.u.uhunger;
@@ -25,7 +25,7 @@ void test('foul fountain water costs nutrition and gags the hero for two turns',
 // fountain.c:drinkfountain() fate 21 with Poison_resistance: the runoff
 // message, rnd(4) juice damage, and none of poison_strdmg's strength loss.
 void test('poison resistance turns contaminated water into fruit-farm runoff', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = FOUNTAIN;
     grantIntrinsicProperty('poisonResistance', 'outside');

@@ -20,8 +20,8 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
             state.nhDisplay?.setCursor(...cursor);
         await state.animationFrame?.();
     }
-    function clear() {
-        effect.clear();
+    async function clear() {
+        await effect.clear();
     }
     return {
         glyph,
@@ -36,17 +36,17 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
             // impact that just blinded the hero hides its trailing frame
             // and any pending status update stays unpublished; the
             // caller's nh_delay_output() still runs.
-            if (effect.draw(position.x, position.y))
+            if (await effect.draw(position.x, position.y))
                 await flushFrame();
             else
                 await state.animationFrame?.();
         },
         async backtrack() {
             // DISP_END/BACKTRACK moves inward before the first return frame.
-            while (effect.retract()) {
+            while (await effect.retract()) {
                 await flushFrame();
             }
-            clear();
+            await clear();
         },
         clear,
     };

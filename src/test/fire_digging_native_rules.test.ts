@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('fire dries a wet towel carried by the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const towel = await addInventoryObject(TOWEL, { spe: 7 });
     const messages: string[] = [];
     initRng(1n);
@@ -30,7 +30,7 @@ void test('fire dries a wet towel carried by the hero', async () => {
 
 void test('an Earth cave-in leaves a wall-walking xorn inside the new rock',
     { timeout: 5000 }, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requireFixtureGame(game);
         game.earth_level = {
             ...game.u.uz, flags: { town: false }, alignment: null,

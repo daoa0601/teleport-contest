@@ -11,7 +11,7 @@ import { ATR_INVERSE, CLR_BRIGHT_BLUE } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('stocking a locked shop writes its inventory notice on the floor outside the entrance', async () => {
-    const level = freshObjectRoom({ left: 12, right: 15, top: 8, bottom: 12, heroX: 10, heroY: 7 });
+    const level = await freshObjectRoom({ left: 12, right: 15, top: 8, bottom: 12, heroX: 10, heroY: 7 });
     requirePlayingGame(game);
     const shop: Room = {
         lx: 12, hx: 15, ly: 8, hy: 12, rtype: SHOPBASE, rlit: 1,
@@ -35,7 +35,7 @@ void test('stocking a locked shop writes its inventory notice on the floor outsi
     assert.equal(notice.engr_type, DUST);
     assert.equal(level.requireAt(10, 10).typ, CORR);
     notice.erevealed = true;
-    map_location(10, 10);
+    await map_location(10, 10);
     assert.equal(level.requireAt(10, 10).disp_color, CLR_BRIGHT_BLUE);
     assert.equal(level.requireAt(10, 10).disp_attr, ATR_INVERSE);
 });

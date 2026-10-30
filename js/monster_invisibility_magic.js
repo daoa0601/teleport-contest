@@ -25,13 +25,13 @@ function knownInvisible(monster, state = game) {
 export async function makeMonsterInvisible(monster) {
     const wasInvisible = !!monster.minvis;
     const wasVisible = canSeeMonster(monster);
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
     const name = nameMonster(monster, { capitalized: true });
     setMonsterPermanentInvisibility(monster);
     if (!monster.invis_blkd) {
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (monster.wormno)
-            redrawMonsterWormSegments(monster);
+            await redrawMonsterWormSegments(monster);
     }
     let identified = false;
     if (!wasInvisible && knownInvisible(monster)) {

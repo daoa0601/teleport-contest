@@ -11,7 +11,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 
 for (const invisible of [false, true]) {
     void test(`a waiting goblin ${invisible ? 'does not notice an invisible' : 'notices a visible'} hero`, async () => {
-        freshObjectRoom({ heroX: 15, heroY: 10, hero: { invisibleTurns: invisible ? 20 : 0 } });
+        await freshObjectRoom({ heroX: 15, heroY: 10, hero: { invisibleTurns: invisible ? 20 : 0 } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
         goblin.mstrategy = STRAT_WAITFORU;

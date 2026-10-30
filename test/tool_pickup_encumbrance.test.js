@@ -12,7 +12,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('consecutive remote pickups report an unchanged burden only once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quantity: 70 });
     const darts = await floorObject(DART, 12, 10, { quantity: 2 });
     resetInputState().feed(' '.repeat(8));
@@ -26,7 +26,7 @@ void test('consecutive remote pickups report an unchanged burden only once', asy
 });
 for (const square of ['empty', 'unreachable']) {
     void test(`pickup on an ${square} square preserves load feedback for remote pickups`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await addInventoryObject(ROCK, { quantity: 70 });
         const darts = await floorObject(DART, 12, 10, { quantity: 2 });
         if (square === 'unreachable')
@@ -47,7 +47,7 @@ for (const square of ['empty', 'unreachable']) {
     });
 }
 void test('an ordinary pickup resets load feedback for the next remote pickup', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quantity: 70 });
     const darts = await floorObject(DART, 12, 10, { quantity: 2 });
     await floorObject(DART, 10, 10);
@@ -59,7 +59,7 @@ void test('an ordinary pickup resets load feedback for the next remote pickup', 
     assert.equal(game.inventory.find(object => object.otyp === DART)?.quan, 3);
 });
 void test('cancelling a combination put-in menu resets load feedback for the next remote pickup', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION } });
+    await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION } });
     await addInventoryObject(ROCK, { quantity: 70 });
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const darts = await floorObject(DART, 12, 10, { quantity: 2 });

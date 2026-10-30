@@ -13,7 +13,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('cancelling a worn strength ring displays the lost bonus', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 2 });
     await wearHeroAccessory(ring, 'uleft');
     await bot();
@@ -22,7 +22,7 @@ void test('cancelling a worn strength ring displays the lost bonus', async () =>
     assert.match(requireScreenRow(22).map(cell => cell.ch).join(''), /St:12\b/);
 });
 void test('draining a worn strength ring immediately displays one lost point', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 2 });
     await wearHeroAccessory(ring, 'uleft');
     await bot();
@@ -31,7 +31,7 @@ void test('draining a worn strength ring immediately displays one lost point', a
 });
 for (const hand of ['uleft', 'uright']) {
     void test(`draining a protection ring on the ${hand === 'uleft' ? 'left' : 'right'} hand updates AC before the next command`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game._moveloopStarted = true;
         game.u.umovement = 12;
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('protection'), { spe: 3 });

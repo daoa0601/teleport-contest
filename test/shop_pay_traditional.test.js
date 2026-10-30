@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 import { createStaffedShop } from './support/shop.js';
 void test('traditional payment buys a single item after its yes-or-no question', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     dagger.unpaid = true;
     const { shopkeeper } = await createStaffedShop({ bill: [
@@ -30,7 +30,7 @@ void test('traditional payment buys a single item after its yes-or-no question',
     assert.equal(game.context.move, 1);
 });
 void test('traditional itemized payment skips an unaffordable item and buys a later affordable one', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const sack = await addInventoryObject(SACK);
     dagger.unpaid = sack.unpaid = true;
@@ -55,7 +55,7 @@ void test('traditional itemized payment skips an unaffordable item and buys a la
     assert.equal(game.context.move, 1);
 });
 void test('declining traditional itemization pays for the whole bill without per-item questions', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const sack = await addInventoryObject(SACK);
     dagger.unpaid = sack.unpaid = true;
@@ -79,7 +79,7 @@ void test('declining traditional itemization pays for the whole bill without per
     assert.equal(game.context.move, 1);
 });
 void test('a priest learns blessings and curses when buying without itemization', async (t) => {
-    freshObjectRoom({ role: 'priest' });
+    await freshObjectRoom({ role: 'priest' });
     const dagger = await addInventoryObject(DAGGER, {
         blessed: true, bknown: false, observed: false,
     });
@@ -111,7 +111,7 @@ void test('a priest learns blessings and curses when buying without itemization'
     assert.equal(game.context.move, 1);
 });
 void test('a menu prefix switches traditional payment to item selection', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     dagger.unpaid = true;
     await createStaffedShop({ bill: [

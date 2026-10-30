@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('shrinking out of a cloak announces the new load only once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 40 });
     const cloak = await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE);
     wearHeroArmor(cloak);

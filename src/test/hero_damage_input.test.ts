@@ -22,8 +22,8 @@ function visibleScreen(): string {
         .map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
 
-function fatalDamageRoom(debug = false) {
-    freshObjectRoom({
+async function fatalDamageRoom(debug = false) {
+    await freshObjectRoom({
         flags: { debug, bones: false, disclose: '-i -a -v -c -o', tombstone: false },
         hero: { uhp: 4, uhpmax: 12 },
     });
@@ -33,7 +33,7 @@ function fatalDamageRoom(debug = false) {
 }
 
 void test('Escape suppresses showdamage prose while nonfatal damage still repaints HP', async () => {
-    const input = fatalDamageRoom();
+    const input = await fatalDamageRoom();
     requirePlayingGame(game);
     game.flags.showdamage = true;
     let sawWarningPager = false;
@@ -58,7 +58,7 @@ void test('Escape suppresses showdamage prose while nonfatal damage still repain
 
 for (const hpAfter of [0, -1, -2]) {
     void test(`fatal damage ending at ${hpAfter} preserves native HP across the death messages`, async () => {
-        const input = fatalDamageRoom();
+        const input = await fatalDamageRoom();
         let sawHitPager = false;
         let sawDeathPager = false;
         input.beforeRead = () => {
@@ -133,7 +133,7 @@ void test("a monster's lethal melee hit keeps negative HP until done()", async (
 });
 
 void test('showdamage at minus one preserves both previously drawn status rows', async () => {
-    const input = fatalDamageRoom();
+    const input = await fatalDamageRoom();
     requirePlayingGame(game);
     game.flags.showdamage = true;
     game.u.uen = 7;
@@ -176,7 +176,7 @@ void test('showdamage at minus one preserves both previously drawn status rows',
 
 for (const recovery of ['life saving', 'debug refusal'] as const) {
     void test(`${recovery} replaces the fatal HP sentinel with zero and then restored HP`, async () => {
-        const input = fatalDamageRoom(recovery === 'debug refusal');
+        const input = await fatalDamageRoom(recovery === 'debug refusal');
         requirePlayingGame(game);
         const amulet = recovery === 'life saving'
             ? await addInventoryObject(AMULET_OF_LIFE_SAVING) : null;
@@ -228,7 +228,7 @@ for (const recovery of ['life saving', 'debug refusal'] as const) {
 }
 
 void test('an ordinary monster hit annotates its damage while showdamage is on', async () => {
-    freshObjectRoom({ flags: { showdamage: true }, hero: { uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { showdamage: true }, hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
     const ogre = await createMonsterAt('ogre', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const input = resetInputState();

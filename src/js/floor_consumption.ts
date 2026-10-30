@@ -31,5 +31,5 @@ export async function useUpFloorObject(object: GameObject, count: number, {
     }
     await delobj(consumed, state);
     if (state.u.ux === x && state.u.uy === y
-        && state.u.uundetected && heroFormHidesUnderObjects(state)) hideHeroUnder(state);
+        && state.u.uundetected && heroFormHidesUnderObjects(state)) await hideHeroUnder(state);
 }

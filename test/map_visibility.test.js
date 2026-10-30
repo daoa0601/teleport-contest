@@ -42,7 +42,7 @@ for (const lightSource of ['yellow light', 'carried lamp']) {
         }
         const floorX = lightSource === 'yellow light' ? 15 : 13;
         vision_reset_new_level();
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(floorX, 10), false);
         assert.equal(game.level.requireAt(floorX, 10).disp_ch, ' ');
         pushKeys('.\x1b');
@@ -70,7 +70,7 @@ for (const lightSource of ['yellow light', 'carried lamp']) {
             assert.equal(beginObjectBurn(lamp), true);
         }
         vision_reset_new_level();
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(17, 10), true);
         await migrateMonsterOffLevel(source, game, {
             dst: { dnum: 0, dlevel: 2 },
@@ -96,7 +96,7 @@ void test('waiting clears the light after the last lamp falls down a ladder', as
     const lamp = await addInventoryObject(OIL_LAMP, { age: 1000 });
     assert.equal(beginObjectBurn(lamp), true);
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(13, 10), true);
     await dropInventoryObjectAtHero(lamp);
     assert.equal(lamp.where, 'migrating');
@@ -118,7 +118,7 @@ void test('waiting clears the light from buried oil while it keeps burning', asy
     const oil = await floorObject(POT_OIL, 17, 10, { age: 100 });
     assert.equal(beginObjectBurn(oil), true);
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), true);
     assert.equal((await buryObject(oil)).outcome, 'buried');
     pushKeys('.\x1b');
@@ -129,25 +129,25 @@ void test('waiting clears the light from buried oil while it keeps burning', asy
     assert.equal(couldsee(17, 10), true, 'burial does not block the line of sight');
 });
 void test('expired gas clears the view beyond it while overlapping gas still blocks', async () => {
-    freshObjectRoom({ left: 8, right: 18, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 8, right: 18, top: 10, bottom: 10 });
     requirePlayingGame(game);
     const cells = [{ x: 12, y: 10 }];
     const first = await createHarmlessGasCloudSelection(game, cells, { ttl: 0 });
     const second = await createHarmlessGasCloudSelection(game, cells, { ttl: 1 });
     assert.ok(first && second);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(couldsee(14, 10), false);
     await runLevelRegions(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(couldsee(14, 10), false, 'the second cloud still blocks sight');
     await runLevelRegions(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(couldsee(14, 10), true);
     assert.equal(cansee(14, 10), true);
     assert.equal(game.level.requireAt(14, 10).disp_ch, '.');
 });
 void test('the first move after restoring draws newly seen floor', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 8, right: 18, top: 10, bottom: 10,
         recalculateVision: false,
     });
@@ -158,14 +158,14 @@ void test('the first move after restoring draws newly seen floor', async () => {
         location.waslit = false;
         location.seenv = 0;
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
     assert.equal(level.requireAt(12, 10).disp_ch, ' ');
     game.plname = 'Cartographer';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Cartographer', storage), true);
+    assert.equal(await restoreGame('Cartographer', storage), true);
     game.nhDisplay = new GameDisplay(null);
     resetInputState();
     await rhack('l'.charCodeAt(0));

@@ -62,7 +62,7 @@ export async function finishMonsterVibratingSquare(
 ) {
     if (!event || event.finished) return event;
 
-    seeTrap(event.trap, state);
+    await seeTrap(event.trap, state);
     if (!event.inSight) {
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     } else {

@@ -25,7 +25,7 @@ export async function resolveMonsterCombatGaze(attacker, defender, attack, { sta
     const archon = attacker.mnum === PM_ARCHON && attack[1] === AD_BLND;
     const blindedArchon = archon && !attacker.mcansee;
     if (MONSTER_SYMBOL[defender.mnum] === S_MIMIC && M_AP_TYPE(defender))
-        revealMonsterAppearance(defender);
+        await revealMonsterAppearance(defender);
     defender.mundetected = 0;
     if (visible) {
         const subject = monsterName(attacker, {

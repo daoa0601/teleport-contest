@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createSpecialLevel } from './support/topology.js';
 
 void test('fumbling a digging swing names the broad side of the tool', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = HWALL;
     const pick = await addInventoryObject(PICK_AXE, { spe: 0, owornmask: W_WEP });
     game.uwep = game.u.uwep = pick;
@@ -32,7 +32,7 @@ void test('fumbling a digging swing names the broad side of the tool', async () 
 });
 
 void test('breaking a door uses the simple tool name even when the pick has a personal name', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -53,7 +53,7 @@ void test('breaking a door uses the simple tool name even when the pick has a pe
 });
 
 void test('a fumbling pick that cannot be dropped reveals its curse', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = HWALL;
     const pick = await addInventoryObject(PICK_AXE, {
         spe: 0, cursed: true, bknown: false, owornmask: W_WEP,
@@ -75,7 +75,7 @@ void test('a fumbling pick that cannot be dropped reveals its curse', async () =
 });
 
 void test('breaking a Rogue-level secret door clears the obsolete door trap before it can explode', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.rogue_level = createSpecialLevel({ dnum: 0, dlevel: 8 });
     const door = level.requireAt(11, 10);
     door.typ = SDOOR;
@@ -97,7 +97,7 @@ void test('breaking a Rogue-level secret door clears the obsolete door trap befo
 });
 
 void test('a revealed secret door cannot retain an old trapdoor permission to dig through a hard floor', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.flags.hardfloor = true;
     const door = level.requireAt(11, 10);
     door.typ = SDOOR;

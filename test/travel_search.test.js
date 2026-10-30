@@ -20,7 +20,7 @@ const flightProperties = ['levitation', 'flying'];
 for (const flight of flightProperties) {
     for (const liquid of [POOL, LAVAPOOL]) {
         void test(`travel with ${flight} takes the direct route over ${liquid === POOL ? 'water' : 'lava'}`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             level.requireAt(12, 10).typ = liquid;
             grantIntrinsicProperty(flight, 'outside');
             game._travelTarget = { x: 14, y: 10 };
@@ -33,7 +33,7 @@ for (const flight of flightProperties) {
     }
 }
 void test('travel takes the direct water route with identified water-walking boots', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = POOL;
     wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
     game._travelTarget = { x: 14, y: 10 };
@@ -44,7 +44,7 @@ void test('travel takes the direct water route with identified water-walking boo
     assert.equal(game._pending_message, '');
 });
 void test('travel crosses a known vibrating square on the direct route', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, VIBRATING_SQUARE, 12, 10, { tseen: true });
     game._travelTarget = { x: 14, y: 10 };
     await rhack(31);
@@ -54,7 +54,7 @@ void test('travel crosses a known vibrating square on the direct route', async (
     assert.equal(game._pending_message, '');
 });
 void test('travel can select a known vibrating square as its destination', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.dungeons[0] = createDungeon({ dname: 'Gehennom', num_dunlevs: 9, flags: { hellish: true } });
     addTrap(level, VIBRATING_SQUARE, 12, 10, { tseen: true });
     game._travelTarget = { x: 12, y: 10 };
@@ -67,7 +67,7 @@ void test('travel can select a known vibrating square as its destination', async
     assert.equal(game._pending_message, 'You feel a strange vibration under your feet.');
 });
 void test('travel stops repeating after returning to a visited square and retravel starts a new route', async () => {
-    const level = freshObjectRoom({ left: 9, right: 14, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 14, top: 10, bottom: 10 });
     for (let x = 9; x <= 14; x++) {
         const square = level.requireAt(x, 8);
         square.typ = ROOM;
@@ -76,12 +76,12 @@ void test('travel stops repeating after returning to a visited square and retrav
     }
     level.requireAt(9, 9).typ = ROOM;
     level.requireAt(14, 9).typ = ROOM;
-    vision_recalc(0);
+    await vision_recalc(0);
     game._travelTarget = { x: 14, y: 10 };
     await rhack(31);
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     level.requireAt(12, 10).typ = STONE;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal((await continueRun()).tookTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(game._pending_message, 'You stop, unsure which way to go.');
@@ -99,7 +99,7 @@ void test('travel stops repeating after returning to a visited square and retrav
     assert.equal(game._pending_message, '');
 });
 void test('travel in grid-bug form follows cardinal steps', async () => {
-    freshObjectRoom({ hero: { mtimedone: 100, umonnum: MONSTER_NAME.indexOf('grid bug'), mh: 20, mhmax: 20 } });
+    await freshObjectRoom({ hero: { mtimedone: 100, umonnum: MONSTER_NAME.indexOf('grid bug'), mh: 20, mhmax: 20 } });
     game._travelTarget = { x: 13, y: 13 };
     await rhack(31);
     assert.equal(Math.abs(game.u.ux - 10) + Math.abs(game.u.uy - 10), 1);
@@ -107,7 +107,7 @@ void test('travel in grid-bug form follows cardinal steps', async () => {
     assert.equal(game.context.travel, true);
 });
 void test('travel in grid-bug form takes two steps to a diagonally adjacent destination', async () => {
-    freshObjectRoom({ hero: { mtimedone: 100, umonnum: MONSTER_NAME.indexOf('grid bug'), mh: 20, mhmax: 20 } });
+    await freshObjectRoom({ hero: { mtimedone: 100, umonnum: MONSTER_NAME.indexOf('grid bug'), mh: 20, mhmax: 20 } });
     game._travelTarget = { x: 11, y: 11 };
     await rhack(31);
     assert.deepEqual([game.u.ux, game.u.uy], [10, 11]);
@@ -119,10 +119,10 @@ void test('travel in grid-bug form takes two steps to a diagonally adjacent dest
     assert.equal(game.context.travel, false);
 });
 void test('travel admits closed doors on the route and stops at the door', async () => {
-    const level = freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
     level.requireAt(12, 10).typ = DOOR;
     level.requireAt(12, 10).doormask = D_CLOSED;
-    vision_recalc(0);
+    await vision_recalc(0);
     game._travelTarget = { x: 14, y: 10 };
     await rhack(31);
     assert.equal(game.u.ux, 11);
@@ -134,9 +134,9 @@ void test('travel admits closed doors on the route and stops at the door', async
 });
 for (const rememberedGlyph of [false, true]) {
     void test(`blind travel avoids unseen terrain with remembered glyph ${rememberedGlyph}`, async () => {
-        const level = freshObjectRoom({ hero: { blindTurns: 10 } });
+        const level = await freshObjectRoom({ hero: { blindTurns: 10 } });
         syncBlindness();
-        vision_recalc(0);
+        await vision_recalc(0);
         level.requireAt(12, 10).seenv = 0;
         level.requireAt(12, 10).remembered_glyph = rememberedGlyph
             ? terrain_glyph(level.requireAt(12, 10), 12, 10) : null;
@@ -148,12 +148,12 @@ for (const rememberedGlyph of [false, true]) {
     });
 }
 void test('travel routes a large hero around a diagonal gap it cannot squeeze through', async () => {
-    const level = freshObjectRoom({ hero: {
+    const level = await freshObjectRoom({ hero: {
             mtimedone: 100, umonnum: MONSTER_NAME.indexOf('hill giant'), mh: 40, mhmax: 40,
         } });
     level.requireAt(11, 10).typ = STONE;
     level.requireAt(10, 11).typ = STONE;
-    vision_recalc(0);
+    await vision_recalc(0);
     game._travelTarget = { x: 13, y: 13 };
     await rhack(31);
     assert.notDeepEqual([game.u.ux, game.u.uy], [10, 10], 'a route around the rocks exists');
@@ -162,12 +162,12 @@ void test('travel routes a large hero around a diagonal gap it cannot squeeze th
     assert.equal(game.context.travel, true);
 });
 void test('a guessed travel goal uses the boulder delay when choosing between visible routes', async () => {
-    const level = freshObjectRoom({ left: 10, right: 14, top: 8, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 14, top: 8, bottom: 10 });
     for (let x = 11; x <= 13; x++)
         level.requireAt(x, 9).typ = IRONBARS;
     await addInventoryObject(ROCK);
     await floorObject(BOULDER, 13, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(couldsee(14, 8), true);
     assert.equal(couldsee(14, 9), true);
     game._travelTarget = { x: 20, y: 9 };
@@ -178,7 +178,7 @@ void test('a guessed travel goal uses the boulder delay when choosing between vi
 });
 for (const stone of [false, true]) {
     void test(`the travel cursor ${stone ? 'rejects unseen stone' : 'can reach an unexplored visible floor'}`, async () => {
-        const level = freshObjectRoom({ flags: { tips: false } });
+        const level = await freshObjectRoom({ flags: { tips: false } });
         const square = level.requireAt(12, 10);
         square.seenv = 0;
         square.disp_glyph = stone

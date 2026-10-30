@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 for (const lit of [false, true]) {
     void test(`exploding ${lit ? 'untimed lit' : 'unlit'} oil reports the inconsistency and still splatters burning oil`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const potion = await floorObject(POT_OIL, 14, 10);
         potion.lamplit = lit;
         const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

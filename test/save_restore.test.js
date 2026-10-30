@@ -36,7 +36,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 void test('save and restore preserve entity identity across every loaded level', async () => {
     const storage = memoryStorage();
-    const level = freshObjectRoom({ moves: 12 });
+    const level = await freshObjectRoom({ moves: 12 });
     requirePlayingGame(game);
     const cachedLevel = new GameMap();
     const pet = await createMonsterAt('little dog', 11, 10);
@@ -52,7 +52,7 @@ void test('save and restore preserve entity identity across every loaded level',
     game.uwep = weapon;
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Schema', storage), true);
+    assert.equal(await restoreGame('Schema', storage), true);
     assert.equal(game.level instanceof GameMap, true);
     assert.ok(game._levelCache !== undefined && game._levelCache !== null, 'Expected game._levelCache to be initialized');
     assert.equal(game._levelCache.get('0:2')?.level instanceof GameMap, true);
@@ -66,7 +66,7 @@ void test('save and restore preserve entity identity across every loaded level',
 // monster's corpse keeps its traits.
 void test('a game whose starting pet died leaving a corpse can be saved and restored', async () => {
     const storage = memoryStorage();
-    const level = freshObjectRoom({ moves: 30 });
+    const level = await freshObjectRoom({ moves: 30 });
     requirePlayingGame(game);
     const pet = await createMonsterAt('horse', 11, 10);
     initializePet(pet, { state: game });
@@ -77,7 +77,7 @@ void test('a game whose starting pet died leaving a corpse can be saved and rest
     assert.equal(corpse?.oextra?.omonst?.m_id, pet.m_id);
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Mourner', storage), true);
+    assert.equal(await restoreGame('Mourner', storage), true);
     assert.equal(game.context.startingpet_mid, pet.m_id);
 });
 void test('an object falling down stairs survives saving and reaches the next level', async () => {
@@ -91,7 +91,7 @@ void test('an object falling down stairs survives saving and reaches the next le
     await dropInventoryObject(club);
     assert.equal(floorObjects(source).includes(club), false);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Faller', storage), true);
+    assert.equal(await restoreGame('Faller', storage), true);
     pushKey(' ');
     await rhack('>'.charCodeAt(0));
     requirePlayingGame(game);
@@ -123,7 +123,7 @@ void test('runSegment resumes a saved game through the same Engine boundary', as
     assert.equal(restored.state.level instanceof GameMap, true);
 });
 void test('saves from before interface option separation report an incompatible version', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'OldOptions';
     resetInputState().feed('\x1b');
     await rhack('O'.charCodeAt(0));
@@ -155,7 +155,7 @@ for (const version of [SAVE_VERSION - 1, SAVE_VERSION + 1]) {
         assert.ok(isSavedRecord(snapshot));
         snapshot.version = version;
         storage.setItem(key, encodeSavedGraph(snapshot));
-        assert.equal(restoreGame('OldFormat', storage), false);
+        assert.equal(await restoreGame('OldFormat', storage), false);
         assert.equal(game.level, level);
         assert.equal(game.moves, 17);
     });
@@ -167,7 +167,7 @@ async function changeLevel(level) {
     ]);
 }
 void test('a saved hero retains the highest earned level after wizard level reduction', async () => {
-    freshObjectRoom({ flags: { debug: true, verbose: true }, hero: { ulevel: 1 } });
+    await freshObjectRoom({ flags: { debug: true, verbose: true }, hero: { ulevel: 1 } });
     requirePlayingGame(game);
     game.plname = 'LevelHistory';
     const storage = memoryStorage();
@@ -175,13 +175,13 @@ void test('a saved hero retains the highest earned level after wizard level redu
     await changeLevel(1);
     assert.equal(game.u.ulevelmax, 1);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('LevelHistory', storage), true);
+    assert.equal(await restoreGame('LevelHistory', storage), true);
     await changeLevel(2);
     assert.equal(game.u.ulevel, 2);
     assert.ok(gameLogEvents().some(event => event.text === 'regained experience level 2'));
 });
 void test('saved leg wounds retain temporary Dexterity loss and heal only once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Wounded';
     const dexterity = currentAttribute(A_DEX);
@@ -189,7 +189,7 @@ void test('saved leg wounds retain temporary Dexterity loss and heal only once',
     await woundHeroLegs('left', 12);
     await woundHeroLegs('right', 20);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Wounded', storage), true);
+    assert.equal(await restoreGame('Wounded', storage), true);
     assert.equal(currentAttribute(A_DEX), dexterity - 1);
     assert.equal(game.u.acurr.a[A_DEX], dexterity);
     const input = resetInputState();
@@ -198,7 +198,7 @@ void test('saved leg wounds retain temporary Dexterity loss and heal only once',
     assert.equal(currentAttribute(A_DEX), dexterity);
 });
 void test('searching and resting do not prevent a later save', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Rested';
     await rhack('s'.charCodeAt(0));
@@ -206,7 +206,7 @@ void test('searching and resting do not prevent a later save', async () => {
     const storage = memoryStorage();
     const position = { x: game.u.ux, y: game.u.uy };
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Rested', storage), true);
+    assert.equal(await restoreGame('Rested', storage), true);
     assert.equal(game.u.ux, position.x);
     assert.equal(game.u.uy, position.y);
 });
@@ -222,7 +222,7 @@ const speciesFields = [
 for (const { owner, field, minimumInvalid } of speciesFields) {
     for (const invalid of [minimumInvalid, MONSTER_NAME.length]) {
         void test(`restore rejects ${owner}.${field} species ${invalid} without replacing the live game`, async () => {
-            const level = freshObjectRoom({ moves: 73 });
+            const level = await freshObjectRoom({ moves: 73 });
             requirePlayingGame(game);
             const club = await addInventoryObject(CLUB);
             const hero = game.u;
@@ -242,7 +242,7 @@ for (const { owner, field, minimumInvalid } of speciesFields) {
             storage.setItem(key, encodeSavedGraph(saved));
             game.moves = 89;
             game.u.uhp = 13;
-            assert.equal(restoreGame('SpeciesBoundary', storage), false);
+            assert.equal(await restoreGame('SpeciesBoundary', storage), false);
             assert.equal(game.u, hero);
             assert.equal(game.urace, race);
             assert.equal(game.level, level);
@@ -256,7 +256,7 @@ for (const { owner, field, minimumInvalid } of speciesFields) {
 }
 for (const invalid of [1, 16]) {
     void test(`restore rejects a hero form light radius of ${invalid}`, async () => {
-        freshObjectRoom({ moves: 73 });
+        await freshObjectRoom({ moves: 73 });
         requirePlayingGame(game);
         const hero = game.u;
         game.plname = 'FormLight';
@@ -271,14 +271,14 @@ for (const invalid of [1, 16]) {
         assert.ok(isSavedRecord(record));
         record.formLightRange = invalid;
         storage.setItem(key, encodeSavedGraph(saved));
-        assert.equal(restoreGame('FormLight', storage), false);
+        assert.equal(await restoreGame('FormLight', storage), false);
         assert.equal(game.u, hero);
         assert.equal(game.moves, 73);
     });
 }
 for (const species of [0, MONSTER_NAME.length - 1]) {
     void test(`restore accepts hero species endpoint ${species} and absent lycanthropy and shapechanger sentinels`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.mtimedone = 100;
         game.u.mh = game.u.mhmax = 20;
@@ -288,14 +288,14 @@ for (const species of [0, MONSTER_NAME.length - 1]) {
         game.plname = 'HeroSpeciesEndpoint';
         const storage = memoryStorage();
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame('HeroSpeciesEndpoint', storage), true);
+        assert.equal(await restoreGame('HeroSpeciesEndpoint', storage), true);
         assert.equal(heroSpecies(), species);
         assert.equal(game.u.ulycn, NON_PM);
         assert.equal(game.u.mcham, NON_PM);
     });
 }
 void test('restore preserves a vampire shifter hero and a real lycanthrope species', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const vampire = MONSTER_NAME.indexOf('vampire');
     const bat = MONSTER_NAME.indexOf('vampire bat');
@@ -308,19 +308,19 @@ void test('restore preserves a vampire shifter hero and a real lycanthrope speci
     game.plname = 'SpeciesCarriers';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('SpeciesCarriers', storage), true);
+    assert.equal(await restoreGame('SpeciesCarriers', storage), true);
     assert.equal(heroSpecies(), bat);
     assert.equal(game.u.mcham, vampire);
     assert.equal(game.u.ulycn, werewolf);
 });
 for (const race of races) {
     void test(`restore accepts the native ${race.name} body and undead race species`, async () => {
-        freshObjectRoom({ race });
+        await freshObjectRoom({ race });
         requirePlayingGame(game);
         game.plname = 'RaceSpecies';
         const storage = memoryStorage();
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame('RaceSpecies', storage), true);
+        assert.equal(await restoreGame('RaceSpecies', storage), true);
         assert.ok(game.urace);
         assert.equal(game.urace.mnum, race.mnum);
         assert.equal(game.urace.mummynum, race.mummynum);

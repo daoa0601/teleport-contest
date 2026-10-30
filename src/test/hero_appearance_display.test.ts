@@ -8,12 +8,12 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the hero monster disguise is displayed before a transformation changes the real body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const originalForm = game.u.umonnum;
     game.u.m_ap_type = M_AP_MONSTER;
     game.u.mappearance = MONSTER_NAME.indexOf('green slime');
 
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
 
     assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, 'P');
@@ -21,14 +21,14 @@ void test('the hero monster disguise is displayed before a transformation change
 });
 
 void test('a hero furniture disguise uses the selected dungeon graphics without changing remembered terrain', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.symset = 'DECgraphics';
     game.u.m_ap_type = M_AP_FURNITURE;
     game.u.mappearance = CmapSymbol.hwall;
     const location = level.requireAt(game.u.ux, game.u.uy);
     const terrain = location.typ;
 
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
 
     assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '─');
@@ -47,7 +47,7 @@ for (const { appearance, character } of [
     { appearance: CmapSymbol.brdnstair, character: '>' },
 ]) {
     void test(`a hero furniture disguise uses the Rogue symbol for map feature ${appearance}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         game.rogue_level = { ...game.u.uz };
         game.symset = 'DECgraphics';
@@ -55,7 +55,7 @@ for (const { appearance, character } of [
         game.u.mappearance = appearance;
         const terrain = level.requireAt(game.u.ux, game.u.uy).typ;
 
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         await flush_screen(1);
 
         assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, character);

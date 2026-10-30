@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 void test('paying a usage debt transfers real coins into the shopkeeper inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     const capital = await knownObject(GOLD_PIECE, { quan: 10 });
     await addCreatedObjectToMonsterInventory(shopkeeper, capital);
@@ -25,7 +25,7 @@ void test('paying a usage debt transfers real coins into the shopkeeper inventor
     assert.equal(shopkeeper.eshk.debit, 0);
 });
 void test('a shopkeeper pays for dropped goods from its carried coins', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     const capital = await knownObject(GOLD_PIECE, { quan: 2 });
     await addCreatedObjectToMonsterInventory(shopkeeper, capital);

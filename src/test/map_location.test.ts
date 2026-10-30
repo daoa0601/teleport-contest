@@ -22,12 +22,12 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('mapping an object remembers the terrain beneath it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await mksobj(POT_HEALING, false, false);
     placeCreatedObject(potion, 12, 10);
 
-    map_location(12, 10);
+    await map_location(12, 10);
 
     assert.equal(level.requireAt(12, 10).disp_ch, '!');
     assert.equal(level.requireAt(12, 10).remembered_glyph?.kind, 'object');
@@ -35,18 +35,18 @@ void test('mapping an object remembers the terrain beneath it', async () => {
 });
 
 void test('forced mapping shows an unseen embedded object without identifying it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = VWALL;
     level.requireAt(12, 10).typ = STONE;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const potion = await mksobj(POT_HEALING, false, false);
     placeCreatedObject(potion, 12, 10);
     assert.equal(cansee(12, 10), false);
     assert.equal(potion.dknown, false);
 
-    map_location(12, 10);
+    await map_location(12, 10);
 
     assert.equal(level.requireAt(12, 10).disp_ch, '!');
     assert.equal(potion.dknown, false);
@@ -54,15 +54,15 @@ void test('forced mapping shows an unseen embedded object without identifying it
 
     level.requireAt(11, 10).typ = level.requireAt(12, 10).typ = ROOM;
     vision_reset();
-    vision_recalc(0);
-    map_location(12, 10);
+    await vision_recalc(0);
+    await map_location(12, 10);
     assert.equal(cansee(12, 10), true);
     assert.equal(potion.dknown, true);
 });
 
 for (const blind of [false, true]) {
     void test(`direct mapping ${blind ? 'does not show' : 'shows'} a cloud when the hero is ${blind ? 'blind' : 'sighted'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const potion = await mksobj(POT_HEALING, false, false);
         placeCreatedObject(potion, 12, 10);
@@ -70,10 +70,10 @@ for (const blind of [false, true]) {
         level.requireAt(11, 10).typ = VWALL;
         vision_reset();
         setHeroBlindnessTurns(blind ? 5 : 0);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), false);
 
-        map_location(12, 10);
+        await map_location(12, 10);
 
         assert.equal(level.requireAt(12, 10).disp_ch, blind ? '!' : '#');
         assert.equal(level.requireAt(12, 10).remembered_glyph?.kind, 'object');
@@ -82,69 +82,69 @@ for (const blind of [false, true]) {
 }
 
 void test('memory-only mapping does not draw an otherwise visible cloud overlay', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await mksobj(POT_HEALING, false, false);
     placeCreatedObject(potion, 12, 10);
     await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
-    map_object(potion, true);
+    await map_object(potion, true);
     assert.equal(level.requireAt(12, 10).disp_ch, '!');
 
-    map_location(12, 10, false);
+    await map_location(12, 10, false);
 
     assert.equal(level.requireAt(12, 10).disp_ch, '!');
     assert.equal(level.requireAt(12, 10).lastseentyp, ROOM);
-    map_location(12, 10, true);
+    await map_location(12, 10, true);
     assert.equal(level.requireAt(12, 10).disp_ch, '#');
 });
 
-void test('a raised drawbridge records its underlying ice as last-seen terrain', () => {
-    const level = freshObjectRoom();
+void test('a raised drawbridge records its underlying ice as last-seen terrain', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const bridge = level.requireAt(12, 10);
     bridge.typ = DRAWBRIDGE_UP;
     bridge.drawbridgemask = DB_ICE;
 
-    map_location(12, 10, false);
+    await map_location(12, 10, false);
 
     assert.equal(bridge.lastseentyp, ICE);
 });
 
 void test('a seen furniture disguise affects remembered terrain, telepathy alone does not', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10);
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.fountain;
     assert.equal(canSeeMonster(mimic), true);
 
-    map_location(12, 10, false);
+    await map_location(12, 10, false);
     assert.equal(level.requireAt(12, 10).lastseentyp, FOUNTAIN);
 
     grantIntrinsicProperty('telepathy', 'outside');
     setHeroBlindnessTurns(5);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(mimic), false);
     assert.equal(canSpotMonster(mimic), true);
-    map_location(12, 10, false);
+    await map_location(12, 10, false);
     assert.equal(level.requireAt(12, 10).lastseentyp, ROOM);
 });
 
 void test('save and restore keep remembered terrain distinct from unseen terrain changes', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Cartographer';
     const location = level.requireAt(30, 10);
     location.typ = ROOM;
     assert.equal(cansee(30, 10), false);
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
     assert.equal(location.lastseentyp, ROOM);
     location.typ = STONE;
     const storage = memoryStorage();
 
     assert.equal(await saveGame(storage), true);
     game.level = new GameMap();
-    assert.equal(restoreGame('Cartographer', storage), true);
+    assert.equal(await restoreGame('Cartographer', storage), true);
 
     assert.equal(game.level.requireAt(30, 10).typ, STONE);
     assert.equal(game.level.requireAt(30, 10).lastseentyp, ROOM);

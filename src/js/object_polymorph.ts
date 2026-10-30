@@ -97,12 +97,12 @@ export async function polymorphFloorObject(
             && state.u.uundetected && heroFormHidesUnderObjects(state);
         const learned = cansee(object.ox, object.oy);
         await do_osshock(object, { state });
-        if (cover) maybeUnhideAt(state.u.ux, state.u.uy, state);
+        if (cover) await maybeUnhideAt(state.u.ux, state.u.uy, state);
         return { affected: true, learned };
     }
     const replacement = await poly_obj(object, STRANGE_OBJECT, { state });
     if (!replacement) throw new Error(`Floor polymorph lost replacement for object ${object.o_id}`);
-    newsym(replacement.ox, replacement.oy);
+    await newsym(replacement.ox, replacement.oy);
     return { affected: true, learned: false };
 }
 
@@ -458,7 +458,7 @@ export async function stone_to_flesh_obj(
         await plineWithContinuation(vegetarian
             ? 'You smell the odor of meat.' : 'You smell a delicious smell.', { noRepeat: true });
     }
-    newsym(x, y);
+    await newsym(x, y);
     return affected;
 }
 

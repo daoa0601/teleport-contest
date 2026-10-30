@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const monsterTurn of [false, true]) {
     void test(`scattered weapons assign kill credit by the active ${monsterTurn ? 'monster' : 'hero'} turn`, async () => {
-        freshObjectRoom({ context: { mon_moving: monsterTurn } });
+        await freshObjectRoom({ context: { mon_moving: monsterTurn } });
         requireFixtureGame(game);
         const victim = await createMonsterAt('jackal', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         victim.mhp = 1;
@@ -32,7 +32,7 @@ for (const monsterTurn of [false, true]) {
 }
 
 void test('a land mine set off during the hero turn credits scattered weapon kills to the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requireFixtureGame(game);
     const victim = await createMonsterAt('jackal', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     victim.mhp = 1;

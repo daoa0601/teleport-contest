@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const held of [false, true]) {
     void test(`a salamander roasts the hero during ${held ? 'an existing' : 'a new'} hold`, async () => {
-        freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, uac: 10 } });
         requirePlayingGame(game);
         const salamander = await createMonsterAt('salamander', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         salamander.mux = game.u.ux;

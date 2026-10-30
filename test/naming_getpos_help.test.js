@@ -16,7 +16,7 @@ for (const target of ['monster', 'floor object']) {
         { binding: 'C-a', key: '\x01', label: '^A', instructions: /For instructions type a '\^A'/ },
     ]) {
         void test(`${target} naming advertises and accepts the rebound ${label} help key`, async (t) => {
-            freshObjectRoom({ flags: { tips: false, verbose: true } });
+            await freshObjectRoom({ flags: { tips: false, verbose: true } });
             applyNethackrc(`BINDINGS=${binding}:getpos.help`);
             const soldier = target === 'monster'
                 ? await createMonsterAt('soldier', 11, 10, NO_MINVENT) : null;

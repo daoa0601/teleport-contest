@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an owlbear recovering its grip does not call its replacement claw hit another repeated attack', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const bear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
     bear.mux = 10;

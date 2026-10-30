@@ -100,7 +100,7 @@ void test('an unseen creature marker blocks a helmet tip to monsters farther awa
     dwarf.mpeaceful = true;
     dwarf.mstrategy = STRAT_WAITFORU;
     await docrt();
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     await runExtendedCommand('tip', 'al    ');
     assert.equal(game._lastPlineMessage, 'That unseen creature is ignoring you!');
     assert.equal(dwarf.mstrategy, STRAT_WAITFORU);

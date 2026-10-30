@@ -7,7 +7,7 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('scattering clears a monster caught at the blast origin', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('soldier', 14, 10);
     monster.mtrapped = 1;
     await floorObject(ROCK, 14, 10);

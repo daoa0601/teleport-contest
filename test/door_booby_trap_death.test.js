@@ -39,8 +39,8 @@ async function fatalDoor(mask = D_CLOSED, type = DOOR) {
     door.roomno = roomno;
     door.edge = true;
     vision_reset();
-    vision_recalc(0);
-    newsym(11, 10);
+    await vision_recalc(0);
+    await newsym(11, 10);
     return { level, door };
 }
 for (const command of ['o', 'l']) {

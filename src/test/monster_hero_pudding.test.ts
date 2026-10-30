@@ -18,7 +18,7 @@ import { installPagerInput } from './support/pager-input.js';
 for (const form of ['black pudding', 'brown pudding']) {
     for (const metal of [false, true]) {
         void test(`a ${form} hero ${metal ? 'divides when cut by iron' : 'does not divide when hit by wood'}`, async () => {
-            freshRoomWithPolymorphedHero(form, { polymorph: { hitPoints: 60 }, hero: { uac: 10 } });
+            await freshRoomWithPolymorphedHero(form, { polymorph: { hitPoints: 60 }, hero: { uac: 10 } });
             requirePlayingGame(game);
             const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
             goblin.mux = game.u.ux;
@@ -48,12 +48,12 @@ for (const form of ['black pudding', 'brown pudding']) {
 }
 
 void test('a blind warned hero keeps makemon\'s warning digit on the divided clone\'s square', async () => {
-    freshRoomWithPolymorphedHero('black pudding', { polymorph: { hitPoints: 60 }, hero: { uac: 10 } });
+    await freshRoomWithPolymorphedHero('black pudding', { polymorph: { hitPoints: 60 }, hero: { uac: 10 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('warning', 'outside');
     // The eyeless pudding form blinds; refresh the vision arrays as the
     // moveloop would before the monster's attack (C set_uasmon flow).
-    vision_recalc(0);
+    await vision_recalc(0);
     const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     goblin.mux = game.u.ux;
     goblin.muy = game.u.uy;

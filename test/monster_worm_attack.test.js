@@ -13,7 +13,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { assertWormBody } from './support/worms.js';
 for (const nearbyTail of [true, false]) {
     void test(`a long worm attacks with its head${nearbyTail ? ' and its adjacent tail' : ' only when its tail is distant'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+        await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('long worm', 11, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
         assertWormBody(worm);
@@ -42,7 +42,7 @@ for (const nearbyTail of [true, false]) {
     });
 }
 void test('a tail bite that petrifies the worm stops the remaining tail attacks', async () => {
-    freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, uac: 0 } });
+    await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, uac: 0 } });
     requirePlayingGame(game);
     installPolymorphedHero('cockatrice');
     const worm = await createMonsterAt('long worm', 11, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
@@ -62,7 +62,7 @@ void test('a tail bite that petrifies the worm stops the remaining tail attacks'
     assert.equal(getRngLog().filter(entry => entry.startsWith('rnd(20)=')).length, 2, 'the dead worm cannot attack with its two remaining nearby segments');
 });
 void test('a fatal tail bite ends the turn before the remaining tail attacks', async () => {
-    freshObjectRoom({ hero: { uhp: 6, uhpmax: 200 } });
+    await freshObjectRoom({ hero: { uhp: 6, uhpmax: 200 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 11, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
     assertWormBody(worm);

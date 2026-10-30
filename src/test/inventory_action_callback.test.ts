@@ -11,7 +11,7 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an accepting command callback keeps its prose before an inventory action', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     const core = await startLuaCore(t);
@@ -38,7 +38,7 @@ void test('an accepting command callback keeps its prose before an inventory act
 
 for (const action of ['wield', 'unwield'] as const) {
     void test(`an accepting command callback keeps its prose before inventory ${action}`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER);
         if (action === 'unwield') game.uwep = dagger;
         const input = resetInputState();
@@ -67,7 +67,7 @@ for (const action of ['wield', 'unwield'] as const) {
 
 for (const action of ['name', 'lookup', 'unready'] as const) {
     void test(`inventory ${action} preserves unread command callback prose`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER);
         if (action === 'unready') await setSecondaryWeapon(dagger);
         const input = resetInputState();

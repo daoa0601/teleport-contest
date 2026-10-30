@@ -12,7 +12,7 @@ void test('leaving a level records its learned features without opening the over
     const { source } = freshConnectedLevels();
     requirePlayingGame(game);
     source.requireAt(11, 10).typ = FOUNTAIN;
-    map_location(11, 10, false);
+    await map_location(11, 10, false);
     await gotoLevel({ dlevel: 2 }, { arrival: 'stairs' });
     const text = await readDungeonOverview();
     assert.match(text, /Level 1:[\s\S]*A fountain\./);

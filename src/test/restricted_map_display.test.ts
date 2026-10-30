@@ -12,14 +12,14 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const mode of ['underwater', 'buried']) {
     void test(`a limited ${mode} redraw leaves temporary glyphs outside its old viewport alone`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         if (mode === 'underwater') {
             for (let x = 7; x <= 16; x++)
                 for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = POOL;
             game.u.uinwater = 1;
         } else game.u.uburied = true;
         await docrt();
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await flush_screen(1);
 
         await redrawMap();
@@ -31,14 +31,14 @@ for (const mode of ['underwater', 'buried']) {
 
 for (const mode of ['underwater', 'buried']) {
     void test(`a delayed full ${mode} reset clears the map on the next update`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const update = mode === 'underwater' ? under_water : under_ground;
         if (mode === 'underwater') {
             level.requireAt(10, 10).typ = POOL;
             game.u.uinwater = 1;
         } else game.u.uburied = true;
         await update(1);
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await flush_screen(1);
 
         await update(2);
@@ -52,7 +52,7 @@ for (const mode of ['underwater', 'buried']) {
 }
 
 void test('an underground full reset leaves the hero blank until a limited update', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.uburied = true;
 
     await under_ground(1);
@@ -80,7 +80,7 @@ for (const mode of ['underwater', 'buried'] as const) {
         await moveloop_core();
         const update = mode === 'underwater' ? under_water : under_ground;
         await update(1);
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await update(2);
         await flush_screen(1);
         assert.equal(requireScreenCell(15, 11).ch, '!');

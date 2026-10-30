@@ -286,7 +286,7 @@ export async function shipObject(object, x, y, { state = requireInitializedGame(
     if (stays) {
         if (impact.count) {
             await impactDrop(object, x, y, { state, publish, random });
-            maybeUnhideAt(x, y, state);
+            await maybeUnhideAt(x, y, state);
         }
         return false;
     }
@@ -322,7 +322,7 @@ export async function shipObject(object, x, y, { state = requireInitializedGame(
         object.otrapped = false;
     if (impact.count) {
         await impactDrop(object, x, y, { state, publish, random });
-        newsym(x, y);
+        await newsym(x, y);
     }
     return true;
 }
@@ -366,7 +366,7 @@ async function deliverAtPassage(object, migration, state, position, publish, ran
     // The pinned C tests this mask before removing migration flags. Its
     // stair and ladder codes share a bit with MIGR_WITH_HERO too.
     if (migration.arrival & MIGR_WITH_HERO) {
-        newsym(position.x, position.y);
+        await newsym(position.x, position.y);
         return;
     }
     const { scatterFloorObjects } = await import('./scatter.js');

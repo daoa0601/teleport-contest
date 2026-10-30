@@ -28,7 +28,7 @@ const LANCE = OBJECT_NAMES.indexOf('lance');
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function impactRoom(species = 'goblin') {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'knight', flags: { verbose: true },
         hero: { ulevel: 30, uhitinc: 100, dx: 1, dy: 0 },
     });

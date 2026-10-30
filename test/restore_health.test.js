@@ -18,7 +18,7 @@ import { memoryStorage } from './support/memory-storage.js';
 // before discarding the save file and starting a new game.
 void test('a dead hero is refused at restore, one key dismisses the message, and the save is discarded', async () => {
     initRng(6103);
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     game.plname = game.displayName = 'Ill';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
@@ -33,7 +33,7 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
     installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
     const reads = [];
     input.beforeRead = () => { reads.push(game._pending_message || ''); };
-    assert.equal(restoreGame('Ill', storage), false);
+    assert.equal(await restoreGame('Ill', storage), false);
     assert.equal(restoreRefusedAsUnhealthy(), true, 'The refusal must be reported back to the async caller.');
     assert.notEqual(storage.getItem(key), null, 'C discards the save file only after the message is dismissed.');
     assert.deepEqual(reads, [], 'Nothing waits for a key before the refusal is dismissed.');
@@ -48,7 +48,7 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
 // C's `u.uhp <= 0 && (!Upolyd || u.mh <= 0)` test.
 void test('a polymorphed hero restores only while its current body lives', async () => {
     initRng(6104);
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     game.plname = game.displayName = 'Poly';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
@@ -63,7 +63,7 @@ void test('a polymorphed hero restores only while its current body lives', async
     resetGame();
     initRng(6104);
     game.nhDisplay = new GameDisplay(null);
-    assert.equal(restoreGame('Poly', storage), true);
+    assert.equal(await restoreGame('Poly', storage), true);
     assert.equal(restoreRefusedAsUnhealthy(), false);
     // C dorecover() deletes the save file after a successful restore.
     assert.equal(storage.getItem(key), null, 'A successful restore consumes the save file.');
@@ -77,7 +77,7 @@ void test('a polymorphed hero restores only while its current body lives', async
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
     installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
-    assert.equal(restoreGame('Poly', storage), false);
+    assert.equal(await restoreGame('Poly', storage), false);
     assert.equal(restoreRefusedAsUnhealthy(), true);
     await dismissUnhealthyRestore('Poly', storage);
     assert.equal(storage.getItem(key), null);
@@ -87,7 +87,7 @@ void test('a polymorphed hero restores only while its current body lives', async
 // save is refused; every later random call in the new game follows them.
 void test("a refused restore spends role_init's quest gender rolls first", async () => {
     initRng(6105);
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard',
         hero: { ualignbase: [0, 0] },
         flags: { female: false, initgend: 0 },
@@ -102,7 +102,7 @@ void test("a refused restore spends role_init's quest gender rolls first", async
     resetGame();
     game.nhDisplay = new GameDisplay(null);
     initRng(6105);
-    assert.equal(restoreGame('Refused', storage), false);
+    assert.equal(await restoreGame('Refused', storage), false);
     const afterRefusal = rn2(1000);
     initRng(6105);
     // A Wizard's nemesis has no fixed gender, so role_init() rolls it.

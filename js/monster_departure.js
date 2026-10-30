@@ -45,7 +45,7 @@ export async function removeMonsterFromGame(monster) {
         finishShopkeeperDeparture(monster);
     }
     if (monster.wormno)
-        removeMonsterWormBody(monster);
+        await removeMonsterWormBody(monster);
     monster.dead = true;
     if (game.u.usteed === monster)
         await dismountHero(DISMOUNT_GENERIC);

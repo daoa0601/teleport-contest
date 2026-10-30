@@ -10,7 +10,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('bones engravings lose the ancestor reading flags and restore worn text pointers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const storage = memoryStorage();
     game.storage = storage;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
@@ -21,7 +21,7 @@ void test('bones engravings lose the ancestor reading flags and restore worn tex
     // Wear advances the actual text pointer while preserving the original text.
     wipeEngravingAt(12, 10, 0);
     assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     game.storage = storage;
     game.flags.debug = true;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];

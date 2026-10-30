@@ -198,7 +198,7 @@ export function createObjectApi(state = game) {
                 return;
             await detach(item);
             await placeObject(item, point.x, point.y, state);
-            newsym(point.x, point.y);
+            await newsym(point.x, point.y);
         },
         has_timer: (value, name) => {
             const kind = timerKind(name);

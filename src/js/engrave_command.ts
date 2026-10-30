@@ -205,7 +205,7 @@ function blindEngraving(): string {
 }
 
 // C engrave.c rloc_engr(): the caller refreshes the old location.
-function relocateEngraving(engraving: Engraving, state: GameState): void {
+async function relocateEngraving(engraving: Engraving, state: GameState): Promise<void> {
     let tries = 200;
     for (;;) {
         if (--tries < 0) return;
@@ -215,7 +215,7 @@ function relocateEngraving(engraving: Engraving, state: GameState): void {
         if (!goodPosition(tx, ty, null, { state })) continue;
         engraving.x = tx;
         engraving.y = ty;
-        newsym(tx, ty);
+        await newsym(tx, ty);
         return;
     }
 }
@@ -396,8 +396,8 @@ export async function doengrave(state: GameState = game): Promise<void> {
     // The rhack seam clears both command queues when the command reports
     // ECMD_CANCEL (getobj() escape) or ECMD_FAIL, so ^A cannot repeat a
     // cancelled engraving.
-    const exit = (): void => {
-        if (setup.disprefresh) newsym(hero.ux, hero.uy);
+    const exit = async (): Promise<void> => {
+        if (setup.disprefresh) await newsym(hero.ux, hero.uy);
         if (setup.ret === 'cancel') commandResultCancelled(state);
         else if (setup.ret === 'fail') commandResultFailed(state);
         state.context.move = setup.ret === 'time' ? 1 : 0;
@@ -406,7 +406,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
     const stylus = await chooseStylus(state);
     if (!stylus) {
         setup.ret = 'cancel';
-        exit();
+        await exit();
         return;
     }
     const usingHands = stylus === 'hands';
@@ -422,7 +422,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
     const wielded = state.uwep || state.u.uwep;
     if (!heroHasFreeHand(state) && stylus !== wielded && !(object && object.owornmask)) {
         await pline(`You have no free ${heroHandName(state)} to write with!`);
-        exit();
+        await exit();
         return;
     }
 
@@ -432,14 +432,14 @@ export async function doengrave(state: GameState = game): Promise<void> {
             throw new Error('An amorphous engulfer must be attached to the hero.');
         await pline(`You tickle ${monsterName(engulfer, { state })} with ${writer}.`);
         await pline('Your message dissolves...');
-        exit();
+        await exit();
         return;
     }
     let initialMsgGiven = false;
     if (!heroCanReachFloor(state, { checkPit: true })) {
         if (!object || object.oclass !== WAND_CLASS) {
             await cantReachFloor(hero.ux, hero.uy, false, true, false, state);
-            exit();
+            await exit();
             return;
         }
         await pline(`You gesture, with your wand, towards the ${
@@ -452,19 +452,19 @@ export async function doengrave(state: GameState = game): Promise<void> {
         if (!initialMsgGiven)
             await pline(`You make a motion towards the altar with ${writer}.`);
         await altarWrath(hero.ux, hero.uy, state);
-        exit();
+        await exit();
         return;
     }
     if (heroLocation.typ === GRAVE) {
         if (usingHands) {
             await pline(`You would only make a small smudge on the ${
                 surfaceName(hero.ux, hero.uy, state)}.`);
-            exit();
+            await exit();
             return;
         } else if (!heroLocation.disturbed) {
             // Disturb the grave; the flag keeps this to one ghoul.
             await disturbGrave(hero.ux, hero.uy, state);
-            exit();
+            await exit();
             return;
         }
     }
@@ -503,7 +503,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
                 if (object.cursed && rn2(WAND_BACKFIRE_CHANCE) === 0) {
                     await explodeWand(object, 0, state);
                     setup.ret = 'time';
-                    exit();
+                    await exit();
                     return;
                 }
                 setup.zapwand = true;
@@ -546,7 +546,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
             if (object === (state.ublindf || state.u.ublindf)) {
                 await pline('That is a bit difficult to engrave with, don\'t you think?');
                 setup.ret = 'fail';
-                exit();
+                await exit();
                 return;
             }
             if (object.otyp === MAGIC_MARKER) {
@@ -604,7 +604,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
         if (objectTypeKnown(object, state)) addExperience(0, 10, state);
     }
     if (setup.teleengr && oep) {
-        relocateEngraving(oep, state);
+        await relocateEngraving(oep, state);
         oep.eread = false;
         oep.erevealed = false;
         setup.disprefresh = true;
@@ -647,7 +647,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
             && !heroCanReachFloor(state, { checkPit: true }))
             await cantReachFloor(hero.ux, hero.uy, false, true, true, state);
         setup.ret = 'time';
-        exit();
+        await exit();
         return;
     }
 
@@ -662,7 +662,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
                 'Do you want to add to the current engraving?', 'y');
             if (answer === 'q') {
                 await pline('Never mind.');
-                exit();
+                await exit();
                 return;
             }
         }
@@ -691,7 +691,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
                         ? frosted ? 'melted into' : 'burned into'
                         : 'engraved in'} the ${surfaceName(hero.ux, hero.uy, state)} here.`);
                 setup.ret = 'time';
-                exit();
+                await exit();
                 return;
             } else if (setup.type !== oep.engr_type || answer === 'n') {
                 if (!heroIsBlind(state)
@@ -702,7 +702,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
         } else if (oep.text.length >= BUFSZ - 1) {
             await pline('There is no room to add anything else here.');
             setup.ret = 'time';
-            exit();
+            await exit();
             return;
         }
     }
@@ -765,11 +765,11 @@ export async function doengrave(state: GameState = game): Promise<void> {
                     objectNameIsPlural(object, state) ? 'glow' : 'glows'}, then ${
                     objectNameIsPlural(object, state) ? 'fade' : 'fades'}.`);
             setup.ret = 'time';
-            exit();
+            await exit();
             return;
         }
         await pline('Never mind.');
-        exit();
+        await exit();
         return;
     }
 
@@ -824,7 +824,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
     }
     // The engraving itself always takes at least one action via the
     // occupation, so this setup pass consumes no game time.
-    exit();
+    await exit();
 }
 
 // C engrave.c engrave(), the occupation callback.  Returns whether another
@@ -957,7 +957,7 @@ export async function continueEngraving(state: GameState = game): Promise<boolea
 
     if (endIndex < pos.remainingText.length) {
         pos.nextIndex = endIndex;
-        if (neweng) newsym(pos.x, pos.y);
+        if (neweng) await newsym(pos.x, pos.y);
         return true; /* not yet finished this turn */
     }
     if (truncate) {
@@ -967,7 +967,7 @@ export async function continueEngraving(state: GameState = game): Promise<boolea
     }
     // C engrave(): the finished path falls through to the final newsym(), so
     // an engraving completed in a single action still refreshes the map.
-    if (neweng) newsym(pos.x, pos.y);
+    if (neweng) await newsym(pos.x, pos.y);
     return false;
 }
 

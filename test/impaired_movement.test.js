@@ -7,7 +7,7 @@ import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a stunned wall-passing hero can choose a rock square as its destination', async () => {
-    const level = freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { stunnedTurns: 10 } });
     installPolymorphedHero('xorn');
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++)
@@ -19,7 +19,7 @@ void test('a stunned wall-passing hero can choose a rock square as its destinati
     assert.equal(game.context.move, 1);
 });
 void test('an impaired hero spends the turn searching when no neighboring square is reachable', async () => {
-    const level = freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { stunnedTurns: 10 } });
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++)
             if (x !== 10 || y !== 10)
@@ -29,14 +29,14 @@ void test('an impaired hero spends the turn searching when no neighboring square
     assert.equal(game.context.move, 1);
 });
 void test('a stunned grid bug chooses only cardinal movement', async () => {
-    freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    await freshObjectRoom({ hero: { stunnedTurns: 10 } });
     installPolymorphedHero('grid bug');
     initRng(1n);
     await rhack('l'.charCodeAt(0));
     assert.equal(Math.abs(game.u.ux - 10) + Math.abs(game.u.uy - 10), 1);
 });
 void test('a stunned tunnelling hero rerolls undiggable stone to reach an open square', async () => {
-    const level = freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { stunnedTurns: 10 } });
     installPolymorphedHero('rock mole');
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++) {

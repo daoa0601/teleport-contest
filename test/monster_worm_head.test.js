@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
 async function wormMovedByDrawbridge(withTail = false) {
-    const level = freshObjectRoom({ left: 8, right: 22, top: 6, bottom: 15,
+    const level = await freshObjectRoom({ left: 8, right: 22, top: 6, bottom: 15,
         heroX: 12, heroY: 13 });
     for (let x = 11; x <= 13; x++) {
         for (let y = 8; y <= 10; y++)
@@ -33,7 +33,7 @@ async function wormMovedByDrawbridge(withTail = false) {
     if (withTail) {
         level.requireAt(11, 9).typ = ROOM;
         level.requireAt(10, 9).typ = ROOM;
-        initializeMonsterWormBody(worm, { segmentCount: 2, random: () => 0 });
+        await initializeMonsterWormBody(worm, { segmentCount: 2, random: () => 0 });
         assert.equal(worm.wormSegments.length, 2);
     }
     assert.equal(await openDrawbridge(12, 10), true);
@@ -57,7 +57,7 @@ for (const oldHeadVisible of [false, true]) {
         const liveHead = game.level.requireAt(12, 10);
         oldHead.lit = oldHead.waslit = oldHeadVisible;
         liveHead.lit = liveHead.waslit = !oldHeadVisible;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 9), oldHeadVisible, 'The stored segment has the intended visibility.');
         assert.equal(cansee(12, 10), !oldHeadVisible, 'The displaced head has the opposite visibility.');
         assert.equal(canSeeMonster(worm), oldHeadVisible);

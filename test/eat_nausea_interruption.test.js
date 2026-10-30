@@ -14,8 +14,8 @@ import { CORPSE, FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-function eatingRoom() {
-    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200, uhs: NOT_HUNGRY } });
+async function eatingRoom() {
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200, uhs: NOT_HUNGRY } });
     requirePlayingGame(game);
     const input = resetInputState();
     installPagerInput(input, {
@@ -24,7 +24,7 @@ function eatingRoom() {
     return input;
 }
 void test('nausea stops an unfinished meal with feedback and leaves it available to resume', async () => {
-    const input = eatingRoom();
+    const input = await eatingRoom();
     requirePlayingGame(game);
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
     input.feed(ration.invlet);
@@ -44,7 +44,7 @@ void test('nausea stops an unfinished meal with feedback and leaves it available
 });
 for (const turns of [7, 1]) {
     void test(`nausea with ${turns} turn${turns === 1 ? '' : 's'} remaining finishes a swallowed last bite before stopping`, async () => {
-        const input = eatingRoom();
+        const input = await eatingRoom();
         requirePlayingGame(game);
         const lizard = await addInventoryObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf('lizard'), age: game.moves,
@@ -67,7 +67,7 @@ for (const turns of [7, 1]) {
     });
 }
 void test('early nausea cancels repeated turns while allowing the meal to continue', async () => {
-    const input = eatingRoom();
+    const input = await eatingRoom();
     requirePlayingGame(game);
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
     input.feed(ration.invlet);
@@ -81,7 +81,7 @@ void test('early nausea cancels repeated turns while allowing the meal to contin
     assert.ok((game.u.confusionTurns ?? 0) >= 2);
 });
 void test('nausea describes existing confusion as slightly more confused', async () => {
-    const input = eatingRoom();
+    const input = await eatingRoom();
     requirePlayingGame(game);
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
     input.feed(ration.invlet);

@@ -11,7 +11,7 @@ import { createPoisonGasCloud } from '../js/regions.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('putting on a restful-sleep amulet starts the real sleepiness timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_RESTFUL_SLEEP);
     resetInputState().feed(amulet.invlet);
     await rhack('P'.charCodeAt(0));
@@ -19,7 +19,7 @@ void test('putting on a restful-sleep amulet starts the real sleepiness timeout'
     assert.equal(propertyIsActive('sleepy'), true);
 });
 void test('removing a restful-sleep amulet directly clears its sleepiness timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_RESTFUL_SLEEP);
     resetInputState().feed(`${amulet.invlet}        `);
     await rhack('P'.charCodeAt(0));
@@ -30,7 +30,7 @@ void test('removing a restful-sleep amulet directly clears its sleepiness timeou
     assert.equal(propertyIsActive('sleepy'), false);
 });
 void test('removing a flying amulet directly announces landing and discovers the amulet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('flying', 'outside');
     const amulet = await addInventoryObject(OBJECT_NAMES.indexOf('amulet of flying'), { typeKnown: false });
     const input = resetInputState();
@@ -50,7 +50,7 @@ void test('removing a flying amulet directly announces landing and discovers the
     assert.match([...messages, game._pending_message].join(' '), /You land\./);
 });
 void test('removing a breathing amulet directly warns about surrounding poison gas', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(OBJECT_NAMES.indexOf('amulet of magical breathing'), { typeKnown: false });
     resetInputState().feed(`${amulet.invlet}           `);
     await rhack('P'.charCodeAt(0));

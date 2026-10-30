@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 void test('move-without-pickup bumps into a visible displacer beast without attacking or swapping', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ hero: { uhitinc: 100 } });
+        await freshObjectRoom({ hero: { uhitinc: 100 } });
         requirePlayingGame(game);
         const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
         beast.mux = game.u.ux;
@@ -33,7 +33,7 @@ void test('move-without-pickup bumps into a visible displacer beast without atta
 });
 
 void test('move-without-pickup excuses the hero to a named pet without displacing it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -49,7 +49,7 @@ void test('move-without-pickup excuses the hero to a named pet without displacin
 });
 
 void test('move-without-pickup discovers an unseen beast through the attack reveal path', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
     beast.minvis = true;
@@ -69,7 +69,7 @@ void test('move-without-pickup discovers an unseen beast through the attack reve
 void test('an alert displacer beast sometimes swaps places with an approaching hero instead of taking an attack', async () => {
     let swaps = 0;
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ hero: { uhitinc: -100 } });
+        await freshObjectRoom({ hero: { uhitinc: -100 } });
         requirePlayingGame(game);
         const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
         beast.mux = game.u.ux;
@@ -94,7 +94,7 @@ void test('an alert displacer beast sometimes swaps places with an approaching h
 for (const canMove of [false, 0] satisfies readonly MonsterFlag[]) {
     void test(`a beast with mcanmove=${canMove} cannot swap with an approaching hero`, async () => {
         for (let seed = 1; seed <= 16; seed++) {
-            freshObjectRoom({ hero: { uhitinc: -100 } });
+            await freshObjectRoom({ hero: { uhitinc: -100 } });
             requirePlayingGame(game);
             const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
             beast.mux = game.u.ux;
@@ -115,7 +115,7 @@ for (const canMove of [false, 0] satisfies readonly MonsterFlag[]) {
 void test('a beast choosing to displace the hero lands in the trap at the old hero square', async () => {
     let trapped = false;
     for (let seed = 1; seed <= 16 && !trapped; seed++) {
-        const level = freshObjectRoom({ hero: { uhitinc: -100 } });
+        const level = await freshObjectRoom({ hero: { uhitinc: -100 } });
         requirePlayingGame(game);
         const beast = await createMonsterAt('displacer beast', 11, 10, MM_ANGRY | NO_MINVENT);
         beast.mux = 10;

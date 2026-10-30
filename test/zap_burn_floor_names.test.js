@@ -7,7 +7,7 @@ import { burnFloorObjectsAt } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('burning unidentified floor scrolls describes their labels instead of revealing their type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const scrolls = await floorObject(SCR_IDENTIFY, 12, 10, { quan: 20, typeKnown: false });
     initRng(1n);
     const burned = await burnFloorObjectsAt(12, 10, { giveFeedback: true });

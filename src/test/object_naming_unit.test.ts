@@ -77,7 +77,7 @@ void test('other roles keep booze in the same pet pickup feedback', async () => 
 
 for (const quantity of [1, 2]) {
     void test(`the inventory help menu names ${quantity} gold piece${quantity === 1 ? '' : 's'} with native quantity grammar`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await addInventoryObject(GOLD_PIECE, { quan: quantity, invlet: '$' });
         await addInventoryObject(FOOD_RATION, { invlet: 'a' });
         const input = resetInputState();
@@ -93,7 +93,7 @@ for (const quantity of [1, 2]) {
 }
 
 void test('simple Samurai names retain class nouns while omitting dilution and individual names', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const potion = await knownObject(POT_BOOZE, { odiluted: true, oname: 'Dinner' });
 
     assert.equal(simpleObjectNameWithArticle(potion), 'a potion of sake');
@@ -102,7 +102,7 @@ void test('simple Samurai names retain class nouns while omitting dilution and i
 });
 
 void test('simple names hide unknown identities and called names without observing the object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await knownObject(RIN_PROTECTION, { typeKnown: false, dknown: false });
     recordObjectCall(RIN_PROTECTION, 'Luck');
 
@@ -111,7 +111,7 @@ void test('simple names hide unknown identities and called names without observi
 });
 
 void test('a simple unique bell name uses its definite article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bell = await knownObject(BELL_OF_OPENING);
 
     assert.equal(simpleObjectNameWithArticle(bell), 'the Bell of Opening');
@@ -120,7 +120,7 @@ void test('a simple unique bell name uses its definite article', async () => {
 const wishRoles: readonly RoleKey[] = ['samurai', 'caveman'];
 for (const role of wishRoles) {
     void test(`${role} wishes accept Japanese item names, including qualified potions and plurals`, async () => {
-        freshObjectRoom({ role, gameplaySeed: 6103n });
+        await freshObjectRoom({ role, gameplaySeed: 6103n });
 
         const potion = await readObjectName('2 potions of sake', { wizardWish: true });
         const sword = await readObjectName('wakizashi', { wizardWish: true });

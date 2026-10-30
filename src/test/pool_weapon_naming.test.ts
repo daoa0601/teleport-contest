@@ -15,7 +15,7 @@ for (const [species, type, request, name] of [
     ['elf-lord', ELVEN_BOW, NEED_RANGED_WEAPON, 'runed bow'],
 ] as const) {
     void test(`a monster's cursed ${name} welds under its perceived name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
         monster.female = false;
         const weapon = await knownObject(type, { known: false, typeKnown: false, dknown: false, cursed: true });
@@ -35,7 +35,7 @@ for (const [species, type, request, name] of [
 
 for (const [identified, name] of [[true, 'orcish dagger'], [false, 'crude dagger']] as const) {
     void test(`a visible failed weapon switch observes the old ${name} before naming it`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         goblin.female = false;
         const welded = await equipMonsterObject(goblin, await knownObject(ORCISH_DAGGER, {
@@ -57,7 +57,7 @@ for (const [identified, name] of [[true, 'orcish dagger'], [false, 'crude dagger
 }
 
 void test('an unseen failed weapon switch does not reveal the old weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.minvis = true;
     const welded = await equipMonsterObject(goblin, await knownObject(ORCISH_DAGGER, {

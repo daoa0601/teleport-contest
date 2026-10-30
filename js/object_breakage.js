@@ -144,7 +144,7 @@ export async function breakObjectAtLocation(object, { x = object.ox, y = object.
     if (glassArmor) {
         const destroyed = await crackGlassArmor(object, x, y, publish, luckRandom, state);
         if (destroyed)
-            newsym(x, y);
+            await newsym(x, y);
         return { destroyed, observed: destroyed && (visible || audible) };
     }
     if (showBreakMessage)

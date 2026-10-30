@@ -27,8 +27,8 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
         await state.animationFrame?.();
     }
 
-    function clear(): void {
-        effect.clear();
+    async function clear(): Promise<void> {
+        await effect.clear();
     }
 
     return {
@@ -42,15 +42,15 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
             // impact that just blinded the hero hides its trailing frame
             // and any pending status update stays unpublished; the
             // caller's nh_delay_output() still runs.
-            if (effect.draw(position.x, position.y)) await flushFrame();
+            if (await effect.draw(position.x, position.y)) await flushFrame();
             else await state.animationFrame?.();
         },
         async backtrack(): Promise<void> {
             // DISP_END/BACKTRACK moves inward before the first return frame.
-            while (effect.retract()) {
+            while (await effect.retract()) {
                 await flushFrame();
             }
-            clear();
+            await clear();
         },
         clear,
     };

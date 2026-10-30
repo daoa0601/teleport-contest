@@ -22,8 +22,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 
-function genocideRoom({ debug = false } = {}) {
-    const level = freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18,
+async function genocideRoom({ debug = false } = {}) {
+    const level = await freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18,
         hero: { urexp: 100 },
         flags: { debug, verbose: true, bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
     requirePlayingGame(game);
@@ -75,7 +75,7 @@ for (const [form, feeling] of [
     ['red dragon', 'dead'], ['vampire', 'condemned'], ['iron golem', 'empty'],
 ] as const) {
     void test(`reading own-role genocide as a ${form} leaves the living body feeling ${feeling}`, async () => {
-        const { state } = genocideRoom();
+        const { state } = await genocideRoom();
         installPolymorphedHero(form);
         const scroll = await addInventoryObject(SCR_GENOCIDE);
         const observed = observedGenocideInput(['cavewoman'], scroll.invlet);
@@ -98,7 +98,7 @@ for (const [form, feeling] of [
 }
 
 void test('a confused genocide scroll kills the human reader with the confusion cause', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     const scroll = await addInventoryObject(SCR_GENOCIDE);
     await makeConfused(10, { state, talk: false });
     const observed = observedGenocideInput([], scroll.invlet);
@@ -113,7 +113,7 @@ void test('a confused genocide scroll kills the human reader with the confusion 
 });
 
 void test('genociding the current changeable form restores the healthy original body', async () => {
-    const { state, level } = genocideRoom();
+    const { state, level } = await genocideRoom();
     installPolymorphedHero('red dragon');
     const dragon = await createMonsterAt('red dragon', 13, 10, NO_MINVENT | MM_NOGRP);
     const scroll = await addInventoryObject(SCR_GENOCIDE);
@@ -130,7 +130,7 @@ void test('genociding the current changeable form restores the healthy original 
 });
 
 void test('genociding an unchanging current form causes immediate genocide death', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('red dragon', { unchanging: true });
     const scroll = await addInventoryObject(SCR_GENOCIDE);
     const observed = observedGenocideInput(['red dragon'], scroll.invlet);
@@ -144,7 +144,7 @@ void test('genociding an unchanging current form causes immediate genocide death
 });
 
 void test('an unchanging other form survives genocide of the original race', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('red dragon', { unchanging: true });
     const scroll = await addInventoryObject(SCR_GENOCIDE);
     const observed = observedGenocideInput(['human'], scroll.invlet);
@@ -160,7 +160,7 @@ void test('an unchanging other form survives genocide of the original race', asy
 });
 
 void test('immediate own-race genocide stops before removing other members of the species', async () => {
-    const { state, level } = genocideRoom();
+    const { state, level } = await genocideRoom();
     const human = await createMonsterAt('human', 13, 10, NO_MINVENT | MM_NOGRP);
     const scroll = await addInventoryObject(SCR_GENOCIDE);
     observedGenocideInput(['human'], scroll.invlet);
@@ -174,7 +174,7 @@ void test('immediate own-race genocide stops before removing other members of th
 });
 
 void test('a doomed original race in a surviving monster body still removes that species from the level', async () => {
-    const { state, level } = genocideRoom();
+    const { state, level } = await genocideRoom();
     installPolymorphedHero('red dragon');
     const human = await createMonsterAt('human', 13, 10, NO_MINVENT | MM_NOGRP);
     const scroll = await addInventoryObject(SCR_GENOCIDE);
@@ -189,7 +189,7 @@ void test('a doomed original race in a surviving monster body still removes that
 });
 
 void test('class self-genocide finishes its species before immediate hero death', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     const scroll = await addInventoryObject(SCR_GENOCIDE, { blessed: true });
     const observed = observedGenocideInput(['@'], scroll.invlet);
 
@@ -205,7 +205,7 @@ void test('class self-genocide finishes its species before immediate hero death'
 });
 
 void test('class genocide of an unchanging dragon continues through later dragons before dying', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('red dragon', { unchanging: true });
     const scroll = await addInventoryObject(SCR_GENOCIDE, { blessed: true });
     observedGenocideInput(['D'], scroll.invlet);
@@ -218,7 +218,7 @@ void test('class genocide of an unchanging dragon continues through later dragon
 });
 
 void test('class genocide stops when returning from a nurse body kills the already-genocided human', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('nurse');
     const scroll = await addInventoryObject(SCR_GENOCIDE, { blessed: true });
     const observed = observedGenocideInput(['@'], scroll.invlet);
@@ -235,7 +235,7 @@ void test('class genocide stops when returning from a nurse body kills the alrea
 });
 
 void test('class genocide leaves no invented delayed scroll cause on later rehumanization', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('red dragon');
     const scroll = await addInventoryObject(SCR_GENOCIDE, { blessed: true });
     observedGenocideInput(['@'], scroll.invlet);
@@ -251,7 +251,7 @@ void test('class genocide leaves no invented delayed scroll cause on later rehum
 });
 
 void test('genociding a shifted vampire bat restores the vampire before wiping out bats', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('vampire bat');
     state.u.mcham = MONSTER_NAME.indexOf('vampire');
     const observed = observedGenocideInput(['vampire bat']);
@@ -267,7 +267,7 @@ void test('genociding a shifted vampire bat restores the vampire before wiping o
 });
 
 void test('an inadmissible class allows another choice instead of ending the scroll', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     const scroll = await addInventoryObject(SCR_GENOCIDE, { blessed: true });
     observedGenocideInput(['I', 'a'], scroll.invlet);
 
@@ -280,7 +280,7 @@ void test('an inadmissible class allows another choice instead of ending the scr
 });
 
 void test('wizard class elimination removes actors and cargo without genociding their species', async () => {
-    const { state, level } = genocideRoom({ debug: true });
+    const { state, level } = await genocideRoom({ debug: true });
     const orc = await createMonsterAt('orc', 13, 10, NO_MINVENT | MM_NOGRP);
     const dagger = await knownObject(DAGGER);
     await addObjectToMonsterInventory(orc, dagger);
@@ -296,7 +296,7 @@ void test('wizard class elimination removes actors and cargo without genociding 
 });
 
 void test('a hallucinating cavewoman sees her gendered role name while another species is genocided', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     state.flags.female = true;
     await makeHallucinated(20, { state, talk: false });
     const scroll = await addInventoryObject(SCR_GENOCIDE);
@@ -311,7 +311,7 @@ void test('a hallucinating cavewoman sees her gendered role name while another s
 });
 
 void test('a cursed genocide scroll cannot send in an already extinct species', async () => {
-    const { state, level } = genocideRoom();
+    const { state, level } = await genocideRoom();
     const ant = MONSTER_NAME.indexOf('giant ant');
     requireMonsterVital(ant).mvflags |= G_EXTINCT;
     const scroll = await addInventoryObject(SCR_GENOCIDE, { cursed: true });
@@ -327,7 +327,7 @@ void test('a cursed genocide scroll cannot send in an already extinct species', 
 });
 
 void test('first and later species genocides log real names even while hallucinating', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     state.flags.female = true;
     await makeHallucinated(20, { state, talk: false });
     observedGenocideInput(['giant ant', 'orc']);
@@ -343,7 +343,7 @@ void test('first and later species genocides log real names even while hallucina
 });
 
 void test('each class genocide logs one event despite removing several species', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     observedGenocideInput(['a', 'd']);
 
     await doClassGenocide();
@@ -360,7 +360,7 @@ void test('each class genocide logs one event despite removing several species',
 });
 
 void test('the first-genocide possessive follows the hero sex flag in a neuter body', async () => {
-    const { state } = genocideRoom();
+    const { state } = await genocideRoom();
     installPolymorphedHero('iron golem');
     state.flags.female = true;
     observedGenocideInput(['a']);

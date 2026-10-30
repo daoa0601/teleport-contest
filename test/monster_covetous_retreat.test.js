@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const woundedHp of [85, 50]) {
     void test(`a covetous lich at ${woundedHp}/90 HP retreats before checking its attack range`, async () => {
-        freshObjectRoom({ left: 8, right: 45 });
+        await freshObjectRoom({ left: 8, right: 45 });
         await init_dungeons();
         requirePlayingGame(game);
         await mkstairs(40, 10, true, null);
@@ -34,7 +34,7 @@ for (const woundedHp of [85, 50]) {
     });
 }
 void test('cosmic stasis keeps a covetous retreat at its current square', async () => {
-    const level = freshObjectRoom({ left: 8, right: 45 });
+    const level = await freshObjectRoom({ left: 8, right: 45 });
     await init_dungeons();
     requirePlayingGame(game);
     await mkstairs(40, 10, true, null);
@@ -51,7 +51,7 @@ void test('cosmic stasis keeps a covetous retreat at its current square', async 
     assert.equal(lich.mavenge, 1);
 });
 void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its expulsion destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await init_dungeons();
     requirePlayingGame(game);
     await mkstairs(10, 10, true, null);
@@ -75,7 +75,7 @@ void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its e
     assert.equal(result, 'harass');
 });
 void test('Juiblex returns to its pre-expulsion square when blocked stairs leave no retreat destination', async () => {
-    const level = freshObjectRoom({ left: 10, right: 10, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 10, top: 10, bottom: 10 });
     await init_dungeons();
     requirePlayingGame(game);
     const expulsionSquare = level.at(9, 9);
@@ -105,7 +105,7 @@ for (const { startX, destinationX, heals } of [
     { startX: 40, destinationX: 11, heals: true },
 ]) {
     void test(`a wounded tower lich teleporting ${heals ? 'toward' : 'away from'} the hero checks its original distance before healing`, async () => {
-        freshObjectRoom({ left: 8, right: 45 });
+        await freshObjectRoom({ left: 8, right: 45 });
         await init_dungeons();
         requirePlayingGame(game);
         game._activeSpecialLevel = {

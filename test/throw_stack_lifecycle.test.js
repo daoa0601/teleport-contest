@@ -10,7 +10,7 @@ import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [terrain, name] of [[ROOM, 'room'], [ICE, 'ice']]) {
     void test(`throwing one rock across ${name} leaves the other rocks carried`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         level.requireAt(11, 10).typ = terrain;
         game.u.acurr.a[A_STR] = 10;

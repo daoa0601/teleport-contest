@@ -55,7 +55,7 @@ void test('a stethoscope identifies a known object disguise by its object name',
     assert.equal(mimic.m_ap_type, 0);
 });
 void test('a confusing gaze skips a known object disguise', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     requireFixtureGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
@@ -68,7 +68,7 @@ void test('a confusing gaze skips a known object disguise', async () => {
     assert.match(game._pending_message, /You gaze at no place in particular/);
 });
 void test('a confusing gaze can affect a known monster disguise', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     const mimic = await createMonsterAt('Wizard of Yendor', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_MONSTER | M_AP_F_DKNOWN;
     mimic.mappearance = nameToMonster('jackal');

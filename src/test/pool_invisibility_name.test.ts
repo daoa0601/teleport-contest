@@ -42,7 +42,7 @@ void test('a proper-name monster becoming invisible uses its name in the possess
 
 for (const type of [POT_INVISIBILITY, WAN_MAKE_INVISIBLE]) {
     void test(`invisibility from ${type === POT_INVISIBILITY ? 'drinking' : 'zapping'} names item use before describing the hallucinated body`, async () => {
-        freshObjectRoom({ hero: { seeInvisible: true, hallucinationTurns: 20 } });
+        await freshObjectRoom({ hero: { seeInvisible: true, hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         monster.minvis = false;

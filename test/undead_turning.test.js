@@ -16,8 +16,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 const PM_TROLL = 220;
-function freshState() {
-    freshObjectRoom({
+async function freshState() {
+    await freshObjectRoom({
         right: 18,
         role: 'wizard',
         hero: {
@@ -33,7 +33,7 @@ async function trollCorpse() {
     return await untimedCorpse(PM_TROLL);
 }
 void test('undead turning revives floor and carried corpses along its path', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const floorCorpse = placeCreatedObject(await trollCorpse(), 11, 10);
     const zombie = await createMonsterAt('human zombie', 13, 10);
@@ -54,7 +54,7 @@ void test('undead turning revives floor and carried corpses along its path', asy
     assert.equal(zombie.mflee, 1);
 });
 void test('the turn undead spell revives a carried corpse', async () => {
-    freshCasterRoom({ role: 'priest' });
+    await freshCasterRoom({ role: 'priest' });
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     corpse.where = 'inventory';
@@ -69,7 +69,7 @@ void test('the turn undead spell revives a carried corpse', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('a wand of undead turning revives a corpse carried by the hero', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     corpse.where = 'inventory';

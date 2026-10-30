@@ -45,7 +45,7 @@ void test('newgame registers the configured fruit before slime molds and mimics 
     assert.equal(game.flags.made_fruit, true);
 });
 void test('changing an unmaterialized preferred fruit reuses its identity through real options', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await changeFruitThroughOptions('Mangoes');
     const first = game.context.current_fruit;
@@ -57,7 +57,7 @@ void test('changing an unmaterialized preferred fruit reuses its identity throug
     assert.equal(game.context.move, 0);
 });
 void test('changing fruit after creation retains old inventory names and reselects an existing identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await changeFruitThroughOptions('Papayas');
     const old = await addInventoryObject(SLIME_MOLD, { quan: 1 });
@@ -74,7 +74,7 @@ void test('changing fruit after creation retains old inventory names and reselec
     assert.equal(game.fruits.length, 2);
 });
 void test('runtime fruit conflicts and juice names follow native singular and compound rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await changeFruitThroughOptions('apples');
     assert.equal(objectName(await mksobj(SLIME_MOLD, true, false)), 'candied apple');
     await changeFruitThroughOptions('goblin corpses');
@@ -86,7 +86,7 @@ void test('runtime fruit conflicts and juice names follow native singular and co
     assert.equal(objectName(await mksobj(SLIME_MOLD, true, false)), 'child');
 });
 void test('fruit wishes distinguish historical names from the generic fruit type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await changeFruitThroughOptions('Papaya');
     const papaya = await mksobj(SLIME_MOLD, true, false);
     await changeFruitThroughOptions('Guava');
@@ -102,7 +102,7 @@ void test('fruit wishes distinguish historical names from the generic fruit type
     assert.equal(await readObjectName('slime mold', { wizardWish: true }), null, 'the old object type name is unavailable when no registered fruit has that name');
 });
 void test('already plural external fruit labels wish and display stacks without a repeated plural suffix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const id = addFruit('berries');
     const single = await readObjectName('a berry', { wizardWish: true });
     const stack = await readObjectName('3 berries', { wizardWish: true });
@@ -116,7 +116,7 @@ void test('already plural external fruit labels wish and display stacks without 
     assert.doesNotMatch(await inventoryItemDescription(stack.object), /berrieses/);
 });
 void test('a registered fruit does not override a real object wish alias', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     addFruit('cookies');
     const cookie = await readObjectName('a cookie', { wizardWish: true });
     assert.ok(cookie && !cookie.noWish);
@@ -124,7 +124,7 @@ void test('a registered fruit does not override a real object wish alias', async
 });
 void test('saved games restore all fruit identities and the preferred name over startup configuration', async () => {
     const storage = memoryStorage();
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.plname = 'Ada';
     game.storage = storage;
@@ -133,10 +133,10 @@ void test('saved games restore all fruit identities and the preferred name over 
     await changeFruitThroughOptions('Guava');
     const current = await addInventoryObject(SLIME_MOLD, { quan: 1 });
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     initializeFruitRegistry('Melon');
     game.storage = storage;
-    assert.equal(restoreGame('Ada', storage), true);
+    assert.equal(await restoreGame('Ada', storage), true);
     assert.equal(game.fruitName, 'Guava');
     assert.equal(game.context.current_fruit, current.spe);
     const restoredOld = game.inventory.find(object => object.spe === old.spe);
@@ -148,7 +148,7 @@ void test('saved games restore all fruit identities and the preferred name over 
 });
 void test('bones carry only existing fruit identities and remap floor, contained, and monster fruit to the new registry', async () => {
     const storage = memoryStorage();
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.storage = storage;
     game.u.uz = { dnum: 0, dlevel: 8 };
@@ -161,7 +161,7 @@ void test('bones carry only existing fruit identities and remap floor, contained
     await addObjectToMonsterInventory(carrier, await knownObject(SLIME_MOLD));
     changePreferredFruit('Guava'); // No instance of this identity exists in bones.
     assert.equal(saveBonesLevel(), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     game.storage = storage;
     game.flags.debug = true;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
@@ -186,7 +186,7 @@ void test('bones carry only existing fruit identities and remap floor, contained
     assert.equal(fruitFromName('Guava'), null);
 });
 void test('a fruit mimic protects and remembers its represented current fruit after preference changes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     changePreferredFruit('Papaya');
     const floor = await floorObject(SLIME_MOLD, 12, 10);
@@ -203,7 +203,7 @@ void test('a fruit mimic protects and remembers its represented current fruit af
     assert.equal(mimic.mcorpsenm, represented);
 });
 void test('runtime fruit limits reject a new hundred-and-first identity but allow an existing preference', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     for (let count = 1; count < 100; count++)
         addFruit(`orchard ${count}`);
     assert.equal(changePreferredFruit('new orchard').changed, false);
@@ -212,7 +212,7 @@ void test('runtime fruit limits reject a new hundred-and-first identity but allo
     assert.equal(objectName(fruit), 'orchard 1');
 });
 void test('external fruit overflow chooses an existing identity and leaves the current preference intact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const current = game.context.current_fruit;
     for (let count = 1; count < 127; count++)

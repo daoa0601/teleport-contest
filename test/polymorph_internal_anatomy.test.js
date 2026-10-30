@@ -10,7 +10,7 @@ for (const [form, eyes, lungs] of [
     ['floating eye', 'corneas', 'retinas'],
 ]) {
     void test(`a gas cloud stings the eyes and breathing surfaces of a ${form}`, async () => {
-        freshRoomWithPolymorphedHero(form, { polymorph: { hitPoints: 100, maxHitPoints: 100 } });
+        await freshRoomWithPolymorphedHero(form, { polymorph: { hitPoints: 100, maxHitPoints: 100 } });
         const cloud = await createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }], { ttl: 5 });
         assert.ok(cloud);
         cloud.damage = 1;
@@ -22,7 +22,7 @@ for (const [form, eyes, lungs] of [
     });
 }
 void test('attributes describes a wolf as normally right-handed', async () => {
-    freshRoomWithPolymorphedHero('wolf');
+    await freshRoomWithPolymorphedHero('wolf');
     game.u.rightHanded = true;
     const input = resetInputState();
     const report = runExtendedCommand('attributes');

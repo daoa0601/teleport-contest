@@ -9,15 +9,15 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function deathRoom() {
-    freshObjectRoom({ flags: { bones: false, disclose: 'none', tombstone: false } });
+async function deathRoom() {
+    await freshObjectRoom({ flags: { bones: false, disclose: 'none', tombstone: false } });
     game.iflags.toptenwin = false;
     const input = resetInputState();
     installPagerInput(input, { expected: /die|stone|body rises|Goodbye|You were|points/i, limit: 8 });
 }
 
 void test('ordinary death preserves the undead transformation chosen by the killer', async () => {
-    deathRoom();
+    await deathRoom();
     const wraith = await createMonsterAt('wraith', 11, 10);
 
     await finishMonsterAttackDeath(wraith, { deathType: DIED });
@@ -26,7 +26,7 @@ void test('ordinary death preserves the undead transformation chosen by the kill
 });
 
 void test('petrification clears the helplessness that only prevented last-second recovery', async () => {
-    deathRoom();
+    await deathRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10);
     game.multi = -3;
     game._helplessTurns = 3;

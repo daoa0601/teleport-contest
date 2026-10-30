@@ -41,7 +41,7 @@ async function dog() {
     return pet;
 }
 void test('an unnamed pet yelps with its native definite name and stops running', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await dog();
     startRun(1, 0);
@@ -50,7 +50,7 @@ void test('an unnamed pet yelps with its native definite name and stops running'
     assert.equal(game.context.run, 0);
 });
 void test('a deaf hero sees an invisible named pet recoil, rather than hearing a yelp', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await dog();
     setMonsterGivenName(pet, 'Fido');
@@ -63,7 +63,7 @@ void test('a deaf hero sees an invisible named pet recoil, rather than hearing a
     assert.equal(await topline(), 'The invisible Fido recoils!');
 });
 void test("yelp wake distance depends on species, not a pet's gained experience levels", async () => {
-    freshObjectRoom({ right: 25 });
+    await freshObjectRoom({ right: 25 });
     requirePlayingGame(game);
     const pet = await dog();
     pet.m_lev = 30;
@@ -75,12 +75,12 @@ void test("yelp wake distance depends on species, not a pet's gained experience 
     assert.equal(far.msleeping, 1);
 });
 void test('a telepathically sensed growl does not interrupt a blind deaf hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await dog();
     grantIntrinsicProperty('telepathy', 'outside');
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     game.u.deafTurns = 10;
     syncDeafness();
     assert.equal(canSpotMonster(pet), true);
@@ -96,7 +96,7 @@ void test('a telepathically sensed growl does not interrupt a blind deaf hero', 
     assert.equal(game.context.run, 0);
 });
 void test('a silent animal does not produce a hallucinated yelp or stop running', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const blob = await createMonsterAt('acid blob', 11, 10);
     startRun(1, 0);
@@ -119,7 +119,7 @@ function zombieTimeLeft(corpse) {
     return timer.deadline - game.moves;
 }
 void test('noise disturbs buried zombies only near its origin, independently of waking distance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const nearby = await buriedZombieAt(12, 11);
     const distant = await buriedZombieAt(13, 10);
@@ -133,7 +133,7 @@ void test('noise disturbs buried zombies only near its origin, independently of 
     assert.equal(zombieTimeLeft(nearby), Math.trunc(Math.trunc(nearbyTime * 2 / 3) * 2 / 3));
 });
 void test('a visible flesh golem wakes with its name and the native exclamation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const golem = await createMonsterAt('flesh golem', 11, 10);
     setMonsterGivenName(golem, 'Frank');
@@ -143,22 +143,22 @@ void test('a visible flesh golem wakes with its name and the native exclamation'
     assert.equal(await topline(), "Frank wakes up. It's alive!");
 });
 void test('a game can save and restore after a growl, then continue ordinary messages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await dog();
     game.plname = 'PetSounds';
     const storage = memoryStorage();
     await publishMonsterGrowl(pet);
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
-    assert.equal(restoreGame('PetSounds', storage), true);
+    assert.equal(await restoreGame('PetSounds', storage), true);
     await plineWithContinuation('The dungeon is quiet.');
     assert.equal(await topline(), 'The dungeon is quiet.');
 });
 for (const sleeping of [false, true]) {
     void test(`a fleeing bystander ${sleeping ? 'uses its name after a wake message' : 'can follow its growl with a separate sentence'}`, async () => {
-        freshObjectRoom({ right: 24 });
+        await freshObjectRoom({ right: 24 });
         requirePlayingGame(game);
         const victim = await createMonsterAt('little dog', 11, 10);
         const observer = await createMonsterAt('little dog', 16, 10);
@@ -180,7 +180,7 @@ for (const sleeping of [false, true]) {
     });
 }
 void test('one digging noise shortens a buried zombie timer once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(11, 10);
     const before = zombieTimeLeft(corpse);
@@ -190,7 +190,7 @@ void test('one digging noise shortens a buried zombie timer once', async () => {
     assert.equal(zombieTimeLeft(corpse), Math.trunc(before * 2 / 3));
 });
 void test('sleeping or paralyzed pets do not make distress sounds', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await dog();
     const corpse = await buriedZombieAt(12, 10);
@@ -212,7 +212,7 @@ void test('sleeping or paralyzed pets do not make distress sounds', async () => 
 });
 for (const timed of [false, true]) {
     void test(`${timed ? 'timed' : 'direct'} ice melting wakes nearby monsters and disturbs buried zombies once`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const ice = requireGameLevel().requireAt(11, 10);
         ice.typ = ICE;
@@ -237,7 +237,7 @@ for (const timed of [false, true]) {
     });
 }
 void test('a thrown stone wakes a sleeping pet after the hit, without an early distress sound', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { uhitinc: 50 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { uhitinc: 50 } });
     requirePlayingGame(game);
     const pet = await dog();
     setMonsterGivenName(pet, 'Fido');

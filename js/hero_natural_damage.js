@@ -369,7 +369,7 @@ async function sleepNaturalTarget(monster, context) {
         await shieldeff(monster.mx, monster.my, state);
         return;
     }
-    if (!putMonsterToSleep(monster, duration))
+    if (!await putMonsterToSleep(monster, duration))
         return;
     if (!heroIsBlind(state))
         await publish(`${subject(monster, context)} is put to sleep by you!`);

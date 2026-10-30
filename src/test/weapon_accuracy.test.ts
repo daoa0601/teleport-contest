@@ -14,7 +14,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-test.beforeEach(() => freshObjectRoom());
+test.beforeEach(async () => await freshObjectRoom());
 
 void test('enchantment adds accuracy to weapons and weapon tools, but not rings', async () => {
     const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);

@@ -59,7 +59,7 @@ void test('travel menu describes a discovered pit with coordinates and no path w
     assert.ok(game.level);
     const pit = addTrap(game.level, PIT, 14, 10);
     pit.tseen = true;
-    newsym(14, 10);
+    await newsym(14, 10);
     game.iflags.getpos_coords = 'm';
     input.feed('m_');
     const action = rhack(0);
@@ -90,7 +90,7 @@ for (const { mode, row } of travelCoordinateModes) {
         assert.ok(stair);
         stair.typ = STAIRS;
         stair.ladder = LA_DOWN;
-        newsym(14, 10);
+        await newsym(14, 10);
         game.iflags.getpos_coords = mode;
         input.feed('m_');
         const action = rhack(0);
@@ -117,7 +117,7 @@ for (const selection of ['a', '\x1b']) {
         const stair = game.level.requireAt(14, 10);
         stair.typ = STAIRS;
         stair.ladder = LA_DOWN;
-        newsym(14, 10);
+        await newsym(14, 10);
         game.iflags.getloc_filter = GFILTER_AREA;
         input.feed('m_');
         await answerPrompts(rhack(0), input, [{
@@ -148,7 +148,7 @@ void test('cancelling the travel menu retains the command for recall', async () 
     assert.ok(stair);
     stair.typ = STAIRS;
     stair.ladder = LA_DOWN;
-    newsym(14, 10);
+    await newsym(14, 10);
     input.feed('m_\x1b');
     await rhack(0);
     input.feed('\x01');
@@ -204,7 +204,7 @@ void test('the travel menu prefix lists visible interesting destinations', async
     assert.ok(stair);
     stair.typ = STAIRS;
     stair.ladder = LA_DOWN;
-    newsym(14, 10);
+    await newsym(14, 10);
     input.feed('m_');
     const action = rhack(0);
     try {

@@ -19,7 +19,7 @@ import { createStaffedShop } from './support/shop.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 void test('a keeper at home blocks a pick-carrying hero at the shop door', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper, roomno } = await createStaffedShop({
         left: 9, right: 16, keeperX: 9, doorX: 8,
@@ -40,7 +40,7 @@ void test('a keeper at home blocks a pick-carrying hero at the shop door', async
     assert.equal(shopkeeper.my, 10);
 });
 void test('a peaceful keeper at home does not mill around an invisible hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     grantIntrinsicProperty('invisible', 'outside', game);
@@ -51,7 +51,7 @@ void test('a peaceful keeper at home does not mill around an invisible hero', as
     assert.equal(shopkeeper.my, 10);
 });
 void test('a following keeper with an open bill moves toward the customer, not home', async () => {
-    freshObjectRoom({ hero: { ux: 15, uy: 10 } });
+    await freshObjectRoom({ hero: { ux: 15, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ right: 16, keeperX: 12 });
     shopkeeper.eshk.shk = { x: 9, y: 10 };
@@ -65,7 +65,7 @@ void test('a following keeper with an open bill moves toward the customer, not h
     assert.equal(shopkeeper.my, 10);
 });
 void test('a blocked keeper outside its shop does not pick up floor cargo without moving', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ left: 9, keeperX: 9 });
     shopkeeper.mx = 7;
@@ -86,7 +86,7 @@ void test('a blocked keeper outside its shop does not pick up floor cargo withou
     assert.ok(floorObjectsAt(game.level, 7, 10).includes(dagger));
 });
 void test('a moving keeper outside its shop can collect the same kind of floor cargo', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ left: 9, keeperX: 9 });
     shopkeeper.mx = 6;
@@ -102,7 +102,7 @@ void test('a moving keeper outside its shop can collect the same kind of floor c
 });
 for (const fast of [false, true]) {
     void test(`a ${fast ? 'fast' : 'normal-speed'} hero's floor pick ${fast ? 'keeps' : 'does not keep'} the shopkeeper at home`, async () => {
-        freshObjectRoom({ hero: { fast } });
+        await freshObjectRoom({ hero: { fast } });
         requirePlayingGame(game);
         const { shopkeeper, roomno } = await createStaffedShop({
             left: 9, right: 16, keeperX: 9, doorX: 8,
@@ -121,7 +121,7 @@ for (const fast of [false, true]) {
     });
 }
 void test('a keeper at home makes room for a distant customer even with an open bill', async () => {
-    freshObjectRoom({ hero: { ux: 15, uy: 10 } });
+    await freshObjectRoom({ hero: { ux: 15, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ left: 9, right: 17, keeperX: 9 });
     const stock = await floorObject(DAGGER, 15, 10);
@@ -133,7 +133,7 @@ void test('a keeper at home makes room for a distant customer even with an open 
 });
 for (const canSee of [false, true]) {
     void test(`an angry ${canSee ? 'sighted' : 'blind'} keeper heads toward ${canSee ? 'the hero' : 'home'}`, async () => {
-        freshObjectRoom({ hero: { ux: 15, uy: 10 } });
+        await freshObjectRoom({ hero: { ux: 15, uy: 10 } });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ left: 9, right: 17, keeperX: 12 });
         // Blind keepers use healing before movement when they carry it.
@@ -152,7 +152,7 @@ for (const canSee of [false, true]) {
 for (const effort of [0, 210]) {
     void test(effort ? 'a keeper intercepts a nearly finished hole'
         : 'a keeper stays near home when the hole is far from finished', async () => {
-        freshObjectRoom({ hero: { ux: 15, uy: 10 } });
+        await freshObjectRoom({ hero: { ux: 15, uy: 10 } });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ left: 9, right: 17, keeperX: 12 });
         shopkeeper.eshk.shk = { x: 9, y: 10 };
@@ -168,7 +168,7 @@ for (const effort of [0, 210]) {
     });
 }
 void test('a distant keeper intercepts active horizontal digging too', async () => {
-    freshObjectRoom({ right: 35, hero: { ux: 30, uy: 10 } });
+    await freshObjectRoom({ right: 35, hero: { ux: 30, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ left: 9, right: 34, keeperX: 12 });
     shopkeeper.eshk.shk = { x: 9, y: 10 };
@@ -182,7 +182,7 @@ void test('a distant keeper intercepts active horizontal digging too', async () 
     assert.equal(shopkeeper.my, 10);
 });
 void test('a keeper at home waits instead of milling around a mounted hero', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

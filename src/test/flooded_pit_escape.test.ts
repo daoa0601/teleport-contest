@@ -9,7 +9,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('crawling out of a flooded pit describes items on the escape square', async () => {
-    const level = freshObjectRoom({ flags: { pickup: false } });
+    const level = await freshObjectRoom({ flags: { pickup: false } });
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++)
             if (x !== 11 || y !== 10) level.requireAt(x, y).typ = STONE;
@@ -31,7 +31,7 @@ void test('crawling out of a flooded pit describes items on the escape square', 
 });
 
 void test('crawling out of a flooded pit triggers a trap on the escape square', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++)
             if (x !== 11 || y !== 10) level.requireAt(x, y).typ = STONE;

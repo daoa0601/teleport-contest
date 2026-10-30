@@ -45,7 +45,7 @@ async function finishRemoval(messages) {
 }
 for (const blind of [false, true]) {
     void test(`delayed suit theft reveals its curse to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
-        freshObjectRoom({ role: 'priest', flags: { female: true },
+        await freshObjectRoom({ role: 'priest', flags: { female: true },
             hero: { uhp: 100, uhpmax: 100, blindTurns: blind ? 20 : 0 } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR, {
@@ -66,7 +66,7 @@ for (const blind of [false, true]) {
 }
 for (const species of ['water nymph', 'monkey']) {
     void test(`${species} attempting delayed armor theft leaves later bite attacks active`, async () => {
-        freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
         const thief = await nearbyThief(species);
@@ -84,7 +84,7 @@ for (const species of ['water nymph', 'monkey']) {
     });
 }
 void test('a second armor theft waits out the longer removal already in progress', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -105,7 +105,7 @@ void test('a second armor theft waits out the longer removal already in progress
     assert.ok(game.inventory.includes(suit));
 });
 void test('a second armor theft does not restart an elapsed turn of removal', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -131,7 +131,7 @@ void test('a second armor theft does not restart an elapsed turn of removal', as
     assert.ok(game.inventory.includes(suit));
 });
 void test('later sleep keeps delayed armor theft pending until the hero wakes', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -150,7 +150,7 @@ void test('later sleep keeps delayed armor theft pending until the hero wakes', 
 void test('a Seer update does not change where the armor thief teleports on recovery', async () => {
     const destinations = [];
     for (const seerDue of [false, true]) {
-        freshObjectRoom({ gameplaySeed: 17, flags: { female: true } });
+        await freshObjectRoom({ gameplaySeed: 17, flags: { female: true } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
         wearHeroArmor(suit);
@@ -170,7 +170,7 @@ void test('a Seer update does not change where the armor thief teleports on reco
     assert.equal(seer.y, ordinary.y, 'Relocation precedes the Seer update');
 });
 void test('an armor thief dying during sleep replaces wake-up feedback with restored movement', async () => {
-    freshObjectRoom({ flags: { female: true } });
+    await freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -186,7 +186,7 @@ void test('an armor thief dying during sleep replaces wake-up feedback with rest
     assert.doesNotMatch(messages.join('\n'), /You wake up\./);
 });
 void test('armor seduction replaces an unprotected prayer without punishing the hero', async () => {
-    freshObjectRoom({ flags: { female: true, paranoia_bits: 0, debug: false },
+    await freshObjectRoom({ flags: { female: true, paranoia_bits: 0, debug: false },
         hero: { ublesscnt: 500, uluck: 0 } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -207,7 +207,7 @@ void test('armor seduction replaces an unprotected prayer without punishing the 
     assert.doesNotMatch(messages.join('\n'), /You finish your prayer\./);
 });
 void test('life saving shortens delayed armor theft to the single recovery turn', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -229,7 +229,7 @@ void test('life saving shortens delayed armor theft to the single recovery turn'
     assert.match(messages.join('\n'), /You survived that attempt on your life\.[\s\S]*The water nymph steals/);
 });
 void test('armor theft after life saving uses the new recovery delay', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -251,7 +251,7 @@ void test('armor theft after life saving uses the new recovery delay', async () 
     assert.ok(game.inventory.includes(suit), 'The later theft replaces the pending suit');
 });
 void test('a nymph stealing another item stays nearby until delayed suit theft finishes', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const dagger = await addInventoryObject(DAGGER);
@@ -269,7 +269,7 @@ void test('a nymph stealing another item stays nearby until delayed suit theft f
     assert.ok(thief.minvent.includes(suit), 'The pending suit is still stolen after removal');
 });
 void test('a nymph steals interrupted donning armor immediately after it becomes unworn', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     pushKey(suit.invlet);
@@ -287,7 +287,7 @@ void test('a nymph steals interrupted donning armor immediately after it becomes
 });
 for (const female of [true, false]) {
     void test(`a nymph continues ${female ? 'removing' : 'taking off'} the suit already being removed with A`, async () => {
-        freshObjectRoom({ flags: { female, menu_style: MENU_PARTIAL }, hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ flags: { female, menu_style: MENU_PARTIAL }, hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
         wearHeroArmor(suit);
@@ -311,7 +311,7 @@ for (const female of [true, false]) {
 }
 for (const restricted of [false, true]) {
     void test(`a nymph refusing a paralyzed hero's armor ${restricted ? 'reports blocked teleportation' : 'teleports before fleeing'}`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         level.flags.noteleport = restricted;
         const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -342,7 +342,7 @@ for (const restricted of [false, true]) {
 }
 for (const female of [true, false]) {
     void test(`a cancelled nymph reports failed ${female ? 'charm' : 'seduction'} and ends her attack when retreat is blocked`, async () => {
-        const level = freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        const level = await freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         level.flags.noteleport = true;
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -366,7 +366,7 @@ for (const female of [true, false]) {
     });
 }
 void test('a cancelled nymph can continue with her second claw when she does not retreat', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -386,7 +386,7 @@ void test('a cancelled nymph can continue with her second claw when she does not
 });
 for (const blind of [false, true]) {
     void test(`a cancelled nymph teleports away${blind ? ' without seduction feedback to a blind hero' : ' after failed seduction'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, blindTurns: blind ? 10 : 0 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, blindTurns: blind ? 10 : 0 } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
         wearHeroArmor(suit);
@@ -409,7 +409,7 @@ for (const blind of [false, true]) {
 }
 for (const previousLoss of [LOST_NONE, LOST_STOLEN]) {
     void test(`delayed theft ${previousLoss === LOST_STOLEN ? 'keeps the stolen suit pickup override' : 'respects the ordinary suit pickup filter'}`, async () => {
-        const level = freshObjectRoom({ flags: {
+        const level = await freshObjectRoom({ flags: {
                 female: true, pickup: true, pickup_types: '$', pickup_stolen: true,
             }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         level.flags.noteleport = true;
@@ -429,7 +429,7 @@ for (const previousLoss of [LOST_NONE, LOST_STOLEN]) {
     });
 }
 void test('a visible delayed armor thief reports that teleportation is prevented', async () => {
-    const level = freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    const level = await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     level.flags.noteleport = true;
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -445,7 +445,7 @@ void test('a visible delayed armor thief reports that teleportation is prevented
     assert.equal(thief.my, 10);
 });
 void test('the hero can move again before the nymph announces delayed armor theft', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -459,7 +459,7 @@ void test('the hero can move again before the nymph announces delayed armor thef
     assert.ok(thief.minvent.includes(suit));
 });
 void test('seduction temporarily uncurses armor before its message pager and restores the curse after removal', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
     wearHeroArmor(suit);

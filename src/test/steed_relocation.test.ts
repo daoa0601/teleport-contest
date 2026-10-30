@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('a dismount after the steed is gone still selects between landing squares', async () => {
-    freshObjectRoom({ left: 9, right: 11, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 9, right: 11, top: 10, bottom: 10 });
     requirePlayingGame(game);
     // C landing_spot() breaks the tie between west and east before the
     // missing-steed check. A subsequent damage roll must follow that choice.
@@ -34,7 +34,7 @@ void test('a dismount after the steed is gone still selects between landing squa
 });
 
 void test('being knocked off a missing steed still chooses a side of the preferred direction', async () => {
-    freshObjectRoom({ left: 9, right: 10, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 9, right: 10, top: 10, bottom: 10 });
     requirePlayingGame(game);
     game.u.dx = -1;
     game.u.dy = 0;
@@ -52,7 +52,7 @@ void test('being knocked off a missing steed still chooses a side of the preferr
 });
 
 async function hallucinatingRiderRoom() {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 9, right: 11, top: 10, bottom: 10,
         flags: { debug: true },
         hero: { hallucinationTurns: 20 },
@@ -81,7 +81,7 @@ void test('mounting shows the same hallucinated steed as relocation onto its squ
 });
 
 async function hallucinatingDismountRoom() {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 9, right: 10, top: 10, bottom: 10,
         hero: { hallucinationTurns: 20 },
     });

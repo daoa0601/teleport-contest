@@ -13,7 +13,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a DEC glyph does not count as three columns when storing toplines', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -32,7 +32,7 @@ void test('a DEC glyph does not count as three columns when storing toplines', a
     }
 });
 void test('a wrapped DEC-mixed topline breaks at its last visible column', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();

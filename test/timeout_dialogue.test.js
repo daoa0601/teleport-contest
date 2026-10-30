@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
 import { BLINDFOLD } from '../js/object_data.js';
 void test('hallucinating at Death\'s door includes Death inviting the hero in', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setPropertyTimeout('hallucination', 20);
     game.u.sickType = SICK_NONVOMITABLE;
     game.u.sickTurns = 3;
@@ -18,7 +18,7 @@ void test('hallucinating at Death\'s door includes Death inviting the hero in', 
     assert.match(messages.join('\n'), /^You are at Death's door\.  (He is|She is|It is|They are) inviting you in\.$/);
 });
 void test('a blindfold hides the slime countdown color change', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.ublindf = await knownObject(BLINDFOLD, { initialize: false });
     game.u.slimedTurns = 9;
     const messages = [];

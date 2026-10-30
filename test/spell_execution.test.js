@@ -27,8 +27,8 @@ const HALBERD = OBJECT_NAMES.indexOf('halberd');
 function visibleText() {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
-function caster(type, { role = 'wizard', hero = {} } = {}) {
-    freshObjectRoom({ role, gameplaySeed: 41n, hero: {
+async function caster(type, { role = 'wizard', hero = {} } = {}) {
+    await freshObjectRoom({ role, gameplaySeed: 41n, hero: {
             ulevel: 30, uen: 200, uenmax: 200, uenpeak: 200,
             uhp: 100, uhpmax: 200, uhs: NOT_HUNGRY, ...hero,
         } });
@@ -45,7 +45,7 @@ function caster(type, { role = 'wizard', hero = {} } = {}) {
     return input;
 }
 void test('self healing spends energy, heals real HP, and leaves memory and inventory intact', async () => {
-    const input = caster(SPE_HEALING);
+    const input = await caster(SPE_HEALING);
     requirePlayingGame(game);
     const carried = await addInventoryObject(WAN_NOTHING);
     const spell = game.spells[0];
@@ -61,7 +61,7 @@ void test('self healing spends energy, heals real HP, and leaves memory and inve
     assert.equal(game.u.uconduct.literate || 0, 0);
 });
 void test('directional healing restores its living target instead of the hero', async () => {
-    const input = caster(SPE_HEALING);
+    const input = await caster(SPE_HEALING);
     requirePlayingGame(game);
     const target = await createMonsterAt('jackal', 11, 10);
     target.mhp = 2;
@@ -73,7 +73,7 @@ void test('directional healing restores its living target instead of the hero', 
     assert.equal(game.u.uen, 195);
 });
 void test('cancelled spell direction releases its energy in the retained direction', async () => {
-    const input = caster(SPE_HEALING);
+    const input = await caster(SPE_HEALING);
     requirePlayingGame(game);
     const target = await createMonsterAt('jackal', 11, 10);
     target.mhp = 2;
@@ -88,7 +88,7 @@ void test('cancelled spell direction releases its energy in the retained directi
     assert.equal(game.u.uen, 195);
 });
 void test('carrying an unread spellbook does not permit casting its spell', async () => {
-    caster(null);
+    await caster(null);
     requirePlayingGame(game);
     await addInventoryObject(SPE_HEALING);
     const result = await castSpell(SPE_HEALING);
@@ -97,7 +97,7 @@ void test('carrying an unread spellbook does not permit casting its spell', asyn
     assert.equal(game.u.uhp, 100);
 });
 void test('forced spell effects bypass learning and energy without training the hero', async () => {
-    caster(null, { hero: { uen: 0 } });
+    await caster(null, { hero: { uen: 0 } });
     requirePlayingGame(game);
     const skill = spellSkillType(SPE_HEALING);
     assert.ok(game.u.weaponSkills != null, 'Expected game.u.weaponSkills to be initialized');
@@ -112,7 +112,7 @@ void test('forced spell effects bypass learning and energy without training the 
     assert.equal(entry.advance, practice);
 });
 void test('successful casting trains the live school by spell level', async () => {
-    caster(SPE_PROTECTION);
+    await caster(SPE_PROTECTION);
     requirePlayingGame(game);
     const skill = spellSkillType(SPE_PROTECTION);
     assert.ok(game.u.weaponSkills != null, 'Expected game.u.weaponSkills to be initialized');
@@ -125,7 +125,7 @@ void test('successful casting trains the live school by spell level', async () =
     assert.ok(game.u.uspellprot > 0);
 });
 void test('protection has diminishing gains and does not restart its current decay period', async () => {
-    const input = caster(SPE_PROTECTION);
+    const input = await caster(SPE_PROTECTION);
     requirePlayingGame(game);
     await castSpell(SPE_PROTECTION);
     const first = game.u.uspellprot;
@@ -142,7 +142,7 @@ void test('protection has diminishing gains and does not restart its current dec
     assert.equal(game.u.usptime, remaining);
 });
 void test('expert protection lasts twenty ticks and its last point expires before feedback', async () => {
-    const input = caster(SPE_PROTECTION, { role: 'priest' });
+    const input = await caster(SPE_PROTECTION, { role: 'priest' });
     requirePlayingGame(game);
     await trainSpellSkill(SPE_PROTECTION, P_EXPERT, { input });
     await castSpell(SPE_PROTECTION);
@@ -157,7 +157,7 @@ void test('expert protection lasts twenty ticks and its last point expires befor
     assert.match(game._pending_message, /haze around you disappears/);
 });
 void test('prayer invulnerability freezes protection decay through the real turn loop', async () => {
-    const input = caster(SPE_PROTECTION);
+    const input = await caster(SPE_PROTECTION);
     requirePlayingGame(game);
     await castSpell(SPE_PROTECTION);
     await answerPrompts(flushPendingTopline(), input, [
@@ -174,7 +174,7 @@ void test('prayer invulnerability freezes protection decay through the real turn
     assert.equal(game.u.usptime, 4);
 });
 void test('protection waits for its first haze message before granting armor', async () => {
-    caster(SPE_PROTECTION);
+    await caster(SPE_PROTECTION);
     requirePlayingGame(game);
     const input = resetInputState();
     await plineWithContinuation('An earlier message that leaves little room for another long sentence.');
@@ -192,7 +192,7 @@ void test('protection waits for its first haze message before granting armor', a
     assert.ok(game.u.uspellprot > 0);
 });
 void test('cure blindness clears sticky goop and deafness without restoring HP', async () => {
-    caster(SPE_CURE_BLINDNESS, { hero: { blindTurns: 20, ucreamed: 10, deafTurns: 10 } });
+    await caster(SPE_CURE_BLINDNESS, { hero: { blindTurns: 20, ucreamed: 10, deafTurns: 10 } });
     requirePlayingGame(game);
     await castSpell(SPE_CURE_BLINDNESS);
     assert.equal(game.u.blindTurns, 0);
@@ -201,7 +201,7 @@ void test('cure blindness clears sticky goop and deafness without restoring HP',
     assert.equal(game.u.uhp, 100);
 });
 void test('cure sickness removes slime and its recorded killer without healing wounds', async () => {
-    caster(SPE_CURE_SICKNESS, { hero: { slimedTurns: 8, slimed: true, slimeKiller: 'a green slime' } });
+    await caster(SPE_CURE_SICKNESS, { hero: { slimedTurns: 8, slimed: true, slimeKiller: 'a green slime' } });
     requirePlayingGame(game);
     await castSpell(SPE_CURE_SICKNESS);
     assert.equal(game.u.slimedTurns, 0);
@@ -209,7 +209,7 @@ void test('cure sickness removes slime and its recorded killer without healing w
     assert.equal(game.u.uhp, 100);
 });
 void test('confusion magic is spent on a surviving melee contact and confuses its target', async () => {
-    const input = caster(SPE_CONFUSE_MONSTER);
+    const input = await caster(SPE_CONFUSE_MONSTER);
     game.flags.verbose = true;
     requirePlayingGame(game);
     await castSpell(SPE_CONFUSE_MONSTER);
@@ -228,7 +228,7 @@ void test('confusion magic is spent on a surviving melee contact and confuses it
     assert.equal(game.u.umconf, charges - 1);
 });
 void test('an already confused target does not consume another magical touch', async () => {
-    const input = caster(SPE_CONFUSE_MONSTER);
+    const input = await caster(SPE_CONFUSE_MONSTER);
     requirePlayingGame(game);
     await castSpell(SPE_CONFUSE_MONSTER);
     await answerPrompts(flushPendingTopline(), input, [
@@ -243,7 +243,7 @@ void test('an already confused target does not consume another magical touch', a
     assert.equal(game.u.umconf, charges);
 });
 void test('a harmless melee contact still spends confusing touch on a shade', async () => {
-    const input = caster(SPE_CONFUSE_MONSTER);
+    const input = await caster(SPE_CONFUSE_MONSTER);
     requirePlayingGame(game);
     await castSpell(SPE_CONFUSE_MONSTER);
     await answerPrompts(flushPendingTopline(), input, [
@@ -261,7 +261,7 @@ void test('a harmless melee contact still spends confusing touch on a shade', as
     assert.equal(game.u.umconf, charges - 1);
 });
 void test('applied polearms carry a confusing touch but thrown weapons do not', async () => {
-    const input = caster(SPE_CONFUSE_MONSTER);
+    const input = await caster(SPE_CONFUSE_MONSTER);
     game.flags.verbose = true;
     requirePlayingGame(game);
     await castSpell(SPE_CONFUSE_MONSTER);
@@ -286,7 +286,7 @@ void test('applied polearms carry a confusing touch but thrown weapons do not', 
     assert.equal(target.mconf, 0);
 });
 void test('a final-charge death wand backfire rolls a single ordinary damage die', async () => {
-    caster(null);
+    await caster(null);
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_DEATH, { spe: -1 });
     await backfireWand(wand);
@@ -294,7 +294,7 @@ void test('a final-charge death wand backfire rolls a single ordinary damage die
     assert.equal(wand.where, 'gone');
 });
 void test('life saving finishes a backfire and removes the exploding wand', async () => {
-    const input = caster(null, { hero: { uhp: 1 } });
+    const input = await caster(null, { hero: { uhp: 1 } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');

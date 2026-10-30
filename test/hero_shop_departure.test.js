@@ -24,7 +24,7 @@ import { createStaffedShop } from './support/shop.js';
 const kopNames = ['Keystone Kop', 'Kop Sergeant', 'Kop Lieutenant', 'Kop Kaptain'];
 const isKop = (monster) => kopNames.includes(MONSTER_NAME[monster.mnum] ?? '');
 async function shop(options = {}) {
-    freshObjectRoom({ left: 3, right: 28, top: 3, bottom: 17, gameplaySeed: 81n,
+    await freshObjectRoom({ left: 3, right: 28, top: 3, bottom: 17, gameplaySeed: 81n,
         flags: { verbose: true, autoopen: true, pickup: false }, ...options });
     requireFixtureGame(game);
     game.plname = 'Ada';

@@ -34,7 +34,7 @@ async function topline(): Promise<string> {
 }
 
 void test('exceptional Strength accuracy improves at 18/50 and 18/100', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await defender();
     for (const [strength, expected] of [
@@ -47,7 +47,7 @@ void test('exceptional Strength accuracy improves at 18/50 and 18/100', async ()
 });
 
 void test('a monster body uses adjusted form accuracy and its species level', async () => {
-    freshObjectRoom({ hero: { ulevel: 8, uz: { dnum: 0, dlevel: 8 } } });
+    await freshObjectRoom({ hero: { ulevel: 8, uz: { dnum: 0, dlevel: 8 } } });
     requirePlayingGame(game);
     const target = await defender();
     installPolymorphedHero('minotaur');
@@ -63,7 +63,7 @@ void test('a monster body uses adjusted form accuracy and its species level', as
 });
 
 void test('worn monster armor and accumulated target disabilities affect accuracy', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const target = await defender();
     const bare = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true });
     await equipMonsterObject(target, await knownObject(LEATHER_ARMOR, { spe: 2 }), W_ARM);
@@ -79,7 +79,7 @@ void test('worn monster armor and accumulated target disabilities affect accurac
 });
 
 void test('Monk armor penalty and empty-hand bonus end when the hero changes form', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     const target = await defender();
     const unarmored = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true });
     wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
@@ -96,7 +96,7 @@ void test('Monk armor penalty and empty-hand bonus end when the hero changes for
 void test('elven accuracy against orcs follows the current body when polymorphed', async () => {
     const elf = races.find(race => race.name === 'elf');
     assert.ok(elf);
-    freshObjectRoom({ race: elf });
+    await freshObjectRoom({ race: elf });
     const target = await defender();
     assert.equal((await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true })).threshold, 20);
     installPolymorphedHero('minotaur');
@@ -110,7 +110,7 @@ void test('elven accuracy against orcs follows the current body when polymorphed
 });
 
 void test('accuracy measures current carrying load and trap restraint', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const target = await defender();
     const unburdened = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true });
     await addInventoryObject(GOLD_PIECE, { quan: 70000 });
@@ -123,7 +123,7 @@ void test('accuracy measures current carrying load and trap restraint', async ()
 });
 
 void test('two-weapon penalties apply to wielded weapons but not natural claws', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const target = await defender();
     installHeroWeaponSkills({
         [P_DAGGER]: P_SKILLED, [P_TWO_WEAPON_COMBAT]: P_BASIC,
@@ -145,7 +145,7 @@ void test('two-weapon penalties apply to wielded weapons but not natural claws',
 });
 
 void test('martial kicks use barehand skill and riding penalties', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const target = await defender();
     installHeroWeaponSkills({ [P_BARE_HANDED_COMBAT]: P_SKILLED, [P_RIDING]: P_UNSKILLED });
     const bite = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true });
@@ -158,7 +158,7 @@ void test('martial kicks use barehand skill and riding penalties', async () => {
 });
 
 void test('a lawful Knight is penalized once for attacking a helpless living defender', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ role: 'knight', hero: { ualign: { type: 1, record: 10 } } });
     const target = await defender();
     target.msleeping = 1;
     await findHeroMeleeHitThreshold(target, AT_WEAP, null, { firstAttack: true });
@@ -170,7 +170,7 @@ void test('a lawful Knight is penalized once for attacking a helpless living def
 });
 
 void test('a Samurai loses alignment for attacking a peaceful defender', async () => {
-    freshObjectRoom({ role: 'samurai', hero: { ualign: { type: 1, record: 0 } } });
+    await freshObjectRoom({ role: 'samurai', hero: { ualign: { type: 1, record: 0 } } });
     const target = await defender();
     target.mpeaceful = 1;
     await findHeroMeleeHitThreshold(target, AT_WEAP, null, { firstAttack: true });
@@ -181,7 +181,7 @@ void test('a Samurai loses alignment for attacking a peaceful defender', async (
 });
 
 void test('a defender can recover from paralysis before the melee roll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const target = await defender();
     target.mcanmove = 0;
     target.mfrozen = 6;
@@ -193,7 +193,7 @@ void test('a defender can recover from paralysis before the melee roll', async (
 });
 
 void test('a missed seduction preserves a sleeping target and gives friendly prose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('wood nymph');
     game.flags.female = true;
     const target = await defender();
@@ -206,7 +206,7 @@ void test('a missed seduction preserves a sleeping target and gives friendly pro
 });
 
 void test('a miss reports cumbersome armor and uses a pronoun when verbose is disabled', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     const target = await defender();
     target.msleeping = 1;
     let feedback = '';

@@ -16,7 +16,7 @@ export async function finishMonsterBirth(monster, flags = 0, state = game) {
         state.vision_full_recalc = 1;
     if (state.in_mklev)
         return monster;
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (!(flags & MM_NOMSG)) {
         const appearance = M_AP_TYPE(monster);
         let exclaim = !(flags & MM_NOEXCLAM);

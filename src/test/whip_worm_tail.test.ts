@@ -13,15 +13,15 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a whip can pull the hero from a pit by catching an adjacent worm tail', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    await freshObjectRoom({ role: 'archeologist', hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
     const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });
     game.uwep = game.u.uwep = whip;
     const worm = await createMonsterAt('long worm', 13, 10, NO_MINVENT | MM_NOTAIL);
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
     game.u.utrap = 3;
     game.u.utraptype = TT_PIT;
-    newsym(11, 10);
+    await newsym(11, 10);
     initRng(4n);
 
     await applyInventoryObject(whip, 'l     ');
@@ -32,15 +32,15 @@ void test('a whip can pull the hero from a pit by catching an adjacent worm tail
 });
 
 void test('applied bullwhip blows can sever an adjacent worm tail without striking its distant head', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    await freshObjectRoom({ role: 'archeologist', hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
     const whip = await addInventoryObject(BULLWHIP, { spe: 10 });
     await setPrimaryWeapon(whip);
     const worm = await createMonsterAt('long worm', 13, 10, NO_MINVENT | MM_NOTAIL);
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
     worm.mhp = worm.mhpmax = 1000;
     worm.mpeaceful = 0;
-    newsym(11, 10);
+    await newsym(11, 10);
     initRng(4n);
 
     for (let blows = 0; blows < 30 && worm.wormSegments.length === 2; blows++)

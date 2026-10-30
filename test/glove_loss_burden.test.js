@@ -9,7 +9,7 @@ import { GAUNTLETS_OF_POWER, ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('losing gauntlets of power immediately reports the increased carrying burden', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { known: false });
     game._moveloopStarted = true;
     game.u.umovement = 12;

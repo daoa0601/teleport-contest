@@ -18,7 +18,7 @@ async function wish(request: string, wizardWish = true) {
 
 for (const request of ['female gnome ruler statue', 'statue of a female gnome ruler']) {
     void test(`a wish preserves species and gender in ${request}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const statue = await wish(request);
 
@@ -29,7 +29,7 @@ for (const request of ['female gnome ruler statue', 'statue of a female gnome ru
 }
 
 void test('historic statues retain history along with the depicted gender', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const statue = await wish('historic female statue of a gnome ruler');
 
@@ -37,7 +37,7 @@ void test('historic statues retain history along with the depicted gender', asyn
 });
 
 void test('a neuter species overrides a female corpse request', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const corpse = await wish('female lichen corpse');
 
@@ -47,7 +47,7 @@ void test('a neuter species overrides a female corpse request', async () => {
 });
 
 void test('a zombifying newt corpse wish rots after ten to fourteen turns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const corpse = await wish('zombifying newt corpse');
     assert.equal(corpse.corpsenm, MONSTER_NAME.indexOf('newt'));
     placeCreatedObject(corpse, game.u.ux, game.u.uy);
@@ -62,7 +62,7 @@ void test('a zombifying newt corpse wish rots after ten to fourteen turns', asyn
 });
 
 void test('corpse wishes for pudding species produce their glob', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const glob = await wish('gray ooze corpse');
 
@@ -71,7 +71,7 @@ void test('corpse wishes for pudding species produce their glob', async () => {
 });
 
 void test('a tin wish can contain spinach or be empty', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const spinach = await wish('tin of spinach');
     const empty = await wish('empty tin');
@@ -84,7 +84,7 @@ void test('a tin wish can contain spinach or be empty', async () => {
 });
 
 void test('a tin of a genocided species is empty', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const newt = MONSTER_NAME.indexOf('newt');
     game.mvitals = [];
     game.mvitals[newt] = { born: 0, died: 0, mvflags: G_GENOD };
@@ -95,7 +95,7 @@ void test('a tin of a genocided species is empty', async () => {
 });
 
 void test('wished eggs keep a hatchable species and start its timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const egg = await wish('cockatrice egg');
 
@@ -105,7 +105,7 @@ void test('wished eggs keep a hatchable species and start its timer', async () =
 });
 
 void test('a figurine cannot depict a unique monster even for a wizard', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const figurine = await wish('figurine of Medusa');
 

@@ -13,7 +13,7 @@ const requests: readonly (readonly [string, string])[] = [
 ];
 for (const [request, form] of requests) {
     void test(`class request ${request} cannot replace a genocided ${form} with another species`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requirePlayingGame(game);
         requireMonsterVital(MONSTER_NAME.indexOf(form)).mvflags |= G_GENOD;
         pushKeys(`polyself\n${request}\n${' '.repeat(20)}`);

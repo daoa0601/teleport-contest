@@ -7,7 +7,7 @@ import { WAN_ENLIGHTENMENT } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('wand enlightenment uses a short tty menu on the right side', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     game.displayName = 'Ada';
     game.plname = 'Ada';
     const wand = await addInventoryObject(WAN_ENLIGHTENMENT, { spe: 2 });

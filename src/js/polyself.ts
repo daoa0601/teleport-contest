@@ -329,7 +329,7 @@ async function restoreHumanBody(
         u.m_ap_type = M_AP_NOTHING;
         u.mappearance = 0;
     }
-    newsym(u.ux, u.uy);
+    await newsym(u.ux, u.uy);
     return {
         changed,
         regainedSight,
@@ -614,7 +614,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     await dropPolymorphWeapons(true);
     if (game.program_state.gameover) return { transformed: true, mnum, died: true };
     findArmorClass(game);
-    if (wasHidingUnder) hideHeroUnder(game);
+    if (wasHidingUnder) await hideHeroUnder(game);
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
     if (wasBlind && !heroIsBlind(game)) {
@@ -623,7 +623,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     }
     // C leaves the sight refresh for the end of polymon(); messages before
     // see_monsters() still show the old view of neighbors.
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
 
     const hero = game.u;
     if ((MONSTER_FLAGS1[hero.umonnum] ?? 0) & M1_OVIPAROUS) {

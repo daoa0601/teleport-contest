@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const lifeSaving of [false, true]) {
     void test(`a web rescue interrupted by a lethal riding accident ${lifeSaving ? 'resumes after life saving' : 'ends without further rescue feedback'}`, async () => {
-        const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+        const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
         requirePlayingGame(game);
         await createSaddledSteed('horse');
         await runExtendedCommand('ride', 'l');

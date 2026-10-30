@@ -9,7 +9,7 @@ import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('valid-location marking stops at the native temporary glyph capacity', async () => {
-    freshObjectRoom({ left: 1, right: 79, top: 0, bottom: 20 });
+    await freshObjectRoom({ left: 1, right: 79, top: 0, bottom: 20 });
     game.symset = 'ASCII';
     const spots = [];
     for (let y = 0; y < 21; y++)
@@ -25,9 +25,9 @@ void test('valid-location marking stops at the native temporary glyph capacity',
 });
 for (const style of ['beam', 'all']) {
     void test(`a temporary ${style} ${style === 'beam' ? 'hides' : 'shows'} its glyph outside sight`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         setHeroBlindnessTurns(10);
-        vision_recalc(0);
+        await vision_recalc(0);
         const effect = new TemporaryMapEffect(style, shieldGlyph('*'));
         await effect.start();
         await effect.show(11, 10);
@@ -38,13 +38,13 @@ for (const style of ['beam', 'all']) {
     });
 }
 void test('a flash restores its visible old position when the next position is hidden', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const effect = new TemporaryMapEffect('flash', shieldGlyph('*'));
     await effect.start();
     await effect.show(11, 10);
     assert.equal(requireScreenCell(10, 11).ch, '*');
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     await effect.show(12, 10);
     await flush_screen(1);
     assert.notEqual(requireScreenCell(10, 11).ch, '*');
@@ -52,9 +52,9 @@ void test('a flash restores its visible old position when the next position is h
     await effect.end();
 });
 void test('an always-visible flash restores its last square before showing the next one', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const effect = new TemporaryMapEffect('always', shieldGlyph('*'));
     await effect.start();
     await effect.show(11, 10);
@@ -64,7 +64,7 @@ void test('an always-visible flash restores its last square before showing the n
     await effect.end();
 });
 void test('changing a beam glyph affects later squares while retaining earlier squares', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const effect = new TemporaryMapEffect('beam', shieldGlyph('*'));
     await effect.start();
     await effect.show(11, 10);
@@ -75,7 +75,7 @@ void test('changing a beam glyph affects later squares while retaining earlier s
     await effect.end();
 });
 void test('a returning tether restores the far end before moving its object toward the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const effect = new TemporaryMapEffect('tether', shieldGlyph('*'));
     await effect.start();
     for (const x of [11, 12, 13])
@@ -94,7 +94,7 @@ void test('a returning tether restores the far end before moving its object towa
     assert.equal(requireScreenCell(10, 11).ch, '.');
 });
 void test('ending an inner effect preserves the outer effect at its other saved positions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const outer = new TemporaryMapEffect('beam', shieldGlyph('*'));
     await outer.start();
     await outer.show(11, 10);

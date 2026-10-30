@@ -27,7 +27,7 @@ async function reflect(mirror, direction = '.') {
     return useMirror(mirror);
 }
 void test('applying a mirror reflects the hero, and cancelling its direction takes no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     await applyInventoryObject(mirror, '.');
@@ -39,7 +39,7 @@ void test('applying a mirror reflects the hero, and cancelling its direction tak
 });
 void test('blind and invisible heroes cannot see themselves in an ordinary mirror', async () => {
     for (const property of ['blinded', 'invisible']) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
         grantIntrinsicProperty(property, 'outside', game);
@@ -52,7 +52,7 @@ void test('blind and invisible heroes cannot see themselves in an ordinary mirro
 });
 void test('a floating-eye form freezes itself, while free action prevents paralysis', async () => {
     for (const freeAction of [false, true]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
         installPolymorphedHero('floating eye');
@@ -66,7 +66,7 @@ void test('a floating-eye form freezes itself, while free action prevents paraly
     }
 });
 void test('an umber-hulk form confuses itself and a vampire has no reflection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     installPolymorphedHero('umber hulk');
@@ -78,7 +78,7 @@ void test('an umber-hulk form confuses itself and a vampire has no reflection', 
     assert.equal(game._pending_message, "You don't have a reflection.");
 });
 void test('vertical mirrors show the surrounding surface without affecting monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const eye = await createMonsterAt('floating eye', 11, 10);
@@ -89,7 +89,7 @@ void test('vertical mirrors show the surrounding surface without affecting monst
     assert.equal(eye.mfrozen || 0, 0);
 });
 void test('underwater mirrors show water and do not send a beam through it', async () => {
-    freshObjectRoom({ hero: { uinwater: true } });
+    await freshObjectRoom({ hero: { uinwater: true } });
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const eye = await createMonsterAt('floating eye', 11, 10);
@@ -99,7 +99,7 @@ void test('underwater mirrors show water and do not send a beam through it', asy
 });
 void test('a floating eye is paralyzed by its own reflection, with paralysis capped', async () => {
     for (const alreadyFrozen of [0, 126]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
         const eye = await createMonsterAt('floating eye', 12, 10);
@@ -114,7 +114,7 @@ void test('a floating eye is paralyzed by its own reflection, with paralysis cap
     }
 });
 void test('a cursed mirror can fog up before affecting the targeted creature', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR, { cursed: true });
     const eye = await createMonsterAt('floating eye', 12, 10);
@@ -124,7 +124,7 @@ void test('a cursed mirror can fog up before affecting the targeted creature', a
     assert.equal(eye.mfrozen || 0, 0);
 });
 void test('a blinded hero can freeze an eye without hearing it when acoustics are disabled', async () => {
-    freshObjectRoom({ flags: { acoustics: false } });
+    await freshObjectRoom({ flags: { acoustics: false } });
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const eye = await createMonsterAt('floating eye', 12, 10);
@@ -138,7 +138,7 @@ for (const [condition, message] of [
     ['blindness', /can't see anything/],
 ]) {
     void test(`a mirror respects an eye's ${condition}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
         const eye = await createMonsterAt('floating eye', 12, 10);
@@ -152,7 +152,7 @@ for (const [condition, message] of [
     });
 }
 void test('an invisible mirror is unnoticed by a monster which cannot see invisible', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const eye = await createMonsterAt('floating eye', 12, 10);
@@ -162,7 +162,7 @@ void test('an invisible mirror is unnoticed by a monster which cannot see invisi
     assert.match(game._pending_message, /fails to notice your mirror/);
 });
 void test('the invisible beam passes a monster which cannot see itself', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const first = await createMonsterAt('floating eye', 11, 10);
@@ -173,17 +173,17 @@ void test('the invisible beam passes a monster which cannot see itself', async (
     assert.equal(second.mconf, 1);
 });
 void test('a wall stops a mirror beam before it reaches the next creature', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const eye = await createMonsterAt('floating eye', 13, 10);
     level.requireAt(12, 10).typ = 0;
-    vision_recalc(0);
+    await vision_recalc(0);
     await reflect(mirror, 'l');
     assert.equal(eye.mfrozen || 0, 0);
 });
 void test('a worm tail stops the beam without showing the worm a reflection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const worm = await createMonsterAt('long worm', 12, 11);
@@ -194,7 +194,7 @@ void test('a worm tail stops the beam without showing the worm a reflection', as
     assert.equal(eye.mfrozen || 0, 0);
 });
 void test('infrared alone cannot reveal a distant reflection', async () => {
-    const level = freshObjectRoom({ right: 25 });
+    const level = await freshObjectRoom({ right: 25 });
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const hulk = await createMonsterAt('umber hulk', 17, 10);
@@ -202,7 +202,7 @@ void test('infrared alone cannot reveal a distant reflection', async () => {
         for (const square of column)
             square.lit = false;
     grantIntrinsicProperty('infravision', 'outside', game);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(howMonsterSeen(hulk) & MONSEEN_NORMAL, 0);
     assert.ok(howMonsterSeen(hulk) & MONSEEN_INFRAVIS);
     await reflect(mirror, 'l');
@@ -210,7 +210,7 @@ void test('infrared alone cannot reveal a distant reflection', async () => {
     assert.match(game._pending_message, /too far away to see itself in the dark/);
 });
 void test('Medusa is petrified through the normal hero kill and statue owners', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const medusa = await createMonsterAt('Medusa', 12, 10, NO_MINVENT);
@@ -224,7 +224,7 @@ void test('Medusa is petrified through the normal hero kill and statue owners', 
         && object.corpsenm === MONSTER_NAME.indexOf('Medusa')));
 });
 void test('Medusa reflection equipment prevents her mirror death and is discovered', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const medusa = await createMonsterAt('Medusa', 12, 10, NO_MINVENT);
@@ -236,7 +236,7 @@ void test('Medusa reflection equipment prevents her mirror death and is discover
     assert.match(game._pending_message, /gaze is reflected away by Medusa's shield/);
 });
 void test('Medusa life saving survives petrification and consumes the amulet', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await addInventoryObject(MIRROR);
     const medusa = await createMonsterAt('Medusa', 12, 10, NO_MINVENT);
@@ -248,7 +248,7 @@ void test('Medusa life saving survives petrification and consumes the amulet', a
     assert.equal(floorObjects(level).some(object => object.otyp === STATUE), false);
 });
 void test('a nymph steals a wielded mirror and obeys the level teleport restriction', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const mirror = await addInventoryObject(MIRROR);
@@ -265,7 +265,7 @@ void test('a nymph steals a wielded mirror and obeys the level teleport restrict
     assert.match(game._pending_message, /mysterious force prevents/);
 });
 void test('mirror theft waits until the hero acknowledges wrapped admiration prose', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const mirror = await addInventoryObject(MIRROR);
@@ -285,7 +285,7 @@ void test('mirror theft waits until the hero acknowledges wrapped admiration pro
 });
 void test('an ordinary animal flees its reflection while a unicorn ignores it', async () => {
     for (const species of ['jackal', 'white unicorn']) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
         const monster = await createMonsterAt(species, 12, 10);
@@ -299,7 +299,7 @@ void test('an ordinary animal flees its reflection while a unicorn ignores it', 
     }
 });
 void test('a speaking mirror uses a turn after direction cancellation, even while deaf', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ualign: { type: 1, record: 10 }, deaf: true } });
+    await freshObjectRoom({ role: 'knight', hero: { ualign: { type: 1, record: 10 }, deaf: true } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     const mirror = await addInventoryItem(await artifactObject('The Magic Mirror of Merlin'));
@@ -309,7 +309,7 @@ void test('a speaking mirror uses a turn after direction cancellation, even whil
     assert.equal(game.inventory.includes(mirror), true);
 });
 void test('an artifact announces its whisper before paging to its rumor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mirror = await artifactObject('The Magic Mirror of Merlin', { overrideIdentified: true });
     const input = resetInputState();
@@ -323,7 +323,7 @@ void test('an artifact announces its whisper before paging to its rumor', async 
 });
 void test('true and false artifact rumors exercise Wisdom in opposite directions', async () => {
     for (const blessed of [true, false]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_WIS] = 3;
         const mirror = await artifactObject('The Magic Mirror of Merlin', { blessed, cursed: !blessed });

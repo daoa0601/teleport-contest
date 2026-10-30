@@ -30,8 +30,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 
-function eatingRoom(form: string | undefined = undefined, options: ObjectRoomOptions = {}) {
-    const level = freshObjectRoom({ flags: { verbose: true, tips: false }, ...options });
+async function eatingRoom(form: string | undefined = undefined, options: ObjectRoomOptions = {}) {
+    const level = await freshObjectRoom({ flags: { verbose: true, tips: false }, ...options });
     requirePlayingGame(game);
     if (form) installPolymorphedHero(form);
     return level;
@@ -39,7 +39,7 @@ function eatingRoom(form: string | undefined = undefined, options: ObjectRoomOpt
 
 
 void test('diet admission follows material and body without making protected unique objects edible', async () => {
-    eatingRoom('rust monster');
+    await eatingRoom('rust monster');
     requirePlayingGame(game);
     const dagger = await uninitializedObject(DAGGER);
     const gold = await uninitializedObject(GOLD_PIECE);
@@ -52,7 +52,7 @@ void test('diet admission follows material and body without making protected uni
 });
 
 void test('a gelatinous cube can eat an empty wooden container but cannot eat its contents with it', async () => {
-    eatingRoom('gelatinous cube');
+    await eatingRoom('gelatinous cube');
     requirePlayingGame(game);
     const box = await uninitializedObject(LARGE_BOX);
     assert.equal(isEdibleFood(box), true);
@@ -61,7 +61,7 @@ void test('a gelatinous cube can eat an empty wooden container but cannot eat it
 });
 
 void test('ghoul food excludes plant corpses and ordinary rations but admits eggs and meat corpses', async () => {
-    eatingRoom('ghoul');
+    await eatingRoom('ghoul');
     requirePlayingGame(game);
     assert.equal(isEdibleFood(await untimedCorpse(MONSTER_NAME.indexOf('lichen'))), false);
     assert.equal(isEdibleFood(await untimedCorpse(MONSTER_NAME.indexOf('newt'))), true);
@@ -70,14 +70,14 @@ void test('ghoul food excludes plant corpses and ordinary rations but admits egg
 });
 
 void test('a fire elemental eats paper but candles are not flammable food', async () => {
-    eatingRoom('fire elemental');
+    await eatingRoom('fire elemental');
     requirePlayingGame(game);
     assert.equal(isEdibleFood(await uninitializedObject(SCR_IDENTIFY)), true);
     assert.equal(isEdibleFood(await uninitializedObject(TALLOW_CANDLE)), false);
 });
 
 void test('floor food can be declined one item at a time before an inventory choice', async () => {
-    eatingRoom();
+    await eatingRoom();
     requirePlayingGame(game);
     const apple = await addInventoryObject(APPLE);
     await floorObject(EGG, game.u.ux, game.u.uy);
@@ -90,7 +90,7 @@ void test('floor food can be declined one item at a time before an inventory cho
 
 void test('the menu prefix and levitation skip floor food and retain real inventory selection', async () => {
     for (const skip of ['menu', 'levitation']) {
-        eatingRoom();
+        await eatingRoom();
         requirePlayingGame(game);
         const apple = await addInventoryObject(APPLE);
         await floorObject(EGG, game.u.ux, game.u.uy);
@@ -103,7 +103,7 @@ void test('the menu prefix and levitation skip floor food and retain real invent
 });
 
 void test('declined floor food changes the empty-inventory message', async () => {
-    eatingRoom();
+    await eatingRoom();
     requirePlayingGame(game);
     await floorObject(APPLE, game.u.ux, game.u.uy);
     pushKeys('n');
@@ -112,7 +112,7 @@ void test('declined floor food changes the empty-inventory message', async () =>
 });
 
 void test('a metal-eater can select and consume the armed floor bear trap', async () => {
-    const level = eatingRoom('rust monster');
+    const level = await eatingRoom('rust monster');
     requirePlayingGame(game);
     const trap = addTrap(level, BEAR_TRAP, game.u.ux, game.u.uy, { tseen: true });
     pushKeys('y');
@@ -127,7 +127,7 @@ void test('a metal-eater can select and consume the armed floor bear trap', asyn
 });
 
 void test('rustproof spitting affects one unit and drops it without gaining nutrition', async () => {
-    const level = eatingRoom('rust monster');
+    const level = await eatingRoom('rust monster');
     requirePlayingGame(game);
     const stack = await addInventoryObject(DAGGER, { quantity: 3, oerodeproof: true });
     const hunger = game.u.uhunger;
@@ -148,7 +148,7 @@ void test('rustproof spitting affects one unit and drops it without gaining nutr
 });
 
 void test('non-food eating consumes one weapon from a stack and clears its temporary meal state', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const stack = await addInventoryObject(DAGGER, { quantity: 2 });
     const hunger = game.u.uhunger;
@@ -165,7 +165,7 @@ void test('non-food eating consumes one weapon from a stack and clears its tempo
 });
 
 void test('non-food eating rejects worn armor before consuming it', async () => {
-    eatingRoom('gelatinous cube');
+    await eatingRoom('gelatinous cube');
     requirePlayingGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { owornmask: W_ARM });
     installPagerInput(resetInputState(), { expected: /You can't eat something you're wearing/, limit: 1 });
@@ -176,7 +176,7 @@ void test('non-food eating rejects worn armor before consuming it', async () => 
 });
 
 void test('an indigestible ring survives without granting nutrition', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_SLOW_DIGESTION, { dknown: false });
     // The live appearance table permits an iron slow-digestion ring.
@@ -192,7 +192,7 @@ void test('an indigestible ring survives without granting nutrition', async () =
 });
 
 void test('digesting a strength ring increases the base attribute and identifies its type', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 2, known: false, dknown: false });
     const before = game.u.acurr.a[A_STR];
@@ -208,7 +208,7 @@ void test('digesting a strength ring increases the base attribute and identifies
 });
 
 void test('free-action digestion grants sleep resistance rather than free action', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('free action'));
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body|You feel wide awake/, limit: 2 });
@@ -219,7 +219,7 @@ void test('free-action digestion grants sleep resistance rather than free action
 });
 
 void test('levitation-ring digestion grants a finite timeout without a permanent source', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('levitation'));
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body|You start to float/, limit: 2 });
@@ -232,7 +232,7 @@ void test('levitation-ring digestion grants a finite timeout without a permanent
 });
 
 void test('eating iron bars resumes work and restores passable terrain on completion', async () => {
-    const level = eatingRoom('rust monster');
+    const level = await eatingRoom('rust monster');
     requirePlayingGame(game);
     const location = level.requireAt(game.u.ux, game.u.uy);
     location.typ = IRONBARS;
@@ -263,7 +263,7 @@ void test('eating iron bars resumes work and restores passable terrain on comple
 });
 
 void test('a guard who sees gold eaten becomes hostile on its next movement', async () => {
-    const level = eatingRoom('rock mole');
+    const level = await eatingRoom('rock mole');
     requirePlayingGame(game);
     const vault = createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: VAULT });
     level.rooms = [vault];
@@ -295,7 +295,7 @@ void test('a guard who sees gold eaten becomes hostile on its next movement', as
 });
 
 void test('digesting a worn ring removes its equipment source before granting its lasting effect', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('poison resistance'));
     await wearHeroAccessory(ring, 'uleft');
@@ -311,7 +311,7 @@ void test('digesting a worn ring removes its equipment source before granting it
 });
 
 void test('digesting an organic potion applies healing and consumes exactly one bottle', async () => {
-    eatingRoom('gelatinous cube');
+    await eatingRoom('gelatinous cube');
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_HEALING, { quantity: 2 });
     assert.ok(game.objectMaterials);
@@ -327,7 +327,7 @@ void test('digesting an organic potion applies healing and consumes exactly one 
 });
 
 void test('digested protection from shape changers restores an actor and reveals a hidden mimic', async () => {
-    eatingRoom('rock mole');
+    await eatingRoom('rock mole');
     requirePlayingGame(game);
     const changed = await createMonsterAt('newt', 12, 10);
     changed.cham = MONSTER_NAME.indexOf('chameleon');

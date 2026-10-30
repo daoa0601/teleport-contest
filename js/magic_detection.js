@@ -29,7 +29,7 @@ export async function detectGold(source, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const blessed = !!source?.blessed;
-    const stale = clearStaleObjects(COIN_CLASS, blessed ? GOLD : 0, state);
+    const stale = await clearStaleObjects(COIN_CLASS, blessed ? GOLD : 0, state);
     const monsters = liveMonsters(state);
     const floors = floorObjects(state);
     let known = stale;
@@ -87,20 +87,20 @@ export async function detectGold(source, { state = game } = {}) {
         for (const object of floors) {
             const found = goldIn(object, blessed, state);
             if (found)
-                showObjectAt(found, object.ox, object.oy, shown);
+                await showObjectAt(found, object.ox, object.oy, shown);
         }
         for (const monster of monsters) {
             const carried = monsterObjects(monster);
             if (monster.mnum === GOLD_GOLEM || carried.some(object => object.otyp === GOLD_PIECE)) {
-                showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
+                await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
             }
             else {
                 const found = carried.map(object => goldIn(object, blessed, state)).find(Boolean);
                 if (found)
-                    showObjectAt(found, monster.mx, monster.my, shown);
+                    await showObjectAt(found, monster.mx, monster.my, shown);
             }
         }
-        const mode = showHeroUnlessCovered(shown, state);
+        const mode = await showHeroUnlessCovered(shown, state);
         await pline(formatFeltMessage('very greedy, and sense gold!', state));
         exerciseWisdom(true, state);
         await browseDetectionMap(mode, 'gold', { state });
@@ -116,7 +116,7 @@ export async function detectFood(source, { state = game } = {}) {
     const confused = (state.u.confusionTurns ?? 0) > 0 || !!source?.cursed;
     const objectClass = confused ? POTION_CLASS : FOOD_CLASS;
     const what = confused ? 'something' : 'food';
-    const stale = clearStaleObjects(objectClass, 0, state);
+    const stale = await clearStaleObjects(objectClass, 0, state);
     alignSteed(state);
     const matches = [];
     for (const object of floorObjects(state)) {
@@ -155,8 +155,8 @@ export async function detectFood(source, { state = game } = {}) {
     const shown = new Map();
     try {
         for (const { object, x, y } of matches)
-            showObjectAt(object, x, y, shown);
-        const mode = showHeroUnlessCovered(shown, state);
+            await showObjectAt(object, x, y, shown);
+        const mode = await showHeroUnlessCovered(shown, state);
         if (!source)
             await pline(`You sense ${what}.`);
         else if (source.blessed) {
@@ -192,7 +192,7 @@ export async function detectMonsters(source, { state = game, monsterClass = 0 } 
         for (const monster of monsters) {
             if (!monsterClass || MONSTER_SYMBOL[monster.mnum] === monsterClass
                 || (monster.mnum === LONG_WORM && monsterClass === WORM_TAIL_CLASS))
-                mapDetectedMonster(monster, true, state);
+                await mapDetectedMonster(monster, true, state);
             if (source?.cursed && (monster.msleeping || !monster.mcanmove)) {
                 monster.msleeping = monster.mfrozen = 0;
                 monster.mcanmove = 1;
@@ -200,7 +200,7 @@ export async function detectMonsters(source, { state = game, monsterClass = 0 } 
             }
         }
         if (!swallowed)
-            displaySelf();
+            await displaySelf();
         await pline('You sense the presence of monsters.');
         if (woken)
             await pline('Monsters sense the presence of you.');
@@ -276,7 +276,7 @@ export async function detectObjects(source, { state = game, objectClass = 0 } = 
             break;
         }
     }
-    const stale = clearStaleObjects(objectClass, 0, state);
+    const stale = await clearStaleObjects(objectClass, 0, state);
     let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
         ? 'something' : objectClass ? OBJECT_CLASS_NAMES[objectClass] : 'objects';
     if (boulderClass && objectClass !== ROCK_CLASS)
@@ -297,21 +297,21 @@ export async function detectObjects(source, { state = game, objectClass = 0 } = 
         for (const object of buried) {
             const found = objectClass ? objectOfClass(object, objectClass) : object;
             if (found)
-                showObjectAt(found, object.ox, object.oy, shown);
+                await showObjectAt(found, object.ox, object.oy, shown);
         }
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {
                 const found = (state.level.objects[x]?.[y] || [])
                     .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
                 if (found)
-                    showObjectAt(found, x, y, shown);
+                    await showObjectAt(found, x, y, shown);
             }
         }
         for (const monster of monsters) {
             const found = monsterObjects(monster)
                 .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
             if (found)
-                showObjectAt(found, monster.mx, monster.my, shown);
+                await showObjectAt(found, monster.mx, monster.my, shown);
             if (misleadingMimic(monster, source, objectClass)) {
                 const appearance = monster.mappearance;
                 if (appearance === undefined)
@@ -324,13 +324,13 @@ export async function detectObjects(source, { state = game, objectClass = 0 } = 
                 const mimicObject = { otyp: appearance, oclass: 0,
                     quan: 1, quantity: 1, ox: 0, oy: 0,
                     corpsenm: monster.mcorpsenm !== undefined && monster.mcorpsenm >= 0 ? monster.mcorpsenm : MONSTER_NAME.indexOf('tengu') };
-                showObjectAt(mimicObject, monster.mx, monster.my, shown);
+                await showObjectAt(mimicObject, monster.mx, monster.my, shown);
             }
             else if (monsterGold(monster, objectClass)) {
-                showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
+                await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
             }
         }
-        const mode = showHeroUnlessCovered(shown, state);
+        const mode = await showHeroUnlessCovered(shown, state);
         await pline(`You detect the ${elsewhere ? 'presence' : 'absence'} of ${what}.`);
         if (elsewhere)
             await browseDetectionMap(mode, 'object', { state });
@@ -401,7 +401,7 @@ function goldIn(object, blessed, state) {
     return blessed && objectOfMaterial(object, GOLD, state)
         || objectOfClass(object, COIN_CLASS);
 }
-function clearStaleObjects(objectClass, material, state) {
+async function clearStaleObjects(objectClass, material, state) {
     let changed = false;
     const monsters = new Map(liveMonsters(state).map(monster => [`${monster.mx},${monster.my}`, monster]));
     for (let x = 1; x < COLNO; x++) {
@@ -417,17 +417,17 @@ function clearStaleObjects(objectClass, material, state) {
                 : materialMatches ? !objects.some(object => objectOfMaterial(object, material, state))
                     : classMatches && !objects.some(object => objectOfClass(object, objectClass));
             if (stale) {
-                unmapObject(x, y);
+                await unmapObject(x, y);
                 changed = true;
             }
         }
     }
     return changed;
 }
-function showObjectAt(object, x, y, shown) {
+async function showObjectAt(object, x, y, shown) {
     object.ox = x;
     object.oy = y;
-    map_object(object, true);
+    await map_object(object, true);
     shown.set(`${x},${y}`, object);
 }
 // C's detected-coins object is also built from cg.zeroobj; only otyp, quan,
@@ -436,10 +436,10 @@ function detectedCoins() {
     const quantity = rnd(10);
     return { otyp: GOLD_PIECE, oclass: 0, quan: quantity, quantity, ox: 0, oy: 0 };
 }
-function showHeroUnlessCovered(shown, state) {
+async function showHeroUnlessCovered(shown, state) {
     let mode = TER_DETECT | TER_OBJ;
     if (!shown.has(`${state.u.ux},${state.u.uy}`)) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         mode |= TER_MON;
     }
     return mode;

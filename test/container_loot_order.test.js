@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C invent.c:loot_xname() omits "partly eaten". Equal rations keep chain
 // order, so add_to_container()'s last insertion appears first.
 void test('container contents keep chain order for whole and partly eaten rations', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await floorObject(SACK, game.u.ux, game.u.uy, { cknown: true });
     const whole = await knownObject(FOOD_RATION, {
         where: 'free', quan: 2, quantity: 2,

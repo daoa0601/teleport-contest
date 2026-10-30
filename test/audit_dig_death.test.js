@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 void test('a fatal self-directed pick strike records the native possessive death cause', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 40, urexp: 100 },
         flags: { verbose: true, female: false, bones: false, tombstone: false,
             disclose: '-i -a -v -c -o' },

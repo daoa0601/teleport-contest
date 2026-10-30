@@ -18,7 +18,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a mounted pony can finish a partial pickup without throwing its rider on resumed input', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { verbose: false } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { verbose: false } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -44,7 +44,7 @@ void test('a mounted pony can finish a partial pickup without throwing its rider
 });
 
 void test('eating destination bars ends movement before a rock mole eats the floor metal', async () => {
-    const level = freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
+    const level = await freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
     const mole = await createMonsterAt('rock mole', 11, 10, MM_NOGRP | NO_MINVENT);
     mole.mpeaceful = 0;
     mole.mflee = 1;
@@ -68,7 +68,7 @@ void test('eating destination bars ends movement before a rock mole eats the flo
 });
 
 void test('unlocking a destination door continues into ordinary floor pickup', async () => {
-    const level = freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
+    const level = await freshObjectRoom({ left: 10, right: 13, top: 10, bottom: 10, flags: { verbose: false } });
     requirePlayingGame(game);
     const orc = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     orc.mpeaceful = 0;
@@ -79,7 +79,7 @@ void test('unlocking a destination door continues into ordinary floor pickup', a
     door.typ = DOOR;
     door.doormask = D_LOCKED;
     vision_note_blocker_change(12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const dagger = await floorObject(DAGGER, 12, 10);
     initRng(1n);
 
@@ -94,7 +94,7 @@ void test('unlocking a destination door continues into ordinary floor pickup', a
 });
 
 void test('a moving engulfer carries the swallowed hero and redraws the stomach at the new position', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
     worm.mpeaceful = 0;

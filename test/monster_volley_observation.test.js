@@ -11,7 +11,7 @@ import { uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';
 void test('a visible single throw observes the remaining stack and keeps an unseen recovered dart separate', async () => {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     const source = await createMonsterAt('kobold lord', 9, 10, NO_MINVENT);
     const darts = await uninitializedObject(DART, {
         quan: 9, dknown: false, known: false, bknown: false, typeKnown: false,

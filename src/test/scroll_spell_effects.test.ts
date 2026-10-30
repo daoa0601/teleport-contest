@@ -94,7 +94,7 @@ void test('cause fear frightens monsters on visible squares, including unseen mo
     requirePlayingGame(game);
     const ant = await createMonsterAt('giant ant', 11, 10);
     ant.minvis = true;
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await applyScrollEffects(await spellSource('cause fear'));
 
@@ -112,7 +112,7 @@ void test('confused fear magic removes fear, sleep, and paralysis', async () => 
     ant.mfrozen = 8;
     ant.mcanmove = 0;
     game.u.confusionTurns = 4;
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await applyScrollEffects(await spellSource('cause fear'));
 

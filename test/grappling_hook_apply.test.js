@@ -29,7 +29,7 @@ async function installHook({ wielded = true, enchantment = 0 } = {}) {
     return hook;
 }
 void test('grappling targeting marks reachable squares while leaving the hero visible', async () => {
-    freshObjectRoom({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
     const hook = await installHook();
     const input = resetInputState();
     const action = applyInventoryObject(hook, '$$');
@@ -46,7 +46,7 @@ void test('grappling targeting marks reachable squares while leaving the hero vi
     assert.equal(game.context.move, 0);
 });
 void test('dismissing the grappling aim corner leaves an uncovered hallucinated monster unchanged', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const hook = await installHook();
     installHeroWeaponSkills({ [P_FLAIL]: P_EXPERT });
     // Outside the hook's valid range, so ending getpos does not itself
@@ -75,7 +75,7 @@ void test('dismissing the grappling aim corner leaves an uncovered hallucinated 
     }
 });
 void test('applying an unwielded grappling hook wields it before targeting', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook({ wielded: false });
     await applyInventoryObject(hook);
@@ -83,7 +83,7 @@ void test('applying an unwielded grappling hook wields it before targeting', asy
     assert.equal(game.context.move, 1);
 });
 void test('a grappling hook snags one object from a visible floor square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     const rock = placeCreatedObject(await knownObject(ROCK), 12, 10);
@@ -95,7 +95,7 @@ void test('a grappling hook snags one object from a visible floor square', async
     assert.equal(game.context.move, 1);
 });
 void test('a hooked shop item is described after credit settles its bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     const { shopkeeper } = await createStaffedShop({ left: 12, keeperX: 14 });
@@ -115,7 +115,7 @@ void test('a hooked shop item is described after credit settles its bill', async
     assert.doesNotMatch(game._pending_message, /unpaid|zorkmids/);
 });
 void test('a grappling hook can yank the hero one square toward solid terrain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     game._travelTipShown = true;
@@ -125,7 +125,7 @@ void test('a grappling hook can yank the hero one square toward solid terrain', 
     assert.equal(game.context.move, 1);
 });
 void test('a grappling hook strikes at range without charging melee hunger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook({ enchantment: 20 });
     const monster = await createMonsterAt('jackal', 12, 10);
@@ -139,7 +139,7 @@ void test('a grappling hook strikes at range without charging melee hunger', asy
     assert.equal(game.context.move, 1);
 });
 void test('a grappling hook can pull a tiny monster next to the hero', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     const hook = await installHook();
     const monster = await createMonsterAt('giant ant', 12, 10);
@@ -153,7 +153,7 @@ void test('a grappling hook can pull a tiny monster next to the hero', async () 
     assert.equal(game.context.move, 1);
 });
 void test('applying a grappling hook scuffs the dust engraving under the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     makeEngravingAt(game.u.ux, game.u.uy, '?', null, 0, DUST);
@@ -169,7 +169,7 @@ void test('applying a grappling hook scuffs the dust engraving under the hero', 
     assert.equal(game.context.move, 1);
 });
 void test('a levitating hero scuffs no engraving while hooking', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     const underHero = makeEngravingAt(game.u.ux, game.u.uy, '?', null, 0, DUST);
@@ -188,7 +188,7 @@ void test('a levitating hero scuffs no engraving while hooking', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('a hook leaves an unliftable stack together on the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hook = await installHook();
     for (const invlet of 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') {

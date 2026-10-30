@@ -16,9 +16,9 @@ import { freshRoomWithPolymorphedHero, installSwallowedHero } from './support/he
 import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
-function explosionForm(species) {
-    freshRoomWithPolymorphedHero(species, { right: 19 });
-    vision_recalc(0);
+async function explosionForm(species) {
+    await freshRoomWithPolymorphedHero(species, { right: 19 });
+    await vision_recalc(0);
     const attack = MONSTER_ATTACKS[MONSTER_NAME.indexOf(species)]?.find(([method]) => method === AT_EXPL);
     assert.ok(attack, `${species} needs its native explosion attack`);
     return attack;
@@ -32,7 +32,7 @@ function unresistedBlast(range) {
     return range === 5 ? 1 : range - 1;
 }
 void test('a blind yellow-light hero receives flash feedback without ending its monster form', async () => {
-    const attack = explosionForm('yellow light');
+    const attack = await explosionForm('yellow light');
     requirePlayingGame(game);
     const defender = await targetMonster();
     assert.equal(heroIsBlind(game), true);
@@ -55,7 +55,7 @@ void test('a blind yellow-light hero receives flash feedback without ending its 
     assert.match(row, /You explode!\s+It is blinded by your flash of light!/);
 });
 void test('a light explosion without a target wakes only monsters within seven squares', async () => {
-    const attack = explosionForm('yellow light');
+    const attack = await explosionForm('yellow light');
     const near = await targetMonster('orc', 16, 10);
     const boundary = await targetMonster('orc', 17, 10);
     near.msleeping = boundary.msleeping = 1;
@@ -71,7 +71,7 @@ void test('a light explosion without a target wakes only monsters within seven s
     assert.equal(messages.length, 0);
 });
 void test('a sleeping target resists a yellow flash before the explosion wakes it', async () => {
-    const attack = explosionForm('yellow light');
+    const attack = await explosionForm('yellow light');
     const defender = await targetMonster();
     defender.msleeping = 1;
     const messages = [];
@@ -84,7 +84,7 @@ void test('a sleeping target resists a yellow flash before the explosion wakes i
     assert.equal(messages.length, 0);
 });
 void test('Sunsword protects a monster from the hero yellow-light flash', async () => {
-    const attack = explosionForm('yellow light');
+    const attack = await explosionForm('yellow light');
     const defender = await targetMonster();
     await equipMonsterObject(defender, await artifactObject('Sunsword'), W_WEP);
     await resolveHeroCombatExplosion(defender, attack, { publish: async () => { } });
@@ -93,7 +93,7 @@ void test('Sunsword protects a monster from the hero yellow-light flash', async 
 });
 for (const target of ['Archon', 'blind orc', 'gray ooze']) {
     void test(`the hero black-light flash respects the ${target}'s sight`, async () => {
-        const attack = explosionForm('black light');
+        const attack = await explosionForm('black light');
         const defender = await targetMonster(target === 'blind orc' ? 'orc' : target);
         if (target === 'blind orc')
             defender.mcansee = 0;
@@ -109,7 +109,7 @@ for (const target of ['Archon', 'blind orc', 'gray ooze']) {
 }
 for (const species of ['flaming sphere', 'freezing sphere', 'shocking sphere']) {
     void test(`a hero ${species} damages nearby monsters without damaging its own body or inventory`, async () => {
-        const attack = explosionForm(species);
+        const attack = await explosionForm(species);
         requirePlayingGame(game);
         const defender = await targetMonster();
         const bystander = await targetMonster('newt', 9, 10);
@@ -131,7 +131,7 @@ for (const species of ['flaming sphere', 'freezing sphere', 'shocking sphere']) 
     });
 }
 void test('a hero fire explosion consumes a paper target and awards hero kill credit', async () => {
-    const attack = explosionForm('flaming sphere');
+    const attack = await explosionForm('flaming sphere');
     requirePlayingGame(game);
     const defender = await targetMonster('paper golem');
     defender.mhp = 1;
@@ -148,7 +148,7 @@ void test('a hero fire explosion consumes a paper target and awards hero kill cr
     assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === SCR_BLANK_PAPER), false);
 });
 void test('killing a bystander leaves the hero explosion result as a hit on the surviving target', async () => {
-    const attack = explosionForm('freezing sphere');
+    const attack = await explosionForm('freezing sphere');
     requirePlayingGame(game);
     const defender = await targetMonster();
     const bystander = await targetMonster('newt', 9, 10);
@@ -163,7 +163,7 @@ void test('killing a bystander leaves the hero explosion result as a hit on the 
     assert.equal(game.u.uconduct.killer, kills + 1);
 });
 void test('a life-saved target makes the hero explosion return a hit', async () => {
-    const attack = explosionForm('freezing sphere');
+    const attack = await explosionForm('freezing sphere');
     requirePlayingGame(game);
     const defender = await targetMonster();
     defender.mhp = 1;
@@ -180,7 +180,7 @@ void test('a life-saved target makes the hero explosion return a hit', async () 
     assert.equal(amulet.where, 'gone');
 });
 void test('a hero explosion from inside a monster affects the engulfer but spares outside monsters', async () => {
-    const attack = explosionForm('freezing sphere');
+    const attack = await explosionForm('freezing sphere');
     requirePlayingGame(game);
     const engulfer = await targetMonster('purple worm');
     const outside = await targetMonster('orc', 9, 10);

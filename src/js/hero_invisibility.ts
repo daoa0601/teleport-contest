@@ -88,7 +88,7 @@ export async function applyPotionLikeInvisibility({
 
     syncHeroInvisibility(state);
     // The hero's square is redrawn before the cursed message can page.
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
 
     let aggravates = false;
     if (cursed) {
@@ -122,7 +122,7 @@ export async function zapHeroInvisible(
     );
     syncHeroInvisibility(state);
     if (observed) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await showInvisibilityMessage(state);
     }
     return observed;

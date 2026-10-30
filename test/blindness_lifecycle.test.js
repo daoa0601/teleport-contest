@@ -16,8 +16,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
-function sightRoom(options = {}) {
-    freshObjectRoom(options);
+async function sightRoom(options = {}) {
+    await freshObjectRoom(options);
     requirePlayingGame(game);
     const messages = [];
     const input = resetInputState();
@@ -42,7 +42,7 @@ async function gainArtifact(name) {
 }
 for (const regaining of [false, true]) {
     void test(`applying eyewear ${regaining ? 'restores Sting light feedback' : 'changes Sting to touch feedback'}`, async () => {
-        const messages = sightRoom();
+        const messages = await sightRoom();
         requirePlayingGame(game);
         const sting = await gainArtifact('Sting');
         const blindfold = await addInventoryObject(BLINDFOLD);
@@ -58,7 +58,7 @@ for (const regaining of [false, true]) {
     });
 }
 void test('removing a blindfold lets an Archeologist decipher a scroll picked up unseen', async () => {
-    const messages = sightRoom({ role: 'archeologist' });
+    const messages = await sightRoom({ role: 'archeologist' });
     requirePlayingGame(game);
     const blindfold = await addInventoryObject(BLINDFOLD);
     await applyInventoryObject(blindfold);
@@ -80,7 +80,7 @@ void test('removing a blindfold lets an Archeologist decipher a scroll picked up
     assert.match(await takeMessages(messages), /You decipher the label on your scroll labeled/);
 });
 void test('adding a blindness timeout behind a blindfold makes the eyes twitch', async () => {
-    const messages = sightRoom({ flags: { debug: true } });
+    const messages = await sightRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const blindfold = await addInventoryObject(BLINDFOLD);
     await applyInventoryObject(blindfold);
@@ -91,7 +91,7 @@ void test('adding a blindness timeout behind a blindfold makes the eyes twitch',
     assert.match(await takeMessages(messages), /Your eyes momentarily twitch\./);
 });
 void test('the real Eyes mask a new timeout and change its feedback without losing sight', async () => {
-    const messages = sightRoom({ role: 'monk', flags: { debug: true } });
+    const messages = await sightRoom({ role: 'monk', flags: { debug: true } });
     requirePlayingGame(game);
     const eyes = await gainArtifact('The Eyes of the Overworld');
     await applyInventoryObject(eyes);
@@ -105,7 +105,7 @@ void test('the real Eyes mask a new timeout and change its feedback without losi
     assert.doesNotMatch(output, /A cloud of darkness/);
 });
 void test('increasing blindness clamps its duration to the Native timeout limit', async () => {
-    const messages = sightRoom({ flags: { debug: true } });
+    const messages = await sightRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     setHeroBlindnessTurns(TIMEOUT - 5);
     await runExtendedCommand('wizintrinsic', 'i\n');

@@ -56,7 +56,7 @@ export async function punishHero(source: GameObject | null = null, state: GameSt
     if (!state.u.uswallow) {
         await placeBallAndChain(state);
         if (heroIsBlind(state)) await setBallAndChainFelt(true, state);
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     }
 }
 

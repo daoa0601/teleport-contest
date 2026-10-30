@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('bad fountain water removes nutrition and can curse blessed equipment while sparing gold', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = FOUNTAIN;
     const equipment = [];

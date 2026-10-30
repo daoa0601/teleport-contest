@@ -12,7 +12,7 @@ function rowText(row) {
     return requireScreenRow(row).map(cell => cell.ch).join('').trimEnd();
 }
 void test('a singleton message menu selects its letter and clears the answered topline', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [{ prompt: /b - an uncursed dagger\.--More--/, keys: 'b' }]);
     assert.equal(selected, 'b'.charCodeAt(0));
@@ -21,7 +21,7 @@ void test('a singleton message menu selects its letter and clears the answered t
     assert.equal(requireGameDisplay().cursorCol, 0);
 });
 void test('a singleton ignores other letters and digits without accepting a count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - 7 uncursed daggers.'), input, [
         { prompt: /b - 7 uncursed daggers\.--More--/, keys: 'x' },
@@ -38,7 +38,7 @@ for (const { name, key } of [
     { name: 'Return', key: '\r' },
 ]) {
     void test(`${name} dismisses a singleton without selecting the item`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const input = resetInputState();
         const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [{ prompt: /b - an uncursed dagger\.--More--/, keys: key }]);
         assert.equal(selected, 0);
@@ -46,7 +46,7 @@ for (const { name, key } of [
     });
 }
 void test('Escape cancels a singleton without suppressing subsequent ordinary messages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [{ prompt: /b - an uncursed dagger\.--More--/, keys: '\x1b' }]);
     assert.equal(selected, 27);
@@ -56,7 +56,7 @@ void test('Escape cancels a singleton without suppressing subsequent ordinary me
     assert.equal(rowText(0), 'You keep your dagger.');
 });
 void test('a wrapped singleton pages once and restores the map it covered', async () => {
-    freshObjectRoom({ top: 0, bottom: 4, heroY: 1 });
+    await freshObjectRoom({ top: 0, bottom: 4, heroY: 1 });
     requirePlayingGame(game);
     await docrt();
     await flush_screen(1);
@@ -75,7 +75,7 @@ void test('a wrapped singleton pages once and restores the map it covered', asyn
     assert.doesNotMatch(screen, /--More--/);
 });
 void test('a singleton restores a map row used only by its More marker', async () => {
-    freshObjectRoom({ top: 0, bottom: 4, heroY: 0 });
+    await freshObjectRoom({ top: 0, bottom: 4, heroY: 0 });
     requirePlayingGame(game);
     await docrt();
     await flush_screen(1);
@@ -87,7 +87,7 @@ void test('a singleton restores a map row used only by its More marker', async (
     assert.equal(requireScreenCell(game.u.ux - 1, 1).ch, '@');
 });
 void test('a selectable singleton leaves status unchanged until the normal status update', async () => {
-    freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
     requirePlayingGame(game);
     await bot();
     await loseHeroHp(5, 'a blow');
@@ -106,7 +106,7 @@ void test('a selectable singleton leaves status unchanged until the normal statu
     assert.match(rowText(23), /HP:7\(20\)/);
 });
 void test('a nonselectable singleton is ordinary prose without a forced More prompt', async () => {
-    freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: 12, uhpmax: 20 } });
     requirePlayingGame(game);
     await bot();
     await loseHeroHp(5, 'a blow');
@@ -121,7 +121,7 @@ void test('a nonselectable singleton is ordinary prose without a forced More pro
 // prompt for an older message that cannot share the line accepts the letter.
 const olderMessage = 'You see here a long row of carefully stacked dusty spellbooks.';
 void test('the item letter dismisses an older message before the singleton is shown', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     await plineWithContinuation(olderMessage);
     const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [
@@ -137,7 +137,7 @@ for (const { name, key, selected } of [
     { name: 'Space', key: ' ', selected: 0 },
 ]) {
     void test(`Escape at older prose still shows the singleton for ${name} to answer`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const input = resetInputState();
         await plineWithContinuation(olderMessage);
         const result = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [

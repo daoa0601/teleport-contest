@@ -21,8 +21,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
 for (const type of [DUST, ENGR_BLOOD]) {
-    void test(`${type === DUST ? 'dust' : 'blood'} can be rubbed away under the hero`, () => {
-        freshObjectRoom();
+    void test(`${type === DUST ? 'dust' : 'blood'} can be rubbed away under the hero`, async () => {
+        await freshObjectRoom();
         makeEngravingAt(10, 10, '?', null, 0, type);
         const adjacent = makeEngravingAt(11, 10, '?', null, 0, type);
         wipeHeroEngraving(1);
@@ -37,8 +37,8 @@ for (const protectedMark of [
     { name: 'indelible dust messages', type: DUST, nowipeout: true },
     { name: 'text burned into stone', type: BURN },
 ]) {
-    void test(`ordinary hero wear preserves ${protectedMark.name}`, () => {
-        freshObjectRoom();
+    void test(`ordinary hero wear preserves ${protectedMark.name}`, async () => {
+        await freshObjectRoom();
         const engraving = makeEngravingAt(10, 10, '?', null, 0, protectedMark.type, { nowipeout: !!protectedMark.nowipeout });
         for (let count = 0; count < 64; count++)
             wipeHeroEngraving(3);
@@ -48,8 +48,8 @@ for (const protectedMark of [
     });
 }
 for (const melted of [false, true]) {
-    void test(`${melted ? 'text melted into ice' : 'engraved text'} wears one character at a time`, () => {
-        freshObjectRoom();
+    void test(`${melted ? 'text melted into ice' : 'engraved text'} wears one character at a time`, async () => {
+        await freshObjectRoom();
         requireFixtureGame(game);
         if (melted)
             game.level.requireAt(10, 10).typ = ICE;
@@ -67,8 +67,8 @@ for (const melted of [false, true]) {
     });
 }
 for (const condition of ['levitating', 'swallowed', 'pit-edge']) {
-    void test(`a ${condition} hero cannot rub the floor engraving`, () => {
-        freshObjectRoom();
+    void test(`a ${condition} hero cannot rub the floor engraving`, async () => {
+        await freshObjectRoom();
         requireFixtureGame(game);
         if (condition === 'levitating')
             game.u.levitating = true;
@@ -99,7 +99,7 @@ void test('standing still can wear away dust during an ordinary world turn', asy
 for (const levitating of [false, true]) {
     for (const action of ['melee', 'kick monster', 'kick wall', 'throw rock']) {
         void test(`${action} ${levitating ? 'cannot wear dust while levitating' : 'wears dust under the hero'}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requireFixtureGame(game);
             game.u.levitating = levitating;
             makeEngravingAt(10, 10, '?', null, 0, DUST);
@@ -132,7 +132,7 @@ for (const levitating of [false, true]) {
 }
 for (const quivered of [false, true]) {
     void test(`${quivered ? 'quivered' : 'hand-thrown'} gold ${quivered ? 'wears' : 'does not wear'} floor dust`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         makeEngravingAt(10, 10, '?', null, 0, DUST);
         const gold = await addInventoryObject(GOLD_PIECE, { quan: 3 });
         if (quivered)
@@ -146,7 +146,7 @@ for (const quivered of [false, true]) {
 }
 for (const refusal of ['welded weapon', 'worn amulet', 'cursed loadstone', 'unwielded Mjollnir', 'heavy Mjollnir']) {
     void test(`a rejected ${refusal} throw leaves the engraving and inventory intact`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         makeEngravingAt(10, 10, '?', null, 0, DUST);
         let item;
@@ -179,7 +179,7 @@ for (const refusal of ['welded weapon', 'worn amulet', 'cursed loadstone', 'unwi
 }
 void test('cancelling a throw or aiming at oneself does not wear floor dust', async () => {
     for (const direction of ['\x1b', '.']) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         makeEngravingAt(10, 10, '?', null, 0, DUST);
         const rock = await addInventoryObject(ROCK);
@@ -190,7 +190,7 @@ void test('cancelling a throw or aiming at oneself does not wear floor dust', as
     }
 });
 void test('an ordinary war hammer does not have Mjollnir throwing restrictions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     makeEngravingAt(10, 10, '?', null, 0, DUST);
     const hammer = await addInventoryObject(WAR_HAMMER);
@@ -200,7 +200,7 @@ void test('an ordinary war hammer does not have Mjollnir throwing restrictions',
     assert.equal(game.context.move, 1);
 });
 void test('worn-item refusal takes precedence over aiming at oneself', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     await wearHeroAccessory(amulet, 'uamul');
@@ -210,7 +210,7 @@ void test('worn-item refusal takes precedence over aiming at oneself', async () 
     assert.equal(game.context.move, 0);
 });
 void test('refusing to throw cursed loadstones reveals the curse without splitting them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stones = await addInventoryObject(LOADSTONE, { quan: 3, cursed: true, bknown: false });
     assert.equal(await canLetGo(stones, 'throw'), false);
@@ -219,7 +219,7 @@ void test('refusing to throw cursed loadstones reveals the curse without splitti
     assert.match(game._pending_message, /cannot throw any of the stones!/);
 });
 void test('silent inventory release still discovers that a loadstone is cursed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const stone = await addInventoryObject(LOADSTONE, { cursed: true, bknown: false });
     assert.equal(await canLetGo(stone), false);
@@ -228,7 +228,7 @@ void test('silent inventory release still discovers that a loadstone is cursed',
     assert.equal(game._pending_message || '', '');
 });
 void test('a fully identified Mjollnir uses its personal name in the wielding refusal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const hammer = await artifactObject('Mjollnir', { rknown: true, invlet: 'a', where: 'inventory' });
     game.inventory.push(hammer);
@@ -238,7 +238,7 @@ void test('a fully identified Mjollnir uses its personal name in the wielding re
     assert.equal(game._pending_message, 'The Mjollnir must be wielded before it can be thrown.');
 });
 void test('repeating a worn-item refusal does not require another message acknowledgment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     await wearHeroAccessory(amulet, 'uamul');
@@ -249,7 +249,7 @@ void test('repeating a worn-item refusal does not require another message acknow
     assert.equal(game._pending_message, 'You cannot throw something you are wearing.');
 });
 void test('a repeated refusal does not duplicate a warning appended to another message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     await wearHeroAccessory(amulet, 'uamul');
@@ -261,7 +261,7 @@ void test('a repeated refusal does not duplicate a warning appended to another m
     assert.equal(game._pending_message, 'A rat squeaks.  You cannot throw something you are wearing.');
 });
 void test('acknowledging a warning does not make an identical refusal print again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     await wearHeroAccessory(amulet, 'uamul');

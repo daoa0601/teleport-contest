@@ -11,7 +11,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { requireScreenCell } from './support/screen.js';
 for (const mode of ['underwater', 'buried']) {
     void test(`a limited ${mode} redraw leaves temporary glyphs outside its old viewport alone`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         if (mode === 'underwater') {
             for (let x = 7; x <= 16; x++)
                 for (let y = 6; y <= 14; y++)
@@ -21,7 +21,7 @@ for (const mode of ['underwater', 'buried']) {
         else
             game.u.uburied = true;
         await docrt();
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await flush_screen(1);
         await redrawMap();
         await flush_screen(1);
@@ -30,7 +30,7 @@ for (const mode of ['underwater', 'buried']) {
 }
 for (const mode of ['underwater', 'buried']) {
     void test(`a delayed full ${mode} reset clears the map on the next update`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const update = mode === 'underwater' ? under_water : under_ground;
         if (mode === 'underwater') {
             level.requireAt(10, 10).typ = POOL;
@@ -39,7 +39,7 @@ for (const mode of ['underwater', 'buried']) {
         else
             game.u.uburied = true;
         await update(1);
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await flush_screen(1);
         await update(2);
         await flush_screen(1);
@@ -50,7 +50,7 @@ for (const mode of ['underwater', 'buried']) {
     });
 }
 void test('an underground full reset leaves the hero blank until a limited update', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.uburied = true;
     await under_ground(1);
     await flush_screen(1);
@@ -78,7 +78,7 @@ for (const mode of ['underwater', 'buried']) {
         await moveloop_core();
         const update = mode === 'underwater' ? under_water : under_ground;
         await update(1);
-        show_glyph_cell(16, 10, '!');
+        await show_glyph_cell(16, 10, '!');
         await update(2);
         await flush_screen(1);
         assert.equal(requireScreenCell(15, 11).ch, '!');

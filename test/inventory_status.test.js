@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('viewing a short inventory leaves an unflagged energy change off the status line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(MACE);
     await bot();
     const energy = game.u.uenmax ?? 0;

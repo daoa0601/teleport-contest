@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
 void test('entering Moloch\'s Sanctum angers its high priest without a peaceful-temple blessing', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const room = createRoom({ lx: 11, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];

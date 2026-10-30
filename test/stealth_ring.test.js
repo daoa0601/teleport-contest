@@ -13,7 +13,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createSaddledSteed } from './support/monsters.js';
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 void test('putting on a stealth ring acknowledges quiet movement before its inventory description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_STEALTH, { invlet: 'a', typeKnown: false });
     const input = resetInputState();
     input.feed(ring.invlet);
@@ -25,7 +25,7 @@ void test('putting on a stealth ring acknowledges quiet movement before its inve
     assert.match(game._pending_message, /ring of stealth \(on right hand\)/);
 });
 void test('the first stealth ring announces quiet movement and identifies its visible type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_STEALTH, { typeKnown: false });
     await wearHeroAccessory(ring, 'uright');
     assert.equal(game._pending_message, 'You move very quietly.');
@@ -33,7 +33,7 @@ void test('the first stealth ring announces quiet movement and identifies its vi
     assert.equal(objectTypeKnown(ring), true);
 });
 void test('an unseen stealth ring gives movement feedback without identifying its appearance', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     const ring = await addInventoryObject(RIN_STEALTH, {
         dknown: false, observed: false, typeKnown: false,
     });
@@ -42,7 +42,7 @@ void test('an unseen stealth ring gives movement feedback without identifying it
     assert.equal(objectTypeKnown(ring), false);
 });
 void test('a second stealth ring stays quiet until the last ring is removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const left = await addInventoryObject(RIN_STEALTH);
     const right = await addInventoryObject(RIN_STEALTH);
     await wearHeroAccessory(left, 'uleft');
@@ -56,7 +56,7 @@ void test('a second stealth ring stays quiet until the last ring is removed', as
     assert.equal(game.u.stealth, false);
 });
 void test('intrinsic stealth suppresses ring feedback and discovery', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('stealth', 'outside');
     const ring = await addInventoryObject(RIN_STEALTH, { typeKnown: false });
     await wearHeroAccessory(ring, 'uright');
@@ -67,7 +67,7 @@ void test('intrinsic stealth suppresses ring feedback and discovery', async () =
 });
 for (const hallucinationTurns of [0, 20]) {
     void test(`removing stealth describes an invisible flying steed with${hallucinationTurns ? '' : 'out'} hallucination`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns } });
+        await freshObjectRoom({ hero: { hallucinationTurns } });
         const steed = await createSaddledSteed('ki-rin');
         steed.minvis = true;
         game.u.usteed = steed;

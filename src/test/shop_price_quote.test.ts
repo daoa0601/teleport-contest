@@ -10,7 +10,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const noCharge of [false, true]) {
     void test(`chatting over ${noCharge ? 'your own' : 'shop-owned'} daggers quotes their price without asking for a direction`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await createStaffedShop();
         const daggers = await floorObject(DAGGER, 10, 10, { quan: 3, no_charge: noCharge });
         const input = resetInputState();
@@ -27,7 +27,7 @@ for (const noCharge of [false, true]) {
 }
 
 void test('a choking customer cannot ask for a floor merchandise quote', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createStaffedShop();
     await floorObject(DAGGER, 10, 10);
     game.u.strangledTurns = 3;

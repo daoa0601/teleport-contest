@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a peaceful lawful minion urges the hero to repent', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const angel = await createMonsterAt('Archon', 11, 10);
     angel.mpeaceful = 1;
 
@@ -19,7 +19,7 @@ void test('a peaceful lawful minion urges the hero to repent', async () => {
 });
 
 void test('the Wizard can curse through chat and wake nearby sleepers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wizard = await createMonsterAt('Wizard of Yendor', 11, 10);
     wizard.msleeping = 0;
     wizard.mpeaceful = 0;

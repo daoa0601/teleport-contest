@@ -10,7 +10,7 @@ const offensiveTypes = new Set([POT_ACID, POT_BLINDNESS, POT_CONFUSION,
 for (const noInventory of [false, true]) {
     void test(`Croesus ${noInventory ? 'receives no sword under NO_MINVENT' : 'always receives a two-handed sword'}`, async () => {
         for (let seed = 1; seed <= 16; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             const croesus = await createMonsterAt('Croesus', 11, 10, noInventory ? NO_MINVENT : 0);
             assert.equal(croesus.minvent.some(object => object.otyp === TWO_HANDED_SWORD), !noInventory, `Croesus sword admission differs at seed ${seed}`);
         }
@@ -19,13 +19,13 @@ for (const noInventory of [false, true]) {
 for (const perception of ['invisible', 'displaced']) {
     void test(`Croesus's fixed sword has the same properties beside a visible or ${perception} hero`, async () => {
         for (let seed = 1; seed <= 16; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             requirePlayingGame(game);
             game.rogue_level = { ...game.u.uz };
             const visibleBirth = await createMonsterAt('Croesus', game.u.ux, game.u.uy);
             const visibleSword = visibleBirth.minvent.find(object => object.otyp === TWO_HANDED_SWORD);
             assert.ok(visibleSword, 'Croesus retains his fixed sword on the Rogue level');
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             requirePlayingGame(game);
             game.rogue_level = { ...game.u.uz };
             if (perception === 'invisible')
@@ -47,7 +47,7 @@ for (const species of ['kobold leader', 'hobbit', 'guard']) {
     void test(`a ${species} can be born with an offensive magic item alongside its ordinary equipment`, async () => {
         let armed = 0;
         for (let seed = 1; seed <= 64; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | MM_NOWAIT);
             if (monster.minvent.some(object => offensiveTypes.has(object.otyp)))
                 armed++;
@@ -58,7 +58,7 @@ for (const species of ['kobold leader', 'hobbit', 'guard']) {
 for (const species of ['kobold leader', 'hobbit', 'guard', 'wood nymph', 'Asmodeus']) {
     void test(`${species} receives no ordinary birth equipment on the Rogue level`, async () => {
         for (let seed = 1; seed <= 64; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             requirePlayingGame(game);
             game.rogue_level = { ...game.u.uz };
             const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | MM_NOWAIT);
@@ -67,7 +67,7 @@ for (const species of ['kobold leader', 'hobbit', 'guard', 'wood nymph', 'Asmode
     });
 }
 void test('Vlad still carries the Candelabrum on the Rogue level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     const vlad = await createMonsterAt('Vlad the Impaler', 11, 10, MM_NOGRP | MM_NOWAIT);

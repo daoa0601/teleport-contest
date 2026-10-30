@@ -188,7 +188,7 @@ void test('loaded dungeon identities, town admission metadata and buried deposit
     game.mines_dnum = game.quest_dnum = game.tower_dnum = -1;
     assert.equal(await saveGame(storage), true);
 
-    assert.equal(restoreGame(game.plname || 'player', storage), true);
+    assert.equal(await restoreGame(game.plname || 'player', storage), true);
 
     assert.equal(game.dungeons[game.mines_dnum]?.dname, 'The Gnomish Mines');
     assert.equal(game.specialLevels?.get('minetn')?.flags.town, true);

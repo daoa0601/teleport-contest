@@ -363,7 +363,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
             return spent();
         }
         if (hole) vision_note_blocker_change(x, y);
-        if (hole || cansee(x, y)) seeTrap(trap, state);
+        if (hole || cansee(x, y)) await seeTrap(trap, state);
         if (cansee(x, y)) {
             await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
             if (hole) await publish(`${subject()} ${(MONSTER_FLAGS1[monster.mnum] ?? 0) & 1 ? 'dives' : 'falls'} through...`);
@@ -417,15 +417,15 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         }
         const cell = state.level.requireAt(trap.tx, trap.ty);
         if (cell.typ === SCORR) { cell.typ = CORR; cell.flags = 0; vision_note_blocker_change(trap.tx, trap.ty); }
-        if (visible) seeTrap(trap, state);
+        if (visible) await seeTrap(trap, state);
         // C remove_monster() empties the old square before redrawing it, even
         // when the monster was already standing on the trap.
         monster.mstate = (monster.mstate ?? 0) | MON_OFFMAP;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         await placeMonsterOnMap(monster, trap.tx, trap.ty);
-        if (monster.wormno) advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
-        maybeUnhideAt(monster.mx, monster.my, state);
-        newsym(monster.mx, monster.my);
+        if (monster.wormno) await advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
+        await maybeUnhideAt(monster.mx, monster.my, state);
+        await newsym(monster.mx, monster.my);
         if (hole) await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
         else await teleportForEscape(monster, 0, seen, options, trap);
         return spent();

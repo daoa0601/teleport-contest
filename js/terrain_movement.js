@@ -179,7 +179,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
                 // handles the pile unlink/relink, maybe_unhide_at, and
                 // both newsym calls
                 await moveObject(chain, ball.ox, ball.oy, state);
-                newsym(hero.ux0, hero.uy0);
+                await newsym(hero.ux0, hero.uy0);
                 state.vision_full_recalc = 1; // in case the hero moved
             }
         }

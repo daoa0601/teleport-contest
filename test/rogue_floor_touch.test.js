@@ -4,23 +4,23 @@ import { feel_location } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('levitating blind touch remembers a lit Rogue floor with its Rogue symbol', () => {
-    const level = freshObjectRoom({ hero: { levitating: true } });
+void test('levitating blind touch remembers a lit Rogue floor with its Rogue symbol', async () => {
+    const level = await freshObjectRoom({ hero: { levitating: true } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     game.symset = 'DECgraphics';
     const destination = level.requireAt(11, 10);
     destination.remembered_glyph = { ch: 'I', color: 8, kind: 'invisible' };
     setHeroBlindnessTurns(10);
-    feel_location(11, 10);
+    await feel_location(11, 10);
     assert.equal(destination.disp_ch, '.');
     assert.equal(destination.remembered_glyph?.ch, '.');
     assert.equal(destination.remembered_glyph?.decgfx, false);
 });
 for (const color of [true, false]) {
     for (const dark_room of [true, false]) {
-        void test(`grounded blind touch shows an unlit Rogue floor with dark_room=${dark_room} and color=${color}`, () => {
-            const level = freshObjectRoom({ flags: { color, dark_room } });
+        void test(`grounded blind touch shows an unlit Rogue floor with dark_room=${dark_room} and color=${color}`, async () => {
+            const level = await freshObjectRoom({ flags: { color, dark_room } });
             requirePlayingGame(game);
             game.rogue_level = { ...game.u.uz };
             game.symset = 'DECgraphics';
@@ -28,7 +28,7 @@ for (const color of [true, false]) {
             destination.lit = false;
             destination.waslit = false;
             setHeroBlindnessTurns(10);
-            feel_location(11, 10);
+            await feel_location(11, 10);
             const symbol = dark_room && color ? '.' : ' ';
             assert.equal(destination.disp_ch, symbol);
             assert.equal(destination.remembered_glyph?.ch, symbol);
@@ -37,21 +37,21 @@ for (const color of [true, false]) {
     }
 }
 for (const symset of ['ASCII', 'DECgraphics']) {
-    void test(`grounded blind touch shows an unlit ${symset} floor as blank without color`, () => {
-        const level = freshObjectRoom({ flags: { color: false, dark_room: true } });
+    void test(`grounded blind touch shows an unlit ${symset} floor as blank without color`, async () => {
+        const level = await freshObjectRoom({ flags: { color: false, dark_room: true } });
         game.symset = symset;
         const destination = level.requireAt(11, 10);
         destination.lit = false;
         destination.waslit = false;
         setHeroBlindnessTurns(10);
-        feel_location(11, 10);
+        await feel_location(11, 10);
         assert.equal(destination.disp_ch, ' ');
         assert.equal(destination.remembered_glyph?.ch, ' ');
         assert.equal(destination.remembered_glyph?.decgfx, false);
     });
 }
-void test('levitating blind touch clears an unseen monster marker on an unlit Rogue floor', () => {
-    const level = freshObjectRoom({
+void test('levitating blind touch clears an unseen monster marker on an unlit Rogue floor', async () => {
+    const level = await freshObjectRoom({
         hero: { levitating: true }, flags: { color: true, dark_room: true },
     });
     requirePlayingGame(game);
@@ -61,7 +61,7 @@ void test('levitating blind touch clears an unseen monster marker on an unlit Ro
     destination.waslit = false;
     destination.remembered_glyph = { ch: 'I', color: 8, kind: 'invisible' };
     setHeroBlindnessTurns(10);
-    feel_location(11, 10);
+    await feel_location(11, 10);
     assert.equal(destination.disp_ch, ' ');
     assert.equal(destination.remembered_glyph?.ch, ' ');
 });

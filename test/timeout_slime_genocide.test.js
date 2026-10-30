@@ -10,7 +10,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('declining sliming death acknowledges that a genocided form is still fatal', async () => {
-    freshObjectRoom({ flags: { debug: true, bones: false } });
+    await freshObjectRoom({ flags: { debug: true, bones: false } });
     requireFixtureGame(game);
     const vital = game.mvitals[PM_GREEN_SLIME];
     assert.ok(vital);

@@ -16,8 +16,8 @@ import { ACH_BGRM, ACH_MEDU, ACH_SOKO, LL_ACHIEVE } from '../js/const.js';
 
 // do.c:1908-1916: entering the Sokoban branch for the first time records
 // ACH_SOKO, whose achieve_msg[] line is "entered Sokoban".
-void test('arriving in the Sokoban branch chronicles the branch entry', () => {
-    freshObjectRoom();
+void test('arriving in the Sokoban branch chronicles the branch entry', async () => {
+    await freshObjectRoom();
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom' }),
         createDungeon({ dname: 'Sokoban' }),
@@ -37,8 +37,8 @@ void test('arriving in the Sokoban branch chronicles the branch entry', () => {
 
 // do.c:1693-1700, 1915: the Bigroom achievement needs a newly made level
 // (`new`), not just a branch change; a cached revisit records nothing.
-void test('arriving on a new Bigroom level chronicles it, a revisit does not', () => {
-    freshObjectRoom();
+void test('arriving on a new Bigroom level chronicles it, a revisit does not', async () => {
+    await freshObjectRoom();
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' })];
     game.specialLevels = new Map([
         ['bigrm', createSpecialLevel({ dnum: 0, dlevel: 5 })],
@@ -64,7 +64,7 @@ void test('arriving on a new Bigroom level chronicles it, a revisit does not', (
 // mon.c:3001: Medusa's first death this game logs the "killed Medusa"
 // achievement line.
 void test('the first Medusa death chronicles the kill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     resetInputState();
     const medusa = await createMonsterAt('Medusa', 11, 10);
     const turn = game.moves;

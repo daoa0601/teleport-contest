@@ -12,10 +12,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 for (const [type, name] of [[PIT, 'pit'], [WEB, 'web']]) {
     void test(`kicking an object in a hidden ${name} reveals the trap before refusing the kick`, async () => {
-        const level = freshObjectRoom({ hero: { utrap: 0 } });
+        const level = await freshObjectRoom({ hero: { utrap: 0 } });
         const trap = addTrap(level, type, 11, 10, { tseen: false });
         const club = await floorObject(CLUB, 11, 10, { initialize: false });
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         const input = resetInputState();
         let discoveries = 0;

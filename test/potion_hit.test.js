@@ -448,7 +448,7 @@ void test('magic-resistant sleep target shields and remains awake', async () => 
     assert.equal(result?.directEffect?.slept, false);
 });
 void test('successful sleeping potion releases a non-engulfing monster grip', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('large mimic', 11, 10);
     game.u.ustuck = monster;
@@ -804,7 +804,7 @@ void test('uncursed restore-ability vapor repairs only the first reduced attribu
     assert.equal(game.u.acurr.a[A_CON], 9);
 });
 void test('full-healing vapor heals both HP pools without exercising a temporary body', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             uhp: 20,
             uhpmax: 30,
             blindTurns: 4,
@@ -1099,7 +1099,7 @@ void test('speed vapor saturates the timed very-fast counter', async () => {
     assert.equal(game.u._exercise?.[A_DEX], 1);
 });
 void test('blindness vapor darkens sight immediately and extends the live timeout', async () => {
-    freshObjectRoom({ hero: { blindTurns: 0 } });
+    await freshObjectRoom({ hero: { blindTurns: 0 } });
     requirePlayingGame(game);
     game.blind = false;
     const messages = [];
@@ -1117,7 +1117,7 @@ void test('blindness vapor darkens sight immediately and extends the live timeou
     assert.equal(result?.sightToggled, true);
 });
 void test('Eyes-blocked blindness vapor brackets the timeout with vision prose', async () => {
-    freshObjectRoom({ hero: { blindTurns: 0 } });
+    await freshObjectRoom({ hero: { blindTurns: 0 } });
     requirePlayingGame(game);
     game.ublindf = await artifactObject('The Eyes of the Overworld');
     const messages = [];
@@ -1136,7 +1136,7 @@ void test('Eyes-blocked blindness vapor brackets the timeout with vision prose',
     assert.equal(result?.sightToggled, false);
 });
 void test('blindness vapor saturates an already-blind timeout without repaint', async () => {
-    freshObjectRoom({ hero: { blindTurns: 0x00fffffe } });
+    await freshObjectRoom({ hero: { blindTurns: 0x00fffffe } });
     requirePlayingGame(game);
     game.blind = true;
     const potion = await potionObject(POT_BLINDNESS);

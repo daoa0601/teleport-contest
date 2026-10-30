@@ -47,22 +47,22 @@ export async function beginMealMimicry(turns: number, { state = game }: { state?
     state._afterMove = { kind: 'end-mimic-meal' };
     hero.m_ap_type = M_AP_OBJECT;
     hero.mappearance = nowHallucinating ? ORANGE : GOLD_PIECE;
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
     await flush_screen(1);
     await flushPendingTopline();
 }
 
-export function finishMealMimicry(state: GameState = game): void {
+export async function finishMealMimicry(state: GameState = game): Promise<void> {
     if (state._helplessDoneMessage === state._mimicMealMessage)
         state._helplessDoneMessage = null;
     state._mimicMealMessage = null;
     if (state.u.m_ap_type) {
         state.u.m_ap_type = M_AP_NOTHING;
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     }
 }
 
-export function updateMealMimicry(state: GameState = game): void {
+export async function updateMealMimicry(state: GameState = game): Promise<void> {
     if (!state._mimicMealMessage || state._helplessDoneMessage !== state._mimicMealMessage
         || state.u.m_ap_type !== M_AP_OBJECT) return;
     const hallucinating = heroIsHallucinating(state);
@@ -74,7 +74,7 @@ export function updateMealMimicry(state: GameState = game): void {
         state.u.mappearance = ORANGE;
     } else return;
     state._helplessDoneMessage = state._mimicMealMessage;
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
 }
 
 export async function disturbMealMimicry(monster: Monster, { state = game }: { state?: GameState } = {}): Promise<boolean> {
@@ -84,7 +84,7 @@ export async function disturbMealMimicry(monster: Monster, { state = game }: { s
         || monster.mux !== hero.ux || monster.muy !== hero.uy
         || Math.max(Math.abs(monster.mx - hero.ux), Math.abs(monster.my - hero.uy)) > 1)
         return false;
-    if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+    if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
     if (!canSeeMonster(monster)) {
         const picksUpGold = requireMonsterData(MONSTER_FLAGS2, monster.mnum) & 0x10000000
             && hero.mappearance === GOLD_PIECE;

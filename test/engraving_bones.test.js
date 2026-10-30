@@ -33,7 +33,7 @@ void test('an ancestor Elbereth is already complete when the next hero attacks f
     await moveloop_core();
     assert.equal(engravingAt(10, 10)?.text, 'Elbereth');
     assert.equal(saveBonesLevel(), true);
-    freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 8 }, uhitinc: 30, ualign: { type: 0, record: 10 } } });
+    await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 8 }, uhitinc: 30, ualign: { type: 0, record: 10 } } });
     requireFixtureGame(game);
     game.storage = storage;
     game.flags.debug = true;

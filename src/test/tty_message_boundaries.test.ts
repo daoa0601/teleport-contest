@@ -20,7 +20,7 @@ function messageRow(): string {
 }
 
 void test('leaving the terrain browser clears Done after its acknowledgment and restores the hero', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     const input = resetInputState();
     const browsing = runExtendedCommand('terrain');
@@ -45,7 +45,7 @@ void test('leaving the terrain browser clears Done after its acknowledgment and 
 });
 
 void test('engulf entry clears the acknowledged announcement before drawing the stomach', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
     const attack = MONSTER_ATTACKS[monster.mnum]?.find(entry => entry[0] === AT_ENGL);
@@ -76,7 +76,7 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
 });
 
 void test('a cancelled vortex can engulf without leaving its acknowledged announcement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('fire vortex', 11, 10, MM_ANGRY | NO_MINVENT);
     monster.mux = game.u.ux;

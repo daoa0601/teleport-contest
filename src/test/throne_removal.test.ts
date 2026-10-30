@@ -5,7 +5,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a vanishing throne leaves ordinary ground without its looted flag', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 2n });
+    const level = await freshObjectRoom({ gameplaySeed: 2n });
     const throne = level.requireAt(10, 10);
     throne.typ = THRONE;
     throne.looted = T_LOOTED;

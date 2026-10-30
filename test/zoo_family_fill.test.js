@@ -7,8 +7,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-function specialRoom(type) {
-    const level = freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 11, gameplaySeed: 321 });
+async function specialRoom(type) {
+    const level = await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 11, gameplaySeed: 321 });
     requirePlayingGame(game);
     game.in_mklev = true;
     game.ubirthday = 0;
@@ -26,7 +26,7 @@ function specialRoom(type) {
     return room;
 }
 void test('an anthole is stocked with one sleeping ant species and food', async () => {
-    const room = specialRoom(ANTHOLE);
+    const room = await specialRoom(ANTHOLE);
     await fillSpecialRoom(room);
     assert.equal(requireGameLevel().monsters.length, 6);
     const species = new Set(requireGameLevel().monsters.map(monster => MONSTER_NAME[monster.mnum]));
@@ -36,14 +36,14 @@ void test('an anthole is stocked with one sleeping ant species and food', async 
     assert.ok(floorObjects(requireGameLevel()).some(object => object.oclass === 7));
 });
 void test('a leprechaun hall has sleeping leprechauns and floor gold', async () => {
-    const room = specialRoom(LEPREHALL);
+    const room = await specialRoom(LEPREHALL);
     await fillSpecialRoom(room);
     assert.equal(requireGameLevel().monsters.length, 6);
     assert.ok(requireGameLevel().monsters.every(monster => MONSTER_NAME[monster.mnum] === 'leprechaun' && monster.msleeping));
     assert.equal(floorObjects(requireGameLevel()).filter(object => object.otyp === GOLD_PIECE).length, 6);
 });
 void test('a cockatrice nest fills eligible squares with sleeping cockatrices', async () => {
-    const room = specialRoom(COCKNEST);
+    const room = await specialRoom(COCKNEST);
     room.irregular = true;
     requireGameLevel().requireAt(10, 10).edge = true;
     await fillSpecialRoom(room);

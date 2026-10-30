@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('untrap leaves a rejected direction visible and spends no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=number_pad:-1,!cmdassist');
     pushKeys('u\ny');
 
@@ -22,7 +22,7 @@ void test('untrap leaves a rejected direction visible and spends no time', async
 });
 
 void test('cancelling an untrap direction leaves no error and spends no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     pushKeys('untrap\n\x1b');
 
     await rhack('#'.charCodeAt(0));

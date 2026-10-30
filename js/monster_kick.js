@@ -131,7 +131,7 @@ export async function tryKickEvasion(monster, { clumsy = false, martial = false,
     const relocation = await nextOpenSquareNearHero(monster, state);
     if (!relocation?.moved)
         return false;
-    unmap_invisible(relocation.oldx, relocation.oldy);
+    await unmap_invisible(relocation.oldx, relocation.oldy);
     await announce(`${nameMonster(monster)} ${evasionVerb(monster, state)}, ${clumsy ? 'easily' : 'nimbly'} evading your ${clumsy ? 'clumsy ' : ''}kick.`);
     return true;
 }
@@ -191,8 +191,8 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
     updateMonsterRegions(monster, state, { x, y });
     monster.mx = x;
     monster.my = y;
-    newsym(oldx, oldy);
-    newsym(x, y);
+    await newsym(oldx, oldy);
+    await newsym(x, y);
     setMonsterApparentHeroPosition(monster, state, rn2);
     const trap = await triggerImmediateMonsterTrap(monster, state);
     await finishImmediateMonsterTrap(trap, state, {

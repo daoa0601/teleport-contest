@@ -64,7 +64,7 @@ void test('Excalibur retains Knight role ownership only for Knights', () => {
 });
 
 void test('naming Grimtooth permanently poisons its dagger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     initializeArtifacts(game);
     const grimtooth = artifactByName('Grimtooth');
     assert.ok(grimtooth);

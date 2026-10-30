@@ -7,7 +7,7 @@ import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a shopkeeper repairs a web spun in the shop after the hero moves away', async () => {
-    freshMonsterAbilityRoom('giant spider');
+    await freshMonsterAbilityRoom('giant spider');
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 13, keeperY: 10 });
     const x = game.u.ux;

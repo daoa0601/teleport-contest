@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('waking a monster-disguised mimic does not reveal it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10);
     const appearance = nameToMonster('little dog');
@@ -28,7 +28,7 @@ void test('waking a monster-disguised mimic does not reveal it', async () => {
 });
 
 void test('waking a disguised Wizard runs the non-mimic appearance cleanup', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wizard = await createMonsterAt('Wizard of Yendor', 11, 10);
     wizard.m_ap_type = M_AP_MONSTER;
@@ -42,7 +42,7 @@ void test('waking a disguised Wizard runs the non-mimic appearance cleanup', asy
 
 for (const [forcefight, monMoving] of [[true, false], [false, false], [true, true]] satisfies [boolean, boolean][]) {
     void test(`waking a hidden eel with forcefight=${forcefight} and monster movement=${monMoving}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.level.requireAt(11, 10).typ = POOL;
         const eel = await createMonsterAt('giant eel', 11, 10);

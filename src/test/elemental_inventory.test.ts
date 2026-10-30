@@ -33,7 +33,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('carried paper can burn while an exposed candle catches light', async () => {
-    freshObjectRoom({ moves: 10, hero: { uhp: 20, uhpmax: 20 } });
+    await freshObjectRoom({ moves: 10, hero: { uhp: 20, uhpmax: 20 } });
     requireFixtureGame(game);
     const scroll = await addInventoryObject(SCR_IDENTIFY);
     const candle = await addInventoryObject(TALLOW_CANDLE, { age: 80 });
@@ -51,7 +51,7 @@ void test('carried paper can burn while an exposed candle catches light', async 
 });
 
 void test('cold shatters carried potions and immediately hurts the carrier', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: 20, uhpmax: 20 } });
     requireFixtureGame(game);
     const potion = await addInventoryObject(POT_HEALING, { quan: 2, quantity: 2 });
     pushKeys(' '.repeat(20));
@@ -65,7 +65,7 @@ void test('cold shatters carried potions and immediately hurts the carrier', asy
 });
 
 void test('electricity can recharge a worn ring and update its armor protection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const ring = await addInventoryObject(RIN_PROTECTION, { spe: 0 });
     await wearHeroAccessory(ring, 'uleft');
@@ -83,7 +83,7 @@ void test('electricity can recharge a worn ring and update its armor protection'
 
 for (const lifesaving of [false, true] as const) {
     void test(`an electrically overcharged ring ${lifesaving ? 'allows life saving' : 'kills immediately'} despite shock resistance`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 40, shockResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40, shockResistance: true } });
         requireFixtureGame(game);
         const ring = await addInventoryObject(RIN_PROTECTION, { spe: 8 });
         if (lifesaving)
@@ -103,7 +103,7 @@ for (const lifesaving of [false, true] as const) {
 
 for (const unchanging of [false, true] as const) {
     void test(`an exploding ring ${unchanging ? 'kills an unchanging iron golem' : 'restores a depleted iron golem to human form'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
+        await freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
         requireFixtureGame(game);
         installPolymorphedHero('iron golem', { hitPoints: 1, maxHitPoints: 80 });
         const ring = await addInventoryObject(RIN_PROTECTION, { spe: 8 });
@@ -127,7 +127,7 @@ for (const unchanging of [false, true] as const) {
 
 for (const lifesaving of [false, true] as const) {
     void test(`a shattered stack ${lifesaving ? 'resumes destruction of the next selected stack after life saving' : 'stops destruction of the next selected stack on death'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
         requireFixtureGame(game);
         const first = await addInventoryObject(POT_HEALING, { quan: 40, quantity: 40 });
         const next = await addInventoryObject(POT_SPEED, { quan: 40, quantity: 40 });
@@ -152,7 +152,7 @@ for (const lifesaving of [false, true] as const) {
 
 for (const artifactName of ['Frost Brand', 'Fire Brand', 'The Mitre of Holiness'] as const) {
     void test(`${artifactName} protects carried potions from elemental destruction`, async () => {
-        freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
+        await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
         const artifact = artifactByName(artifactName);
         assert.ok(artifact !== null && artifact !== undefined);
         const item = await addInventoryObject(artifact.baseType);
@@ -170,7 +170,7 @@ for (const artifactName of ['Frost Brand', 'Fire Brand', 'The Mitre of Holiness'
 }
 
 void test('intrinsic cold resistance does not protect carried potions like a wielded Frost Brand', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     grantIntrinsicProperty('coldResistance', 'outside');
     const artifact = artifactByName('Frost Brand');
@@ -188,7 +188,7 @@ void test('intrinsic cold resistance does not protect carried potions like a wie
 });
 
 void test('a burning green-slime glob boils and explodes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const glob = await addInventoryObject(GLOB_OF_GREEN_SLIME);
     const messages: string[] = [];
     initRng(2n);
@@ -201,7 +201,7 @@ void test('a burning green-slime glob boils and explodes', async () => {
 
 for (const eyesWorn of [false, true] as const) {
     void test(`the Book glow ${eyesWorn ? 'is visible through the Eyes of the Overworld' : 'is hidden by blindness'}`, async () => {
-        freshObjectRoom({ role: 'monk' });
+        await freshObjectRoom({ role: 'monk' });
         requireFixtureGame(game);
         const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
         setHeroBlindnessTurns(20);
@@ -226,7 +226,7 @@ for (const eyesWorn of [false, true] as const) {
 
 for (const lifesaving of [false, true] as const) {
     void test(`ordinary items are destroyed before losing levitation ${lifesaving ? 'and life saving lets the ring finish crumbling' : 'causes a fatal fall'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 40, shockResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40, shockResistance: true } });
         requireFixtureGame(game);
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
         await wearHeroAccessory(ring, 'uleft');
@@ -254,7 +254,7 @@ for (const lifesaving of [false, true] as const) {
 }
 
 void test('hallucination changes the Book glow color without damaging the Book', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
     const messages: string[] = [];
     initRng(2n);
@@ -267,7 +267,7 @@ void test('hallucination changes the Book glow color without damaging the Book',
 
 for (const artifactName of ['Fire Brand', 'The Mitre of Holiness'] as const) {
     void test(`${artifactName} still resists burning-paper damage when inventory protection fails`, async () => {
-        freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
+        await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
         requireFixtureGame(game);
         const artifact = artifactByName(artifactName);
         assert.ok(artifact !== null && artifact !== undefined);
@@ -287,7 +287,7 @@ for (const artifactName of ['Fire Brand', 'The Mitre of Holiness'] as const) {
 
 for (const sight of ['sighted', 'blind', 'hallucinating'] as const) {
     void test(`destruction of a previously unseen stack ${sight === 'sighted' ? 'reveals its appearance' : `does not reveal its appearance while ${sight}`}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         setHeroBlindnessTurns(20);
         const potion = await addInventoryObject(POT_HEALING, {
@@ -315,7 +315,7 @@ for (const sight of ['sighted', 'blind', 'hallucinating'] as const) {
 
 for (const sight of ['sighted', 'blind', 'hallucinating'] as const) {
     void test(`a fully destroyed unseen potion ${sight === 'sighted' ? 'leaves its appearance in discoveries' : `does not reveal its appearance while ${sight}`}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         setHeroBlindnessTurns(20);
         const potion = await addInventoryObject(POT_HEALING, {
@@ -346,7 +346,7 @@ for (const sight of ['sighted', 'blind', 'hallucinating'] as const) {
 // C trap.c lava_effects(): a surviving hero sees the Book glow with
 // hcolor("dark red"), like the fire-damage path.
 void test('the Book survives lava with a hallucinated glow', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requireFixtureGame(game);
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
     const messages: string[] = [];

@@ -77,7 +77,7 @@ void test('the trap detection cursor describes hallucinated traps', async () => 
     for (let seed = 1; seed <= 8; seed++) {
         const level = freshPlayableRoom({ flags: { tips: false, verbose: false } });
         const trap = addTrap(level, WEB, 11, 10, { tseen: true });
-        map_trap(trap, true);
+        await map_trap(trap, true);
         game.u.hallucinationTurns = 30;
         initRng(seed);
         const input = resetInputState();

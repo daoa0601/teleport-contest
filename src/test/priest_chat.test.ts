@@ -21,7 +21,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createRoom } from './support/topology.js';
 
 async function templePriest() {
-    const level = freshObjectRoom({ hero: { ulevelpeak: 1 } });
+    const level = await freshObjectRoom({ hero: { ulevelpeak: 1 } });
     requirePlayingGame(game);
     const room = createRoom({ lx: 7, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];
@@ -106,7 +106,7 @@ void test('a pious donation grants temporary clairvoyance', async () => {
 });
 
 void test('a monster in a coaligned cleric form rejects a hero who has strayed', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 0, record: -1 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 0, record: -1 } } });
     const priest = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     const changed = await changeMonsterForm(priest, MONSTER_NAME.indexOf('aligned cleric'));
     assert.ok(changed);
@@ -125,7 +125,7 @@ void test('a restored priest gives fresh temple-entry feedback despite a recent 
     game.plname = 'TempleVisitor';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('TempleVisitor', storage), true);
+    assert.equal(await restoreGame('TempleVisitor', storage), true);
     game.u.ux = 6;
     game.u.urooms = [];
     clearMessageWindow();

@@ -17,7 +17,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('moving into a raised drawbridge reports the closed bridge', async () => {
-    const level = freshObjectRoom({ flags: { autoopen: false } });
+    const level = await freshObjectRoom({ flags: { autoopen: false } });
     const gate = level.requireAt(11, 10);
     gate.typ = DBWALL;
     initRng(1n);
@@ -30,7 +30,7 @@ void test('moving into a raised drawbridge reports the closed bridge', async () 
 
 for (const solved of [false, true] as const) {
     void test(`a phasing hero cannot enter Sokoban unphaseable walls${solved ? ' after the puzzle is solved' : ''}`, async () => {
-        const level = freshObjectRoom({ flags: { autoopen: false } });
+        const level = await freshObjectRoom({ flags: { autoopen: false } });
         const wall = level.requireAt(11, 10);
         wall.typ = VWALL;
         wall.wall_info = W_NONPASSWALL;
@@ -48,7 +48,7 @@ for (const solved of [false, true] as const) {
 }
 
 void test('an amorphous hero with unsqueezable possessions fails to ooze under a door', async () => {
-    const level = freshObjectRoom({ flags: { autoopen: false } });
+    const level = await freshObjectRoom({ flags: { autoopen: false } });
     const door = level.requireAt(11, 9);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -67,7 +67,7 @@ void test('an amorphous hero with unsqueezable possessions fails to ooze under a
 });
 
 void test('a fumbling rider cannot lead the steed through a closed door', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'knight',
         flags: { autoopen: false, pickup: false },
     });

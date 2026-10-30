@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('learning the life-saving amulet does not train Wisdom above its exercise limit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     game._knownObjectTypes?.delete(AMULET_OF_LIFE_SAVING);

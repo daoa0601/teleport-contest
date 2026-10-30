@@ -15,7 +15,7 @@ import { heroSpecies } from '../js/hero_species.js';
 // blinds a fellow raven with pie or venom nor blinds itself with a
 // self-thrown hit; mthrowu.c passes a null aggressor, which skips the check.
 void test('a raven hero cannot blind a fellow raven with pie or venom', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await polymonHero(MONSTER_NAME.indexOf('raven'));
     const raven = await createMonsterAt('raven', 12, 10, NO_MINVENT);
     assert.equal(monsterCanBeBlindedByObject(raven, BLINDING_VENOM, {
@@ -28,7 +28,7 @@ void test('a raven hero cannot blind a fellow raven with pie or venom', async ()
     assert.equal(monsterCanBeBlindedByObject(raven, BLINDING_VENOM, {}), true);
 });
 void test('a raven hero is not blinded by its own self-thrown pie or venom', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await polymonHero(MONSTER_NAME.indexOf('raven'));
     assert.equal(heroCanBeBlindedByObject(CREAM_PIE, game, { thrownByHero: true }), false);
     assert.equal(heroCanBeBlindedByObject(BLINDING_VENOM, game, { thrownByHero: true }), false);

@@ -11,7 +11,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a small animal form loses its armor with an animal pronoun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     monster.female = false;
     const armor = await equipMonsterObject(monster, await knownObject(CHAIN_MAIL), W_ARM);
@@ -26,7 +26,7 @@ void test('a small animal form loses its armor with an animal pronoun', async ()
 });
 
 void test('an invisible monster’s lost armor uses the possessive Its', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     await equipMonsterObject(monster, await knownObject(ELVEN_CLOAK), W_ARMC);
     const messages: string[] = [];

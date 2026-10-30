@@ -37,7 +37,7 @@ import { createRoom, createSpecialLevel } from './support/topology.js';
 const MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 
 async function offensiveRoom({ species = 'orc', x = 14, y = 10 } = {}) {
-    const level = freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18 });
+    const level = await freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18 });
     requirePlayingGame(game);
     const state = game;
     const monster = await createMonsterAt(species, x, y, MONSTER_FLAGS);
@@ -473,7 +473,7 @@ void test('a faithful hero in an intact sanctuary is not targeted with an offens
         shrlevel: { ...state.u.uz }, parentmid: priest.m_id,
         intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0 };
     updateHeroRoomMembership(state);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(select(), null);
     priest.mpeaceful = false;

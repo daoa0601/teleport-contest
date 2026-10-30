@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const carriedLamp of [false, true]) {
     void test(`a death drop on an altar refreshes sight with ${carriedLamp ? 'the carried lamp' : 'the dead monster light removed'}`, async () => {
-        const level = freshObjectRoom({ context: { mon_moving: true } });
+        const level = await freshObjectRoom({ context: { mon_moving: true } });
         requirePlayingGame(game);
         for (let x = 7; x <= 16; x++)
             for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
@@ -30,7 +30,7 @@ for (const carriedLamp of [false, true]) {
         }
         const dagger = await knownObject(DAGGER, { blessed: true });
         await addObjectToMonsterInventory(elemental, dagger);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(14, 10), true);
         pushKeys('   ');
         let sightDuringFlash: boolean | undefined;
@@ -51,7 +51,7 @@ for (const carriedLamp of [false, true]) {
 }
 
 void test('a revived luminous pet illuminates the dungeon again', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
@@ -59,11 +59,11 @@ void test('a revived luminous pet illuminates the dungeon again', async () => {
     dragon.mtame = 10;
     const death = await finishEnvironmentalMonsterDeath(dragon, game);
     assert.ok(death.corpse);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), false);
 
     const revival = await reviveCorpseImmediately(death.corpse, game);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.ok(revival?.monster);
     assert.equal(cansee(revival.monster.mx + 1, revival.monster.my), true);

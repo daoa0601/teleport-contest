@@ -30,8 +30,8 @@ async function createTrap(...args) {
     assert.ok(trap, 'The requested floor trap must be created');
     return trap;
 }
-function sokobanRoom() {
-    const level = freshObjectRoom();
+async function sokobanRoom() {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', entry_lev: 1, num_dunlevs: 20, depth_start: 1 }),
@@ -50,7 +50,7 @@ function completions() {
     return gameLogEvents().filter(event => event.text.includes('Sokoban level'));
 }
 void test('filling the last Sokoban pit lifts the diagonal restriction and records completion', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     const pit = await createTrap(12, 10, PIT);
     level.requireAt(11, 10).typ = STONE;
@@ -65,7 +65,7 @@ void test('filling the last Sokoban pit lifts the diagonal restriction and recor
     assert.equal(completions()[0]?.text, 'completed 2nd Sokoban level');
 });
 void test('an original hole keeps Sokoban active after the other pit is filled', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     const pit = await createTrap(12, 10, PIT);
     const hole = await createTrap(13, 10, HOLE);
@@ -77,7 +77,7 @@ void test('an original hole keeps Sokoban active after the other pit is filled',
     assert.equal(completions().length, 1);
 });
 void test('player-made pits and spiked pits do not prevent Sokoban completion', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     const original = await createTrap(12, 10, PIT);
     await createTrap(14, 10, SPIKED_PIT);
@@ -95,7 +95,7 @@ void test('player-made pits and spiked pits do not prevent Sokoban completion', 
     assert.equal(completions().length, 1);
 });
 void test('generation and new trap placement do not finish Sokoban, but replacement can', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     game.in_mklev = true;
     const pit = await createTrap(12, 10, PIT);
@@ -113,7 +113,7 @@ void test('generation and new trap placement do not finish Sokoban, but replacem
     assert.equal(completions().length, 1);
 });
 void test('removing a non-pit floor trap does not check Sokoban completion', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     const bear = await createTrap(12, 10, BEAR_TRAP);
     assert.equal(await deleteFloorTrap(bear), true);
@@ -125,7 +125,7 @@ void test('removing a non-pit floor trap does not check Sokoban completion', asy
     assert.equal(completions().length, 1);
 });
 void test('removing a connected pit lets its neighbors join a new pit at the same square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const left = await createTrap(11, 10, PIT);
     const middle = await createTrap(12, 10, PIT);
@@ -142,7 +142,7 @@ void test('removing a connected pit lets its neighbors join a new pit at the sam
 });
 for (const replacement of [SPIKED_PIT, WEB]) {
     void test(`replacing an occupied pit ${replacement === WEB ? 'releases the hero for a web' : 'keeps the hero trapped in a spiked pit'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { ux: x, uy: y } = game.u;
         const pit = await createTrap(x, y, PIT);
@@ -156,7 +156,7 @@ for (const replacement of [SPIKED_PIT, WEB]) {
     });
 }
 void test('replacing a floor trap does not release the hero from a lava wall', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const { ux: x, uy: y } = game.u;
     await createTrap(x, y, BEAR_TRAP);
@@ -173,12 +173,12 @@ void test('replacing a floor trap does not release the hero from a lava wall', a
     assert.equal(game.u.utrap, 0);
 });
 void test('removing a floor trap beneath a worm segment releases the trapped worm', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10);
-    removeMonsterWormBody(worm);
+    await removeMonsterWormBody(worm);
     placeMonsterAt(worm, worm.mx, worm.my);
-    initializeMonsterWormBody(worm, { segmentCount: 1 });
+    await initializeMonsterWormBody(worm, { segmentCount: 1 });
     assert.ok(worm.wormSegments != null, 'Expected worm.wormSegments to be initialized');
     const segment = worm.wormSegments[0];
     assert.ok(segment);
@@ -194,7 +194,7 @@ void test('removing a floor trap beneath a worm segment releases the trapped wor
 });
 for (const solved of [false, true]) {
     void test(`monsters born in ${solved ? 'solved' : 'unsolved'} Sokoban know its pits and holes unless mindless`, async () => {
-        const level = sokobanRoom();
+        const level = await sokobanRoom();
         requirePlayingGame(game);
         if (solved)
             await fillWithBoulder(await createTrap(12, 10, PIT));
@@ -208,7 +208,7 @@ for (const solved of [false, true]) {
     });
 }
 void test('solving Sokoban keeps its DEC wall color without coloring other branches', async () => {
-    const level = sokobanRoom();
+    const level = await sokobanRoom();
     requirePlayingGame(game);
     game.symset = 'DECgraphics';
     const wall = level.requireAt(12, 9);
@@ -223,7 +223,7 @@ void test('solved Sokoban still excludes the maze-statue mimic disguise', async 
     const appearances = [[], []];
     for (const inSokoban of [false, true]) {
         for (let seed = 0; seed < 8; seed++) {
-            const level = sokobanRoom();
+            const level = await sokobanRoom();
             requirePlayingGame(game);
             await fillWithBoulder(await createTrap(12, 10, PIT));
             if (!inSokoban)
@@ -245,7 +245,7 @@ void test('solved Sokoban still excludes the maze-statue mimic disguise', async 
     assert.ok(appearances[1].every(appearance => appearance === BOULDER), 'Sokoban uses the roomless boulder disguise after completion');
 });
 void test('Sokoban rules do not prevent shop mimics from disguising as stock', async () => {
-    sokobanRoom();
+    await sokobanRoom();
     requirePlayingGame(game);
     await createStaffedShop();
     const appearances = [];

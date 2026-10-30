@@ -20,7 +20,7 @@ import { createDungeon } from './support/topology.js';
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 const maximumDice = (count, sides) => count * sides;
 async function breathRoom({ heroOnRay = false, sourceSpecies = 'red dragon' } = {}) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 2, right: 40, top: 2, bottom: 18,
         heroX: heroOnRay ? 12 : 10, heroY: heroOnRay ? 10 : 14,
         flags: { verbose: true, disclose: '-i -a -v -c -o' },

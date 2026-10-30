@@ -76,7 +76,7 @@ export async function clearVaultCorridor(guard, force = false, state = game) {
                 return false;
             if (occupant.mtame)
                 await publishMonsterYelp(occupant);
-            if (!(await randomMonsterRelocation(occupant, { state, flags: RLOC_MSG })))
+            if (!await randomMonsterRelocation(occupant, { state, flags: RLOC_MSG }))
                 await sendMonsterToLimbo(occupant, state);
         }
         const location = corridorLocation(level, point.x, point.y);
@@ -92,7 +92,7 @@ export async function clearVaultCorridor(guard, force = false, state = game) {
                 blackout(point.x, point.y, state);
         }
         deleteEngravingAt(point.x, point.y, level);
-        map_location(point.x, point.y, true);
+        await map_location(point.x, point.y, true);
         vision_note_blocker_change(point.x, point.y);
         state.vision_full_recalc = 1;
         corridor.fcbeg++;
@@ -126,7 +126,7 @@ export async function parkVaultGuard(guard, state = game) {
     const x = guard.mx, y = guard.my;
     if (x) {
         removeMonsterFromMapAt(x, y, state);
-        newsym(x, y);
+        await newsym(x, y);
     }
     if (monsterAtPosition(requireGameLevel(state), 0, 0, state) !== guard)
         await placeMonsterOnMap(guard, 0, 0, state);

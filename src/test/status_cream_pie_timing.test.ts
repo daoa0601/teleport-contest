@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('applying a cream pie displays blindness before the next command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pie = await addInventoryObject(CREAM_PIE);
     await bot();
     pushKeys(' ');

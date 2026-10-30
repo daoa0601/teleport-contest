@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('vault guards stop receiving optional armor once their earlier armor is sufficient', async () => {
     let adequatelyArmored = 0;
     for (let seed = 1; seed <= 128; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
 
         const guard = await createMonsterAt('guard', 13, 10);
 
@@ -30,7 +30,7 @@ void test('vault guards stop receiving optional armor once their earlier armor i
 
 void test('every equipped vault guard carries a cursed tin whistle', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
 
         const guard = await createMonsterAt('guard', 13, 10);
 

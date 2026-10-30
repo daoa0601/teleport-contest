@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('escape lists gems by quantity before amulets', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.storage = memoryStorage();
     game.flags.disclose = '-i -a -v -g -c -o';
     await addInventoryObject(AMULET_OF_REFLECTION, { initialize: false });

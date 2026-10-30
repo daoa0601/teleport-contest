@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('bad breath from a fountain makes every living monster flee without announcing flight', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const jackal = await createMonsterAt('jackal', 11, 10);
     const distant = await createMonsterAt('newt', 16, 14);

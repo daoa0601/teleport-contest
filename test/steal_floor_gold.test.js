@@ -15,7 +15,7 @@ import { resetInputState } from '../js/input.js';
 // C steal.c:stealgold() prefers the larger floor pile without rolling, and
 // only flees when the purse is gone or the second one-in-five roll allows.
 void test('a leprechaun snatching floor gold over a smaller purse stays for more', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroGoldAmount(game, 20);
     const floor = await mksobj(GOLD_PIECE, true, false);
@@ -39,7 +39,7 @@ void test('a leprechaun snatching floor gold over a smaller purse stays for more
 // C steal.c:stealgold() skips both rolls when the hero carries no purse, so
 // the thief always teleports away and flees after picking up floor gold.
 void test('a leprechaun snatching floor gold from a penniless hero flees', async () => {
-    freshObjectRoom({ hero: { levitating: true } });
+    await freshObjectRoom({ hero: { levitating: true } });
     requirePlayingGame(game);
     const floor = await mksobj(GOLD_PIECE, true, false);
     floor.quan = 100;

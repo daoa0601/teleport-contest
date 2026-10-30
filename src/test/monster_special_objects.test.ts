@@ -20,7 +20,7 @@ for (const [name, type] of [
     ['Book', SPE_BOOK_OF_THE_DEAD],
 ] as const) {
     void test(`Vlad keeps his vampire form while carrying the ${name}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, NO_MINVENT);
         const originalForm = vlad.mnum;
         const object = await addObjectToMonsterInventory(vlad, await knownObject(type));
@@ -33,7 +33,7 @@ for (const [name, type] of [
 }
 
 void test('Vlad keeps his vampire form for another role’s quest artifact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, NO_MINVENT);
     const originalForm = vlad.mnum;
     await addObjectToMonsterInventory(vlad, await artifactObject('The Orb of Detection'));
@@ -44,7 +44,7 @@ void test('Vlad keeps his vampire form for another role’s quest artifact', asy
 });
 
 void test('a bagged invocation tool does not prevent Vlad from changing shape', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, NO_MINVENT);
     const originalForm = vlad.mnum;
     const sack = await knownObject(SACK);
@@ -57,7 +57,7 @@ void test('a bagged invocation tool does not prevent Vlad from changing shape', 
 });
 
 void test('an ordinary artifact does not prevent Vlad from changing shape', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, NO_MINVENT);
     const originalForm = vlad.mnum;
     await addObjectToMonsterInventory(vlad, await artifactObject('Sting'));

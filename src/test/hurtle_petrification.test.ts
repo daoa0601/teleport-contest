@@ -15,7 +15,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a monster the hero hurls into a cockatrice silently becomes a visible statue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     const gremlin = await createMonsterAt('gremlin', ux + 1, uy, NO_MINVENT);

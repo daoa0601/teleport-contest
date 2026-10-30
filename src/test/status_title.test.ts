@@ -10,7 +10,7 @@ function titleRow(): string {
 }
 
 void test('a long hero name is shortened to keep the rank and attribute columns', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 30 } });
     game.plname = 'abcdefghijklmnopqrstuv';
     game.displayName = 'Abcdefghijklmnopqrstuv';
 
@@ -21,7 +21,7 @@ void test('a long hero name is shortened to keep the rank and attribute columns'
 });
 
 void test('monster titles use body gender and capitalize only after spaces', async () => {
-    freshObjectRoom({ hero: { umonnum: 268, mfemale: true, mtimedone: 50 } });
+    await freshObjectRoom({ hero: { umonnum: 268, mfemale: true, mtimedone: 50 } });
     game.plname = 'alice';
     game.displayName = 'Alice';
 
@@ -31,7 +31,7 @@ void test('monster titles use body gender and capitalize only after spaces', asy
 });
 
 void test('a monster body still supplies its title and hit dice at timeout zero', async () => {
-    freshObjectRoom({ hero: { umonnum: 0, mtimedone: 0, mh: 3, mhmax: 8 } });
+    await freshObjectRoom({ hero: { umonnum: 0, mtimedone: 0, mh: 3, mhmax: 8 } });
 
     await bot();
 
@@ -42,7 +42,7 @@ void test('a monster body still supplies its title and hit dice at timeout zero'
 });
 
 void test('an absent rank uses the nearest lower rank before the role name', async () => {
-    freshObjectRoom({ hero: { ulevel: 10 } });
+    await freshObjectRoom({ hero: { ulevel: 10 } });
     requirePlayingGame(game);
     const titles = game.urole.title.slice();
     titles[3] = { m: '', f: '' };

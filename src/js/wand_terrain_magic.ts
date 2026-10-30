@@ -40,7 +40,7 @@ export async function zapMapAt(x: number, y: number, source: GameObject, { state
     if (state.program_state.gameover) return;
     const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
     if ((state.u.dz ?? 0) > 0) await zapEngraving(x, y, source, state);
-    else if (!state.u.dz) learned = (await zapDrawbridge(x, y, source, state)) || learned;
+    else if (!state.u.dz) learned = await zapDrawbridge(x, y, source, state) || learned;
     if (state.program_state.gameover) return;
     if (source.otyp === WAN_PROBING)
         learned = await probeTerrain(x, y, trap, learned, state);
@@ -55,14 +55,14 @@ async function cancelMagicTrap(x: number, y: number, source: GameObject, state: 
         await shieldeff(x, y);
         if (!cansee(x, y)) return false;
         trap.tseen = 1;
-        newsym(x, y);
+        await newsym(x, y);
         return true;
     }
     if (![TELEP_TRAP, LEVEL_TELEP, MAGIC_TRAP, ANTI_MAGIC, POLY_TRAP].includes(trap.ttyp)) return false;
     const visible = cansee(x, y);
     await explode(x, y, -WAN_CANCELLATION, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL, { state });
     deleteTrap(trap, state);
-    newsym(x, y);
+    await newsym(x, y);
     return visible;
 }
 
@@ -84,7 +84,7 @@ async function zapEngraving(x: number, y: number, source: GameObject, state: Pla
         break;
     case WAN_TELEPORTATION:
     case SPE_TELEPORT_AWAY:
-        relocateEngraving(engraving, state);
+        await relocateEngraving(engraving, state);
         break;
     case SPE_STONE_TO_FLESH:
         if (engraving.engr_type !== ENGRAVE) break;
@@ -100,13 +100,13 @@ async function zapEngraving(x: number, y: number, source: GameObject, state: Pla
 }
 
 // C engrave.c:rloc_engr(). Engravings need an ordinary, unoccupied floor.
-function relocateEngraving(engraving: Engraving, state: PlayingGameState) {
+async function relocateEngraving(engraving: Engraving, state: PlayingGameState) {
     for (let tries = 200; tries > 0; tries--) {
         const x = 2 + rn2(COLNO - 3), y = rn2(ROWNO);
         if (engravingAt(x, y, state.level) || !goodPosition(x, y, null, { state })) continue;
         engraving.x = x;
         engraving.y = y;
-        newsym(x, y);
+        await newsym(x, y);
         return;
     }
 }
@@ -163,14 +163,14 @@ function sameGlyph(left: ReturnType<typeof glyphAt>, right: ReturnType<typeof gl
 async function probeTerrain(x: number, y: number, trap: Trap | undefined, learned: boolean, state: PlayingGameState) {
     const location = state.level.requireAt(x, y);
     const oldType = location.lastseentyp, oldGlyph = glyphAt(x, y, state);
-    showMapSpot(x, y, { state });
+    await showMapSpot(x, y, { state });
     learned ||= oldType !== location.lastseentyp || !sameGlyph(oldGlyph, glyphAt(x, y, state));
     const surface = location.typ === DRAWBRIDGE_UP
         ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
     if (surface === SDOOR) {
         revealSecretDoor(x, y);
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         if (cansee(x, y)) {
             await pline('Probing reveals a secret door.');
             learned = true;
@@ -178,7 +178,7 @@ async function probeTerrain(x: number, y: number, trap: Trap | undefined, learne
     } else if (surface === SCORR) {
         location.typ = CORR;
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         await pline('Probing exposes a secret corridor.');
         learned = true;
     } else if ((surface === ICE || IS_FURNITURE(surface)) && (state.u.dz ?? 0) > 0) {
@@ -188,7 +188,7 @@ async function probeTerrain(x: number, y: number, trap: Trap | undefined, learne
     if (trap) {
         const seen = trap.tseen, hallucinating = heroIsHallucinating(state);
         trap.tseen = 1;
-        newsym(x, y);
+        await newsym(x, y);
         if (!seen || hallucinating) {
             const name = trapName(trap.ttyp, { state });
             const definite = hallucinating ? !rn2(4)

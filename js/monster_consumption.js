@@ -94,7 +94,7 @@ async function growAfterFood(monster, state, { publish = plineWithContinuation, 
     if (canSpotMonster(monster))
         await publish(growth.message);
     finishMonsterGrowth(monster, growth);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
 }

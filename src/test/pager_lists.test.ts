@@ -14,9 +14,9 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const key of ['m', 'M']) {
     void test(`look choice ${key} lists shown monsters with coordinates`, async () => {
-        freshObjectRoom({ flags: { tips: false } });
+        await freshObjectRoom({ flags: { tips: false } });
         await createMonsterAt('kitten', 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         const input = resetInputState();
         input.feed(key);
         await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -27,9 +27,9 @@ for (const key of ['m', 'M']) {
 }
 for (const key of ['o', 'O']) {
     void test(`look choice ${key} lists shown objects and observes adjacent ones`, async () => {
-        freshObjectRoom({ flags: { tips: false } });
+        await freshObjectRoom({ flags: { tips: false } });
         const dagger = await floorObject(DAGGER, 11, 10, { dknown: false });
-        newsym(11, 10);
+        await newsym(11, 10);
         dagger.dknown = false;
         const input = resetInputState();
         input.feed(key);
@@ -41,11 +41,11 @@ for (const key of ['o', 'O']) {
 }
 for (const key of ['t', 'T']) {
     void test(`look choice ${key} lists a remembered trap obscured by an object`, async () => {
-        const level = freshObjectRoom({ flags: { tips: false } });
+        const level = await freshObjectRoom({ flags: { tips: false } });
         level.traps.push({ tx: 11, ty: 10, ttyp: BEAR_TRAP, tseen: true,
             once: false, launch: { x: 0, y: 0 } });
         await floorObject(DAGGER, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         const input = resetInputState();
         input.feed(key);
         await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -55,13 +55,13 @@ for (const key of ['t', 'T']) {
 }
 for (const key of ['e', 'E']) {
     void test(`look choice ${key} lists a covered engraving using its remembered text`, async () => {
-        freshObjectRoom({ flags: { tips: false } });
+        await freshObjectRoom({ flags: { tips: false } });
         const engraving = makeEngravingAt(11, 10, 'new words', null, 0, ENGRAVE);
         assert.ok(engraving);
         engraving.eread = true;
         engraving.rememberedText = 'old words';
         await floorObject(DAGGER, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         const input = resetInputState();
         input.feed(key);
         await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -72,7 +72,7 @@ for (const key of ['e', 'E']) {
 }
 
 void test('a covered engraving on DEC-only terrain lists no obscuring symbol', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     game.symset = 'DECgraphics';
     const square = game.level?.requireAt(11, 10);
     assert.ok(square);
@@ -82,7 +82,7 @@ void test('a covered engraving on DEC-only terrain lists no obscuring symbol', a
     assert.ok(engraving);
     engraving.eread = true;
     engraving.rememberedText = 'old words';
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('e');
     await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -91,9 +91,9 @@ void test('a covered engraving on DEC-only terrain lists no obscuring symbol', a
 });
 
 void test('look lists use a full-screen text window with a bottom-row pager', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     await createMonsterAt('kitten', 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('M');
     const operation = rhack('/'.charCodeAt(0));
@@ -107,18 +107,18 @@ void test('look lists use a full-screen text window with a bottom-row pager', as
 
 for (const dismiss of [' ', '\x1b']) {
     void test(`object lists delay later observations until the first page is ${dismiss === ' ' ? 'advanced' : 'cancelled'}`, async () => {
-        freshObjectRoom({ left: 3, right: 18, flags: { tips: false } });
+        await freshObjectRoom({ left: 3, right: 18, flags: { tips: false } });
         for (const y of [8, 9]) {
             for (let x = 3; x <= (y === 8 ? 17 : 8); x++) {
                 await floorObject(DAGGER, x, y);
-                newsym(x, y);
+                await newsym(x, y);
             }
         }
         const nextPageDagger = await floorObject(DAGGER, 9, 9, { dknown: false });
-        newsym(9, 9);
+        await newsym(9, 9);
         nextPageDagger.dknown = false;
         const laterDagger = await floorObject(DAGGER, 11, 11, { dknown: false });
-        newsym(11, 11);
+        await newsym(11, 11);
         laterDagger.dknown = false;
         const input = resetInputState();
         input.feed('O');

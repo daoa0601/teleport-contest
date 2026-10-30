@@ -35,7 +35,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('the first drop-side load check starts from an unencumbered baseline', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 70 });
     const dagger = await addInventoryObject(DAGGER);
     delete game._encumbranceLevel;
@@ -47,7 +47,7 @@ void test('the first drop-side load check starts from an unencumbered baseline',
 });
 
 void test('fusing worm teeth redraws the relieved load at the next message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const teeth = await addInventoryWeapon(WORM_TOOTH, { quan: 70 });
     await setPrimaryWeapon(teeth);
     const scroll = await addInventoryObject(SCR_ENCHANT_WEAPON);
@@ -65,7 +65,7 @@ void test('fusing worm teeth redraws the relieved load at the next message', asy
 });
 
 void test('leg recovery compares its load with the last reported load', async () => {
-    freshObjectRoom({ hero: { _woundedLegSide: 'both', _woundedLegTurns: 5 } });
+    await freshObjectRoom({ hero: { _woundedLegSide: 'both', _woundedLegTurns: 5 } });
     await addInventoryObject(ROCK, { quan: 70 });
     delete game._encumbranceLevel;
     const messages: string[] = [];
@@ -77,7 +77,7 @@ void test('leg recovery compares its load with the last reported load', async ()
 });
 
 void test('releasing a carried ball does not announce relief for an unreported load', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ball = await addInventoryObject(HEAVY_IRON_BALL);
     game.uball = ball;
     ball.ox = game.u.ux;
@@ -98,7 +98,7 @@ void test('releasing a carried ball does not announce relief for an unreported l
 });
 
 void test('prayer feeding does not announce relief for an unreported hunger load', async () => {
-    freshObjectRoom({ hero: { uhs: HUNGRY, uhunger: 50 } });
+    await freshObjectRoom({ hero: { uhs: HUNGRY, uhunger: 50 } });
     requirePlayingGame(game);
     game.u.atemp.a[A_STR] = -1;
     await addInventoryObject(ROCK, { quan: 64 });
@@ -117,7 +117,7 @@ void test('prayer feeding does not announce relief for an unreported hunger load
 });
 
 void test('a dissolving carried glob reports load relief only once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
     game.u.acurr.a[A_CON] = 3;
@@ -143,7 +143,7 @@ void test('a dissolving carried glob reports load relief only once', async () =>
 });
 
 void test('returning to an unhealthy human body reports the load after life saving feeds the hero', async () => {
-    freshObjectRoom({ hero: { uhp: 0, uhunger: 50, uhs: HUNGRY } });
+    await freshObjectRoom({ hero: { uhp: 0, uhunger: 50, uhs: HUNGRY } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -167,7 +167,7 @@ void test('returning to an unhealthy human body reports the load after life savi
 });
 
 void test('floating up reports an existing load when no prior check has run', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 110 });
     delete game._encumbranceLevel;
     game.u.levitationTurns = 5;
@@ -184,7 +184,7 @@ void test('floating up reports an existing load when no prior check has run', as
 });
 
 void test('poison reports a pending load even when it affects Intelligence', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 70 });
     delete game._encumbranceLevel;
     const messages: string[] = [];
@@ -197,7 +197,7 @@ void test('poison reports a pending load even when it affects Intelligence', asy
 });
 
 void test('prayer attribute repair compares its load with the last reported load', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
     await addInventoryObject(ROCK, { quan: 70 });
@@ -215,7 +215,7 @@ void test('prayer attribute repair compares its load with the last reported load
 });
 
 void test('dismounting while levitating reports a load that has never been checked', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.usteed = await createMonsterAt('pony', 11, 10);
     grantIntrinsicProperty('levitation', 'outside');
     await addInventoryObject(ROCK, { quan: 110 });
@@ -231,7 +231,7 @@ void test('dismounting while levitating reports a load that has never been check
 });
 
 void test('throwing a quivered coin reports an existing load when no check has run', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 70 });
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 5 });
     await setQuiverObject(gold);
@@ -249,7 +249,7 @@ void test('throwing a quivered coin reports an existing load when no check has r
 });
 
 void test('a healing prayer favor immediately reports restored carrying capacity', async () => {
-    freshObjectRoom({ hero: { uhunger: 1000 } });
+    await freshObjectRoom({ hero: { uhunger: 1000 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
     await addInventoryObject(ROCK, { quan: 60 });

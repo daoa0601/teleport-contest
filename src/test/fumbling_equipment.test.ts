@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('wearing fumbling gauntlets starts a timeout and removing them ends their fumbling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gloves = await addInventoryObject(OBJECT_NAMES.indexOf('gauntlets of fumbling'));
 
     await equip('W', gloves, 1);
@@ -24,7 +24,7 @@ void test('wearing fumbling gauntlets starts a timeout and removing them ends th
 });
 
 void test('removing fumble boots keeps fumbling supplied by worn gauntlets', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gloves = await addInventoryObject(OBJECT_NAMES.indexOf('gauntlets of fumbling'));
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('fumble boots'));
     await equip('W', gloves, 1);
@@ -40,7 +40,7 @@ void test('removing fumble boots keeps fumbling supplied by worn gauntlets', asy
 });
 
 void test('permanent fumbling remains scheduled after fumble boots come off', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('fumbling', 'outside');
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('fumble boots'));
     await equip('W', boots, 2);

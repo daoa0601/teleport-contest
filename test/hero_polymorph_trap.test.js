@@ -19,7 +19,7 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 for (const protection of ['antimagic', 'unchanging']) {
     void test(`${protection} leaves a revealed polymorph trap in place`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         if (protection === 'antimagic')
             grantIntrinsicProperty('antimagic', 'outside');
         else
@@ -35,7 +35,7 @@ for (const protection of ['antimagic', 'unchanging']) {
     });
 }
 void test('wielded Magicbane resists a polymorph trap without consuming it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const weapon = await addInventoryItem(await artifactObject('Magicbane'));
     await setPrimaryWeapon(weapon);
     const originalForm = game.u.umonnum;
@@ -51,7 +51,7 @@ void test('wielded Magicbane resists a polymorph trap without consuming it', asy
     assert.equal(game._pending_message, 'You step onto a polymorph trap!  You feel momentarily different.');
 });
 void test('a priest recognizes blessed replacement boots when a polymorph trap prints them', async () => {
-    const level = freshObjectRoom({ role: 'priest' });
+    const level = await freshObjectRoom({ role: 'priest' });
     const shoes = await addInventoryObject(IRON_SHOES, { blessed: true });
     wearHeroArmor(shoes);
     const trap = addTrap(level, POLY_TRAP, 10, 10);
@@ -65,7 +65,7 @@ void test('a priest recognizes blessed replacement boots when a polymorph trap p
     assert.match(game._pending_message, / - a blessed pair of .+ \(being worn\)\./);
 });
 void test('a polymorph trap replaces worn iron shoes with kicking boots and vanishes', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const shoes = await addInventoryObject(IRON_SHOES, { spe: 2 });
     wearHeroArmor(shoes);
     const originalForm = game.u.umonnum;
@@ -80,7 +80,7 @@ void test('a polymorph trap replaces worn iron shoes with kicking boots and vani
 });
 for (const blind of [false, true]) {
     void test(`polymorph-trap feedback ${blind ? 'keeps unseen boots unnamed while blind' : 'observes named boots after sight returns'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         setHeroBlindnessTurns(20);
         const shoes = await addInventoryObject(IRON_SHOES, {
             observed: false, dknown: false, oname: 'Buster',
@@ -104,7 +104,7 @@ for (const blind of [false, true]) {
 }
 for (const known of [false, true]) {
     void test(`a ${known ? 'known' : 'newly revealed'} polymorph trap keeps the hero visible while changing iron shoes`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const shoes = await addInventoryObject(IRON_SHOES);
         wearHeroArmor(shoes);
         const trap = addTrap(level, POLY_TRAP, game.u.ux, game.u.uy, { tseen: known });
@@ -122,7 +122,7 @@ for (const known of [false, true]) {
     });
 }
 void test('an unprotected hero removes the trap before choosing a new form', async () => {
-    const level = freshObjectRoom({ hero: { polymorphControl: true }, gameplaySeed: 2n });
+    const level = await freshObjectRoom({ hero: { polymorphControl: true }, gameplaySeed: 2n });
     const trap = addTrap(level, POLY_TRAP, 10, 10);
     const input = resetInputState();
     input.beforeRead = () => { assert.equal(level.traps.includes(trap), false); };

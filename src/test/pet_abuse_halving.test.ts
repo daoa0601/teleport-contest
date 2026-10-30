@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('conflicted abuse halves a pet\'s bond instead of shaving it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10,
         MM_NOGRP | MM_NOWAIT | NO_MINVENT);

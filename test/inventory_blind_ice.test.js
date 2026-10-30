@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 for (const terrain of [ICE, DRAWBRIDGE_UP]) {
     void test(`blind inspection recognizes hallucinated ice on terrain ${terrain}`, async (t) => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { mention_decor: true }, hero: { blindTurns: 10, hallucinationTurns: 10 },
         });
         const location = level.requireAt(game.u.ux, game.u.uy);

@@ -30,7 +30,7 @@ async function helplessTurnWithBufferedBoulder(status: 'unchanged' | 'botl' | 't
     game.u.uhp = game.u.uhpmax;
     game.context.botl = false;
     await placeObject(await mksobj(BOULDER, false, false), x, y);
-    newsym(x, y);
+    await newsym(x, y);
     if (status === 'botl') {
         game.u.uen = game.u.uenmax = 4;
         game.context.botl = true;

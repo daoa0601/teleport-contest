@@ -323,7 +323,7 @@ void test('a long AUTOCOMPLETE diagnostic keeps its prefix and counts as early r
 });
 
 void test('a grab exception picks up an item outside the pickup classes', async () => {
-    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    await freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.display = { async readKey(): Promise<number> { return ' '.charCodeAt(0); } };
@@ -336,7 +336,7 @@ void test('a grab exception picks up an item outside the pickup classes', async 
 });
 
 void test('a drop exception leaves a matching item on the floor', async () => {
-    freshObjectRoom({ flags: { pickup: true } });
+    await freshObjectRoom({ flags: { pickup: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.display = { async readKey(): Promise<number> { return ' '.charCodeAt(0); } };
@@ -351,7 +351,7 @@ void test('a drop exception leaves a matching item on the floor', async () => {
 });
 
 void test('without an exception the pickup classes decide', async () => {
-    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    await freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.display = { async readKey(): Promise<number> { return ' '.charCodeAt(0); } };
@@ -375,19 +375,19 @@ void test('BOULDER= replaces the boulder map glyph', async () => {
     assert.equal(parseNethackrc('BOULDER=125\nBOULDER=4294967296').boulderSym, '}');
     assert.equal(parseNethackrc('BOULDER=9007199254740993').boulderSym, '\u0001');
 
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     applyNethackrc('BOULDER=256');
     await floorObject(BOULDER, 11, 10, { dknown: true });
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '`');
 });
 
 void test('WARNINGS= does not change the map warning glyphs', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const xorn = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
     xorn.minvis = 1;
     xorn.mpeaceful = false;
@@ -397,14 +397,14 @@ void test('WARNINGS= does not change the map warning glyphs', async () => {
     // retargets the pager lookup, never showsyms.
     applyNethackrc('WARNINGS=49 50 51');
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '2');
 });
 
 void test('a hallucinating hero sees the boulder override on any boulder glyph', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     // '#' is no object-class symbol, so only the override can draw it.
     applyNethackrc('BOULDER=35');
@@ -416,7 +416,7 @@ void test('a hallucinating hero sees the boulder override on any boulder glyph',
     let found = false;
     for (let seed = 0n; seed < 8000n && !found; seed++) {
         initRng(seed);
-        map_object(arrow, true, false);
+        await map_object(arrow, true, false);
         const glyph = glyphAt(11, 10);
         found = !!glyph && 'ch' in glyph && glyph.ch === '#';
     }
@@ -424,11 +424,11 @@ void test('a hallucinating hero sees the boulder override on any boulder glyph',
 });
 
 void test('an ordinary object keeps its native glyph number', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(BOULDER, 11, 10, { dknown: true });
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     // display.c always records the object's glyph; getpos's m/o cycling and
@@ -438,7 +438,7 @@ void test('an ordinary object keeps its native glyph number', async () => {
 });
 
 void test('an exception rule observes an unseen object while naming it', async () => {
-    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    await freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.display = { async readKey(): Promise<number> { return ' '.charCodeAt(0); } };
@@ -456,7 +456,7 @@ void test('an exception rule observes an unseen object while naming it', async (
 });
 
 void test('a drop rule needs the observed name to spare an unseen scroll', async () => {
-    freshObjectRoom({ flags: { pickup: true } });
+    await freshObjectRoom({ flags: { pickup: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.display = { async readKey(): Promise<number> { return ' '.charCodeAt(0); } };
@@ -509,11 +509,11 @@ void test('a symset the symbols file does not carry reverts to default with an e
 // pager.c's do_screen_description() matches ROCK_CLASS against the BOULDER
 // override, so the ';' look at a configured boulder glyph still names it.
 void test('a BOULDER= glyph is still described as a boulder', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     applyNethackrc('BOULDER=56');
     await floorObject(BOULDER, 11, 10, { dknown: true });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '8');
 

@@ -10,7 +10,7 @@ import { requireScreenRow } from './support/screen.js';
 import { planInput } from './support/planned-input.js';
 
 void test('the item action prompt describes the full arrow stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 4 });
     const input = resetInputState();
     let title = '';
@@ -28,7 +28,7 @@ void test('the item action prompt describes the full arrow stack', async () => {
 });
 
 void test('the item action prompt describes the full fortune cookie stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cookies = await addInventoryObject(FORTUNE_COOKIE, { quan: 3 });
     const input = resetInputState();
 
@@ -42,7 +42,7 @@ void test('the item action prompt describes the full fortune cookie stack', asyn
 
 for (const quantity of [1, 4]) {
     void test(`the naming action describes ${quantity === 1 ? 'one arrow' : 'a stack of arrows'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const arrows = await addInventoryObject(ARROW, { quan: quantity });
         const input = resetInputState();
         let namingLabel = '';
@@ -65,7 +65,7 @@ for (const quantity of [1, 4]) {
 
 for (const type of [AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR]) {
     void test(`the naming menu treats an unidentified ${type === AMULET_OF_YENDOR ? 'real' : 'fake'} Amulet as unique`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const amulet = await addInventoryObject(type, { known: false, typeKnown: false });
         const input = resetInputState();
         planInput(input, t, [

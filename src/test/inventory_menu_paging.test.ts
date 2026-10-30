@@ -16,7 +16,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function fullPack({ stack = false } = {}) {
-    freshObjectRoom();
+    await freshObjectRoom();
     const objects = [];
     for (let index = 0; index < 36; index++) {
         // Distinct enchantments keep these real inventory objects separate.
@@ -208,7 +208,7 @@ void test('selecting an item on a later inventory page restores the map before i
 });
 
 void test('a short inventory retains the status lines when its item action menu opens', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const item = await addInventoryObject(DAGGER);
     await bot();
     const input = resetInputState();
@@ -227,7 +227,7 @@ void test('a short inventory retains the status lines when its item action menu 
 // bot_disabled; docorner() then repaints the status it reached from the
 // current hero, including energy raised without a status request.
 void test('dismissing a map-height inventory repaints stale status values', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     // A heading, twenty items, and "(end)" fill every map row.
     for (let index = 0; index < 20; index++) await addInventoryObject(DAGGER, { spe: index });
     await bot();

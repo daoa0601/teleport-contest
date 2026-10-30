@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const role of ['wizard', 'caveman'] as const) {
     void test(`a cornuthaum changes ${role} charisma by role rather than enchantment`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         const hat = await addInventoryObject(OBJECT_NAMES.indexOf('cornuthaum'), { spe: 4, typeKnown: false });
         const charisma = currentAttribute(A_CHA);
 
@@ -32,7 +32,7 @@ for (const role of ['wizard', 'caveman'] as const) {
     });
 
     void test(`destroying a cornuthaum before ${role} dressing finishes leaves charisma unchanged`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         const hat = await addInventoryObject(CORNUTHAUM, { typeKnown: false });
         const charisma = currentAttribute(A_CHA);
         assert.ok(hat.invlet);
@@ -51,7 +51,7 @@ for (const role of ['wizard', 'caveman'] as const) {
     });
 
     void test(`destroying a fully worn cornuthaum restores ${role} charisma`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         const hat = await addInventoryObject(CORNUTHAUM);
         const charisma = currentAttribute(A_CHA);
         await dress('W', hat);
@@ -66,7 +66,7 @@ for (const role of ['wizard', 'caveman'] as const) {
 }
 
 void test('a dunce cap curses itself, limits both mental attributes, and refuses takeoff', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hat = await addInventoryObject(OBJECT_NAMES.indexOf('dunce cap'), { cursed: false });
 
     const messages = await dress('W', hat);
@@ -84,7 +84,7 @@ void test('a dunce cap curses itself, limits both mental attributes, and refuses
 });
 
 void test('a blind hero loses beatitude knowledge when a dunce cap curses itself', async () => {
-    freshObjectRoom({ hero: { blindTurns: 50 } });
+    await freshObjectRoom({ hero: { blindTurns: 50 } });
     const hat = await addInventoryObject(OBJECT_NAMES.indexOf('dunce cap'), { cursed: false, bknown: true });
 
     const messages = await dress('W', hat);
@@ -98,7 +98,7 @@ void test('a blind hero loses beatitude knowledge when a dunce cap curses itself
 for (const type of [DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT]) {
     for (const blind of [false, true]) {
         void test(`wearing an unseen named ${OBJECT_NAMES[type]} ${blind ? 'conceals its name while blind' : 'reveals its name in the glow message'}`, async () => {
-            freshObjectRoom({ hero: { blindTurns: 50 } });
+            await freshObjectRoom({ hero: { blindTurns: 50 } });
             const hat = await addInventoryObject(type, {
                 observed: false, dknown: false, known: false, oname: 'Scholar',
             });

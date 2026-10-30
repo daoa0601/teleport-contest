@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('an increase-damage bonus helps an applied pick break a wall sooner', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const pick = await addInventoryObject(PICK_AXE, { spe: 0, owornmask: W_WEP });
     game.uwep = game.u.uwep = pick;
     game.u.udaminc = 100;
@@ -30,7 +30,7 @@ void test('an increase-damage bonus helps an applied pick break a wall sooner', 
 
 for (const strength of [68, 118]) {
     void test(`exceptional strength ${strength} helps an applied pick finish a wall`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         // Native Strength stores 18/xx as 18 + xx.
         game.u.acurr = { a: [strength, 12, 12, 12, 12, 12] };
         const pick = await addInventoryObject(PICK_AXE, {

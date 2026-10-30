@@ -13,7 +13,7 @@ import { planInput } from './support/planned-input.js';
 for (const location of ['underwater', 'hole', 'trapdoor']) {
     const position = location === 'underwater' ? 'underwater' : `over a seen ${location}`;
     void test(`traditional inventory tipping offers floor containers ${position}`, async t => {
-        const level = freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        const level = await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
         const { ux: x, uy: y } = game.u;
         if (location === 'underwater') {
             level.requireAt(x, y).typ = POOL;

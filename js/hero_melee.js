@@ -34,16 +34,16 @@ export async function attackHostileMonster(monster, x, y, { confirmationOverridd
     if (Upolyd(game.u) && monsterHasNoAttacks(heroSpecies(game))) {
         await plineWithContinuation('You have no way to attack monsters physically.');
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (exceedsActionCapacity(game)) {
         await plineWithContinuation('You cannot fight while so heavily loaded.');
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (await checkHeroAttackOverexertion()) {
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (game.u.twoweap && !await canBeginTwoWeaponCombat(game))
@@ -71,7 +71,7 @@ export async function attackHostileMonster(monster, x, y, { confirmationOverridd
         await attackWithHumanForm(monster, x, y, attack, confirmationOverridden);
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    finishAttackDisplay(monster, x, y);
+    await finishAttackDisplay(monster, x, y);
     return true;
 }
 async function announceImprovisedAttack() {
@@ -157,7 +157,7 @@ async function cleaveAroundTarget(targetX, targetY, attack) {
             continue;
         const monster = monsterAtPosition(game.level, x, y);
         if (!monster) {
-            unmap_invisible(x, y);
+            await unmap_invisible(x, y);
             continue;
         }
         const accuracy = await findHeroMeleeHitThreshold(monster, attack[0], primaryWeapon(), { firstAttack: true });
@@ -188,10 +188,10 @@ function primaryWeapon() {
 function secondaryWeapon() {
     return game.uswapwep || game.u.uswapwep || null;
 }
-function finishAttackDisplay(monster, x, y) {
+async function finishAttackDisplay(monster, x, y) {
     if (game.context.forcefight && !monster.dead && monster.mhp > 0
         && !canSpotMonster(monster) && !(game.u.uswallow && game.u.ustuck === monster)
         && game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible')
-        map_invisible(x, y);
+        await map_invisible(x, y);
 }
 //# sourceMappingURL=hero_melee.js.map

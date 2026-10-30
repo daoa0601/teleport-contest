@@ -22,7 +22,7 @@ export async function stealHeroGold(monster, state, publish, random, rollOne) {
     if (floor && (!purse || floor.quan > purse.quan || random(5) === 0)) {
         unlinkObject(floor, state);
         await linkObjectToMonsterInventory(monster, floor, { state });
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         const steed = state.u.usteed;
         const species = steed ? steed.mnum : heroSpecies(state);
         const owner = steed ? possessiveName(monsterName(steed, { state, article: 'your' })) : 'your';

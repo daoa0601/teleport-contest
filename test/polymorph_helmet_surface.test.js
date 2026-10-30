@@ -11,7 +11,7 @@ import { polymonHero } from '../js/polyself.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a helmet dropped by polymorph in a corridor falls to the ground', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = CORR;
     const helmet = await addInventoryObject(HELMET);
     wearHeroArmor(helmet);

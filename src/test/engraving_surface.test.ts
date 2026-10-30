@@ -15,8 +15,8 @@ for (const { below, surface } of [
     { below: DB_MOAT, surface: 'water' },
     { below: DB_FLOOR, surface: 'ground' },
 ]) {
-    void test(`a raised drawbridge exposes a ${surface} writing surface`, () => {
-        const level = freshObjectRoom();
+    void test(`a raised drawbridge exposes a ${surface} writing surface`, async () => {
+        const level = await freshObjectRoom();
         const square = level.requireAt(10, 10);
         square.typ = DRAWBRIDGE_UP;
         square.drawbridgemask = below;
@@ -30,7 +30,7 @@ for (const { species, surface } of [
     { species: 'trapper', surface: 'husk' },
 ]) {
     void test(`the surface around a hero engulfed by a ${species} is its ${surface}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const engulfer = await createMonsterAt(species, 11, 10);
         await installSwallowedHero(engulfer);
 
@@ -39,8 +39,8 @@ for (const { species, surface } of [
     });
 }
 
-void test('air on the Plane of Water is an air bubble and its water has no bottom', () => {
-    const level = freshObjectRoom({ hero: { uinwater: true } });
+void test('air on the Plane of Water is an air bubble and its water has no bottom', async () => {
+    const level = await freshObjectRoom({ hero: { uinwater: true } });
     game.water_level = createSpecialLevel({ dnum: 4, dlevel: 1 });
     game.u.uz = { dnum: 4, dlevel: 1 };
     level.requireAt(10, 10).typ = AIR;
@@ -50,8 +50,8 @@ void test('air on the Plane of Water is an air bubble and its water has no botto
     assert.equal(surfaceName(11, 10), 'water');
 });
 
-void test('hallucinating changes the perceived liquid surface', () => {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+void test('hallucinating changes the perceived liquid surface', async () => {
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     level.requireAt(10, 10).typ = POOL;
 
     const names = Array.from({ length: 20 }, () => surfaceName(10, 10));

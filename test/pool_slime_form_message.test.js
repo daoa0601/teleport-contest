@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 void test('sliming announces the new body before breaking the cloak clasp', async () => {
-    freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
+    await freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(LEATHER_CLOAK));
     const input = resetInputState();
@@ -27,7 +27,7 @@ void test('sliming announces the new body before breaking the cloak clasp', asyn
     assert.match(messages.join('\n'), /clasp on your cloak breaks open/);
 });
 void test('the fatal slime condition stays visible during the explore death question', async () => {
-    freshObjectRoom({ flags: { explore: true, female: false }, hero: { slimedTurns: 1, slimed: true } });
+    await freshObjectRoom({ flags: { explore: true, female: false }, hero: { slimedTurns: 1, slimed: true } });
     const input = resetInputState();
     let questions = 0;
     input.display = { async readKey() {
@@ -44,7 +44,7 @@ void test('the fatal slime condition stays visible during the explore death ques
     assert.equal(game.u.slimed, false);
 });
 void test('the status line still shows Slime while the final slime message waits for a key', async () => {
-    freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
+    await freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
     requirePlayingGame(game);
     game.context.botl = true;
     await bot();

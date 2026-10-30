@@ -21,7 +21,7 @@ async function fatalContact(
     contact: (corpse: GameObject) => Promise<unknown>,
     overrides: Partial<GameObject> = {},
 ): Promise<{ messages: string[]; death: string | undefined }> {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
     requirePlayingGame(game);
     const corpse = await corpseObject(COCKATRICE, overrides);
     game.storage = memoryStorage();

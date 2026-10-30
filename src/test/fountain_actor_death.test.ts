@@ -19,7 +19,7 @@ for (const { command, lifeSaving } of [
     { command: 'dip', lifeSaving: true },
 ]) {
     void test(`${command}: fountain snakes ${lifeSaving ? 'continue after life saving' : 'stop spawning when their trap kills the hero'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             left: 8, right: 15, top: 10, bottom: 10,
             hero: { uhp: 1, uhpmax: 40, uac: 20 },
             flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },

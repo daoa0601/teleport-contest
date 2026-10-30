@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('a visible invisible werewolf keeps its perceived name when changing during a turn', async () => {
-    freshObjectRoom({ datetime: '20250101010000', flags: { moonphase: 4 } });
+    await freshObjectRoom({ datetime: '20250101010000', flags: { moonphase: 4 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('seeInvisible', 'outside');
     const werewolf = await createMonsterAt('human werewolf', 13, 10, NO_MINVENT);

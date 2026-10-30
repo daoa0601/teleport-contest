@@ -20,7 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function meleeRoom(form: string, defender: string) {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o' },
         hero: { uhitinc: 100, uhp: 200, uhpmax: 200 },
     });
@@ -127,7 +127,7 @@ void test('a natural melee kick does not offer boots to an acid blob\'s object p
 
 void test('an eyeless attacker feels an acid splash without seeing its source', async () => {
     await meleeRoom('gray ooze', 'acid blob');
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(heroIsBlind(game), true, 'The ooze form has no eyes');
     game.u.acidResistance = true;
     initRng(41n);

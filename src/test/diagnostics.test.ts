@@ -204,7 +204,7 @@ void test('a panic snapshot cannot replace an existing ordinary save', async () 
     try {
         game.u.uhp = 7;
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame('Diagnostic', storage), true);
+        assert.equal(await restoreGame('Diagnostic', storage), true);
         assert.equal(await saveGame(storage), true);
         game.program_state.something_worth_saving = true;
         game.u.uhp = 3;
@@ -213,7 +213,7 @@ void test('a panic snapshot cannot replace an existing ordinary save', async () 
         await assert.rejects(panic('The dungeon cannot continue.'), PanicTermination);
 
         assert.equal(hasErrorSave('Diagnostic', storage), true);
-        assert.equal(restoreGame('Diagnostic', storage), true);
+        assert.equal(await restoreGame('Diagnostic', storage), true);
         assert.equal(game.u.uhp, 7);
     } finally {
         await engine.lua.destroy();

@@ -19,7 +19,7 @@ for (const { name, key } of [
     { name: 'Space', key: ' ' },
 ]) {
     void test(`fuzzer ${name} cancels traditional spell selection before a following spell letter`, async () => {
-        freshObjectRoom({ role: 'wizard', flags: { menu_style: MENU_TRADITIONAL } });
+        await freshObjectRoom({ role: 'wizard', flags: { menu_style: MENU_TRADITIONAL } });
         requirePlayingGame(game);
         forceLearnSpell(SPE_FORCE_BOLT);
         game.iflags.debug_fuzzer = true;
@@ -31,7 +31,7 @@ for (const { name, key } of [
         assert.equal(await nhgetch(), 'a'.charCodeAt(0), 'cancellation leaves the next command unread');
     });
     void test(`fuzzer ${name} cancels traditional inventory category selection before a following class symbol`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
         await addInventoryObject(DAGGER);
         game.iflags.debug_fuzzer = true;
         bindInputGate(new QueuedFuzzerInput(`${key})\x1bX`));
@@ -41,7 +41,7 @@ for (const { name, key } of [
         assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim(), '', 'cancelling clears the inventory category question');
     });
     void test(`fuzzer ${name} cancels the spider ability before a following spin choice`, async () => {
-        const level = freshMonsterAbilityRoom('cave spider');
+        const level = await freshMonsterAbilityRoom('cave spider');
         game.iflags.debug_fuzzer = true;
         bindInputGate(new QueuedFuzzerInput(`${key}sX`));
         await rhack('m'.charCodeAt(0) | 128); // Meta-m invokes #monster.
@@ -53,7 +53,7 @@ for (const { name, key } of [
 }
 for (const cmdassist of [false, true]) {
     void test(`fuzzer NUL cancels a direction without ${cmdassist ? 'opening assistance' : 'an invalid-direction message'}`, async () => {
-        freshObjectRoom({ flags: { cmdassist } });
+        await freshObjectRoom({ flags: { cmdassist } });
         game.iflags.debug_fuzzer = true;
         bindInputGate(new QueuedFuzzerInput('\0 lX'));
         const direction = await promptDirection();
@@ -64,7 +64,7 @@ for (const cmdassist of [false, true]) {
 }
 for (const count of ['', '3']) {
     void test(`fuzzer NUL cancels #adjust ${count ? 'and rejoins the counted stack' : 'without moving the stack'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: 7 });
         const source = dagger.invlet;
         game.iflags.debug_fuzzer = true;
@@ -80,7 +80,7 @@ for (const count of ['', '3']) {
 }
 for (const charges of [2, 0, -1]) {
     void test(`fuzzer NUL cancels a crystal-ball search with ${charges} charges`, async () => {
-        freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+        await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
         const ball = await addInventoryObject(CRYSTAL_BALL, {
             blessed: true, spe: charges, known: false, typeKnown: false,
         });

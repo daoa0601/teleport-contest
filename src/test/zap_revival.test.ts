@@ -14,7 +14,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 
 for (const quantity of [1, 2]) {
     void test(`undead turning describes ${quantity === 1 ? "the Oracle's corpse" : "one of the Oracle's corpses"} with one article`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const body = await floorObject(CORPSE, game.u.ux, game.u.uy, {
             corpsenm: MONSTER_NAME.indexOf('Oracle'), quan: quantity,
@@ -41,7 +41,7 @@ for (const quantity of [1, 2]) {
 }
 
 void test('reviving shop stock with a wand charges only the corpse brought to life', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 13 });
     const bodies = await floorObject(CORPSE, 11, 10, {
@@ -62,7 +62,7 @@ void test('reviving shop stock with a wand charges only the corpse brought to li
 });
 
 void test('self-directed undead turning describes a glowing carried corpse as it comes alive', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const body = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('troll') });
     const wand = await addInventoryObject(WAN_UNDEAD_TURNING, { spe: 2 });
@@ -79,7 +79,7 @@ void test('self-directed undead turning describes a glowing carried corpse as it
 });
 
 void test('undead turning reports an eel corpse twitching when there is no water to revive in', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const body = await floorObject(CORPSE, 10, 10, { corpsenm: MONSTER_NAME.indexOf('giant eel') });
     const wand = await addInventoryObject(WAN_UNDEAD_TURNING, { spe: 2 });
@@ -94,7 +94,7 @@ void test('undead turning reports an eel corpse twitching when there is no water
 });
 
 void test('a unique monster\'s corpse that cannot revive twitches with a single article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const body = await floorObject(CORPSE, 10, 10, { corpsenm: MONSTER_NAME.indexOf('Oracle') });
     body.norevive = true;

@@ -7,7 +7,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C insight.c:enlightenment() "Miscellaneous" section counts every bones
 // level loaded this game (u.uroleplay.numbones), with plur() agreement.
 void test('enlightenment counts every bones level encountered', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.u.uroleplay.numbones = 2;
     const input = resetInputState();

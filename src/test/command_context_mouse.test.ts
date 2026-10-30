@@ -71,7 +71,7 @@ for (const { state, kind } of [
             const door = requireGameLevel().requireAt(11, 10);
             door.typ = DOOR;
             door.doormask = state;
-            newsym(11, 10);
+            await newsym(11, 10);
             const moves = game.moves;
 
             // C domouseaction() queues open/kick without cmdq_add_dir().
@@ -126,7 +126,7 @@ void test('an actual context right click enters an open doorway, while a simulat
             const doorway = level.requireAt(x, 10);
             doorway.typ = DOOR;
             doorway.doormask = D_ISOPEN;
-            newsym(x, 10);
+            await newsym(x, 10);
         }
         const moves = game.moves;
 
@@ -167,7 +167,7 @@ void test('a mounted self-click clears the map-look target before the queued loo
     const engine = await startMenuGame();
     try {
         game.u.usteed = await createSaddledSteed();
-        newsym(10, 10);
+        await newsym(10, 10);
         const moves = game.moves;
         engine.inputGate.feedMapClick(10, 10, 1);
         await engine.runUntilInputNeeded();
@@ -183,7 +183,7 @@ void test('the keyboard here menu keeps the map-look target when mounted', async
     const engine = await startMenuGame();
     try {
         game.u.usteed = await createSaddledSteed();
-        newsym(10, 10);
+        await newsym(10, 10);
         await type(engine, '#herecmdmenu\n');
 
         await choose(engine, 'Look at map symbol');

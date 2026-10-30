@@ -279,10 +279,10 @@ export async function dismissUnhealthyRestore(
     storage?.removeItem?.(saveKey(name));
 }
 
-export function restoreGame(
+export async function restoreGame(
     name: string | null | undefined,
     storage: RestoreStorage | null | undefined = game.storage,
-): boolean {
+): Promise<boolean> {
     restoreRefusal = null;
     retainedSave = null;
     if (!storage?.getItem) return false;
@@ -364,7 +364,7 @@ export function restoreGame(
         game.fmon = game.level?.monsters[0] ?? null;
         game.fruits?.reverse(); // C loadfruitchn() prepends saved entries.
         game.stairs = restoreLevelChains(snapshot.state.level, game.stairs);
-        restoreLevelRegions(game, 0);
+        await restoreLevelRegions(game, 0);
         // C restores the hero's carried and migrating lights while reading
         // the game state (restore.c:655) and then pushes the current
         // level's own batch back in front while loading the level

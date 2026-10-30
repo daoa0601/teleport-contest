@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a dropped boulder announces landing in the pit with the hero', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const boulder = await addInventoryObject(BOULDER, { invlet: 'a' });
     const pit = addTrap(game.level, PIT, game.u.ux, game.u.uy, { tseen: true });

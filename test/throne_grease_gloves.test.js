@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test("removing gloves cleans the slippery hands caused by Vlad's throne", async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     game.dungeons = [createDungeon({ dname: "Vlad's Tower" })];
     const gloves = await addInventoryObject(LEATHER_GLOVES);

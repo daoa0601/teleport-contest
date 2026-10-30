@@ -27,7 +27,7 @@ function pitAt(x = game.u.ux, y = game.u.uy) {
 }
 
 void test('quaffing a blessed potion consumes it and lifts the hero out of a pit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pitAt();
     game.u.utrap = 4;
@@ -50,7 +50,7 @@ void test('quaffing a blessed potion consumes it and lifts the hero out of a pit
 });
 
 void test('putting on a ring over a sink crashes without announcing that it remains worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     const ring = await addInventoryObject(RIN_LEVITATION, { invlet: 'a', dknown: true });
@@ -69,7 +69,7 @@ void test('putting on a ring over a sink crashes without announcing that it rema
 void test('moving over a pit on the final levitation turn either defers or lands once', async () => {
     const outcomes = new Set();
     for (let seed = 1n; seed <= 16n; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         addTrap(requireGameLevel(game), PIT, game.u.ux + 1, game.u.uy, { tseen: false });
         timedLevitation(1);
@@ -150,7 +150,7 @@ void test('resuming recovery messages still runs the later levitation expiry', a
 });
 
 void test('finishing a levitation-boots dressing delay lifts the hero out of a pit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._moveloopStarted = true;
     game.u.umovement = 12;
@@ -173,7 +173,7 @@ void test('finishing a levitation-boots dressing delay lifts the hero out of a p
 });
 
 void test('the down command ends blessed levitation without needing a staircase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await addInventoryObject(POT_LEVITATION, { invlet: 'a', blessed: true, dknown: true });
     installPagerInput(resetInputState(), { expected: /start to float|float gently to the floor/, limit: 2 });
@@ -187,7 +187,7 @@ void test('the down command ends blessed levitation without needing a staircase'
 });
 
 void test('uncontrolled levitation refuses the down command without spending time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     timedLevitation(20);
     installPagerInput(resetInputState(), { expected: /floating high above the floor/, limit: 1 });
@@ -199,7 +199,7 @@ void test('uncontrolled levitation refuses the down command without spending tim
 });
 
 void test('the drop command refuses a worn levitation ring without changing its source', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_LEVITATION, { invlet: 'a', dknown: true });
     await wearHeroAccessory(ring, 'uleft');

@@ -24,7 +24,7 @@ void test('finished Earth digs raise their debris as elementals or xorn', async 
         [9n, PM_EARTH_ELEMENTAL],
     ] as const;
     for (const [seed, species] of expectations) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         game.earth_level = createSpecialLevel({
             dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 8,
             flags: { town: false },

@@ -16,7 +16,7 @@ import { wearPolymorphControlRing } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a sleeping hero does not notice blindness from potion vapor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await putHeroToSleep(20);
 
@@ -27,7 +27,7 @@ void test('a sleeping hero does not notice blindness from potion vapor', async (
 });
 
 void test('paralysis does not prevent the hero from noticing blindness', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await applySupportedPotionVapor({ potion: await knownObject(POT_PARALYSIS) });
     clearMessageWindow();
@@ -39,7 +39,7 @@ void test('paralysis does not prevent the hero from noticing blindness', async (
 });
 
 void test('a sleeping hero cannot choose a polymorph despite a control ring', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await wearPolymorphControlRing();
     assert.equal(heroCanControlPolymorph(), true);
     await putHeroToSleep(20);
@@ -48,7 +48,7 @@ void test('a sleeping hero cannot choose a polymorph despite a control ring', as
 });
 
 void test('sleep slows ordinary metabolism but being awake does not', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const awakeHunger = game.u.uhunger;
     for (let turn = 0; turn < 20; turn++) await getHungry();
@@ -64,7 +64,7 @@ void test('sleep slows ordinary metabolism but being awake does not', async () =
 
 for (const [species, foodCost] of [['rock mole', 1], ['yellow mold', 0]] as const) {
     void test(`ordinary metabolism respects a ${species}'s diet`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
@@ -79,7 +79,7 @@ for (const [species, foodCost] of [['rock mole', 1], ['yellow mold', 0]] as cons
 
 
 void test('passing out from cursed booze prevents controlled polymorph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');

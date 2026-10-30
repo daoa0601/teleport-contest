@@ -135,7 +135,7 @@ void test('a nonverbose stair descent has no synthetic arrival pager', async () 
     assert.equal(game.context.move, 1);
 });
 void test('a native screen redraw waits for its existing message before clearing the screen', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
     await flush_screen(1);
@@ -154,7 +154,7 @@ void test('a native screen redraw waits for its existing message before clearing
     assert.equal(game.moves, moves);
 });
 void test('an ordinary map refresh preserves the pending message without requiring input', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await pline('A bell rings nearby.');
     const input = resetInputState();

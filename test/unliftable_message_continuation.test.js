@@ -9,7 +9,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an unliftable object acknowledges earlier arrival prose before reporting its weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     const boulder = await floorObject(BOULDER, 10, 10, { bknown: false });
     await pline('You smell smoke...');

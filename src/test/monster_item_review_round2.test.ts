@@ -27,7 +27,7 @@ for (const { boots, name, iron } of [
     { boots: SPEED_BOOTS, name: 'speed boots', iron: false },
 ]) {
     void test(`a monster wearing ${name} ${iron ? 'avoids' : 'seeks'} a polymorph trap`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         await addObjectToMonsterInventory(monster, await knownObject(boots, { owornmask: W_ARMF }), game);
@@ -40,7 +40,7 @@ for (const { boots, name, iron } of [
 }
 
 void test('a ghost from a bottle ends the drinker meal and waiting, while preserving other strategy', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
     monster.meating = 7;
@@ -65,7 +65,7 @@ void test('a ghost from a bottle ends the drinker meal and waiting, while preser
 void test('a hallucinated djinni receives a fresh perceived name when vanishing', async () => {
     let changingNames = 0;
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
         const potion = await addObjectToMonsterInventory(monster, await knownObject(POT_HEALING), game);
@@ -88,7 +88,7 @@ void test('a hallucinated djinni receives a fresh perceived name when vanishing'
 });
 
 void test('an unseen humanoid deliberately entering a visible polymorph trap is someone', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     monster.minvis = true;
@@ -108,7 +108,7 @@ void test('an unseen humanoid deliberately entering a visible polymorph trap is 
 
 for (const destinationVisible of [true, false]) {
     void test(`a defensive teleport trap reports a monster ${destinationVisible ? 'remaining visible' : 'disappearing'}`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         monster.mhp = 1;
@@ -131,7 +131,7 @@ for (const destinationVisible of [true, false]) {
 
 for (const species of ['floating eye', 'vampire bat', 'naga hatchling']) {
     void test(`${species} enters an escape trap using its native locomotion`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species === 'naga hatchling' ? 'red naga hatchling' : species, 10, 10, NO_MINVENT);
         const trap = addTrap(level, TELEP_TRAP, 9, 10);
@@ -151,7 +151,7 @@ for (const species of ['floating eye', 'vampire bat', 'naga hatchling']) {
 void test('a hallucinating hero sees random trap names when monsters jump onto escape and polymorph traps', async () => {
     const names = new Set<string>();
     for (let seed = 1n; seed <= 6n; seed++) {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
         requirePlayingGame(game);
         initRng(seed);
         const fleeing = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -165,7 +165,7 @@ void test('a hallucinating hero sees random trap names when monsters jump onto e
         names.add((messages[0] ?? '').replace(/^.* onto a (.*)!$/, '$1'));
     }
     for (let seed = 1n; seed <= 6n; seed++) {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
         requirePlayingGame(game);
         initRng(seed);
         const seeker = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -189,7 +189,7 @@ void test('a hallucinating hero sees random trap names when monsters jump onto e
 });
 
 void test('a visible priest who cannot see the invisible hero summons insects around the mistaken spot', async () => {
-    freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+    await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     grantIntrinsicProperty('invisible', 'outside', game);
     const priest = await createMonsterAt('aligned cleric', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -204,7 +204,7 @@ void test('a visible priest who cannot see the invisible hero summons insects ar
 });
 
 void test('a successful aggravation spell aimed at a misplaced hero still explains its effect', async () => {
-    freshObjectRoom({ heroX: 11, heroY: 10, hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ heroX: 11, heroY: 10, hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('invisible', 'outside', game);
     const caster = await createMonsterAt('lich', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -232,7 +232,7 @@ void test('a successful aggravation spell aimed at a misplaced hero still explai
 });
 
 void test('a cursed leash makes a teleporting pet yelp, wake a nearby sleeper, and interrupt running', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 10, 10, NO_MINVENT);
     const sleeper = await createMonsterAt('orc', 11, 10, NO_MINVENT);
@@ -254,7 +254,7 @@ void test('a cursed leash makes a teleporting pet yelp, wake a nearby sleeper, a
 });
 
 void test('a leash stays attached while its slack message waits for acknowledgement', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const pet = await createMonsterAt('little dog', 10, 10, NO_MINVENT);

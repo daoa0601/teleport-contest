@@ -20,7 +20,7 @@ const ARMOR_CLASS = 3;
 void test('abbots are born without weapons or armor but can carry magic items', async () => {
     let carriedItems = 0;
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ role: 'monk', gameplaySeed: seed });
+        await freshObjectRoom({ role: 'monk', gameplaySeed: seed });
 
         const abbot = await makemonAt(MONSTER_NAME.indexOf('abbot'), 12, 10, MM_NOMSG);
 
@@ -36,7 +36,7 @@ void test('abbots are born without weapons or armor but can carry magic items', 
 
 for (const name of ['page', 'roshi', 'warrior']) {
     void test(`${name} receives a sword and body armor at birth`, async () => {
-        freshObjectRoom({ gameplaySeed: 1n });
+        await freshObjectRoom({ gameplaySeed: 1n });
 
         const guardian = await makemonAt(MONSTER_NAME.indexOf(name), 12, 10, MM_NOMSG);
 
@@ -49,7 +49,7 @@ for (const name of ['page', 'roshi', 'warrior']) {
 }
 
 void test('a hunter receives a bow and a usable stack of arrows', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const hunter = await makemonAt(MONSTER_NAME.indexOf('hunter'), 12, 10, MM_NOMSG);
 
@@ -61,7 +61,7 @@ void test('a hunter receives a bow and a usable stack of arrows', async () => {
 });
 
 void test('a thug receives a club, a small blade, and body armor', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const thug = await makemonAt(MONSTER_NAME.indexOf('thug'), 12, 10, MM_NOMSG);
 
@@ -72,7 +72,7 @@ void test('a thug receives a club, a small blade, and body armor', async () => {
 });
 
 void test('a neanderthal receives a club and leather armor', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const guardian = await makemonAt(MONSTER_NAME.indexOf('neanderthal'), 12, 10, MM_NOMSG);
 
@@ -82,7 +82,7 @@ void test('a neanderthal receives a club and leather armor', async () => {
 });
 
 void test('a ninja receives throwing weapons and a melee weapon', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const ninja = await makemonAt(MONSTER_NAME.indexOf('ninja'), 12, 10, MM_NOMSG);
 
@@ -95,7 +95,7 @@ void test('Kops can receive cream pies and police weapons', async () => {
     let pies = 0;
     let weapons = 0;
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const kop = await makemonAt(MONSTER_NAME.indexOf('Keystone Kop'), 12, 10, MM_NOMSG);
         assert.ok(kop);
         const stack = kop.minvent.find(item => item.otyp === CREAM_PIE);
@@ -110,7 +110,7 @@ void test('Kops can receive cream pies and police weapons', async () => {
 });
 
 void test('Monk quest leaders receive their role clothing', async () => {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 1n });
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 1n });
 
     const leader = await makemonAt(MONSTER_NAME.indexOf('Grand Master'), 12, 10, MM_NOMSG);
 
@@ -120,7 +120,7 @@ void test('Monk quest leaders receive their role clothing', async () => {
 
 for (const name of ['Grand Master', 'Master Kaen']) {
     void test(`${name} receives Cleric clothing but no mace when the hero is a Priest`, async () => {
-        freshObjectRoom({ role: 'priest', gameplaySeed: 1n });
+        await freshObjectRoom({ role: 'priest', gameplaySeed: 1n });
 
         const monster = await makemonAt(MONSTER_NAME.indexOf(name), 12, 10, MM_NOMSG);
 
@@ -136,7 +136,7 @@ for (const name of ['Grand Master', 'Master Kaen']) {
 }
 
 void test('an Arch Priest outside the Cleric quest does not receive Cleric equipment', async () => {
-    freshObjectRoom({ role: 'wizard', gameplaySeed: 1n });
+    await freshObjectRoom({ role: 'wizard', gameplaySeed: 1n });
 
     const leader = await makemonAt(MONSTER_NAME.indexOf('Arch Priest'), 12, 10, MM_NOMSG);
 

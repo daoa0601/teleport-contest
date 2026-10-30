@@ -100,7 +100,7 @@ export async function applyCorpsePostEffects(mnum, { state = game, tin = null } 
     requireLiveGame(state);
     requirePlayingGame(state);
     if (state._mimicMealMessage)
-        finishMealMimicry(state);
+        await finishMealMimicry(state);
     const hero = state.u;
     const name = requireMonsterData(MONSTER_NAME, mnum);
     if (HUMAN_WERE_FORMS.has(mnum)) {
@@ -229,6 +229,6 @@ async function eatStalker(state) {
         grantIntrinsicProperty('seeInvisible', 'outside', state);
         syncHeroInvisibility(state);
     }
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
 }
 //# sourceMappingURL=corpse_eating.js.map

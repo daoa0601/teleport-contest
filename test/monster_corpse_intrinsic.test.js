@@ -23,7 +23,7 @@ for (const [corpse, resists, message] of [
     ['green dragon', monsterHasPoisonResistance, 'looks healthy'],
 ]) {
     void test(`${corpse} flesh gives a monster lasting resistance`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const eater = await createMonsterAt('little dog', 11, 10);
         await grantMonsterCorpseIntrinsic(eater, species(corpse));
         assert.equal(resists(eater), true);
@@ -34,7 +34,7 @@ for (const [corpse, resists, message] of [
     });
 }
 void test('flesh grants intrinsic resistance even when armor already supplies it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eater = await createMonsterAt('hobbit', 11, 10);
     const armor = await equipMonsterObject(eater, await knownObject(RED_DRAGON_SCALE_MAIL), W_ARM);
     await grantMonsterCorpseIntrinsic(eater, species('red dragon'));
@@ -43,7 +43,7 @@ void test('flesh grants intrinsic resistance even when armor already supplies it
     assert.equal(monsterHasFireResistance(eater), true);
 });
 void test('an innate resistance can be retained from flesh after polymorph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eater = await createMonsterAt('red dragon', 11, 10);
     await grantMonsterCorpseIntrinsic(eater, species('red dragon'));
     assert.equal(game._pending_message, '', 'Natural resistance suppresses the gain message.');
@@ -52,7 +52,7 @@ void test('an innate resistance can be retained from flesh after polymorph', asy
     assert.equal(monsterHasFireResistance(eater), true);
 });
 void test('yellow dragon flesh cannot give monsters temporary acid or stone resistance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eater = await createMonsterAt('little dog', 11, 10);
     await grantMonsterCorpseIntrinsic(eater, species('yellow dragon'));
     assert.equal(monsterHasAcidResistance(eater), false);
@@ -60,7 +60,7 @@ void test('yellow dragon flesh cannot give monsters temporary acid or stone resi
     assert.equal(game._pending_message, '');
 });
 void test('stalker flesh makes a visible eater permanently invisible and stunned', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eater = await createMonsterAt('little dog', 11, 10);
     assert.equal(canSeeMonster(eater), true);
     await grantMonsterCorpseIntrinsic(eater, species('stalker'));
@@ -70,7 +70,7 @@ void test('stalker flesh makes a visible eater permanently invisible and stunned
     assert.match(game._pending_message, /vanishes\./);
 });
 void test('stalker flesh flickers through mummy wrapping and appears when it is removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eater = await createMonsterAt('hobbit', 11, 10);
     const wrapping = await equipMonsterObject(eater, await knownObject(MUMMY_WRAPPING), W_ARMC);
     await grantMonsterCorpseIntrinsic(eater, species('stalker'));
@@ -81,14 +81,14 @@ void test('stalker flesh flickers through mummy wrapping and appears when it is 
     assert.equal(!!eater.perminvis, true);
 });
 void test('a hero who sees invisible monsters observes the stalker change', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true } });
+    await freshObjectRoom({ hero: { seeInvisible: true } });
     const eater = await createMonsterAt('little dog', 11, 10);
     await grantMonsterCorpseIntrinsic(eater, species('stalker'));
     assert.equal(canSeeMonster(eater), true);
     assert.match(game._pending_message, /becomes invisible\./);
 });
 void test('a dead eater gains neither invisibility nor stun from stalker flesh', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const eater = await createMonsterAt('little dog', 11, 10);
     eater.mhp = 0;

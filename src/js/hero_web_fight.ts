@@ -81,6 +81,6 @@ export async function fightSeenWebWithForce(
     }
 
     deleteTrap(trap, state);
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }

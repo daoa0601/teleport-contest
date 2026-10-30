@@ -18,7 +18,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 void test('a blinded Wizard finishes its turn after relocating and drinking healing', async () => {
     let relocations = 0;
     for (let seed = 1; seed <= 24; seed++) {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
         wizard.mhp = wizard.mhpmax = 40;
@@ -45,7 +45,7 @@ void test('a blinded Wizard finishes its turn after relocating and drinking heal
 });
 for (const feedback of ['unseen', 'already fast', 'asleep', 'frozen', 'immobile', 'level creation']) {
     void test(`silent haste (${feedback}) preserves the next hallucinated name`, async () => {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const caster = await createMonsterAt('kobold shaman', 13, 10, MM_ANGRY | NO_MINVENT);
         const witness = await createMonsterAt('orc', 14, 11, NO_MINVENT);
@@ -89,7 +89,7 @@ for (const feedback of ['unseen', 'already fast', 'asleep', 'frozen', 'immobile'
 void test('additional adjacent container removals keep their pronoun without changing the next hallucinated name', async () => {
     const nextNames = [];
     for (const count of [1, 3]) {
-        freshObjectRoom({ heroX: 12, heroY: 10 });
+        await freshObjectRoom({ heroX: 12, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 11, 10, NO_MINVENT);
         const bag = await addObjectToMonsterInventory(monster, await knownObject(SACK, { initialize: false }), game);

@@ -7,7 +7,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('#wizcustom shows the active symbol set without taking a turn', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     game.symset = 'DECgraphics';
     const pages: string[] = [];
     const input = resetInputState();
@@ -26,7 +26,7 @@ void test('#wizcustom shows the active symbol set without taking a turn', async 
 });
 
 void test('#wizcustom updates the base wall color when color is toggled', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=symset:DECgraphics');
     const rows: string[] = [];
     const input = resetInputState();
@@ -59,7 +59,7 @@ for (const { label, options, byte, color, primary } of [
     { label: 'primary symbols with RogueEpyx configured', options: 'color,roguesymset:RogueEpyx', byte: 248, color: '08', primary: true },
 ]) {
     void test(`#wizcustom reports branch wall colors on Rogue with ${label}`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requirePlayingGame(game);
         game.rogue_level = { ...game.u.uz };
         applyNethackrc(`OPTIONS=symset:DECgraphics,${options}`);
@@ -90,7 +90,7 @@ for (const { symset, vertical, horizontal } of [
     { symset: 'IBMGraphics_2', vertical: 179, horizontal: 196 },
 ]) {
     void test(`#wizcustom reports the loaded ${symset} wall bytes`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         applyNethackrc(`OPTIONS=symset:${symset}`);
         const rows: string[] = [];
         const input = resetInputState();

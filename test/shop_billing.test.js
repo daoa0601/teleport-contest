@@ -21,7 +21,7 @@ import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 async function staffedShop(t, answers = [], { shoptype = SHOPBASE, keeperX = 12, keeperY = 10 } = {}) {
-    freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14, role: 'caveman',
+    await freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14, role: 'caveman',
         flags: { verbose: true, autoopen: true, pickup: true } });
     requirePlayingGame(game);
     const shop = await createStaffedShop({
@@ -371,7 +371,7 @@ void test('a sleeping keeper gives a list price instead of a spoken pickup quote
 });
 for (const away of [false, true]) {
     void test(`billing looks up an angry keeper ${away ? 'outside' : 'inside'} the shop`, async (t) => {
-        freshObjectRoom({ right: 25 });
+        await freshObjectRoom({ right: 25 });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop();
         const first = await floorObject(DAGGER, 10, 10);

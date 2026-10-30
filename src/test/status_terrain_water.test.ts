@@ -10,10 +10,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('swimming below the surface refreshes optional terrain status to Submerged', async () => {
-    const level = freshObjectRoom({ flags: { terrainstatus: true }, hero: { uhs: 1 } });
+    const level = await freshObjectRoom({ flags: { terrainstatus: true }, hero: { uhs: 1 } });
     grantIntrinsicProperty('swimming', 'outside');
     level.requireAt(10, 10).typ = MOAT;
-    map_location(10, 10, true);
+    await map_location(10, 10, true);
     await bot();
     pushKeys(' '.repeat(10));
 

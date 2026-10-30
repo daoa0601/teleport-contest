@@ -6,7 +6,7 @@ import { runLevelRegions } from '../js/regions.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('poison gas displays HP lost by an already blind hero', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 5 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 5 } });
     level.regions = [{ kind: 'gas-cloud', heroInside: true, monsterIds: [], damage: 8, visible: true, heroFault: false, ttl: 3, cells: [{ x: 10, y: 10 }] }];
     await bot();
     await runLevelRegions(game, { rollOne: () => 3, publish: async () => undefined });

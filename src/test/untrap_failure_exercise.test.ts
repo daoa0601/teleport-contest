@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a bungled web rescue does not penalize dexterity when the hero stays outside the web', async () => {
-    const level = freshObjectRoom({ hero: { _exercise: [0, 0, 0, 0, 0, 0] } });
+    const level = await freshObjectRoom({ hero: { _exercise: [0, 0, 0, 0, 0, 0] } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('goblin', 11, 10);
     monster.mtrapped = 1;

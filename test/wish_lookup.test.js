@@ -15,33 +15,33 @@ for (const [request, type] of [
     ['grey dragon scales', GRAY_DRAGON_SCALES],
 ]) {
     void test(`a wish recognizes ${request}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const result = await readObjectName(request);
         assert.ok(result && !result.noWish, `Wish was rejected: ${request}`);
         assert.equal(result.object.otyp, type);
     });
 }
 void test('wishes recognize an assigned type call name within its class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(POT_HEALING, 'restorative');
     const result = await readObjectName('potion called restorative');
     assert.ok(result && !result.noWish, 'The called potion should be wishable');
     assert.equal(result.object.otyp, POT_HEALING);
 });
 void test('a class-qualified unknown wish grants a random item of that class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('wand of nonexistent magic');
     assert.ok(result && !result.noWish, 'A specified class should fall back to a random object');
     assert.equal(result.object.oclass, 11);
 });
 void test('a named subrange wish chooses an item in that range', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('boots');
     assert.ok(result && !result.noWish, 'Boots should select a random pair');
     assert.match(OBJECT_NAMES[result.object.otyp] ?? '', /boots|shoes/);
 });
 void test('an unqualified unknown name cannot produce an object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.equal(await readObjectName('nonexistent magic'), null);
     assert.equal(game.inventory.length, 0);
 });

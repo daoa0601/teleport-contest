@@ -52,8 +52,8 @@ for (const [type, mask, outcome, terrain, symbol] of [
         door.typ = type;
         door.doormask = mask;
         vision_reset();
-        vision_recalc(0);
-        newsym(11, 10);
+        await vision_recalc(0);
+        await newsym(11, 10);
         const before = door.remembered_glyph;
         assert.ok(before?.kind === 'terrain');
         assert.equal(before.terrainName, type === SDOOR ? 'wall' : 'closed door');

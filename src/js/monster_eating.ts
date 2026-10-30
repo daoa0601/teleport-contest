@@ -10,13 +10,13 @@ import { MONSTER_SYMBOL } from './monster_data.js';
 
 const S_MIMIC = 13;
 
-export function finishMonsterEating(monster: Monster, state: GameState = game): void {
+export async function finishMonsterEating(monster: Monster, state: GameState = game): Promise<void> {
     requireLiveGame(state);
     monster.meating = 0;
     if (M_AP_TYPE(monster) !== M_AP_NOTHING
         && MONSTER_SYMBOL[monster.mnum] !== S_MIMIC) {
         monster.m_ap_type = M_AP_NOTHING;
         monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
 }

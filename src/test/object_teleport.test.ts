@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a falling object can land beside a monster without merging into its floor stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await createMonsterAt('orc', 16, 10);
     const first = await knownObject(ROCK, { quan: 1 });
@@ -37,7 +37,7 @@ void test('a falling object can land beside a monster without merging into its f
 });
 
 void test('object relocation avoids the hero, boulders, closed doors and inaccessible bridge surfaces', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     placeCreatedObject(await knownObject(BOULDER), 11, 10);
     const doorSquare = game.level.requireAt(12, 10);
@@ -60,7 +60,7 @@ void test('object relocation avoids the hero, boulders, closed doors and inacces
 });
 
 void test('relocation keeps an object inside the Wizard tower when it starts inside', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const tower = { lx: 12, hx: 14, ly: 9, hy: 11 };
     game._activeSpecialLevel = { prototype: 'wizard3', file: 'wizard3.lua', downTeleportExclude: tower };
@@ -76,7 +76,7 @@ void test('relocation keeps an object inside the Wizard tower when it starts ins
 });
 
 void test('relocating a Rider corpse revives the Rider instead of moving the corpse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await mksobj(CORPSE, false, false);
     set_corpsenm(corpse, 311);
@@ -91,7 +91,7 @@ void test('relocating a Rider corpse revives the Rider instead of moving the cor
 
 for (const type of [DAGGER, GLOB_OF_BLACK_PUDDING]) {
     void test(`relocation within the same shop removes a returned unpaid ${type === DAGGER ? 'dagger' : 'glob'} from its bill`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({
             left: 7, right: 16, top: 6, bottom: 14, keeperX: 8, keeperY: 6,
@@ -112,7 +112,7 @@ for (const type of [DAGGER, GLOB_OF_BLACK_PUDDING]) {
 }
 
 void test('relocating shop stock while outside the shop counts as theft', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const object = await knownObject(DAGGER);
@@ -129,7 +129,7 @@ void test('relocating shop stock while outside the shop counts as theft', async 
 
 for (const contained of [false, true]) {
     void test(`relocating ${contained ? 'contained' : 'loose'} shop gold to the keeper's free spot records the loan`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({
             left: 7, right: 16, top: 6, bottom: 14, keeperX: 15, keeperY: 10,

@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
 void test('petrification stops actions as the hero stiffens', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     game.u.fast = true;
     game.u.veryFast = true;
     game.u.veryFastTurns = 30;
@@ -39,7 +39,7 @@ void test('petrification stops actions as the hero stiffens', async () => {
     assert.ok(messages.includes('You stop eating the food ration.'));
 });
 void test('the final petrification turn invokes a stoning death', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     startHeroPetrification({ turns: 1, killer: 'cockatrice egg' });
     const deaths = [];
     const result = await advanceHeroPetrification({

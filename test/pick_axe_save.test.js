@@ -13,13 +13,13 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('saving midway through a wall preserves the work already done', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.plname = 'Digger';
     const pick = await addInventoryObject(PICK_AXE, { invlet: 'a', spe: 20, owornmask: W_WEP });
     game.uwep = game.u.uwep = pick;
     requireGameLevel().requireAt(11, 10).typ = VWALL;
-    newsym(11, 10);
+    await newsym(11, 10);
     installPagerInput(resetInputState(), {
         expected: /You (?:start|continue) digging|You hit the rock with all your might/,
         limit: 2,
@@ -32,7 +32,7 @@ void test('saving midway through a wall preserves the work already done', async 
     assert.equal(requireGameLevel().requireAt(11, 10).typ, VWALL);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Digger', storage), true);
+    assert.equal(await restoreGame('Digger', storage), true);
     // Resuming through rhack() needs the message clear from fresh command input.
     await setTopline('');
     await applyInventoryObject(game.uwep, 'l');

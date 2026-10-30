@@ -18,7 +18,7 @@ import { createMonsterAt } from './support/monsters.js';
 
 for (const blind of [false, true]) {
     void test(`${blind ? 'feeling' : 'looking'} while swallowed inspects the stomach before any floor features`, async t => {
-        const level = freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
+        const level = await freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
         const worm = await createMonsterAt('purple worm', game.u.ux, game.u.uy,
             MM_NOGRP | MM_NOWAIT | NO_MINVENT);
         game.u.uswallow = 1;
@@ -45,7 +45,7 @@ for (const blind of [false, true]) {
 }
 
 void test('looking above a pool describes the water without revealing submerged objects', async t => {
-    const level = freshObjectRoom({ hero: { levitationTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { levitationTurns: 10 } });
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const dagger = await floorObject(DAGGER, game.u.ux, game.u.uy, { dknown: false });
     const input = resetInputState();
@@ -57,7 +57,7 @@ void test('looking above a pool describes the water without revealing submerged 
 });
 
 void test('blind inspection of an altar asks to feel here before describing the altar', async t => {
-    const level = freshObjectRoom({ hero: { blindTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 10 } });
     const altar = level.requireAt(game.u.ux, game.u.uy);
     altar.typ = ALTAR;
     altar.flags = 0;
@@ -72,7 +72,7 @@ void test('blind inspection of an altar asks to feel here before describing the 
 });
 
 void test('look-here describes a known trap before reporting an empty floor', async t => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
     const input = resetInputState();
     planInput(input, t, []);
@@ -82,7 +82,7 @@ void test('look-here describes a known trap before reporting an empty floor', as
 });
 
 void test('each look at hallucinated ice chooses one liquid description', async t => {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
     level.requireAt(game.u.ux, game.u.uy).typ = ICE;
     initRng(71);
     const liquids = [displayLiquidName('water'), displayLiquidName('water')];
@@ -97,7 +97,7 @@ void test('each look at hallucinated ice chooses one liquid description', async 
 });
 
 void test('looking at a seen trap on hallucinated ice chooses its name before the liquid', async t => {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
     level.requireAt(game.u.ux, game.u.uy).typ = ICE;
     addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
     initRng(71);

@@ -18,9 +18,9 @@ export async function grantMonsterCorpseIntrinsic(monster, species, state = game
             const name = monsterName(monster, { state, capitalized: true });
             setMonsterPermanentInvisibility(monster);
             if (!monster.invis_blkd) {
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
                 if (monster.wormno)
-                    redrawMonsterWormSegments(monster);
+                    await redrawMonsterWormSegments(monster);
             }
             if (visible) {
                 const change = !canSpotMonster(monster) ? 'vanishes'

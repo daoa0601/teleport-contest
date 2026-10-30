@@ -21,7 +21,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 const BIRTH_FLAGS = NO_MINVENT | MM_NOGRP | MM_NOWAIT;
 void test('a cream-pie hit can leave a monster blind for the minimum twenty-one turns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('goblin', 11, 10, BIRTH_FLAGS);
     monster.mpeaceful = false;
     const pie = await knownObject(CREAM_PIE);
@@ -33,7 +33,7 @@ void test('a cream-pie hit can leave a monster blind for the minimum twenty-one 
     assert.equal(pie.where, 'gone');
 });
 async function contactRoom(expected, species = 'goblin') {
-    freshObjectRoom({ gameplaySeed: 97n, flags: { verbose: true }, hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ gameplaySeed: 97n, flags: { verbose: true }, hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
     const monster = await createMonsterAt(species, 11, 10, BIRTH_FLAGS);
     monster.mhp = monster.mhpmax = 200;
     monster.msleeping = 0;

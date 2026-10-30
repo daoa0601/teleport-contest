@@ -25,7 +25,7 @@ void test('discovering a pit beneath a hallucinated monster redraws the monster'
     });
     requirePlayingGame(game);
     game.u.hallucinationTurns = 20;
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const original = level.requireAt(monster.mx, monster.my).disp_glyph?.glyph;
 
     await finishMonsterPitTrap(monster, beginMonsterPitTrap(monster, trap), {

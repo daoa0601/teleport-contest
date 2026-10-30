@@ -8,7 +8,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('searching while swallowed spends a turn looking for the exit without finding outside monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
     await installSwallowedHero(worm);

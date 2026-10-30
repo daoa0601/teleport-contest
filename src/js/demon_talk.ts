@@ -64,7 +64,7 @@ export async function demandDemonBribe(monster: Monster, state: PlayingGameState
             : formatFeltMessage('tension building.', state));
         monster.mtame = 0;
         angerDemon(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         return false;
     }
     if (state.u.uhs === FAINTED) await resetHeroFaint({ state });
@@ -80,7 +80,7 @@ export async function demandDemonBribe(monster: Monster, state: PlayingGameState
             await plineWithContinuation(`${subject()} appears before you.`);
             monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_APPEARMSG;
         }
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     const deaf = heroIsDeaf(state);
     if (heroIsDemon) {

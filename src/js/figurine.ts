@@ -312,12 +312,12 @@ export async function runClaimedFigurineTimer(
     };
 }
 
-export function finishFigurineTimer<T extends FigurineTimerEvent | null | undefined>(
+export async function finishFigurineTimer<T extends FigurineTimerEvent | null | undefined>(
     event: T, state: GameState = game,
-): T {
+): Promise<T> {
     if (!event?.transformed || !event.finishPending) return event;
     deleteFigurine(event.figurine, state);
-    if (event.redraw) newsym(event.x, event.y);
+    if (event.redraw) await newsym(event.x, event.y);
     event.finishPending = false;
     event.finished = true;
     return event;

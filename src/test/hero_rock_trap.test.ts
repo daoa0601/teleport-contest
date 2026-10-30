@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const blind of [false, true]) {
     void test(`a falling rock is named from ${blind ? 'touch' : 'sight'} before striking the hero`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         if (blind) setHeroBlindnessTurns(20);
         const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);

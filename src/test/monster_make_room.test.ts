@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 void test('a monster displaced to make room leaves its square as it would leave the level', async () => {
-    const level = freshObjectRoom({ right: 22 });
+    const level = await freshObjectRoom({ right: 22 });
     const hidden = await createMonsterAt('iron piercer', 15, 10, NO_MINVENT);
     hidden.mundetected = 1;
     hidden.mtrapped = 1;
@@ -29,12 +29,12 @@ void test('a monster displaced to make room leaves its square as it would leave 
 });
 
 void test('displacing a boulder-disguised mimic reopens the view past its square', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     const mimic = await createMonsterAt('small mimic', 12, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
     mimic.mappearance = BOULDER;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), false);
     const arrival = await createMonsterAt('jackal', 12, 8, NO_MINVENT);
     requireShopGame(game);
@@ -42,7 +42,7 @@ void test('displacing a boulder-disguised mimic reopens the view past its square
     game.vision_full_recalc = 0;
     await mnearto(arrival, 12, 10, game, { moveOther: true });
     // The move loop refreshes sight only when a change requested it.
-    if (game.vision_full_recalc) vision_recalc(0);
+    if (game.vision_full_recalc) await vision_recalc(0);
 
     assert.equal(mimic.m_ap_type, 0);
     assert.equal(cansee(14, 10), true);
@@ -50,7 +50,7 @@ void test('displacing a boulder-disguised mimic reopens the view past its square
 
 for (const arrivalFits of [false, true]) {
     void test(`endgame displacement migrates the resident onward when ${arrivalFits ? 'only its replacement fits' : 'neither monster can be placed'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const arrival = await createMonsterAt('Wizard of Yendor', 11, 10, NO_MINVENT);
         const resident = await createMonsterAt(arrivalFits ? 'salamander' : 'xorn', 12, 10, NO_MINVENT);
         for (let x = 7; x <= 16; x++) {

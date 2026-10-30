@@ -12,12 +12,12 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const lighting of [false, true]) {
     void test(`a monster polymorph ${lighting ? 'lights' : 'darkens'} nearby dungeon squares`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         for (let x = 7; x <= 16; x++)
             for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
         const monster = await createMonsterAt(lighting ? 'jackal' : 'fire elemental', 13, 10, NO_MINVENT);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(14, 10), !lighting);
 
         await changeMonsterForm(monster, MONSTER_NAME.indexOf(lighting ? 'fire elemental' : 'jackal'), game,

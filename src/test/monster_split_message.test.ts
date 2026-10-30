@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // potion.c split_mon(): a spotted monster announces its division, naming
 // whose heat fed it.  uhitm.c passive() passes the hero for brown mold.
 void test('a brown mold fed by the hero\'s heat multiplies from your heat', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 200;
     const mold = await createMonsterAt('brown mold', game.u.ux + 1, game.u.uy);

@@ -10,7 +10,7 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('inventory adjustment acknowledges command callback prose before asking for a destination', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     const core = await startLuaCore(t);

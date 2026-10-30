@@ -7,7 +7,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('#wizbury buries adjacent objects but leaves distant objects on the floor', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const here = await floorObject(DIAMOND, 10, 10);
     const adjacent = await floorObject(DIAMOND, 11, 11);
@@ -23,7 +23,7 @@ void test('#wizbury buries adjacent objects but leaves distant objects on the fl
 });
 
 void test('#wizbury reports when no adjacent objects exist', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
 
     await runExtendedCommand('wizbury');

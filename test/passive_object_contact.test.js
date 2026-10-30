@@ -19,7 +19,7 @@ for (const { form, objectType, field } of [
     { form: 'red mold', objectType: CLUB, field: 'oeroded' },
 ]) {
     void test(`a missile touching the hero's ${form} body suffers its passive erosion`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         installPolymorphedHero(form);
         const projectile = await floorObject(objectType, game.u.ux, game.u.uy);
         await applyMonsterPassiveToObject(game.u, projectile, {
@@ -31,7 +31,7 @@ for (const { form, objectType, field } of [
     });
 }
 void test('grease protects a projectile from a rust-monster hero and can wear off', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('rust monster');
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { greased: true });
     await applyMonsterPassiveToObject(game.u, arrow, {
@@ -42,7 +42,7 @@ void test('grease protects a projectile from a rust-monster hero and can wear of
 });
 for (const form of ['rust monster', 'red mold', 'disenchanter']) {
     void test(`a cancelled ${form} hero leaves an impacting object intact`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         installPolymorphedHero(form);
         game.u.mcan = true;
         const projectile = await floorObject(form === 'red mold' ? CLUB : ARROW, game.u.ux, game.u.uy, { spe: 3 });
@@ -55,7 +55,7 @@ for (const form of ['rust monster', 'red mold', 'disenchanter']) {
     });
 }
 void test('a cancelled acid-blob hero can still corrode an impacting arrow', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('acid blob');
     game.u.mcan = true;
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy);
@@ -65,7 +65,7 @@ void test('a cancelled acid-blob hero can still corrode an impacting arrow', asy
     assert.equal(arrow.oeroded2, 1);
 });
 void test('a steam-vortex hero does not burn a wooden projectile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('steam vortex');
     const club = await floorObject(CLUB, game.u.ux, game.u.uy);
     await applyMonsterPassiveToObject(game.u, club, {
@@ -74,7 +74,7 @@ void test('a steam-vortex hero does not burn a wooden projectile', async () => {
     assert.equal(club.oeroded ?? 0, 0);
 });
 void test('a disenchanter hero drains an impacting arrow without taking ownership or announcing hero equipment', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('disenchanter');
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { spe: 3 });
     const messages = [];
@@ -89,7 +89,7 @@ void test('a disenchanter hero drains an impacting arrow without taking ownershi
     assert.equal(messages.length, 0);
 });
 void test('a monster disenchanter still drains and describes the hero\'s carried weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     const club = await addInventoryObject(CLUB, { spe: 3 });
     const messages = [];
@@ -102,7 +102,7 @@ void test('a monster disenchanter still drains and describes the hero\'s carried
     assert.deepEqual(messages, ['Your club seems less effective.']);
 });
 void test('an ordinary human hero has no passive object damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { spe: 3 });
     await applyMonsterPassiveToObject(game.u, arrow, {
         publish: () => { }, random: () => 0,
@@ -112,7 +112,7 @@ void test('an ordinary human hero has no passive object damage', async () => {
     assert.equal(arrow.oeroded2 ?? 0, 0);
 });
 void test("a dual-wielding hero's weaponless blow disenchants the secondary weapon half the time", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     const primary = await addInventoryObject(DAGGER, { spe: 5 });

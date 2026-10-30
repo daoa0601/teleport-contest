@@ -8,7 +8,7 @@ import { runLevelRegions } from '../js/regions.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('natural lava clouds do not blame the hero outside level generation or monster movement', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const level = await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     level.flags.temperature = 1;
     for (let x = 1; x < COLNO; x++) {
@@ -22,7 +22,7 @@ void test('natural lava clouds do not blame the hero outside level generation or
         assert.equal(cloud.heroFault, false);
 });
 void test('a fumarole leaves damaging gas which hurts a breathing occupant on the next region turn', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const level = await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     level.flags.temperature = 1;
     for (let x = 1; x < COLNO; x++) {
@@ -47,7 +47,7 @@ void test('a fumarole leaves damaging gas which hurts a breathing occupant on th
 });
 for (const deaf of [false, true]) {
     void test(`distant fumaroles ${deaf ? 'stay silent for a deaf hero' : 'announce a whoosh only once'}`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 1n, heroX: 1, heroY: 0,
+        const level = await freshObjectRoom({ gameplaySeed: 1n, heroX: 1, heroY: 0,
             hero: { deafTurns: deaf ? 100 : 0 } });
         requirePlayingGame(game);
         level.flags.temperature = 1;
@@ -66,7 +66,7 @@ for (const deaf of [false, true]) {
     });
 }
 void test('a nearby fumarole announces a loud whoosh', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n, heroX: 40, heroY: 10 });
+    const level = await freshObjectRoom({ gameplaySeed: 1n, heroX: 40, heroY: 10 });
     requirePlayingGame(game);
     level.flags.temperature = 1;
     for (let x = 1; x < COLNO; x++) {

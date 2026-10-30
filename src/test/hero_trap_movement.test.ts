@@ -247,7 +247,7 @@ void test('a rust trap can rust the helmet worn by the hero', async () => {
 });
 
 void test('enchanted iron shoes absorb an anti-magic field', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uen: 20, uenmax: 20 },
     });
     requireFixtureGame(game);
@@ -280,7 +280,7 @@ void test('an anti-magic field drains energy from an unprotected hero', async ()
 
 void test('wielding Magicbane turns an anti-magic field into an implosion',
     async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uen: 20, uenmax: 20 },
         });
         requireFixtureGame(game);
@@ -369,7 +369,7 @@ void test('stepping into a magic portal moves the hero to its other end',
 
 for (const lifesaving of [false, true] as const) {
     void test(`walking into a fire trap ${lifesaving ? 'resumes floor burning after life saving' : 'stops floor burning and movement bookkeeping on death'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uhp: 1, uhpmax: 80 }, flags: { pickup: false },
         });
         requireFixtureGame(game);
@@ -395,7 +395,7 @@ for (const lifesaving of [false, true] as const) {
 }
 
 void test('a mounted hero escaping a web names the steed', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });
@@ -416,7 +416,7 @@ void test('a mounted hero escaping a web names the steed', async () => {
 });
 
 void test('a mounted hero stuck in the floor names the steed', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });
@@ -447,7 +447,7 @@ void test('a hallucinating rider sees one steed identity per lava struggle', asy
 });
 
 async function hallucinatedLavaStuckName(stepIntoLava: boolean): Promise<string | null> {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });

@@ -9,13 +9,13 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const known of [false, true]) {
     void test(`temporarily mapping a ${known ? 'known' : 'concealed'} trap preserves its discovery state`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const trap = addTrap(level, PIT, 11, 10, { tseen: known });
 
-        map_trap(trap, true);
+        await map_trap(trap, true);
         await flush_screen(1);
         const temporary = requireScreenCell(10, 11).ch;
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         assert.equal(temporary, '^');

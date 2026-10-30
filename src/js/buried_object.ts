@@ -98,8 +98,8 @@ export async function buryFloorObjectsAt(x: number, y: number, state: GameState 
         object = result.next;
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
-    maybeUnhideAt(x, y, state);
+    await newsym(x, y);
+    await maybeUnhideAt(x, y, state);
     if (shop && loss) {
         await publish(`You owe ${shopkeeperName(shop.resident, { state })} ${loss} ${
             currency(loss, { state })} for burying merchandise.`);
@@ -191,7 +191,7 @@ export async function unearthFloorObjectsAt(x: number, y: number, state: GameSta
         unearthed.push(object);
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
+    await newsym(x, y);
     return unearthed;
 }
 
@@ -224,6 +224,6 @@ export async function buriedBallToPunishment(state: GameState = game): Promise<b
     await punishHero(ball, state);
     clearHeroTrap(state);
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }

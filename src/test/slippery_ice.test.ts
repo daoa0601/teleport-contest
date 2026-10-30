@@ -19,7 +19,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('fumbling refers to the item just described on the floor by a pronoun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await floorObject(DAGGER, 10, 10);
     await showFloorPile([dagger]);
     const messages: string[] = [];
@@ -85,7 +85,7 @@ void test('cold resistance prevents an unmounted hero from slipping on ice', asy
 
 for (const onIce of [true, false]) {
     void test(`a saddled pony slipping ${onIce ? 'on' : 'off'} ice is named without its saddle`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         if (onIce) level.requireAt(game.u.ux, game.u.uy).typ = ICE;
         const steed = await createSaddledSteed('pony', { saddle: { cursed: true } });
         game.u.usteed = steed;
@@ -105,7 +105,7 @@ for (const onIce of [true, false]) {
 }
 
 void test('a cockatrice-form hero slipping into an unarmored monster leaves its statue and earns kill credit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('cockatrice');
     const orc = await createMonsterAt('orc', 9, 10, NO_MINVENT);
     game.u.fumblingFromIce = true;
@@ -126,7 +126,7 @@ void test('a cockatrice-form hero slipping into an unarmored monster leaves its 
 
 for (const blind of [false, true]) {
     void test(`a ${blind ? 'blind' : 'sighted'} Cleric learns a dagger's curse when naming it in a trip`, async () => {
-        freshObjectRoom({ role: 'priest', hero: { blindTurns: blind ? 20 : 0 } });
+        await freshObjectRoom({ role: 'priest', hero: { blindTurns: blind ? 20 : 0 } });
         const dagger = await floorObject(DAGGER, 10, 10, {
             cursed: true, known: false, bknown: false, dknown: blind,
         });
@@ -142,7 +142,7 @@ for (const blind of [false, true]) {
 
 for (const description of ['it', 'something'] as const) {
     void test(`tripping over ${description} leaves an unnamed dagger's curse unknown`, async () => {
-        freshObjectRoom({ role: 'priest', hero: { blindTurns: description === 'something' ? 20 : 0 } });
+        await freshObjectRoom({ role: 'priest', hero: { blindTurns: description === 'something' ? 20 : 0 } });
         const dagger = await floorObject(DAGGER, 10, 10, {
             cursed: true, known: false, bknown: false, dknown: false,
         });

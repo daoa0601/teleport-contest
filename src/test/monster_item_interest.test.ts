@@ -32,7 +32,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function interestRoom(species = 'goblin') {
-    freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true } });
+    await freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true } });
     requirePlayingGame(game);
     const state = game;
     const monster = await createMonsterAt(species, 11, 10, BIRTH_FLAGS);

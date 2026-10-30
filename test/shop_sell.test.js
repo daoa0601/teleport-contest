@@ -25,13 +25,13 @@ function monsterLevel(species) {
     return level;
 }
 async function priceShop({ shoptype = SHOPBASE } = {}) {
-    const level = freshObjectRoom({ ...SHOP, role: 'caveman' });
+    const level = await freshObjectRoom({ ...SHOP, role: 'caveman' });
     const { shopkeeper } = await createStaffedShop({ ...SHOP,
         keeperX: 12, keeperY: 10, shopType: shoptype });
     return { level, shopkeeper };
 }
 async function sellShop(t, answers = [], { shoptype = SHOPBASE, gold = 1000 } = {}) {
-    freshObjectRoom({ ...SHOP, role: 'caveman' });
+    await freshObjectRoom({ ...SHOP, role: 'caveman' });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         ...SHOP, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,

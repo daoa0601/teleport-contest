@@ -9,7 +9,7 @@ import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { clearPath, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a blocker change while the hero is submerged leaves distant moats transparent', async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     // The moat at (12,10) was transparent when the sight table was built;
     // entering the water alone does not rebuild the table in C.
@@ -24,7 +24,7 @@ void test('a blocker change while the hero is submerged leaves distant moats tra
     assert.equal(clearPath(16, 10, 14, 10), false, 'the boulder blocks sight through its own cell');
 });
 void test('an expiring cloud uncovers a moat while the hero stays submerged', async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = MOAT;
     game.u.uinwater = 1;

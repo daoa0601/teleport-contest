@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('falling Mjollnir wakes sleepers near the map origin rather than the hero', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 1, top: 1,
         hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } },
     });
@@ -35,7 +35,7 @@ void test('falling Mjollnir wakes sleepers near the map origin rather than the h
 void test('Excalibur falling onto the hero adds its artifact damage to ordinary sword damage', async () => {
     const wounds: number[] = [];
     for (const artifact of [false, true]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const sword = artifact
             ? await addInventoryItem(await artifactObject('Excalibur', { spe: 0 }))
@@ -55,7 +55,7 @@ void test('Excalibur falling onto the hero adds its artifact damage to ordinary 
 });
 
 void test('a falling Fire Brand burns away slime and replaces the hard helmet reassurance', async () => {
-    freshObjectRoom({ hero: { slimedTurns: 10 } });
+    await freshObjectRoom({ hero: { slimedTurns: 10 } });
     const helmet = await addInventoryObject(HELMET);
     game.uarmh = game.u.uarmh = helmet;
     const sword = await addInventoryItem(await artifactObject('Fire Brand', { spe: 0 }));
@@ -72,7 +72,7 @@ void test('a falling Fire Brand burns away slime and replaces the hard helmet re
 });
 
 void test('a falling Stormbringer drains the hero experience level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryItem(await artifactObject('Stormbringer', { spe: 0 }));
 
     await throwInventoryObject(sword, '<', ' '.repeat(30));
@@ -84,7 +84,7 @@ void test('a falling Stormbringer drains the hero experience level', async () =>
 void test('a falling Magicbane can cancel the hero and drain magical energy', async () => {
     let cancelled = false;
     for (let seed = 1; seed <= 24 && !cancelled; seed++) {
-        freshObjectRoom({ hero: { uen: 10, uenmax: 10 } });
+        await freshObjectRoom({ hero: { uen: 10, uenmax: 10 } });
         const blade = await addInventoryItem(await artifactObject('Magicbane', { spe: 0 }));
         initRng(BigInt(seed));
 

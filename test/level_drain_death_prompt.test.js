@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('fatal level drain asks the wizard death question directly and resumes the level loss', async () => {
-    freshObjectRoom({ flags: { debug: true }, hero: {
+    await freshObjectRoom({ flags: { debug: true }, hero: {
             ulevel: 1, uhp: 20, uhpmax: 20, uexp: 5,
             uen: 10, uenmax: 10, uhpinc: [0, 4], ueninc: [0, 2],
         } });

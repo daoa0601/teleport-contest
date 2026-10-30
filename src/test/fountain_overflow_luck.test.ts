@@ -10,7 +10,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a carried luckstone protects floor scrolls from overflowing fountain water', async () => {
-    const level = freshObjectRoom({ hero: { uluck: 0 } });
+    const level = await freshObjectRoom({ hero: { uluck: 0 } });
     level.requireAt(10, 10).typ = FOUNTAIN;
     await addInventoryObject(LUCKSTONE, { blessed: true });
     assert.equal(game.u.moreluck, 3);

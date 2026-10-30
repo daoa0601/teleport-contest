@@ -24,7 +24,7 @@ const DIAMOND = OBJECT_NAMES.indexOf('diamond');
 // with the seeded rooms below); the pony keeps the hero's old square.
 
 async function mountedPony(seed: RngSeed) {
-    freshObjectRoom({ gameplaySeed: seed });
+    await freshObjectRoom({ gameplaySeed: seed });
     requirePlayingGame(game);
     const pony = await createMonsterAt('pony', 11, 10);
     game.u.usteed = pony;
@@ -93,7 +93,7 @@ void test('the deferred trap fires once through the descent', async () => {
 // C steed.c:875-895 stucksteed(): helpless and mid-meal steeds refuse to
 // move; holding traps are not consulted.
 void test('stuckSteed reports a helpless or eating steed', async () => {
-    freshObjectRoom({ gameplaySeed: 45 });
+    await freshObjectRoom({ gameplaySeed: 45 });
     requirePlayingGame(game);
     assert.equal(await stuckSteed(), false); // not riding
 
@@ -120,8 +120,8 @@ void test('stuckSteed reports a helpless or eating steed', async () => {
 
 // C decl.c in_steed_dismounting: never saved; the schema classifies the
 // port's transient flag so copyPersistentState cannot throw on it.
-void test('the dismounting flag is transient save state', () => {
-    freshObjectRoom({ gameplaySeed: 44 });
+void test('the dismounting flag is transient save state', async () => {
+    await freshObjectRoom({ gameplaySeed: 44 });
     requirePlayingGame(game);
     game._steedDismounting = true;
     const snapshot = copyPersistentState(game);

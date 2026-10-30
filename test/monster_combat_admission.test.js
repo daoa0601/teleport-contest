@@ -27,7 +27,7 @@ async function coveredCobra(x, y) {
     return cobra;
 }
 void test('Conflict reveals a covered defender before the attack is stamped or damages it', async () => {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const captain = await createMonsterAt('captain', 11, 10, NO_MINVENT);
@@ -70,7 +70,7 @@ void test('Conflict reveals a covered defender before the attack is stamped or d
     assert.ok(cobra.mhp < health, `the resumed attack should damage the cobra: ${health} -> ${cobra.mhp}`);
 });
 void test('a helpless Conflict attacker leaves its sleeping defender concealed', async () => {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const captain = await createMonsterAt('captain', 11, 10, NO_MINVENT);
@@ -91,7 +91,7 @@ void test('a helpless Conflict attacker leaves its sleeping defender concealed',
 });
 for (const defenderKind of ['covered cobra', 'disguised mimic']) {
     void test(`a pet readies its weapon against a ${defenderKind} before its first strike`, async () => {
-        freshObjectRoom({ heroX: 18, right: 20 });
+        await freshObjectRoom({ heroX: 18, right: 20 });
         requirePlayingGame(game);
         const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
         initializePet(captain);

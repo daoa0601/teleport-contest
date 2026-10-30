@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const situation of ['burns', 'resisted', 'cancelled', 'no splash']) {
     void test(`ochre jelly acid contact ${situation}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const jelly = await createMonsterAt('ochre jelly', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         if (situation === 'resisted')

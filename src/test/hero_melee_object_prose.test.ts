@@ -17,7 +17,7 @@ for (const { type, noun, seed, message } of [
     { type: EXPENSIVE_CAMERA, noun: 'camera', seed: 2n, message: /You succeed in destroying your expensive camera\.  Congratulations!/ },
 ]) {
     void test(`breaking a wielded ${noun} gives the native two-sentence admonishment`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhitinc: 100 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhitinc: 100 } });
         const object = await addInventoryObject(type);
         await setPrimaryWeapon(object);
         const target = await createMonsterAt('goblin', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);

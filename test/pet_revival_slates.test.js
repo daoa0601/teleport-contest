@@ -8,7 +8,7 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function revivedPet(material) {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);
     assert.ok(dog.edog);
@@ -65,7 +65,7 @@ void test('a master-killed pet returns from death untame but not vengeful', asyn
     assert.equal(await topMessage(), '');
 });
 void test('an abused pet rises from death hostile without a farewell', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     initRng(1n);
     const dog = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);

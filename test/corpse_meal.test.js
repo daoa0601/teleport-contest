@@ -10,8 +10,8 @@ import { CORPSE } from '../js/object_data.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-function diningRoom() {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 61n, hero: { uhunger: 200 } });
+async function diningRoom() {
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 61n, hero: { uhunger: 200 } });
     requirePlayingGame(game);
     const input = resetInputState();
     const messages = [];
@@ -36,21 +36,21 @@ async function eatCorpse(name, input) {
     assert.equal(food.where, 'gone', 'the meal consumes the selected corpse');
 }
 void test('an ordinary Monk finds meat terrible even though humans are omnivorous', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
     await eatCorpse('lizard', input);
     assert.match([...messages, game._pending_message].join('\n'), /This lizard corpse tastes terrible!/);
     assert.equal(game.u.uconduct.unvegetarian, 1);
 });
 void test('an ordinary Monk finds a vegan corpse delicious', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
     await eatCorpse('lichen', input);
     assert.match([...messages, game._pending_message].join('\n'), /This lichen corpse tastes delicious!/);
     assert.equal(game.u.uconduct.unvegetarian || 0, 0);
 });
 void test('a Monk eats with the transformed body and regains the original diet on return', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
     await polymonHero(MONSTER_NAME.indexOf('tiger'));
     await eatCorpse('lizard', input);

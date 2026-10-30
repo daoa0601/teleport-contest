@@ -208,7 +208,7 @@ async function traceImmediateZap(source, range, state) {
             range -= 3;
         }
         else if (source.otyp === WAN_PROBING && location.remembered_glyph?.kind === 'invisible') {
-            unmap_invisible(x, y);
+            await unmap_invisible(x, y);
         }
         if (state.program_state.gameover)
             return;
@@ -288,7 +288,7 @@ async function zapVertically(source, state) {
     else if (state.u.uundetected && heroFormHidesUnderObjects(state)) {
         const object = state.level.objects[state.u.ux]?.[state.u.uy]?.[0];
         if (object && await hitObjectWithWand(object, source, { state })) {
-            maybeUnhideAt(state.u.ux, state.u.uy, state);
+            await maybeUnhideAt(state.u.ux, state.u.uy, state);
             disclose = true;
         }
     }
@@ -319,7 +319,7 @@ async function strikeOrLockVertically(source, x, y, trap, state) {
         await placeCreatedObject(rock, x, y, state);
         observeObjectForNaming(rock, { state });
         await stack_object(rock, state);
-        newsym(x, y);
+        await newsym(x, y);
         return false;
     }
     if (dz <= 0 || !trap)
@@ -335,7 +335,7 @@ async function strikeOrLockVertically(source, x, y, trap, state) {
             : !known ? "There's a trapdoor beneath you; it shatters." : 'The trapdoor beneath you shatters.');
         trap.ttyp = HOLE;
         trap.tseen = 1;
-        newsym(x, y);
+        await newsym(x, y);
         await triggerHeroTrap(trap, { gotoLevel });
         return known;
     }
@@ -345,7 +345,7 @@ async function strikeOrLockVertically(source, x, y, trap, state) {
             await pline(`Some ${isIceAt(x, y, state) ? 'frost' : 'dust'} swirls beneath you.`);
         else {
             trap.tseen = 1;
-            newsym(x, y);
+            await newsym(x, y);
             await pline('A trapdoor appears beneath you.');
             return true;
         }

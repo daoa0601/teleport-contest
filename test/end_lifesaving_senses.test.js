@@ -10,7 +10,7 @@ import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a blind hero feels the life-saving medallion warm after falling in lava', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 20 } });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     level.requireAt(game.u.ux, game.u.uy).typ = LAVAPOOL;

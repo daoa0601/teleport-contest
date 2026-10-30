@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('Stormbringer displays the HP restored by draining a monster', async () => {
-    freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
+    await freshObjectRoom({ hero: { uhp: 5, uhpmax: 12 } });
     const monster = await createMonsterAt('pony', 12, 10, NO_MINVENT);
     monster.mhp = monster.mhpmax = 20;
     const weapon = await artifactObject('Stormbringer');

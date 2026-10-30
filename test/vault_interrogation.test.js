@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 async function arrivingGuard() {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     for (let x = 9; x <= 10; x++)
@@ -117,7 +117,7 @@ void test('a guard silently cancels a counted search repeat before asking the he
     // message and resets a count repeat via nomul(0); vault.c's follow-up
     // `if (gm.multi > 0) { nomul(0); unmul(NULL); }` can never fire after
     // that reset, so no recovery message appears before the name prompt.
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     for (let x = 9; x <= 10; x++)

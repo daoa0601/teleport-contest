@@ -20,7 +20,7 @@ void test('live rnl biases the same base draw according to current Luck', () => 
     assert.ok(unfortunate < 20);
 });
 void test('a carried luckstone improves luck-sensitive decisions', async () => {
-    freshObjectRoom({ hero: { uluck: 0 } });
+    await freshObjectRoom({ hero: { uluck: 0 } });
     initRng(1n);
     const withoutStone = rnl(20);
     await addInventoryObject(LUCKSTONE, { blessed: true });

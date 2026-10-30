@@ -12,7 +12,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const polymorphed of [false, true]) {
     void test(`attack exertion displays the reduced ${polymorphed ? 'monster-form' : 'human'} HP`, async () => {
-        freshObjectRoom({ moves: 1 });
+        await freshObjectRoom({ moves: 1 });
         if (polymorphed) installPolymorphedHero('wolf');
         await addInventoryObject(BOULDER);
         game._encumbranceLevel = nearCapacity(game);

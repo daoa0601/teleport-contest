@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 
 void test('entering a moat announces that body of water', async () => {
-    const level = freshObjectRoom({ hero: { magicalBreathing: true } });
+    const level = await freshObjectRoom({ hero: { magicalBreathing: true } });
     level.requireAt(10, 10).typ = MOAT;
     const messages: string[] = [];
 
@@ -24,7 +24,7 @@ void test('entering a moat announces that body of water', async () => {
 });
 
 void test('drowning names the moat in the death record', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 10, right: 10, top: 10, bottom: 10,
         hero: { urexp: 100 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
@@ -43,7 +43,7 @@ void test('drowning names the moat in the death record', async () => {
 });
 
 void test("water on Juiblex's assigned level is described as a swamp", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await init_dungeons();
     const juiblex = game.specialLevels?.get('juiblex');
     assert.ok(juiblex);

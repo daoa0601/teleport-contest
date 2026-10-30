@@ -19,7 +19,7 @@ const alignments: (0 | 1)[] = [1, 0];
 
 for (const level of ['air_level', 'water_level'] as const) {
     void test(`levitation on the ${level} prevents a fountain from judging the dipped sword`, async () => {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 5, ualign: { type: 1, record: 0 } } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 5, ualign: { type: 1, record: 0 } } });
         requirePlayingGame(game);
         game[level] = { ...game.u.uz, flags: { town: false }, alignment: null };
         const location = game.level.requireAt(game.u.ux, game.u.uy);
@@ -45,7 +45,7 @@ for (const level of ['air_level', 'water_level'] as const) {
 
 for (const alignment of alignments) {
     void test(`the Lady of the Lake judges a level-five knight with alignment ${alignment}`, async () => {
-        freshObjectRoom({ hero: { ulevel: 5, ualign: { type: alignment, record: 0 } } });
+        await freshObjectRoom({ hero: { ulevel: 5, ualign: { type: alignment, record: 0 } } });
         requirePlayingGame(game);
         const knight = roles.find(role => role.key === 'knight');
         assert.ok(knight);
@@ -78,7 +78,7 @@ for (const alignment of alignments) {
 }
 
 void test('Excalibur made in the wielded hand searches while waiting and stops when unwielded', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 5, ualign: { type: 1, record: 0 } } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 5, ualign: { type: 1, record: 0 } } });
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
     game.level.flags.nfountains = 1;

@@ -7,7 +7,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('ordinary soldier armor includes a leather cloak rather than magical protection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     initRng(1n);
 
     const soldier = await createMonsterAt('soldier', 12, 10, MM_NOGRP);

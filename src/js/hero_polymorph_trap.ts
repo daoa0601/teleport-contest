@@ -26,7 +26,7 @@ const WAND_CLASS = 12;
 
 export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean): Promise<void> {
     requirePlayingGame(game);
-    seeTrap(trap);
+    await seeTrap(trap);
     const steed = game.u.usteed;
     const locomotion = heroLocomotion('step');
     const verb = viaSitting ? 'trigger' : steed
@@ -66,7 +66,7 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
         if (game.program_state.gameover) return;
     }
     deleteTrap(trap);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await plineWithContinuation(formatFeltMessage('a change coming over you.'));
     await polymorphHero();
 }

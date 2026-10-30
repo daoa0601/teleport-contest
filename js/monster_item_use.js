@@ -51,8 +51,8 @@ export async function revealAggravatingMonster(monster, state) {
     await plineWithContinuation(`For some reason, ${owner} presence is known to you.`);
     await cls();
     const glyph = transientMonsterGlyph(monster);
-    show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
-    displaySelf();
+    await show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+    await displaySelf();
     await plineWithContinuation(formatFeltMessage(`aggravated at ${monsterName(monster, { state, article: 'your', suppressIt: true })}.`, state));
     await displayMessageWindow();
     await docrt();
@@ -60,9 +60,9 @@ export async function revealAggravatingMonster(monster, state) {
         setMulti(-1, state);
         state._helplessDoneMessage = 'Aggravated, you are jolted into full consciousness.';
     }
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (!canSpotMonster(monster))
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
 }
 // Return null when the selected item can still be used. An exploded wand
 // spends no action if its owner survives, but cancels the selected choice.
@@ -185,7 +185,7 @@ export async function presentMonsterScrollRead(monster, object, { state, publish
         const sensed = canSenseMonster(monster);
         if (!sensed && couldsee(monster.mx, monster.my)
             && (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2 <= 100)
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
         const words = `reading ${name}`.replace('reading a scroll labeled', monster.mconf ? 'attempting to incant' : 'incant');
         const subject = monsterName(monster, {
             state, article: 'a', suppressInvisible: true, suppressSaddle: true,
@@ -256,7 +256,7 @@ async function flashReadingMonster(monster, state) {
     }
     finally {
         row[monster.mx] = saved;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
 }
 //# sourceMappingURL=monster_item_use.js.map

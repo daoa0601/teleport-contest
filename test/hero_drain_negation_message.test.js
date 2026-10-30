@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('magic cancellation reports avoided life drain before a barrow wight curses', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
     wearHeroArmor(cloak);

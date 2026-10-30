@@ -10,7 +10,7 @@ import { artifactByName } from '../js/artifacts.js';
 import { flush_screen, plineWithContinuation } from '../js/display.js';
 import { requireScreenRow } from './support/screen.js';
 void test('the Staff reports slight relief when it cures a timeout but permanent blindness remains', async () => {
-    freshObjectRoom({ role: 'healer', hero: { permaBlind: true, blindTurns: 7 } });
+    await freshObjectRoom({ role: 'healer', hero: { permaBlind: true, blindTurns: 7 } });
     requirePlayingGame(game);
     const staff = await artifactObject('The Staff of Aesculapius', { invlet: 'a', where: 'inventory', age: 0 });
     game.inventory = [staff];
@@ -22,7 +22,7 @@ void test('the Staff reports slight relief when it cures a timeout but permanent
 });
 for (const cream of [0, 2]) {
     void test(`Staff healing reports relief ${cream ? 'once with cream remaining' : 'twice without cream'}`, async () => {
-        freshObjectRoom({ role: 'healer', hero: { blindTurns: 7, ucreamed: cream } });
+        await freshObjectRoom({ role: 'healer', hero: { blindTurns: 7, ucreamed: cream } });
         requirePlayingGame(game);
         const staff = await artifactObject('The Staff of Aesculapius', {
             invlet: 'a', where: 'inventory', age: 0,
@@ -40,7 +40,7 @@ for (const cream of [0, 2]) {
     });
 }
 void test('invoking the Staff at full health cures temporary blindness while leaving cream', async () => {
-    freshObjectRoom({ role: 'healer', hero: { blindTurns: 7, ucreamed: 2 } });
+    await freshObjectRoom({ role: 'healer', hero: { blindTurns: 7, ucreamed: 2 } });
     requirePlayingGame(game);
     const staff = await artifactObject('The Staff of Aesculapius', {
         invlet: 'a', where: 'inventory', age: 0,

@@ -22,8 +22,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function polymorphRoom(): string[] {
-    freshObjectRoom({ flags: { verbose: true } });
+async function polymorphRoom(): Promise<string[]> {
+    await freshObjectRoom({ flags: { verbose: true } });
     installPolymorphedHero('genetic engineer');
     const messages: string[] = [];
     const input = resetInputState();
@@ -47,7 +47,7 @@ function effectContext(monster: Monster, damage = 2): HeroNaturalEffectContext {
 
 for (const guard of ['wielded weapon', 'lethal damage'] as const) {
     void test(`a natural polymorph with ${guard} leaves ordinary damage to its caller`, async () => {
-        polymorphRoom();
+        await polymorphRoom();
         const orc = await createMonsterAt('orc', 11, 10, NO_MINVENT);
         orc.mhp = orc.mhpmax = 20;
         const species = orc.mnum;
@@ -67,7 +67,7 @@ for (const guard of ['wielded weapon', 'lethal damage'] as const) {
 }
 
 void test('worn magic negation blocks transformation while preserving the ordinary hit', async () => {
-    polymorphRoom();
+    await polymorphRoom();
     const orc = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     orc.mhp = orc.mhpmax = 20;
     await equipMonsterObject(orc, await knownObject(CLOAK_OF_PROTECTION), W_ARMC);
@@ -86,7 +86,7 @@ void test('worn magic negation blocks transformation while preserving the ordina
 
 for (const [species, antimagic] of [['baby gray dragon', true], ['arch-lich', false]] as const) {
     void test(`${antimagic ? 'antimagic' : 'general magic resistance'} completes a polymorph hit without subtracting its ordinary damage`, async () => {
-        const messages = polymorphRoom();
+        const messages = await polymorphRoom();
         const target = await createMonsterAt(species, 11, 10, NO_MINVENT);
         target.mhp = target.mhpmax = 100;
         assert.equal(monsterHasMagicResistance(target), antimagic);
@@ -105,7 +105,7 @@ for (const [species, antimagic] of [['baby gray dragon', true], ['arch-lich', fa
 }
 
 void test('an unarmed genetic engineer transforms its target and teleports even when the hero cancellation flag is set', async () => {
-    const messages = polymorphRoom();
+    const messages = await polymorphRoom();
     requirePlayingGame(game);
     game.u.mcan = true;
     const target = await createMonsterAt('orc', 11, 10, NO_MINVENT);
@@ -130,7 +130,7 @@ void test('an unarmed genetic engineer transforms its target and teleports even 
 });
 
 async function cancelledOrc(hitPoints: number, lifeSaving = false) {
-    const messages = polymorphRoom();
+    const messages = await polymorphRoom();
     const orc = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     orc.mhpmax = 100;
     orc.mhp = hitPoints;
@@ -179,7 +179,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
         }
     }
 
-    const messages = polymorphRoom();
+    const messages = await polymorphRoom();
     const ordinary = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     ordinary.mhp = ordinary.mhpmax = 100;
     initRng(BigInt(shockSeed));
@@ -192,7 +192,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
 void test('a failed form change still completes the polymorph hit without subtracting damage', async () => {
     let unchanged = false;
     for (let seed = 1; seed <= 20 && !unchanged; seed++) {
-        const messages = polymorphRoom();
+        const messages = await polymorphRoom();
         const erinys = await createMonsterAt('erinys', 11, 10, NO_MINVENT);
         erinys.mhp = erinys.mhpmax = 100;
         const species = erinys.mnum;

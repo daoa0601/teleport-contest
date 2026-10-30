@@ -76,7 +76,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
     requireLiveGame(state);
     requirePlayingGame(state);
     const hero = state.u;
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (hero.usteed) {
         const steedName = monsterName(hero.usteed, { state });
         const subject = monsterName(monster, { state, capitalized: true, augmentIt: true });
@@ -127,7 +127,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
         return { captured: false, died: false };
     }
     await flushMessages();
-    vision_recalc(2);
+    await vision_recalc(2);
     hero.uswallow = 1;
     const level = monster.m_lev;
     let duration;
@@ -138,7 +138,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
     else
         duration = rollOne(level + 5);
     hero.uswldtim = Math.max(2, duration);
-    swallowed(true);
+    await swallowed(true);
     if (!FLAMING_SPECIES.has(monster.mnum))
         await snuffEngulfedLights(state, publish);
     return { captured: true, died: false };

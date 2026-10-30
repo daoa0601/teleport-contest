@@ -13,9 +13,9 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('dismissing a corner menu paints the current hallucinated glyph beneath it', async () => {
-    freshObjectRoom({ left: 45, right: 65, heroX: 50, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ left: 45, right: 65, heroX: 50, hero: { hallucinationTurns: 20 } });
     await createMonsterAt('lichen', 54, 7);
-    newsym(54, 7);
+    await newsym(54, 7);
     await flush_screen(1);
     const previous = glyphAt(54, 7);
     assert.ok(previous?.kind === 'monster');
@@ -31,7 +31,7 @@ void test('dismissing a corner menu paints the current hallucinated glyph beneat
     await input.waitUntilBlocked();
 
     // The logical map can change while the window covers its physical cells.
-    newsym(54, 7);
+    await newsym(54, 7);
     const current = glyphAt(54, 7);
     const currentCharacter = requireGameLevel().requireAt(54, 7).disp_ch;
     input.feed('\x1b');

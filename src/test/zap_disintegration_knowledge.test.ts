@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('monsters learn when the hero resists its own disintegration breath', async () => {
-    freshObjectRoom({ hero: { uen: 50, uenmax: 50 } });
+    await freshObjectRoom({ hero: { uen: 50, uenmax: 50 } });
     requirePlayingGame(game);
     installPolymorphedHero('black dragon');
     const jackal = await createMonsterAt('jackal', 11, 10);

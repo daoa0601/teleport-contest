@@ -17,7 +17,7 @@ async function messageLine() {
     return row.map(cell => cell.ch).join('').trimEnd();
 }
 void test('a failed bear-trap rescue makes the injured pet cry out', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     const pet = await createMonsterAt('little dog', 11, 10);
     initializePet(pet);
@@ -34,7 +34,7 @@ void test('a failed bear-trap rescue makes the injured pet cry out', async () =>
     assert.equal(pet.mtrapped, 1);
 });
 void test('a failed bear-trap rescue releases and redraws a pet that goes wild', async () => {
-    const level = freshObjectRoom({ flags: { hilite_pet: true } });
+    const level = await freshObjectRoom({ flags: { hilite_pet: true } });
     addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     const pet = await createMonsterAt('little dog', 11, 10);
     initializePet(pet);
@@ -45,7 +45,7 @@ void test('a failed bear-trap rescue releases and redraws a pet that goes wild',
     const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id });
     // A sleeping pet stays silent, leaving only the release message.
     pet.msleeping = 1;
-    newsym(pet.mx, pet.my);
+    await newsym(pet.mx, pet.my);
     await flush_screen();
     const cell = requireGameDisplay().grid[pet.my + 1]?.[pet.mx - 1];
     assert.ok(cell, 'the pet must have a displayed map cell');
@@ -62,7 +62,7 @@ void test('a failed bear-trap rescue releases and redraws a pet that goes wild',
     assert.equal(cell.attr & 1, 0, 'a wild pet loses its map highlight');
 });
 void test('a failed bear-trap rescue does not add abuse history to a minion', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     const pet = await createMonsterAt('Angel', 11, 10, MM_EMIN | NO_MINVENT);
     initializePet(pet);

@@ -12,14 +12,14 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 
 void test('entering and moving the targeting cursor preserves unseen monster information', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     for (const x of [11, 20]) {
         const monster = await createMonsterAt('xorn', x, 10, MM_NOGRP | NO_MINVENT);
         monster.minvis = 1;
         monster.mpeaceful = false;
         monster.m_lev = 8;
     }
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     game.u.warning = true;
     await flush_screen(1);
     const input = resetInputState();
@@ -39,14 +39,14 @@ void test('entering and moving the targeting cursor preserves unseen monster inf
 const TARGETS = [{ x: 9, y: 8 }, { x: 9, y: 12 }, { x: 11, y: 11 }];
 
 async function highlightedSpecies(heroY: number, phase: 'install' | 'exit', marked = false) {
-    freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 }, iflags: { bgcolors: false } });
+    await freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 }, iflags: { bgcolors: false } });
     for (const { x, y } of TARGETS)
         await createMonsterAt('jackal', x, y, MM_NOGRP | NO_MINVENT);
     const isValidLocation = (x: number, y: number) =>
         TARGETS.some(spot => spot.x === x && spot.y === y);
     if (phase === 'install') {
         initRng(1n);
-        prepareMapPositionHighlights(isValidLocation);
+        await prepareMapPositionHighlights(isValidLocation);
     } else {
         const input = resetInputState();
         input.feed(marked ? '$.' : '.');
@@ -87,7 +87,7 @@ for (const phase of ['install', 'exit'] as const) {
 }
 
 void test('targeting does not repaint a status change nothing marked for redisplay', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     game.u.uen = game.u.uenmax = 7;
     game.context.botl = true;
     await flush_screen(1);
@@ -106,7 +106,7 @@ void test('targeting does not repaint a status change nothing marked for redispl
 });
 
 void test('requesting a targeting refresh redraws the current status values', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     game.u.uen = game.u.uenmax = 7;
     game.context.botl = true;
     await flush_screen(1);

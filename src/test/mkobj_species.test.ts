@@ -8,7 +8,7 @@ import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('changing a half-eaten human corpse into a newt preserves the eaten fraction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const corpse = await mksobj(CORPSE, false, false);
     set_corpsenm(corpse, MONSTER_NAME.indexOf('human'));
     corpse.oeaten = 200;
@@ -20,7 +20,7 @@ void test('changing a half-eaten human corpse into a newt preserves the eaten fr
 });
 
 void test('changing a statue from a human to a newt updates its weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const statue = await mksobj(STATUE, false, false);
     set_corpsenm(statue, MONSTER_NAME.indexOf('human'));
     assert.equal(statue.owt, 2175);
@@ -31,7 +31,7 @@ void test('changing a statue from a human to a newt updates its weight', async (
 });
 
 void test('changing a carried figurine species restarts transformation even when uncursed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const figurine = await mksobj(FIGURINE, false, false);
     figurine.where = 'inventory';
     game.inventory.push(figurine);

@@ -10,7 +10,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a glob dropped into water stays separate from a neighboring floor glob', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const settled = await floorObject(GLOB_OF_BLACK_PUDDING, game.u.ux + 1, game.u.uy);
     const landing = await addInventoryObject(GLOB_OF_BLACK_PUDDING, { invlet: 'a' });

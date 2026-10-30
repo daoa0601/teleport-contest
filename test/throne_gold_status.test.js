@@ -10,7 +10,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a throne updates the displayed purse after taking carried gold', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     setHeroGoldAmount(game, 250);
     await bot();
@@ -21,7 +21,7 @@ void test('a throne updates the displayed purse after taking carried gold', asyn
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\$:0\b/);
 });
 void test('gold confiscation refreshes the purse before its announcement pages', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     level.requireAt(10, 10).typ = THRONE;
     setHeroGoldAmount(game, 250);
     await bot();

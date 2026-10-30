@@ -8,7 +8,7 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('contents spilled from a burning chest fall into lava below a raised bridge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const chest = await floorObject(CHEST, 12, 10);
     const club = await knownObject(CLUB, { where: 'free' });
     await addObjectToContainer(chest, club);
@@ -24,7 +24,7 @@ void test('contents spilled from a burning chest fall into lava below a raised b
 
 
 void test('a burning scroll the hero has not identified is named by its label', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const scroll = await floorObject(SCR_TELEPORTATION, 12, 10, { known: false, typeKnown: false });
     const messages: string[] = [];
 

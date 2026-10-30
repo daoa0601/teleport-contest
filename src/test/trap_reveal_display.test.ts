@@ -16,16 +16,16 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRAP, 'falling-rock']] as const) {
     void test(`revealing a ${name} trap redraws a monster over its floor pile before hit prose`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const kitten = await createMonsterAt('kitten', 12, 10, NO_MINVENT);
         kitten.mhp = kitten.mhpmax = 100;
         await floorObject(ROCK, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         const trap = addTrap(level, type, 11, 10, { tseen: false });
         placeMonsterAt(kitten, 11, 10);
-        newsym(12, 10);
+        await newsym(12, 10);
         await plineWithContinuation('You hear something moving nearby in the darkness.');
         const input = resetInputState();
         const action = await triggerImmediateMonsterTrap(kitten, game);

@@ -17,8 +17,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 
-function bonesRoom(storage: ReturnType<typeof memoryStorage>): void {
-    freshObjectRoom({ flags: { debug: true } });
+async function bonesRoom(storage: ReturnType<typeof memoryStorage>): Promise<void> {
+    await freshObjectRoom({ flags: { debug: true } });
     game.storage = storage;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
 }
@@ -27,8 +27,8 @@ for (const owner of ['inventory', 'floor', 'mixed', 'cached', 'bones'] as const)
     void test(`restored ${owner} timers announce equal-time fuel warnings in native restore order`, async () => {
         const storage = memoryStorage();
         if (owner === 'cached') freshConnectedLevels();
-        else if (owner === 'bones') bonesRoom(storage);
-        else freshObjectRoom();
+        else if (owner === 'bones') await bonesRoom(storage);
+        else await freshObjectRoom();
         requirePlayingGame(game);
         game.flags.verbose = false;
         const lamp = owner === 'inventory'
@@ -46,15 +46,15 @@ for (const owner of ['inventory', 'floor', 'mixed', 'cached', 'bones'] as const)
             await gotoLevel({ dlevel: 1 }, { arrival: 'stairs' });
         } else if (owner === 'bones') {
             assert.equal(saveBonesLevel(), true);
-            bonesRoom(storage);
+            await bonesRoom(storage);
             resetInputState().feed('yn');
             await mklev();
             assert.equal(game._restoredBones, true);
         } else {
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
         }
-        vision_recalc(0);
+        await vision_recalc(0);
         const messages: string[] = [];
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message); };

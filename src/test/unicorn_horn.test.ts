@@ -32,7 +32,7 @@ void test('applying a unicorn horn uses a turn without consuming it', async () =
 });
 
 void test('a unicorn form can use its natural horn', async () => {
-    freshMonsterAbilityRoom('gray unicorn');
+    await freshMonsterAbilityRoom('gray unicorn');
     requirePlayingGame(game);
 
     await runMonsterAbilityCommand();
@@ -42,7 +42,7 @@ void test('a unicorn form can use its natural horn', async () => {
 });
 
 void test('an uncursed horn can cure several timed ailments', async () => {
-    freshMonsterAbilityRoom('white unicorn');
+    await freshMonsterAbilityRoom('white unicorn');
     requirePlayingGame(game);
     game.u.sick = true;
     game.u.sickTurns = 20;

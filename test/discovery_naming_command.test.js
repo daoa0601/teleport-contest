@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('discovery naming can replace a previously assigned type name', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(RIN_PROTECTION, { typeKnown: false });
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
@@ -32,7 +32,7 @@ for (const { outcome, blindTurns, discovery } of [
         discovery: /\n\* ring of protection \([a-z ]+\) *\n/ },
 ]) {
     void test(`cancelling a rename ${outcome}`, async (t) => {
-        freshObjectRoom({ hero: { blindTurns } });
+        await freshObjectRoom({ hero: { blindTurns } });
         recordObjectKnowledge(RIN_PROTECTION);
         const input = resetInputState();
         input.feed('name\r');
@@ -54,7 +54,7 @@ for (const { style, configured, gameover } of [
     { style: 'suppressed after game over', configured: true, gameover: true },
 ]) {
     void test(`discovery naming class headings use ${style} highlighting`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await addInventoryObject(RIN_PROTECTION, { typeKnown: false });
         recordObjectCall(RIN_PROTECTION, 'Defense');
         if (configured)

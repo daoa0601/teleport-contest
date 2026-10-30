@@ -18,7 +18,7 @@ for (const [label, type, seed, survives] of [
     ['an uncharged ring gets no extra protection', OBJECT_NAMES.indexOf('warning'), 2n, false],
 ] satisfies [string, number, bigint, boolean][]) {
     void test(`monster inventory electricity: ${label}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         const charge = type === RIN_PROTECTION ? 3 : 0;
@@ -38,7 +38,7 @@ for (const [label, type, seed, survives] of [
 
 for (const perception of ['sighted', 'hallucinating', 'detected invisible']) {
     void test(`a distant monster's Book survives fire when the hero is ${perception}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 15, 10, MM_NOGRP | NO_MINVENT);
         const book = await equipMonsterObject(monster,

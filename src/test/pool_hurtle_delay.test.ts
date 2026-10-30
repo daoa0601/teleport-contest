@@ -18,7 +18,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('forced hurtling preserves the voluntary movement state and its starting square', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     game.u.umoved = false;
     game.u.ux0 = 9;
     game.u.uy0 = 10;
@@ -32,7 +32,7 @@ void test('forced hurtling preserves the voluntary movement state and its starti
 });
 
 void test('a knockback cannot shorten an existing sleep', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     await putHeroToSleep(8);
 
     await hurtleHero(1, 0, 1);
@@ -44,7 +44,7 @@ void test('a knockback cannot shorten an existing sleep', async () => {
 });
 
 void test('a second knockback cannot shorten time already spent moving through the air', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     await hurtleHero(1, 0, 2);
 
     await hurtleHero(1, 0, 1);
@@ -54,7 +54,7 @@ void test('a second knockback cannot shorten time already spent moving through t
 });
 
 void test('a web anchoring a sleeping hero prevents knockback without waking them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await putHeroToSleep(8);
     game.u.utrap = 4;
     game.u.utraptype = TT_WEB;
@@ -68,7 +68,7 @@ void test('a web anchoring a sleeping hero prevents knockback without waking the
 });
 
 void test('crawling out after hurtling into water looks at the landing square', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     game.flags.pickup = false;
     for (let x = 10; x <= 12; x++)
         for (let y = 9; y <= 11; y++)
@@ -89,7 +89,7 @@ void test('crawling out after hurtling into water looks at the landing square', 
 });
 
 void test('hurtling into water releases a swimming hero from the movement delay', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true } });
+    const level = await freshObjectRoom({ hero: { swimming: true } });
     level.requireAt(11, 10).typ = POOL;
     installPagerInput(resetInputState(), { expected: /fall into the pool of water/, limit: 1 });
 

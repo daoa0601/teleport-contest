@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function theftFight(species = 'monkey') {
-    const level = freshObjectRoom({ right: 22, gameplaySeed: 37n });
+    const level = await freshObjectRoom({ right: 22, gameplaySeed: 37n });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const attacker = await createMonsterAt(species, 11, 10, NO_MINVENT);
@@ -157,7 +157,7 @@ void test('glove theft petrifies a corpse-wielding victim and grows the thief wi
 });
 
 void test('stealing a mounted pony saddle dismounts the hero before transferring the saddle', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     installPagerInput(resetInputState(), { expected: /mount|ride|steal|saddle/, limit: 10 });

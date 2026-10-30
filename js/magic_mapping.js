@@ -18,7 +18,7 @@ export async function mapMagicLevel({ state = game, confused = (state.u.confusio
     requirePlayingGame(state);
     const constraints = unconstrainMap(state);
     try {
-        mapLevel({ confused, revealAllTraps, exercise: false });
+        await mapLevel({ confused, revealAllTraps, exercise: false });
         if (!state.level.flags.hero_memory || constraints.changed) {
             await flush_screen(1);
             await browseDetectionMap(MAP_MODE, 'anything of interest', { state });
@@ -53,12 +53,12 @@ export async function mapVicinity(source, { state = game } = {}) {
         for (let x = bounds.left; x <= bounds.right; x++) {
             for (let y = bounds.top; y <= bounds.bottom; y++) {
                 const oldGlyph = glyphAt(x, y, state);
-                showMapSpot(x, y, { state, confused: (hero.confusionTurns ?? 0) > 0 });
+                await showMapSpot(x, y, { state, confused: (hero.confusionTurns ?? 0) > 0 });
                 const object = state.level.objects[x]?.[y]?.[0];
                 if (object) {
                     if (extended)
                         observeObject(object, state);
-                    map_object(object, true);
+                    await map_object(object, true);
                     if (glyphChanged(oldGlyph, glyphAt(x, y, state))
                         && terrainCoversObjectsAt(x, y, state))
                         detectedObject = true;
@@ -70,9 +70,9 @@ export async function mapVicinity(source, { state = game } = {}) {
                 if ((constraints.changed || !state.level.flags.hero_memory)
                     && !extended && (x !== hero.ux || y !== hero.uy)
                     && oldGlyph?.kind !== 'monster')
-                    map_invisible(x, y);
+                    await map_invisible(x, y);
                 else
-                    mapDetectedMonster(monster, false, state);
+                    await mapDetectedMonster(monster, false, state);
                 const newGlyph = glyphAt(x, y, state);
                 if (extended && glyphChanged(oldGlyph, newGlyph)
                     && newGlyph?.kind !== 'invisible')
@@ -109,7 +109,7 @@ export async function mapVicinity(source, { state = game } = {}) {
             const monster = state.level.monsters.find(actor => monsterHasMapPosition(actor, state) &&
                 !actor.dead && actor.mhp > 0 && actor.mx === x && actor.my === y);
             if (!monster || !canSpotMonster(monster))
-                map_invisible(x, y);
+                await map_invisible(x, y);
         }
     }
     await see_monsters();

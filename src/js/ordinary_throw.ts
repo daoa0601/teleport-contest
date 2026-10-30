@@ -161,7 +161,7 @@ export async function throwOrdinaryObject({
         if ('consumed' in flight && flight.consumed) return { ...flight, consumed: true };
 
         // bhit() erases a web-stopped returning missile before throwit() recoils.
-        if (flight.stoppedBy === 'web') tetherDisplay?.clear();
+        if (flight.stoppedBy === 'web') await tetherDisplay?.clear();
 
         if (!boomerang && trajectory.recoil) {
             await hurtleHero(
@@ -206,7 +206,7 @@ export async function throwOrdinaryObject({
             if (state.program_state.gameover) return { heroDied: true };
             return { ...flight, object: thrown, landed: thrown.where === 'inventory' ? thrown : null };
         }
-        tetherDisplay?.clear();
+        await tetherDisplay?.clear();
 
         const landed = await finishHeroThrownObjectLanding({
             state,
@@ -217,7 +217,7 @@ export async function throwOrdinaryObject({
         });
         return { ...flight, object: thrown, landed };
     } finally {
-        tetherDisplay?.clear();
+        await tetherDisplay?.clear();
         if (state._thrownObject === thrown) state._thrownObject = null;
     }
 }

@@ -57,7 +57,7 @@ void test('leaving a pool clears the underwater state', async () => {
     assert.equal(messages.at(-1), 'You are back on solid ground.');
 });
 void test('leaving a pool from under water redraws the surface view', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { ux, uy } = game.u;
     await docrt();
@@ -343,7 +343,7 @@ void test('a no-teleport level blocks escape without spending power', async () =
     assert.equal(messages.includes('The attempted teleport spell fails.'), true);
 });
 void test('a neutral rider is blamed when the pony drowns before the rider escapes', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'barbarian',
         hero: { ulevel: 30, ualign: { type: 0, record: 10 } },
     });
@@ -368,7 +368,7 @@ void test('a neutral rider is blamed when the pony drowns before the rider escap
     assert.notDeepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
 void test('a flying steed keeps its rider above the pool', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requireFixtureGame(game);
     const steed = await createSaddledSteed('silver dragon');
     await runExtendedCommand('ride', 'l ');

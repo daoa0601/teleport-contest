@@ -9,7 +9,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('water sitting wets exposed armor after an earlier unarmored sit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = POOL;
     const armor = await addInventoryObject(CHAIN_MAIL, { blessed: false });

@@ -80,7 +80,7 @@ export async function resolveMonsterImmediateWand(
         } else {
             const target = monsterAtPosition(state.level, x, y);
             if (target) {
-                if (cansee(x, y) && !canSpotMonster(target)) map_invisible(x, y);
+                if (cansee(x, y) && !canSpotMonster(target)) await map_invisible(x, y);
                 await hitMonsterWithImmediateWand(target, context);
                 range -= 3;
             }
@@ -163,7 +163,7 @@ async function hitMonsterWithImmediateWand(target: Monster, context: WandRayCont
     let revealInvisible = false;
     if (wand.otyp !== WAN_UNDEAD_TURNING) {
         target.msleeping = 0;
-        if (target.m_ap_type) revealMonsterAppearance(target);
+        if (target.m_ap_type) await revealMonsterAppearance(target);
     }
     switch (wand.otyp) {
     case WAN_STRIKING: {
@@ -210,7 +210,7 @@ async function hitMonsterWithImmediateWand(target: Monster, context: WandRayCont
     }
     if (revealInvisible && target.mhp > 0 && !target.dead
         && cansee(state.bhitpos.x, state.bhitpos.y) && !canSpotMonster(target))
-        map_invisible(state.bhitpos.x, state.bhitpos.y);
+        await map_invisible(state.bhitpos.x, state.bhitpos.y);
 }
 
 async function damageMonsterWithWand(

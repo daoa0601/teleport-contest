@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const wish of ['magic fountain', 'blessed fountain']) {
     void test(`a wished ${wish} restores drained attributes and grants an ability gain`, async () => {
-        freshObjectRoom({ hero: { uluck: 0, acurr: { a: [8, 9, 10, 11, 10, 9] } } });
+        await freshObjectRoom({ hero: { uluck: 0, acurr: { a: [8, 9, 10, 11, 10, 9] } } });
         requirePlayingGame(game);
         await readObjectName(wish, { wizardWish: true });
         resetInputState().feed('y' + ' '.repeat(20));
@@ -28,7 +28,7 @@ for (const wish of ['magic fountain', 'blessed fountain']) {
 }
 
 void test('a refreshing drink from a wished magic fountain preserves its blessing and water', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await readObjectName('magic fountain', { wizardWish: true });
     const hunger = game.u.uhunger;
@@ -46,7 +46,7 @@ void test('a refreshing drink from a wished magic fountain preserves its blessin
 
 for (const luck of [0, 4]) {
     void test(`a blessed fountain restores drained attributes and grants ${luck < 4 ? 'one gain' : 'all gains'} at luck ${luck}`, async () => {
-        freshObjectRoom({ hero: { uluck: luck, acurr: { a: [8, 9, 10, 11, 10, 9] } } });
+        await freshObjectRoom({ hero: { uluck: luck, acurr: { a: [8, 9, 10, 11, 10, 9] } } });
         requirePlayingGame(game);
         const fountain = game.level.requireAt(10, 10);
         fountain.typ = FOUNTAIN;
@@ -66,7 +66,7 @@ for (const luck of [0, 4]) {
 }
 
 void test('Escape during a blessed fountain drink finishes the reward without another acknowledgment', async () => {
-    freshObjectRoom({ hero: { uluck: 4 } });
+    await freshObjectRoom({ hero: { uluck: 4 } });
     requirePlayingGame(game);
     const fountain = game.level.requireAt(10, 10);
     fountain.typ = FOUNTAIN;
@@ -88,7 +88,7 @@ void test('Escape during a blessed fountain drink finishes the reward without an
 });
 
 void test('a refreshing drink preserves the blessing and cannot dry the fountain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const fountain = game.level.requireAt(10, 10);
     fountain.typ = FOUNTAIN;
@@ -106,7 +106,7 @@ void test('a refreshing drink preserves the blessing and cannot dry the fountain
 });
 
 void test('negative natural luck prevents the blessed fountain attribute reward', async () => {
-    freshObjectRoom({ hero: { uluck: -1, moreluck: 3 } });
+    await freshObjectRoom({ hero: { uluck: -1, moreluck: 3 } });
     requirePlayingGame(game);
     const fountain = game.level.requireAt(10, 10);
     fountain.typ = FOUNTAIN;

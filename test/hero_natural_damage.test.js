@@ -17,7 +17,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function naturalAttackRoom(form, defender, expected, limit = 6) {
-    freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30 } });
     installPolymorphedHero(form, { hitPoints: 80 });
     const monster = await createMonsterAt(defender, 11, 10, NO_MINVENT | MM_NOGRP | MM_NOWAIT);
     monster.mhp = monster.mhpmax = 200;

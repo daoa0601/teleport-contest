@@ -272,7 +272,7 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
     }
     if (artifactEmitsLight(best) && !best.lamplit) {
         beginObjectBurn(best, state);
-        vision_recalc(1);
+        await vision_recalc(1);
         if (!creation && best.lamplit && cansee(monster.mx, monster.my)) {
             const visibleNow = canSeeMonster(monster);
             const named = wasVisible || visibleNow;
@@ -330,7 +330,7 @@ export async function adjustMonsterClothingAfterPolymorph(
             bypassObject(placed, state);
         }
         dropped.push(placed);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     };
     const destroy = async (object: GameObject | null): Promise<void> => {
         if (object && await destroyObjectFromMonsterInventory(monster, object, state, { publish }))

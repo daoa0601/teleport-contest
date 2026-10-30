@@ -5,12 +5,12 @@ import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonster
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterName } from './monster_name.js';
-export function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
+export async function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible = !monsterResistsSleep(monster) &&
         !monsterIsBreathless(monster) &&
         !monsterIsHelpless(monster);
-    const slept = susceptible ? putMonsterToSleep(monster, rollOne(25)) : false;
+    const slept = susceptible ? await putMonsterToSleep(monster, rollOne(25)) : false;
     return {
         kind: 'sleep-gas',
         trap,
@@ -26,7 +26,7 @@ export async function finishMonsterSleepGasTrap(monster, event, { state = game, 
     if (!event || event.finished)
         return event;
     await publish(`${describeMonster(monster)} suddenly falls asleep!`);
-    seeTrap(event.trap, state);
+    await seeTrap(event.trap, state);
     event.finished = true;
     return event;
 }

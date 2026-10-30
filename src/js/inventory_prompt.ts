@@ -233,7 +233,11 @@ async function chooseGetobjLetter(
         }
         if (QUITCHARS.includes(key)) {
             // C getobj(): a silent cancellation leaves the question painted.
-            if (game.flags?.verbose !== false) await neverMind();
+            if (game.flags?.verbose !== false) {
+                game._pending_message = '';
+                game._retained_message = '';
+                await neverMind();
+            }
             return CANCELLED;
         }
         if (key === HANDS_SYM) {
@@ -254,7 +258,11 @@ async function chooseGetobjLetter(
                 || useAlternates && handsDownplayed || handsSuggested) ? handsText : null;
             const letterCount = letters?.length ?? 0;
             const listed = letterCount > 0;
-            answered = true;
+            // The query has been read before the menu opens. Its dismissal
+            // can redraw vision and print a fresh monster notice, which
+            // belongs to the following action rather than the old query.
+            if (answered) game._pending_message = '';
+            answered = false;
             const selection = await selectInventoryObject({
                 ...(letters === undefined ? {} : { letters }),
                 ...(extraChoice ? { extraChoice } : {}),
@@ -268,7 +276,6 @@ async function chooseGetobjLetter(
             key = selection.key;
             if (key === 0) break;
             if (key === HANDS_SYM) {
-                game._pending_message = '';
                 return HANDS;
             }
             if (key === ESCAPE) {
@@ -324,8 +331,6 @@ async function chooseGetobjLetter(
 }
 
 async function neverMind(): Promise<void> {
-    game._pending_message = '';
-    game._retained_message = '';
     await pline('Never mind.');
 }
 

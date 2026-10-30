@@ -32,8 +32,8 @@ import { nearCapacity } from '../js/weight.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
-function warningRoom(options = {}) {
-    freshObjectRoom(options);
+async function warningRoom(options = {}) {
+    await freshObjectRoom(options);
     requirePlayingGame(game);
     return captureMessages();
 }
@@ -93,7 +93,7 @@ for (const [artifact, target, color] of [
     ['Grimtooth', 'Woodland-elf', 'red'],
 ]) {
     void test(`${artifact} senses its target only in the primary weapon slot`, async () => {
-        const messages = warningRoom();
+        const messages = await warningRoom();
         requirePlayingGame(game);
         const weapon = await gainArtifact(artifact);
         const monster = await targetMonster(target);
@@ -111,7 +111,7 @@ for (const [artifact, target, color] of [
     });
 }
 void test('a semantic weapon switch reports the old warning stopping before the new warning starts', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     const orcrist = await gainArtifact('Orcrist');
@@ -124,7 +124,7 @@ void test('a semantic weapon switch reports the old warning stopping before the 
     assert.ok(stop >= 0 && start > stop, text);
 });
 void test('throwing the primary warning weapon reports its warning stopping', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     const monster = await targetMonster();
@@ -155,7 +155,7 @@ for (const [artifact, nonTarget] of [
     ['Grimtooth', 'goblin'],
 ]) {
     void test(`${artifact} does not warn about unrelated monsters`, async () => {
-        const messages = warningRoom();
+        const messages = await warningRoom();
         requirePlayingGame(game);
         const monster = await targetMonster(nonTarget);
         monster.minvis = true;
@@ -165,7 +165,7 @@ for (const [artifact, nonTarget] of [
     });
 }
 void test('warning strength follows the number of targets, including unseen distant sleeping allies', async () => {
-    const messages = warningRoom({ right: 65 });
+    const messages = await warningRoom({ right: 65 });
     requirePlayingGame(game);
     await setPrimaryWeapon(await gainArtifact('Sting'));
     const targets = await addTargets(1);
@@ -174,13 +174,13 @@ void test('warning strength follows the number of targets, including unseen dist
     targets[0].mpeaceful = true;
     await see_monsters();
     assert.match(await takeMessages(messages), /Sting flickers light blue!/);
-    targets.push(...(await addTargets(3, 1)));
+    targets.push(...await addTargets(3, 1));
     await see_monsters();
     assert.equal(await takeMessages(messages), '');
-    targets.push(...(await addTargets(1, 4)));
+    targets.push(...await addTargets(1, 4));
     await see_monsters();
     assert.match(await takeMessages(messages), /Sting glimmers light blue!/);
-    targets.push(...(await addTargets(8, 5)));
+    targets.push(...await addTargets(8, 5));
     await see_monsters();
     assert.match(await takeMessages(messages), /Sting gleams light blue!/);
     await removeMonsterFromGame(targets.pop());
@@ -196,14 +196,14 @@ void test('warning strength follows the number of targets, including unseen dist
     assert.match(await takeMessages(messages), /Sting stops flickering\./);
 });
 void test('blind warning quivers once, stays quiet as strength changes, and stops quivering', async () => {
-    const messages = warningRoom({ right: 65 });
+    const messages = await warningRoom({ right: 65 });
     requirePlayingGame(game);
     setHeroBlindnessTurns(100);
     await setPrimaryWeapon(await gainArtifact('Sting'));
     const targets = await addTargets(1);
     await see_monsters();
     assert.match(await takeMessages(messages), /Sting quivers slightly\./);
-    targets.push(...(await addTargets(4, 1)));
+    targets.push(...await addTargets(4, 1));
     await see_monsters();
     assert.equal(await takeMessages(messages), '');
     for (const target of targets)
@@ -213,7 +213,7 @@ void test('blind warning quivers once, stays quiet as strength changes, and stop
 });
 for (const condition of ['deaf', 'asleep']) {
     void test(`artifact warning remains perceptible while ${condition}`, async () => {
-        const messages = warningRoom({ hero: { deafTurns: condition === 'deaf' ? 100 : 0 } });
+        const messages = await warningRoom({ hero: { deafTurns: condition === 'deaf' ? 100 : 0 } });
         requirePlayingGame(game);
         syncDeafness();
         if (condition === 'asleep')
@@ -224,7 +224,7 @@ for (const condition of ['deaf', 'asleep']) {
     });
 }
 void test('removing object warning preserves the monster form warning source', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     installPolymorphedHero('vampire');
     const elf = await targetMonster('Woodland-elf');
@@ -239,7 +239,7 @@ void test('removing object warning preserves the monster form warning source', a
     assert.match(await takeMessages(messages), /Sting stops flickering\./);
 });
 void test('swapping into an empty secondary slot reports the warning stopping', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     await targetMonster();
@@ -250,7 +250,7 @@ void test('swapping into an empty secondary slot reports the warning stopping', 
     assert.match(await takeMessages(messages), /Sting stops flickering\./);
 });
 void test('wielding reports the prospective hand description before activating warning', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     await targetMonster();
@@ -264,7 +264,7 @@ void test('wielding reports the prospective hand description before activating w
 });
 for (const blind of [false, true]) {
     void test(`inventory ${blind ? 'hides' : 'shows'} the active glow in the primary hand clause`, async () => {
-        warningRoom();
+        await warningRoom();
         requirePlayingGame(game);
         await targetMonster();
         await setPrimaryWeapon(await gainArtifact('Sting'));
@@ -289,7 +289,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('restore keeps the source and senses but announces a fresh warning census', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const monster = await targetMonster();
     monster.minvis = true;
@@ -298,7 +298,7 @@ void test('restore keeps the source and senses but announces a fresh warning cen
     game.plname = 'Warning';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Warning', storage), true);
+    assert.equal(await restoreGame('Warning', storage), true);
     assert.equal(canSpotMonster(requireGameLevel().monsters[0]), true);
     assert.equal(await takeMessages(messages), '');
     await see_monsters();
@@ -352,7 +352,7 @@ void test('a warning with unchanged strength continues across level travel witho
     assert.doesNotMatch(await takeMessages(messages), /Sting/);
 });
 void test('hallucinated warning uses an unreal color rather than the artifact color', async () => {
-    const messages = warningRoom({ hero: { hallucinationTurns: 100 } });
+    const messages = await warningRoom({ hero: { hallucinationTurns: 100 } });
     requirePlayingGame(game);
     await targetMonster();
     await setPrimaryWeapon(await gainArtifact('Sting'));
@@ -361,7 +361,7 @@ void test('hallucinated warning uses an unreal color rather than the artifact co
     assert.doesNotMatch(text, /Sting flickers light blue!/);
 });
 void test('an active artifact light appears inside the inventory hand clause', async () => {
-    warningRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    await warningRoom({ hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     const sword = await gainArtifact('uncursed Sunsword');
     pushKeys(inventoryLetter(sword));
@@ -396,7 +396,7 @@ void test('ordinary arrival feedback stays after the warning, unlike materializa
     assert.ok(glow >= 0 && text.indexOf('The portal closes') > glow, text);
 });
 void test('stashing a wielded artifact ends warning before the put message', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK, { contents: [], olocked: false, otrapped: false });
     const sting = await gainArtifact('Sting');
@@ -412,7 +412,7 @@ void test('stashing a wielded artifact ends warning before the put message', asy
     assert.ok(stop >= 0 && text.indexOf('You put') > stop, text);
 });
 void test('lava burns the wielded wooden artifact and life saving does not keep its warning', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     const monster = await targetMonster();
@@ -429,7 +429,7 @@ void test('lava burns the wielded wooden artifact and life saving does not keep 
     assert.match(await takeMessages(messages), /Sting stops flickering\./);
 });
 void test('a warning artifact broken while forcing a lock loses its sensing without a stop message', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const monster = await targetMonster();
@@ -448,7 +448,7 @@ void test('a warning artifact broken while forcing a lock loses its sensing with
     assert.doesNotMatch(text, /Sting stops/);
 });
 void test('drowning emergency drops remove a warning source before the hero crawls away', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const monster = await targetMonster();
@@ -470,7 +470,7 @@ void test('drowning emergency drops remove a warning source before the hero craw
     assert.match(await takeMessages(messages), /Sting stops flickering\./);
 });
 void test('readying bare hands describes them before the warning stops', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     await targetMonster();
     await setPrimaryWeapon(await gainArtifact('Sting'));
@@ -482,7 +482,7 @@ void test('readying bare hands describes them before the warning stops', async (
     assert.ok(hands >= 0 && text.indexOf('Sting stops flickering.') > hands, text);
 });
 void test('swapping warning weapons describes the new primary before changing either warning', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('Sting');
     const orcrist = await gainArtifact('Orcrist');
@@ -500,7 +500,7 @@ void test('swapping warning weapons describes the new primary before changing ei
 });
 for (const lifeSaving of [false, true]) {
     void test(`throwing away invoked levitation ${lifeSaving ? 'resumes after life saving' : 'stops before flight after fatal landing'}`, async () => {
-        const messages = warningRoom({ role: 'barbarian' });
+        const messages = await warningRoom({ role: 'barbarian' });
         requirePlayingGame(game);
         if (!lifeSaving)
             game.flags.disclose = '-i -a -v -c -o -g';
@@ -520,7 +520,7 @@ for (const lifeSaving of [false, true]) {
 }
 for (const swap of [false, true]) {
     void test(`${swap ? 'swapping to' : 'wielding'} cursed Orcrist welds before changing warning sources`, async () => {
-        const messages = warningRoom();
+        const messages = await warningRoom();
         requirePlayingGame(game);
         const sting = await gainArtifact('uncursed +0 Sting');
         const orcrist = await gainArtifact('cursed +0 Orcrist');
@@ -544,7 +544,7 @@ for (const swap of [false, true]) {
     });
 }
 void test('applying a cursed pick-axe welds it before the old warning stops', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const pick = await addInventoryObject(PICK_AXE, { cursed: true, bknown: false });
@@ -568,7 +568,7 @@ void test('applying a cursed pick-axe welds it before the old warning stops', as
         }]);
 });
 void test('wielding a new weapon ends two-weapon combat after describing its warning', async () => {
-    const messages = warningRoom({ role: 'barbarian' });
+    const messages = await warningRoom({ role: 'barbarian' });
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const orcrist = await gainArtifact('uncursed +0 Orcrist');
@@ -586,7 +586,7 @@ void test('wielding a new weapon ends two-weapon combat after describing its war
     assert.ok(glow >= 0 && text.indexOf('You are no longer using two weapons at once.') > glow, text);
 });
 void test('replacing the secondary weapon also ends two-weapon combat', async () => {
-    warningRoom({ role: 'barbarian' });
+    await warningRoom({ role: 'barbarian' });
     requirePlayingGame(game);
     await setPrimaryWeapon(await gainArtifact('uncursed +0 Sting'));
     await setSecondaryWeapon(await addInventoryObject(DAGGER));
@@ -598,7 +598,7 @@ void test('replacing the secondary weapon also ends two-weapon combat', async ()
     assert.equal(game.uswapwep, pick);
 });
 void test('a potion dropped while escaping water can dilute again on landing in the pool', async () => {
-    warningRoom();
+    await warningRoom();
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_HEALING, { odiluted: 0 });
     await addInventoryObject(ROCK, { quan: 200 });
@@ -612,7 +612,7 @@ void test('a potion dropped while escaping water can dilute again on landing in 
     assert.equal(potion.otyp, POT_WATER);
 });
 void test('losing hands in a polymorph reports the warning stopping before dropping the weapon', async () => {
-    const messages = warningRoom();
+    const messages = await warningRoom();
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const monster = await targetMonster();
@@ -627,7 +627,7 @@ void test('losing hands in a polymorph reports the warning stopping before dropp
 });
 for (const lifeSaving of [false, true]) {
     void test(`a polymorph weapon drop ${lifeSaving ? 'continues after life saving' : 'stops after fatal landing'}`, async () => {
-        const messages = warningRoom({ role: 'barbarian' });
+        const messages = await warningRoom({ role: 'barbarian' });
         requirePlayingGame(game);
         if (!lifeSaving)
             game.flags.disclose = '-i -a -v -c -o -g';
@@ -647,7 +647,7 @@ for (const lifeSaving of [false, true]) {
     });
 }
 void test('dropping a wielded warning artifact stops its warning before announcing the drop', async () => {
-    const messages = warningRoom({ role: 'barbarian' });
+    const messages = await warningRoom({ role: 'barbarian' });
     requirePlayingGame(game);
     const sting = await gainArtifact('uncursed +0 Sting');
     const secondary = await addInventoryObject(DAGGER);

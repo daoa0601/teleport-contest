@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function throwDagger(seed: number, dualWielding: boolean): Promise<number> {
-    freshObjectRoom({ role: 'rogue', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'rogue', hero: { ulevel: 1 } });
     const target = await createMonsterAt('human zombie', 12, 10, MM_NOGRP | NO_MINVENT);
     target.mpeaceful = false;
     target.msleeping = 0;

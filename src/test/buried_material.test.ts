@@ -9,7 +9,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a buried wand rots according to its shuffled wooden material', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wand = await floorObject(WAN_CANCELLATION, 12, 10);
     game.objectMaterials ??= [];
     game.objectMaterials[wand.otyp] = 8;

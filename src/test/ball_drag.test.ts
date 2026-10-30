@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function readyToDrag() {
-    freshObjectRoom({ flags: { pickup: false, verbose: true } });
+    await freshObjectRoom({ flags: { pickup: false, verbose: true } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
         expected: /punish|iron ball|jackal|pit|medallion|But wait|reconstitut|kill|fall|hit|welcome|swap places|Things that are here:/i,
@@ -39,7 +39,7 @@ async function readyToDrag() {
 }
 
 void test('a blocked chain route restores the chain above the ball before refusing a heavy drag', async () => {
-    const level = freshObjectRoom({ heroX: 9, heroY: 11, flags: { pickup: false } });
+    const level = await freshObjectRoom({ heroX: 9, heroY: 11, flags: { pickup: false } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), { expected: /punish|cannot.*drag/, limit: 5 });
     await punishHero();

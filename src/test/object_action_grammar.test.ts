@@ -7,7 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('object action messages conjugate go using the shared native verb rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await addInventoryObject(POT_HEALING);
 
     assert.equal(ownedObjectAction(potion, 'go'), 'Your potion of healing goes');

@@ -21,7 +21,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SILVER_SPEAR = OBJECT_NAMES.indexOf('silver spear');
 void test('melee damage punctuation uses the sight left by viewing terrain inside an engulfer', async () => {
-    freshObjectRoom({ flags: { verbose: true, tips: false } });
+    await freshObjectRoom({ flags: { verbose: true, tips: false } });
     const vortex = await createMonsterAt('fire vortex', 11, 10, MM_NOGRP | NO_MINVENT);
     await installSwallowedHero(vortex);
     const input = resetInputState();
@@ -42,7 +42,7 @@ for (const [label, type, verb] of [
     ['whip', BULLWHIP, 'lash'], ['wet towel', TOWEL, 'lash'],
 ]) {
     void test(`a ${label} uses its native melee-hit verb`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
         const object = type === null ? null : await knownObject(type, { spe: type === TOWEL ? 2 : 0 });
         const messages = [];
@@ -55,7 +55,7 @@ for (const [label, type, verb] of [
     });
 }
 void test('a barbarian smites with an ordinary weapon but quiet combat just reports a hit', async () => {
-    freshObjectRoom({ role: 'barbarian', flags: { verbose: true } });
+    await freshObjectRoom({ role: 'barbarian', flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const spear = await knownObject(SPEAR);
     const messages = [];
@@ -66,7 +66,7 @@ void test('a barbarian smites with an ordinary weapon but quiet combat just repo
     assert.deepEqual(messages, ['You smite the orc.', 'You hit it.']);
 });
 void test('a sensed invisible defender is named but does not reveal melee damage through punctuation', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = true;
@@ -80,7 +80,7 @@ void test('a sensed invisible defender is named but does not reveal melee damage
 });
 for (const mode of ['thrown', 'kicked', 'applied', 'dragged']) {
     void test(`${mode} objects use projectile hit feedback`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
         const spear = await knownObject(SPEAR);
         const messages = [];
@@ -92,7 +92,7 @@ for (const mode of ['thrown', 'kicked', 'applied', 'dragged']) {
     });
 }
 void test('ordinary lethal hits and already-described contacts suppress the generic hit line', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const spear = await knownObject(SPEAR);
     const messages = [];
@@ -108,7 +108,7 @@ void test('ordinary lethal hits and already-described contacts suppress the gene
     assert.equal(messages.length, 0);
 });
 void test('a killing arrow in a volley still reports its ordinal hit', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const arrow = await knownObject(ARROW);
     monster.mhp = 0;
@@ -122,7 +122,7 @@ void test('a killing arrow in a volley still reports its ordinal hit', async () 
     assert.deepEqual(messages, ['The 2nd arrow hits the orc!']);
 });
 void test('a volley of a different object does not expose an unrelated killing hit', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const dagger = await knownObject(DAGGER);
     const messages = [];
@@ -135,14 +135,14 @@ void test('a volley of a different object does not expose an unrelated killing h
     assert.equal(messages.length, 0);
 });
 void test('a missed projectile retains its volley ordinal without a second article', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const arrow = await knownObject(ARROW);
     const name = captureHeroProjectileName(arrow, game, { count: 3, index: 3, objectType: ARROW });
     assert.equal(rayMissMessage(name, monster, { x: 11, y: 10 }), 'The 3rd arrow misses the orc.');
 });
 void test('a missed throw omits a sensed invisible defender and leaves waking to the caller', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { detectMonsters: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { detectMonsters: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = true;
     monster.msleeping = 1;
@@ -156,7 +156,7 @@ void test('a missed throw omits a sensed invisible defender and leaves waking to
     assert.equal(monster.msleeping, 1);
 });
 void test('a missed stack of arrows does not identify an object-disguised mimic', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const mimic = await createMonsterAt('small mimic', 11, 10, MM_NOGRP | NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = DAGGER;
@@ -169,7 +169,7 @@ void test('a missed stack of arrows does not identify an object-disguised mimic'
     assert.equal(mimic.m_ap_type, M_AP_OBJECT);
 });
 void test('a visible missed throw names its defender according to verbosity', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const arrow = await knownObject(ARROW);
     const messages = [];
@@ -180,7 +180,7 @@ void test('a visible missed throw names its defender according to verbosity', as
     assert.deepEqual(messages, ['The arrow misses the orc.', 'The arrow misses it.']);
 });
 void test('capitalized fruit keeps its article when it hits a monster', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     const fruit = await knownObject(SLIME_MOLD, { spe: addFruit('Dragon Fruit') });
     const messages = [];
@@ -191,7 +191,7 @@ void test('capitalized fruit keeps its article when it hits a monster', async ()
     assert.deepEqual(messages, ['The Dragon Fruit hits the orc.']);
 });
 void test('an artifact personal name stays bare even when it is also a fruit name', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
     addFruit('Sunsword');
     const sword = await artifactObject('Sunsword', { rknown: true });
@@ -205,7 +205,7 @@ void test('an artifact personal name stays bare even when it is also a fruit nam
     assert.deepEqual(messages, ['Sunsword hits the orc!']);
 });
 void test('a swallowed projectile names its unseen engulfer only with verbose feedback', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const engulfer = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
     engulfer.mx = game.u.ux;
@@ -229,7 +229,7 @@ void test('a swallowed projectile names its unseen engulfer only with verbose fe
     assert.deepEqual(messages, ['The dagger hits it!', 'The dagger hits the purple worm!']);
 });
 void test('a harmless stone projectile uses the same ordinal and target naming', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
     const rock = await knownObject(ROCK);
     const messages = [];
@@ -240,7 +240,7 @@ void test('a harmless stone projectile uses the same ordinal and target naming',
     assert.deepEqual(messages, ['The 2nd rock hits the xorn but does no harm.']);
 });
 void test('silver feedback retains the destroyed object name and native plural agreement', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
     const monster = await createMonsterAt('vampire', 11, 10, MM_NOGRP | NO_MINVENT);
     const spears = await knownObject(SILVER_SPEAR, { quan: 2, oname: '100% faithful' });
     const savedObjectName = captureHeroPhysicalObjectName(spears);
@@ -254,7 +254,7 @@ void test('silver feedback retains the destroyed object name and native plural a
 });
 for (const silverRings of [1, 2]) {
     void test(`${silverRings} silver ${silverRings === 1 ? 'ring sears' : 'rings sear'} a vampire`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
         const monster = await createMonsterAt('vampire', 11, 10, MM_NOGRP | NO_MINVENT);
         const messages = [];
         await showHeroPhysicalSilver(monster, {
@@ -265,7 +265,7 @@ for (const silverRings of [1, 2]) {
     });
 }
 void test('silver uses the saved body anatomy after its target changes form', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
     const monster = await createMonsterAt('vampire', 11, 10, MM_NOGRP | NO_MINVENT);
     const originalSpecies = monster.mnum;
     setMonsterSpecies(monster, MONSTER_NAME.indexOf('fog cloud'));
@@ -277,7 +277,7 @@ void test('silver uses the saved body anatomy after its target changes form', as
     assert.deepEqual(messages, ["The silver sears the fog cloud's flesh!"]);
 });
 void test('unseen flesh is seared without identifying the monster or the silver object', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
     const monster = await createMonsterAt('vampire', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = true;
     const messages = [];
@@ -288,7 +288,7 @@ void test('unseen flesh is seared without identifying the monster or the silver 
     assert.deepEqual(messages, ['Its flesh is seared!']);
 });
 void test('a lit Sunsword retains its bare artifact name for radiance feedback', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { protectionFromShapeChangers: true } });
     const monster = await createMonsterAt('vampire', 11, 10, MM_NOGRP | NO_MINVENT);
     const sword = await artifactObject('Sunsword', { lamplit: true });
     const savedObjectName = captureHeroPhysicalObjectName(sword);
@@ -300,7 +300,7 @@ void test('a lit Sunsword retains its bare artifact name for radiance feedback',
     assert.deepEqual(messages, ["Sunsword's radiance penetrates deep into the vampire's flesh!"]);
 });
 void test('silver searing an amorphous target does not invent flesh', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('fog cloud', 11, 10, MM_NOGRP | NO_MINVENT);
     const messages = [];
     await showHeroPhysicalSilver(monster, {
@@ -310,7 +310,7 @@ void test('silver searing an amorphous target does not invent flesh', async () =
     assert.deepEqual(messages, ['Your silver dagger sears the fog cloud!']);
 });
 void test('shade contact wakes an unseen adjacent defender and marks its position', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('shade', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = true;
     monster.msleeping = 1;
@@ -324,7 +324,7 @@ void test('shade contact wakes an unseen adjacent defender and marks its positio
     assert.equal(glyphAt(11, 10)?.kind, 'invisible');
 });
 void test('a silver weapon that can damage a shade does not report harmless passage', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const monster = await createMonsterAt('shade', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.msleeping = 1;
     const messages = [];
@@ -339,7 +339,7 @@ for (const [species, subject] of [
     ['Medusa', "Medusa's corpse"], ['Wizard of Yendor', "The Wizard of Yendor's corpse"],
 ]) {
     void test(`a thrown ${species} corpse keeps native possessive naming when it passes through a shade`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         const shade = await createMonsterAt('shade', 11, 10, MM_NOGRP | NO_MINVENT);
         const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf(species) });
         const messages = [];
@@ -351,20 +351,20 @@ for (const [species, subject] of [
     });
 }
 void test('captured corpse names include species while thrown-object names follow xname', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     assert.equal(captureHeroPhysicalObjectName(corpse), 'cockatrice corpse');
     assert.equal(captureHeroProjectileName(corpse), 'corpse');
 });
 void test('capturing an unseen wand name does not reveal its appearance while blind', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const wand = await knownObject(WAN_FIRE, { dknown: false, typeKnown: false });
     await makeBlinded(1, { talk: false });
     assert.equal(captureHeroPhysicalObjectName(wand), 'wand');
     assert.equal(wand.dknown, false);
 });
 void test('the deferred unpoisoned name survives deletion and follows the hit pager', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const arrows = await knownObject(ARROW, { quan: 2, opoisoned: 1, oname: 'Venom' });
     assert.equal(captureHeroPhysicalObjectName(arrows), 'poisoned arrows named Venom');
     arrows.opoisoned = 0;

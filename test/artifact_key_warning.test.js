@@ -9,7 +9,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('the wielded Master Key warms when a nearby hidden trap enters its census', async () => {
-    const level = freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
+    const level = await freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
     requirePlayingGame(game);
     const key = await artifactObject('The Master Key of Thievery', { invlet: 'a', where: 'inventory' });
     game.inventory = [key];

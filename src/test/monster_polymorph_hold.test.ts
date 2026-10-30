@@ -30,7 +30,7 @@ async function messageLine() {
 }
 
 void test('a swallowed hero breaks out when a named engulfer becomes solid and cannot engulf', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     setMonsterGivenName(worm, 'Maw');
@@ -61,7 +61,7 @@ void test('a swallowed hero breaks out when a named engulfer becomes solid and c
 });
 
 void test('a light form releases the swallowed hero without breakout damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     await installSwallowedHero(worm);
@@ -84,7 +84,7 @@ for (const [heroForm, newForm, remainsHeld] of [
     ['python', 'fog cloud', false],
 ] satisfies [string | null, string, boolean][]) {
     void test(`${heroForm || 'human'} hero and ${newForm} retain their hold: ${remainsHeld}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (heroForm) installPolymorphedHero(heroForm);
         const bear = await createMonsterAt('owlbear', 11, 10);
@@ -100,7 +100,7 @@ for (const [heroForm, newForm, remainsHeld] of [
 
 for (const saved of [false, true]) {
     void test(`swallowed polymorph food ${saved ? 'resumes after life saving' : 'stops at a fatal breakout landing'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1 } });
+        await freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10);
         await installSwallowedHero(worm);
@@ -138,11 +138,11 @@ for (const saved of [false, true]) {
 }
 
 void test('a new engulfing form repaints the stomach without releasing or moving the hero', async () => {
-    freshObjectRoom({ flags: { color: true } });
+    await freshObjectRoom({ flags: { color: true } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     await installSwallowedHero(worm);
-    swallowed(true);
+    await swallowed(true);
     await flush_screen();
     const x = game.u.ux, y = game.u.uy;
     const oldColor = requireScreenCell(x, y + 1).color;
@@ -163,7 +163,7 @@ void test('a new engulfing form repaints the stomach without releasing or moving
 
 for (const saved of [false, true]) {
     void test(`a swallowed polymorph potion ${saved ? 'finishes after life saving' : 'stops at fatal expulsion'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1 } });
+        await freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10);
         await installSwallowedHero(worm);
@@ -200,7 +200,7 @@ for (const saved of [false, true]) {
 }
 
 void test('a swallowed vampire reversion preserves the native nameless suffix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const vampire = await createMonsterAt('vampire', 11, 10);
     await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
@@ -228,7 +228,7 @@ void test('a swallowed vampire reversion preserves the native nameless suffix', 
 
 for (const saved of [false, true]) {
     void test(`cancelling a swallower ${saved ? 'finishes after life saving' : 'stops at fatal natural-form restoration'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1 } });
+        await freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const vampire = await createMonsterAt('vampire', 11, 10);
         await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
@@ -299,7 +299,7 @@ for (const saved of [false, true]) {
 
 for (const saved of [false, true]) {
     void test(`a petrifying egg in a swallower ${saved ? 'resumes physical damage after life saving' : 'stops on fatal natural-form recovery'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1 } });
+        await freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const shifter = await createMonsterAt('sandestin', 11, 10, NO_MINVENT);
         await changeMonsterForm(shifter, MONSTER_NAME.indexOf('purple worm'));

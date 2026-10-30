@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 for (const [type, name] of [[PICK_AXE, 'pick-axe'], [DWARVISH_MATTOCK, 'mattock']]) {
     void test(`the shopkeeper catches a returned ${name}`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
         shopkeeper.eshk.shknam = 'Izchak';

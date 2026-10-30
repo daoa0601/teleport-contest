@@ -20,8 +20,8 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { applyInventoryObject, dropInventoryObject, kickDirection } from './support/commands.js';
 import { createStaffedShop } from './support/shop.js';
 
-function dropRoom(options: ObjectRoomOptions = {}) {
-    freshObjectRoom({ role: 'barbarian', ...options });
+async function dropRoom(options: ObjectRoomOptions = {}) {
+    await freshObjectRoom({ role: 'barbarian', ...options });
     requirePlayingGame(game);
     const messages: string[] = [];
     const input = resetInputState();
@@ -43,7 +43,7 @@ async function text(messages: string[]) {
 }
 
 void test('a digging fumble onto an altar reveals the tool before releasing its wielded slot', async () => {
-    const messages = dropRoom({ hero: { fumbling: true } });
+    const messages = await dropRoom({ hero: { fumbling: true } });
     requirePlayingGame(game);
     const pick = await addInventoryObject(PICK_AXE, { spe: 0, bknown: false });
     await setPrimaryWeapon(pick);
@@ -66,7 +66,7 @@ void test('a digging fumble onto an altar reveals the tool before releasing its 
 });
 
 void test('a slippery bullwhip lands on an altar through the normal drop effects', async () => {
-    const messages = dropRoom({ hero: { glibTurns: 20 } });
+    const messages = await dropRoom({ hero: { glibTurns: 20 } });
     requirePlayingGame(game);
     const whip = await addInventoryObject(BULLWHIP, { bknown: false });
     await setPrimaryWeapon(whip);
@@ -87,7 +87,7 @@ void test('a slippery bullwhip lands on an altar through the normal drop effects
 
 for (const blind of [false, true]) {
     void test(`burning a borrowed bullwhip ${blind ? 'while blind ' : ''}preserves its used-up bill`, async () => {
-        const messages = dropRoom();
+        const messages = await dropRoom();
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 12 });
         const whip = await addInventoryObject(BULLWHIP, { oeroded: 3 });
@@ -116,7 +116,7 @@ for (const blind of [false, true]) {
 }
 
 void test('shipping a borrowed tool down a ladder settles its bill before migration', async () => {
-    const messages = dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
+    const messages = await dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',  num_dunlevs: 2, flags: {} })];
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 12 });
@@ -144,7 +144,7 @@ void test('shipping a borrowed tool down a ladder settles its bill before migrat
 });
 
 void test('kicking shop merchandise down a ladder charges the stock even when it was never picked up', async () => {
-    const messages = dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
+    const messages = await dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',  num_dunlevs: 2, flags: {} })];
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 12 });
@@ -168,7 +168,7 @@ void test('kicking shop merchandise down a ladder charges the stock even when it
 });
 
 void test('shipping a shop container clears ownership flags on its contents', async () => {
-    const messages = dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
+    const messages = await dropRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',  num_dunlevs: 2, flags: {} })];
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 12 });

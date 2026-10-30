@@ -11,7 +11,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('entering a moat announces that body of water', async () => {
-    const level = freshObjectRoom({ hero: { magicalBreathing: true } });
+    const level = await freshObjectRoom({ hero: { magicalBreathing: true } });
     level.requireAt(10, 10).typ = MOAT;
     const messages = [];
     await heroLiquidEffects({ publish: text => { messages.push(text); } });
@@ -19,7 +19,7 @@ void test('entering a moat announces that body of water', async () => {
     assert.equal(game.u.uinwater, 1);
 });
 void test('drowning names the moat in the death record', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 10, right: 10, top: 10, bottom: 10,
         hero: { urexp: 100 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
@@ -35,7 +35,7 @@ void test('drowning names the moat in the death record', async () => {
     assert.equal(loadScoreRecords()[0]?.death, 'drowned in a moat');
 });
 void test("water on Juiblex's assigned level is described as a swamp", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await init_dungeons();
     const juiblex = game.specialLevels?.get('juiblex');
     assert.ok(juiblex);

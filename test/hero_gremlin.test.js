@@ -7,8 +7,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
-function installGremlinHero(terrain) {
-    const level = freshRoomWithPolymorphedHero('gremlin', {
+async function installGremlinHero(terrain) {
+    const level = await freshRoomWithPolymorphedHero('gremlin', {
         left: 7,
         right: 16,
         top: 6,
@@ -28,7 +28,7 @@ function installGremlinHero(terrain) {
     return level;
 }
 void test('a gremlin can multiply while standing on a pool', async () => {
-    const level = installGremlinHero(POOL);
+    const level = await installGremlinHero(POOL);
     requireFixtureGame(game);
     await runMonsterAbilityCommand(' '.repeat(4));
     const clone = level.monsters.find(monster => monster.mnum === PM_GREMLIN && (monster.mtame ?? 0) > 0);
@@ -38,7 +38,7 @@ void test('a gremlin can multiply while standing on a pool', async () => {
     assert.equal(game.context.move, 0);
 });
 void test('a gremlin cannot multiply away from water', async () => {
-    const level = installGremlinHero(ROOM);
+    const level = await installGremlinHero(ROOM);
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
     assert.equal(level.monsters.length, 0);

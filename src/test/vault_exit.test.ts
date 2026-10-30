@@ -20,7 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
 async function vaultExit({ peaceful = true, inVault = true } = {}) {
-    const level = freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18 });
+    const level = await freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18 });
     requirePlayingGame(game);
     const state = game;
     state.u.uinvault = inVault ? 10 : 0;
@@ -214,7 +214,7 @@ void test('the vault payment message uses a hallucinated currency', async () => 
 });
 
 void test('currency has native singular and plural forms for ordinary and hallucinated amounts', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.equal(currency(1), 'zorkmid');
     assert.equal(currency(0), 'zorkmids');

@@ -64,7 +64,7 @@ void test('a fallen monster arrives after save, restore, and level entry', async
 
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Migrant', storage), true);
+    assert.equal(await restoreGame('Migrant', storage), true);
     assert.ok(
         (game._migratingMonsters || [])
             .some(candidate => candidate.m_id === monsterId),
@@ -208,7 +208,7 @@ void test('a migrating long worm keeps its tail length', async () => {
     requirePlayingGame(game);
     initRng(41n);
     const worm = await createMonsterAt('long worm', 12, 10);
-    initializeMonsterWormBody(worm, {
+    await initializeMonsterWormBody(worm, {
         allowTail: true, segmentCount: 4,
     });
     assert.equal(worm.wormSegments?.length, 4);
@@ -347,7 +347,7 @@ void test('an ascending migrant retains upward arrival restrictions through save
     const storage = memoryStorage();
     game.plname = 'Ascending';
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Ascending', storage), true);
+    assert.equal(await restoreGame('Ascending', storage), true);
     initRng(1n);
 
     const input = resetInputState();

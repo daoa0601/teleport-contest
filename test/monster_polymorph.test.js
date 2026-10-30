@@ -15,7 +15,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a chameleon on the Rogue level retries a lowercase animal form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
     monster.cham = MONSTER_NAME.indexOf('chameleon');
@@ -25,7 +25,7 @@ void test('a chameleon on the Rogue level retries a lowercase animal form', asyn
     assert.match(monsterClassSymbol(monster.mnum), /^[A-Z]$/);
 });
 void test('an endgame adventurer loses the rank in its name when polymorphed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.astral_level = { dnum: 9, dlevel: 5, flags: { town: false }, alignment: null };
     game.u.uz = { dnum: 9, dlevel: 1 };
@@ -35,7 +35,7 @@ void test('an endgame adventurer loses the rank in its name when polymorphed', a
     assert.equal(adventurer.name, 'Aria');
 });
 void test('random monster polymorph selects a species rather than a generic giant placeholder', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
     initRng(418n);
@@ -46,7 +46,7 @@ void test('random monster polymorph selects a species rather than a generic gian
 void test('fire elementals have triple health on their home plane', async () => {
     const health = [];
     for (const home of [false, true]) {
-        freshObjectRoom({ gameplaySeed: 29n });
+        await freshObjectRoom({ gameplaySeed: 29n });
         requirePlayingGame(game);
         game.fire_level = { ...(home ? game.u.uz : { dnum: 7, dlevel: 3 }),
             flags: { town: false }, alignment: null };
@@ -57,7 +57,7 @@ void test('fire elementals have triple health on their home plane', async () => 
     assert.equal(health[1], 3 * health[0]);
 });
 void test('a long worm loses its old body when it changes form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('long worm', 11, 10);
     initRng(1n);
@@ -66,7 +66,7 @@ void test('a long worm loses its old body when it changes form', async () => {
     assert.deepEqual(monster.wormSegments, []);
 });
 void test('a monster receives a worm body when it becomes a long worm', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('little dog', 11, 10);
     initRng(1n);
@@ -75,7 +75,7 @@ void test('a monster receives a worm body when it becomes a long worm', async ()
     assert.ok(Array.isArray(monster.wormSegments));
 });
 void test('a leashed monster pulls free when its new body cannot be leashed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('little dog', 11, 10);
     monster.mleashed = 1;
@@ -89,7 +89,7 @@ void test('a leashed monster pulls free when its new body cannot be leashed', as
     assert.equal(game.inventory.includes(leash), true);
 });
 void test('a monster drops its weapon when its new form cannot wield one', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant', 11, 10);
     const dagger = await equipMonsterObject(monster, await knownObject(DAGGER), W_WEP);
@@ -102,7 +102,7 @@ void test('a monster drops its weapon when its new form cannot wield one', async
     assert.equal(dagger.oy, monster.my);
 });
 void test('a wooden weapon burns when a new monster body drops it into lava', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant', 11, 10, NO_MINVENT);
     const club = await equipMonsterObject(monster, await knownObject(CLUB), W_WEP);
@@ -116,7 +116,7 @@ void test('a wooden weapon burns when a new monster body drops it into lava', as
     assert.equal(level.objects[11]?.[10]?.includes(club) ?? false, false);
 });
 void test('a large new body destroys ordinary torso clothing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('shopkeeper', 11, 10, NO_MINVENT);
     const clothing = [
@@ -134,7 +134,7 @@ void test('a large new body destroys ordinary torso clothing', async () => {
     assert.ok((monster.misc_worn_check ?? 0) & I_SPECIAL);
 });
 void test('a tiny new body drops gear that no longer fits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('shopkeeper', 11, 10, NO_MINVENT);
     const gear = [
@@ -154,7 +154,7 @@ void test('a tiny new body drops gear that no longer fits', async () => {
     assert.equal(monster.inventory.length, 0);
 });
 void test('a former giant drops boulders its new form cannot carry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant', 11, 10);
     const boulder = await equipMonsterObject(monster, await knownObject(BOULDER), 0);
@@ -165,7 +165,7 @@ void test('a former giant drops boulders its new form cannot carry', async () =>
     assert.equal(boulder.oy, monster.my);
 });
 void test('a monster drops its saddle when its new body cannot wear one', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('pony', 11, 10);
     const saddle = await equipMonsterObject(monster, await knownObject(SADDLE), W_SADDLE);
@@ -175,7 +175,7 @@ void test('a monster drops its saddle when its new body cannot wear one', async 
     assert.equal(monster.saddled, false);
 });
 void test('a visible werewolf announces its natural change', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.datetime = '20250101010000';
     game.flags.moonphase = 4;
@@ -193,7 +193,7 @@ void test('a visible werewolf announces its natural change', async () => {
     assert.equal(game.were_changes, 1);
 });
 void test('a natural werewolf transformation restores movement to an immobilized monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('human werewolf', 11, 10, NO_MINVENT);
     monster.mcanmove = false;
@@ -205,7 +205,7 @@ void test('a natural werewolf transformation restores movement to an immobilized
     assert.ok(monster.mcanmove, 'the new body can move again');
 });
 void test('an unseen werejackal howls and wakes nearby monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.datetime = '20250101010000';
     game.flags.moonphase = 4;
@@ -225,7 +225,7 @@ void test('an unseen werejackal howls and wakes nearby monsters', async () => {
 });
 for (const [species, humanForm] of [['werejackal', 262], ['werewolf', 263]]) {
     void test(`an unseen ${species} wakes nearby monsters with acoustics disabled`, async () => {
-        freshObjectRoom({ flags: { acoustics: false } });
+        await freshObjectRoom({ flags: { acoustics: false } });
         requirePlayingGame(game);
         const howler = await createMonsterAt(humanForm, 11, 10, NO_MINVENT);
         howler.minvis = 1;
@@ -247,7 +247,7 @@ for (const [species, humanForm] of [['werejackal', 262], ['werewolf', 263]]) {
     });
 }
 void test('a wounded vampire shape returns to its natural form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('fog cloud', 11, 10);
     monster.mhp = 2;
@@ -260,7 +260,7 @@ void test('a wounded vampire shape returns to its natural form', async () => {
 });
 void test('a vampire at nine tenths of its truncated maximum may take another shape', async () => {
     for (const [mhp, shifts] of [[27, true], [26, false]]) {
-        freshObjectRoom({ right: 30 });
+        await freshObjectRoom({ right: 30 });
         requirePlayingGame(game);
         const vampire = MONSTER_NAME.indexOf('vampire');
         // Far beyond BOLT_LIM, so being seen does not hold the vampire's form.
@@ -275,7 +275,7 @@ void test('a vampire at nine tenths of its truncated maximum may take another sh
     }
 });
 void test('a killed vampire shape rises in its natural form', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const vampire = MONSTER_NAME.indexOf('vampire');
     const monster = await createMonsterAt('fog cloud', 11, 10);
@@ -287,7 +287,7 @@ void test('a killed vampire shape rises in its natural form', async () => {
     assert.equal(level.monsters.includes(monster), true);
 });
 void test('a vampire becoming solid inside a closed door smashes it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const door = level.requireAt(11, 10);
     door.typ = DOOR;

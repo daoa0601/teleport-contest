@@ -9,7 +9,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('hallucination distorts the aura when holy water blesses a saddle', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 30, uluck: 13 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 30, uluck: 13 } });
     const pony = await createSaddledSteed();
     const saddle = monsterSaddle(pony);
     assert.ok(saddle);

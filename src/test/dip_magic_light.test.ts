@@ -10,7 +10,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('fountain water cannot extinguish the magical light of gold dragon armor', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { lamplit: true });
     initRng(6n);
@@ -21,7 +21,7 @@ void test('fountain water cannot extinguish the magical light of gold dragon arm
 });
 
 void test('dipping a candle extinguishes its flame before another fountain effect', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const candle = await addInventoryObject(TALLOW_CANDLE, { lamplit: true });
     const input = resetInputState();

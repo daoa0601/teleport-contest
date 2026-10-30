@@ -15,31 +15,31 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
-function darkRoom() {
-    const level = freshObjectRoom({
+async function darkRoom() {
+    const level = await freshObjectRoom({
         left: 2, right: 30, top: 2, bottom: 18,
         hero: { acurr: { a: [18, 12, 12, 12, 12, 12] } },
     });
     for (let x = 2; x <= 30; x++)
         for (let y = 2; y <= 18; y++) level.requireAt(x, y).lit = false;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     installPagerInput(resetInputState(), { expected: /lamp|candle|flame/, limit: 12 });
     return level;
 }
 
 void test('a thrown lamp reveals a nearby monster in passing and remembers it after the light moves away', async () => {
-    darkRoom();
+    await darkRoom();
     const lamp = await addInventoryObject(OIL_LAMP, { age: 200 });
     await applyInventoryObject(lamp);
     const monster = await createMonsterAt('kobold', 14, 12, NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(monster), false);
     let sawMonster = false;
     game.animationFrame = async () => { sawMonster ||= canSeeMonster(monster); };
 
     await throwInventoryObject(lamp);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(sawMonster, true, 'The lamp must reveal monsters beside its flight path');
     assert.equal(canSeeMonster(monster), false);
@@ -49,14 +49,14 @@ void test('a thrown lamp reveals a nearby monster in passing and remembers it af
 });
 
 void test('a thrown candle reveals distant floor before its flame is extinguished on landing', async () => {
-    darkRoom();
+    await darkRoom();
     const candle = await addInventoryObject(WAX_CANDLE, { age: 200 });
     await applyInventoryObject(candle);
     let sawDistantFloor = false;
     game.animationFrame = async () => { sawDistantFloor ||= cansee(17, 10); };
 
     await throwInventoryObject(candle);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(sawDistantFloor, true, 'The candle must illuminate floor while it is in flight');
     assert.equal(cansee(17, 10), false);
@@ -66,7 +66,7 @@ void test('a thrown candle reveals distant floor before its flame is extinguishe
 
 for (const action of ['thrown', 'kicked']) {
     void test(`a ${action} lit lamp stays visible between flight steps`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             right: 30,
             hero: { acurr: { a: [18, 18, 18, 12, 12, 12] } },
         });
@@ -76,7 +76,7 @@ for (const action of ['thrown', 'kicked']) {
         if (action === 'kicked') {
             await dropInventoryObject(lamp);
             game.u.ux--;
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         await redrawMap();
         const visibleColumns = new Set<number>();

@@ -7,7 +7,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const under of [DB_FLOOR, DB_ICE]) {
     void test(`two boulders cannot be pushed into underlay ${under} to escape surrounding rock`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         for (let x = 9; x <= 11; x++)
             for (let y = 9; y <= 11; y++) {
                 if (x !== 10 || y !== 10)

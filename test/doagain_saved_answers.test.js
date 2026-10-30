@@ -18,7 +18,7 @@ import { requireFixtureGame } from './support/game-state.js';
 // recorded into CQ_REPEAT and cmd.c:do_repeat() replays it without
 // drawing the question again.
 void test('do-again replays the saved ring-finger answer without asking again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION, { invlet: 'a' });
     const input = resetInputState();
     input.feed('a');
@@ -78,7 +78,7 @@ void test('do-again feeds the live add-to answer into the engraving text questio
 // C yn_function() records only tty_yn_function()'s accepted answer. After
 // the ring is removed, do-again puts it back on the same finger silently.
 void test('do-again replays the accepted finger after a rejected live key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION, { invlet: 'a' });
     const input = resetInputState();
     input.feed('a');

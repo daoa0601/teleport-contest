@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a mind flayer tentacle damages the hero and drains intelligence through negative armor class', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
         uac: -5, uhp: 100, uhpmax: 100,
         acurr: { a: [10, 20, 10, 10, 10, 10] }, amax: { a: [10, 20, 10, 10, 10, 10] },
     } });
@@ -38,7 +38,7 @@ void test('a mind flayer tentacle damages the hero and drains intelligence throu
 
 for (const greased of [false, true]) {
     void test(`a ${greased ? 'greased' : 'plain'} helmet protects intelligence while a tentacle still deals contact damage`, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
             uac: -5, uhp: 100, uhpmax: 100,
             acurr: { a: [10, 20, 10, 10, 10, 10] }, amax: { a: [10, 20, 10, 10, 10, 10] },
         } });
@@ -61,7 +61,7 @@ for (const greased of [false, true]) {
 }
 
 void test('a headless hero takes the first tentacle hit and skips the remaining brain attacks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('gray ooze', { hitPoints: 50 });
     game.u.uac = 0;
@@ -82,7 +82,7 @@ void test('a headless hero takes the first tentacle hit and skips the remaining 
 });
 
 void test('memory loss ends the remaining tentacle attacks in the same move', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
         uac: 0, uhp: 100, uhpmax: 100,
         acurr: { a: [10, 20, 10, 10, 10, 10] }, amax: { a: [10, 20, 10, 10, 10, 10] },
     } });

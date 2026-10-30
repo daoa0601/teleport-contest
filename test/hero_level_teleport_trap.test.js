@@ -250,7 +250,7 @@ void test('stepping onto a level teleport trap wears departure engravings before
 });
 for (const property of ['levitation', 'flying']) {
     void test(`a hero with ${property} announces airborne level teleport trap contact`, async () => {
-        const level = freshObjectRoom({ flags: { debug: true } });
+        const level = await freshObjectRoom({ flags: { debug: true } });
         grantIntrinsicProperty(property, 'outside');
         const input = resetInputState();
         await answerPrompts(triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10)), input, [
@@ -263,7 +263,7 @@ for (const property of ['levitation', 'flying']) {
 }
 for (const acceptDeath of [true, false]) {
     void test(`teleporting to Nowhere ${acceptDeath ? 'ends play without trap confusion' : 'confuses the hero after declining death'}`, async () => {
-        const level = freshObjectRoom({ flags: {
+        const level = await freshObjectRoom({ flags: {
                 debug: true, bones: false, tombstone: false, disclose: '-i -a -v -g -c -o',
             } });
         requirePlayingGame(game);
@@ -293,10 +293,10 @@ for (const acceptDeath of [true, false]) {
     });
 }
 void test('discovering a level teleport trap displays it beneath an invisible hero before acknowledgment', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     grantIntrinsicProperty('invisible', 'outside');
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
-    newsym(10, 10);
+    await newsym(10, 10);
     await plineWithContinuation('You hear footsteps approaching along the corridor.');
     const input = resetInputState();
     const operation = triggerHeroTrap(trap);
@@ -310,7 +310,7 @@ void test('discovering a level teleport trap displays it beneath an invisible he
     assert.equal(displayedSquare, '^', 'discovering the trap replaces the floor while the unread message waits');
 });
 void test('a level teleport trap pages its announcement before asking for a level', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
@@ -331,7 +331,7 @@ void test('a level teleport trap pages its announcement before asking for a leve
     assert.equal(game._pending_message, 'You feel disoriented.');
 });
 void test('teleport control prevents the trap from confusing the hero after cancellation', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     grantIntrinsicProperty('teleportControl', 'outside');
     const input = resetInputState();
@@ -341,7 +341,7 @@ void test('teleport control prevents the trap from confusing the hero after canc
     assert.equal(game._pending_message, 'You briefly feel centered.');
 });
 void test('magic resistance leaves an unintentionally triggered level teleport trap in place', async () => {
-    const level = freshObjectRoom({ hero: { antimagic: true } });
+    const level = await freshObjectRoom({ hero: { antimagic: true } });
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
     input.feed(' ');

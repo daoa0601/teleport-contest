@@ -8,7 +8,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { BELL_OF_OPENING, AMULET_OF_YENDOR } from '../js/object_data.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 void test('invoking Demonbane as a demon retouches and rejects the weapon before its power', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     game.valley_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
     game.dungeons = [createDungeon({ dname: 'Doom' }), createDungeon({ dname: 'Gehennom' })];
@@ -23,7 +23,7 @@ void test('invoking Demonbane as a demon retouches and rejects the weapon before
 });
 for (const type of [BELL_OF_OPENING, AMULET_OF_YENDOR]) {
     void test(`unique item ${type} is admitted by the invoke command and consumes a turn`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const object = await knownObject(type, { invlet: 'a', where: 'inventory' });
         game.inventory = [object];

@@ -10,7 +10,7 @@ import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('knocking a held hero free gives the holder its re-hold cooldown', async () => {
-    freshObjectRoom({ heroX: 12, right: 20, flags: { verbose: false } });
+    await freshObjectRoom({ heroX: 12, right: 20, flags: { verbose: false } });
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     const giant = await createMonsterAt('hill giant', ux - 1, uy, NO_MINVENT);
@@ -29,7 +29,7 @@ void test('knocking a held hero free gives the holder its re-hold cooldown', asy
 // C mhitm_knockback() hurtles the hero before its 1-in-4 stun roll; a fatal
 // wall bump ends the game inside hurtle(), so no stagger follows the death.
 void test('a fatal knockback into a wall ends the game before the stun roll', async () => {
-    const level = freshObjectRoom({ heroX: 12, right: 20, flags: { verbose: false } });
+    const level = await freshObjectRoom({ heroX: 12, right: 20, flags: { verbose: false } });
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     level.requireAt(ux + 2, uy).typ = STONE;

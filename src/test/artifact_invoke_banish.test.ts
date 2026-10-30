@@ -11,7 +11,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { initializePet } from '../js/dog.js';
 
 void test('a zero banishment roll sends the demon to the preceding dungeon bottom', async () => {
-    const level = freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
+    const level = await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     game.valley_level = createSpecialLevel({ dnum: 2, dlevel: 1 });
     game.dungeons = [
@@ -32,7 +32,7 @@ void test('a zero banishment roll sends the demon to the preceding dungeon botto
 });
 
 void test('Demonbane banishes visible demons and imps, leaving other creatures and hidden demons here', async () => {
-    const level = freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
+    const level = await freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     game.valley_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
     game.dungeons = [
@@ -52,7 +52,7 @@ void test('Demonbane banishes visible demons and imps, leaving other creatures a
         level.requireAt(13, y).typ = STONE;
         vision_note_blocker_change(13, y);
     }
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await invokeInventoryObject(sword, ' '.repeat(20));
 

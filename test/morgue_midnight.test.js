@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // which is the localtime()-normalized hour of getnow(), not the fixed
 // datetime's literal hour string.
 async function enterMorgue(datetime) {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.datetime = datetime;
     const room = {
         lx: 8, hx: 18, ly: 8, hy: 12, rtype: MORGUE,

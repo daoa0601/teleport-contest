@@ -25,7 +25,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 const species = (name) => MONSTER_NAME.indexOf(name);
 void test('tin contents depend on individual knowledge instead of recognizing the tin type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hidden = await addInventoryObject(TIN, {
         initialize: false, corpsenm: species('lichen'),
         typeKnown: true, known: false, bknown: false,
@@ -37,8 +37,8 @@ void test('tin contents depend on individual knowledge instead of recognizing th
     });
     assert.equal(await inventoryItemDescription(identified), 'a tin of kobold meat');
 });
-function room(t, answers = [], options = {}) {
-    freshObjectRoom({ gameplaySeed: 71n, role: 'wizard', ...options });
+async function room(t, answers = [], options = {}) {
+    await freshObjectRoom({ gameplaySeed: 71n, role: 'wizard', ...options });
     requirePlayingGame(game);
     game.plname = 'Tin eater';
     const input = resetInputState();
@@ -72,7 +72,7 @@ async function finishOpening() {
 }
 for (const [tool, turns] of [[DAGGER, 3], [AXE, 6]]) {
     void test(`opening a tin with ${tool === DAGGER ? 'a dagger' : 'an axe'} takes ${turns} occupation turns`, async (t) => {
-        room(t, [
+        await room(t, [
             { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
             { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
             { prompt: /Eat it\?/, keys: 'y' },
@@ -97,7 +97,7 @@ for (const [tool, turns] of [[DAGGER, 3], [AXE, 6]]) {
     });
 }
 void test('a blessed opener opens an unblessed tin immediately', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -111,7 +111,7 @@ void test('a blessed opener opens an unblessed tin immediately', async (t) => {
     assert.equal(game.inventory.includes(food), false);
 });
 void test('hands are required even for a blessed tin', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     installPolymorphedHero('kitten');
     const food = await tin({ blessed: true });
@@ -121,7 +121,7 @@ void test('hands are required even for a blessed tin', async (t) => {
     assert.match(game._last_message, /cannot handle the tin/);
 });
 void test('a metallivore bites a tin without hands or an eating prompt', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     installPolymorphedHero('rock mole');
     const food = await tin();
@@ -133,7 +133,7 @@ void test('a metallivore bites a tin without hands or an eating prompt', async (
     assert.equal(game.u.uconduct.food, 1);
 });
 void test('slippery bare hands drop one unopened tin from a carried stack', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const food = await tin({ quan: 3 });
     setSlipperyHands(10);
@@ -148,7 +148,7 @@ void test('slippery bare hands drop one unopened tin from a carried stack', asyn
     assert.equal(game.u.uhunger, hunger);
 });
 void test('a dagger can still open tins while the hero has slippery hands', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -163,7 +163,7 @@ void test('a dagger can still open tins while the hero has slippery hands', asyn
     assert.equal(game.inventory.includes(food), false);
 });
 void test('leaving a floor tin stops opening without consuming it', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     await wield(DAGGER);
     const food = await floorObject(TIN, game.u.ux, game.u.uy, {
@@ -176,7 +176,7 @@ void test('leaving a floor tin stops opening without consuming it', async (t) =>
     assert.equal(food.where, 'floor');
 });
 void test('losing floor reach stops opening a floor tin', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     await wield(DAGGER);
     const food = await floorObject(TIN, game.u.ux, game.u.uy, {
@@ -189,7 +189,7 @@ void test('losing floor reach stops opening a floor tin', async (t) => {
     assert.equal(food.where, 'floor');
 });
 void test('refusing the contents discards one tin and learns its contents', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'n' },
@@ -205,7 +205,7 @@ void test('refusing the contents discards one tin and learns its contents', asyn
     assert.equal(game.u.uconduct.food || 0, 0);
 });
 void test('empty tins are discarded without counting a meal', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
     ]);
     requirePlayingGame(game);
@@ -219,7 +219,7 @@ void test('empty tins are discarded without counting a meal', async (t) => {
     assert.equal(game.u.uconduct.food || 0, 0);
 });
 void test('a metallivore obtains nutrition from an empty tin itself', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     installPolymorphedHero('rock mole');
     const food = await tin({ corpsenm: -1 });
@@ -229,7 +229,7 @@ void test('a metallivore obtains nutrition from an empty tin itself', async (t) 
     assert.equal(game.u.uconduct.food || 0, 0);
 });
 void test('blessed spinach increases Strength and grants 600 nutrition', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /tin opens like magic.*contains spinach/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
         { prompt: /feel like Popeye/, keys: ' ' },
@@ -247,7 +247,7 @@ void test('blessed spinach increases Strength and grants 600 nutrition', async (
     assert.equal(game.inventory.includes(food), false);
 });
 void test('refusing cursed spinach leaves its contents unidentified', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /easily open the tin.*decaying green substance/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'n' },
@@ -261,7 +261,7 @@ void test('refusing cursed spinach leaves its contents unidentified', async (t) 
     assert.equal(game.u.uconduct.food || 0, 0);
 });
 void test('rotten contents start vomiting without adding nutrition', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /easily open the tin.*smells like newts/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -277,7 +277,7 @@ void test('rotten contents start vomiting without adding nutrition', async (t) =
     assert.equal(game.inventory.includes(food), false);
 });
 void test('homemade tins cannot grant more nutrition than their corpse', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /tin opens like magic.*smells like newts/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
     ]);
@@ -289,7 +289,7 @@ void test('homemade tins cannot grant more nutrition than their corpse', async (
     assert.equal(game.u.uhunger, hunger + 20);
 });
 void test('fried contents grease hands even when gloves are worn', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -305,7 +305,7 @@ void test('fried contents grease hands even when gloves are worn', async (t) => 
     assert.match(game._last_message, /gloves very slippery/);
 });
 void test('an explicitly trapped tin explodes before offering contents', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
     ]);
     requirePlayingGame(game);
@@ -322,7 +322,7 @@ void test('an explicitly trapped tin explodes before offering contents', async (
     assert.equal(game.u.uconduct.food || 0, 0);
 });
 void test('fatal petrifying contents consume the tin before death', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /easily open the tin.*smells like cockatrices/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -342,7 +342,7 @@ void test('fatal petrifying contents consume the tin before death', async (t) =>
     assert.equal(game.context.move, 0);
 });
 void test('healthy tins replace meat with spinach and preserve suitable vegetarian contents', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const meat = await tin({ corpsenm: species('newt') });
     setTinVariety(meat, HEALTHY_TIN);
@@ -353,7 +353,7 @@ void test('healthy tins replace meat with spinach and preserve suitable vegetari
     assert.equal(tinDetails(vegetable, vegetable.corpsenm, { state: game }), 'tin of lichen');
 });
 void test('identified preparation names reflect curse and nonrotting species', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const food = await tin({ spe: -4, known: true, cknown: true });
     assert.match(await inventoryItemDescription(food), /tin of french fried lichen/);
@@ -367,7 +367,7 @@ void test('identified preparation names reflect curse and nonrotting species', a
     assert.equal(tinVariety(food, true), SPINACH_TIN);
 });
 void test('applying an opener with no carried tin takes no time', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const opener = await addInventoryObject(TIN_OPENER);
     const result = await useTinOpener(opener);
@@ -375,7 +375,7 @@ void test('applying an opener with no carried tin takes no time', async (t) => {
     assert.equal(game.uwep, null);
 });
 void test('canceling tin selection keeps the time spent wielding an opener', async (t) => {
-    const input = room(t);
+    const input = await room(t);
     requirePlayingGame(game);
     const opener = await addInventoryObject(TIN_OPENER);
     await tin();
@@ -389,7 +389,7 @@ void test('canceling tin selection keeps the time spent wielding an opener', asy
     assert.equal(game.uwep, opener);
 });
 void test('saving during opening preserves tin identity and stops the occupation on restore', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
@@ -403,7 +403,7 @@ void test('saving during opening preserves tin identity and stops the occupation
     await startTin(food);
     await continueTinOpening(openingTin());
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Tin eater', storage), true);
+    assert.equal(await restoreGame('Tin eater', storage), true);
     const restored = game.inventory.find(object => object.otyp === TIN);
     assert.ok(restored);
     assert.ok(game.context.tin != null, 'Expected game.context.tin to be initialized');
@@ -414,7 +414,7 @@ void test('saving during opening preserves tin identity and stops the occupation
     assert.equal(game.inventory.includes(restored), false);
 });
 void test('the eat command opens a carried tin through the real occupation dispatcher', async (t) => {
-    const input = room(t, [
+    const input = await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -434,7 +434,7 @@ void test('the eat command opens a carried tin through the real occupation dispa
     assert.equal(game.context.move, 1);
 });
 void test('opening one unpaid tin preserves the bill and identity of the unopened stack', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'n' },
@@ -460,7 +460,7 @@ void test('opening one unpaid tin preserves the bill and identity of the unopene
     assert.equal(game.context.tin.tin, null);
 });
 void test('a fatal trap stops before charging or consuming its tin', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /KABOOM!!.*tin was booby-trapped/, keys: ' ' },
         { prompt: /You die\.\.\.--More--/, keys: ' ' },
@@ -479,7 +479,7 @@ void test('a fatal trap stops before charging or consuming its tin', async (t) =
     assert.equal(game.context.move, 0);
 });
 void test('a tin is consumed before its nutrition can cause fatal choking', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
@@ -501,7 +501,7 @@ void test('a tin is consumed before its nutrition can cause fatal choking', asyn
     assert.equal(game.u.glibTurns || 0, 0);
 });
 void test('applying a tin opener wields it and opens the selected tin', async (t) => {
-    const input = room(t);
+    const input = await room(t);
     requirePlayingGame(game);
     const opener = await addInventoryObject(TIN_OPENER, { blessed: true });
     const food = await tin();

@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('an erinys can rouse a later paralyzed arrival while an earlier one stays frozen', async () => {
-    freshObjectRoom({ left: 8, right: 25, hero: { uhp: 200, uhpmax: 200 } });
+    await freshObjectRoom({ left: 8, right: 25, hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     const earlier = await createMonsterAt('goblin', 24, 10, MM_ANGRY | NO_MINVENT);
     const later = await createMonsterAt('goblin', 23, 10, MM_ANGRY | NO_MINVENT);

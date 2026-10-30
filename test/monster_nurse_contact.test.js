@@ -7,7 +7,7 @@ import { AD_HEAL, AT_CLAW } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('nurse treatment silently cures food poisoning and terminal illness', async () => {
-    freshObjectRoom({ hero: { sick: true, sickTurns: 7, sickType: SICK_ALL,
+    await freshObjectRoom({ hero: { sick: true, sickTurns: 7, sickType: SICK_ALL,
             sickCause: 'contaminated food' } });
     requirePlayingGame(game);
     const nurse = await createMonsterAt('nurse', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -22,7 +22,7 @@ void test('nurse treatment silently cures food poisoning and terminal illness', 
     assert.doesNotMatch(game._pending_message ?? '', /cured|better|relief/, 'the nurse cures sickness without publishing a cure message');
 });
 void test('an unarmed, unarmored hero receives nurse healing and a lasting maximum HP gain', async () => {
-    freshObjectRoom({ hero: { uhp: 30, uhpmax: 40, uhppeak: 40 } });
+    await freshObjectRoom({ hero: { uhp: 30, uhpmax: 40, uhppeak: 40 } });
     requirePlayingGame(game);
     const nurse = await createMonsterAt('nurse', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const messages = [];

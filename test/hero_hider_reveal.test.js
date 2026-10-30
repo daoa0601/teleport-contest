@@ -19,8 +19,8 @@ const REVEAL_PROSE = /fall|board|piercer|ogre|snake|hiding|Wait|mimic|hit|miss|I
 function finalProse(messages) {
     return `${messages.join('\n')}\n${game._pending_message ?? ''}`;
 }
-function revealRoom() {
-    freshObjectRoom();
+async function revealRoom() {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Mope';
     const input = resetInputState();
@@ -48,7 +48,7 @@ async function runAttack(ogre) {
     });
 }
 void test('a hiding piercer hero drops onto its attacker and swaps squares', async () => {
-    const { messages } = revealRoom();
+    const { messages } = await revealRoom();
     assert.equal((await polymonHero(MONSTER_NAME.indexOf('rock piercer'))).transformed, true);
     assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
     assert.equal(game.u.uundetected, 1);
@@ -66,7 +66,7 @@ void test('a hiding piercer hero drops onto its attacker and swaps squares', asy
     assert.notEqual(`${game.u.ux},${game.u.uy}`, `${heroX},${heroY}`, 'the hero lands on a different square');
 });
 void test('a falling piercer lands on the attacker\'s vacated square', async () => {
-    const { messages } = revealRoom();
+    const { messages } = await revealRoom();
     assert.equal((await polymonHero(MONSTER_NAME.indexOf('rock piercer'))).transformed, true);
     assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
     const level = requireGameLevel(game);
@@ -90,7 +90,7 @@ void test('a falling piercer lands on the attacker\'s vacated square', async () 
     assert.equal(game.u.uy, 10, 'the hero lands on the attacker\'s old square');
 });
 void test('a falling piercer springs a trap on its landing square', async () => {
-    const { messages } = revealRoom();
+    const { messages } = await revealRoom();
     assert.equal((await polymonHero(MONSTER_NAME.indexOf('rock piercer'))).transformed, true);
     assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
     const level = requireGameLevel(game);
@@ -110,7 +110,7 @@ void test('a falling piercer springs a trap on its landing square', async () => 
     assert.match(prose, /falling piercer \(you\)!/, 'the piercer still strikes after landing');
 });
 void test('a hiding snake hero is pointed out to its attacker', async () => {
-    const { messages } = revealRoom();
+    const { messages } = await revealRoom();
     await floorObject(TOWEL, game.u.ux, game.u.uy, { dknown: true });
     assert.equal((await polymonHero(MONSTER_NAME.indexOf('snake'))).transformed, true);
     assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
@@ -125,7 +125,7 @@ void test('a hiding snake hero is pointed out to its attacker', async () => {
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'S', 'the revealed hero is drawn on its square again');
 });
 void test('a mimicking hero is unmasked instead of attacked', async () => {
-    const { messages } = revealRoom();
+    const { messages } = await revealRoom();
     assert.equal((await polymonHero(MONSTER_NAME.indexOf('small mimic'))).transformed, true);
     assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
     assert.ok((game.u.m_ap_type ?? 0) !== 0, 'the hero mimics an object');

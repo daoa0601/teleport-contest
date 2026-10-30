@@ -13,10 +13,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('farlook offers a named monster entry before its species entry', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
     const kitten = await createMonsterAt('kitten', 11, 10);
     setMonsterGivenName(kitten, 'Oracle');
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('/l.');
 
@@ -31,9 +31,9 @@ void test('farlook offers a named monster entry before its species entry', async
 });
 
 void test('ordinary farlook offers information about the hero and keeps looking after declining it', async () => {
-    freshObjectRoom({ role: 'wizard', flags: { tips: false, verbose: true, help: true } });
+    await freshObjectRoom({ role: 'wizard', flags: { tips: false, verbose: true, help: true } });
     game.plname = 'Aster';
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     const input = resetInputState();
     input.feed('/');
 
@@ -49,7 +49,7 @@ void test('ordinary farlook offers information about the hero and keeps looking 
 });
 
 void test('the typed-name look command opens the encyclopedia without asking for more information', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     const input = resetInputState();
 
     await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -62,7 +62,7 @@ void test('the typed-name look command opens the encyclopedia without asking for
 });
 
 void test('custom map warnings preserve default symbols in typed look', async () => {
-    freshObjectRoom({ flags: { tips: false, help: false } });
+    await freshObjectRoom({ flags: { tips: false, help: false } });
     applyNethackrc('OPTIONS=warnings:0abcde');
     const input = resetInputState();
     input.feed('\x1b');
@@ -92,7 +92,7 @@ for (const [symbol, description] of [
     ['8', "I've never heard of such things."],
 ] as const) {
     void test(`typed look describes the default ${JSON.stringify(symbol)} symbol`, async () => {
-        freshObjectRoom({ flags: { tips: false, help: false } });
+        await freshObjectRoom({ flags: { tips: false, help: false } });
         game.symset = 'DECgraphics';
         const input = resetInputState();
         input.feed(`/?${symbol}\n`);
@@ -117,7 +117,7 @@ for (const symset of ['default', 'DECgraphics']) {
         ['\\', 'an opulent throne', 'opulent throne'],
     ] as const) {
         void test(`typed ${JSON.stringify(symbol)} offers ${meaning} information using ${symset}`, async () => {
-            freshObjectRoom({ flags: { tips: false, help: true } });
+            await freshObjectRoom({ flags: { tips: false, help: true } });
             game.symset = symset;
             const input = resetInputState();
             input.feed(`/?${symbol}\n`);
@@ -134,7 +134,7 @@ for (const symset of ['default', 'DECgraphics']) {
 
 for (const blind of [false, true]) {
     void test(`typed look describes an unseen creature with blindness=${blind}`, async () => {
-        freshObjectRoom({ flags: { help: false }, hero: { blindTurns: blind ? 10 : 0 } });
+        await freshObjectRoom({ flags: { help: false }, hero: { blindTurns: blind ? 10 : 0 } });
         const input = resetInputState();
         input.feed('/?I\n');
 
@@ -148,14 +148,14 @@ for (const blind of [false, true]) {
 
 for (const up of [false, true]) {
     void test(`farlook explains ordinary and branch staircases ${up ? 'up' : 'down'}`, async () => {
-        const level = freshObjectRoom({ flags: { tips: false } });
+        const level = await freshObjectRoom({ flags: { tips: false } });
         game.symset = 'DECgraphics';
         const stairs = level.requireAt(11, 10);
         stairs.typ = STAIRS;
         stairs.ladder = up ? LA_UP : LA_DOWN;
         game.stairs = { sx: 11, sy: 10, up, isladder: false,
             tolev: { dnum: 1, dlevel: 1 }, u_traversed: true, next: null };
-        newsym(11, 10);
+        await newsym(11, 10);
         const input = resetInputState();
         input.feed('l.');
 

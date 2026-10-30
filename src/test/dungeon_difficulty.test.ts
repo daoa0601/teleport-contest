@@ -12,7 +12,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 for (const [depth, expected] of [[12, 24], [25, 50], [30, 50]]) {
     void test(`a worn aggravation ring raises level difficulty at depth ${depth}`, async () => {
         assert.ok(depth !== undefined && expected !== undefined);
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 40 })];
         game.u.uz = { dnum: 0, dlevel: depth };
@@ -27,7 +27,7 @@ for (const [depth, expected] of [[12, 24], [25, 50], [30, 50]]) {
 }
 
 void test('the aggravation ring also adjusts Amulet and endgame difficulty', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 40, dunlev_ureached: 20 }),
         createDungeon({ dname: 'Planes', depth_start: -5, num_dunlevs: 5 })];

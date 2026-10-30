@@ -224,7 +224,7 @@ export async function tryWizardTerrainWish(parsed) {
         changed = false;
     if (!changed)
         return false;
-    feel_newsym(x, y);
+    await feel_newsym(x, y);
     if (game.u.uinwater && !isPoolAt(game.u.ux, game.u.uy)) {
         game.u.uinwater = false;
         game.underwater = game.u.underwater = false;

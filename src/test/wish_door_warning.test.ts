@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('replacing a warned door gives the town watch a fresh first warning', async () => {
-    const level = freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 12, 12, 12] } } });
+    const level = await freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 12, 12, 12] } } });
     level.flags.has_town = true;
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
@@ -30,7 +30,7 @@ void test('replacing a warned door gives the town watch a fresh first warning', 
     await readObjectName('wall', { wizardWish: true });
     await readObjectName('locked door', { wizardWish: true });
     game.u.ux = 10;
-    vision_recalc(0);
+    await vision_recalc(0);
     initRng(1n);
     await kickDirection('l');
 

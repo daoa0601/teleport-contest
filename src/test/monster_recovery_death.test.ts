@@ -23,7 +23,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a held vampire bat leaves the hero clutches before rising in its natural form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('large mimic');
     const monster = await createMonsterAt('vampire bat', 11, 10, NO_MINVENT);
@@ -43,7 +43,7 @@ void test('a held vampire bat leaves the hero clutches before rising in its natu
 
 for (const lifeSaved of [false, true]) {
     void test(`vampire recovery ${lifeSaved ? 'continues after life saving on expulsion' : 'stops when expulsion kills the hero'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             gameplaySeed: 37n,
             hero: { uhp: 1, uhpmax: 40 },
             flags: { disclose: '-i -a -v -c -o' },
@@ -155,7 +155,7 @@ void test('a vampire which survives its recovery door learns the trap and stays 
 });
 
 async function vampireInTrappedDoor() {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { ulevel: 1, uz: { dnum: 0, dlevel: 1 } },
         flags: { verbose: true },
     });

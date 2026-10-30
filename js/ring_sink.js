@@ -84,11 +84,11 @@ export async function polymorphSink(state, publish) {
         await publish(`The sink transforms into ${withIndefiniteArticle(symbolName)}!`);
     else
         await publish('The sink vanishes.');
-    newsym(ux, uy);
+    await newsym(ux, uy);
 }
 // C do.c:459-494 teleport_sink(): move the sink to a far, unseen, plain
 // room square.  Returns whether the sink moved.
-function teleportSink(state) {
+async function teleportSink(state) {
     const { ux, uy } = state.u;
     const level = requireGameLevel(state);
     const sink = level.requireAt(ux, uy);
@@ -107,12 +107,12 @@ function teleportSink(state) {
         const alreadyLooted = !!sink.looted;
         sink.typ = ROOM;
         sink.looted = 0;
-        newsym(ux, uy);
+        await newsym(ux, uy);
         location.typ = SINK;
         location.looted = alreadyLooted ? 1 : 0;
         // C's two set_levltyp() calls recount fountains and sinks.
         countLevelFeatures(state);
-        newsym(cx, cy);
+        await newsym(cx, cy);
         return true;
     }
     return false;
@@ -201,7 +201,7 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
             await publish('Several flies buzz around the sink.');
             break;
         case 194: { /* RIN_TELEPORTATION */
-            nosink = teleportSink(state);
+            nosink = await teleportSink(state);
             await publish(`The sink ${nosink ? '' : 'momentarily '}vanishes.`);
             ideed = false;
             break;

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 void test('chewing a shop wall never starts a real dig', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     await createStaffedShop({
         left: 8, right: 14, top: 8, bottom: 12,
         keeperX: 11, keeperY: 11, doorX: 8, doorY: 10,
@@ -39,7 +39,7 @@ void test('chewing a shop wall never starts a real dig', async () => {
 // her; rnl(7) either drives the pick into her own foot or wrecks the trap.
 void test('digging down inside a bear trap hits the hero or frees her', async () => {
     for (const [seed, expectHit] of [[2n, true], [4n, false]] as const) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const trap = await maketrap(10, 10, BEAR_TRAP);
         assert.ok(trap);
         game.u.utrap = 4;

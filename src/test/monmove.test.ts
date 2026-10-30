@@ -39,7 +39,7 @@ function rolls(values: readonly number[]) {
 }
 
 void test('natural monster speed and randomized movement use species data', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await createMonsterAt('pony', 11, 10);
     const kitten = await createMonsterAt('kitten', 12, 10);
     assert.equal(naturalMonsterSpeed(pony), 16); // pony
@@ -52,7 +52,7 @@ void test('natural monster speed and randomized movement use species data', asyn
 
 void test('monster allocation applies newest-first movement to current actors',
     async () => {
-        freshObjectRoom({ right: 70, recalculateVision: false });
+        await freshObjectRoom({ right: 70, recalculateVision: false });
         requirePlayingGame(game);
         const kobold = await createMonsterAt('kobold', 66, 16);
         const pony = await createMonsterAt('pony', 67, 9);
@@ -65,7 +65,7 @@ void test('monster allocation applies newest-first movement to current actors',
     });
 
 void test('galloping gives the mounted steed extra movement', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         context: { mv: true },
         recalculateVision: false,
     });
@@ -84,7 +84,7 @@ void test('galloping gives the mounted steed extra movement', async () => {
 });
 
 void test('Knight starts with a living pony companion', async () => {
-    freshObjectRoom({ role: 'knight' });
+    await freshObjectRoom({ role: 'knight' });
     const pet = await makedog();
     assert.ok(pet, 'The starting pet is created on an available square');
     assert.equal(pet.mnum, MONSTER_NAME.indexOf('pony'));
@@ -93,7 +93,7 @@ void test('Knight starts with a living pony companion', async () => {
 });
 
 void test('a tame red dragon bites and claws an adjacent enemy', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         right: 20,
         heroX: 18,
         heroY: 10,
@@ -126,7 +126,7 @@ void test('a tame red dragon bites and claws an adjacent enemy', async () => {
 });
 
 void test('a silver weapon sears a lycanthropic hero in melee', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         heroX: 10,
         heroY: 10,
         hero: {
@@ -163,7 +163,7 @@ void test('a silver weapon sears a lycanthropic hero in melee', async () => {
 });
 
 void test('a monster fire blast makes a shifted vampire rise', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 14, heroY: 10, recalculateVision: false,
     });
     requirePlayingGame(game);
@@ -196,7 +196,7 @@ void test('a monster fire blast makes a shifted vampire rise', async () => {
 });
 
 void test('a land monster in lava burns and drops what it carried', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = LAVAPOOL;
     const rock = await knownObject(ROCK);
@@ -216,7 +216,7 @@ void test('a land monster in lava burns and drops what it carried', async () => 
 
 void test('a monster which survives lava burns vulnerable carried items',
     async () => {
-        const level = freshObjectRoom({ recalculateVision: false });
+        const level = await freshObjectRoom({ recalculateVision: false });
         requirePlayingGame(game);
         level.requireAt(12, 10).typ = LAVAPOOL;
         const scroll = await knownObject(SCR_TELEPORTATION);
@@ -234,7 +234,7 @@ void test('a monster which survives lava burns vulnerable carried items',
     });
 
 void test('a gremlin multiplies in a fountain and dries it up', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = FOUNTAIN;
     level.flags.nfountains = 1;
@@ -260,7 +260,7 @@ void test('a gremlin multiplies in a fountain and dries it up', async () => {
 });
 
 void test('flight does not keep a monster above the Plane of Water', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.water_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     level.requireAt(12, 10).typ = POOL;
@@ -280,7 +280,7 @@ void test('flight does not keep a monster above the Plane of Water', async () =>
 });
 
 void test('a drowning vampire wolf rises as a flying vampire leader', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
@@ -304,7 +304,7 @@ void test('a drowning vampire wolf rises as a flying vampire leader', async () =
 });
 
 void test('a flying hero keeps their steed above water', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.water_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     level.requireAt(12, 10).typ = POOL;
@@ -323,7 +323,7 @@ void test('a flying hero keeps their steed above water', async () => {
 });
 
 void test('a water wall drowns a monster clinging to the ceiling', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = WATER;
     const piercer = await createMonsterAt('rock piercer', 12, 10);
@@ -340,7 +340,7 @@ void test('a water wall drowns a monster clinging to the ceiling', async () => {
 });
 
 void test('an engulfer carries only a form which fits through iron bars', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = IRONBARS;
     const fogCloud = await createMonsterAt('fog cloud', 10, 10);

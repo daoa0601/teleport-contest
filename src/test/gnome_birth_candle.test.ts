@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const lit of [false, true]) {
     void test(`a gnome born on ${lit ? 'lit' : 'dark'} terrain has a ${lit ? 'stored' : 'burning'} candle`, async () => {
         for (let seed = 1; seed <= 256; seed++) {
-            const level = freshObjectRoom({ gameplaySeed: seed });
+            const level = await freshObjectRoom({ gameplaySeed: seed });
             level.requireAt(12, 10).lit = lit;
 
             const gnome = await makemonAt(MONSTER_NAME.indexOf('gnome'), 12, 10, MM_NOMSG);

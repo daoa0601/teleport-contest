@@ -11,21 +11,21 @@ import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('retrying plate armor as plate mail keeps the armor class restriction', async () => {
-    freshObjectRoom({ gameplaySeed: 1 });
+    await freshObjectRoom({ gameplaySeed: 1 });
     recordObjectCall(POT_HEALING, 'plate mail');
     const result = await readObjectName('plate armor', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, OBJECT_NAMES.indexOf('plate mail'));
 });
 void test('a glob wish excludes matching call names from other object classes', async () => {
-    freshObjectRoom({ gameplaySeed: 1 });
+    await freshObjectRoom({ gameplaySeed: 1 });
     recordObjectCall(POT_HEALING, 'glob of gray ooze');
     const result = await readObjectName('glob of gray ooze', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, GLOB_OF_GRAY_OOZE);
 });
 void test('a potion call name is not interpreted as holy water', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(POT_HEALING, 'holy water');
     const result = await readObjectName('uncursed potion called holy water', { wizardWish: true });
     assert.ok(result && !result.noWish);
@@ -33,7 +33,7 @@ void test('a potion call name is not interpreted as holy water', async () => {
     assert.equal(result.object.blessed, false);
 });
 void test('tin contents take precedence over the holy-water potion suffix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('uncursed tin of holy water', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, TIN);
@@ -41,14 +41,14 @@ void test('tin contents take precedence over the holy-water potion suffix', asyn
     assert.equal(result.object.cursed, false);
 });
 void test('a bare spinach wish checks object call names before the tin fallback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(POT_HEALING, 'spinach');
     const result = await readObjectName('spinach', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, POT_HEALING);
 });
 void test('a bare spinach wish produces a spinach tin when no object name matches', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('spinach', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, TIN);
@@ -56,44 +56,44 @@ void test('a bare spinach wish produces a spinach tin when no object name matche
     assert.equal(result.object.corpsenm, -1);
 });
 void test('a call name does not arm a wished land mine', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('land mine called digger', { wizardWish: true });
     assert.ok(result && !result.noWish, 'The mine should be an object');
     assert.equal(result.object.otyp, LAND_MINE);
     assert.equal(requireGameLevel().traps.length, 0);
 });
 void test('ordinary trapped chest wishes retain a generated trap', async () => {
-    freshObjectRoom({ gameplaySeed: 5 });
+    await freshObjectRoom({ gameplaySeed: 5 });
     const result = await readObjectName('trapped chest');
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otrapped, true);
 });
 void test('an ordinary untrapped chest wish removes a generated trap', async () => {
-    freshObjectRoom({ gameplaySeed: 5 });
+    await freshObjectRoom({ gameplaySeed: 5 });
     const result = await readObjectName('untrapped chest');
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otrapped, false);
 });
 void test('broken glass is rejected instead of granting a glass gem', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('broken glass', { wizardWish: true });
     assert.equal(result, null);
 });
 void test('looking glass wishes preserve the mirror description during glass parsing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(POT_HEALING, 'worthless piece of looking glass');
     const result = await readObjectName('looking glass', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, MIRROR);
 });
 void test('an unmatched bag call name falls back to a bag description', async () => {
-    freshObjectRoom({ gameplaySeed: 1 });
+    await freshObjectRoom({ gameplaySeed: 1 });
     const result = await readObjectName('bag called unregistered', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.ok(result.object.otyp >= SACK && result.object.otyp <= BAG_OF_TRICKS, `Expected a bag, received object type ${result.object.otyp}`);
 });
 void test('a plural range noun keeps its class when resolving a call name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(SPEED_BOOTS, 'speedy');
     recordObjectCall(POT_HEALING, 'speedy');
     const result = await readObjectName('boots called speedy', { wizardWish: true });
@@ -101,21 +101,21 @@ void test('a plural range noun keeps its class when resolving a call name', asyn
     assert.equal(result.object.otyp, SPEED_BOOTS);
 });
 void test('a plural candle wish selects candles before considering a call name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(MAGIC_MARKER, 'peculiar');
     const result = await readObjectName('candles called peculiar', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.ok(result.object.otyp === TALLOW_CANDLE || result.object.otyp === WAX_CANDLE, `Expected candles, received ${OBJECT_NAMES[result.object.otyp]}`);
 });
 void test('a singular candle range can resolve a call name from the tool class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(MAGIC_MARKER, 'peculiar');
     const result = await readObjectName('candle called peculiar', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, MAGIC_MARKER);
 });
 void test('an explicit article requests one fruit even with a plural registered label', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fruit = addFruit('berries');
     const result = await readObjectName('a berries', { wizardWish: true });
     assert.ok(result && !result.noWish);
@@ -129,7 +129,7 @@ for (const [name, blessing, blessed, cursed] of [
     ['Guava', 'uncursed blessed', false, false],
 ]) {
     void test(`a fruit wish restores ${blessing} when matching ${name}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const fruit = addFruit(name);
         const result = await readObjectName(`${blessing} ${name}`, { wizardWish: true });
         assert.ok(result && !result.noWish);
@@ -140,7 +140,7 @@ for (const [name, blessing, blessed, cursed] of [
     });
 }
 void test('partly eaten within a registered fruit name does not consume that fruit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fruit = addFruit('greased partly eaten Guava');
     const result = await readObjectName('greased partly eaten Guava', { wizardWish: true });
     assert.ok(result && !result.noWish);
@@ -151,7 +151,7 @@ void test('partly eaten within a registered fruit name does not consume that fru
 void test('a neutral monster alias replaces a wished gender and can depict either sex', async () => {
     const genders = new Set();
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const result = await readObjectName('female grey dragon statue', { wizardWish: true });
         assert.ok(result && !result.noWish, `Statue wish failed with seed ${seed}`);
         genders.add(result.object.spe);
@@ -160,14 +160,14 @@ void test('a neutral monster alias replaces a wished gender and can depict eithe
     assert.ok(genders.has(CORPSTAT_FEMALE), 'Alias wishes should be able to produce female statues');
 });
 void test('a canonical neutral monster name preserves the explicit wished gender', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('female gray dragon statue', { wizardWish: true });
     assert.ok(result && !result.noWish);
     assert.equal(result.object.spe, CORPSTAT_FEMALE);
 });
 for (const request of ['scales of red dragon', 'red dragon scales']) {
     void test(`a wish for ${request} produces that dragon's scales`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const result = await readObjectName(request, { wizardWish: true });
         assert.ok(result && !result.noWish, `Scale wish was rejected: ${request}`);
         assert.equal(result.object.otyp, RED_DRAGON_SCALES);
@@ -175,14 +175,14 @@ for (const request of ['scales of red dragon', 'red dragon scales']) {
 }
 for (const [noun, oclass] of [['ring', 4], ['wand', 11]]) {
     void test(`of spinach does not change a wished ${noun} into food`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const result = await readObjectName(`${noun} of spinach`, { wizardWish: true });
         assert.ok(result && !result.noWish);
         assert.equal(result.object.oclass, oclass);
     });
 }
 void test('luck can protect a floor scroll from water created by a wizard wish', async () => {
-    freshObjectRoom({ gameplaySeed: 1, hero: { uluck: 13 } });
+    await freshObjectRoom({ gameplaySeed: 1, hero: { uluck: 13 } });
     const scroll = await mksobj(SCR_LIGHT, false, false);
     placeCreatedObject(scroll, game.u.ux, game.u.uy);
     const result = await readObjectName('pool', { wizardWish: true });
@@ -190,7 +190,7 @@ void test('luck can protect a floor scroll from water created by a wizard wish',
     assert.equal(scroll.otyp, SCR_LIGHT, 'Luck should protect this scroll from blanking');
 });
 void test('a wished tree can be dug even when it replaces an undiggable wall', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await readObjectName('undiggable wall', { wizardWish: true });
     assert.equal(mayDig(game.u.ux, game.u.uy), false);
     const result = await readObjectName('looted tree', { wizardWish: true });
@@ -201,7 +201,7 @@ void test('a wished tree can be dug even when it replaces an undiggable wall', a
     assert.equal(mayDig(game.u.ux, game.u.uy), true);
 });
 void test('a tree wish still honors an explicit undiggable property', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('undiggable tree', { wizardWish: true });
     assert.ok(result?.noWish);
     assert.equal(mayDig(game.u.ux, game.u.uy), false);
@@ -209,7 +209,7 @@ void test('a tree wish still honors an explicit undiggable property', async () =
 for (const noun of ['wall', 'tree', 'iron bars']) {
     for (const suffix of ['named', 'called', 'labeled']) {
         void test(`a ${noun} wish ignores wall properties in its ${suffix} suffix`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const result = await readObjectName(`${noun} ${suffix} undiggable unphaseable example`, { wizardWish: true });
             assert.ok(result?.noWish);
             const location = requireGameLevel().requireAt(game.u.ux, game.u.uy);

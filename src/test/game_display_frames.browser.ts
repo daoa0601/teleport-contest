@@ -29,9 +29,9 @@ void test('text windows erase map frame colors and targeting restores them after
             const { resetInputState } = await import('../js/input.js');
             const { selectMapPosition } = await import('../js/getpos.js');
             const { flush_screen, map_background } = await import('../js/display.js');
-            freshObjectRoom({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
+            await freshObjectRoom({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
             const { game } = await import('../js/gstate.js');
-            map_background(75, 10, true);
+            await map_background(75, 10, true);
             const display = new GameDisplay(document.body);
             game.nhDisplay = display;
             const input = resetInputState();

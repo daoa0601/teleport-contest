@@ -21,7 +21,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 void test('consuming the last item after game over deletes its actual inventory identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_HEALING, { in_use: true });
     game.program_state.gameover = true;
@@ -30,7 +30,7 @@ void test('consuming the last item after game over deletes its actual inventory 
     assert.equal(potion.where, 'gone');
 });
 void test('postmortem object cleanup consumes active items and one unit of an active stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_HEALING, { in_use: true });
     const scrolls = await addInventoryObject(SCR_IDENTIFY, { in_use: true, quan: 3 });
@@ -47,7 +47,7 @@ void test('postmortem object cleanup consumes active items and one unit of an ac
     assert.equal(spare.quan, 1);
 });
 async function invokedHeart() {
-    freshObjectRoom({ role: 'barbarian', gameplaySeed: 37n,
+    await freshObjectRoom({ role: 'barbarian', gameplaySeed: 37n,
         flags: { disclose: '-i -a -v -c -o' } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
@@ -87,7 +87,7 @@ void test('a new fatal landing during carried artifact removal interrupts consum
     assert.equal(heart.where, 'free', 'A fatal carried effect must stop before object deletion');
 });
 void test('freeing carried coins removes the purse and updates the displayed gold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const coins = await addInventoryObject(GOLD_PIECE, { quan: 237 });
     await flush_screen(1);

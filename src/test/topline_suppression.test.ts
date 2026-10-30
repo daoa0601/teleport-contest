@@ -15,7 +15,7 @@ const toplText = () => requireScreenRow(0).map(cell => cell.ch).join('').trimEnd
 // never repaints, so timeout prose arriving after the player pressed
 // Escape at a --More-- stays off the screen until the next input.
 void test('suppressed timeout prose stays off the top line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('\x1b');
     await moreUntilDismissed('You hear a jackal barking in the corridor.');
@@ -36,7 +36,7 @@ void test('suppressed timeout prose stays off the top line', async () => {
 });
 
 void test('death after Escape preserves the death line and suppressed prose in recall', async () => {
-    freshObjectRoom({ iflags: { prevmsg_window: 's' } });
+    await freshObjectRoom({ iflags: { prevmsg_window: 's' } });
     const input = resetInputState();
     await pline('A bell rings.');
     input.feed('\x1b');

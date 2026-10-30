@@ -12,7 +12,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('dipping a scroll into a pool blanks it without using a potion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const scroll = await addInventoryObject(SCR_IDENTIFY);
@@ -23,7 +23,7 @@ void test('dipping a scroll into a pool blanks it without using a potion', async
 });
 for (const level of ['air_level', 'water_level']) {
     void test(`levitating above a pool on the ${level} preserves the dipped scroll`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game[level] = { ...game.u.uz, flags: { town: false }, alignment: null };
         game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
@@ -39,7 +39,7 @@ for (const level of ['air_level', 'water_level']) {
     });
 }
 void test('washing bare hands in a pool removes slippery fingers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     game.u.glibTurns = 12;
@@ -50,7 +50,7 @@ void test('washing bare hands in a pool removes slippery fingers', async () => {
     assert.match(game._pending_message, /no longer slippery/);
 });
 void test('dipping acid into a sink pours away one bottle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     const acid = await addInventoryObject(POT_ACID, { quan: 2 });
@@ -62,7 +62,7 @@ void test('dipping acid into a sink pours away one bottle', async () => {
     assert.match(game._pending_message, /drain seems less clogged/);
 });
 void test('sink vapors offer a call name for an unknown see-invisible potion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     const potion = await addInventoryObject(POT_SEE_INVISIBLE, {
@@ -79,7 +79,7 @@ void test('sink vapors offer a call name for an unknown see-invisible potion', a
 });
 for (const quantity of [1, 2]) {
     void test(`holding ${quantity} lichen ${quantity === 1 ? 'corpse' : 'corpses'} under a tap omits the species`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
         const corpse = await addInventoryObject(CORPSE, {
@@ -94,7 +94,7 @@ for (const quantity of [1, 2]) {
     });
 }
 void test('dipping a towel in water wets it before the potion is consumed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const towel = await addInventoryObject(TOWEL, { spe: 0 });
     const water = await addInventoryObject(POT_WATER);
@@ -105,7 +105,7 @@ void test('dipping a towel in water wets it before the potion is consumed', asyn
     assert.match(game._pending_message, /towel gets (damp|wet).*towel soaks/);
 });
 void test('dipping an acid stack in water destroys the entire stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const acid = await addInventoryObject(POT_ACID, { quan: 3 });
     const water = await addInventoryObject(POT_WATER);

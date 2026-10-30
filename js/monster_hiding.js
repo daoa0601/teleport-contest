@@ -115,7 +115,7 @@ export async function finishMonsterHideUnder(monster, concealment, state = game)
         state.last_hider = monster.m_id;
     }
     if (concealment.undetected !== concealment.oldUndetected)
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
 }
 export async function hideMonsterUnder(monster, state = game) {
     const concealment = beginMonsterHideUnder(monster, state);
@@ -123,13 +123,13 @@ export async function hideMonsterUnder(monster, state = game) {
     return concealment.undetected;
 }
 // C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
-export function hideHeroUnder(state = game) {
+export async function hideHeroUnder(state = game) {
     requireLiveGame(state);
     const oldUndetected = !!state.u.uundetected;
     const { undetected } = hidingPlace(heroHidingActor(state), state);
     state.u.uundetected = undetected ? 1 : 0;
     if (undetected !== oldUndetected)
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     return undetected;
 }
 export function canMonsterHideUnderObjectAt(state, x, y) {
@@ -149,7 +149,7 @@ export function canMonsterHideUnderObjectAt(state, x, y) {
     }
     return false;
 }
-export function maybeUnhideAt(x, y, state = game) {
+export async function maybeUnhideAt(x, y, state = game) {
     const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
         && !candidate.dead && candidate.mx === x && candidate.my === y);
     const isHero = !monster && state.u.ux === x && state.u.uy === y;
@@ -170,7 +170,7 @@ export function maybeUnhideAt(x, y, state = game) {
     else
         state.u.uundetected = hidden ? 1 : 0;
     if (!hidden)
-        newsym(x, y);
+        await newsym(x, y);
 }
 function heroHidingActor(state) {
     return {

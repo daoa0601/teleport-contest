@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a diagonal ray bounces along a corridor toward a closed door', async () => {
-    const level = freshObjectRoom({ right: 30, hero: { uhp: 1000, uhpmax: 1000 } });
+    const level = await freshObjectRoom({ right: 30, hero: { uhp: 1000, uhpmax: 1000 } });
     requirePlayingGame(game);
     level.requireAt(11, 11).typ = VWALL;
     level.requireAt(11, 10).typ = CORR;

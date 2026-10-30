@@ -39,7 +39,7 @@ void test('object shuffling keeps each unidentified description and color togeth
 });
 
 void test('wished unknown armor uses shuffled appearance and slot grammar', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._knownObjectTypes = new Set();
     game.objectDescriptions = [];

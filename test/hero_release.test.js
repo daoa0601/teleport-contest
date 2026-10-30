@@ -14,7 +14,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('release from a holder lets the hero walk without moving the monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const mimic = await createMonsterAt('large mimic', 11, 10);
     game.u.ustuck = mimic;
@@ -25,7 +25,7 @@ void test('release from a holder lets the hero walk without moving the monster',
     assert.equal(mimic.my, 10);
 });
 void test('release from swallowing replaces punishment without expulsion or a landing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     pushKeys('                    ');
     await punishHero();
@@ -42,7 +42,7 @@ void test('release from swallowing replaces punishment without expulsion or a la
     const storage = memoryStorage();
     game.plname = 'Released';
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Released', storage), true);
+    assert.equal(await restoreGame('Released', storage), true);
     assert.equal(game.u.ustuck, null);
     assert.equal(!!game.u.uswallow, false);
     assert.equal(!!game.uswallow, false);
@@ -57,7 +57,7 @@ void test('release from swallowing replaces punishment without expulsion or a la
     assert.equal(game.u.utrap || 0, 0);
 });
 void test('releasing another monster does not free the hero from a holder', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const holder = await createMonsterAt('large mimic', 11, 10);
     const other = await createMonsterAt('orc', 13, 10);

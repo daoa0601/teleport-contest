@@ -230,7 +230,7 @@ export async function burnFloorObjectsAt(x, y, { state = game, giveFeedback = fa
         visible,
     });
     if (burned && couldsee(x, y))
-        repaint(x, y);
+        await repaint(x, y);
     return burned;
 }
 export function startMeltIceTimer(x, y, minimumTime = 0, state = game, random = rn2) {
@@ -256,13 +256,13 @@ function liquidMonsterAt(x, y, state = game) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y) || null;
 }
-function revealStrandedSwimmer(x, y, state = game) {
+async function revealStrandedSwimmer(x, y, state = game) {
     const monster = liquidMonsterAt(x, y, state);
     if (!monster || !monster.mundetected
         || !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000002))
         return;
     monster.mundetected = 0;
-    newsym(x, y);
+    await newsym(x, y);
 }
 async function freezeLiquidAt(x, y, state, publish) {
     const location = state.level?.at(x, y);
@@ -316,7 +316,7 @@ async function freezeLiquidAt(x, y, state, publish) {
             : wasMoat ? `The ${waterbody} is bridged with ice!`
                 : `The ${displayLiquidName('water', state)} freezes.`;
         await publish(message, { noRepeat: true });
-        newsym(x, y);
+        await newsym(x, y);
     }
     else if (!lava) {
         await publishHeardMessage('a crackling sound.', publish, state);
@@ -340,7 +340,7 @@ async function freezeLiquidAt(x, y, state, publish) {
         }
     }
     else {
-        revealStrandedSwimmer(x, y, state);
+        await revealStrandedSwimmer(x, y, state);
     }
     if (!lava) {
         startMeltIceTimer(x, y, 0, state);
@@ -383,8 +383,8 @@ async function evaporatePoolAt(x, y, state, publish, heroCaused) {
     if (message && !enveloped)
         await publish(message, { noRepeat: true });
     if (location.typ === ROOM) {
-        revealStrandedSwimmer(x, y, state);
-        newsym(x, y);
+        await revealStrandedSwimmer(x, y, state);
+        await newsym(x, y);
         const monster = liquidMonsterAt(x, y, state);
         if (pit && state.u.ux === x && state.u.uy === y)
             await triggerHeroTrap(pit);
@@ -407,7 +407,7 @@ export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun 
     if (kind === RAY_FIRE && removeWebAt(x, y, state)) {
         if (visible)
             await publish('A web bursts into flames!');
-        newsym(x, y);
+        await newsym(x, y);
     }
     if (kind === RAY_FIRE && isIceAt(x, y, state)) {
         await meltIce(x, y);
@@ -455,7 +455,7 @@ export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun 
     if (location.typ === SDOOR) {
         convertSecretDoor(location, state);
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         if (visible) {
             await publish(`${yourRay ? 'Your' : 'The'} ${rayNoun} reveals a secret door.`);
         }
@@ -478,7 +478,7 @@ export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun 
             vision_note_blocker_change(x, y);
             if (visible) {
                 await publish(wandType === WAN_STRIKING ? 'The door crashes open!' : destroyedDoorMessage(kind));
-                newsym(x, y);
+                await newsym(x, y);
             }
             else if (wandType === WAN_STRIKING) {
                 await publish('You feel a burst of cool air.');

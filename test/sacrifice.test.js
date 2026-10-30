@@ -35,8 +35,8 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
-function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
-    freshObjectRoom({
+async function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
+    await freshObjectRoom({
         ...room,
         hero: {
             ulevel: 1, uluck: 0, ugangr: 0, ublesscnt: 100,
@@ -54,7 +54,7 @@ function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     return altar;
 }
 void test('offering without an altar does not use a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await runExtendedCommand('offer');
     assert.equal(game.context.move, 0);
@@ -63,7 +63,7 @@ void test('offering without an altar does not use a turn', async () => {
 const persistentImpairments = ['confusion', 'stunned'];
 for (const condition of persistentImpairments) {
     void test(`#offer is refused while ${condition} persists without a countdown`, async () => {
-        freshAltar();
+        await freshAltar();
         requirePlayingGame(game);
         const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
         grantIntrinsicProperty(condition, 'outside');
@@ -74,7 +74,7 @@ for (const condition of persistentImpairments) {
     });
 }
 void test('#offer rejects selected gold with the native gold refusal', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
     await addInventoryObject(GOLD_PIECE, { quan: 12 });
@@ -84,7 +84,7 @@ void test('#offer rejects selected gold with the native gold refusal', async () 
     assert.ok(game.inventory.includes(corpse));
 });
 void test('#offer announces a Rider squirming out of the hero\'s inventory', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death')));
     await runExtendedCommand('offer', `${corpse.invlet} `);
@@ -93,7 +93,7 @@ void test('#offer announces a Rider squirming out of the hero\'s inventory', asy
     assert.match(game._pending_message, /You feel squirming in your backpack!/);
 });
 void test('#offer makes a Rider in a wielded corpse stack writhe out of the hero\'s grasp', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('Death'), {
         quan: 2, quantity: 2,
@@ -107,7 +107,7 @@ void test('#offer makes a Rider in a wielded corpse stack writhe out of the hero
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
 });
 void test('#offer handles a carried cockatrice corpse by feeling it bare-handed', async () => {
-    freshAltar({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+    await freshAltar({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('cockatrice')));
     game.storage = memoryStorage();
@@ -127,11 +127,11 @@ void test('#offer handles a carried cockatrice corpse by feeling it bare-handed'
     assert.equal(loadScoreRecords()[0]?.death, 'petrified by touching a cockatrice corpse bare-handed');
 });
 void test('a blind hero offering their own race senses something dreadful being summoned', async () => {
-    freshAltar({ alignment: -1, hero: { permaBlind: true, ualign: { type: -1, record: 0 } } });
+    await freshAltar({ alignment: -1, hero: { permaBlind: true, ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('human')));
     setHeroBlindnessTurns(100);
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     assert.ok(corpse.invlet);
     await answerPrompts(runExtendedCommand('offer', corpse.invlet), input, [
@@ -142,7 +142,7 @@ void test('a blind hero offering their own race senses something dreadful being 
     assert.ok(game.level.monsters.length > 0);
 });
 void test('a fresh floor corpse is consumed and reduces the prayer timeout', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), 10, 10);
     const timeout = game.u.ublesscnt;
@@ -154,7 +154,7 @@ void test('a fresh floor corpse is consumed and reduces the prayer timeout', asy
     assert.equal(game.context.move, 1);
 });
 void test('declining a floor corpse allows a different inventory offering', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const floor = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), 10, 10);
     const carried = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('jackal')));
@@ -163,7 +163,7 @@ void test('declining a floor corpse allows a different inventory offering', asyn
     assert.equal(game.inventory.includes(carried), false);
 });
 void test('an old ordinary corpse is retained without earning favor', async () => {
-    freshAltar({ moves: 200 });
+    await freshAltar({ moves: 200 });
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt'), { age: 0 }));
     assert.ok(corpse.invlet);
@@ -174,7 +174,7 @@ void test('an old ordinary corpse is retained without earning favor', async () =
     assert.match(game._pending_message, /Nothing happens/);
 });
 void test('an acid blob remains a valid offering even when old', async () => {
-    freshAltar({ moves: 200 });
+    await freshAltar({ moves: 200 });
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('acid blob'), { age: 0 }));
     await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
@@ -182,7 +182,7 @@ void test('an acid blob remains a valid offering even when old', async () => {
     assert.ok(game.u.ublesscnt < 100);
 });
 void test('offering from a floor stack consumes only one corpse', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt'), {
         quan: 3, quantity: 3,
@@ -192,7 +192,7 @@ void test('offering from a floor stack consumes only one corpse', async () => {
     assert.ok(floorObjectsAt(game.level, 10, 10).includes(corpse));
 });
 void test('a former pet is refused even after its corpse becomes old', async () => {
-    freshAltar({ moves: 200, hero: { uluck: 10, ualign: { type: 0, record: 10 } } });
+    await freshAltar({ moves: 200, hero: { uluck: 10, ualign: { type: 0, record: 10 } } });
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10);
     initializePet(pet);
@@ -205,7 +205,7 @@ void test('a former pet is refused even after its corpse becomes old', async () 
     assert.ok(game.u.ualign.record < 10);
 });
 void test('a chaotic human sacrifice changes a neutral altar without changing the hero', async () => {
-    const altar = freshAltar({ hero: { ualign: { type: -1, record: 0 }, ualignbase: [-1, -1] } });
+    const altar = await freshAltar({ hero: { ualign: { type: -1, record: 0 }, ualignbase: [-1, -1] } });
     requirePlayingGame(game);
     altar.altarmask = altar.flags;
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('human')));
@@ -216,7 +216,7 @@ void test('a chaotic human sacrifice changes a neutral altar without changing th
     assert.equal(corpse.where, 'gone');
 });
 void test('a disloyal hero can convert once by offering to another god', async () => {
-    freshAltar({ alignment: 1, hero: { ualign: { type: 0, record: -5 } } });
+    await freshAltar({ alignment: 1, hero: { ualign: { type: 0, record: -5 } } });
     requirePlayingGame(game);
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('newt')));
     await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
@@ -228,7 +228,7 @@ void test('a disloyal hero can convert once by offering to another god', async (
     assert.equal(game.u.uluck, -3);
 });
 void test('a god can bestow the role\'s preferred artifact as a usable floor object', async () => {
-    freshAltar({
+    await freshAltar({
         alignment: -1, role: 'barbarian', flags: { debug: true },
         hero: { ulevel: 3, ublesscnt: 0, ualign: { type: -1, record: 10 }, ualignbase: [-1, -1] },
     });
@@ -254,7 +254,7 @@ void test('a god can bestow the role\'s preferred artifact as a usable floor obj
     assert.ok(!log.some(event => event.text.startsWith('found ')));
 });
 void test('a fake Amulet on a high altar is exposed but does not end the game', async () => {
-    freshAltar({ high: true });
+    await freshAltar({ high: true });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(FAKE_AMULET_OF_YENDOR, { known: false });
     await runExtendedCommand('offer', `${amulet.invlet}\x1b`);
@@ -264,7 +264,7 @@ void test('a fake Amulet on a high altar is exposed but does not end the game', 
     assert.ok(!game.program_state.gameover);
 });
 void test('the real Amulet on a low altar is retained and does not end the game', async () => {
-    freshAltar();
+    await freshAltar();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_YENDOR);
     assert.ok(amulet.invlet);
@@ -275,7 +275,7 @@ void test('the real Amulet on a low altar is retained and does not end the game'
 });
 for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']]) {
     void test(`offering the real Amulet at ${alignment === 0 ? 'the hero\'s' : 'another god\'s'} high altar ends with ${outcome}`, async () => {
-        freshAltar({
+        await freshAltar({
             alignment, high: true,
             flags: { disclose: '-i -a -v -c -o', bones: false },
             hero: { uz: { dnum: 1, dlevel: 1 }, urexp: 100 },
@@ -312,7 +312,7 @@ for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']]) {
     });
 }
 void test('declining divine death after a fake offering still spends the offering turn', async () => {
-    freshAltar({ flags: { debug: true }, hero: { ugangr: 10 } });
+    await freshAltar({ flags: { debug: true }, hero: { ugangr: 10 } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(FAKE_AMULET_OF_YENDOR, { known: true });
     initRng(2n);

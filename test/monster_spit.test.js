@@ -22,7 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 const BIRTH_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function spitRoom(sourceName = 'black naga', targetName = 'jackal', heroTarget = false) {
-    freshObjectRoom({
+    await freshObjectRoom({
         left: 7, right: 22, top: 6, bottom: 15,
         heroX: heroTarget ? 12 : 15, heroY: heroTarget ? 10 : 12,
         flags: { verbose: true },
@@ -197,7 +197,7 @@ void test('solid rock between monsters prevents a spit launch', async () => {
     assert.ok(target);
     game.level.requireAt(10, 10).typ = STONE;
     vision_note_blocker_change(10, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const result = await spit();
     assert.equal(result.nativeResult, M_ATTK_MISS);
     assert.equal(target.mhp, 100);

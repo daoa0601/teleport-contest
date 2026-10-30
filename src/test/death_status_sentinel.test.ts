@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('fatal damage of minus one retains both health numbers through the death pager', async () => {
-    freshObjectRoom({ hero: { uhp: 81, uhpmax: 108 }, flags: { debug: true } });
+    await freshObjectRoom({ hero: { uhp: 81, uhpmax: 108 }, flags: { debug: true } });
     requirePlayingGame(game);
     const lich = await createMonsterAt('arch-lich', 11, 10);
     await bot();

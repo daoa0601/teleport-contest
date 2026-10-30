@@ -151,7 +151,7 @@ async function toggleIntrinsicInvisibility() {
     else
         grantIntrinsicProperty('invisible', 'outside', game);
     syncHeroInvisibility(game);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
 }
 async function hear(text) {
     const message = formatHeardMessage(text);

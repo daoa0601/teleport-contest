@@ -13,7 +13,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('water-walking boots lift a submerged hero and identify themselves at dressing completion', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     game.u.uinwater = 1;
     game.underwater = true;

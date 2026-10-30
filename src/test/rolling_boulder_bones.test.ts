@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 
 void test('a fatal rolling boulder returns to its launch square before bones are prepared', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 40, uac: 100, fumbling: true },
         flags: { pickup: false, debug: true, bones: true },
     });

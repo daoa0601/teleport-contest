@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // If its live run value later changes, lookaround() still limits turns
 // using the bend taken during the earlier run.
 void test('a counted walk retains the earlier run turn limit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).typ = STONE;

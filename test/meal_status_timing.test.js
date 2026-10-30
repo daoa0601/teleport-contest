@@ -9,7 +9,7 @@ import { CRAM_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the first meal bite defers its hunger status until a status update', async () => {
-    freshObjectRoom({ hero: { uhunger: 884, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 884, uhs: NOT_HUNGRY } });
     const food = await addInventoryObject(CRAM_RATION);
     await bot();
     pushKeys(food.invlet);

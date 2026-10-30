@@ -20,7 +20,7 @@ import { createStaffedShop } from './support/shop.js';
 import { invokeInventoryObject, readInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('confused enchant weapon repairs and proofs a weapon without enchanting it', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 5 } });
+    await freshObjectRoom({ hero: { confusionTurns: 5 } });
     requireFixtureGame(game);
     const weapon = await addInventoryWeapon(LONG_SWORD, {
         spe: 2, oeroded: 2, oeroded2: 1,
@@ -36,7 +36,7 @@ void test('confused enchant weapon repairs and proofs a weapon without enchantin
     assert.equal(game.context.move, 1);
 });
 void test('enchant weapon fuses a stack of worm teeth into one uncursed crysknife', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const teeth = await addInventoryWeapon(WORM_TOOTH, {
         quan: 4, cursed: true, spe: 0, oerodeproof: true,
@@ -54,7 +54,7 @@ void test('enchant weapon fuses a stack of worm teeth into one uncursed crysknif
     assert.equal(game.uwep, teeth);
 });
 void test('cursed confused enchantment removes proofing without repairing damage', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 5 } });
+    await freshObjectRoom({ hero: { confusionTurns: 5 } });
     const weapon = await addInventoryWeapon(LONG_SWORD, {
         spe: 2, oerodeproof: true, oeroded: 1,
     });
@@ -67,7 +67,7 @@ void test('cursed confused enchantment removes proofing without repairing damage
     assert.ok(weapon.rknown);
 });
 void test('a blind hero feels a confused repair but does not learn proofing', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 5, blindTurns: 10 } });
+    await freshObjectRoom({ hero: { confusionTurns: 5, blindTurns: 10 } });
     requireFixtureGame(game);
     const weapon = await addInventoryWeapon(LONG_SWORD, {
         spe: 1, oeroded: 1, rknown: true,
@@ -82,7 +82,7 @@ void test('a blind hero feels a confused repair but does not learn proofing', as
     assert.match(game._pending_message, /feels as good as new/);
 });
 void test('a wielded armor item cannot be proofed by confused enchant weapon', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 5 } });
+    await freshObjectRoom({ hero: { confusionTurns: 5 } });
     requireFixtureGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { oeroded: 1, spe: 0 });
     await setPrimaryWeapon(armor);
@@ -94,7 +94,7 @@ void test('a wielded armor item cannot be proofed by confused enchant weapon', a
     assert.match(game._pending_message, /hands twitch/);
 });
 void test('weapon-tools are enchanted and uncursed like weapons', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const pick = await addInventoryObject(PICK_AXE, { cursed: true, spe: 0 });
     await setPrimaryWeapon(pick);
@@ -105,7 +105,7 @@ void test('weapon-tools are enchanted and uncursed like weapons', async () => {
     assert.equal(game.uwep, pick);
 });
 void test('enchant weapon frees a welded tin opener without enchanting it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const opener = await addInventoryObject(TIN_OPENER, { cursed: true, spe: 0 });
     await setPrimaryWeapon(opener);
@@ -116,7 +116,7 @@ void test('enchant weapon frees a welded tin opener without enchanting it', asyn
     assert.match(game._pending_message, /amber aura/);
 });
 void test('cursed enchantment dulls a crysknife without changing its enchantment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const knife = await addInventoryWeapon(CRYSKNIFE, {
         quan: 3, spe: 2, oerodeproof: true,
     });
@@ -131,7 +131,7 @@ void test('cursed enchantment dulls a crysknife without changing its enchantment
     assert.match(await inventoryItemDescription(knife), /worm tooth/);
 });
 void test('restricted artifacts resist cursed enchantment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact !== null && artifact !== undefined);
@@ -146,7 +146,7 @@ void test('restricted artifacts resist cursed enchantment', async () => {
     assert.match(game._pending_message, /faintly glows black/);
 });
 void test('ordinary cursed enchantment reduces the primary weapon, not its alternate', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const primary = await addInventoryWeapon(LONG_SWORD, { spe: 2 });
     const alternate = await addInventoryWeapon(LONG_SWORD, { spe: 3 });
@@ -163,7 +163,7 @@ void test('over-enchantment can evaporate the entire wielded stack', async () =>
     let destroyed = 0;
     let survived = 0;
     for (let seed = 1; seed <= 24; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const arrows = await addInventoryWeapon(ARROW, { spe: 6, quan: 12 });
         await setPrimaryWeapon(arrows);
@@ -192,7 +192,7 @@ void test('over-enchantment can evaporate the entire wielded stack', async () =>
 void test('weapons at +9 sometimes resist a further enchantment even when they survive', async () => {
     let unchanged = 0;
     for (let seed = 1; seed <= 24; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const sword = await addInventoryWeapon(LONG_SWORD, { spe: 9 });
         await setPrimaryWeapon(sword);
@@ -208,7 +208,7 @@ void test('weapons at +9 sometimes resist a further enchantment even when they s
     assert.ok(unchanged > 0, 'all surviving weapons gained an enchantment');
 });
 void test('identifying enchant weapon through a known weapon gives no experience award', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const sword = await addInventoryWeapon(LONG_SWORD, { known: true });
     await setPrimaryWeapon(sword);
@@ -220,7 +220,7 @@ void test('identifying enchant weapon through a known weapon gives no experience
     assert.equal(game.u.urexp || 0, experience);
 });
 void test('an unrecognized scroll can be named after its effect before it is consumed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const sword = await addInventoryWeapon(LONG_SWORD, { known: false });
     await setPrimaryWeapon(sword);
@@ -249,7 +249,7 @@ void test('an unrecognized scroll can be named after its effect before it is con
     assert.equal(game.context.move, 1);
 });
 void test('improving an unpaid weapon raises its price without settling its bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createStaffedShop();
     const sword = await floorObject(LONG_SWORD, 10, 10, { spe: 0 });
     pushKeys(' ');
@@ -263,7 +263,7 @@ void test('improving an unpaid weapon raises its price without settling its bill
     assert.ok(await unpaidObjectCost(sword) > before);
 });
 void test('degrading an unpaid crysknife charges its old value before transformation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     // Real provenance: an unproofed floor crysknife reverts to a worm
     // tooth at placement, the hero picks THAT up, and an uncursed enchant
@@ -291,7 +291,7 @@ void test('degrading an unpaid crysknife charges its old value before transforma
     assert.equal(amountOwed, before);
 });
 void test('reading without a weapon does not invent a pager when the message fits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const scroll = await addInventoryObject(SCR_ENCHANT_WEAPON);
     await readInventoryObject(scroll);
@@ -299,7 +299,7 @@ void test('reading without a weapon does not invent a pager when the message fit
     assert.match(game._pending_message, /scroll, it disappears\.  Your hands twitch\./);
 });
 void test('a blind hero can enchant a known weapon without identifying the scroll', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     requireFixtureGame(game);
     const sword = await addInventoryWeapon(LONG_SWORD, { known: true });
     await setPrimaryWeapon(sword);
@@ -310,7 +310,7 @@ void test('a blind hero can enchant a known weapon without identifying the scrol
     assert.equal(scroll.where, 'gone');
 });
 void test('elven weapons warn after an enchantment takes them beyond +5', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const dagger = await addInventoryWeapon(ELVEN_DAGGER, { spe: 5 });
     await setPrimaryWeapon(dagger);
@@ -320,7 +320,7 @@ void test('elven weapons warn after an enchantment takes them beyond +5', async 
     assert.match(game._pending_message, /suddenly vibrates unexpectedly/);
 });
 void test('a beginner gets the strange-feeling message when there is no weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.flags.beginner = true;
     const scroll = await addInventoryObject(SCR_ENCHANT_WEAPON);
@@ -330,7 +330,7 @@ void test('a beginner gets the strange-feeling message when there is no weapon',
 });
 for (const [species, action] of [['wolf', 'pronounce'], ['killer bee', 'cogitate']]) {
     void test(`a blind ${species} reads a scroll using the form's speech ability`, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
                 blindTurns: 10, umonnum: MONSTER_NAME.indexOf(species),
             } });
         requireFixtureGame(game);
@@ -343,7 +343,7 @@ for (const [species, action] of [['wolf', 'pronounce'], ['killer bee', 'cogitate
     });
 }
 void test('a fully identified artifact uses its personal name in enchantment feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact !== null && artifact !== undefined);
@@ -358,7 +358,7 @@ void test('a fully identified artifact uses its personal name in enchantment fee
     assert.equal(game._pending_message, 'As you read the scroll, it disappears.  Excalibur faintly glows black.');
 });
 void test('a tooth transformation does not include a user-supplied individual name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const tooth = await addInventoryWeapon(WORM_TOOTH, {
         oextra: { oname: 'Keepsake' },
@@ -374,7 +374,7 @@ void test('a tooth transformation does not include a user-supplied individual na
 void test('evaporating an invoked quest weapon ends its power and carried status', async () => {
     let destroyed = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
+        await freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
         requireFixtureGame(game);
         ensureQuestStatus().touched_artifact = true;
         const artifact = artifactByName('The Sceptre of Might');
@@ -398,7 +398,7 @@ void test('evaporating an invoked quest weapon ends its power and carried status
     assert.ok(destroyed > 0);
 });
 void test('fusing teeth reports the first load-status change even when the hero remains burdened', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await addInventoryObject(ROCK, { quan: 70 });
     const teeth = await addInventoryWeapon(WORM_TOOTH, { quan: 4 });
@@ -411,7 +411,7 @@ void test('fusing teeth reports the first load-status change even when the hero 
 void test('evaporating an unpaid weapon leaves its full purchase price owed', async () => {
     let destroyed = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const { shopkeeper } = await createStaffedShop();
         const sword = await floorObject(LONG_SWORD, 10, 10, { spe: 6 });
@@ -433,7 +433,7 @@ void test('evaporating an unpaid weapon leaves its full purchase price owed', as
     assert.ok(destroyed > 0);
 });
 void test('enchantment waits for the visible read message to be acknowledged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const sword = await addInventoryWeapon(LONG_SWORD, { spe: 0 });
     await setPrimaryWeapon(sword);

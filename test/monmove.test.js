@@ -26,7 +26,7 @@ function rolls(values) {
     };
 }
 void test('natural monster speed and randomized movement use species data', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await createMonsterAt('pony', 11, 10);
     const kitten = await createMonsterAt('kitten', 12, 10);
     assert.equal(naturalMonsterSpeed(pony), 16); // pony
@@ -37,7 +37,7 @@ void test('natural monster speed and randomized movement use species data', asyn
     assert.equal(mcalcmove(kitten, true, rolls([6])), 12);
 });
 void test('monster allocation applies newest-first movement to current actors', async () => {
-    freshObjectRoom({ right: 70, recalculateVision: false });
+    await freshObjectRoom({ right: 70, recalculateVision: false });
     requirePlayingGame(game);
     const kobold = await createMonsterAt('kobold', 66, 16);
     const pony = await createMonsterAt('pony', 67, 9);
@@ -47,7 +47,7 @@ void test('monster allocation applies newest-first movement to current actors', 
     assert.equal(kobold.movement, 12);
 });
 void test('galloping gives the mounted steed extra movement', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         context: { mv: true },
         recalculateVision: false,
     });
@@ -61,7 +61,7 @@ void test('galloping gives the mounted steed extra movement', async () => {
     assert.equal(pony.movement, 36);
 });
 void test('Knight starts with a living pony companion', async () => {
-    freshObjectRoom({ role: 'knight' });
+    await freshObjectRoom({ role: 'knight' });
     const pet = await makedog();
     assert.ok(pet, 'The starting pet is created on an available square');
     assert.equal(pet.mnum, MONSTER_NAME.indexOf('pony'));
@@ -69,7 +69,7 @@ void test('Knight starts with a living pony companion', async () => {
     assert.ok(pet.mtame && pet.mtame > 0);
 });
 void test('a tame red dragon bites and claws an adjacent enemy', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         right: 20,
         heroX: 18,
         heroY: 10,
@@ -89,7 +89,7 @@ void test('a tame red dragon bites and claws an adjacent enemy', async () => {
     assert.equal(goblin.mhp, 68);
 });
 void test('a silver weapon sears a lycanthropic hero in melee', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         heroX: 10,
         heroY: 10,
         hero: {
@@ -115,7 +115,7 @@ void test('a silver weapon sears a lycanthropic hero in melee', async () => {
     assert.equal(game.u.uhp, 88);
 });
 void test('a monster fire blast makes a shifted vampire rise', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 14, heroY: 10, recalculateVision: false,
     });
     requirePlayingGame(game);
@@ -140,7 +140,7 @@ void test('a monster fire blast makes a shifted vampire rise', async () => {
     assert.equal(level.monsters.includes(wolf), true);
 });
 void test('a land monster in lava burns and drops what it carried', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = LAVAPOOL;
     const rock = await knownObject(ROCK);
@@ -156,7 +156,7 @@ void test('a land monster in lava burns and drops what it carried', async () => 
     assert.equal(floorObjectsAt(level, 12, 10).includes(rock), true);
 });
 void test('a monster which survives lava burns vulnerable carried items', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = LAVAPOOL;
     const scroll = await knownObject(SCR_TELEPORTATION);
@@ -171,7 +171,7 @@ void test('a monster which survives lava burns vulnerable carried items', async 
     assert.deepEqual(fireAnt.minvent, []);
 });
 void test('a gremlin multiplies in a fountain and dries it up', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = FOUNTAIN;
     level.flags.nfountains = 1;
@@ -194,7 +194,7 @@ void test('a gremlin multiplies in a fountain and dries it up', async () => {
     assert.deepEqual(messages, ['The gremlin multiplies!', 'The fountain dries up!']);
 });
 void test('flight does not keep a monster above the Plane of Water', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.water_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     level.requireAt(12, 10).typ = POOL;
@@ -211,7 +211,7 @@ void test('flight does not keep a monster above the Plane of Water', async () =>
     assert.deepEqual(messages, ['The red dragon drowns.']);
 });
 void test('a drowning vampire wolf rises as a flying vampire leader', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
@@ -231,7 +231,7 @@ void test('a drowning vampire wolf rises as a flying vampire leader', async () =
     assert.ok(messages.some(message => message.includes('rises as a vampire')));
 });
 void test('a flying hero keeps their steed above water', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.water_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     level.requireAt(12, 10).typ = POOL;
@@ -247,7 +247,7 @@ void test('a flying hero keeps their steed above water', async () => {
     assert.equal(pony.mhp, hitPoints);
 });
 void test('a water wall drowns a monster clinging to the ceiling', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = WATER;
     const piercer = await createMonsterAt('rock piercer', 12, 10);
@@ -261,7 +261,7 @@ void test('a water wall drowns a monster clinging to the ceiling', async () => {
     assert.notEqual(monsterAtPosition(level, piercer.mx, piercer.my), piercer);
 });
 void test('an engulfer carries only a form which fits through iron bars', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = IRONBARS;
     const fogCloud = await createMonsterAt('fog cloud', 10, 10);

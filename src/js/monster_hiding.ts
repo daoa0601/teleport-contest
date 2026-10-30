@@ -138,7 +138,7 @@ export async function finishMonsterHideUnder(
         state._lastPlineKind = PLNMSG_HIDE_UNDER;
         state.last_hider = monster.m_id;
     }
-    if (concealment.undetected !== concealment.oldUndetected) newsym(monster.mx, monster.my);
+    if (concealment.undetected !== concealment.oldUndetected) await newsym(monster.mx, monster.my);
 }
 
 export async function hideMonsterUnder(monster: Monster, state: GameState = game): Promise<boolean> {
@@ -148,12 +148,12 @@ export async function hideMonsterUnder(monster: Monster, state: GameState = game
 }
 
 // C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
-export function hideHeroUnder(state: GameState = game): boolean {
+export async function hideHeroUnder(state: GameState = game): Promise<boolean> {
     requireLiveGame(state);
     const oldUndetected = !!state.u.uundetected;
     const { undetected } = hidingPlace(heroHidingActor(state), state);
     state.u.uundetected = undetected ? 1 : 0;
-    if (undetected !== oldUndetected) newsym(state.u.ux, state.u.uy);
+    if (undetected !== oldUndetected) await newsym(state.u.ux, state.u.uy);
     return undetected;
 }
 
@@ -171,7 +171,7 @@ export function canMonsterHideUnderObjectAt(state: GameState, x: number, y: numb
     return false;
 }
 
-export function maybeUnhideAt(x: number, y: number, state: GameState = game): void {
+export async function maybeUnhideAt(x: number, y: number, state: GameState = game): Promise<void> {
     const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
         && !candidate.dead && candidate.mx === x && candidate.my === y);
     const isHero = !monster && state.u.ux === x && state.u.uy === y;
@@ -186,7 +186,7 @@ export function maybeUnhideAt(x: number, y: number, state: GameState = game): vo
     const hidden = hidingPlace(actor, state).undetected;
     if (monster) monster.mundetected = hidden ? 1 : 0;
     else state.u.uundetected = hidden ? 1 : 0;
-    if (!hidden) newsym(x, y);
+    if (!hidden) await newsym(x, y);
 }
 
 function heroHidingActor(state: GameState): HidingActor {

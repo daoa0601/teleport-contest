@@ -43,7 +43,7 @@ function editSave(storage: ReturnType<typeof memoryStorage>, edit: (state: Recor
 }
 
 async function speciesRoom() {
-    freshObjectRoom({ moves: 37 });
+    await freshObjectRoom({ moves: 37 });
     requirePlayingGame(game);
     game.plname = 'Species';
     const monster = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
@@ -97,7 +97,7 @@ for (const carrier of carriers) {
             game.u.uhp = 13;
             game.plname = 'Still playing';
 
-            assert.equal(restoreGame('Species', storage), false);
+            assert.equal(await restoreGame('Species', storage), false);
 
             assert.equal(game.moves, 91);
             assert.equal(game.u.uhp, 13);
@@ -127,7 +127,7 @@ for (const objectType of [CORPSE, STATUE, FIGURINE]) {
                 else saved.corpsenm = species;
             });
 
-            assert.equal(restoreGame('Species', storage), false);
+            assert.equal(await restoreGame('Species', storage), false);
 
             assert.ok(game.level === level);
             assert.ok(game.inventory.includes(body));
@@ -154,7 +154,7 @@ void test('restore also rejects an invalid natural shape stored inside a corpse'
         savedRecord(savedRecord(body.oextra).omonst).cham = MONSTER_NAME.length;
     });
 
-    assert.equal(restoreGame('Species', storage), false);
+    assert.equal(await restoreGame('Species', storage), false);
 
     assert.ok(game.level === level);
     assert.ok(game.inventory.includes(corpse));
@@ -171,7 +171,7 @@ void test('generic food and absent shape metadata survive restore alongside the 
     assert.equal(await saveGame(storage), true);
     resetGame();
 
-    assert.equal(restoreGame('Species', storage), true);
+    assert.equal(await restoreGame('Species', storage), true);
 
     requirePlayingGame(game);
     const restoredMonster = game.level.monsters.find(actor => actor.m_id === monster.m_id);
@@ -195,7 +195,7 @@ void test('a loadstone selected count is preserved even when it exceeds the mons
     assert.equal(await saveGame(storage), true);
     resetGame();
 
-    assert.equal(restoreGame('Species', storage), true);
+    assert.equal(await restoreGame('Species', storage), true);
 
     const restored = game.inventory.find(object => object.o_id === loadstone.o_id);
     assert.ok(restored);
@@ -219,7 +219,7 @@ void test('mimic fruit and altar metadata retain their native meanings across re
     assert.equal(await saveGame(storage), true);
     resetGame();
 
-    assert.equal(restoreGame('Species', storage), true);
+    assert.equal(await restoreGame('Species', storage), true);
 
     requirePlayingGame(game);
     const restoredFruit = game.level.monsters.find(actor => actor.m_id === fruitMimic.m_id);

@@ -15,8 +15,8 @@ import { maintainVaultResidence } from '../js/vault.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
-function vaultedLevel() {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10,
+async function vaultedLevel() {
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10,
         flags: { menu_style: MENU_PARTIAL } });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
@@ -27,7 +27,7 @@ function vaultedLevel() {
     level.requireAt(11, 10).typ = VWALL;
 }
 void test('a guard arriving over a pending removal message pages with the old armor class', async () => {
-    vaultedLevel();
+    await vaultedLevel();
     game._moveloopStarted = true;
     game.u.umovement = 12;
     const cloak = await addInventoryObject(LEATHER_CLOAK);

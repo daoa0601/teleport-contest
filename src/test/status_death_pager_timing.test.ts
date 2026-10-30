@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a monster death message acknowledgement retains status until the next map flush', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await bot();
     await pline('You die...');
     game.u.uhp = 0;

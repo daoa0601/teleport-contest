@@ -89,5 +89,5 @@ export async function updateMonsterEquipment(
     if (!on && state.u.usteed === monster && object.otyp === SADDLE)
         await dismountHero(DISMOUNT_FELL, { state, announce: publish });
     if (!silently && wasVisible !== canSeeMonster(monster))
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
 }

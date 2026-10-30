@@ -28,11 +28,11 @@ for (const [type, name, species, glyph, beforeMessage] of [
         });
         requirePlayingGame(game);
         placeMonsterAt(monster, 12, 10);
-        newsym(11, 10);
-        newsym(12, 10);
+        await newsym(11, 10);
+        await newsym(12, 10);
         await flush_screen(1);
         placeMonsterAt(monster, 11, 10);
-        newsym(12, 10);
+        await newsym(12, 10);
         const shown: string[] = [];
         const publish = async () => {
             await flush_screen(1);
@@ -58,9 +58,9 @@ for (const [type, name] of [
     [ANTI_MAGIC, 'anti-magic'], [FIRE_TRAP, 'fire'],
 ] as const) {
     void test(`discovering a ${name} trap draws the hero before its announcement`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const trap = addTrap(level, type, 11, 10, { tseen: false });
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         game.u.ux = 11;
         await plineWithContinuation('You hear something moving nearby in the darkness.');

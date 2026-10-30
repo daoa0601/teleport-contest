@@ -10,8 +10,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { cansee, couldsee, unset_seenv, visibleCellsFrom, vision_recalc, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('visibility from a square stops behind a wall and at its range limit', () => {
-    const level = freshObjectRoom({
+void test('visibility from a square stops behind a wall and at its range limit', async () => {
+    const level = await freshObjectRoom({
         left: 31, right: 49, top: 1, bottom: 19,
         heroX: 40, heroY: 10,
     });
@@ -27,8 +27,8 @@ void test('visibility from a square stops behind a wall and at its range limit',
     assert.ok(includes(obstructed, 43, 10));
     assert.equal(includes(obstructed, 45, 10), false);
 });
-void test('forgetting a corridor origin clears all views recorded for that square', () => {
-    const level = freshObjectRoom();
+void test('forgetting a corridor origin clears all views recorded for that square', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const x = game.u.ux, y = game.u.uy;
     const location = level.requireAt(x, y);
@@ -37,24 +37,24 @@ void test('forgetting a corridor origin clears all views recorded for that squar
     assert.equal(location.seenv, 0);
 });
 void test('forgetting one view of an adjacent wall preserves a view from elsewhere', async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const wall = level.requireAt(11, 11);
     wall.typ = VWALL;
     wall.seenv = 0;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const corridorView = wall.seenv;
     assert.notEqual(corridorView, 0);
     await moveHeroByTeleport(12, 12);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.notEqual(wall.seenv, corridorView);
     unset_seenv(wall, 10, 10, 11, 11);
     assert.equal(wall.seenv & corridorView, 0);
     assert.notEqual(wall.seenv, 0);
 });
 void test('a message refresh keeps both lines of sight closed while the hero is swallowed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     assert.equal(couldsee(12, 10), true);

@@ -26,7 +26,7 @@ async function attackWithDeath(outcome: number) {
 }
 
 void test('a lucky hero escapes both of Death\'s touches without damage', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
 
     const prose = await attackWithDeath(0);
 
@@ -37,7 +37,7 @@ void test('a lucky hero escapes both of Death\'s touches without damage', async 
 });
 
 void test('Death drains maximum HP in proportion to current HP and hero level', async () => {
-    freshObjectRoom({ hero: { uhp: 300, uhpmax: 300, ulevel: 20, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 300, uhpmax: 300, ulevel: 20, uac: 10 } });
 
     const prose = await attackWithDeath(5);
 
@@ -47,7 +47,7 @@ void test('Death drains maximum HP in proportion to current HP and hero level', 
 });
 
 void test('Death only deals reduced contact damage to an undead hero', async () => {
-    freshRoomWithPolymorphedHero('human zombie', {
+    await freshRoomWithPolymorphedHero('human zombie', {
         polymorph: { hitPoints: 500 }, hero: { uac: 10 },
     });
 
@@ -59,7 +59,7 @@ void test('Death only deals reduced contact damage to an undead hero', async () 
 });
 
 void test('antimagic changes Death\'s fatal touch into ordinary life force drain', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, antimagic: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, antimagic: true } });
 
     const prose = await attackWithDeath(19);
 
@@ -69,7 +69,7 @@ void test('antimagic changes Death\'s fatal touch into ordinary life force drain
 });
 
 void test('a full touch of death applies its own HP drain without armor or half physical protection', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -10, halfPhysicalDamage: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -10, halfPhysicalDamage: true } });
 
     const prose = await attackWithDeath(19);
 
@@ -79,7 +79,7 @@ void test('a full touch of death applies its own HP drain without armor or half 
 });
 
 void test('a full touch of death ends a living monster form before the next touch', async () => {
-    freshRoomWithPolymorphedHero('jackal', {
+    await freshRoomWithPolymorphedHero('jackal', {
         polymorph: { hitPoints: 100 }, hero: { uhp: 500, uhpmax: 500, uac: 10 },
     });
 

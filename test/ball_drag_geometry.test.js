@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 // ball, so the chain is seated at the midpoint between them without dragging
 // the ball and without costing extra time.
 void test('a two-space diagonal step seats the chain at the midpoint', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 9, heroY: 9, flags: { pickup: false, verbose: true },
     });
     requirePlayingGame(game);
@@ -43,7 +43,7 @@ void test('a two-space diagonal step seats the chain at the midpoint', async () 
 // C ball.c:drag_ball() case 5: the hero ends a knight's move from the ball;
 // the chain takes whichever of the two between squares is closer to it.
 void test('a diagonal squeeze pulls the chain to the nearer between square', async () => {
-    freshObjectRoom({ heroX: 9, heroY: 9, flags: { pickup: false, verbose: true } });
+    await freshObjectRoom({ heroX: 9, heroY: 9, flags: { pickup: false, verbose: true } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
         expected: /punish|iron ball/i, limit: 5,
@@ -64,7 +64,7 @@ void test('a diagonal squeeze pulls the chain to the nearer between square', asy
 // C ball.c:drag_ball(): when the destination already touches the chain,
 // nothing is moved at all and the pair keeps its squares under the hero.
 void test('stepping next to the chain leaves both attachments in place', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 10, heroY: 10, flags: { pickup: false, verbose: true },
     });
     requirePlayingGame(game);
@@ -88,7 +88,7 @@ void test('stepping next to the chain leaves both attachments in place', async (
 // the chain hops to the hero's previous square once it is more than one step
 // behind, and that never costs extra time or requires capacity.
 void test('a carried ball lets the chain trail one square behind the hero', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 10, flags: { pickup: false, verbose: true } });
+    await freshObjectRoom({ heroX: 10, heroY: 10, flags: { pickup: false, verbose: true } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
         expected: /punish|iron ball/i, limit: 5,
@@ -111,7 +111,7 @@ void test('a carried ball lets the chain trail one square behind the hero', asyn
 // not a mere continuation of the ball's water jerks the hero back onto the
 // chain square and drags the ball onto it as well.
 void test('a pool under the chain jerks the water-walking hero back onto it', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 10, heroY: 10, flags: { pickup: false, verbose: true },
     });
     requirePlayingGame(game);

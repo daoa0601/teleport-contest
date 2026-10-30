@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const terrain of ['pool', 'raised drawbridge']) {
     for (const alreadyBuried of [false, true]) {
         void test(`freezing a ${terrain} slows a ${alreadyBuried ? 'previously buried' : 'floor'} corpse`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requireFixtureGame(game);
             const location = game.level.requireAt(12, 10);
             location.typ = terrain === 'pool' ? POOL : DRAWBRIDGE_UP;
@@ -43,7 +43,7 @@ for (const terrain of ['pool', 'raised drawbridge']) {
     }
 }
 void test('melting ice restores the rot rate of a corpse buried before freezing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(12, 10).typ = POOL;
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), 12, 10);
@@ -64,7 +64,7 @@ void test('melting ice restores the rot rate of a corpse buried before freezing'
     assert.equal(corpse.where, 'gone');
 });
 void test('ice delays a Rider revival even though its corpse cannot be buried', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(12, 10).typ = POOL;
     const species = MONSTER_NAME.indexOf('Death');
@@ -90,7 +90,7 @@ void test('ice delays a Rider revival even though its corpse cannot be buried', 
 // first level is built. A corpse made then rots one turn earlier than an
 // identical corpse made on turn 1.
 async function rotTurn(createdAtMoves) {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.moves = createdAtMoves;
     game.in_mklev = true;

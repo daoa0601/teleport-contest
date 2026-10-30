@@ -13,7 +13,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('burning away worn levitation boots lands the hero in the pit below', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.traps.push({ tx: 10, ty: 10, ttyp: PIT, tseen: false, once: false, launch: { x: 0, y: 0 } });
     const boots = await addInventoryObject(LEVITATION_BOOTS, { oeroded: 3 });
@@ -28,7 +28,7 @@ void test('burning away worn levitation boots lands the hero in the pit below', 
     assert.equal(game.inventory.includes(boots), false);
 });
 void test('burning away the last floor object reveals the monster hiding beneath it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const club = await floorObject(CLUB, 11, 10, { oeroded: 3 });
     const scorpion = await createMonsterAt('scorpion', 11, 10, NO_MINVENT);

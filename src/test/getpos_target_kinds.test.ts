@@ -9,9 +9,9 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('valid-location cycling falls back to interesting features without a validity rule', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     level.requireAt(12, 10).typ = FOUNTAIN;
-    newsym(12, 10);
+    await newsym(12, 10);
     const nextValid = game.commandBindings.specialKey('getpos.valid.next');
     assert.ok(nextValid !== undefined);
     resetInputState().feed([nextValid, '.']);
@@ -25,11 +25,11 @@ void test('valid-location cycling falls back to interesting features without a v
 });
 
 void test('interesting-target cycling skips pools in favor of dungeon features', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     level.requireAt(11, 10).typ = POOL;
     level.requireAt(12, 10).typ = FOUNTAIN;
-    newsym(11, 10);
-    newsym(12, 10);
+    await newsym(11, 10);
+    await newsym(12, 10);
     resetInputState().feed('a.');
 
     const selected = await selectMapPosition({

@@ -11,8 +11,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 for (const form of ['garter snake', 'rust monster', 'ghost']) {
-    void test(`movement preview ${form === 'ghost' ? 'admits' : 'rejects'} an underwater ${form} at bars`, () => {
-        const level = freshObjectRoom({ hero: { uinwater: true } });
+    void test(`movement preview ${form === 'ghost' ? 'admits' : 'rejects'} an underwater ${form} at bars`, async () => {
+        const level = await freshObjectRoom({ hero: { uinwater: true } });
         installPolymorphedHero(form);
         level.requireAt(11, 10).typ = IRONBARS;
 
@@ -22,7 +22,7 @@ for (const form of ['garter snake', 'rust monster', 'ghost']) {
 
 for (const form of ['human', 'garter snake', 'ghost', 'python', 'brown pudding']) {
     void test(`iron bars ${form === 'human' || form === 'python' ? 'block' : 'admit'} a ${form}`, async () => {
-        const level = freshObjectRoom({ flags: { mention_walls: true } });
+        const level = await freshObjectRoom({ flags: { mention_walls: true } });
         requirePlayingGame(game);
         level.requireAt(11, 10).typ = IRONBARS;
         if (form !== 'human') installPolymorphedHero(form);
@@ -39,7 +39,7 @@ for (const form of ['human', 'garter snake', 'ghost', 'python', 'brown pudding']
 
 for (const form of ['garter snake', 'rust monster', 'ghost']) {
     void test(`underwater iron bars ${form === 'ghost' ? 'admit' : 'block'} a ${form}`, async () => {
-        const level = freshObjectRoom({ hero: { uinwater: true } });
+        const level = await freshObjectRoom({ hero: { uinwater: true } });
         requirePlayingGame(game);
         installPolymorphedHero(form);
         level.requireAt(11, 10).typ = IRONBARS;
@@ -61,7 +61,7 @@ for (const form of ['garter snake', 'rust monster', 'ghost']) {
 
 for (const form of ['rock mole', 'rust monster', 'black pudding']) {
     void test(`a ${form} must chew through iron bars before moving into them`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: true } });
+        const level = await freshObjectRoom({ flags: { verbose: true } });
         requirePlayingGame(game);
         installPolymorphedHero(form);
         level.requireAt(11, 10).typ = IRONBARS;
@@ -84,7 +84,7 @@ for (const form of ['rock mole', 'rust monster', 'black pudding']) {
 
 for (const obstacle of ['too full', 'nondiggable']) {
     void test(`a ${obstacle} rock mole cannot chew through bars`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         installPolymorphedHero('rock mole');
         const bars = level.requireAt(11, 10);

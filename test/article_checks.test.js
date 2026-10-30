@@ -11,7 +11,7 @@ for (const [turns, form, expected] of [
     [3, 'umber hulk', 'You are turning into an umber hulk.'],
 ]) {
     void test(`hallucinated slime form takes the native article: ${form}`, async () => {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         game.u.hallucinationTurns = 100;
         startHeroSliming({ state: game, turns, killer: 'green slime' });
         const messages = [];

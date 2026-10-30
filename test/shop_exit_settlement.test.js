@@ -20,7 +20,7 @@ function keeperGold(keeper) {
         .reduce((total, object) => total + object.quan, 0);
 }
 void test('an outside creditor takes only the debt as real coins, then wakes and returns home', async () => {
-    freshObjectRoom({ right: 27 });
+    await freshObjectRoom({ right: 27 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const dagger = await addInventoryObject(DAGGER);
@@ -64,7 +64,7 @@ void test('an outside creditor takes only the debt as real coins, then wakes and
     assert.equal(messages[0], 'Ada wakes up and comes and takes the 37 zorkmids you owed him.');
 });
 void test('shop debt transfers all carried gold before its message pages, while possessions await disclosure', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+Ada';
@@ -102,7 +102,7 @@ void test('shop debt transfers all carried gold before its message pages, while 
 });
 for (const arises of [false, true]) {
     void test(`peaceful inheritance ${arises ? 'leaves a rising hero possessions' : 'claims possessions without waking the keeper'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop();
         const dagger = await addInventoryObject(DAGGER);
@@ -118,7 +118,7 @@ for (const arises of [false, true]) {
     });
 }
 void test('a resident has priority over a creditor and every keeper settles without replacing the first repository', async () => {
-    freshObjectRoom({ right: 27 });
+    await freshObjectRoom({ right: 27 });
     requirePlayingGame(game);
     const west = await createStaffedShop();
     const east = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
@@ -147,7 +147,7 @@ void test('a resident has priority over a creditor and every keeper settles with
     assert.equal(east.shopkeeper.eshk.robbed, 500);
 });
 void test('a shared-wall creditor is preferred and later room membership cannot replace its repository', async () => {
-    freshObjectRoom({ right: 27 });
+    await freshObjectRoom({ right: 27 });
     requirePlayingGame(game);
     const west = await createStaffedShop();
     const east = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
@@ -168,7 +168,7 @@ void test('a shared-wall creditor is preferred and later room membership cannot 
 });
 for (const debt of [0, 50]) {
     void test(`${debt ? 'a creditor takes priority over an angry keeper' : 'an angry keeper takes priority over a peaceful local keeper'}`, async () => {
-        freshObjectRoom({ right: 40 });
+        await freshObjectRoom({ right: 40 });
         requirePlayingGame(game);
         const local = await createStaffedShop();
         const angry = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
@@ -202,7 +202,7 @@ for (const debt of [0, 50]) {
 }
 for (const outcome of ['died', 'ascended', 'quit']) {
     void test(`${outcome} ${outcome === 'quit' ? 'omits corpse prose but still returns' : 'shows a visible secondary keeper examining the corpse and returns'} the keeper`, async () => {
-        freshObjectRoom({ right: 27 });
+        await freshObjectRoom({ right: 27 });
         requirePlayingGame(game);
         const west = await createStaffedShop();
         const east = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
@@ -215,7 +215,7 @@ for (const outcome of ['died', 'ascended', 'quit']) {
         await addInventoryObject(DAGGER);
         game.u.ushops = [west.roomno];
         game.program_state.gameover = true;
-        vision_recalc(0);
+        await vision_recalc(0);
         const messages = [];
         await settleShopkeepersOnExit(outcome, { random: () => 0, publish: message => { messages.push(message); } });
         if (outcome === 'quit')
@@ -230,7 +230,7 @@ for (const outcome of ['died', 'ascended', 'quit']) {
     });
 }
 void test('silent settlement still wakes, reveals, and settles an unseen secondary keeper', async () => {
-    freshObjectRoom({ right: 27 });
+    await freshObjectRoom({ right: 27 });
     requirePlayingGame(game);
     const west = await createStaffedShop();
     const east = await createStaffedShop({ left: 18, right: 24, keeperX: 21 });
@@ -241,7 +241,7 @@ void test('silent settlement still wakes, reveals, and settles an unseen seconda
     game.u.ushops = [west.roomno];
     game.u.blindTurns = 5;
     game.program_state.gameover = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages = [];
     await settleShopkeepersOnExit('died', { silent: true, publish: message => { messages.push(message); } });
     assert.equal(messages.length, 0);
@@ -251,7 +251,7 @@ void test('silent settlement still wakes, reveals, and settles an unseen seconda
     assert.equal(east.shopkeeper.eshk.debit, 0);
 });
 void test('escape leaves bills, possessions, and keeper state untouched', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const dagger = await addInventoryObject(DAGGER);
@@ -263,7 +263,7 @@ void test('escape leaves bills, possessions, and keeper state untouched', async 
     assert.ok(game.inventory.includes(dagger));
 });
 void test('a lone nonlocal keeper is still settled and removed when no local candidate exists', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const dagger = await addInventoryObject(DAGGER);
@@ -280,7 +280,7 @@ void test('a lone nonlocal keeper is still settled and removed when no local can
     assert.ok(game.inventory.includes(dagger));
 });
 void test('repossession falls back to the previous hero square when no keeper recorded a location', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     game.u.ux0 = 10;

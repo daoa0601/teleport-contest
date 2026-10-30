@@ -6,7 +6,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('a shrieker wakes the other monsters on the level', async () => {
-    freshRoomWithPolymorphedHero('shrieker');
+    await freshRoomWithPolymorphedHero('shrieker');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.msleeping = 1;
@@ -15,7 +15,7 @@ void test('a shrieker wakes the other monsters on the level', async () => {
     assert.equal(game.context.move, 0);
 });
 void test('a shriek does not cross the moat around the Wizard tower', async () => {
-    freshRoomWithPolymorphedHero('shrieker', {
+    await freshRoomWithPolymorphedHero('shrieker', {
         heroX: 11,
         heroY: 10,
     });

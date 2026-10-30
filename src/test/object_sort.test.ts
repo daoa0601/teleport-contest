@@ -30,7 +30,7 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
-test.beforeEach(() => freshObjectRoom({ gameplaySeed: 212n }));
+test.beforeEach(async () => await freshObjectRoom({ gameplaySeed: 212n }));
 
 function screenText() {
     assert.ok(game.nhDisplay);
@@ -152,7 +152,7 @@ void test('saving and restoring retains configured class and loot order in actua
     assert.equal(await saveGame(storage), true);
     applyNethackrc('OPTIONS=packorder:)%$,sortloot:none');
 
-    assert.equal(restoreGame('Loot sorter', storage), true);
+    assert.equal(await restoreGame('Loot sorter', storage), true);
 
     assert.match(inventoryOrderSymbols(), /^\/!\$/);
     assert.deepEqual(sortObjects(game.inventory, { mode: inventorySortMode() })

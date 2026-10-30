@@ -31,7 +31,7 @@ async function topline(): Promise<string> {
 }
 
 void test('hunger weakens a pet at its movement opportunity after the native grace period', async () => {
-    freshObjectRoom({ moves: 600 });
+    await freshObjectRoom({ moves: 600 });
     requirePlayingGame(game);
     const dog = await pet();
     assert.ok(dog.edog);
@@ -49,7 +49,7 @@ void test('hunger weakens a pet at its movement opportunity after the native gra
 });
 
 void test('new hunger weakness clamps health without healing an injured pet', async () => {
-    freshObjectRoom({ moves: 601 });
+    await freshObjectRoom({ moves: 601 });
     const dog = await pet();
     dog.mhp = 4;
 
@@ -60,7 +60,7 @@ void test('new hunger weakness clamps health without healing an injured pet', as
 });
 
 void test('a pet first noticed overdue becomes weak before a later action can starve it', async () => {
-    freshObjectRoom({ moves: 1000 });
+    await freshObjectRoom({ moves: 1000 });
     const dog = await pet();
 
     const starved = await applyPetHunger(dog, game);
@@ -75,7 +75,7 @@ for (const [description, condition] of [
     ['frozen', 'frozen'], ['still chewing', 'eating'],
 ] as const) {
     void test(`a ${description} pet waits for its next movement opportunity before hunger weakness`, async () => {
-        freshObjectRoom({ moves: 1000 });
+        await freshObjectRoom({ moves: 1000 });
         requirePlayingGame(game);
         const dog = await pet();
         if (condition === 'frozen') {
@@ -91,7 +91,7 @@ for (const [description, condition] of [
 }
 
 void test('an already weak pet starves only after its starvation deadline and releases its leash', async () => {
-    freshObjectRoom({ moves: 850 });
+    await freshObjectRoom({ moves: 850 });
     requirePlayingGame(game);
     const dog = await pet();
     assert.ok(dog.edog);
@@ -115,7 +115,7 @@ void test('an already weak pet starves only after its starvation deadline and re
 });
 
 void test('a frail pet can starve immediately when weakness removes its last hit point', async () => {
-    freshObjectRoom({ moves: 601 });
+    await freshObjectRoom({ moves: 601 });
     const dog = await pet();
     dog.mhp = dog.mhpmax = 2;
 
@@ -126,7 +126,7 @@ void test('a frail pet can starve immediately when weakness removes its last hit
 });
 
 void test('a form which eats neither meat nor plants postpones hunger without inventing recovery', async () => {
-    freshObjectRoom({ moves: 601 });
+    await freshObjectRoom({ moves: 601 });
     const golem = await pet('iron golem');
     assert.ok(golem.edog);
     golem.edog.mhpmax_penalty = 20;
@@ -140,14 +140,14 @@ void test('a form which eats neither meat nor plants postpones hunger without in
 });
 
 void test('an unseen starving pet causes sadness without naming a visible death', async () => {
-    freshObjectRoom({ moves: 851, right: 20 });
+    await freshObjectRoom({ moves: 851, right: 20 });
     requirePlayingGame(game);
     const dog = await pet('little dog', 18, 10);
     assert.ok(dog.edog);
     dog.edog.mhpmax_penalty = 20;
     for (let y = 0; y < 21; y++) game.level.requireAt(15, y).typ = STONE;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await applyPetHunger(dog, game);
 
@@ -156,14 +156,14 @@ void test('an unseen starving pet causes sadness without naming a visible death'
 });
 
 void test('starvation through life saving consumes the real amulet and ends the pet action', async () => {
-    freshObjectRoom({ moves: 851 });
+    await freshObjectRoom({ moves: 851 });
     requirePlayingGame(game);
     const dog = await pet();
     assert.ok(dog.edog);
     dog.edog.mhpmax_penalty = 20;
     const amulet = await equipMonsterObject(dog, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     const starved = await applyPetHunger(dog, game);
 
@@ -176,7 +176,7 @@ void test('starvation through life saving consumes the real amulet and ends the 
 });
 
 void test('hunger weakness commits before its message waits and interrupts ongoing work afterwards', async () => {
-    freshObjectRoom({ moves: 601 });
+    await freshObjectRoom({ moves: 601 });
     const dog = await pet();
     const input = resetInputState();
     input.feed('5s');

@@ -9,14 +9,14 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('infravision reveals a disappearance spell cast from a dark square', async () => {
-    const level = freshObjectRoom({ hero: { infravision: true }, flags: { verbose: true } });
+    const level = await freshObjectRoom({ hero: { infravision: true }, flags: { verbose: true } });
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++) for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
     const demon = await createMonsterAt('nalfeshnee', 12, 10, NO_MINVENT);
     demon.mpeaceful = 0;
     demon.mflee = 1;
     demon.msleeping = 0;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(demon), true);
     const random = (limit: number) => limit === demon.m_lev ? 4 : limit - 1;
     const action = await runMonsterAction(demon, game, random);

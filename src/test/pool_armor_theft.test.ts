@@ -14,7 +14,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a monkey announces its hit before taking off a worn hat and runs instead of teleporting', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const hat = await addInventoryObject(FEDORA);
     wearHeroArmor(hat);
@@ -38,7 +38,7 @@ void test('a monkey announces its hit before taking off a worn hat and runs inst
 
 for (const female of [true, false]) {
     void test(`a nymph ${female ? 'charms' : 'seduces'} the hero into handing over a cloak`, async () => {
-        freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const cloak = await addInventoryObject(LEATHER_CLOAK);
         wearHeroArmor(cloak);
@@ -61,7 +61,7 @@ for (const female of [true, false]) {
 }
 
 void test('a nymph waits while the hero removes a suit, then steals it', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);

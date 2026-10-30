@@ -686,7 +686,7 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
     if (misc.kind === 'polymorph-trap') {
         const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
         if (cansee(monster.mx, monster.my) || trapVisible)
-            seeTrap(misc.trap, state);
+            await seeTrap(misc.trap, state);
         if (canSeeMonster(monster) || trapVisible) {
             const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
             const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
@@ -695,12 +695,12 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
         const oldx = monster.mx, oldy = monster.my;
         // use_misc() removes even a monster already standing on the trap.
         removeMonsterFromMapAt(oldx, oldy, state);
-        newsym(oldx, oldy);
+        await newsym(oldx, oldy);
         await placeMonsterOnMap(monster, misc.trap.tx, misc.trap.ty, state);
-        maybeUnhideAt(monster.mx, monster.my, state);
+        await maybeUnhideAt(monster.mx, monster.my, state);
         if (monster.wormno)
-            advanceMonsterWormBody(monster, { state });
-        newsym(monster.mx, monster.my);
+            await advanceMonsterWormBody(monster, { state });
+        await newsym(monster.mx, monster.my);
         await changeMonsterForm(monster, null, state, { showMessage: true });
         misc.effectApplied = true;
         return misc;
@@ -1772,7 +1772,7 @@ export async function commitPetPickup(monster, movement, state) {
         return;
     movement.pickupPending = false;
     remove_object(object, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     await addObjectToMonsterInventory(monster, object, state);
     if (speciesHasWeaponAttack(monster.mnum) && monster.weaponCheck === NEED_WEAPON) {
         monster.weaponCheck = NEED_HTH_WEAPON;
@@ -1827,7 +1827,7 @@ async function monsterVersusMonsterWieldAction(aggressor, defender, attack, stat
     if (aggressor.weaponCheck !== NEED_WEAPON && currentWeapon)
         return null;
     aggressor.weaponCheck = NEED_HTH_WEAPON;
-    return (await wieldMonsterWeapon(aggressor, state))
+    return await wieldMonsterWeapon(aggressor, state)
         ? { kind: 'monster-wield', aggressor, defender }
         : null;
 }
@@ -2373,7 +2373,7 @@ async function pullLeashedPetCloser(monster, state, random, calls) {
     updateMonsterRegions(monster, state);
     removeMonsterFromMapAt(monster.mx, monster.my, state);
     await placeMonsterOnMap(monster, destination.x, destination.y, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
 async function movePet(monster, state, random, rollDice, rollOne, calls, resumeAfterInventory = false) {
@@ -2983,7 +2983,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     }
     if (selected &&
         !(nix === heroX && niy === heroY) &&
-        (await stopMonsterHeldByHero(monster, state))) {
+        await stopMonsterHeldByHero(monster, state)) {
         return finishMovement({
             oldx,
             oldy,
@@ -3075,11 +3075,11 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         removeMonsterFromMapAt(oldx, oldy, state);
         await placeMonsterOnMap(monster, nix, niy, state);
         if (monster.wormno)
-            advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
+            await advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
         // C m_move() exposes a concealer which left its cover right after
         // place_monster(), before postmov() decides whether to hide again.
         // dog_move() has no such call, so a pet stays hidden through its move.
-        maybeUnhideAt(monster.mx, monster.my, state);
+        await maybeUnhideAt(monster.mx, monster.my, state);
         if (!Array.isArray(monster.mtrack))
             monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
@@ -3087,7 +3087,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     }
     else {
         if (isUnicorn(monster) && recordRandom(random, calls, 2)
-            && !(await reportMonsterTeleportRestriction(monster, { state }))) {
+            && !await reportMonsterTeleportRestriction(monster, { state })) {
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_MSG,
             });
@@ -3101,7 +3101,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             }, MMOVE_MOVED, 'dochug');
         }
         if (monster.wormno)
-            shrinkStationaryMonsterWorm(monster, { rollDice });
+            await shrinkStationaryMonsterWorm(monster, { rollDice });
     }
     return finishMovement({
         oldx,
@@ -3171,7 +3171,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
     if (MONSTER_SYMBOL[monster.mnum] === S_EEL && monster.minvis
         && cansee(monster.mx, monster.my)) {
         monster.minvis = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     const alreadyFleeing = !!monster.mflee;
     await summonMonsterAttackHelp(monster, state, random);
@@ -3548,7 +3548,7 @@ async function moveSpecial(monster, state, random, rollDice, rollOne, calls, { i
     removeMonsterFromMapAt(oldx, oldy, state);
     await placeMonsterOnMap(monster, selected.x, selected.y, state);
     if (state === game)
-        newsym(selected.x, selected.y);
+        await newsym(selected.x, selected.y);
     if (monster.isshk && !inHisShop && shopkeeperInOwnShop(monster, state))
         await checkSpecialRoom();
     return {
@@ -3595,7 +3595,7 @@ async function movePriest(monster, state, random, rollDice, rollOne, calls) {
                 postMoveStatus: MMOVE_NOTHING,
                 movementStage: 'postmov',
                 deferredAfterSpecialAttack: true,
-                ...(await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls)),
+                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
             };
         }
         if (state.u.urooms.includes(epri.shroom)) {
@@ -3653,7 +3653,7 @@ async function moveShopkeeper(monster, state, random, rollDice, rollOne, calls) 
             return {
                 ...stopped,
                 deferredAfterSpecialAttack: true,
-                ...(await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls)),
+                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
             };
         }
         if (eshk.following) {
@@ -3846,7 +3846,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
             const seen = canSeeMonster(monster) || monster === state.u.usteed;
             if (movement.forcedTrapLanding && !state.level.flags.sokoban_rules) {
                 if (seen) {
-                    seeTrap(trap, state);
+                    await seeTrap(trap, state);
                     await publish(trap.ttyp === TRAPDOOR
                         ? `A trap door opens, but ${canonicalMonsterName(monster, { state })} doesn't fall through.`
                         : `${canonicalMonsterName(monster, { state, capitalized: true })} doesn't fall through the hole.`);
@@ -3857,7 +3857,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
                 return null;
             if (seen) {
                 await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} seems to be yanked down!`);
-                seeTrap(trap, state);
+                await seeTrap(trap, state);
             }
         }
         const event = await teleportMonsterThroughHole(monster, trap, {
@@ -3879,7 +3879,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         const inSight = state.u.usteed === monster
             || cansee(monster.mx, monster.my) && canSpotMonster(monster);
         const wasSeen = !!trap.tseen;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (inSight)
             await publish(`${heroIsDeaf(state) ? '' : 'Click!  '}${canonicalMonsterName(monster, { state, capitalized: true })} triggers ${wasSeen ? 'a rolling boulder trap' : 'something'}.`);
         const launch = trap.launch;
@@ -3911,7 +3911,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
-        const event = beginMonsterSleepGasTrap(monster, trap, state, {
+        const event = await beginMonsterSleepGasTrap(monster, trap, state, {
             rollOne: (range) => {
                 const result = rollOne(range);
                 calls.push(`rnd(${range})`);
@@ -4023,7 +4023,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === ANTI_MAGIC) {
-        const effect = applyMonsterAntiMagicTrap(monster, {
+        const effect = await applyMonsterAntiMagicTrap(monster, {
             trap, state,
             rollDice: (count, sides) => {
                 const result = rollDice(count, sides);
@@ -4537,7 +4537,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             MONSTER_SYMBOL[monster.mnum] === S_EEL);
     if (hiddenUnder) {
         if (!canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
         slot.attackerMapped = true;
         monster.mundetected = 0;
         if (!senseWithTelepathy(monster) && !heroDetectsMonsters(state)) {
@@ -4563,7 +4563,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                     revealUnderMessage: `${name === 'It' ? 'Something' : name} was hidden under ${what}!`,
                 };
             }
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         }
     }
     // gulpmu() has its own roll; every successful contact enters hitmu()
@@ -5477,7 +5477,7 @@ export async function resumeDeferredHeroContact(action, state, { random = rn2, r
         return action;
     const calls = action.calls;
     if (attack.damageType === AD_STON &&
-        (await applyMonsterStoningAttack(action.monster, { state, random, publish }))) {
+        await applyMonsterStoningAttack(action.monster, { state, random, publish })) {
         await knockHeroFromMonster(action.monster, attack, state, random, publish);
         attack.deferredPostHit = false;
         return action;
@@ -6135,7 +6135,7 @@ async function finishWizardClone(clone, state, random, calls) {
         clone.m_ap_type = M_AP_MONSTER;
         clone.mappearance = MONSTER_NAME.indexOf(WIZARD_CLONE_APPEARANCE_NAMES[appearanceIndex] ?? '');
     }
-    newsym(clone.mx, clone.my);
+    await newsym(clone.mx, clone.my);
     return clone;
 }
 function monsterHasteSelfEffect(monster, state) {
@@ -6211,9 +6211,9 @@ export async function resumeDeferredMovementSpell(action, state, random = rn2, r
             await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${canSeeInvisible ? 'becomes transparent' : 'disappears'}!`);
         }
         setMonsterPermanentInvisibility(monster);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
     }
     else {
         throw new Error(`Directed spell ${spellCast.spell} reached the undirected spell effect`);
@@ -6284,7 +6284,7 @@ function holdsUpMonsterWeb(x, y, state) {
             return stairs.up;
     return false;
 }
-function postMoveHideUnder(monster, movement, state, random, calls) {
+async function postMoveHideUnder(monster, movement, state, random, calls) {
     const originalSpecies = requireMovementCapabilities(movement).species;
     const hidesUnder = !!((MONSTER_FLAGS1[originalSpecies] ?? 0) & M1_CONCEAL);
     const eel = MONSTER_SYMBOL[originalSpecies] === S_EEL;
@@ -6299,11 +6299,11 @@ function postMoveHideUnder(monster, movement, state, random, calls) {
             return;
         }
         if (concealment.undetected !== concealment.oldUndetected)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
     }
     // postmov() redraws even when hideunder() leaves concealment unchanged
     // or the monster skips the attempt. Hallucinations need that refresh.
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
 }
 async function finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext) {
     // A direct m_move() caller has no dochug() phase to resume.
@@ -6322,7 +6322,7 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
     }
     if (heroIsHallucinating(state) && (movement.postMoveStatus === MMOVE_NOTHING
         || movement.postMoveStatus === MMOVE_DONE || movement.postMoveStatus === MMOVE_NOMOVES))
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     if (movement.postMoveStatus === MMOVE_MOVED) {
         const dx = Math.abs(monster.mx - state.u.ux);
         const dy = Math.abs(monster.my - state.u.uy);
@@ -6435,7 +6435,7 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
                 return movement;
             }
             if (state === game)
-                newsym(movement.oldx, movement.oldy);
+                await newsym(movement.oldx, movement.oldy);
             movement.postMoveOldSquarePainted = true;
             await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
         }
@@ -6487,7 +6487,7 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
             state.u.uy0 = state.u.uy;
             await placeHeroOnLevel(monster.mx, monster.my, state);
             if (state === game)
-                swallowed(false);
+                await swallowed(false);
         }
         else if (state === game) {
             const { mx, my } = monster;
@@ -6500,7 +6500,7 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
                 await impossible(reason, { state });
             }
             else
-                newsym(mx, my);
+                await newsym(mx, my);
         }
         movement.postMoveDestinationPainted = true;
     }
@@ -6525,9 +6525,9 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
                 return movement;
             }
             if (monster.minvis) {
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
                 if (monster.wormno)
-                    redrawMonsterWormSegments(monster);
+                    await redrawMonsterWormSegments(monster);
             }
         }
         await finishMonsterFloorTail(monster, movement, state, random, rollDice, rollOne, calls, dochugContext);
@@ -6539,7 +6539,7 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
 }
 async function finishMonsterFloorTail(monster, movement, state, random, rollDice, rollOne, calls, dochugContext) {
     await maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls);
-    postMoveHideUnder(monster, movement, state, random, calls);
+    await postMoveHideUnder(monster, movement, state, random, calls);
     if (movement.deferredAfterHideUnder)
         return;
     if (monster.isshk) {
@@ -6740,7 +6740,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
     if (!action.monster.dead && (action.monster.mhp ?? 0) > 0
         && action.monster.mtrapped) {
         const alreadySpotted = canSpotMonster(action.monster);
-        maybeUnhideAt(action.monster.mx, action.monster.my, state);
+        await maybeUnhideAt(action.monster.mx, action.monster.my, state);
         if (!alreadySpotted && canSeeMonster(action.monster)) {
             await publish(`${canonicalMonsterName(action.monster, {
                 state, capitalized: true, article: 'a',
@@ -7098,7 +7098,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
 async function moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, calls, dochugContext, movement) {
     if (!movement && monster.meating !== undefined && monster.meating > 0) {
         if (--monster.meating === 0)
-            finishMonsterEating(monster, state);
+            await finishMonsterEating(monster, state);
         movement = {
             oldx: monster.mx,
             oldy: monster.my,
@@ -7218,7 +7218,7 @@ export async function resumeDeferredMonsterHideUnder(action, state, random = rn2
     if (!movement?.deferredAfterHideUnder)
         return action;
     delete movement.deferredAfterHideUnder;
-    newsym(action.monster.mx, action.monster.my);
+    await newsym(action.monster.mx, action.monster.my);
     if (action.monster.isshk) {
         if (!hasShopkeeperData(action.monster))
             throw new Error('A shopkeeper must retain its shop state');
@@ -7376,7 +7376,7 @@ export async function beginMonsterDochug(monster, state, random = rn2, rollDice 
     checkQuestMonsterStatus(monster, state);
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state))
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         if (monster.mcanmove && (monster.mstrategy ?? 0) & STRAT_CLOSE
             && !monster.msleeping && nextToHero)
             await talkQuestCharacter(monster, state);
@@ -7398,7 +7398,7 @@ export async function beginMonsterDochug(monster, state, random = rn2, rollDice 
     // sleeping piercer still owns restrap()'s one-in-three probe.
     if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
         if (heroIsHallucinating(state))
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -7418,7 +7418,7 @@ export async function beginMonsterDochug(monster, state, random = rn2, rollDice 
         const woke = await disturbSleepingMonster(monster, state, random, calls);
         if (!woke) {
             if (heroIsHallucinating(state))
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
             return {
                 monster,
                 calls,

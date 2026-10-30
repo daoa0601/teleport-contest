@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { floorObjectsAt } from './support/level-state.js';
 for (const cause of ['blessed', 'confused']) {
     void test(`a ${cause} punishment scroll creates guilt without a ball and chain`, async () => {
-        freshObjectRoom({ hero: { confusionTurns: cause === 'confused' ? 5 : 0 } });
+        await freshObjectRoom({ hero: { confusionTurns: cause === 'confused' ? 5 : 0 } });
         requirePlayingGame(game);
         const scroll = await addInventoryObject(SCR_PUNISHMENT, { blessed: cause === 'blessed' });
         await readInventoryObject(scroll, ' '.repeat(20));
@@ -22,7 +22,7 @@ for (const cause of ['blessed', 'confused']) {
     });
 }
 void test('a second cursed punishment scroll adds twice the normal ball weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(40));
     await punishHero();
@@ -36,7 +36,7 @@ void test('a second cursed punishment scroll adds twice the normal ball weight',
     assert.equal(game.uball.owt, weight + 320);
 });
 void test('an amorphous hero slips free and leaves an ordinary iron ball', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('gray ooze');
     pushKeys(' '.repeat(20));
@@ -46,7 +46,7 @@ void test('an amorphous hero slips free and leaves an ordinary iron ball', async
         .some(object => object.otyp === HEAVY_IRON_BALL));
 });
 void test('a swallowed hero gains a ball and chain without placing them outside the monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 10, 10);
     await installSwallowedHero(worm);

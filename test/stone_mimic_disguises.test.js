@@ -18,7 +18,7 @@ for (const appearance of ['staircase up', 'staircase down', 'opulent throne']) {
         mimic.mappearance = MAP_SYMBOLS.findIndex(symbol => symbol.name === appearance);
         assert.ok(mimic.mappearance >= 0, `${appearance} must be a dungeon symbol`);
         mimic.msleeping = 1;
-        newsym(mimic.mx, mimic.my);
+        await newsym(mimic.mx, mimic.my);
         await hitMonsterWithWand(mimic, await knownObject(SPE_STONE_TO_FLESH));
         assert.equal(mimic.m_ap_type, 0, 'the stone disguise must be removed');
         assert.equal(mimic.msleeping, 0, 'the revealed mimic wakes up');

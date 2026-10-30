@@ -28,7 +28,7 @@ export async function collectLevelFollowers(state = game, petsOnly = false) {
             if (!monster.mtame)
                 continue;
             monster.mtrapped = 0;
-            finishMonsterEating(monster, state);
+            await finishMonsterEating(monster, state);
             monster.msleeping = monster.mfrozen = 0;
             monster.mcanmove = 1;
         }

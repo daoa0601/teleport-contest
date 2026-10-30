@@ -24,7 +24,7 @@ void test('inside a generated dark Rogue room, geometric sight reaches the room 
     game.u.uy = room.ly;
 
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(couldsee(room.hx, room.hy), true);
     assert.equal(cansee(room.hx, room.hy), false);

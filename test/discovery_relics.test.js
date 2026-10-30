@@ -9,7 +9,7 @@ import { recordObjectEncounter, recordObjectKnowledge } from '../js/object_knowl
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('discoveries show encountered relics separately and keep the unidentified Amulet out of that section', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectEncounter(AMULET_OF_YENDOR);
     recordObjectEncounter(SPE_BOOK_OF_THE_DEAD);
     recordObjectKnowledge(BELL_OF_OPENING);
@@ -22,7 +22,7 @@ void test('discoveries show encountered relics separately and keep the unidentif
     assert.equal(game.context.move, 0);
 });
 void test('an artifact discovery alone opens the discoveries list with its alignment and base type', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact);
     discoverArtifact(artifact.id);

@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 void test('dropping a contribution clears a peaceful robbed shopkeeper\'s loss balance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.robbed = 100;
     const dagger = await addInventoryObject(DAGGER);

@@ -10,7 +10,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('changing a buried egg species preserves its organic rot deadline', async () => {
-    freshObjectRoom({ gameplaySeed: 170 });
+    await freshObjectRoom({ gameplaySeed: 170 });
     const egg = placeCreatedObject(await knownObject(EGG, { initialize: false }), 12, 10);
     await buryObject(egg);
     const rot = objectTimers(egg).find(timer => timer.kind === OBJECT_TIMER_KIND.ROT_ORGANIC);

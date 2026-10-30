@@ -25,21 +25,21 @@ function spit(aim, options = {}) {
     });
 }
 void test('a cobra uses #monster to spit venom', async () => {
-    const level = freshMonsterAbilityRoom('cobra');
+    const level = await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     await runMonsterAbilityCommand(`l${' '.repeat(8)}`);
     assert.equal(game.context.move, 1);
     assert.equal(floorObjects(level).length, 0);
 });
 void test('cancelling a spit direction creates no venom and spends no turn', async () => {
-    const level = freshMonsterAbilityRoom('cobra');
+    const level = await freshMonsterAbilityRoom('cobra');
     const result = await spit(null);
     assert.equal(result.spentTime, false);
     assert.equal(result.reason, 'cancelled');
     assert.equal(floorObjects(level).length, 0);
 });
 void test('cobra venom blinds a monster without hurting it', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 100;
@@ -55,7 +55,7 @@ void test('cobra venom blinds a monster without hurting it', async () => {
     assert.ok((jackal.mblinded ?? 0) >= 21 && (jackal.mblinded ?? 0) <= 45, `Blinding venom should last 21–45 turns, received ${jackal.mblinded}`);
 });
 void test('black naga venom burns for two dice without a hero damage bonus', async () => {
-    freshMonsterAbilityRoom('black naga');
+    await freshMonsterAbilityRoom('black naga');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 100;
@@ -70,7 +70,7 @@ void test('black naga venom burns for two dice without a hero damage bonus', asy
     assert.ok(damage >= 2 && damage <= 12, `Acid venom should deal 2d6 with no Strength/ring bonus, received ${damage}`);
 });
 void test('venom which reaches a wall splashes on the last open square', async () => {
-    const level = freshMonsterAbilityRoom('cobra');
+    const level = await freshMonsterAbilityRoom('cobra');
     level.requireAt(12, 10).typ = 0;
     const result = await spit(direction('l', 1, 0), {
         publish: async () => undefined,
@@ -81,7 +81,7 @@ void test('venom which reaches a wall splashes on the last open square', async (
     assert.equal(floorObjectsAt(level, 11, 10).length, 0);
 });
 void test('spitting blinding venom upward can blind the hero', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     const result = await spit(direction('<', 0, 0, -1), {
         publish: async () => undefined,
@@ -95,7 +95,7 @@ void test('spitting blinding venom upward can blind the hero', async () => {
     assert.equal(game.u.blind, true);
 });
 void test('blinding venom cannot reach an engulfer eyes from inside', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     worm.mx = game.u.ux;
@@ -114,7 +114,7 @@ void test('blinding venom cannot reach an engulfer eyes from inside', async () =
     assert.equal(worm.mblinded, undefined);
 });
 void test('acid venom which kills an engulfer releases the hero', async () => {
-    freshMonsterAbilityRoom('black naga');
+    await freshMonsterAbilityRoom('black naga');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', game.u.ux + 1, game.u.uy);
     jackal.mx = game.u.ux;

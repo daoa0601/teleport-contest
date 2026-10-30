@@ -12,7 +12,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('empty-stomach vomiting describes the current monster form anatomy', async () => {
-    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 100, uhs: HUNGRY } });
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 100, uhs: HUNGRY } });
     requirePlayingGame(game);
     installPolymorphedHero('floating eye');
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });

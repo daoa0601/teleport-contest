@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('putting on named zero-delay armor uses its noun without inventory details', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const shield = await addInventoryObject(SMALL_SHIELD, { blessed: true, spe: 2, oname: 'Shelter' });
     pushKey(shield.invlet);
     await rhack('W'.charCodeAt(0));
@@ -21,7 +21,7 @@ void test('putting on named zero-delay armor uses its noun without inventory det
     assert.equal(await inventoryItemDescription(shield), 'a blessed +2 small shield named Shelter (being worn)');
 });
 void test('nonverbose zero-delay armor wear keeps its state change without the verbose message', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     const shield = await addInventoryObject(SMALL_SHIELD);
     pushKey(shield.invlet);
     await rhack('W'.charCodeAt(0));
@@ -30,7 +30,7 @@ void test('nonverbose zero-delay armor wear keeps its state change without the v
     assert.equal(game.context.move, 1);
 });
 void test('wearing cursed wielded armor frees the hand before its dressing delay', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await addInventoryObject(RING_MAIL, { cursed: true, known: false });
     await setPrimaryWeapon(armor);
     pushKey(armor.invlet);
@@ -45,7 +45,7 @@ void test('wearing cursed wielded armor frees the hand before its dressing delay
     assert.equal(game.context.move, 1);
 });
 void test('wearing an alternate cloak removes its alternate slot and finishes immediately', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cloak = await addInventoryObject(LEATHER_CLOAK, { known: false });
     await setSecondaryWeapon(cloak);
     pushKey(cloak.invlet);
@@ -60,7 +60,7 @@ void test('wearing an alternate cloak removes its alternate slot and finishes im
     assert.equal(game.context.move, 1);
 });
 void test('wearing readied armor clears only the quiver and keeps an unrelated welded weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(LONG_SWORD, { cursed: true });
     const dagger = await addInventoryObject(DAGGER);
     const armor = await addInventoryObject(RING_MAIL);

@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a potion cannot replace a monster paralysis that already prevents movement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('dog', game.u.ux + 1, game.u.uy);
     monster.mcanmove = false;
     monster.mfrozen = 60;

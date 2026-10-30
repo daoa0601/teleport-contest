@@ -23,7 +23,7 @@ void test('a hero turned eyeless on the downstairs still sees its weapon hit the
     await floorObject(ROCK, game.u.ux, game.u.uy);
     const sword = await addInventoryObject(LONG_SWORD);
     await setPrimaryWeapon(sword);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(game.u.ux, game.u.uy), true);
     // C polymon() blinds an eyeless form, but vision is only recalculated
     // later, so dropping the weapon still uses the old sight.

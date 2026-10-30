@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // end-of-game disclosure, so the typed answer to one disclosure question
 // silently answers the following one.
 void test('a question answered during do-again feeds the next question', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     game._inDoAgain = true;
     game._repeatCommands = [];

@@ -49,7 +49,7 @@ function templeRoom(lx: number, hx: number, ly: number, hy: number, roomnoidx = 
 }
 
 async function temple({ hero = {} }: Pick<ObjectRoomOptions, 'hero'> = {}) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 7, right: 30, top: 6, bottom: 14,
         hero: { uhp: 100, uhpmax: 100, uac: 30, ...hero },
     });
@@ -75,7 +75,7 @@ async function temple({ hero = {} }: Pick<ObjectRoomOptions, 'hero'> = {}) {
         intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
     };
     updateHeroRoomMembership(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     pushKeys(' '.repeat(100));
     return { priest, altar, level };
 }
@@ -297,7 +297,7 @@ void test('retaliation uses the hero temple edges when the original altar is too
     }
     game.u.ux = 20;
     updateHeroRoomMembership(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     initRng(1n);
 
     await wakeMonster(priest, { attacked: true });

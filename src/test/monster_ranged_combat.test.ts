@@ -20,7 +20,7 @@ const maximumDice = (count: number, sides: number) => count * sides;
 const nonzeroRoll = (range: number) => Math.min(1, range - 1);
 
 async function rangedCombatants(species: string, adjacent = false) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 2, right: 40, top: 2, bottom: 18, heroX: 10, heroY: 14,
         context: { mon_moving: true }, flags: { verbose: true },
     });

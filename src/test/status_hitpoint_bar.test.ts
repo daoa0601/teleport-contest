@@ -34,7 +34,7 @@ void test('the legacy story retains the inverted title and pre-equipment status 
 });
 
 void test('a half-full title bar inverts half its fixed thirty-character title', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 20, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 20, uhpmax: 40 } });
 
     await bot();
 
@@ -48,7 +48,7 @@ void test('a half-full title bar inverts half its fixed thirty-character title',
 });
 
 void test('a nonzero health fraction keeps one inverted character even above the display cap', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 1, uhpmax: 100000 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 1, uhpmax: 100000 } });
 
     await bot();
 
@@ -59,7 +59,7 @@ void test('a nonzero health fraction keeps one inverted character even above the
 });
 
 void test('a critically injured title blinks across its inverted and remaining portions', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 2, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 2, uhpmax: 40 } });
 
     await bot();
 

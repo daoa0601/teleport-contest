@@ -50,7 +50,7 @@ async function readAndChooseCharge(scroll: GameObject, answer: string) {
 }
 
 void test('reading a blessed charging scroll restores a cancelled directional wand', async () => {
-    freshObjectRoom({ gameplaySeed: 71 });
+    await freshObjectRoom({ gameplaySeed: 71 });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING, { blessed: true, typeKnown: false });
     const wand = await addInventoryObject(WAN_FIRE, { spe: -1 });
@@ -64,7 +64,7 @@ void test('reading a blessed charging scroll restores a cancelled directional wa
 });
 
 void test('cancelling the charging choice still consumes and identifies the scroll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING, { typeKnown: false });
     const wand = await addInventoryObject(WAN_FIRE, { spe: 0 });
@@ -80,7 +80,7 @@ void test('cancelling the charging choice still consumes and identifies the scro
 });
 
 void test('a confused charging scroll restores energy instead of charging an item', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 4, uen: 0, uenmax: 100 } });
+    await freshObjectRoom({ hero: { confusionTurns: 4, uen: 0, uenmax: 100 } });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING);
 
@@ -92,7 +92,7 @@ void test('a confused charging scroll restores energy instead of charging an ite
 });
 
 void test('a confused blessed charging scroll can increase maximum energy', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
+    await freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING, { blessed: true });
 
@@ -103,7 +103,7 @@ void test('a confused blessed charging scroll can increase maximum energy', asyn
 });
 
 void test('a confused cursed charging scroll empties energy without reducing its maximum', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
+    await freshObjectRoom({ hero: { confusionTurns: 4, uen: 20, uenmax: 20 } });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING, { cursed: true });
 
@@ -114,7 +114,7 @@ void test('a confused cursed charging scroll empties energy without reducing its
 });
 
 void test('a magic marker cannot be refilled a second time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const marker = await addInventoryObject(MAGIC_MARKER, { spe: 0 });
     await rechargeObject(marker, 1);
@@ -130,7 +130,7 @@ void test('a magic marker cannot be refilled a second time', async () => {
 });
 
 void test('cursed charging drains an ordinary wand but not a blessed one', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const plain = await addInventoryObject(WAN_FIRE, { spe: 5 });
     const blessed = await addInventoryObject(WAN_FIRE, { spe: 5, blessed: true });
@@ -145,7 +145,7 @@ void test('cursed charging drains an ordinary wand but not a blessed one', async
 });
 
 void test('blind charging describes a vibration without revealing an unseen wand', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_FIRE, {
         observed: false, dknown: false, typeKnown: false, known: false, spe: 0,
@@ -157,7 +157,7 @@ void test('blind charging describes a vibration without revealing an unseen wand
 });
 
 void test('a second recharge destroys a wishing wand and hurts its user', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_WISHING, { spe: 0, recharged: 1 });
     pushKeys('\x1b');
@@ -170,7 +170,7 @@ void test('a second recharge destroys a wishing wand and hurts its user', async 
 });
 
 void test('charging a worn protection ring changes armor class without removing the ring', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_PROTECTION, { spe: 0 });
     await wearHeroAccessory(ring, 'uleft');
@@ -185,7 +185,7 @@ void test('charging a worn protection ring changes armor class without removing 
 });
 
 void test('charging a worn strength ring updates its bonus without changing innate strength', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_GAIN_STRENGTH, { spe: 0 });
     await wearHeroAccessory(ring, 'uright');
@@ -199,7 +199,7 @@ void test('charging a worn strength ring updates its bonus without changing inna
 });
 
 void test('a constitution ring increases carrying capacity only while worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain constitution'), { spe: 2 });
     const capacity = weightCapacity(game);
@@ -212,7 +212,7 @@ void test('a constitution ring increases carrying capacity only while worn', asy
 });
 
 void test('charging suggestions do not reveal an unidentified magical instrument', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const flute = await addInventoryObject(MAGIC_FLUTE, { typeKnown: false, known: false });
     const wand = await addInventoryObject(WAN_FIRE);
@@ -229,7 +229,7 @@ void test('charging suggestions do not reveal an unidentified magical instrument
 });
 
 void test('an exploding worn ring loses its effect before dealing damage', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_GAIN_STRENGTH, { spe: -5 });
     await wearHeroAccessory(ring, 'uleft');
@@ -245,7 +245,7 @@ void test('an exploding worn ring loses its effect before dealing damage', async
 });
 
 void test('charging changes a crystal ball\'s blessing and can remove its curse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: 3, blessed: true });
     pushKeys('\x1b');
@@ -263,7 +263,7 @@ void test('charging changes a crystal ball\'s blessing and can remove its curse'
 });
 
 void test('refilling a lamp restores fuel, and cursed charging extinguishes it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lamp = await addInventoryObject(OIL_LAMP, { spe: 0, age: 0 });
     pushKeys('\x1b');
@@ -280,7 +280,7 @@ void test('refilling a lamp restores fuel, and cursed charging extinguishes it',
 });
 
 void test('repeated instrument charging respects its charge and counter limits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const flute = await addInventoryObject(MAGIC_FLUTE, { spe: 19, recharged: 7 });
 
@@ -291,7 +291,7 @@ void test('repeated instrument charging respects its charge and counter limits',
 });
 
 void test('grease and the invocation bell stop at their own charge limits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 49 });
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 5 });
@@ -305,7 +305,7 @@ void test('grease and the invocation bell stop at their own charge limits', asyn
 });
 
 void test('invoking the Card charges an item and starts its cooldown', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     requirePlayingGame(game);
     const card = await artifactObject('The Platinum Yendorian Express Card', {
         invlet: 'a', where: 'inventory', blessed: true,
@@ -322,7 +322,7 @@ void test('invoking the Card charges an item and starts its cooldown', async () 
 });
 
 void test('cancelling the Card\'s charging choice does not start its cooldown', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     requirePlayingGame(game);
     const card = await artifactObject('The Platinum Yendorian Express Card', {
         invlet: 'a', where: 'inventory',
@@ -336,7 +336,7 @@ void test('cancelling the Card\'s charging choice does not start its cooldown', 
 });
 
 void test('the Card\'s blessing does not improve charging for another role', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     const card = await artifactObject('The Platinum Yendorian Express Card', { blessed: true });
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: 0 });
@@ -349,7 +349,7 @@ void test('the Card\'s blessing does not improve charging for another role', asy
 });
 
 void test('destroying an unpaid wand preserves the amount owed to the shop', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const wand = await floorObject(WAN_WISHING, 10, 10, { spe: 0, recharged: 1 });

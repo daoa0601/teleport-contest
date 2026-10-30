@@ -51,7 +51,7 @@ async function restoreWithInput(object) {
     }
 }
 void test('quaffing an ordinary oil bottle replaces the selector with its native taste and spends a turn', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     const oil = await potion(POT_OIL, { invlet: 'h', quan: 2 });
     recordObjectKnowledge(oil.otyp);
@@ -64,7 +64,7 @@ void test('quaffing an ordinary oil bottle replaces the selector with its native
     assert.ok(game.u._exercise[A_WIS] <= 0);
 });
 void test('an observable potion effect identifies a seen global type even when its inventory view has a name', async () => {
-    freshObjectRoom({ hero: { uhp: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const healing = await potion(POT_HEALING, { typeKnown: false });
     assert.ok(game._knownObjectTypes != null);
@@ -77,7 +77,7 @@ void test('an observable potion effect identifies a seen global type even when i
     assert.equal(game.inventory.includes(healing), false);
 });
 void test('unknown fruit juice remains owned until the actual calling prompt resumes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const juice = await potion(POT_FRUIT_JUICE, { typeKnown: false });
     const input = resetInputState();
@@ -102,7 +102,7 @@ void test('unknown fruit juice remains owned until the actual calling prompt res
     assert.equal(game.u.uhunger, 920);
 });
 void test('an unseen effect grants healing but does not identify or call the potion', async () => {
-    freshObjectRoom({ hero: { blindTurns: 5, uhp: 1 } });
+    await freshObjectRoom({ hero: { blindTurns: 5, uhp: 1 } });
     requirePlayingGame(game);
     const healing = await potion(POT_HEALING, {
         cursed: true, dknown: false, observed: false, typeKnown: false,
@@ -114,7 +114,7 @@ void test('an unseen effect grants healing but does not identify or call the pot
     assert.equal(game.u.urexp || 0, 0);
 });
 void test('empty detection consumes and offers a call without crediting formal identification', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const detection = await potion(POT_MONSTER_DETECTION, { typeKnown: false });
     await drink(detection, ' empty\n');
@@ -126,7 +126,7 @@ void test('empty detection consumes and offers a call without crediting formal i
     assert.equal(game.context.move, 1);
 });
 void test('blessed empty monster detection persists and remains ambiguous', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const detection = await potion(POT_MONSTER_DETECTION, { blessed: true, typeKnown: false });
     await drink(detection, ' loneliness\n');
@@ -137,7 +137,7 @@ void test('blessed empty monster detection persists and remains ambiguous', asyn
     assert.equal(game._objectCallNames[detection.otyp], 'loneliness');
 });
 void test('blessed monster detection identifies the real type when an actual monster is present', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
     const detection = await potion(POT_MONSTER_DETECTION, { blessed: true });
@@ -148,7 +148,7 @@ void test('blessed monster detection identifies the real type when an actual mon
     assert.equal(dog.dead, undefined);
 });
 void test('a wielded potion stack keeps the undrunk remainder wielded with native stack weight', async () => {
-    freshObjectRoom({ hero: { uhp: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const healing = await potion(POT_HEALING, { quan: 3, owornmask: W_WEP, wielded: true });
     game.uwep = healing;
@@ -160,7 +160,7 @@ void test('a wielded potion stack keeps the undrunk remainder wielded with nativ
     assert.equal(game.inventory.length, 1);
 });
 void test('drinking the last wielded potion clears the weapon before its effect and removes its identity', async () => {
-    freshObjectRoom({ hero: { uhp: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const healing = await potion(POT_HEALING, { owornmask: W_WEP, wielded: true });
     game.uwep = healing;
@@ -170,7 +170,7 @@ void test('drinking the last wielded potion clears the weapon before its effect 
     assert.equal(healing.where, 'gone');
 });
 void test('shop quaffing preserves the single bill while quantity is consumed and retains the final used-up stock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const oil = await potion(POT_OIL, { quan: 2 });
@@ -190,7 +190,7 @@ void test('shop quaffing preserves the single bill while quantity is consumed an
 });
 for (const key of ['\x1b', '\n', ' ']) {
     void test(`cancelling quaff selection with ${JSON.stringify(key)} spends no time and preserves stock`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const oil = await potion(POT_OIL);
         resetInputState().feed(key);
@@ -202,7 +202,7 @@ for (const key of ['\x1b', '\n', ' ']) {
     });
 }
 void test('strangulation rejects drinking before asking for an inventory letter', async () => {
-    freshObjectRoom({ hero: { strangledTurns: 3 } });
+    await freshObjectRoom({ hero: { strangledTurns: 3 } });
     requirePlayingGame(game);
     const oil = await potion(POT_OIL);
     await rhack('q'.charCodeAt(0));
@@ -212,7 +212,7 @@ void test('strangulation rejects drinking before asking for an inventory letter'
 });
 for (const terrain of [FOUNTAIN, SINK]) {
     void test(`a levitating hero bypasses inaccessible terrain source ${terrain} and selects a potion directly`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = terrain;
         grantIntrinsicProperty('levitation', 'outside');
@@ -224,7 +224,7 @@ for (const terrain of [FOUNTAIN, SINK]) {
     });
 }
 void test('a declined terrain drink uses native nothing-else feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
     resetInputState().feed('n');
@@ -233,7 +233,7 @@ void test('a declined terrain drink uses native nothing-else feedback', async ()
     assert.equal(game.context.move, 0);
 });
 void test('menu-requested quaff bypasses fountain admission', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
     const oil = await potion(POT_OIL);
@@ -246,7 +246,7 @@ void test('menu-requested quaff bypasses fountain admission', async () => {
     assert.equal(game._pending_message, 'That was smooth!');
 });
 void test('drinking surrounding water spends time without consuming an inventory potion', async () => {
-    freshObjectRoom({ hero: { uinwater: true } });
+    await freshObjectRoom({ hero: { uinwater: true } });
     requirePlayingGame(game);
     const oil = await potion(POT_OIL);
     resetInputState().feed('y');
@@ -256,7 +256,7 @@ void test('drinking surrounding water spends time without consuming an inventory
     assert.match(game._pending_message, /what lives in this water/);
 });
 void test('physical restore ability also restores one drained experience level', async () => {
-    freshObjectRoom({ hero: { ulevel: 2, ulevelmax: 4, uhp: 40, uenmax: 10, uen: 10 } });
+    await freshObjectRoom({ hero: { ulevel: 2, ulevelmax: 4, uhp: 40, uenmax: 10, uen: 10 } });
     requirePlayingGame(game);
     const restore = await potion(POT_RESTORE_ABILITY, { typeKnown: false });
     await restoreWithInput(restore);
@@ -264,7 +264,7 @@ void test('physical restore ability also restores one drained experience level',
     assert.equal(game.u.ulevelmax, 4);
 });
 void test('blessed physical restoration recovers all drained experience levels', async () => {
-    freshObjectRoom({ hero: { ulevel: 2, ulevelmax: 4, uhp: 40, uenmax: 10, uen: 10 } });
+    await freshObjectRoom({ hero: { ulevel: 2, ulevelmax: 4, uhp: 40, uenmax: 10, uen: 10 } });
     requirePlayingGame(game);
     const restore = await potion(POT_RESTORE_ABILITY, { blessed: true, typeKnown: false });
     await restoreWithInput(restore);
@@ -272,7 +272,7 @@ void test('blessed physical restoration recovers all drained experience levels',
     assert.equal(game.u.ulevelmax, 4);
 });
 void test('a noncursed speed potion cures unmounted legs instead of granting speed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await woundHeroLegs('left', 30);
     const speed = await potion(POT_SPEED, { typeKnown: false });
@@ -282,21 +282,21 @@ void test('a noncursed speed potion cures unmounted legs instead of granting spe
     assert.equal(propertyIsActive('fast'), false);
 });
 void test('ordinary speed grants timed acceleration and permanent natural speed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await drink(await potion(POT_SPEED), ' ');
     assert.equal(hasIntrinsicProperty('fast', 'outside'), true);
     assert.ok((game.u.veryFastTurns ?? 0) >= 100 && (game.u.veryFastTurns ?? 0) < 110);
 });
 void test('cursed speed only grants temporary acceleration', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await drink(await potion(POT_SPEED, { cursed: true }));
     assert.equal(hasIntrinsicProperty('fast', 'outside'), false);
     assert.ok((game.u.veryFastTurns ?? 0) >= 40 && (game.u.veryFastTurns ?? 0) < 50);
 });
 void test('see-invisible reveals a real invisible monster and times out through the live scheduler', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
     dog.minvis = 1;
@@ -323,21 +323,21 @@ void test('see-invisible reveals a real invisible monster and times out through 
     }
 });
 void test('seeing an invisible wall mimic restores its actual light blocking', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     mimic.minvis = 1;
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = 1;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), true);
     await grantHeroSeeInvisible({ duration: 50 });
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
 });
 void test('cursed invisibility removes only outside permanence while preserving a worn ring', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_INVISIBILITY);
     await wearHeroAccessory(ring, 'uleft');
@@ -349,7 +349,7 @@ void test('cursed invisibility removes only outside permanence while preserving 
     assert.equal(game.uleft, ring);
 });
 void test('effect-only digestion leaves the actual floor bottle for its owning consumption boundary', async () => {
-    freshObjectRoom({ hero: { uhp: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const healing = await floorObject(POT_HEALING, game.u.ux, game.u.uy);
     await drinkPotion(healing, { consume: false });
@@ -360,7 +360,7 @@ void test('effect-only digestion leaves the actual floor bottle for its owning c
 });
 for (const menu of ['?', '*']) {
     void test(`the real ${menu} inventory menu selects and drinks a potion once`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const oil = await potion(POT_OIL);
         recordObjectKnowledge(oil.otyp);
@@ -372,7 +372,7 @@ for (const menu of ['?', '*']) {
     });
 }
 void test('quaffing unlit oil exercises Wisdom through the actual inventory action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const oil = await potion(POT_OIL, { quan: 12 });
     recordObjectKnowledge(oil.otyp);

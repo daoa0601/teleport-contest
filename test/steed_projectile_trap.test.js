@@ -15,7 +15,7 @@ for (const trapType of [ARROW_TRAP, DART_TRAP]) {
     void test(`a ridden steed sometimes takes a ${missile} trap's missile instead of the hero`, async () => {
         let steedTargeted = 0, heroTargeted = 0;
         for (let seed = 1n; seed <= 40n; seed++) {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             const steed = await createSaddledSteed();
             steed.mhp = steed.mhpmax = 200;
@@ -50,7 +50,7 @@ for (const trapType of [ARROW_TRAP, DART_TRAP]) {
 void test('an arrow trap that kills the ridden steed throws the hero without a riding message', async () => {
     let killed = false;
     for (let seed = 1n; seed <= 60n && !killed; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const steed = await createSaddledSteed();
         steed.mhp = 1;

@@ -9,14 +9,14 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function stackRoom() {
-    freshObjectRoom({ role: 'rogue', flags: { pushweapon: true } });
+async function stackRoom() {
+    await freshObjectRoom({ role: 'rogue', flags: { pushweapon: true } });
     const input = resetInputState();
     installPagerInput(input, { expected: /dagger|arrow|wield|readied|welded/, limit: 20 });
 }
 
 void test('wielding a counted stack leaves the unselected daggers in inventory', async () => {
-    stackRoom();
+    await stackRoom();
     const daggers = await addInventoryObject(DAGGER, { quan: 5 });
 
     pushKeys(`2${daggers.invlet}`);
@@ -32,7 +32,7 @@ void test('wielding a counted stack leaves the unselected daggers in inventory',
 });
 
 void test('a counted selection of an already wielded stack keeps the whole stack wielded', async () => {
-    stackRoom();
+    await stackRoom();
     const daggers = await addInventoryObject(DAGGER, { quan: 5 });
     await setPrimaryWeapon(daggers);
 
@@ -47,7 +47,7 @@ void test('a counted selection of an already wielded stack keeps the whole stack
 });
 
 void test('a counted alternate selection wields just the selected portion', async () => {
-    stackRoom();
+    await stackRoom();
     const primary = await addInventoryObject(DAGGER, { spe: 1 });
     const alternate = await addInventoryObject(DAGGER, { quan: 5, spe: 2 });
     await setPrimaryWeapon(primary);
@@ -63,7 +63,7 @@ void test('a counted alternate selection wields just the selected portion', asyn
 });
 
 void test('wielding one quivered arrow preserves the remaining quiver stack', async () => {
-    stackRoom();
+    await stackRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 5 });
     await setQuiverObject(arrows);
 
@@ -78,7 +78,7 @@ void test('wielding one quivered arrow preserves the remaining quiver stack', as
 });
 
 void test('declining both quiver choices leaves the arrows readied', async () => {
-    stackRoom();
+    await stackRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 5 });
     await setQuiverObject(arrows);
 
@@ -93,7 +93,7 @@ void test('declining both quiver choices leaves the arrows readied', async () =>
 });
 
 void test('confirming the whole quiver stack moves it into the wielded slot', async () => {
-    stackRoom();
+    await stackRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 5 });
     await setQuiverObject(arrows);
 
@@ -107,7 +107,7 @@ void test('confirming the whole quiver stack moves it into the wielded slot', as
 });
 
 void test('a welded primary refuses a counted selection without leaving a split stack', async () => {
-    stackRoom();
+    await stackRoom();
     const welded = await addInventoryObject(DAGGER, { cursed: true });
     const arrows = await addInventoryObject(ARROW, { quan: 5 });
     await setPrimaryWeapon(welded);

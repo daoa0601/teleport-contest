@@ -13,7 +13,7 @@ import { createStaffedShop } from './support/shop.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 void test('erasing an unencountered gem call name removes its discovery and refreshes the billed price', async () => {
-    freshObjectRoom({ hero: { blindTurns: 20 } });
+    await freshObjectRoom({ hero: { blindTurns: 20 } });
     const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS,
         { typeKnown: false, observed: false, dknown: true, unpaid: true });
     recordObjectCall(glass.otyp, 'shiny');
@@ -37,7 +37,7 @@ void test('erasing an unencountered gem call name removes its discovery and refr
 });
 
 void test('erasing a name missing from discoveries reports the native consistency error', async () => {
-    freshObjectRoom({ hero: { blindTurns: 20 } });
+    await freshObjectRoom({ hero: { blindTurns: 20 } });
     const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS,
         { typeKnown: false, observed: false, dknown: true });
     recordObjectCall(glass.otyp, 'shiny');

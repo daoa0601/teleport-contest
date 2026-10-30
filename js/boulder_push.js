@@ -61,7 +61,7 @@ async function pushBoulders(sx, sy, dx, dy) {
         const glyph = glyphAt(sx, sy);
         if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
             await plineWithContinuation('That feels like a boulder.');
-            map_object(boulder, true);
+            await map_object(boulder, true);
             endVoluntaryMultiTurn(game);
             return false;
         }
@@ -74,13 +74,13 @@ async function pushBoulders(sx, sy, dx, dy) {
             return stepOntoBoulder(sx, sy);
         if (game.u.levitating || Is_airlevel(game.u.uz)) {
             if (heroIsBlind(game))
-                feel_location(sx, sy);
+                await feel_location(sx, sy);
             await plineWithContinuation(`You don't have enough leverage to push the ${objectCombatName(boulder)}.`);
             return false;
         }
         if (heroIsVerySmall(game) && !game.u.usteed) {
             if (heroIsBlind(game))
-                feel_location(sx, sy);
+                await feel_location(sx, sy);
             await plineWithContinuation(`You're too small to push that ${objectCombatName(boulder)}.`);
             return cannotPush(boulder, sx, sy);
         }
@@ -98,7 +98,7 @@ async function pushBoulders(sx, sy, dx, dy) {
             && !!shopResident(roomsAt(level, sx, sy, SHOPBASE)[0]);
         if (level.flags.sokoban_rules && dx && dy) {
             if (heroIsBlind(game))
-                feel_location(sx, sy);
+                await feel_location(sx, sy);
             await plineWithContinuation(`The ${objectCombatName(boulder)} won't roll diagonally on this ${surfaceName(sx, sy)}.`);
             return cannotPush(boulder, sx, sy);
         }
@@ -158,7 +158,7 @@ function heroThrowsRocks(state = game) {
 }
 async function stepOntoBoulder(x, y) {
     const old = glyphAt(x, y);
-    feel_location(x, y);
+    await feel_location(x, y);
     if (heroThrowsRocks()) {
         await plineWithContinuation(`You ${heroLocomotion('step')} over a boulder here.`);
     }
@@ -181,7 +181,7 @@ async function cannotPushMessage(boulder, x, y) {
         ? `${monsterName(steed, { article: 'your', capitalized: true })} tries to move ${what}, but cannot.`
         : `You try to move ${what}, but in vain.`);
     if (heroIsBlind(game))
-        feel_location(x, y);
+        await feel_location(x, y);
 }
 async function cannotPush(boulder, x, y) {
     if (heroThrowsRocks()) {
@@ -207,7 +207,7 @@ async function cannotPush(boulder, x, y) {
 }
 async function monsterBlocksBoulder(boulder, monster, sx, sy, rx, ry) {
     if (heroIsBlind(game))
-        feel_location(sx, sy);
+        await feel_location(sx, sy);
     let heardOrSeen = false;
     if (canSpotMonster(monster)) {
         await plineWithContinuation(`There's ${monsterName(monster, { article: 'a' })} on the other side.`);
@@ -216,7 +216,7 @@ async function monsterBlocksBoulder(boulder, monster, sx, sy, rx, ry) {
     else {
         await publishHeardMessage(`a monster behind the ${objectCombatName(boulder)}.`, plineWithContinuation);
         heardOrSeen = !heroIsDeaf(game);
-        map_invisible(rx, ry);
+        await map_invisible(rx, ry);
     }
     if (game.flags.verbose !== false) {
         const who = game.u.usteed ? monsterName(game.u.usteed, { article: 'your' }) : 'you';
@@ -229,7 +229,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
     if (trap.ttyp === LANDMINE && rn2(10)) {
         remove_object(boulder);
         await placeObject(boulder, rx, ry);
-        newsym(sx, sy);
+        await newsym(sx, sy);
         const bang = !heroIsDeaf(game) || !heroIsBlind(game) ? 'KAABLAMM!!' : 'Gadzooks';
         await plineWithContinuation(`${bang}!  The ${objectCombatName(boulder)} ${objectNameIsPlural(boulder) ? 'trigger' : 'triggers'} ${trap.madeby_u ? 'your' : 'a'} land mine.`);
         await explodeLandMine(trap, game, { seeSquare: cansee(rx, ry), heroCaused: true });
@@ -237,7 +237,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
             return 'handled';
         await fillPitWithBoulderAt(game.u.ux, game.u.uy);
         if (cansee(rx, ry))
-            newsym(rx, ry);
+            await newsym(rx, ry);
         return 'handled';
     }
     if (is_pit(trap.ttyp)) {
@@ -245,7 +245,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
         // Removing a boulder queues a full vision update in this port.
         // Finish that update before native's temporary IN_SIGHT override.
         if (!heroIsBlind(game) && game.vision_full_recalc)
-            vision_recalc(0);
+            await vision_recalc(0);
         const row = game.viz_array?.[ry];
         if (!heroIsBlind(game) && row)
             row[rx] = (row[rx] ?? 0) | 2;
@@ -255,7 +255,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
         if (!result.finished)
             await placeObject(boulder, rx, ry);
         if (monsterAtPosition(game.level, rx, ry) && !heroIsBlind(game))
-            newsym(rx, ry);
+            await newsym(rx, ry);
         return 'handled';
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
@@ -275,7 +275,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
         location.wall_info &= ~W_NONDIGGABLE;
         location.candig = 1;
         if (cansee(rx, ry))
-            newsym(rx, ry);
+            await newsym(rx, ry);
         return 'handled';
     }
     if (trap.ttyp === TELEP_TRAP || trap.ttyp === LEVEL_TELEP) {
@@ -303,7 +303,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
         }
         if (game.program_state.gameover)
             return 'handled';
-        seeTrap(trap);
+        await seeTrap(trap);
         return 'handled';
     }
     if (trap.ttyp === ROLLING_BOULDER_TRAP) {
@@ -316,7 +316,7 @@ async function pushIntoTrap(boulder, trap, sx, sy, rx, ry, dx, dy, costly) {
                 break;
         }
         await plineWithContinuation(`The ${objectCombatName(boulder)} suddenly ${objectNameIsPlural(boulder) ? 'roll' : 'rolls'} away from you!`);
-        feelTrap(trap);
+        await feelTrap(trap);
         await launchRollingBoulder({ x: sx, y: sy }, { x, y }, { known: true, state: game });
         return 'handled';
     }
@@ -340,15 +340,15 @@ async function moveBoulder(boulder, sx, sy, rx, ry, costly) {
     }
     game._lastPushedBoulder = boulder;
     game._lastBoulderPushMove = moves;
-    unmap_invisible(rx, ry, false);
+    await unmap_invisible(rx, ry, false);
     boulder.corpsenm = 0;
     await moveObject(boulder, rx, ry);
     if (heroIsBlind(game)) {
-        feel_location(rx, ry);
-        feel_location(sx, sy);
+        await feel_location(rx, ry);
+        await feel_location(sx, sy);
     }
     else
-        newsym(sx, sy);
+        await newsym(sx, sy);
     if (costly && !costlySpot(rx, ry)) {
         await addShopObjectToBill(boulder, game, { ininv: false });
         return;

@@ -7,7 +7,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a hallucinating egg layer knows its egg without identifying its appearance', async () => {
-    const level = freshObjectRoom({ flags: { female: true }, hero: { hallucinationTurns: 30 } });
+    const level = await freshObjectRoom({ flags: { female: true }, hero: { hallucinationTurns: 30 } });
     requirePlayingGame(game);
     installPolymorphedHero('cockatrice');
     const hunger = game.u.uhunger;
@@ -24,7 +24,7 @@ void test('a hallucinating egg layer knows its egg without identifying its appea
 });
 
 void test('a hallucinating male egg layer gets the platypus refusal without spending a turn', async () => {
-    freshObjectRoom({ flags: { female: false }, hero: { hallucinationTurns: 30 } });
+    await freshObjectRoom({ flags: { female: false }, hero: { hallucinationTurns: 30 } });
     installPolymorphedHero('cockatrice');
 
     await runExtendedCommand('sit');

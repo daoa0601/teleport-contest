@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a completed monster attack redraws the injured hero health', async () => {
-    freshObjectRoom({ hero: { uhp: 30, uhpmax: 30, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 30, uhpmax: 30, uac: 10 } });
     requirePlayingGame(game);
     const newt = await createMonsterAt('newt', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     newt.mux = game.u.ux;

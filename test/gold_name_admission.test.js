@@ -9,7 +9,7 @@ import { planInput } from './support/planned-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a queued inventory naming choice rejects gold without asking for a name', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     input.feed('name\r');
@@ -20,7 +20,7 @@ void test('a queued inventory naming choice rejects gold without asking for a na
     assert.equal(game.context.move, 0);
 });
 void test('gold has no item naming action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     let actions = '';

@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a visible shattered monster potion reveals its color without identifying its type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const giant = await createMonsterAt('fire giant', 11, 10, NO_MINVENT);
     const potion = await knownObject(POT_HEALING, { dknown: false, known: false, typeKnown: false });
     await addObjectToMonsterInventory(giant, potion);

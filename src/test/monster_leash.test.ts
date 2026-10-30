@@ -37,7 +37,7 @@ async function topline() {
 }
 
 void test('an untamed visible pet pulls free with its name and native pronoun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { pet, leash } = await leashedPet();
     requirePlayingGame(game);
@@ -57,13 +57,13 @@ void test('an untamed visible pet pulls free with its name and native pronoun', 
 });
 
 void test('a sensed but unseen untamed pet makes its leash fall slack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { pet, leash } = await leashedPet();
     requirePlayingGame(game);
     grantIntrinsicProperty('telepathy', 'outside');
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSpotMonster(pet), true);
     assert.equal(canSeeMonster(pet), false);
 
@@ -77,7 +77,7 @@ void test('a sensed but unseen untamed pet makes its leash fall slack', async ()
 });
 
 void test('untaming clears a stale leash attachment even when the object is gone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { pet } = await leashedPet({ withLeash: false });
     requirePlayingGame(game);
@@ -89,7 +89,7 @@ void test('untaming clears a stale leash attachment even when the object is gone
 });
 
 void test('leash feedback waits for the message pager before detaching the pet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { pet, leash } = await leashedPet();
     requirePlayingGame(game);
@@ -114,16 +114,16 @@ void test('leash feedback waits for the message pager before detaching the pet',
 });
 
 void test('untaming a long worm removes pet highlighting from its visible tail', async () => {
-    freshObjectRoom({ flags: { hilite_pet: true } });
+    await freshObjectRoom({ flags: { hilite_pet: true } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 12, 10);
-    initializeMonsterWormBody(worm, { segmentCount: 2 });
+    await initializeMonsterWormBody(worm, { segmentCount: 2 });
     assert.equal(worm.wormSegments?.length, 2);
     initializePet(worm);
     worm.mtame = 1;
     worm.msleeping = 1;
-    newsym(worm.mx, worm.my);
-    for (const segment of worm.wormSegments) newsym(segment.x, segment.y);
+    await newsym(worm.mx, worm.my);
+    for (const segment of worm.wormSegments) await newsym(segment.x, segment.y);
     await flush_screen();
     for (const segment of worm.wormSegments)
         assert.equal(displayedCell(segment.x - 1, segment.y + 1).attr & 1, 1);
@@ -137,7 +137,7 @@ void test('untaming a long worm removes pet highlighting from its visible tail',
 });
 
 void test('a migrating pet releases its leash while still visible on the old level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { pet, leash } = await leashedPet();
     requirePlayingGame(game);
@@ -174,18 +174,18 @@ void test('a migrating pet releases its leash while still visible on the old lev
 });
 
 void test('a pet made wild by time apart loses its leash and highlight silently', async () => {
-    freshObjectRoom({ flags: { hilite_pet: true } });
+    await freshObjectRoom({ flags: { hilite_pet: true } });
     requirePlayingGame(game);
     const { pet, leash } = await leashedPet();
     requirePlayingGame(game);
     pet.mtame = 5;
     game.moves = 1100;
-    newsym(pet.mx, pet.my);
+    await newsym(pet.mx, pet.my);
     await flush_screen();
     assert.equal(displayedCell(pet.mx - 1, pet.my + 1).attr & 1, 1);
 
-    catchUpMonster(pet, 1000, game);
-    newsym(pet.mx, pet.my);
+    await catchUpMonster(pet, 1000, game);
+    await newsym(pet.mx, pet.my);
     await flush_screen();
 
     assert.equal(pet.mtame, 0);

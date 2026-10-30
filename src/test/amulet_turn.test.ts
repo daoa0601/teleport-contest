@@ -15,7 +15,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 
 for (const blind of [false, true]) {
     void test(`portal warmth ${blind ? 'does not reveal' : 'reveals'} an unseen Amulet's appearance ${blind ? 'while blind' : 'after sight returns'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 100 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 100 : 0 } });
         requirePlayingGame(game);
         const amulet = await addInventoryObject(AMULET_OF_YENDOR, { dknown: false, observed: false });
         game.uwep = amulet;
@@ -37,7 +37,7 @@ void test('a wielded Amulet reports portal heat during ordinary turns', async ()
     for (const [distance, warmth] of [[3, 'hot!'], [8, 'very warm.'], [12, 'warm.']] as const) {
         let feltHeat = false;
         for (let seed = 1; seed <= 48 && !feltHeat; seed++) {
-            freshObjectRoom({ right: 24 });
+            await freshObjectRoom({ right: 24 });
             requirePlayingGame(game);
             game.level.flags.rndmongen = false;
             const amulet = await addInventoryObject(AMULET_OF_YENDOR);
@@ -66,7 +66,7 @@ void test('a wielded Amulet reports portal heat during ordinary turns', async ()
 void test('carrying the Amulet can wake a distant sleeping Wizard', async () => {
     let wokeWizard = false;
     for (let seed = 1; seed <= 128 && !wokeWizard; seed++) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         game.level.flags.rndmongen = false;
         level.requireAt(40, 10).typ = ROOM;
@@ -97,7 +97,7 @@ void test('carrying the Amulet can wake a distant sleeping Wizard', async () => 
 
 void test('the Amulet senses the most recently created portal on a level', async () => {
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ right: 26 });
+        await freshObjectRoom({ right: 26 });
         requirePlayingGame(game);
         game.level.flags.rndmongen = false;
         game.uwep = await addInventoryObject(AMULET_OF_YENDOR);

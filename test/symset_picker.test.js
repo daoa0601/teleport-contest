@@ -79,21 +79,21 @@ async function driveOptionWindow(option, name, fullMenu = false) {
     input.beforeRead = null;
     return { pickerScreens };
 }
-function installLadderUp(x, y) {
+async function installLadderUp(x, y) {
     const location = game.level?.at(x, y);
     assert.ok(location, 'the room exposes the test cell');
     location.typ = LADDER;
     location.ladder = LA_UP;
-    newsym(x, y);
+    await newsym(x, y);
     return { column: x - 1, row: y + 1 };
 }
 // symbols.c:do_symset(): picking DECgraphics from the "Select symbol set:"
 // menu swaps the active set and redraws the map through the new symbols,
 // exactly like switch_symbols() plus doredraw().
 void test('the options-menu symset picker switches the live symbol set', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
-    const cell = installLadderUp(12, 8);
+    const cell = await installLadderUp(12, 8);
     await flush_screen(1);
     assert.equal(screen().split('\n')[cell.row]?.charAt(cell.column), '<');
     const { pickerScreens } = await driveOptionWindow('symset', 'DECgraphics');
@@ -105,10 +105,10 @@ void test('the options-menu symset picker switches the live symbol set', async (
     assert.equal(screen().split('\n')[cell.row]?.charAt(cell.column), '\u2264');
 });
 void test('choosing Default Symbols from the picker reverts the map', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.symset = 'DECgraphics';
-    const cell = installLadderUp(12, 8);
+    const cell = await installLadderUp(12, 8);
     await flush_screen(1);
     assert.equal(screen().split('\n')[cell.row]?.charAt(cell.column), '\u2264');
     await driveOptionWindow('symset', 'Default Symbols');
@@ -119,19 +119,19 @@ void test('choosing Default Symbols from the picker reverts the map', async () =
 // Only selecting the rogue set or crossing a level boundary restores it.
 for (const name of ['plain', 'DECgraphics']) {
     void test(`picking the named primary symbol set ${name} redraws the Rogue level`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: false, tips: false, help: false } });
+        const level = await freshObjectRoom({ flags: { verbose: false, tips: false, help: false } });
         requirePlayingGame(game);
         game.rogue_level = { ...game.u.uz };
         level.requireAt(12, 8).typ = STAIRS;
         level.upstair = { x: 12, y: 8 };
-        const ladder = installLadderUp(13, 8);
+        const ladder = await installLadderUp(13, 8);
         level.requireAt(11, 8).typ = HWALL;
         await floorObject(GOLD_PIECE, 11, 10, { dknown: true });
         const rememberedGold = await floorObject(GOLD_PIECE, 3, 2, { dknown: true });
-        map_object(rememberedGold);
-        newsym(12, 8);
-        newsym(11, 8);
-        newsym(11, 10);
+        await map_object(rememberedGold);
+        await newsym(12, 8);
+        await newsym(11, 8);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(11, 9).ch, '%');
         assert.equal(requireScreenCell(10, 11).ch, '*');
@@ -158,12 +158,12 @@ for (const name of ['plain', 'DECgraphics']) {
     });
 }
 void test('a primary symbol selection displays its boulder override while typed look uses the Rogue override', async () => {
-    freshObjectRoom({ flags: { verbose: false, help: false, tips: false } });
+    await freshObjectRoom({ flags: { verbose: false, help: false, tips: false } });
     requirePlayingGame(game);
     applyNethackrc('BOULDER=57');
     game.rogue_level = { ...game.u.uz };
     await floorObject(BOULDER, 11, 10, { dknown: true });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '`');
     await driveOptionWindow('symset', 'DECgraphics', true);
@@ -190,30 +190,30 @@ void test('level travel restores Rogue symbols after picking a named primary sym
     assert.equal(requireScreenCell(10, 11).ch, '%');
 });
 void test('restoring on Rogue discards the displayed primary symbol set', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
-    map_object(await floorObject(GOLD_PIECE, 3, 2, { dknown: true }));
+    await map_object(await floorObject(GOLD_PIECE, 3, 2, { dknown: true }));
     await driveOptionWindow('symset', 'DECgraphics', true);
     assert.equal(requireScreenCell(2, 3).ch, '$');
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     await docrt();
     await flush_screen(1);
     assert.equal(requireScreenCell(2, 3).ch, '*');
 });
 for (const { name, coin } of [{ name: 'RogueEpyx', coin: '\x0f' }, { name: 'Blank', coin: '\x1a' }]) {
     void test(`restoring ${name} retains the process gold-label fallback until an options redraw`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         game.rogue_level = { ...game.u.uz };
         const storage = memoryStorage();
         assert.equal(await saveGame(storage), true);
         const playerName = game.plname;
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         applyNethackrc(`OPTIONS=roguesymset:${name}`);
-        assert.equal(restoreGame(playerName, storage), true);
+        assert.equal(await restoreGame(playerName, storage), true);
         await docrt();
         await bot();
         await flush_screen(1);
@@ -225,7 +225,7 @@ for (const { name, coin } of [{ name: 'RogueEpyx', coin: '\x0f' }, { name: 'Blan
 }
 // do_symset() sets nothing_to_do when the pick is dismissed.
 void test('dismissing the symset picker keeps the current set', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.symset = 'DECgraphics';
     const input = resetInputState();
@@ -256,7 +256,7 @@ void test('dismissing the symset picker keeps the current set', async () => {
 // The rogue picker lists the Rogue*-restricted sets and drops the
 // primary-restricted ones, with the rogue-level title.
 void test('the roguesymset picker lists rogue-eligible sets', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const input = resetInputState();
     const pickerScreens = [];
@@ -304,7 +304,7 @@ void test('the roguesymset picker lists rogue-eligible sets', async () => {
 // options.c:doset_simple() swaps the simple menu's symset row for the
 // rogue set's while the hero is on the Rogue level.
 void test('the simple options menu offers roguesymset on the Rogue level', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     game.rogueSymset = 'RogueIBM';
@@ -347,7 +347,7 @@ void test('the simple options menu offers roguesymset on the Rogue level', async
 // clear_all_glyphmap_colors() runs before the new set's G_ wall colors are
 // applied, so remembered branch walls trade their color with every switch.
 void test('switching symbol sets recolors remembered branch walls', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const location = game.level?.at(3, 2);
     assert.ok(location, 'the map exposes the test cell');
@@ -364,7 +364,7 @@ void test('switching symbol sets recolors remembered branch walls', async () => 
 // the cmap range after the grave, and doredraw() repaints them from the
 // new showsyms.
 void test('switching to DECgraphics redraws a remembered pool', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const location = game.level?.at(3, 2);
     assert.ok(location, 'the map exposes the test cell');
@@ -381,11 +381,11 @@ void test('switching to DECgraphics redraws a remembered pool', async () => {
 // row in the picker (a rogue-restricted set like RogueEpyx), so an empty
 // pick is nothing_to_do and the display keeps the Rogue symbols.
 void test('an empty picker pick keeps an unlisted primary set displayed', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     applyNethackrc('OPTIONS=symset:RogueEpyx');
-    const cell = installLadderUp(12, 8);
+    const cell = await installLadderUp(12, 8);
     await flush_screen(1);
     assert.equal(requireScreenCell(cell.column, cell.row).ch, '<');
     const input = resetInputState();

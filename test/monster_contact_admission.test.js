@@ -22,7 +22,7 @@ function collectAttackMessages(expected) {
 }
 for (const trapType of [PIT, SPIKED_PIT]) {
     void test(`a horse trapped in ${trapType === PIT ? 'a pit' : 'a spiked pit'} can bite but cannot kick`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const horse = await createMonsterAt('horse', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         horse.mux = game.u.ux;
@@ -41,7 +41,7 @@ for (const trapType of [PIT, SPIKED_PIT]) {
     });
 }
 void test('a horse can kick a hero who is trapped in a pit', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     await maketrap(game.u.ux, game.u.uy, PIT);
     game.u.utrap = 3;
@@ -60,7 +60,7 @@ void test('a horse can kick a hero who is trapped in a pit', async () => {
 });
 for (const condition of ['ordinary', 'confused', 'Conflict']) {
     void test(`an armed ${condition} centaur ${condition === 'ordinary' ? 'avoids' : 'risks'} kicking a cockatrice`, async () => {
-        freshRoomWithPolymorphedHero('cockatrice', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
+        await freshRoomWithPolymorphedHero('cockatrice', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
         requirePlayingGame(game);
         if (condition === 'Conflict')
             await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
@@ -81,7 +81,7 @@ for (const condition of ['ordinary', 'confused', 'Conflict']) {
 }
 for (const hits of [false, true]) {
     void test(`a ${hits ? 'successful' : 'missed'} kick at a thick-skinned hero ${hits ? 'is harmless and silent' : 'still reports a miss'}`, async () => {
-        freshRoomWithPolymorphedHero('mastodon', { polymorph: { hitPoints: 100 }, hero: { uac: 0 } });
+        await freshRoomWithPolymorphedHero('mastodon', { polymorph: { hitPoints: 100 }, hero: { uac: 0 } });
         requirePlayingGame(game);
         const horse = await createMonsterAt('horse', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         horse.mux = game.u.ux;
@@ -101,7 +101,7 @@ for (const hits of [false, true]) {
 }
 for (const species of ['lichen', 'large mimic', 'giant eel']) {
     void test(`a ${species} cannot hold an unsolid hero`, async () => {
-        freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
+        await freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
         requirePlayingGame(game);
         if (species === 'giant eel') {
             const location = game.level.at(11, 10);
@@ -122,7 +122,7 @@ for (const species of ['lichen', 'large mimic', 'giant eel']) {
     });
 }
 void test('an owlbear claws an unsolid hero but its following hug passes through', async () => {
-    freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
+    await freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
     requirePlayingGame(game);
     const owlbear = await createMonsterAt('owlbear', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     owlbear.mux = game.u.ux;
@@ -137,7 +137,7 @@ void test('an owlbear claws an unsolid hero but its following hug passes through
     assert.match(messages.join('\n'), /owlbear's grab attempt passes right through you!/);
 });
 void test('a purple worm bites an unsolid hero but cannot swallow it', async () => {
-    freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
+    await freshRoomWithPolymorphedHero('wraith', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     worm.mux = game.u.ux;

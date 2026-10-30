@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a summoned demon shares the unread hero attack message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const summoner = await createMonsterAt('incubus', 12, 10, NO_MINVENT);
     await plineWithContinuation('You hit the incubus!');
 

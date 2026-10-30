@@ -185,7 +185,7 @@ void test('probing describes a mimic without exposing or changing its disguise',
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = CHEST;
-    newsym(mimic.mx, mimic.my);
+    await newsym(mimic.mx, mimic.my);
     const status = await monsterStatusLine(mimic);
     assert.match(status, /mimicking a chest/);
     assert.equal(mimic.m_ap_type & 3, M_AP_OBJECT);
@@ -199,7 +199,7 @@ void test('locking reveals an adjacent chest mimic without making it grab the he
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = CHEST;
     mimic.msleeping = 1;
-    newsym(mimic.mx, mimic.my);
+    await newsym(mimic.mx, mimic.my);
     await hitMonsterWithWand(mimic, await chargedWand(OBJECT_NAMES.indexOf('locking')));
     assert.equal(mimic.m_ap_type, 0);
     assert.equal(mimic.msleeping, 1);

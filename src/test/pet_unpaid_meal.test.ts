@@ -14,7 +14,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { createStaffedShop } from './support/shop.js';
 
 void test('a pet names an unpaid meal without a price suffix before announcing its charge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
     shopkeeper.movement = 0;

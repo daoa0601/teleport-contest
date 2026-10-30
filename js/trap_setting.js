@@ -93,7 +93,7 @@ export async function continueTrapSetting(state = game) {
     const trap = await maketrap(state.u.ux, state.u.uy, type);
     if (trap) {
         trap.madeby_u = true;
-        feelTrap(trap, state);
+        await feelTrap(trap, state);
         if (roomsAt(state.level, trap.tx, trap.ty, SHOPBASE).length)
             addShopDamage(trap.tx, trap.ty, 0, state);
         if (!progress.forceBungle)

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // Kept apart from shop_sell.test.ts: this file's process must not have run a
 // deliberate drop before the accidental one.
 void test('an accidental drop before any deliberate drop sells without a query', async t => {
-    freshObjectRoom({ left: 9, right: 13, top: 9, bottom: 11, role: 'caveman' });
+    await freshObjectRoom({ left: 9, right: 13, top: 9, bottom: 11, role: 'caveman' });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         left: 9, right: 13, top: 9, bottom: 11, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,

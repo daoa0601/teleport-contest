@@ -9,7 +9,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an archer judges a retreating displaced hero by the apparent target range', async () => {
-    freshObjectRoom({ left: 2, right: 20, heroX: 12, heroY: 10 });
+    await freshObjectRoom({ left: 2, right: 20, heroX: 12, heroY: 10 });
     requirePlayingGame(game);
     game.u.ux0 = 11;
     game.u.uy0 = 10;

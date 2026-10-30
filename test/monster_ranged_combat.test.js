@@ -15,7 +15,7 @@ const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVE
 const maximumDice = (count, sides) => count * sides;
 const nonzeroRoll = (range) => Math.min(1, range - 1);
 async function rangedCombatants(species, adjacent = false) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 2, right: 40, top: 2, bottom: 18, heroX: 10, heroY: 14,
         context: { mon_moving: true }, flags: { verbose: true },
     });

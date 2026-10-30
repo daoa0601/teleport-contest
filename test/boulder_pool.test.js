@@ -21,12 +21,12 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test("a monster's life-saving amulet works when a boulder fills its pool", async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     await makeBlinded(10, { talk: false });
     game.u.deaf = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     const monster = await createMonsterAt('giant', 12, 10);
     monster.mhp = 1;
     const amulet = await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -39,7 +39,7 @@ void test("a monster's life-saving amulet works when a boulder fills its pool", 
     assert.equal(amulet.where, 'gone');
 });
 void test('a visible boulder splash names the pool and wakes a sleeping monster aloud', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     requireGameLevel().requireAt(11, 10).typ = POOL;
     const sleeper = await createMonsterAt('giant ant', 14, 10);
@@ -63,7 +63,7 @@ void test('a visible boulder splash names the pool and wakes a sleeping monster 
     assert.ok(newtWake >= 0 && antWake > newtWake, 'newer monsters wake first');
 });
 void test('an unpaid boulder used to fill water stays on its shop bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
@@ -78,7 +78,7 @@ void test('an unpaid boulder used to fill water stays on its shop bill', async (
     assert.ok(shopkeeper.eshk.bill.some((entry) => entry.bo_id === boulder.o_id && entry.useup));
 });
 void test('a lava splash burns slime and destroys the polymorphed body, not human HP', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     await polymonHero(MONSTER_NAME.indexOf('giant ant'));
@@ -96,7 +96,7 @@ void test('a lava splash burns slime and destroys the polymorphed body, not huma
     assert.ok(!game.program_state.gameover);
 });
 void test('life saving resumes boulder disposal after a fatal lava splash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -113,7 +113,7 @@ void test('life saving resumes boulder disposal after a fatal lava splash', asyn
 });
 for (const waterPlane of [false, true]) {
     void test(`a boulder ${waterPlane ? 'cannot fill' : 'can fill'} a wall of water ${waterPlane ? 'on' : 'outside'} the Water Plane`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         pushKeys(' '.repeat(100));
         if (waterPlane)
@@ -128,7 +128,7 @@ for (const waterPlane of [false, true]) {
 }
 void test('a water wall can swallow a boulder that would fill an ordinary pool', async () => {
     for (const type of [POOL, WATER]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         pushKeys(' '.repeat(100));
         requireGameLevel().requireAt(12, 10).typ = type;

@@ -28,17 +28,17 @@ function committedTopline(): string {
     return game._pending_message;
 }
 
-function drawRect(level: GameMap, left: number, right: number, top: number, bottom: number): void {
+async function drawRect(level: GameMap, left: number, right: number, top: number, bottom: number): Promise<void> {
     for (let y = top; y <= bottom; y++)
         for (let x = left; x <= right; x++)
-            newsym(x, y);
+            await newsym(x, y);
 }
 
 void test('#lookaround describes the whole seen room and each interesting square', async () => {
-    const level = freshObjectRoom({ flags: { tips: false } });
-    drawRect(level, 7, 16, 6, 14);
+    const level = await freshObjectRoom({ flags: { tips: false } });
+    await drawRect(level, 7, 16, 6, 14);
     await floorObject(FOOD_RATION, 12, 8);
-    newsym(12, 8);
+    await newsym(12, 8);
 
     const input = resetInputState();
     input.feed('#lookaround\r');
@@ -72,16 +72,16 @@ void test('#lookaround from a doorway describes the adjacent room with its direc
     corridor.lit = corridor.waslit = true;
     corridor.seenv = 255;
     updateHeroRoomMembership(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     // The whole room is explored: magic mapping supplies the remembered
     // floor the room description needs, including corners out of sight.
     for (let y = 6; y <= 14; y++)
         for (let x = 6; x <= 10; x++) {
-            magic_map_background(x, y);
-            newsym(x, y);
+            await magic_map_background(x, y);
+            await newsym(x, y);
         }
-    newsym(11, 10);
-    newsym(12, 10);
+    await newsym(11, 10);
+    await newsym(12, 10);
 
     const input = resetInputState();
     input.feed('#lookaround\r');
@@ -116,11 +116,11 @@ void test('#lookaround in a corridor lists remembered corridors beyond sight', a
     remembered.typ = CORR;
     remembered.lit = false;
     remembered.seenv = 255;
-    magic_map_background(40, 5);
-    vision_recalc(0);
-    newsym(12, 10);
-    newsym(40, 5);
-    newsym(6, 6);
+    await magic_map_background(40, 5);
+    await vision_recalc(0);
+    await newsym(12, 10);
+    await newsym(40, 5);
+    await newsym(6, 6);
 
     const input = resetInputState();
     input.feed('#lookaround\r');

@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const action of ['eat', 'study']) {
     void test(`${action} refreshes the turn display after travel during occupation steps`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             moves: 60, flags: { time: true, runmode: 'walk' },
             // findtravelpath() leaves run set after arrival, with no multi.
             context: { run: 8, mv: false },

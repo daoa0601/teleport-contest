@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const alreadyInside of [false, true]) {
     void test(`steam vortex death ${alreadyInside ? 'keeps an existing cloud quiet' : 'announces a new cloud around the hero'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const messages: string[] = [];
         const publish = async (message: string) => { messages.push(message); };
         if (alreadyInside)

@@ -185,7 +185,7 @@ void test('Amulet difficulty remembers the deepest visit after returning upstair
     await gotoLevel({ dnum: 0, dlevel: 4 }, { arrival: 'stairs' });
     await gotoLevel({ dnum: 0, dlevel: 1 }, { arrival: 'stairs' });
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Climber', storage), true);
+    assert.equal(await restoreGame('Climber', storage), true);
     await addInventoryObject(AMULET_OF_YENDOR);
     assert.equal(level_difficulty(), 4);
 });

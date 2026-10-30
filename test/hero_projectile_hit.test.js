@@ -24,7 +24,7 @@ async function throwWeaponAtHero(type = DAGGER, properties = {}) {
     return { soldier, weapon };
 }
 void test('a horizontal rock throw tells a rock-passing hero it does no harm', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('xorn', { hitPoints: 40 });
     const { soldier, weapon } = await throwWeaponAtHero(ROCK, { spe: 0 });
@@ -37,7 +37,7 @@ void test('a horizontal rock throw tells a rock-passing hero it does no harm', a
     assert.ok(messages.includes("It doesn't harm you."));
 });
 void test('projectile damage waits until the hit message can be shown', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const health = game.u.uhp;
     const { soldier, weapon } = await throwWeaponAtHero();
@@ -52,7 +52,7 @@ void test('projectile damage waits until the hit message can be shown', async ()
     assert.ok(game.u.uhp < health);
 });
 void test('a thrown weapon hurts the current monster body without changing saved human health', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 60 });
     const humanHealth = game.u.uhp;
@@ -63,7 +63,7 @@ void test('a thrown weapon hurts the current monster body without changing saved
     assert.equal(Upolyd(game.u), true);
 });
 void test('poison on a thrown dart damages the same monster body as its point', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 60 });
     const { soldier, weapon } = await throwWeaponAtHero(DART, { opoisoned: 1 });
@@ -76,7 +76,7 @@ void test('poison on a thrown dart damages the same monster body as its point', 
     assert.equal(game.u.uhp, 40);
 });
 void test('a projectile that destroys the monster body returns the hero to human form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 1 });
     const humanHealth = game.u.uhp;
@@ -89,7 +89,7 @@ void test('a projectile that destroys the monster body returns the hero to human
 void test('half physical damage reduces a thrown weapon hit, rounding up', async () => {
     const damage = [];
     for (const halfPhysicalDamage of [false, true]) {
-        freshObjectRoom({ hero: { halfPhysicalDamage } });
+        await freshObjectRoom({ hero: { halfPhysicalDamage } });
         requireFixtureGame(game);
         const health = game.u.uhp;
         const { soldier, weapon } = await throwWeaponAtHero();
@@ -105,7 +105,7 @@ void test('half physical damage reduces a thrown weapon hit, rounding up', async
 // itself, so a seen throw reveals the darts it keeps, and a thrown one can
 // merge back into that stack later.
 void test('watching a monster throw one dart reveals the rest of its stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { soldier, weapon } = await throwWeaponAtHero(DART, { quan: 3, dknown: false, spe: 0 });
     await throwMonsterWeaponAtHero(soldier, game, weapon, { publish: async () => { }, rollOne: () => 1 });
@@ -114,7 +114,7 @@ void test('watching a monster throw one dart reveals the rest of its stack', asy
     assert.equal(kept?.dknown, true);
 });
 void test('a caught poisoned dart is announced by its simple name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { soldier, weapon } = await throwWeaponAtHero(DART, { opoisoned: 1, spe: 0 });
     const messages = [];
@@ -132,7 +132,7 @@ for (const [condition, type, impairment] of [
     ['acid venom', ACID_VENOM, null],
 ]) {
     void test(`${condition} prevents a catch without revealing a welded weapon's curse`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const wielded = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
         await setPrimaryWeapon(wielded);
@@ -149,7 +149,7 @@ for (const [condition, type, impairment] of [
     });
 }
 void test('an eligible catch reveals a welded weapon\'s curse while using the other hand', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const wielded = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
     await setPrimaryWeapon(wielded);

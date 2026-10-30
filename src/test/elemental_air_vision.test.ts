@@ -46,7 +46,7 @@ void test('Plane of Air sight through drifting clouds follows the maintained blo
         vision_reset_new_level();
 
         await moveElementalBubbles();
-        vision_recalc(0);
+        await vision_recalc(0);
 
         // The turn reset the plane to air and redrew the clouds; the hero
         // still stands on clear air with the own square in sight.

@@ -217,7 +217,7 @@ async function triggerPit(
     const plunged = tookPlunge;
     if (!sokoban && (hero.levitating || game.levitating
         || (flying && !plunged && !viaSitting))) return;
-    feelTrap(trap);
+    await feelTrap(trap);
     if (!sokoban && (formFlags & M1_CLING) && !plunged) {
         if (alreadyKnown) {
             await plineWithContinuation(
@@ -352,7 +352,7 @@ async function triggerWeb(
 ) {
     requirePlayingGame(game);
     const hero = game.u;
-    feelTrap(trap);
+    await feelTrap(trap);
     const form = heroMonsterForm();
     if (await maybeDestroyWeb(hero, trap, { message: !noWebMessage })) return;
     if (form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER) {
@@ -391,7 +391,7 @@ async function triggerWeb(
     if (!turns) {
         if (!noWebMessage) await plineWithContinuation(`You tear through ${trap.madeby_u ? 'your' : 'a'} web!`);
         deleteTrap(trap);
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
     }
 }
 
@@ -444,7 +444,7 @@ async function triggerLandmine(trap: Trap, {
     if (airborne) {
         const alreadySeen = !!trap.tseen;
         if (!alreadySeen && rn2(3) !== 0) return;
-        feelTrap(trap);
+        await feelTrap(trap);
         await plineWithContinuation(`${alreadySeen ? 'There is' : 'You discover'} ${
             trap.madeby_u ? 'the trigger of your mine' : 'a trigger'} in a pile of soil below you.`);
         if (alreadySeen && rn2(3) !== 0) return;
@@ -453,7 +453,7 @@ async function triggerLandmine(trap: Trap, {
             alreadySeen ? `${trap.madeby_u ? 'your' : 'a'} land mine` : 'it'} off!`);
     } else {
         if (landmineSteedHitInProgress) return;
-        feelTrap(trap);
+        await feelTrap(trap);
         await plineWithContinuation(
             `KAABLAMM!!!  You triggered ${trap.madeby_u ? 'your' : 'a'} land mine!`,
         );
@@ -508,7 +508,7 @@ async function triggerLandmine(trap: Trap, {
     });
     if (game.program_state.gameover) return;
     if (steedMid && saddle && !hero.usteed) await keepSaddleWithSteedcorpse(steedMid, saddle);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
     const landing = await triggerHeroTrapAt(hero.ux, hero.uy, { recursiveTrap: true });
     if (landing.died) return;
     await fillPitWithBoulderAt(hero.ux, hero.uy, game);
@@ -664,7 +664,7 @@ export async function freeHeroFromBuriedBall(state: GameState = game) {
     level.engravings = (level.engravings || []).filter(
         engraving => engraving.x !== x || engraving.y !== y,
     );
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 
@@ -773,7 +773,7 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
 }
 
 async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport']): Promise<boolean> {
-    seeTrap(trap);
+    await seeTrap(trap);
     if (game._inTeleportTrap) return false;
     if (typeof finishTeleport !== 'function')
         throw new TypeError('teleport trap needs an arrival handler');
@@ -796,7 +796,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
         let destination = null;
         if (trap.once) {
             deleteTrap(trap);
-            newsym(game.u.ux, game.u.uy);
+            await newsym(game.u.ux, game.u.uy);
 
             const vault = searchSpecial(VAULT);
             if (vault) {
@@ -817,8 +817,8 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
                 return true;
             }
             if (cleared.relocation) {
-                newsym(cleared.relocation.oldx, cleared.relocation.oldy);
-                newsym(cleared.relocation.x, cleared.relocation.y);
+                await newsym(cleared.relocation.oldx, cleared.relocation.oldy);
+                await newsym(cleared.relocation.x, cleared.relocation.y);
             }
             destination = trap.teledest;
         } else {
@@ -839,10 +839,10 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
 }
 
 async function triggerMagicTrap(trap: Trap) {
-    seeTrap(trap);
+    await seeTrap(trap);
     if (rn2(30) === 0) {
         deleteTrap(trap);
-        newsym(trap.tx, trap.ty);
+        await newsym(trap.tx, trap.ty);
         await plineWithContinuation('You are caught in a magical explosion!');
         if (await loseHeroHp(rnd(10), 'magical explosion')) return;
         await plineWithContinuation('Your body absorbs some of the magical energy!');
@@ -867,12 +867,12 @@ async function triggerProjectileTrap(trap: Trap) {
     if (trap.once && trap.tseen && rn2(15) === 0) {
         await publishHeardMessage(arrowTrap ? 'a loud click!' : 'a soft click.', plineWithContinuation);
         deleteTrap(trap);
-        newsym(trap.tx, trap.ty);
+        await newsym(trap.tx, trap.ty);
         return;
     }
 
     trap.once = true;
-    seeTrap(trap);
+    await seeTrap(trap);
     await plineWithContinuation(`${subject} shoots out at you!`);
 
     const missile = await makeTrapMissile(objectType, trap);
@@ -912,7 +912,7 @@ async function triggerProjectileTrap(trap: Trap) {
     placeCreatedObject(missile, trap.tx, trap.ty);
     if (!blind) observeObject(missile, game);
     await stack_object(missile, game);
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
 }
 
 // C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
@@ -920,7 +920,7 @@ async function triggerProjectileTrap(trap: Trap) {
 export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
     intentional: boolean): Promise<void> {
     requirePlayingGame(game);
-    seeTrap(trap);
+    await seeTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
     // precedence over the species' normal way of moving.
@@ -933,7 +933,7 @@ export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOp
         return;
     }
     deleteTrap(trap);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
     await levelTeleport({
         gotoLevel: (...args) => { scheduleLevelChange(args, gotoLevel ?? changeLevel); },
     });
@@ -960,7 +960,7 @@ async function triggerSqueakyBoard(
     const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
-            seeTrap(trap);
+            await seeTrap(trap);
             const hallucinating = heroIsHallucinating(game);
             await plineWithContinuation(hallucinating
                 ? 'You notice a crease in the linoleum.'
@@ -969,7 +969,7 @@ async function triggerSqueakyBoard(
         return;
     }
 
-    seeTrap(trap);
+    await seeTrap(trap);
     await plineWithContinuation(deaf
         ? 'A board beneath you vibrates.'
         : `A board beneath you squeaks ${
@@ -991,13 +991,13 @@ async function triggerFallingRockTrap(trap: Trap) {
             `A trap door in the ${ceiling} opens, but nothing falls out!`,
         );
         deleteTrap(trap);
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
         return;
     }
 
     let damage = d(2, 6);
     trap.once = true;
-    feelTrap(trap);
+    await feelTrap(trap);
     const rock = await makeTrapMissile(ROCK, trap);
     placeCreatedObject(rock, hero.ux, hero.uy);
     observeObjectForNaming(rock);
@@ -1033,7 +1033,7 @@ async function triggerFallingRockTrap(trap: Trap) {
     if (!(game.blind || heroIsBlind(game)))
         observeObject(rock, game);
     await stack_object(rock, game);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
     if (!harmless) {
         if (await loseHeroHp(physicalDamage(damage), 'falling rock')) return;
         await exerciseAttribute(A_STR, false);
@@ -1042,7 +1042,7 @@ async function triggerFallingRockTrap(trap: Trap) {
 
 async function triggerSleepingGasTrap(trap: Trap) {
     const hero = game.u;
-    seeTrap(trap);
+    await seeTrap(trap);
     const breathless = !!hero.breathless
         || !!(heroFormFlags() & M1_BREATHLESS);
     if (hero.sleepResistance || breathless) {
@@ -1059,7 +1059,7 @@ async function triggerSleepingGasTrap(trap: Trap) {
         || monsterIsBreathless(steed) || monsterIsHelpless(steed)) return;
     steed.mx = hero.ux;
     steed.my = hero.uy;
-    if (!putMonsterToSleep(steed, rnd(25))) return;
+    if (!await putMonsterToSleep(steed, rnd(25))) return;
     const name = steed.name || `The ${monsterTypeName(
         steed.mnum, !!steed.female,
     )}`;
@@ -1069,10 +1069,10 @@ async function triggerSleepingGasTrap(trap: Trap) {
 export async function animateRollingBoulderCell(
     boulder: GameObject, glyph: DisplayGlyph, x: number, y: number, previous: Position | null,
 ): Promise<Position | null> {
-    if (previous) newsym(previous.x, previous.y);
+    if (previous) await newsym(previous.x, previous.y);
     if (!cansee(x, y)) return null;
 
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
+    await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
     // Keep the animation cursor after the last map cell the display changed.
     const frameCursor: [number, number] = previous
         ? lastDirtyMapCursor() ?? [x, y + 1]
@@ -1087,7 +1087,7 @@ export async function animateRollingBoulderCell(
 
 async function triggerRollingBoulderTrap(trap: Trap) {
     const wasKnown = !!trap.tseen;
-    feelTrap(trap);
+    await feelTrap(trap);
 
     const click = heroIsDeaf(game) ? '' : 'Click!  ';
     await plineWithContinuation(`${click}You trigger a rolling boulder trap!`);
@@ -1112,7 +1112,7 @@ async function triggerBearTrap(trap: Trap, {
 
     const damage = d(2, 4);
     if (!forced && !viaSitting && (levitating || flying)) return false;
-    feelTrap(trap);
+    await feelTrap(trap);
     const subject = trap.madeby_u ? 'Your' : 'A';
     const body = { mnum: heroMonsterForm() };
     if (monsterIsAmorphous(body) || monsterIsWhirly(body) || monsterIsUnsolid(body)) {
@@ -1185,7 +1185,7 @@ async function rustIronGolemHero() {
 
 async function triggerRustTrap(trap: Trap) {
     const hero = game.u;
-    seeTrap(trap);
+    await seeTrap(trap);
     const target = rn2(5);
 
     if (target === 0) {
@@ -1256,7 +1256,7 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
     const levitating = !!(game.u?.levitating || game.levitating);
     if (game.blind && levitating && !sokoban) return null;
 
-    feelTrap(trap);
+    await feelTrap(trap);
     if (!sokoban && !tookPlunge) await plineWithContinuation(trap.ttyp === TRAPDOOR
         ? 'A trap door opens up under you!' : "There's a gaping hole under you!");
 
@@ -1403,11 +1403,11 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         });
         break;
     case FIRE_TRAP:
-        seeTrap(trap);
+        await seeTrap(trap);
         died = (await triggerHeroFireTrap()).died;
         break;
     case MAGIC_PORTAL:
-        feelTrap(trap);
+        await feelTrap(trap);
         if (game.u.utraptype === TT_BURIEDBALL) await buriedBallToPunishment();
         await activateMagicPortal(trap, gotoLevel);
         break;
@@ -1431,7 +1431,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         await triggerLandmine(trap, { failedUntrap, forceTrap, forceBungle });
         break;
     case VIBRATING_SQUARE:
-        feelTrap(trap);
+        await feelTrap(trap);
         break;
     }
     return {

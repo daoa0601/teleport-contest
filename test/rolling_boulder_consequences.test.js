@@ -15,7 +15,7 @@ import { createStaffedShop } from './support/shop.js';
 import { createDungeon } from './support/topology.js';
 for (const monsterTurn of [false, true]) {
     void test(`a surviving boulder hit ${monsterTurn ? 'during a monster turn preserves Elbereth and peace' : 'during the hero turn breaks Elbereth and angers a peaceful target'}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             context: { mon_moving: monsterTurn },
             hero: { ualign: { type: 0, record: 10 } },
         });
@@ -38,7 +38,7 @@ for (const monsterTurn of [false, true]) {
 void test('a hero-turn boulder hit gives a variable Elbereth penalty at low alignment', async () => {
     const penalties = new Set();
     for (let seed = 1n; seed <= 16n; seed++) {
-        freshObjectRoom({ hero: { ualign: { type: 0, record: 5 } } });
+        await freshObjectRoom({ hero: { ualign: { type: 0, record: 5 } } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
         goblin.mpeaceful = 0;
@@ -59,7 +59,7 @@ void test('a hero-turn boulder hit gives a variable Elbereth penalty at low alig
 });
 for (const teleportWorks of [false, true]) {
     void test(`a rolling boulder ${teleportWorks ? 'loses its shop exemption when it migrates' : 'retains its shop exemption when level teleport fails'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
         await createStaffedShop({

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createRoom } from './support/topology.js';
 void test('a priest seen by infravision names her deity when the hero enters a dark temple', async () => {
-    const level = freshObjectRoom({ hero: { infravision: true } });
+    const level = await freshObjectRoom({ hero: { infravision: true } });
     requirePlayingGame(game);
     const room = createRoom({ lx: 7, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];
@@ -36,7 +36,7 @@ void test('a priest seen by infravision names her deity when the hero enters a d
         intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
     };
     game.u.urooms0 = [];
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(priest), true);
     const input = resetInputState();
     await answerPrompts(intemple(ROOMOFFSET), input, [

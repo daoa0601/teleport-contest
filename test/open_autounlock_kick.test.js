@@ -9,15 +9,15 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-function lockedDoorEast() {
-    const level = freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_KICK } });
+async function lockedDoorEast() {
+    const level = await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_KICK } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
     return door;
 }
 void test('answering the autounlock kick offer runs the kick at the door without a new direction', async () => {
-    const door = lockedDoorEast();
+    const door = await lockedDoorEast();
     requirePlayingGame(game);
     // A polymorphed giant always breaks the door, independent of the roll.
     game.u.mh = game.u.mhmax = 100;
@@ -42,7 +42,7 @@ void test('answering the autounlock kick offer runs the kick at the door without
 });
 for (const answer of ['n', 'q']) {
     void test(`declining the autounlock kick offer with '${answer}' runs no kick`, async () => {
-        const door = lockedDoorEast();
+        const door = await lockedDoorEast();
         const input = resetInputState();
         pushKeys('l');
         await answerPrompts(rhack('o'.charCodeAt(0)), input, [
@@ -60,7 +60,7 @@ for (const answer of ['n', 'q']) {
     });
 }
 void test('a mounted hero gets no kick offer for a locked door', async () => {
-    const door = lockedDoorEast();
+    const door = await lockedDoorEast();
     const steed = await createSaddledSteed('pony', { x: 10, y: 9 });
     game.u.usteed = steed;
     const input = resetInputState();

@@ -24,7 +24,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createRoomLevel } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('restoring a chameleon re-enables shape changes after protection was removed elsewhere', async () => {
-    const savedLevel = freshObjectRoom();
+    const savedLevel = await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);
     await wearHeroAccessory(ring, 'uleft');
     const monster = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
@@ -40,7 +40,7 @@ void test('restoring a chameleon re-enables shape changes after protection was r
     assert.equal(game.moves, moves, 'Restoring permission does not advance a turn.');
 });
 void test('protection gained elsewhere restores the returning monster and displays its change', async () => {
-    const savedLevel = freshObjectRoom();
+    const savedLevel = await freshObjectRoom();
     const monster = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
     game.level = createRoomLevel();
@@ -54,7 +54,7 @@ void test('protection gained elsewhere restores the returning monster and displa
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /The little dog turns into a chameleon!/);
 });
 void test('a restored cancelled shapechanger returns to its base form and stays cancelled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
     monster.mcan = 1;
@@ -66,7 +66,7 @@ void test('a restored cancelled shapechanger returns to its base form and stays 
     assert.equal(monster.cham, NON_PM, 'Cancellation still prevents changing shape on a later restore.');
 });
 void test('an active shapechanger keeps its current form when restored without protection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
     await restoreMonsterShape(monster);
@@ -74,7 +74,7 @@ void test('an active shapechanger keeps its current form when restored without p
     assert.equal(monster.cham, MONSTER_NAME.indexOf('chameleon'));
 });
 void test('a cancelled beast-form werecreature returns to human form during restoration', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt(MONSTER_NAME.indexOf('werewolf'), 11, 10, NO_MINVENT);
     monster.mcan = 1;
     monster.mhp = 8;
@@ -91,7 +91,7 @@ void test('a cancelled beast-form werecreature returns to human form during rest
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /changes into a human/);
 });
 void test('a cancelled unseen mimic is revealed and put to sleep when restored', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(30, 15).typ = ROOM;
     const mimic = await createMonsterAt('small mimic', 30, 15, NO_MINVENT);
     assert.notEqual(M_AP_TYPE(mimic), M_AP_NOTHING);
@@ -102,7 +102,7 @@ void test('a cancelled unseen mimic is revealed and put to sleep when restored',
     assert.equal(!!mimic.msleeping, true);
 });
 void test('restoration with new protection ends a borrowed meal disguise without putting the pet to sleep', async () => {
-    const savedLevel = freshObjectRoom();
+    const savedLevel = await freshObjectRoom();
     const pet = await createMonsterAt('little dog', 11, 10);
     initializePet(pet);
     pet.msleeping = 0;
@@ -122,7 +122,7 @@ void test('restoration with new protection ends a borrowed meal disguise without
     assert.equal(!!pet.msleeping, false);
 });
 void test('restoration without protection leaves an ordinary mimic disguise intact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     assert.notEqual(M_AP_TYPE(mimic), M_AP_NOTHING);
     await restoreMonsterShape(mimic);
@@ -130,7 +130,7 @@ void test('restoration without protection leaves an ordinary mimic disguise inta
     assert.equal(mimic.cham, NON_PM);
 });
 void test('cancellation reports a visible return to natural form after acknowledging earlier prose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
     await plineWithContinuation('The little dog bares its teeth and growls menacingly.');
@@ -147,7 +147,7 @@ void test('cancellation reports a visible return to natural form after acknowled
 });
 for (const bodyType of [CORPSE, STATUE]) {
     void test(`restoring saved ${bodyType === CORPSE ? 'corpse' : 'statue'} traits visibly normalizes a protected shapechanger`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const original = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
         await changeMonsterForm(original, MONSTER_NAME.indexOf('little dog'));
         const body = await createCorpstatAt(bodyType, original, original.mnum, 11, 10, CORPSTAT_INIT);

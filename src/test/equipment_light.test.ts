@@ -28,8 +28,8 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const GOLD_MAIL = OBJECT_NAMES.indexOf('gold dragon scale mail');
 
-function darkRoom() {
-    const level = freshObjectRoom({ left: 2, right: 30, top: 2, bottom: 18 });
+async function darkRoom() {
+    const level = await freshObjectRoom({ left: 2, right: 30, top: 2, bottom: 18 });
     for (let x = 2; x <= 30; x++) {
         for (let y = 2; y <= 18; y++) {
             level.requireAt(x, y).lit = false;
@@ -37,15 +37,15 @@ function darkRoom() {
         }
     }
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     return level;
 }
 
 void test('a disappearing luminous monster stops lighting nearby floor', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     const elemental = await createMonsterAt('fire elemental', 14, 10, NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(15, 10), true);
 
     await removeMonsterFromGame(elemental);
@@ -55,39 +55,39 @@ void test('a disappearing luminous monster stops lighting nearby floor', async (
 });
 
 void test('gold dragon mail lights the dungeon while worn and moves with the hero', async () => {
-    darkRoom();
+    await darkRoom();
     const armor = await addInventoryObject(GOLD_MAIL);
     assert.equal(cansee(13, 10), false);
 
     wearHeroArmor(armor);
     await applyArmorOnEffects(armor);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(13, 10), true);
 
     await moveHeroByTeleport(20, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(13, 10), false);
     assert.equal(cansee(23, 10), true);
 
     await removeHeroArmor(armor);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(23, 10), false);
     assert.equal(armor.lamplit, false);
 });
 
 void test('a monster lights nearby squares with gold dragon mail until it loses the armor', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     const armor = await addObjectToMonsterInventory(soldier, await knownObject(GOLD_MAIL));
 
     await initializeMonsterArmor(soldier);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), true);
 
     assert.ok(armor);
     await removeObjectFromMonsterInventory(soldier, armor);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), false);
     assert.ok(armor !== null && armor !== undefined);
     assert.equal(armor.lamplit, false);
@@ -95,26 +95,26 @@ void test('a monster lights nearby squares with gold dragon mail until it loses 
 });
 
 void test('wielding Sunsword lights the room and emptying the hand extinguishes it', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     game.u.ualign.type = 1;
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
     pushKeys(`${sword.invlet} `);
 
     await rhack('w'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), true);
 
     pushKeys('- ');
     await rhack('w'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(sword.lamplit, false);
     assert.equal(cansee(12, 10), false);
     assert.match(game._pending_message, /Sunsword stops shining/);
 });
 
 void test('swapping Sunsword from the alternate slot starts its light', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     game.u.ualign.type = 1;
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
@@ -122,14 +122,14 @@ void test('swapping Sunsword from the alternate slot starts its light', async ()
     pushKeys('  ');
 
     await rhack('x'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(game.uwep, sword);
     assert.equal(cansee(12, 10), true);
 });
 
 void test('the Eyes reveal Sunsword shining despite an underlying blindness timeout', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     game.u.ualign.type = 1;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
@@ -147,20 +147,20 @@ void test('the Eyes reveal Sunsword shining despite an underlying blindness time
 });
 
 void test('a stack of burning candles lights a wider area until extinguished', async () => {
-    darkRoom();
+    await darkRoom();
     const candles = await floorObject(WAX_CANDLE, 14, 10, { quan: 9, age: 200 });
 
     beginObjectBurn(candles);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(18, 10), true);
 
     endObjectBurn(candles);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(18, 10), false);
 });
 
 void test('gold armor stops lighting the room when its wearer dies', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     const armor = await addObjectToMonsterInventory(soldier, await knownObject(GOLD_MAIL));
@@ -168,14 +168,14 @@ void test('gold armor stops lighting the room when its wearer dies', async () =>
     soldier.mhp = 0;
 
     await finishEnvironmentalMonsterDeath(soldier, game, { publish: async () => {} });
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.ok(armor !== null && armor !== undefined);
     assert.equal(armor.lamplit, false);
     assert.equal(cansee(17, 10), false);
 });
 
 void test('hero death extinguishes equipment light but leaves a dropped lamp burning', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     const armor = await addInventoryObject(GOLD_MAIL);
     wearHeroArmor(armor);
@@ -194,18 +194,18 @@ void test('hero death extinguishes equipment light but leaves a dropped lamp bur
 });
 
 void test('a monster can unwield Sunsword without dropping it or leaving its light behind', async () => {
-    darkRoom();
+    await darkRoom();
     requireFixtureGame(game);
     const giant = await createMonsterAt('giant', 14, 10, NO_MINVENT);
     const sword = await equipMonsterObject(giant, await artifactObject('Sunsword'), W_WEP);
     beginObjectBurn(sword);
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages: string[] = [];
 
     await unwieldMonsterWeapon(giant, game, {
         publish: async (message: string) => messages.push(message),
     });
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(giant.mw, null);
     assert.equal(giant.minvent.includes(sword), true);
@@ -215,13 +215,13 @@ void test('a monster can unwield Sunsword without dropping it or leaving its lig
 });
 
 void test('Sunsword starts lighting the room after the monster\'s wielding message is acknowledged', async () => {
-    darkRoom();
+    await darkRoom();
     const input = resetInputState();
     const giant = await createMonsterAt('giant', 14, 10, NO_MINVENT);
     await addObjectToMonsterInventory(giant, await artifactObject('Sunsword'));
     giant.weaponCheck = NEED_HTH_WEAPON;
     beginObjectBurn(await floorObject(OIL_LAMP, 11, 10, { age: 100 }));
-    vision_recalc(0);
+    await vision_recalc(0);
     await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
 
     const wielding = wieldMonsterWeapon(giant);
@@ -229,7 +229,7 @@ void test('Sunsword starts lighting the room after the monster\'s wielding messa
     assert.equal(cansee(16, 10), false);
     input.feed('   ');
     await wielding;
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(cansee(16, 10), true);
     assert.ok(giant.mw !== null && giant.mw !== undefined);

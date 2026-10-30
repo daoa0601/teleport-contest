@@ -13,7 +13,7 @@ import { createDungeon, createRoom, createSpecialLevel } from './support/topolog
 for (const [name, note] of [['bigrm', 'A very big room.'], ['rogue', 'A primitive area.']]) {
     void test(`the overview recognizes ${name}`, async () => {
         assert.ok(name && note);
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 20 })];
         game.specialLevels = new Map([[name, createSpecialLevel(game.u.uz)]]);
@@ -24,19 +24,19 @@ for (const [name, note] of [['bigrm', 'A very big room.'], ['rogue', 'A primitiv
 }
 
 void test('a discovered former Oracle room retains its automatic annotation', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 20 })];
     level.rooms = [createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, orig_rtype: DELPHI })];
     level.nroom = 1;
     level.requireAt(11, 10).roomno = ROOMOFFSET;
-    mapLevel({ exercise: false });
+    await mapLevel({ exercise: false });
 
     assert.match(await readDungeonOverview(), /Oracle of Delphi\./);
 });
 
 void test('the overview reports Sokoban as solved or unsolved', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Sokoban', num_dunlevs: 8, entry_lev: 8 })];
     game.sokoban_dnum = 0;
@@ -49,7 +49,7 @@ void test('the overview reports Sokoban as solved or unsolved', async () => {
 });
 
 void test('the Quest home uses local level numbers and the leader quest note', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Quest', depth_start: 15, num_dunlevs: 5 })];
     game.quest_dnum = 0;
@@ -64,7 +64,7 @@ void test('the Quest home uses local level numbers and the leader quest note', a
 });
 
 void test('the Sanctum altar replaces the invocation gateway annotation', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 9,
         dunlev_ureached: 9, flags: { hellish: true } })];
@@ -77,7 +77,7 @@ void test('the Sanctum altar replaces the invocation gateway annotation', async 
     const altar = level.requireAt(12, 10);
     altar.typ = ALTAR;
     altar.flags = AM_NEUTRAL;
-    mapLevel({ exercise: false });
+    await mapLevel({ exercise: false });
 
     const text = await readDungeonOverview();
     assert.match(text, /Moloch's Sanctum\./);
@@ -85,7 +85,7 @@ void test('the Sanctum altar replaces the invocation gateway annotation', async 
 });
 
 void test('wizard overview does not label ordinary Quest filler levels as special levels', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Quest', num_dunlevs: 5 })];
     game.quest_dnum = 0;

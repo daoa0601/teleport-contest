@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function transformFight(attackerSpecies: string, defenderSpecies = 'orc') {
-    const level = freshObjectRoom({ right: 22, gameplaySeed: 1n, flags: { verbose: true } });
+    const level = await freshObjectRoom({ right: 22, gameplaySeed: 1n, flags: { verbose: true } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt(attackerSpecies, 11, 10, NO_MINVENT);
     const defender = await createMonsterAt(defenderSpecies, 12, 10, NO_MINVENT);

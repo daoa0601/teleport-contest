@@ -6,7 +6,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 
 void test('an already green slime form survives a forced sliming timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('green slime');
     game.u.slimed = true;
     game.u.slimedTurns = 1;

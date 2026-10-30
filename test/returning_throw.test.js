@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 async function wieldAklys() {
-    freshObjectRoom({ left: 4, right: 25, top: 3, bottom: 17 });
+    await freshObjectRoom({ left: 4, right: 25, top: 3, bottom: 17 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 125;
     const weapon = await addInventoryWeapon(AKLYS);
@@ -157,7 +157,7 @@ for (const command of ['throw', 'fire']) {
     });
 }
 void test('a strong Valkyrie catches and rewields Mjollnir', async () => {
-    freshObjectRoom({ role: 'valkyrie', right: 25 });
+    await freshObjectRoom({ role: 'valkyrie', right: 25 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 125;
     const hammer = await addInventoryItem(await artifactObject('Mjollnir'));
@@ -187,7 +187,7 @@ for (const kill of [false, true]) {
     });
 }
 void test('an underwater boomerang takes the straight returning-weapon path', async () => {
-    freshObjectRoom({ right: 25 });
+    await freshObjectRoom({ right: 25 });
     requirePlayingGame(game);
     game.underwater = true;
     const boom = await addInventoryWeapon(BOOMERANG);
@@ -241,7 +241,7 @@ void test('half physical damage reduces a failed catch injury', async () => {
     assert.equal(40 - game.u.uhp, Math.ceil(fullDamage / 2));
 });
 void test('a failed Mjollnir catch can strike the hero with lightning', async () => {
-    freshObjectRoom({ role: 'valkyrie', right: 25 });
+    await freshObjectRoom({ role: 'valkyrie', right: 25 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 125;
     const hammer = await addInventoryItem(await artifactObject('Mjollnir'));

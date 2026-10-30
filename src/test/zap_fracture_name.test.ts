@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('striking a named statue leaves ordinary unnamed rocks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const statue = await floorObject(STATUE, 10, 10, {
         corpsenm: MONSTER_NAME.indexOf('troll'), oname: 'Masterpiece',

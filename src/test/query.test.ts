@@ -325,7 +325,7 @@ void test('line input clears the row its echo wraps onto', async () => {
 void test('clearing a wrapped answer restores the covered map row', async () => {
     // A room reaching the top row puts visible floor on the map row the
     // wrapped echo covers.
-    freshObjectRoom({ top: 0, bottom: 14 });
+    await freshObjectRoom({ top: 0, bottom: 14 });
     requirePlayingGame(game);
     await placeHeroOnLevel(10, 8);
     const coveredRow = () => game.nhDisplay?.grid[1]?.map(cell => cell.ch).join('') ?? '';

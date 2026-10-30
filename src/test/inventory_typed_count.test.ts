@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('typed inventory counts stop at the native limit before splitting gold', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 40_000 });
     const input = resetInputState();
     planInput(input, t, [{ prompt: /What do you want to drop\?/, keys: '40000$' }]);
@@ -24,7 +24,7 @@ void test('typed inventory counts stop at the native limit before splitting gold
 });
 
 void test('backspace edits the capped inventory count', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 40_000 });
     const input = resetInputState();
     planInput(input, t, [{ prompt: /What do you want to drop\?/, keys: '99999\x7f$' }]);
@@ -36,7 +36,7 @@ void test('backspace edits the capped inventory count', async t => {
 });
 
 void test('inventory menu counts can exceed the typed-count limit', async t => {
-    freshObjectRoom({ flags: { force_invmenu: true } });
+    await freshObjectRoom({ flags: { force_invmenu: true } });
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50_000 });
     const input = resetInputState();
     planInput(input, t, [{ prompt: /What do you want to drop\?[\s\S]*\(end\)/, keys: '40000$' }]);
@@ -52,7 +52,7 @@ for (const { position, keys } of [
     { position: 'after a count', keys: ['2', -1] },
 ]) {
     void test(`EOF cancels inventory selection ${position}`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: 5 });
         const input = resetInputState();
         planInput(input, t, [{ prompt: /What do you want to drop\?/, keys }]);
@@ -67,7 +67,7 @@ for (const { position, keys } of [
 }
 
 void test('a literal fuzzer NUL cancels a count without consuming the next command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 5 });
     game.iflags.debug_fuzzer = true;
     bindInputGate(new QueuedFuzzerInput('2\0X'));
@@ -80,7 +80,7 @@ void test('a literal fuzzer NUL cancels a count without consuming the next comma
 });
 
 void test('a literal Ctrl-C retries object selection instead of cancelling it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 5 });
     game.iflags.debug_fuzzer = true;
     // C more() skips acknowledgments in fuzzer mode; the letter answers the retry.

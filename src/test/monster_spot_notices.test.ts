@@ -9,8 +9,8 @@ import assert from 'node:assert/strict';
 
 import { moveMonsterForHeroAttack, performMonsterTurn, restoregamePreamble } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
-import { docrt } from '../js/display.js';
+import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, HWALL, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
+import { canSeeMonster, docrt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -40,7 +40,7 @@ function announcements(): string[] {
 }
 
 void test('spot_monsters announces a moving monster once per sighting', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     const jackal = await createMonsterAt('jackal', 14, 10, MM_NOGRP | NO_MINVENT);
@@ -61,7 +61,7 @@ void test('spot_monsters announces a moving monster once per sighting', async ()
 
 for (const trapped of [false, true]) {
     void test(`a first sighting precedes ${trapped ? 'a fatal door explosion' : 'opening a door'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             left: 10, right: 13, top: 10, bottom: 10,
             flags: { spot_monsters: true, verbose: true },
         });
@@ -76,7 +76,7 @@ for (const trapped of [false, true]) {
         door.typ = DOOR;
         door.doormask = D_LOCKED | (trapped ? D_TRAPPED : 0);
         vision_note_blocker_change(12, 10);
-        vision_recalc(0);
+        await vision_recalc(0);
         initRng(1n);
         pushKeys(' '.repeat(30));
 
@@ -95,7 +95,7 @@ for (const trapped of [false, true]) {
 }
 
 void test('the vision catch-up announces nearest first and describes peaceful monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     const gnome = await createMonsterAt('gnome', 13, 10, NO_MINVENT);
@@ -110,7 +110,7 @@ void test('the vision catch-up announces nearest first and describes peaceful mo
 });
 
 void test('a telepathically sensed hider is not announced', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     setHeroBlindnessTurns(100);
@@ -125,7 +125,7 @@ void test('a telepathically sensed hider is not announced', async () => {
 });
 
 void test('a save made after notices ran keeps its latches through restore', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Spot saver';
     game.flags.spot_monsters = true;
@@ -137,10 +137,10 @@ void test('a save made after notices ran keeps its latches through restore', asy
 
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Spot saver', storage), true);
+    assert.equal(await restoreGame('Spot saver', storage), true);
     // dorecover() repaints through docrt(); recompute sight the same way
     // before asking for notices.
-    vision_recalc(0);
+    await vision_recalc(0);
     // C savemon() writes the raw struct monst, so the spotted jackal stays
     // spotted after the restore instead of being announced again.
     const afterRestore: string[] = [];
@@ -153,7 +153,7 @@ void test('a save made after notices ran keeps its latches through restore', asy
 // postmov(), so its first sighting waits for the next vision recalculation
 // instead of being announced by the movement presenter.
 void test('an eating monster is not announced by its turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     const jackal = await createMonsterAt('jackal', 14, 10, MM_NOGRP | NO_MINVENT);
@@ -174,7 +174,7 @@ void test('an eating monster is not announced by its turn', async () => {
 });
 
 void test('a conflicted pet attacks the hero before its first sighting notice', async () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const cat = await createMonsterAt('housecat', 11, 10, NO_MINVENT);
@@ -195,7 +195,7 @@ void test('a conflicted pet attacks the hero before its first sighting notice', 
 });
 
 void test('redrawing announces a visible monster after rebuilding sight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     await createMonsterAt('jackal', 12, 10, NO_MINVENT);
@@ -208,7 +208,7 @@ void test('redrawing announces a visible monster after rebuilding sight', async 
 });
 
 void test('a redraw announces a previously seen monster when sight returns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     await createMonsterAt('jackal', 12, 10, NO_MINVENT);
@@ -225,14 +225,14 @@ void test('a redraw announces a previously seen monster when sight returns', asy
 });
 
 void test('restoring announces a monster that was not spotted before saving', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Spot saver';
     game.flags.spot_monsters = true;
     await createMonsterAt('jackal', 12, 10, NO_MINVENT);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Spot saver', storage), true);
+    assert.equal(await restoreGame('Spot saver', storage), true);
     pushKeys(' '.repeat(40));
 
     await restoregamePreamble();
@@ -242,7 +242,7 @@ void test('restoring announces a monster that was not spotted before saving', as
 });
 
 void test('a nested teleport waits for the outer invocation message before noticing monsters', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false, spot_monsters: true } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false, spot_monsters: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30, flags: { hellish: true } })];
     game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
@@ -275,7 +275,7 @@ void test('a nested teleport waits for the outer invocation message before notic
 });
 
 void test('jumping onto a teleport trap delays notices until both landings finish', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false, spot_monsters: true } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false, spot_monsters: true } });
     requirePlayingGame(game);
     grantIntrinsicProperty('jumping', 'form');
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30, flags: { hellish: true } })];
@@ -283,8 +283,17 @@ void test('jumping onto a teleport trap delays notices until both landings finis
     game.u.uz = { dnum: 0, dlevel: 29 };
     addTrap(level, TELEP_TRAP, 12, 10);
     addTrap(level, VIBRATING_SQUARE, 14, 10);
-    const jackal = await createMonsterAt('jackal', 13, 11, MM_NOGRP | NO_MINVENT);
+    // Keep the jackal out of sight during the jump itself. Native
+    // hurtle_step() recalculates vision before teleds() starts blocking.
+    for (let x = 7; x <= 16; x++) {
+        if (x === 14) continue;
+        level.requireAt(x, 12).typ = HWALL;
+        vision_note_blocker_change(x, 12);
+    }
+    const jackal = await createMonsterAt('jackal', 14, 13, MM_NOGRP | NO_MINVENT);
     jackal.mpeaceful = 0;
+    await vision_recalc(0);
+    assert.equal(canSeeMonster(jackal), false, 'the jackal is first visible at the second landing');
     const input = resetInputState();
     input.feed('ll.');
 
@@ -359,7 +368,7 @@ void test('level arrival notices wait for the special level message', async () =
 // C hack.c:1721-1727: the saddle is suppressed only for a named monster,
 // so an unnamed steed is announced as "your saddled pony".
 void test('a saddled steed keeps its saddle in the announcement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.spot_monsters = true;
     const pony = await createMonsterAt('pony', game.u.ux, game.u.uy, NO_MINVENT);

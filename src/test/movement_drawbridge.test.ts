@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const under of [DB_FLOOR, DB_ICE] as const) {
     void test(`hurtling past a raised bridge over ${under === DB_FLOOR ? 'ground' : 'ice'} keeps moving`, async () => {
-        const level = freshObjectRoom({ hero: { swimming: true } });
+        const level = await freshObjectRoom({ hero: { swimming: true } });
         const square = level.requireAt(11, 10);
         square.typ = DRAWBRIDGE_UP;
         square.drawbridgemask = under;
@@ -25,7 +25,7 @@ for (const under of [DB_FLOOR, DB_ICE] as const) {
 }
 
 void test('hurtling over a raised drawbridge names its moat', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const square = level.requireAt(11, 10);
     square.typ = DRAWBRIDGE_UP;
     square.drawbridgemask = DB_MOAT;
@@ -38,7 +38,7 @@ void test('hurtling over a raised drawbridge names its moat', async () => {
 });
 
 void test('moving toward lava below a raised bridge does not help escape lava', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_LAVA;
@@ -55,7 +55,7 @@ void test('moving toward lava below a raised bridge does not help escape lava', 
 });
 
 void test('the levitation countdown stays quiet above dry ground below a raised bridge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const square = level.requireAt(10, 10);
     square.typ = DRAWBRIDGE_UP;
     square.drawbridgemask = DB_FLOOR;

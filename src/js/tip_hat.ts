@@ -116,7 +116,7 @@ async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }: 
     }
     if (Math.abs(x - game.u.ux) <= 1 && Math.abs(y - game.u.uy) <= 1
         && !heroIsDeaf() && await publishMonsterNoise(monster)) {
-        if (!visible) map_invisible(x, y);
+        if (!visible) await map_invisible(x, y);
     } else await pline(visible ? `${monsterName(monster, { capitalized: true })} doesn't respond.`
         : 'Nothing happens.');
 }

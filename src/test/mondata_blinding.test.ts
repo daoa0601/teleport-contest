@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('light-based blinding requires an uncancelled attacker and a susceptible hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('yellow light', 12, 10, NO_MINVENT);
     const methods = [AT_BOOM, AT_BREA, AT_EXPL, AT_GAZE, AT_MAGC];
     attacker.mcan = 0;
@@ -30,7 +30,7 @@ void test('light-based blinding requires an uncancelled attacker and a susceptib
 });
 
 void test('weapon and spit attacks without a blinding object cannot blind the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('cobra', 12, 10, NO_MINVENT);
 
     for (const method of [AT_NONE, AT_SPIT, AT_WEAP])

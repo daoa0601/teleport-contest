@@ -12,7 +12,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 async function shopEntrance() {
-    freshObjectRoom({ left: 3, right: 18, hero: { ux: 7, uy: 10 } });
+    await freshObjectRoom({ left: 3, right: 18, hero: { ux: 7, uy: 10 } });
     requirePlayingGame(game);
     const shop = await createStaffedShop({ left: 9, right: 17, keeperX: 9, doorX: 8 });
     const door = game.level.requireAt(8, 10);

@@ -118,7 +118,7 @@ void test('a forced land mine activation can reveal its trigger below a flying m
     });
 
 void test('the blast scatters loose objects away from the mine', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const rock = await floorObject(ROCK, 11, 10);
 

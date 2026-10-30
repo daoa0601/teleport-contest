@@ -7,7 +7,7 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('cursing a wielded two-handed weapon cancels queued armor removal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
     await setPrimaryWeapon(sword);
     game.context.takeoff = {

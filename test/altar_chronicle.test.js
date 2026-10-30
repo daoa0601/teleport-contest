@@ -9,7 +9,7 @@ import { DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the chronicle records the first altar drop before the altar reveals beatitude', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = ALTAR;
     const dagger = await addInventoryObject(DAGGER, { blessed: false, cursed: false, bknown: false, spe: 2 });
     const input = resetInputState();
@@ -27,7 +27,7 @@ void test('the chronicle records the first altar drop before the altar reveals b
     assert.doesNotMatch(text, /dropping an uncursed/);
 });
 void test('an unobserved potion gains its appearance before the first altar-drop event is named', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await addInventoryObject(POT_HEALING, {
         typeKnown: false, known: false, dknown: false, bknown: false, observed: false,
     });

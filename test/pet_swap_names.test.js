@@ -16,7 +16,7 @@ for (const [species, tame, expected] of [
     ['gnome', false, 'You swap places with the peaceful gnome.'],
 ]) {
     void test(`swapping with a ${tame ? 'pet' : 'peaceful'} ${species} names its species`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
         if (tame)

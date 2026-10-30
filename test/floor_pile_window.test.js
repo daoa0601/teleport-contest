@@ -18,7 +18,7 @@ function displayedRow(row) {
 }
 for (const overlay of [true, false]) {
     void test(`a stale leash report finishes before the ${overlay ? 'corner' : 'full-screen'} floor pile appears`, async () => {
-        freshObjectRoom({ flags: { menu_overlay: overlay } });
+        await freshObjectRoom({ flags: { menu_overlay: overlay } });
         const apple = await floorObject(APPLE, 10, 10);
         const leash = await floorObject(LEASH, 10, 10, { leashmon: 4242 });
         const input = resetInputState();
@@ -44,7 +44,7 @@ for (const overlay of [true, false]) {
     });
 }
 void test('Escape during a stale leash report clears the message before the corner pile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.program_state.something_worth_saving = true;
     const apple = await floorObject(APPLE, 10, 10);
     const leash = await floorObject(LEASH, 10, 10, { leashmon: 4242 });
@@ -68,7 +68,7 @@ void test('Escape during a stale leash report clears the message before the corn
     assert.equal(leash.leashmon, 0);
 });
 void test('a floor-pile corner window preserves seen prose to its left', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
@@ -87,7 +87,7 @@ void test('a floor-pile corner window preserves seen prose to its left', async (
     assert.equal(ration.where, 'floor');
 });
 void test('a floor-pile window acknowledges an unread message before clearing it for the menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
@@ -105,7 +105,7 @@ void test('a floor-pile window acknowledges an unread message before clearing it
     assert.doesNotMatch(title, /jackal|barking/);
 });
 void test('a floor-pile window follows paged wrapped prose without leaving text on the map', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
@@ -121,7 +121,7 @@ void test('a floor-pile window follows paged wrapped prose without leaving text 
     assert.doesNotMatch(uncoveredMapRow, /beyond|closed door|animal/);
 });
 void test('a floor-pile window too wide for a corner overlays only its own rows', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10, {
         oname: 'an extraordinarily long given name that leaves no room for a corner window',
     });
@@ -144,7 +144,7 @@ void test('a floor-pile window too wide for a corner overlays only its own rows'
 // the window's left edge and repaints only map rows. The seen top line
 // stays physically clipped until a new message replaces it.
 void test('dismissing a floor-pile corner window leaves the seen top line clipped', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
@@ -168,7 +168,7 @@ void test('dismissing a floor-pile corner window leaves the seen top line clippe
     assert.equal(displayedRow(0).trimEnd(), 'You hear a jackal barking in the corridor.', 'repeating the clipped text repaints the whole top line');
 });
 void test('a narrower floor-pile window does not restore text a wider one erased', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10, { oname: 'provisions for the long road home' });
     const leash = await floorObject(LEASH, 10, 10);
@@ -196,7 +196,7 @@ void test('a narrower floor-pile window does not restore text a wider one erased
 // clears physical columns, so the clip must keep every cell before the
 // window edge, not that many bytes of the encoded message.
 void test('a farlook description is clipped by screen cells, not raw bytes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
@@ -206,7 +206,7 @@ void test('a farlook description is clipped by screen cells, not raw bytes', asy
     // The same putmixed() line the farlook command publishes for the
     // floor square west of the hero: the glyph prefix plus the resolved description.
     game.symset = 'DECgraphics';
-    newsym(game.u.ux - 1, game.u.uy);
+    await newsym(game.u.ux - 1, game.u.uy);
     const detail = await farlookLocationDescription(game.u.ux - 1, game.u.uy);
     const described = screenDescription(game.u.ux - 1, game.u.uy, detail).text;
     assert.ok(described.includes('\x0e'), 'the farlook description must carry the mixed glyph prefix');

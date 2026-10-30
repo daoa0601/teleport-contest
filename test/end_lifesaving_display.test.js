@@ -15,7 +15,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('life saving repaints the restored hit points before paging the crumble message', async () => {
-    freshObjectRoom({ role: 'barbarian' });
+    await freshObjectRoom({ role: 'barbarian' });
     game.u.uhp = game.u.uhpmax = 40;
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');

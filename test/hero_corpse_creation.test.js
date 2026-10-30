@@ -11,7 +11,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 void test('a dead human leaves a correctly weighted corpse with a decay timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game._canMakeBones = true;
@@ -29,7 +29,7 @@ void test('a dead human leaves a correctly weighted corpse with a decay timer', 
     assert.equal(objectTimers(corpse)[0]?.kind, OBJECT_TIMER_KIND.ROT_CORPSE);
 });
 void test('a hero dying as a troll leaves the troll body and its revival timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game._canMakeBones = true;
@@ -41,7 +41,7 @@ void test('a hero dying as a troll leaves the troll body and its revival timer',
     assert.equal(objectTimers(corpse)[0]?.kind, OBJECT_TIMER_KIND.REVIVE_MON);
 });
 void test('a hero dying as a ghost leaves no corpse or grave', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game._canMakeBones = true;

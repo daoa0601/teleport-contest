@@ -10,10 +10,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('ordinary look offers the history behind a named orc horde', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
     const orc = await createMonsterAt('hill orc', 11, 10);
     setMonsterGivenName(orc, 'Zogg of Gruz');
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('/l.');
     await answerPrompts(rhack('/'.charCodeAt(0)), input, [
@@ -27,11 +27,11 @@ void test('ordinary look offers the history behind a named orc horde', async () 
 });
 
 void test('orc horde history retains conditions from the selected description', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
     const orc = await createMonsterAt('hill orc', 11, 10);
     setMonsterGivenName(orc, 'Zogg of Gruz');
     orc.msleeping = true;
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('/l.');
 

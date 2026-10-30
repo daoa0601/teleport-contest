@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // but leaves a counted walk (multi > 0, context.run == 0) moving; the
 // subsequent arrival messages then merge or page like any other prose.
 void test('a counted walk reads a dust engraving and keeps walking', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     makeEngravingAt(11, 10, 'hi', null, game.moves, DUST);
 
     game.multi = 2;
@@ -28,7 +28,7 @@ void test('a counted walk reads a dust engraving and keeps walking', async () =>
 });
 
 void test('a run stops on the engraving it just read', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     makeEngravingAt(11, 10, 'hi', null, game.moves, DUST);
 
     await rhack('L'.charCodeAt(0));
@@ -41,7 +41,7 @@ void test('a run stops on the engraving it just read', async () => {
 // C hack.c:domove_core() stops only context.run runs on entering a doorway;
 // a counted walk crosses it and continues.
 void test('a counted walk crosses a doorway without stopping', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = DOOR;
 
     game.multi = 2;

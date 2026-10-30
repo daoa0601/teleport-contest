@@ -27,7 +27,7 @@ void test('probing reports a monster that cannot move without a countdown', asyn
 void test('probing a clear worm tail does not describe the cloud around its head', async () => {
     freshPlayableRoom({ right: 25 });
     const worm = await createMonsterAt('long worm', 16, 10, MM_NOTAIL | NO_MINVENT);
-    initializeMonsterWormBody(worm, { segmentCount: 2, random: () => 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 2, random: () => 0 });
     assert.ok(worm.wormSegments);
     const tail = worm.wormSegments[0];
     assert.ok(tail, 'The probed worm must have a tail outside its head square.');

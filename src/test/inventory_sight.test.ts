@@ -41,7 +41,7 @@ function acknowledgeMessages(input: InputGate, messages: string[]) {
 }
 
 void test('an Archeologist deciphers a carried scroll stack without reading or consuming it', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     const messages: string[] = [];
@@ -62,7 +62,7 @@ void test('an Archeologist deciphers a carried scroll stack without reading or c
 });
 
 void test('deciphering waits for the label message before learning the type or breaking conduct', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     const scroll = await unseenScroll();
@@ -86,7 +86,7 @@ void test('deciphering waits for the label message before learning the type or b
 });
 
 void test('each newly deciphered type counts once and only the first breaks illiteracy', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     acknowledgeMessages(input, []);
@@ -108,7 +108,7 @@ for (const [role, blind, otyp] of [
     ['archeologist', false, SCR_BLANK_PAPER],
 ] as const) {
     void test(`${role} ${blind ? 'without sight' : 'with sight'} does not decipher ${otyp === SCR_BLANK_PAPER ? 'blank paper' : 'an ineligible scroll'}`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         requireFixtureGame(game);
         const input = resetInputState();
         acknowledgeMessages(input, []);
@@ -123,7 +123,7 @@ for (const [role, blind, otyp] of [
 }
 
 void test('tutorial return deciphers saved unseen scrolls using the current sight before restoring the hero', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     const messages: string[] = [];
@@ -147,7 +147,7 @@ void test('tutorial return deciphers saved unseen scrolls using the current sigh
 
 
 void test('seeing carried inventory learns its scrolls but does not inspect bag contents', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     acknowledgeMessages(input, []);
@@ -177,7 +177,7 @@ void test('seeing carried inventory learns its scrolls but does not inspect bag 
 
 for (const role of ['priest', 'caveman'] as const) {
     void test(`${role} ${role === 'priest' ? 'recognizes' : 'cannot recognize'} changed beatitude on an already seen item`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         const club = await addInventoryObject(CLUB);
         await removeCurseEffect({ blessed: true, confused: true, announce: false });
         assert.equal(club.dknown, true);
@@ -190,7 +190,7 @@ for (const role of ['priest', 'caveman'] as const) {
 }
 
 void test('a hallucinating Archeologist still deciphers a wished-for scroll', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ role: 'archeologist', hero: { hallucinationTurns: 20 } });
     requireFixtureGame(game);
     const input = resetInputState();
     const keys = [...'scroll of identify\n'];
@@ -212,7 +212,7 @@ void test('a hallucinating Archeologist still deciphers a wished-for scroll', as
 });
 
 void test('saving and restoring learned labels preserves knowledge and literacy', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requireFixtureGame(game);
     const input = resetInputState();
     acknowledgeMessages(input, []);
@@ -223,7 +223,7 @@ void test('saving and restoring learned labels preserves knowledge and literacy'
     game.storage = storage;
     assert.equal(await saveGame(storage), true);
 
-    assert.equal(restoreGame('Labels', storage), true);
+    assert.equal(await restoreGame('Labels', storage), true);
     await learnUnseenInventory();
 
     const scroll = game.inventory.find(object => object.otyp === SCR_IDENTIFY);

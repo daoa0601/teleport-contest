@@ -48,7 +48,7 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
         return finishEggHatchTimer(event, game, currentTurn);
     }
     if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
-        const event = runClaimedGlobTimer(claimed, game, currentTurn);
+        const event = await runClaimedGlobTimer(claimed, game, currentTurn);
         if (event?.message) await plineWithContinuation(event.message);
         return finishGlobTimer(event, game, currentTurn);
     }
@@ -56,7 +56,7 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
         const event = await runClaimedFigurineTimer(claimed, game, currentTurn);
         for (const message of event?.waterMessages || []) await plineWithContinuation(message);
         if (event?.message) await plineWithContinuation(event.message);
-        return finishFigurineTimer(event, game);
+        return await finishFigurineTimer(event, game);
     }
     if (kind === OBJECT_TIMER_KIND.REVIVE_MON || kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
         const event = await runClaimedCorpseRevivalTimer(claimed, game, currentTurn);
@@ -66,7 +66,7 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
     }
     const event = await runClaimedObjectRotTimer(claimed, game);
     if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC && event && 'where' in event && event.where === 'floor')
-        newsym(event.x, event.y);
+        await newsym(event.x, event.y);
     return event;
 }
 
@@ -79,7 +79,7 @@ async function announceBuriedRevival(event: CorpseRevivalTimerEvent): Promise<vo
             subject = monsterName(monster, { article: 'a', capitalized: true });
         if (trap) trap.tseen = true;
         await plineWithContinuation(`${subject} claws itself out of the ground!`);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     } else {
         const dx = monster.mx - game.u.ux;
         const dy = monster.my - game.u.uy;

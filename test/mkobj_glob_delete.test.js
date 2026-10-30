@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 void test('a dissolved unpaid glob remains on the used-up shop bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createStaffedShop();
     const glob = placeCreatedObject(await knownObject(GLOB_OF_GRAY_OOZE), 12, 10);
     await addShopObjectToBill(glob, game, { ininv: false, silent: true });
@@ -27,7 +27,7 @@ void test('a dissolved unpaid glob remains on the used-up shop bill', async () =
     assert.equal(glob.unpaid, false);
 });
 void test('a snake loses its hiding place when the covering glob dissolves', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const glob = placeCreatedObject(await knownObject(GLOB_OF_GRAY_OOZE), 12, 10);
     const snake = await createMonsterAt('garter snake', 12, 10);
     snake.mundetected = 1;

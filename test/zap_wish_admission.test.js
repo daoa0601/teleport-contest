@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('dropping a wished fruit stack keeps an already plural registered name', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { debug: true, verbose: false },
         hero: { fumblingTurns: 10 },
     });
@@ -31,7 +31,7 @@ for (const [request, type, hero] of [
     ['boulder', BOULDER, {}],
 ]) {
     void test(`a wishing wand leaves ${request} on the floor when the hero cannot hold it`, async () => {
-        const level = freshObjectRoom({ hero });
+        const level = await freshObjectRoom({ hero });
         requirePlayingGame(game);
         const wand = await addInventoryObject(WAN_WISHING, { spe: 2 });
         const input = resetInputState();

@@ -30,7 +30,7 @@ function spit(aim: DirectionSelection | null, options: Partial<Parameters<typeof
 }
 
 void test('a cobra uses #monster to spit venom', async () => {
-    const level = freshMonsterAbilityRoom('cobra');
+    const level = await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     await runMonsterAbilityCommand(`l${' '.repeat(8)}`);
 
@@ -40,7 +40,7 @@ void test('a cobra uses #monster to spit venom', async () => {
 
 void test('cancelling a spit direction creates no venom and spends no turn',
     async () => {
-        const level = freshMonsterAbilityRoom('cobra');
+        const level = await freshMonsterAbilityRoom('cobra');
 
         const result = await spit(null);
 
@@ -50,7 +50,7 @@ void test('cancelling a spit direction creates no venom and spends no turn',
     });
 
 void test('cobra venom blinds a monster without hurting it', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 100;
@@ -70,7 +70,7 @@ void test('cobra venom blinds a monster without hurting it', async () => {
 });
 
 void test('black naga venom burns for two dice without a hero damage bonus', async () => {
-    freshMonsterAbilityRoom('black naga');
+    await freshMonsterAbilityRoom('black naga');
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 100;
@@ -90,7 +90,7 @@ void test('black naga venom burns for two dice without a hero damage bonus', asy
 
 void test('venom which reaches a wall splashes on the last open square',
     async () => {
-        const level = freshMonsterAbilityRoom('cobra');
+        const level = await freshMonsterAbilityRoom('cobra');
         level.requireAt(12, 10).typ = 0;
 
         const result = await spit(direction('l', 1, 0), {
@@ -104,7 +104,7 @@ void test('venom which reaches a wall splashes on the last open square',
     });
 
 void test('spitting blinding venom upward can blind the hero', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
 
     const result = await spit(direction('<', 0, 0, -1), {
@@ -121,7 +121,7 @@ void test('spitting blinding venom upward can blind the hero', async () => {
 });
 
 void test('blinding venom cannot reach an engulfer eyes from inside', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     requireFixtureGame(game);
     const worm = await createMonsterAt(
         'purple worm', game.u.ux + 1, game.u.uy,
@@ -145,7 +145,7 @@ void test('blinding venom cannot reach an engulfer eyes from inside', async () =
 });
 
 void test('acid venom which kills an engulfer releases the hero', async () => {
-    freshMonsterAbilityRoom('black naga');
+    await freshMonsterAbilityRoom('black naga');
     requireFixtureGame(game);
     const jackal = await createMonsterAt(
         'jackal', game.u.ux + 1, game.u.uy,

@@ -47,7 +47,7 @@ export async function useLeash(leash) {
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (!monster) {
         await pline('There is no creature there.');
-        unmap_invisible(x, y);
+        await unmap_invisible(x, y);
     }
     else
         await useLeashOnMonster(leash, monster, x, y, canSpotMonster(monster));
@@ -59,7 +59,7 @@ async function useLeashOnMonster(leash, monster, x, y, spotted) {
     const petName = () => monsterLeashName(monster);
     if (!spotted && level.requireAt(x, y).remembered_glyph?.kind !== 'invisible') {
         await pline(`You fail to ${leash.leashmon ? 'un' : ''}leash something.`);
-        map_invisible(x, y);
+        await map_invisible(x, y);
     }
     else if (!monster.mtame) {
         await pline(`${name()} ${leash.leashmon ? 'is not' : 'cannot be'} leashed!`);

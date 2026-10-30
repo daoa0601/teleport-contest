@@ -199,7 +199,7 @@ function canCenterCloud(x, y, state) {
 async function chooseCenter(question, state) {
     await pline(question);
     const valid = (x, y) => canCenterCloud(x, y, state);
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = await showGetposTip(state);
     await showGetposInstructions(state);
     if (firstUse)

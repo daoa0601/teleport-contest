@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
 async function templeWithResident(priestX: number, priestY: number, hostile: boolean) {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.rndmongen = false;
     const room = createRoom({ lx: 11, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });

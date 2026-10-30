@@ -13,7 +13,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 
 for (const loan of [10, 25]) {
     void test(`paying a 25-zorkmid debt describes its ${loan}-zorkmid gold loan`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.eshk.debit = 25;
@@ -40,7 +40,7 @@ for (const loan of [10, 25]) {
 }
 
 void test('an unaffordable usage debt mentions stashed gold without offering nonexistent credit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.debit = 25;
     const sack = await addInventoryObject(SACK);
@@ -57,7 +57,7 @@ void test('an unaffordable usage debt mentions stashed gold without offering non
 });
 
 void test('a deaf customer receives a guarded nod after paying a surcharged shopkeeper', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.eshk.debit = 25;
@@ -76,7 +76,7 @@ void test('a deaf customer receives a guarded nod after paying a surcharged shop
 });
 
 void test('paying a usage debt pages the settlement before the item payment menu', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await addInventoryObject(POT_HEALING);
     const { shopkeeper } = await createStaffedShop({ bill: [
         { bo_id: potion.o_id, bquan: 1, price: 113, useup: false },

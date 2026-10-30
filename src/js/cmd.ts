@@ -6,7 +6,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
+import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -1996,7 +1996,7 @@ async function discoverFountainGem(loc: MapLocation) {
         chooseGem: () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1),
         createGem: (gemType: number) => mksobj(gemType, false, false),
         placeGem: (gem: GameObject) => placeCreatedObject(gem, game.u.ux, game.u.uy),
-        repaint: () => newsym(game.u.ux, game.u.uy),
+        repaint: async () => await newsym(game.u.ux, game.u.uy),
         exerciseWisdom,
     });
 }
@@ -2038,7 +2038,7 @@ async function summonFountainNymph() {
             const nymph = await makemonNear(
                 PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG,
             );
-            if (nymph) newsym(nymph.mx, nymph.my);
+            if (nymph) await newsym(nymph.mx, nymph.my);
             return nymph;
         },
         announce: plineWithContinuation,
@@ -2057,7 +2057,7 @@ async function summonFountainDemon() {
             const demon = await makemonNear(
                 PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG,
             );
-            if (demon) newsym(demon.mx, demon.my);
+            if (demon) await newsym(demon.mx, demon.my);
             return demon;
         },
         announce: plineWithContinuation,
@@ -2086,7 +2086,7 @@ async function summonFountainSnakes() {
             const snake = await makemonNear(
                 PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG,
             );
-            if (snake) newsym(snake.mx, snake.my);
+            if (snake) await newsym(snake.mx, snake.my);
             return snake;
         },
         trapAt: fountainTrapAt,
@@ -2174,7 +2174,7 @@ export async function drinkFountain(loc: MapLocation) {
             await plineWithContinuation('But it disappears.');
         }
         grantIntrinsicProperty('seeInvisible', 'outside');
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         await exerciseAttribute(A_WIS, true);
     } else if (fate === 26) {
         if ((await detectMonsters(null)).result)
@@ -2406,7 +2406,7 @@ async function kickOuch(x: number, y: number, objectName = '') {
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
     if (isok(x, y)) {
-        if (heroIsBlind(game)) feel_location(x, y);
+        if (heroIsBlind(game)) await feel_location(x, y);
         const location = game.level?.at(x, y);
         const bridge = location && (location.typ === DOOR || location.typ === DBWALL)
             ? findDrawbridgeAt(x, y) : null;
@@ -2528,15 +2528,15 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     if (monster.mundetected
         || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
         monster.mundetected = 0;
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
-            newsym(x, y);
+            await newsym(x, y);
             const name = monsterName(monster, { article: 'a' });
             await plineWithContinuation(
                 `There is ${name} here.`,
             );
         } else {
-            map_invisible(x, y);
+            await map_invisible(x, y);
             await plineWithContinuation('There is something hidden here.');
         }
     }
@@ -2568,7 +2568,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     if (evaded) {
         await applyKickPassive(monster, false);
         if (monster.mx === x && monster.my === y
-            && !canSpotMonster(monster)) map_invisible(x, y);
+            && !canSpotMonster(monster)) await map_invisible(x, y);
         game.context.move = 1;
         return true;
     }
@@ -2583,7 +2583,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         game.context.move = 1;
         return true;
     }
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
     await applyCaitiffPenalty(monster);
     const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
     if (petReaction.heroDied) return true;
@@ -2614,7 +2614,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         });
     } else if (monster.mx === x && monster.my === y
         && !canSpotMonster(monster)) {
-        map_invisible(x, y);
+        await map_invisible(x, y);
     }
     if (damage.trainSkill) await useHeroSkill(35);
     game.context.move = 1;
@@ -2650,10 +2650,10 @@ async function dokick() {
         const glyph = glyphAt(x, y);
         if (monster.dead || monster.mhp <= 0) {
             if (oldGlyph && glyph?.kind === 'invisible' && oldGlyph.metadata?.kind !== 'invisible')
-                show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
+                await show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
         } else if (!canSpotMonster(monster) && monster.mx === x && monster.my === y
             && glyph?.kind !== 'invisible' && !(game.u.uswallow && game.u.ustuck === monster))
-            map_invisible(x, y);
+            await map_invisible(x, y);
         if (!game.program_state.gameover && kickCausesRecoil() && game.context.move)
             await recoilFromKick(recoilRange);
         return;
@@ -2671,7 +2671,7 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    unmap_invisible(x, y);
+    await unmap_invisible(x, y);
     if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
         await plineWithContinuation(`You splash some ${displayLiquidName(
             isPoolAt(x, y) ? 'water' : 'lava')} around.`);
@@ -2722,7 +2722,7 @@ async function dokick() {
             if (heroIsBlind(game)) await pline('Crack!  Something broke!');
             else {
                 await pline('The headstone topples over and breaks!');
-                newsym(x, y);
+                await newsym(x, y);
             }
         }
         game.context.move = 1;
@@ -2744,9 +2744,9 @@ async function dokick() {
             } else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
                 location.doormask = D_ISOPEN;
             }
-            feel_newsym(x, y);
+            await feel_newsym(x, y);
             vision_reset();
-            vision_recalc(0);
+            await vision_recalc(0);
         } else {
             await kickOuch(x, y);
         }
@@ -2765,7 +2765,7 @@ async function kickDumb(x: number, y: number): Promise<void> {
     const martial = heroHasMartialKick();
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
-        if (heroIsBlind(game)) feel_location(x, y);
+        if (heroIsBlind(game)) await feel_location(x, y);
     } else {
         await pline('Dumb move!  You strain a muscle.');
         await exerciseAttribute(A_STR, false);
@@ -3301,7 +3301,7 @@ async function dochat() {
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     if (!heroIsDeaf(game) && monster.mtame && monster.meating) {
-        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+        if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
         await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
         return;
     }
@@ -3382,7 +3382,7 @@ async function wizKill() {
         cursor = target;
         const monster = await wizardKillTarget(cursor);
         if (monster === 'quit') break;
-        unmap_invisible(cursor.x, cursor.y);
+        await unmap_invisible(cursor.x, cursor.y);
         if (!monster) {
             await pline('There is no monster there.');
             break;
@@ -4068,8 +4068,8 @@ async function moveIntoFailedUntrap(trap: Trap) {
     u.uy0 = oldy;
     await placeHeroOnLevel(newx, newy);
     u.umoved = true;
-    newsym(oldx, oldy);
-    vision_recalc(1);
+    await newsym(oldx, oldy);
+    await vision_recalc(1);
     await checkHeroLeashes(oldx, oldy);
     if (game.program_state.gameover) return { entered: true, died: true };
     await finishBallAndChainMove(ballChainMove);
@@ -4109,10 +4109,10 @@ async function wizMap() {
             game.u.hallucinationTurns = 0;
             for (const trap of requireGameLevel().traps) {
                 trap.tseen = true;
-                map_trap(trap, true);
+                await map_trap(trap, true);
             }
             for (const engraving of requireGameLevel().engravings ?? [])
-                map_engraving(engraving, true);
+                await map_engraving(engraving, true);
             await mapMagicLevel({ confused: false });
         });
     } finally {
@@ -4560,7 +4560,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
         },
         liquidName: () => displayLiquidName('water'),
         exerciseWisdom,
-        repaint: () => newsym(game.u.ux, game.u.uy),
+        repaint: async () => await newsym(game.u.ux, game.u.uy),
     });
     if (sensationEffect.handled) {
         eventMessage = sensationEffect.message;
@@ -4982,7 +4982,6 @@ async function wizIdentify(): Promise<void> {
             'Debug Identify',
             '(all items are permanently identified already)',
         ]);
-        game._pending_message = '';
         game.context.move = 0;
         return;
     }
@@ -5026,7 +5025,6 @@ async function wizIdentify(): Promise<void> {
     } finally {
         await tty_destroy_nhwindow(window);
     }
-    game._pending_message = '';
     if (selected.includes('all')) {
         await identifyPack(0);
         game.context.move = 0;
@@ -6258,7 +6256,7 @@ async function doclose(): Promise<void> {
         const previousGlyph = loc.remembered_glyph?.glyph;
         recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
-        feel_location(x, y);
+        await feel_location(x, y);
         if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
             game.context.move = 1;
     }
@@ -6296,7 +6294,7 @@ async function doclose(): Promise<void> {
         if (game.u.usteed || rn2(25) < effort) {
             await pline('The door closes.');
             loc.doormask = D_CLOSED;
-            feel_newsym(x, y);
+            await feel_newsym(x, y);
             vision_note_blocker_change(x, y);
         } else {
             await exerciseAttribute(A_STR, true);
@@ -6355,7 +6353,7 @@ async function doopen(x = 0, y = 0): Promise<void> {
         const previousGlyph = loc.remembered_glyph?.glyph;
         recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
-        newsym(x, y);
+        await newsym(x, y);
         // doopen_indir() uses a turn when looking at the target teaches
         // the hero something, even if the target has no door to open.
         if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
@@ -6428,7 +6426,7 @@ async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<
         if (roomsAt(level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_DOOR_COST);
     } else door.doormask = D_ISOPEN;
-    feel_newsym(x, y);
+    await feel_newsym(x, y);
     vision_note_blocker_change(x, y);
 }
 
@@ -6647,7 +6645,7 @@ async function applyTool(
                     && heroMayDisplaceMonster(monster)
                     && artifactById(game.uwep?.oartifact, game)?.name
                         !== 'Stormbringer') {
-                    return (await runSafepetDisplacement(monster)) !== 'evaded';
+                    return await runSafepetDisplacement(monster) !== 'evaded';
                 }
                 const savedForcefight = game.context.forcefight ?? false;
                 if (!monster.mtame) game.context.forcefight = true;
@@ -7475,9 +7473,9 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
                 return true;
             }
         }
-        unmapObject(x, y);
-        if (obstacle) map_object(obstacle, true);
-        newsym(x, y);
+        await unmapObject(x, y);
+        if (obstacle) await map_object(obstacle, true);
+        await newsym(x, y);
 
         if (obstacle) {
             target = simpleObjectNameWithArticle(obstacle, game);
@@ -7566,7 +7564,7 @@ async function finishHeroMovement({
     const species = heroSpecies(game);
     if (((MONSTER_FLAGS1[species] ?? 0) & M1_CONCEAL)
         || MONSTER_SYMBOL[species] === S_EEL || u.dx || u.dy)
-        hideHeroUnder();
+        await hideHeroUnder();
     if ((u.dx || u.dy) && (u.m_ap_type === M_AP_OBJECT || u.m_ap_type === M_AP_FURNITURE))
         u.m_ap_type = M_AP_NOTHING;
     await checkHeroLeashes(oldx, oldy);
@@ -7574,11 +7572,8 @@ async function finishHeroMovement({
     game._domoveSucceeded = oldx !== u.ux || oldy !== u.uy;
     u.umoved = game._domoveSucceeded;
     if (u.umoved) {
-        newsym(oldx, oldy);
-        vision_recalc(1);
-        // C vision_recalc() ends with notice_all_mons(), before the
-        // invocation message.
-        await noticeAllMonsters(game);
+        await newsym(oldx, oldy);
+        await vision_recalc(1);
         await announceInvocationSquare();
     }
     if (ballChainMove) await finishBallAndChainMove(ballChainMove);
@@ -7806,7 +7801,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             // vector.  The destination re-lookup below then finds the
             // co-located swallower and offers the pet swap, exactly like
             // hack.c's second m_at() and domove_swap_with_pet().
-            if ((await runSafepetDisplacement(monster)) !== 'evaded') return true;
+            if (await runSafepetDisplacement(monster) !== 'evaded') return true;
             swallowerYielded = true;
         } else {
             // domove_attackmon_at(): do_attack() runs the attack_checks()
@@ -7963,7 +7958,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
-            if ((await runSafepetDisplacement(monster)) !== 'evaded') return true;
+            if (await runSafepetDisplacement(monster) !== 'evaded') return true;
             // C do_attack() returns FALSE here: a yielding monster takes
             // the same DO_MOVE checks as an unoccupied destination.
         } else {
@@ -8004,7 +7999,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
     // hack.c:domove() clears a remembered unseen monster at the destination
     // before trying to move; a displacer-beast swap returned above and skips
     // this, matching the native !displaceu guard.
-    unmap_invisible(newx, newy);
+    await unmap_invisible(newx, newy);
 
     if ((dx || dy) && await ridingPreventsMovement()) {
         stopRun(game);
@@ -8029,7 +8024,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         || loc.typ === DOOR && (!!(loc.doormask & (D_CLOSED | D_LOCKED))
             || !!(dx && dy) && !heroPassesWalls(game)
                 && blocksDiagonalDoor(null, loc)))) {
-        feel_location(newx, newy);
+        await feel_location(newx, newy);
     }
 
     if (!await heroCanEnterIronBars(newx, newy, game)) return rejectHeroMove();

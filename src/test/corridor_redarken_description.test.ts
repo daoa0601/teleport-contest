@@ -16,18 +16,18 @@ import { requireScreenRow } from './support/screen.js';
 // (defsyms[S_corr].explanation), so the autodescribed corridor is "corridor",
 // never the stale "lit corridor" name of the previous glyph.
 void test('a re-darkened corridor is described as a plain corridor', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     const corridor = level.requireAt(12, 10);
     corridor.typ = CORR;
     corridor.lit = true;
-    newsym(12, 10);
-    vision_recalc(0);
+    await newsym(12, 10);
+    await vision_recalc(0);
     assert.equal(game.level?.requireAt(12, 10).waslit, true,
         'The lit corridor was remembered as lit while seen');
 
     corridor.lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     input.feed('ll');
     const selection = selectMapPosition({

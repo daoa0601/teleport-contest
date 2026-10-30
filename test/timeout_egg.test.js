@@ -12,20 +12,20 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { vision_recalc } from '../js/vision.js';
 void test('seeing an egg hatch teaches the adult egg type even for a young-species egg', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const baby = MONSTER_NAME.indexOf('baby crocodile');
     const adult = MONSTER_NAME.indexOf('crocodile');
     const egg = await floorObject(EGG, 12, 10, { initialize: false, corpsenm: baby });
     scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, game.moves);
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await runClaimedEggHatchTimer(claimNextDueObjectTimer());
     await finishEggHatchTimer(event);
     assert.ok((game.mvitals[adult]?.mvflags ?? 0) & MV_KNOWS_EGG);
     assert.equal((game.mvitals[baby]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
 });
 void test('the last hatchling before extinction leaves its egg as in the native loop', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const baby = MONSTER_NAME.indexOf('cave spider');
     const adult = MONSTER_NAME.indexOf('giant spider');
@@ -34,7 +34,7 @@ void test('the last hatchling before extinction leaves its egg as in the native 
     vital.born = 119;
     const egg = await floorObject(EGG, 12, 10, { initialize: false, corpsenm: adult });
     scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, game.moves);
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await runClaimedEggHatchTimer(claimNextDueObjectTimer());
     await finishEggHatchTimer(event);
     assert.ok(game.level.monsters.some(monster => monster.mnum === baby));
@@ -44,13 +44,13 @@ void test('the last hatchling before extinction leaves its egg as in the native 
     assert.equal(egg.timed, 1);
 });
 void test('hatching the held egg releases its weapon and inventory ownership', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const egg = await addInventoryObject(EGG, {
         initialize: false, corpsenm: MONSTER_NAME.indexOf('crocodile'),
     });
     await setPrimaryWeapon(egg);
     scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, game.moves);
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await runClaimedEggHatchTimer(claimNextDueObjectTimer());
     await finishEggHatchTimer(event);
     assert.equal(egg.where, 'gone');

@@ -119,7 +119,7 @@ export async function makeFamiliar(
     if (tame) initializePet(monster, { state, everything: true });
     monster.msleeping = 0;
     setMonsterMalign(monster, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (monster.mtame && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state, { publish: announce });

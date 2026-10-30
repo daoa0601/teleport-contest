@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [tame, owner] of [[true, 'Your little dog'], [false, 'The little dog']] as const) {
     void test(`a ${tame ? 'pet' : 'wild'} carrier's shattered potion is named ${owner}'s`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
         dog.mtame = tame ? 10 : 0;
         dog.mpeaceful = tame ? 1 : 0;

@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const command of ['W', 'P']) {
     void test(`${command} refuses a second cloak without replacing the worn cloak`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const cloak = await addInventoryObject(LEATHER_CLOAK);
         const spare = await addInventoryObject(OBJECT_NAMES.indexOf('robe'));
         wearHeroArmor(cloak);
@@ -34,7 +34,7 @@ for (const command of ['W', 'P']) {
 
 for (const command of ['W', 'P']) {
     void test(`${command} calls an already worn reflection shield a shield`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const reflection = await addInventoryObject(SHIELD_OF_REFLECTION);
         const spare = await addInventoryObject(SMALL_SHIELD);
         wearHeroArmor(reflection);
@@ -50,7 +50,7 @@ for (const command of ['W', 'P']) {
 }
 
 void test('wear refuses a shield with a two-handed sword', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
     const shield = await addInventoryObject(SMALL_SHIELD);
     await setPrimaryWeapon(sword);
@@ -64,7 +64,7 @@ void test('wear refuses a shield with a two-handed sword', async () => {
 });
 
 void test('a bear trap prevents wearing boots', async () => {
-    freshObjectRoom({ hero: { utrap: 4, utraptype: TT_BEARTRAP } });
+    await freshObjectRoom({ hero: { utrap: 4, utraptype: TT_BEARTRAP } });
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('low boots'));
     pushKeys(boots.invlet);
 
@@ -76,7 +76,7 @@ void test('a bear trap prevents wearing boots', async () => {
 });
 
 void test('a large polymorphed body cannot put on a suit of armor', async () => {
-    freshObjectRoom({ hero: { mh: 30, mhmax: 30, umonnum: MONSTER_NAME.indexOf('giant') } });
+    await freshObjectRoom({ hero: { mh: 30, mhmax: 30, umonnum: MONSTER_NAME.indexOf('giant') } });
     const suit = await addInventoryObject(RING_MAIL);
     pushKeys(suit.invlet);
 
@@ -88,7 +88,7 @@ void test('a large polymorphed body cannot put on a suit of armor', async () => 
 });
 
 void test('puton refuses a ring behind cursed gloves and spends only the discovery turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { cursed: true, bknown: false });
     const ring = await addInventoryObject(RIN_PROTECTION);
     wearHeroArmor(gloves);
@@ -107,7 +107,7 @@ void test('puton refuses a ring behind cursed gloves and spends only the discove
 });
 
 void test('puton refuses a third ring without replacing either hand', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const left = await addInventoryObject(RIN_PROTECTION, { spe: 1 });
     const right = await addInventoryObject(RIN_PROTECTION, { spe: 2 });
     const third = await addInventoryObject(RIN_PROTECTION, { spe: 3 });
@@ -124,7 +124,7 @@ void test('puton refuses a third ring without replacing either hand', async () =
 });
 
 void test('a limbless hero cannot wear a meat ring', async () => {
-    freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf('black pudding'), mh: 40, mhmax: 40 } });
+    await freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf('black pudding'), mh: 40, mhmax: 40 } });
     const ring = await addInventoryObject(MEAT_RING);
     pushKeys(`${ring.invlet}l`);
 
@@ -136,7 +136,7 @@ void test('a limbless hero cannot wear a meat ring', async () => {
 });
 
 void test('puton keeps asking for a ring hand after an invalid answer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION);
     pushKeys(`${ring.invlet}xl`);
 
@@ -154,7 +154,7 @@ for (const command of ['W', 'P']) {
         { name: 'Escape', key: '\x1b' },
     ]) {
         void test(`${command}: ${name} cancels ring-hand selection and leaves the next movement command unread`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const ring = await addInventoryObject(RIN_PROTECTION);
             const startX = game.u.ux;
             const startY = game.u.uy;
@@ -174,7 +174,7 @@ for (const command of ['W', 'P']) {
 }
 
 void test('checking wearable armor reveals a welded weapon curse even if wear is cancelled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
     await setPrimaryWeapon(dagger);
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('low boots'));

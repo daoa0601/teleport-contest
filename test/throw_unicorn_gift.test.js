@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a unicorn accepts an identified aligned gem thrown from several squares away', async () => {
-    const level = freshObjectRoom({ right: 30, hero: { uluck: 0 } });
+    const level = await freshObjectRoom({ right: 30, hero: { uluck: 0 } });
     level.flags.noteleport = true;
     const unicorn = await createMonsterAt('gray unicorn', 14, 10);
     unicorn.mpeaceful = 0;
@@ -21,7 +21,7 @@ void test('a unicorn accepts an identified aligned gem thrown from several squar
     assert.equal(unicorn.mpeaceful, 1);
 });
 void test('a tame unicorn catches and drops a distant gem without taking damage', async () => {
-    freshObjectRoom({ right: 30, hero: { uluck: 0 } });
+    await freshObjectRoom({ right: 30, hero: { uluck: 0 } });
     const unicorn = await createMonsterAt('gray unicorn', 14, 10);
     initializePet(unicorn, { state: game });
     unicorn.mhp = unicorn.mhpmax = 100;
@@ -34,7 +34,7 @@ void test('a tame unicorn catches and drops a distant gem without taking damage'
     assert.equal(gem.oy, 10);
 });
 void test('a unicorn rejects identified glass thrown from a distance but becomes peaceful', async () => {
-    const level = freshObjectRoom({ right: 30 });
+    const level = await freshObjectRoom({ right: 30 });
     level.flags.noteleport = true;
     const unicorn = await createMonsterAt('gray unicorn', 14, 10);
     unicorn.mpeaceful = 0;
@@ -46,7 +46,7 @@ void test('a unicorn rejects identified glass thrown from a distance but becomes
     assert.equal(glass.oy, 10);
 });
 void test('a blind hero receives Luck for a unicorn gift without seeing its reaction', async () => {
-    const level = freshObjectRoom({ right: 30, hero: { uluck: 0, blindTurns: 20, blind: true } });
+    const level = await freshObjectRoom({ right: 30, hero: { uluck: 0, blindTurns: 20, blind: true } });
     level.flags.noteleport = true;
     await createMonsterAt('gray unicorn', 11, 10);
     const gem = await addInventoryObject(DIAMOND);
@@ -57,7 +57,7 @@ void test('a blind hero receives Luck for a unicorn gift without seeing its reac
     assert.doesNotMatch(messages.join('\n') + game._pending_message, /accepts your gift/);
 });
 void test('a hallucinating hero sees a new unicorn identity when it accepts a gem', async () => {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     level.flags.noteleport = true;
     await createMonsterAt('gray unicorn', 11, 10);
     const gem = await addInventoryObject(DIAMOND);

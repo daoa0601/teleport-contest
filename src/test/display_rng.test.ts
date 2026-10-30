@@ -25,7 +25,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a hallucinated monster eating bars keeps its final dochug appearance', async () => {
-    const level = freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('rust monster', 13, 10, MM_NOGRP | NO_MINVENT);
     monster.mpeaceful = false;
@@ -37,8 +37,8 @@ void test('a hallucinated monster eating bars keeps its final dochug appearance'
     initRng(17n);
     monsterName(monster, { capitalized: true });
     // dissolve_bars() redraws once, then dochug(MMOVE_DONE) redraws again.
-    newsym(13, 10);
-    newsym(13, 10);
+    await newsym(13, 10);
+    await newsym(13, 10);
     const expected = glyphAt(13, 10);
     initRng(17n);
 
@@ -52,7 +52,7 @@ void test('a hallucinated monster eating bars keeps its final dochug appearance'
 });
 
 void test('a thrown potion flashes its hallucinated appearance before breaking', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const potion = await knownObject(POT_WATER);
     initRng(31n);
     const expected = transientObjectGlyph(potion);
@@ -71,12 +71,12 @@ void test('a thrown potion flashes its hallucinated appearance before breaking',
 });
 
 void test('a potion shattering on hot ground leaves a hallucinated object beside it unchanged', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     game.level.flags.temperature = 1;
     placeCreatedObject(await knownObject(CHEST), 13, 10);
     initRng(23n);
-    newsym(13, 10);
+    await newsym(13, 10);
     const before = glyphAt(13, 10);
     const potion = await knownObject(POT_WATER);
 
@@ -89,7 +89,7 @@ void test('a potion shattering on hot ground leaves a hallucinated object beside
 
 for (const hallucinating of [false, true]) {
     void test(`looking at a detected engulfer preserves ${hallucinating ? 'hallucinated descriptions' : 'its identity at the hero square'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const engulfer = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
         engulfer.mx = game.u.ux;
         engulfer.my = game.u.uy;
@@ -105,7 +105,7 @@ for (const hallucinating of [false, true]) {
         initRng(31n);
         const constraints = unconstrainMap();
         try {
-            mapDetectedMonster(engulfer, false);
+            await mapDetectedMonster(engulfer, false);
 
             const description = await farlookLocationDescription(game.u.ux, game.u.uy);
 
@@ -118,7 +118,7 @@ for (const hallucinating of [false, true]) {
 }
 
 void test('browsing detected objects inside an engulfer preserves the next hallucinated description', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const engulfer = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
     engulfer.mx = game.u.ux;
     engulfer.my = game.u.uy;
@@ -134,7 +134,7 @@ void test('browsing detected objects inside an engulfer preserves the next hallu
     initRng(31n);
     const constraints = unconstrainMap();
     try {
-        map_object(potion);
+        await map_object(potion);
         pushKeys('lh.');
 
         await browseDetectionMap(TER_OBJ, 'object of interest');
@@ -147,7 +147,7 @@ void test('browsing detected objects inside an engulfer preserves the next hallu
 
 void test('a newborn shapechanger shows the same hallucinated form as a silent later change', async () => {
     async function changeAtBirth(newborn: boolean) {
-        freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
+        await freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
         const monster = await createMonsterAt('chameleon', 12, 10, MM_NOGRP | NO_MINVENT);
         game.u.protectionFromShapeChangers = false;
         monster.cham = monster.mnum;
@@ -171,7 +171,7 @@ void test('a newborn shapechanger shows the same hallucinated form as a silent l
 });
 
 void test('Vlad keeps his birth form without choosing a discarded hallucinated name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, MM_NOGRP | NO_MINVENT);
     const species = vlad.mnum;
     game.u.hallucinationTurns = 20;
@@ -187,7 +187,7 @@ void test('Vlad keeps his birth form without choosing a discarded hallucinated n
 });
 
 async function hallucinatedDisplacementRoom() {
-    freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
         heroX: 10, heroY: 10, hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

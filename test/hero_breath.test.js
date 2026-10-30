@@ -5,7 +5,7 @@ import { hitHeroWithRay } from '../js/hero_breath.js';
 import { startHeroSliming } from '../js/slime.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 void test('red-dragon breath burns slime without hurting its fireproof body', async () => {
-    freshRoomWithPolymorphedHero('red dragon', {
+    await freshRoomWithPolymorphedHero('red dragon', {
         recalculateVision: false,
     });
     startHeroSliming({ state: game, turns: 10 });
@@ -24,7 +24,7 @@ void test('red-dragon breath burns slime without hurting its fireproof body', as
     ]);
 });
 void test('green-dragon breath cannot poison its poison-resistant body', async () => {
-    freshRoomWithPolymorphedHero('green dragon', {
+    await freshRoomWithPolymorphedHero('green dragon', {
         recalculateVision: false,
     });
     const messages = [];

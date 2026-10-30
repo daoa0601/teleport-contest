@@ -409,14 +409,14 @@ export async function wakeMonster(monster, { attacked = false } = {}) {
     const appearance = M_AP_TYPE(monster);
     if (appearance !== M_AP_NOTHING) {
         if (appearance !== M_AP_MONSTER)
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
     }
     else if (game.context.forcefight && !game.context.mon_moving
         && monster.mundetected) {
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
-    finishMonsterEating(monster);
+    await finishMonsterEating(monster);
     if (!attacked)
         return { heroDied: false };
     requirePlayingGame(game);

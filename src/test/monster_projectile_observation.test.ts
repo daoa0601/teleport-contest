@@ -12,13 +12,13 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an offscreen missile miss leaves its description unknown and its floor stack mergeable', async () => {
-    const level = freshObjectRoom({ right: 18 });
+    const level = await freshObjectRoom({ right: 18 });
     requirePlayingGame(game);
     const elf = await createMonsterAt('Grey-elf', 14, 10, MM_NOGRP | NO_MINVENT);
     await createMonsterAt('human zombie', 15, 10, MM_NOGRP | NO_MINVENT);
     level.requireAt(12, 10).typ = STONE;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(15, 10), false);
     await floorObject(ELVEN_DAGGER, 15, 10, { dknown: false });
     const missile = await knownObject(ELVEN_DAGGER, { dknown: true });

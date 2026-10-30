@@ -12,7 +12,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 // segments, so a worm whose head is farther away still triggers the
 // direction question.
 void test('a long worm tail beside the hero asks the loot direction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 13, 10);
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
     worm.msleeping = 0;
@@ -25,7 +25,7 @@ void test('a long worm tail beside the hero asks the loot direction', async () =
     assert.equal(game.context.move, 0);
 });
 void test('a long worm two squares away does not ask the loot direction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 13, 10);
     worm.wormSegments = [{ x: 13, y: 11 }];
     worm.msleeping = 0;

@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a fire zap reports enveloping steam before its hit instead of repeating evaporation feedback', async () => {
-    const level = freshObjectRoom({ hero: { fireResistance: true, waterWalking: true, uac: 100 } });
+    const level = await freshObjectRoom({ hero: { fireResistance: true, waterWalking: true, uac: 100 } });
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = MOAT;
     const wand = await addInventoryObject(WAN_FIRE, { spe: 2 });

@@ -53,7 +53,7 @@ for (const lit of [false, true]) {
             game.u.ux = candle.ox - 3;
             game.u.uy = candle.oy;
             vision_reset_new_level();
-            vision_recalc(0);
+            await vision_recalc(0);
             assert.equal(game.level.requireAt(candle.ox + 1, candle.oy).lit, false);
             assert.equal(cansee(candle.ox + 1, candle.oy), true);
         }
@@ -83,7 +83,7 @@ void test('a string map replaces lit fill with a dark room that arrival does not
     game.u.uy = y + 2;
     game.in_mklev = false;
     vision_reset_new_level();
-    vision_recalc();
+    await vision_recalc();
     const distant = game.level.requireAt(x + 7, y + 2);
     assert.equal(distant.lit, false, 'des.map(string) defaults to unlit');
     assert.equal(cansee(x + 7, y + 2), false);

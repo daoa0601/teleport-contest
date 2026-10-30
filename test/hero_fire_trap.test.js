@@ -19,7 +19,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const source of ['floor', 'carried box', 'floor box']) {
     void test(`${source} fire ${source === 'floor' ? 'burns exposed floor paper' : 'leaves floor paper untouched'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const paper = await floorObject(SCR_IDENTIFY, 10, 10, { quan: 40, quantity: 40 });
         const box = source === 'carried box' ? await addInventoryObject(CHEST)
@@ -39,7 +39,7 @@ for (const source of ['floor', 'carried box', 'floor box']) {
 }
 for (const source of ['submerged floor box', 'submerged carried box', 'dry floor box beside submerged hero']) {
     void test(`fire from a ${source} uses the correct water location`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const carried = source === 'submerged carried box';
         const box = carried ? await addInventoryObject(CHEST) : await floorObject(CHEST, 11, 10);
@@ -66,7 +66,7 @@ for (const source of ['submerged floor box', 'submerged carried box', 'dry floor
     });
 }
 void test('a carried fire trap melts ice even though it does not burn floor objects', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     await wearHeroAccessory(await addInventoryObject(OBJECT_NAMES.indexOf('levitation')), 'uleft');
     const ice = game.level.requireAt(10, 10);
@@ -82,7 +82,7 @@ void test('a carried fire trap melts ice even though it does not burn floor obje
     assert.ok(game.u.levitation);
 });
 void test('fire traps teach and clear Fire Brand resistance for sighted and blinded monsters', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     const watcher = await createMonsterAt('jackal', 12, 10);
     const blindWatcher = await createMonsterAt('jackal', 13, 10);
@@ -109,7 +109,7 @@ void test('fire traps teach and clear Fire Brand resistance for sighted and blin
 });
 for (const lifesaving of [false, true]) {
     void test(`a trapped chest fire ${lifesaving ? 'finishes trap discovery after life saving' : 'does not finish discovery after permanent death'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const box = await addInventoryObject(CHEST, { otrapped: true });
         if (lifesaving)
@@ -128,7 +128,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('fire damage that drains a level removes the level-granted ability', async () => {
-    freshObjectRoom({ role: 'caveman', hero: {
+    await freshObjectRoom({ role: 'caveman', hero: {
             ulevel: 7, uhp: 8, uhpmax: 8, uhpinc: [0, 0, 0, 0, 0, 0, 1],
         } });
     requireFixtureGame(game);
@@ -143,7 +143,7 @@ void test('fire damage that drains a level removes the level-granted ability', a
     assert.ok(game.u.uhp > 0 && game.u.uhp < 8);
 });
 void test('crawling out of melted ice onto another fire trap does not trigger it during the first', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     for (let x = 10; x <= 12; x++)
         for (let y = 9; y <= 11; y++)

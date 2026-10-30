@@ -13,7 +13,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const contents of ['known', 'unknown', 'empty'] as const) {
     void test(`traditional payment names a billed sack with ${contents} contents without offering owned contents`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await addInventoryObject(SACK, { cknown: contents !== 'unknown', unpaid: true });
         if (contents !== 'empty') await addCreatedObjectToContainer(sack, await knownObject(DAGGER));
         const { shopkeeper } = await createStaffedShop({ bill: [
@@ -48,7 +48,7 @@ for (const { quantity, alternate, label } of [
     { quantity: 2, alternate: true, label: 'two alternate daggers' },
 ]) {
     void test(`traditional payment preserves the price and question for ${label} with a long name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const name = 'the long and winding road through mountains to the distant sea';
         const dagger = await addInventoryObject(DAGGER, {
             quan: quantity, unpaid: true, greased: true,
@@ -98,7 +98,7 @@ for (const { personalName, label, expected } of [
         label: 'a long personal name', expected: /named a second\.\.\. for 4 zorkmids\.  Pay\?/ },
 ]) {
     void test(`traditional payment shortens a long call name beside ${label}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const callName = 'the long and winding road through mountains to the distant sea';
         const potion = await addInventoryObject(POT_HEALING, {
             known: false, typeKnown: false, unpaid: true, greased: true,

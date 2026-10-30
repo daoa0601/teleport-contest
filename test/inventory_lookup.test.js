@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 void test('lookup advice for the discovered Eyes of the Overworld treats one artifact as this', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     assert.ok(eyes.oartifact);
     assert.ok(eyes.invlet);
@@ -36,7 +36,7 @@ void test('lookup advice for the discovered Eyes of the Overworld treats one art
 });
 for (const overlay of [true, false]) {
     void test(`dismissing a ${overlay ? 'corner' : 'full-screen'} encyclopedia entry ${overlay ? 'preserves' : 'refreshes'} a hallucinated monster${overlay ? '' : ' once'}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 40, right: 65, top: 1, bottom: 10, heroX: 50, heroY: 2,
             flags: { menu_overlay: overlay },
         });
@@ -76,7 +76,7 @@ for (const overlay of [true, false]) {
     });
 }
 void test('inventory lookup offers and shows the species entry for a stack of kobold corpses', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const corpses = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('kobold'), quan: 2 });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -90,7 +90,7 @@ void test('inventory lookup offers and shows the species entry for a stack of ko
     assert.equal(game.context.move, 0);
 });
 void test('inventory lookup shows the selected weapon information and consumes its letter', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const katana = await addInventoryObject(KATANA, { quan: 2 });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -107,7 +107,7 @@ void test('inventory lookup shows the selected weapon information and consumes i
     assert.equal(game.context.move, 1);
 });
 void test('Return advances an encyclopedia prose page instead of closing its menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const horn = await addInventoryObject(UNICORN_HORN);
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [

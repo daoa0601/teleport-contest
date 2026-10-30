@@ -11,10 +11,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('terrain inspection reveals a gray harmless cloud beneath an adjacent monster', async () => {
-    freshObjectRoom({ flags: { tips: false, color: true } });
+    await freshObjectRoom({ flags: { tips: false, color: true } });
     await createMonsterAt('jackal', 11, 10);
     assert.ok(await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]));
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('\x7fb');
     const action = rhack(0);

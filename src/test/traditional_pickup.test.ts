@@ -34,7 +34,7 @@ void test('a traditional command count takes at most the lone stack quantity', a
 });
 
 void test('counted traditional pickup refreshes the hallucinated stack left under an invisible hero', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { menu_style: MENU_TRADITIONAL },
         hero: { hallucinationTurns: 20, invisibleTurns: 20 },
     });

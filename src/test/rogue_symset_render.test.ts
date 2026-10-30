@@ -20,8 +20,8 @@ import { gotoLevel } from '../js/level_change.js';
 // S_ entries over the base rogue set (symbols.c:load_symset() →
 // update_rogue_symset() over init_rogue_symbols()).
 
-function rogueLevel() {
-    const level = freshObjectRoom({ flags: { verbose: false } });
+async function rogueLevel() {
+    const level = await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     const wall = level.requireAt(12, 10);
@@ -39,13 +39,13 @@ function rogueCell(x: number, y: number) {
 }
 
 void test('the Blank rogue symbol set blanks walls, stairs and coins', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:Blank');
     await floorObject(GOLD_PIECE, 14, 10, { dknown: true });
 
-    newsym(12, 10);
-    newsym(13, 10);
-    newsym(14, 10);
+    await newsym(12, 10);
+    await newsym(13, 10);
+    await newsym(14, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(12, 10)?.ch, '\x1a');
@@ -55,11 +55,11 @@ void test('the Blank rogue symbol set blanks walls, stairs and coins', async () 
 });
 
 void test('RogueIBM draws double-line walls and Greek-Xi stairs', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueIBM');
 
-    newsym(12, 10);
-    newsym(13, 10);
+    await newsym(12, 10);
+    await newsym(13, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(12, 10)?.ch, 'Í');
@@ -69,61 +69,61 @@ void test('RogueIBM draws double-line walls and Greek-Xi stairs', async () => {
 
 for (const name of ['IBMgraphics', 'IBMGraphics_1', 'IBMGraphics_2', 'AmigaFont']) {
     void test(`${name} renders its terrain and effects when loaded as the rogue set`, async () => {
-        rogueLevel();
+        await rogueLevel();
         applyNethackrc(`OPTIONS=eight_bit_tty,roguesymset:${name}`);
-        newsym(12, 10);
-        newsym(13, 10);
+        await newsym(12, 10);
+        await newsym(13, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(11, 11).ch, name === 'AmigaFont' ? '\xc1' : '\xc4');
         assert.equal(requireScreenCell(12, 11).ch, name === 'AmigaFont' ? '<' : '%');
 
         const beam = zapdir_to_glyph(1, 0, 0);
-        show_glyph_cell(11, 9, beam.ch, beam.color, beam.decgfx, 0, beam);
+        await show_glyph_cell(11, 9, beam.ch, beam.color, beam.decgfx, 0, beam);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 10).ch, name === 'AmigaFont' ? '\xf0' : '\xc4');
 
         game.u.ustuck = await createMonsterAt('purple worm', 10, 10);
         game.u.uswallow = 1;
-        swallowed(true);
+        await swallowed(true);
         await flush_screen(1);
         assert.equal(requireScreenCell(8, 11).ch, name === 'AmigaFont' ? '\xf7' : '\xb3');
     });
 }
 
 void test('AmigaFont uses the tty alternate font unless eight_bit_tty is enabled', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:AmigaFont');
 
-    newsym(12, 10);
+    await newsym(12, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(11, 11).ch, 'A', 'g_putch() strips the high bit of the Amiga wall');
 });
 
 void test('plain as the rogue set redraws wall corners as plus', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:plain');
     const corner = level.requireAt(12, 10);
     corner.typ = TLCORNER;
     corner.seenv = 255;
 
-    newsym(12, 10);
+    await newsym(12, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(12, 10)?.ch, '+');
 });
 
 void test('RogueEpyx replaces trap symbols and keeps rogue colors', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
     const trap = addTrap(level, BEAR_TRAP, 14, 10);
     trap.tseen = true;
     await floorObject(GOLD_PIECE, 15, 10, { dknown: true });
 
-    newsym(12, 10);
-    newsym(13, 10);
-    newsym(14, 10);
-    newsym(15, 10);
+    await newsym(12, 10);
+    await newsym(13, 10);
+    await newsym(14, 10);
+    await newsym(15, 10);
     await flush_screen(1);
 
     // The wall keeps cmap_to_roguecolor()'s brown, the trap shows the card
@@ -137,10 +137,10 @@ void test('RogueEpyx replaces trap symbols and keeps rogue colors', async () => 
 });
 
 void test('RogueEpyx displays the hero with the human class symbol', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
 
-    displaySelf();
+    await displaySelf();
     await flush_screen(1);
 
     assert.equal(rogueCell(game.u.ux, game.u.uy)?.ch, '\x01');
@@ -149,10 +149,10 @@ void test('RogueEpyx displays the hero with the human class symbol', async () =>
 });
 
 void test('the default rogue set still strips colors and shows percent stairs', async () => {
-    rogueLevel();
+    await rogueLevel();
 
-    newsym(12, 10);
-    newsym(13, 10);
+    await newsym(12, 10);
+    await newsym(13, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(12, 10)?.ch, '-');
@@ -162,33 +162,33 @@ void test('the default rogue set still strips colors and shows percent stairs', 
 });
 
 void test('named rogue sets redraw room floors with the centered dot', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueIBM');
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(11, 10)?.ch, 'ú');
 });
 
 void test('Blank blanks fountains and unseen stone as well', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:Blank');
     const fountain = level.requireAt(14, 10);
     fountain.typ = FOUNTAIN;
 
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(14, 10)?.ch, '\x1a');
 });
 
 void test('a female hero is also yellow under RogueEpyx colors', async () => {
-    rogueLevel();
+    await rogueLevel();
     game.flags.female = true;
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
 
-    displaySelf();
+    await displaySelf();
     await flush_screen(1);
 
     assert.equal(rogueCell(game.u.ux, game.u.uy)?.ch, '\x01');
@@ -196,18 +196,18 @@ void test('a female hero is also yellow under RogueEpyx colors', async () => {
 });
 
 void test('statues turn red under RogueEpyx colors', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
     await floorObject(STATUE, 14, 10, { dknown: true, corpsenm: 0 });
 
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(14, 10)?.color, CLR_RED);
 });
 
 void test('explosions keep their own colors under RogueEpyx', async () => {
-    rogueLevel();
+    await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
     let coloredFrames = 0;
     game.animationFrame = async () => {
@@ -233,15 +233,15 @@ for (const name of ['RogueEpyx', 'Blank', 'RogueIBM']) {
 }
 
 void test('Blank blanks every trap symbol including the vibrating square', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:Blank');
     const trap = addTrap(level, BEAR_TRAP, 14, 10);
     trap.tseen = true;
     const square = addTrap(level, VIBRATING_SQUARE, 15, 10);
     square.tseen = true;
 
-    newsym(14, 10);
-    newsym(15, 10);
+    await newsym(14, 10);
+    await newsym(15, 10);
     await flush_screen(1);
 
     assert.equal(rogueCell(14, 10)?.ch, '\x1a');
@@ -249,12 +249,12 @@ void test('Blank blanks every trap symbol including the vibrating square', async
 });
 
 void test('RogueEpyx blanks neither the vibrating square nor plain walls', async () => {
-    const level = rogueLevel();
+    const level = await rogueLevel();
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
     const square = addTrap(level, VIBRATING_SQUARE, 15, 10);
     square.tseen = true;
 
-    newsym(15, 10);
+    await newsym(15, 10);
     await flush_screen(1);
 
     // dat/symbols:RogueEpyx replaces the twenty-two real traps only.

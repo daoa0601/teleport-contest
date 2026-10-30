@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('disintegrating a displacement cloak announces the loss of displacement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT);
     wearHeroArmor(cloak);
     const input = resetInputState();

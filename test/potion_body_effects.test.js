@@ -38,7 +38,7 @@ for (const [properties, message] of [
     [{ cursed: true }, 'This tastes like castor oil.'],
 ]) {
     void test(`unlit oil ${message} preserves health and leaves consumption to the caller`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const result = await apply(POT_OIL, properties);
         assert.equal(game._pending_message, message);
@@ -49,7 +49,7 @@ for (const [properties, message] of [
     });
 }
 void test('unlit oil abuses wisdom', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     for (let drinks = 0; drinks < 12; drinks++)
         await apply(POT_OIL);
@@ -57,7 +57,7 @@ void test('unlit oil abuses wisdom', async () => {
     assert.ok(game.u._exercise[A_WIS] < 0);
 });
 void test('burning oil hurts a human and removes pending sliming', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     startHeroSliming({ turns: 7 });
     const result = await apply(POT_OIL, { lamplit: true });
@@ -67,7 +67,7 @@ void test('burning oil hurts a human and removes pending sliming', async () => {
     assert.match(game._pending_message, /slime.*burned away/);
 });
 void test('fire resistance reduces burning oil damage, but cold resistance removes that reduction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('fireResistance', 'outside');
     await apply(POT_OIL, { lamplit: true });
@@ -78,7 +78,7 @@ void test('fire resistance reduces burning oil damage, but cold resistance remov
     assert.ok(game.u.uhp >= 24 && game.u.uhp <= 36);
 });
 void test('a fire elemental enjoys burning oil without losing body health', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('fire elemental');
     const result = await apply(POT_OIL, { lamplit: true });
@@ -89,7 +89,7 @@ void test('a fire elemental enjoys burning oil without losing body health', asyn
     assert.ok(game.u._exercise[A_WIS] >= 0);
 });
 void test('ordinary water adds nutrition without the fullness/choking rule', async () => {
-    freshObjectRoom({ hero: { uhunger: 2000 } });
+    await freshObjectRoom({ hero: { uhunger: 2000 } });
     requirePlayingGame(game);
     const result = await apply(POT_WATER);
     assert.equal(result.heroDied, false);
@@ -99,7 +99,7 @@ void test('ordinary water adds nutrition without the fullness/choking rule', asy
 });
 for (const alignment of [-1, 0, 1]) {
     void test(`holy water follows alignment ${alignment}`, async () => {
-        freshObjectRoom({ hero: { ualign: { type: alignment, record: 0 } } });
+        await freshObjectRoom({ hero: { ualign: { type: alignment, record: 0 } } });
         requirePlayingGame(game);
         await apply(POT_WATER, { blessed: true });
         if (alignment === -1) {
@@ -113,7 +113,7 @@ for (const alignment of [-1, 0, 1]) {
     });
 }
 void test('holy water cures fatal sickness but leaves nausea intact', async () => {
-    freshObjectRoom({ hero: { vomitingTurns: 8, vomiting: true } });
+    await freshObjectRoom({ hero: { vomitingTurns: 8, vomiting: true } });
     requirePlayingGame(game);
     await startHeroSickness({ turns: 15, type: SICK_ALL });
     await apply(POT_WATER, { blessed: true });
@@ -122,7 +122,7 @@ void test('holy water cures fatal sickness but leaves nausea intact', async () =
     assert.match(game._pending_message, /cured.*relief/);
 });
 void test('holy water burns an undead body even with lawful alignment', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
     requirePlayingGame(game);
     installPolymorphedHero('vampire');
     await apply(POT_WATER, { blessed: true });
@@ -130,7 +130,7 @@ void test('holy water burns an undead body even with lawful alignment', async ()
     assert.equal(game.u.uhp, 40);
 });
 void test('unholy water heals a chaotic hero without increasing maximum health', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 }, uhp: 37 } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 }, uhp: 37 } });
     requirePlayingGame(game);
     await apply(POT_WATER, { cursed: true });
     assert.ok(game.u.uhp >= 39 && game.u.uhp <= 40);
@@ -138,18 +138,18 @@ void test('unholy water heals a chaotic hero without increasing maximum health',
     assert.equal(game._pending_message, 'You feel quite proud of yourself.');
 });
 void test('unholy water damages lawful heroes and gives neutral heroes dread', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
     requirePlayingGame(game);
     await apply(POT_WATER, { cursed: true });
     assert.ok(game.u.uhp < 40);
-    freshObjectRoom({ hero: { ualign: { type: 0, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 0, record: 0 } } });
     requirePlayingGame(game);
     await apply(POT_WATER, { cursed: true });
     assert.equal(game.u.uhp, 40);
     assert.equal(game._pending_message, 'You feel full of dread.');
 });
 void test('holy water cures lycanthropy even while an unchanging werewolf remains in beast form', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     setHeroLycanthropy(MONSTER_NAME.indexOf('werewolf'));
     installPolymorphedHero('werewolf', { turns: 0 });
@@ -162,7 +162,7 @@ void test('holy water cures lycanthropy even while an unchanging werewolf remain
     assert.equal(propertyIsActive('drainResistance'), true);
 });
 void test('unholy water changes an infected human into its beast form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroLycanthropy(MONSTER_NAME.indexOf('werewolf'));
     await apply(POT_WATER, { cursed: true });
@@ -170,7 +170,7 @@ void test('unholy water changes an infected human into its beast form', async ()
     assert.ok(game.u.mh > 0);
 });
 void test('a Healer is immune to ordinary and blessed sickness potions', async () => {
-    freshObjectRoom({ role: 'healer' });
+    await freshObjectRoom({ role: 'healer' });
     requirePlayingGame(game);
     const bases = game.u.acurr.a.slice();
     await apply(POT_SICKNESS);
@@ -179,7 +179,7 @@ void test('a Healer is immune to ordinary and blessed sickness potions', async (
     assert.deepEqual(game.u.acurr.a, bases);
 });
 void test('blessed sickness hurts other roles by one point and ends hallucination', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 12 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 12 } });
     requirePlayingGame(game);
     await apply(POT_SICKNESS, { blessed: true });
     assert.equal(game.u.uhp, 39);
@@ -187,7 +187,7 @@ void test('blessed sickness hurts other roles by one point and ends hallucinatio
     assert.match(game._pending_message, /shocked back to your senses/);
 });
 void test('poison resistance reduces sickness damage and attribute loss without preventing either', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('poisonResistance', 'outside');
     const before = game.u.acurr.a.slice();
@@ -202,7 +202,7 @@ void test('poison resistance reduces sickness damage and attribute loss without 
     }, 0), 1);
 });
 void test('sustain ability prevents sickness attribute loss but leaves its health damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('sustainAbility', 'outside');
     const before = game.u.acurr.a.slice();
@@ -212,7 +212,7 @@ void test('sustain ability prevents sickness attribute loss but leaves its healt
 });
 for (const [properties, minimum, maximum] of [[{ blessed: true }, 1, 4], [{}, 1, 8], [{ cursed: true }, 2, 16]]) {
     void test(`acid damage is ${minimum}..${maximum} for its beatitude`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const result = await apply(POT_ACID, properties);
         assert.ok(40 - game.u.uhp >= minimum && 40 - game.u.uhp <= maximum);
@@ -220,7 +220,7 @@ for (const [properties, minimum, maximum] of [[{ blessed: true }, 1, 4], [{}, 1,
     });
 }
 void test('acid resistance prevents damage while acid still cures petrification', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('acidResistance', 'outside');
     startHeroPetrification({ turns: 3 });
@@ -230,7 +230,7 @@ void test('acid resistance prevents damage while acid still cures petrification'
     assert.match(game._pending_message, /You feel limber!$/u);
 });
 void test('acid damages the current monster body without damaging saved human health', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('dog');
     await apply(POT_ACID);
@@ -238,7 +238,7 @@ void test('acid damages the current monster body without damaging saved human he
     assert.equal(game.u.uhp, 40);
 });
 void test('burning oil resumes after its message and life saving before curing slime', async () => {
-    freshObjectRoom({ hero: { uhp: 1 } });
+    await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     startHeroSliming({ turns: 7 });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -261,7 +261,7 @@ void test('burning oil resumes after its message and life saving before curing s
     assert.equal(game.inventory.includes(amulet), false);
 });
 void test('an unchanging amulet prevents polymorph potion transformation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_UNCHANGING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -271,7 +271,7 @@ void test('an unchanging amulet prevents polymorph potion transformation', async
     assert.equal(game._pending_message, 'You feel a little strange.');
 });
 void test('blessed polymorph offers a real form choice and gives the chosen form a short lifetime', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await addInventoryObject(POT_POLYMORPH, { blessed: true });
     const input = resetInputState();
@@ -292,7 +292,7 @@ void test('blessed polymorph offers a real form choice and gives the chosen form
     assert.ok(game.u.mtimedone >= 10 && game.u.mtimedone <= 24);
 });
 void test('ordinary gain level gains one experience level and current health', async () => {
-    freshObjectRoom({ hero: { ulevel: 8, uhp: 12, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { ulevel: 8, uhp: 12, uhpmax: 40 } });
     requirePlayingGame(game);
     await apply(POT_GAIN_LEVEL);
     assert.equal(game.u.ulevel, 9);
@@ -300,7 +300,7 @@ void test('ordinary gain level gains one experience level and current health', a
     assert.equal(game.u.uexp, newExperienceThreshold(8));
 });
 void test('blessed gain level places experience inside the new level', async () => {
-    freshObjectRoom({ hero: { ulevel: 8 } });
+    await freshObjectRoom({ hero: { ulevel: 8 } });
     requirePlayingGame(game);
     await apply(POT_GAIN_LEVEL, { blessed: true });
     assert.equal(game.u.ulevel, 9);
@@ -361,8 +361,8 @@ void test('cursed gain level with the Amulet rises from level one to the Plane o
     assert.deepEqual(game.u.uz, game.earth_level);
     assert.equal(requireGameLevel(), earth);
 });
-void test('rise-up admission excludes Sokoban, endgame, and the top Wizard tower interior', () => {
-    freshObjectRoom();
+void test('rise-up admission excludes Sokoban, endgame, and the top Wizard tower interior', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [dungeon('The Dungeons of Doom', 1, 20)];
     assert.equal(canHeroRiseUp(10, 10), true);
@@ -376,8 +376,8 @@ void test('rise-up admission excludes Sokoban, endgame, and the top Wizard tower
     game.astral_level = { dnum: 0, dlevel: 1, flags: { town: false }, alignment: null };
     assert.equal(canHeroRiseUp(10, 10), false);
 });
-void test('depth resolution follows the actual branch parent and clamps past its bottom', () => {
-    freshObjectRoom({ hero: { uz: { dnum: 1, dlevel: 1 } } });
+void test('depth resolution follows the actual branch parent and clamps past its bottom', async () => {
+    await freshObjectRoom({ hero: { uz: { dnum: 1, dlevel: 1 } } });
     requirePlayingGame(game);
     game.dungeons = [dungeon('The Dungeons of Doom', 1, 20),
         dungeon('The Gnomish Mines', 5, 4)];

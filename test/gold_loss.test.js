@@ -16,7 +16,7 @@ import { throneSitEffect } from '../js/throne.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a throne takes readied gold but leaves gold inside a carried bag', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     game.level.requireAt(10, 10).typ = THRONE;
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 23 });

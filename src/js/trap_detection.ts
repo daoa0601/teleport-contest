@@ -47,11 +47,11 @@ export async function detectTraps(source: Pick<GameObject, 'cursed'> | null | un
     const objectLists = [floorObjects(state), state.level.buriedObjects || [],
         ...liveMonsters(state).map(monster => monster.minvent || [])];
     for (const objects of objectLists) {
-        const location = detectContainerTraps(objects, null, false, state);
+        const location = await detectContainerTraps(objects, null, false, state);
         if (location & ELSEWHERE) return await displayTrapMap(cursed, state);
         if (location) found = true;
     }
-    if (detectContainerTraps(state.inventory, null, false, state)) found = true;
+    if (await detectContainerTraps(state.inventory, null, false, state)) found = true;
     for (const { x, y } of trappedDoors(state)) {
         if (!atHero(x, y, state)) return await displayTrapMap(cursed, state);
         found = true;
@@ -73,18 +73,18 @@ async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise
     const objects: DetectionMap = new Map();
     try {
         // Floor traps cover chest traps; doors are displayed last, as in C.
-        detectContainerTraps(state.level.buriedObjects || [], objects, cursed, state);
-        detectContainerTraps(floorObjects(state), objects, cursed, state);
+        await detectContainerTraps(state.level.buriedObjects || [], objects, cursed, state);
+        await detectContainerTraps(floorObjects(state), objects, cursed, state);
         for (const monster of liveMonsters(state))
-            detectContainerTraps(monster.minvent || [], objects, cursed, state);
-        detectContainerTraps(state.inventory, objects, cursed, state);
-        for (const trap of floorTraps(state)) senseTrap(trap, objects, cursed, state);
+            await detectContainerTraps(monster.minvent || [], objects, cursed, state);
+        await detectContainerTraps(state.inventory, objects, cursed, state);
+        for (const trap of floorTraps(state)) await senseTrap(trap, objects, cursed, state);
         for (const { x, y } of trappedDoors(state))
-            senseTrap({ tx: x, ty: y, ttyp: TRAPPED_DOOR }, objects, cursed, state);
+            await senseTrap({ tx: x, ty: y, ttyp: TRAPPED_DOOR }, objects, cursed, state);
         let mode = TER_DETECT | (cursed ? TER_OBJ : TER_TRP);
         const heroGlyph = glyphAt(state.u.ux, state.u.uy, state);
         if (heroGlyph?.kind !== 'trap' && heroGlyph?.kind !== 'object') {
-            newsym(state.u.ux, state.u.uy);
+            await newsym(state.u.ux, state.u.uy);
             mode |= TER_MON;
         }
         await pline(formatFeltMessage(`${cursed ? 'very greedy' : 'entrapped'}.`, state));
@@ -93,7 +93,7 @@ async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise
     return { result: 0, known: false, strangeFeeling: false };
 }
 
-function detectContainerTraps(objects: readonly GameObject[], shown: DetectionMap | null, cursed: boolean, state: PlayingGameState): number {
+async function detectContainerTraps(objects: readonly GameObject[], shown: DetectionMap | null, cursed: boolean, state: PlayingGameState): Promise<number> {
     let result = 0;
     for (const object of objects) {
         const trapped = (object.otyp === CHEST || object.otyp === LARGE_BOX) && object.otrapped;
@@ -106,17 +106,17 @@ function detectContainerTraps(objects: readonly GameObject[], shown: DetectionMa
             object.tknown = true;
             observeObject(object, state);
             result |= atHero(x, y, state) ? HERE : ELSEWHERE;
-            if (shown) senseTrap({ tx: x, ty: y, ttyp: TRAPPED_CHEST }, shown, cursed, state);
+            if (shown) await senseTrap({ tx: x, ty: y, ttyp: TRAPPED_CHEST }, shown, cursed, state);
         }
-        if (contents.length) result |= detectContainerTraps(contents, shown, cursed, state);
+        if (contents.length) result |= await detectContainerTraps(contents, shown, cursed, state);
     }
     return result;
 }
 
-function senseTrap(trap: TrapGlyphSource, shown: DetectionMap, cursed: boolean, state: PlayingGameState): void {
+async function senseTrap(trap: TrapGlyphSource, shown: DetectionMap, cursed: boolean, state: PlayingGameState): Promise<void> {
     const hallucinating = heroIsHallucinating(state);
     if (!hallucinating && !cursed) {
-        map_trap(trap, true);
+        await map_trap(trap, true);
         trap.tseen = true;
         return;
     }
@@ -127,7 +127,7 @@ function senseTrap(trap: TrapGlyphSource, shown: DetectionMap, cursed: boolean, 
     // Native fake objects draw a species even when their type is not a corpse.
     const object: DetectionObject = { otyp, oclass: objectClassForType(otyp), ox: trap.tx, oy: trap.ty,
         quan: quantity, quantity, corpsenm: rn2(MONSTER_NAME.length) };
-    map_object(object, true);
+    await map_object(object, true);
     shown.set(`${trap.tx},${trap.ty}`, object);
 }
 

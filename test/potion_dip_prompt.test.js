@@ -17,7 +17,7 @@ for (const { type, name, terrain, source, pronoun } of [
     { type: DAGGER, name: 'dagger', terrain: FOUNTAIN, source: 'fountain', pronoun: 'it' },
 ]) {
     void test(`brief dip prompts use ${pronoun} for ${name} at a ${source}`, async (t) => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         game.level.requireAt(game.u.ux, game.u.uy).typ = terrain;
         const target = await addInventoryObject(type);
@@ -35,7 +35,7 @@ for (const { type, name, terrain, source, pronoun } of [
 }
 for (const verbose of [false, true]) {
     void test(`cancelling the dip item question ${verbose ? 'announces cancellation' : 'keeps the question visible'}`, async () => {
-        freshObjectRoom({ flags: { verbose } });
+        await freshObjectRoom({ flags: { verbose } });
         const dagger = await addInventoryObject(DAGGER);
         resetInputState();
         await runExtendedCommand('dip', '\u001b');

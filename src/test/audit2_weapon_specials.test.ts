@@ -46,7 +46,7 @@ const defender = (species: string) => ({ mnum: nameToMonster(species) });
 // C weapon.c:hitval(): is_pick() also covers the dwarvish mattock, and the
 // target needs both passes_walls() and thick_skinned().
 void test('a mattock shares the pick accuracy bonus against an earth elemental', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
     const mattock = await uninitializedObject(DWARVISH_MATTOCK, { spe: 0 });
     const elemental = await createMonsterAt('earth elemental', 10, 8, NO_MINVENT);
@@ -60,7 +60,7 @@ void test('a mattock shares the pick accuracy bonus against an earth elemental',
 // and "always subtract erosion even for blunt weapons ... if (tmp < 1) tmp = 1".
 // A mace rolls 1d6+1 against man-sized defenders.
 void test('weapon damage floors negative enchantment at zero and erosion at one', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
 
     const drained = await uninitializedObject(MACE, { spe: -3 });
@@ -82,7 +82,7 @@ void test('weapon damage floors negative enchantment at zero and erosion at one'
 // rnd(20) for silver vs silver-haters, rnd(8) for a lit light artifact vs a
 // gremlin. Maximum rolls pin the exact die sizes.
 void test('blessed, silver, and wielded light each add their own damage die', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
     const maximum = { rollOne: maximumRoll, rollDice: maximumDice };
 
@@ -106,7 +106,7 @@ void test('blessed, silver, and wielded light each add their own damage die', as
 // combat scales with martial_bonus(); riding penalizes accuracy, adds thrust
 // damage, and dual wielding rides worse.
 void test('skill bonuses follow the native two-weapon, martial arts, and riding tables', async () => {
-    freshObjectRoom({ role: 'samurai', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'samurai', hero: { ulevel: 1 } });
     initRng(1n);
     const skills = ensureHeroSkills(game);
     assert.ok(skills);
@@ -168,7 +168,7 @@ void test('skill bonuses follow the native two-weapon, martial arts, and riding 
 // wielders, giants love clubs, a Balrog facing an armed hero grabs a whip,
 // and a cockatrice corpse is only wielded through gloves.
 void test('hand-to-hand monster weapon choice respects the native preferences', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
 
     // hwep[] prefers the silver saber to the mace, so only the
@@ -211,7 +211,7 @@ void test('hand-to-hand monster weapon choice respects the native preferences', 
 // distance 13 while visible; Snickersnee serves as its own propellor; an
 // aklys is a throw-and-return weapon for thinking monsters only.
 void test('ranged monster weapon choice prefers polearms in reach and returning weapons', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
 
     const ogre = await createMonsterAt('ogre', 8, 8);
@@ -258,7 +258,7 @@ void test('role skill ceilings match the native class tables', async () => {
         ['knight', P_RIDING, P_EXPERT],
         ['samurai', P_TWO_WEAPON_COMBAT, P_EXPERT],
     ] as const) {
-        freshObjectRoom({ role, hero: { ulevel: 1 } });
+        await freshObjectRoom({ role, hero: { ulevel: 1 } });
         const skills = ensureHeroSkills(game);
         assert.ok(skills, `${role} skills initialize`);
         const entry = skills[skill];
@@ -273,7 +273,7 @@ void test('role skill ceilings match the native class tables', async () => {
     // A weapon in the role's table stays unskilled until carried: the
     // Barbarian kit carries no dagger, so his in-table dagger skill starts
     // untrained (C skill_init() promotes only carried weapons to Basic).
-    freshObjectRoom({ role: 'barbarian', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'barbarian', hero: { ulevel: 1 } });
     const skills = ensureHeroSkills(game);
     assert.ok(skills);
     const daggerSkill = skills[P_DAGGER];

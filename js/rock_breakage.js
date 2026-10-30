@@ -79,10 +79,10 @@ export async function fractureRock(object, x, y, { state = game, random = rn2, p
             throw new Error('Floor fracture requires a level.');
         if (!visionCellBlocksLight(level, x, y)) {
             vision_note_blocker_change(x, y);
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         if (cansee(x, y))
-            newsym(x, y);
+            await newsym(x, y);
     }
 }
 export async function breakStatue(statue, x, y, { state = game, random = rn2, publish = pline } = {}) {

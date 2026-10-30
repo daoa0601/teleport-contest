@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the Tourist nemesis is hostile and waits for the hero instead of approaching as a leader', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
 
     const nemesis = await createMonsterAt('Master of Thieves', 12, 10, MM_NOGRP | NO_MINVENT);
 
@@ -21,7 +21,7 @@ void test('the Tourist nemesis is hostile and waits for the hero instead of appr
 });
 
 void test('the Tourist nemesis receives the Bell of Opening at birth', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
 
     const nemesis = await createMonsterAt('Master of Thieves', 12, 10, MM_NOGRP);
 
@@ -29,7 +29,7 @@ void test('the Tourist nemesis receives the Bell of Opening at birth', async () 
 });
 
 void test('taming cannot pacify the Tourist nemesis', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     const nemesis = await createMonsterAt('Master of Thieves', 12, 10, MM_ANGRY | NO_MINVENT);
 
     assert.equal(await tameMonster(nemesis), false);
@@ -38,7 +38,7 @@ void test('taming cannot pacify the Tourist nemesis', async () => {
 });
 
 void test('the Tourist nemesis pursues the hero carrying the quest artifact', async () => {
-    freshObjectRoom({ role: 'tourist', hero: { uhave: { questart: 1 } } });
+    await freshObjectRoom({ role: 'tourist', hero: { uhave: { questart: 1 } } });
     requirePlayingGame(game);
     const nemesis = await createMonsterAt('Master of Thieves', 12, 10, NO_MINVENT);
 
@@ -50,7 +50,7 @@ void test('the Tourist nemesis pursues the hero carrying the quest artifact', as
 });
 
 void test('a quest guardian retains the starting alignment after the hero converts', async () => {
-    freshObjectRoom({ role: 'priest', hero: { ualign: { type: -1, record: 10 } } });
+    await freshObjectRoom({ role: 'priest', hero: { ualign: { type: -1, record: 10 } } });
     game.initAlignment = { name: 'lawful', value: 1 };
     const guardian = await createMonsterAt('acolyte', 12, 10, NO_MINVENT);
 
@@ -61,7 +61,7 @@ void test('a quest guardian retains the starting alignment after the hero conver
 });
 
 void test('an explicitly angry quest leader stays hostile and honors the no-wait birth flag', async () => {
-    freshObjectRoom({ role: 'knight' });
+    await freshObjectRoom({ role: 'knight' });
 
     const leader = await createMonsterAt('King Arthur', 12, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
 
@@ -71,9 +71,9 @@ void test('an explicitly angry quest leader stays hostile and honors the no-wait
 });
 
 void test('the Master of Thieves remains a peaceful leader for a Rogue', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     await createMonsterAt('Master of Thieves', 12, 10, NO_MINVENT);
-    freshObjectRoom({ role: 'rogue' });
+    await freshObjectRoom({ role: 'rogue' });
 
     const leader = await createMonsterAt('Master of Thieves', 12, 10, NO_MINVENT);
 

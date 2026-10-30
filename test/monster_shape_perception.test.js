@@ -10,7 +10,7 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a monster changing form during its turn updates a stale hero position', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('soldier', 11, 10, MM_NOMSG | NO_MINVENT);
     monster.mux = 8;
     monster.muy = 9;
@@ -21,7 +21,7 @@ void test('a monster changing form during its turn updates a stale hero position
 });
 for (const monsterMoving of [false, true]) {
     void test(`a human polymorphed next to a scare scroll ${monsterMoving ? 'flees during its turn' : 'waits until its turn to flee'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt('soldier', 11, 10, MM_NOMSG | NO_MINVENT);
         monster.mpeaceful = 0;
         monster.mux = game.u.ux;
@@ -37,7 +37,7 @@ for (const monsterMoving of [false, true]) {
 void test('a shapechanger born during a monster turn locates the visible hero in its new form', async () => {
     let changed = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         game.context.mon_moving = true;
         const naturalForm = MONSTER_NAME.indexOf('chameleon');
         const monster = await makemonAt(naturalForm, 12, 10, MM_NOMSG | NO_MINVENT);

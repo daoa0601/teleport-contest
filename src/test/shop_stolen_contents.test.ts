@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { withMessagePages } from './support/planned-input.js';
 
 void test('dropping a billed container and a whole billed stack into an engulfer charges all its contents', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK);
     const daggers = await knownObject(DAGGER, { quan: 5 });

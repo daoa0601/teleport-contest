@@ -11,7 +11,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const polymorphed of [false, true]) {
     void test(`the Oracle's passive damage updates ${polymorphed ? 'monster-form' : 'human'} HP on the next screen flush`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (polymorphed) installPolymorphedHero('wolf', { hitPoints: 40 });
         const oracle = await createMonsterAt('Oracle', 11, 10, NO_MINVENT);

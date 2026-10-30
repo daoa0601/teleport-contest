@@ -220,7 +220,7 @@ void test('a wand of cold freezes out a burned engraving', async () => {
 // C engrave.c zappable() else-branch: a worn-out wand that fails to yield a
 // wrested charge reports the fact and still spends the turn.
 void test('a worn-out wand is too dry to engrave', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const wand = await addInventoryObject(WAN_DIGGING, { spe: 0 });
     assert.ok(wand.invlet);

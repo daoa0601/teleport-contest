@@ -14,7 +14,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('fatal cursed royal jelly uses an article in its poisoning record and tombstone', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     game.storage = memoryStorage();
@@ -40,7 +40,7 @@ for (const { killer, cause } of [
     { killer: 'an arrow', cause: 'an arrow' },
 ]) {
     void test(`fatal poison from ${killer} preserves the killer article and poisoning outcome`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
             flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
         requirePlayingGame(game);
         game.storage = memoryStorage();
@@ -64,7 +64,7 @@ for (const { killer, cause } of [
     });
 }
 void test('ordinary poison HP damage attributes a unique killer without changing the death to poisoning', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 10 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
     requirePlayingGame(game);
     game.storage = memoryStorage();
@@ -83,7 +83,7 @@ for (const { killer, cause } of [
     { killer: 'rabid rat', cause: 'a rabid rat' },
 ]) {
     void test(`fatal illness from ${killer} keeps the native killer article`, async () => {
-        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+        await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
         requirePlayingGame(game);
         game.storage = memoryStorage();
         game.u.urexp = 100;

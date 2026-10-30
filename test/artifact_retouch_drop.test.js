@@ -11,7 +11,7 @@ import { knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('retouching a silver weapon after polymorph drops it through the altar blessing check', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+    const level = await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = ALTAR;
     const saber = await knownObject(OBJECT_NAMES.indexOf('silver saber'), { invlet: 'a', where: 'inventory', bknown: false });

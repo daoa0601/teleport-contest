@@ -11,7 +11,7 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a level-script knight receives player hit points and a weapon', async t => {
-    freshObjectRoom({ flags: { bones: false }, gameplaySeed: 731n });
+    await freshObjectRoom({ flags: { bones: false }, gameplaySeed: 731n });
     requirePlayingGame(game);
     await init_dungeons();
     await startLuaCore(t);

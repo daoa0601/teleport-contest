@@ -288,7 +288,7 @@ export async function makeShopkeeperHappy(
             await migrateMonsterOffLevel(monster, state, { dst: shop.shoplevel }, {
                 kind: 'shop-return', mode: MIGR_APPROX_XY, coordinate: shop.shd,
             });
-            newsym(x, y);
+            await newsym(x, y);
             shop.dismiss_kops = true;
         }
         if (vanished) await plineWithContinuation(`Satisfied, ${name} suddenly disappears!`);
@@ -497,7 +497,7 @@ export async function shopkeeperCatch(
         await pline(`${shopkeeperName(keeper, { state, capitalized: true })} nimbly${
             keeper.mx === x && keeper.my === y ? '' : ' reaches over and'
         } catches the ${objectName(object, state)}.`);
-        if (!canSpotMonster(keeper)) map_invisible(x, y);
+        if (!canSpotMonster(keeper)) await map_invisible(x, y);
     }
     removeOneObjectFromBill(object, state, keeper);
     await addObjectToMonsterInventory(keeper, object, state);
@@ -1101,9 +1101,9 @@ async function litterScatter(
 }
 
 // C shk.c litter_newsyms().
-function litterNewsyms(litter: readonly number[], x: number, y: number): void {
+async function litterNewsyms(litter: readonly number[], x: number, y: number): Promise<void> {
     for (let i = 0; i < 9; i++)
-        if ((litter[i] ?? 0) & LITTER_UPDATE) newsym(x + horiz(i), y + vert(i));
+        if ((litter[i] ?? 0) & LITTER_UPDATE) await newsym(x + horiz(i), y + vert(i));
 }
 
 // C shk.c repair_damage().  Returns 0: postponed, 1: silent repair,
@@ -1159,7 +1159,7 @@ export async function repairShopDamage(
         }
         removeTrap(trap, state);
         deleteEngravingAt(x, y, state.level);
-        if (seeit) newsym(x, y);
+        if (seeit) await newsym(x, y);
         if (!catchup) disposition = 3;
     }
 
@@ -1185,7 +1185,7 @@ export async function repairShopDamage(
     if (count) await litterScatter(litter, x, y, keeper, state);
     deleteEngravingAt(x, y, state.level);
 
-    if (seeit) newsym(x, y);
+    if (seeit) await newsym(x, y);
     vision_note_blocker_change(x, y);
 
     if (catchup) return 1;  // repaired while off level: no messages
@@ -1198,7 +1198,7 @@ export async function repairShopDamage(
         } else if (IS_DOOR(record.typ)) {
             await pline('Suddenly, the shop door reappears!');
         }
-        newsym(x, y);
+        await newsym(x, y);
     } else if (IS_WALL(record.typ)) {
         if (insideShop(state, state.u.ux, state.u.uy)
             === keeper.eshk.shoproom) {
@@ -1210,7 +1210,7 @@ export async function repairShopDamage(
 
     if (stopPicking) await stopHeroOccupation(state);
 
-    litterNewsyms(litter, x, y);
+    await litterNewsyms(litter, x, y);
 
     if (disposition < 3) disposition = 2;
     return disposition;

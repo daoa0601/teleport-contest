@@ -95,7 +95,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     const hero = game.u;
     const shoes = ironShoes();
     if (shoes && (shoes.spe ?? 0) > 0) {
-        seeTrap(trap);
+        await seeTrap(trap);
         await plineWithContinuation(
             `A lethargic aura surrounds ${ownedObjectName(shoes, game, { capitalized: false })}.`,
         );
@@ -105,7 +105,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
         return;
     }
 
-    seeTrap(trap);
+    await seeTrap(trap);
     if (
         hero.antimagic ||
         propertyIsActive('antimagic', game) ||
@@ -138,10 +138,10 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     );
 }
 
-export function applyMonsterAntiMagicTrap(
+export async function applyMonsterAntiMagicTrap(
     monster: Monster,
     { rollDice = d, rollOne = rnd, trap, state = game }: MonsterAntiMagicOptions = {},
-): MonsterAntiMagicTrapEvent {
+): Promise<MonsterAntiMagicTrapEvent> {
     const shoes = monsterWornIronShoes(monster);
     if (shoes && (shoes.spe ?? 0) > 0) {
         shoes.spe--;
@@ -165,7 +165,7 @@ export function applyMonsterAntiMagicTrap(
         const energyDrain = canUseMagic ? rollDice(2, 6) : 0;
         if (energyDrain) {
             monster.mspec_used = (monster.mspec_used ?? 0) + energyDrain;
-            if (trap && monsterTrapVisibility(monster, state).inSight) seeTrap(trap, state);
+            if (trap && monsterTrapVisibility(monster, state).inSight) await seeTrap(trap, state);
         }
         return {
             kind: energyDrain ? 'anti-magic-drain' : 'anti-magic',
@@ -187,7 +187,7 @@ export function applyMonsterAntiMagicTrap(
         damage += rollOne(4);
     }
     if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK) damage = Math.trunc((damage + 3) / 4);
-    if (trap && monsterTrapVisibility(monster, state).inSight) seeTrap(trap, state);
+    if (trap && monsterTrapVisibility(monster, state).inSight) await seeTrap(trap, state);
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     return {
         kind: 'anti-magic-damage',
@@ -221,7 +221,7 @@ export async function finishMonsterAntiMagicTrap(
         if (death.heroDied) return death;
     }
     if (event.kind === 'anti-magic-damage' && event.seeSquare && event.trap && state === game)
-        newsym(event.trap.tx, event.trap.ty);
+        await newsym(event.trap.tx, event.trap.ty);
     return death;
 }
 

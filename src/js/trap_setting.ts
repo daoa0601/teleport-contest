@@ -93,7 +93,7 @@ export async function continueTrapSetting(state: GameState = game): Promise<bool
     const trap = await maketrap(state.u.ux, state.u.uy, type);
     if (trap) {
         trap.madeby_u = true;
-        feelTrap(trap, state);
+        await feelTrap(trap, state);
         if (roomsAt(state.level, trap.tx, trap.ty, SHOPBASE).length) addShopDamage(trap.tx, trap.ty, 0, state);
         if (!progress.forceBungle) await pline(`You finish arming the ${trapName(type)}.`);
         // C evaluates this luck roll before checking force_bungle too.

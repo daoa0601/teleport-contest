@@ -16,7 +16,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 // stream repainting remembered piles afterwards is advanced by the number of
 // rows the Debug Identify menu showed.
 async function hallucinatedRockAppearanceAfterWizIdentify(menuEntries) {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 99 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 99 } });
     requirePlayingGame(game);
     game.flags.debug = true;
     // Unidentified objects (dknown unset by the unobserved admission) are

@@ -280,7 +280,7 @@ async function giveSpell() {
         const name = simpleObjectNameWithArticle(book);
         await announceDivineGift(name.charAt(0).toUpperCase() + name.slice(1));
         placeCreatedObject(book, game.u.ux, game.u.uy);
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
     }
 }
 async function crownHero() {

@@ -31,7 +31,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 const MONSTER_FLAGS = NO_MINVENT | MM_NOGRP | MM_NOWAIT;
 
 async function wandRoom(type = WAN_STRIKING, heroX = 18, heroY = 12) {
-    freshObjectRoom({ left: 2, right: 25, heroX, heroY, gameplaySeed: 37n });
+    await freshObjectRoom({ left: 2, right: 25, heroX, heroY, gameplaySeed: 37n });
     requirePlayingGame(game);
     game.context.mon_moving = true;
     game.context.zap_oseen = true;
@@ -90,7 +90,7 @@ void test('intervening stone stops a ray before it reaches a later monster', asy
     const target = await targetAt(12);
     level.requireAt(10, 10).typ = STONE;
     vision_note_blocker_change(10, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await resolveMonsterImmediateWand(source, wand, options);
 
@@ -278,7 +278,7 @@ void test('striking opens a closed door and continues into the room', async () =
     door.typ = DOOR;
     door.doormask = D_CLOSED;
     vision_note_blocker_change(9, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const target = await targetAt(12);
 
     await resolveMonsterImmediateWand(source, wand, options);
@@ -296,7 +296,7 @@ void test('a striking ray passes over a raised bridge then destroys its portcull
     const wall = level.requireAt(10, 10);
     wall.typ = DBWALL;
     vision_note_blocker_change(10, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     const result = await resolveMonsterImmediateWand(source, wand, options);
 

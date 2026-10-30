@@ -20,7 +20,7 @@ for (const [name, levelFlag, expected] of [
 ]) {
     for (const wall of [HWALL, SDOOR]) {
         void test(`${name} pit opens ${wall === HWALL ? 'a wall' : 'a secret door'}`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             if (levelFlag !== null)
                 level.flags[levelFlag] = true;
@@ -41,7 +41,7 @@ for (const [name, levelFlag, expected] of [
 }
 for (const terrain of [STONE, SCORR]) {
     void test(`a trapdoor opens ${terrain === STONE ? 'stone' : 'a secret corridor'} into a corridor`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.requireAt(12, 10).typ = terrain;
         const trap = await maketrap(12, 10, TRAPDOOR);
@@ -51,7 +51,7 @@ for (const terrain of [STONE, SCORR]) {
     });
 }
 void test('a plain pit removes furniture that a spiked pit cannot overwrite', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = FOUNTAIN;
     countLevelFeatures();
@@ -63,7 +63,7 @@ void test('a plain pit removes furniture that a spiked pit cannot overwrite', as
     assert.equal(level.flags.nfountains, 0);
 });
 void test('a spiked pit opens stone into a corridor', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = STONE;
     const trap = await maketrap(12, 10, SPIKED_PIT);
@@ -72,19 +72,19 @@ void test('a spiked pit opens stone into a corridor', async () => {
     assert.equal(level.requireAt(12, 10).typ, CORR);
 });
 void test('opening a wall exposes the floor behind it after vision updates', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     for (let y = 6; y <= 14; y++)
         level.requireAt(11, y).typ = HWALL;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
     await maketrap(11, 10, HOLE);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), true);
 });
 void test('creating a pit unearths buried goods and removes their rot timer and engraving', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dagger = await knownObject(DAGGER);
     addBuriedObject(dagger, 12, 10);
@@ -99,7 +99,7 @@ void test('creating a pit unearths buried goods and removes their rot timer and 
 });
 for (const monMoving of [false, true]) {
     void test(`a ${monMoving ? 'monster' : 'hero'} pit records shop wall repair before changing terrain`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         await createStaffedShop();
         level.requireAt(12, 10).typ = HWALL;
@@ -113,7 +113,7 @@ for (const monMoving of [false, true]) {
     });
 }
 void test('a hole in ordinary shop floor schedules repair without a wall charge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     await createStaffedShop();
     await maketrap(12, 10, HOLE);
@@ -124,7 +124,7 @@ void test('a hole in ordinary shop floor schedules repair without a wall charge'
 });
 for (const terrain of [ICE, DRAWBRIDGE_UP]) {
     void test(`a hole thaws corpses beneath ${terrain === ICE ? 'ice' : 'a raised drawbridge'} and stops melting`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const location = level.requireAt(12, 10);
         location.typ = terrain;

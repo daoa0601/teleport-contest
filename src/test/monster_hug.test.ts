@@ -21,7 +21,7 @@ import { installPagerInput } from './support/pager-input.js';
 const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 
 async function attacker(species = 'carnivorous ape') {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | NO_MINVENT);
     monster.mux = game.u.ux;

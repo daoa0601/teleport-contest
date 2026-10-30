@@ -36,8 +36,8 @@ import { createDungeon } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
 import { applyInventoryObject } from './support/commands.js';
 
-function lowHitPointRoom() {
-    const level = freshObjectRoom({
+async function lowHitPointRoom() {
+    const level = await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 100, urexp: 100 },
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o', tombstone: false },
     });
@@ -57,7 +57,7 @@ async function dieWith(action: () => Promise<unknown>, death: string) {
 }
 
 void test('a fatal monster striking ray identifies the killer as a wand', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     requirePlayingGame(game);
     const state = game;
     const monster = await createMonsterAt('orc', 11, 10, NO_MINVENT);
@@ -72,13 +72,13 @@ void test('a fatal monster striking ray identifies the killer as a wand', async 
 });
 
 void test('a fatal boulder conjured above the hero identifies the scroll of earth', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
 
     await dieWith(() => dropBoulderOnHero(), 'killed by a scroll of earth');
 });
 
 void test('a confused fire scroll retains its article when it burns the last hit point', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     game.u.confusionTurns = 5;
     const scroll = await addInventoryObject(SCR_FIRE);
 
@@ -86,7 +86,7 @@ void test('a confused fire scroll retains its article when it burns the last hit
 });
 
 void test('a fatal grappling mishap keeps its already supplied article', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     const hook = await addInventoryObject(GRAPPLING_HOOK, { owornmask: W_WEP, wielded: true });
     game.uwep = game.u.uwep = hook;
     game._travelTipShown = true;
@@ -99,7 +99,7 @@ void test('a fatal grappling mishap keeps its already supplied article', async (
 });
 
 void test('a hero hurtled into a wall is killed by bumping into it without an article', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
 
     pushKeys(' '.repeat(100));
     await hurtleHero(-1, 0, 30);
@@ -109,7 +109,7 @@ void test('a hero hurtled into a wall is killed by bumping into it without an ar
 });
 
 void test('sitting in lava kills a hero who cannot spare the burn', async () => {
-    const level = lowHitPointRoom();
+    const level = await lowHitPointRoom();
     level.requireAt(game.u.ux, game.u.uy).typ = LAVAPOOL;
     game.u.utrap = 2;
     game.u.utraptype = TT_LAVA;
@@ -119,7 +119,7 @@ void test('sitting in lava kills a hero who cannot spare the burn', async () => 
 });
 
 void test('sitting down on a spike can be the last point of damage', async () => {
-    const level = lowHitPointRoom();
+    const level = await lowHitPointRoom();
     addTrap(level, SPIKED_PIT, game.u.ux, game.u.uy, { tseen: true });
     game.u.utrap = 3;
     game.u.utraptype = TT_PIT;
@@ -133,7 +133,7 @@ for (const { type, death } of [
     { type: SPIKED_PIT, death: 'fell into a pit of iron spikes' },
 ]) {
     void test(`a fatal ${type === PIT ? 'pit' : 'spiked pit'} fall retains its native death description`, async () => {
-        const level = lowHitPointRoom();
+        const level = await lowHitPointRoom();
         const trap = addTrap(level, type, game.u.ux, game.u.uy);
         initRng(1n);
 
@@ -142,7 +142,7 @@ for (const { type, death } of [
 }
 
 void test('a falling rock trap kills with the falling rock', async () => {
-    const level = lowHitPointRoom();
+    const level = await lowHitPointRoom();
     const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);
     initRng(1n);
 
@@ -150,7 +150,7 @@ void test('a falling rock trap kills with the falling rock', async () => {
 });
 
 void test('a fatal magic trap explosion leaves no energy to absorb', async () => {
-    const level = lowHitPointRoom();
+    const level = await lowHitPointRoom();
     const trap = addTrap(level, MAGIC_TRAP, game.u.ux, game.u.uy);
     const energy = game.u.uenmax;
     initRng(33n); // rn2(30) selects the explosion
@@ -160,7 +160,7 @@ void test('a fatal magic trap explosion leaves no energy to absorb', async () =>
 });
 
 void test('a rolling boulder that hits the hero kills with the boulder', async () => {
-    const level = lowHitPointRoom();
+    const level = await lowHitPointRoom();
     const { ux, uy } = game.u;
     const trap = addTrap(level, ROLLING_BOULDER_TRAP, ux, uy, {
         launch: { x: ux + 4, y: uy }, launch2: { x: ux - 3, y: uy },
@@ -173,7 +173,7 @@ void test('a rolling boulder that hits the hero kills with the boulder', async (
 
 for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
     void test(`a fatal scattered object records ${cause} as its killer`, async () => {
-        lowHitPointRoom();
+        await lowHitPointRoom();
         await floorObject(CLUB, 11, 10, { quantity: count, spe: 0 });
 
         await dieWith(() => scatterFloorObjects(11, 10, 2, {
@@ -186,7 +186,7 @@ for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
 
 for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
     void test(`a fatal object hit preserves ${cause} as its killer`, async () => {
-        lowHitPointRoom();
+        await lowHitPointRoom();
         const clubs = await knownObject(CLUB, { quantity: count, spe: 0 });
 
         await dieWith(() => hitHeroWithObject(clubs, 1, 8, { rollOne: () => 1 }),
@@ -195,7 +195,7 @@ for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {
 }
 
 void test('a fatal Medusa corpse hit preserves the possessive killer name', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
 
     await dieWith(() => hitHeroWithObject(corpse, 1, 8, { rollOne: () => 1 }),
@@ -203,7 +203,7 @@ void test('a fatal Medusa corpse hit preserves the possessive killer name', asyn
 });
 
 void test('a fatal projectile preserves its formatted killer when the hit name is supplied', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
 
     await dieWith(() => hitHeroWithObject(corpse, 1, 8, {
@@ -218,7 +218,7 @@ for (const [type, name, killer] of [
     [ARROW, 'an arrow', 'an arrow'],
 ] as const) {
     void test(`a fatal object hit named ${name} uses the supplied name as its killer`, async () => {
-        lowHitPointRoom();
+        await lowHitPointRoom();
         const missile = await knownObject(type, { spe: 0 });
 
         await dieWith(() => hitHeroWithObject(missile, 1, 8, { name, rollOne: () => 1 }),
@@ -227,7 +227,7 @@ for (const [type, name, killer] of [
 }
 
 void test('a fatal scattered object is retained on the floor during death cleanup', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     const club = await floorObject(CLUB, 11, 10);
 
     await dieWith(() => scatterFloorObjects(11, 10, 1, {
@@ -238,7 +238,7 @@ void test('a fatal scattered object is retained on the floor during death cleanu
 });
 
 void test('a fatal single corpse hit uses a generic hit name and a species-specific killer', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('newt') });
     const messages: string[] = [];
     resetInputState().beforeRead = () => { messages.push(game._pending_message); };
@@ -251,7 +251,7 @@ void test('a fatal single corpse hit uses a generic hit name and a species-speci
 });
 
 void test('putting a bag of holding into another can kill with the explosion', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     for (const invlet of ['a', 'b']) {
         const bag = await addInventoryObject(BAG_OF_HOLDING, {
             invlet, initialize: false, olocked: false, otrapped: false, cknown: true,
@@ -266,7 +266,7 @@ void test('putting a bag of holding into another can kill with the explosion', a
 });
 
 void test('a coin fired straight up can kill the hero it falls on', async () => {
-    lowHitPointRoom();
+    await lowHitPointRoom();
     await carriedGold(5);
     await readyGold();
     initRng(1n);

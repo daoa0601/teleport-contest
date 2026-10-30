@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('calling the Amulet uses its special rejection instead of denying ownership', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_YENDOR);
     // A callable item keeps getobj available; the typed Amulet still takes
     // the special rejection path rather than the empty-candidate shortcut.
@@ -23,7 +23,7 @@ void test('calling the Amulet uses its special rejection instead of denying owne
     assert.equal(game._pending_message, "The Amulet doesn't like being called names.");
 });
 void test('a rejected invocation target remains owned and receives the silly-thing message', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     input.feed('invoke\r');
@@ -37,7 +37,7 @@ void test('a rejected invocation target remains owned and receives the silly-thi
     assert.equal(game.context.move, 0);
 });
 void test('a drop command mimes empty hands without repeating its prompt', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     const input = resetInputState();
     planInput(input, t, [{ prompt: /What do you want to drop\?/, keys: '-' }]);

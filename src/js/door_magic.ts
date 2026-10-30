@@ -41,7 +41,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
         // Magic exposes a closed door; it does not preserve a secret lock.
         door.typ = DOOR;
         door.doormask = D_CLOSED | (door.doormask & D_TRAPPED);
-        newsym(x, y);
+        await newsym(x, y);
         if (cansee(x, y)) await plineWithContinuation('A door appears in the wall!');
         if (opening) return true;
     }
@@ -60,7 +60,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             door.doormask = D_NODOOR;
             vision_note_blocker_change(x, y);
             if (visible) await plineWithContinuation('The doorway vanishes!');
-            newsym(x, y);
+            await newsym(x, y);
             return true;
         }
         if (await doorObstructed(x, y, quietly, state)) return false;
@@ -77,7 +77,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
         }
         door.doormask = D_LOCKED | (door.doormask & D_TRAPPED);
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
     } else if (opening) {
         if (door.doormask & D_LOCKED) {
             message = 'The door unlocks!';
@@ -90,7 +90,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             const saw = occupant ? canSeeMonster(occupant) : cansee(x, y);
             door.doormask = D_NODOOR;
             vision_note_blocker_change(x, y);
-            newsym(x, y);
+            await newsym(x, y);
             const sees = occupant ? canSeeMonster(occupant) : cansee(x, y);
             if (occupant) await triggerMonsterDoorTrap(occupant, saw || sees, { state });
             else {
@@ -109,13 +109,13 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             door.doormask = D_BROKEN;
             vision_note_blocker_change(x, y);
             const sees = cansee(x, y);
-            newsym(x, y);
+            await newsym(x, y);
             if (state.flags.verbose) {
                 if ((saw || sees) && !heroIsUnaware(state))
                     await plineWithContinuation('The door crashes open!');
                 else if (!heroIsDeaf(state)) await publishHeard('a crashing sound.', state);
             }
-            if (state.vision_full_recalc) vision_recalc(0);
+            if (state.vision_full_recalc) await vision_recalc(0);
             loudness = 20;
         }
     } else await impossible(`magic (${source.otyp}) attempted on door.`);
@@ -144,7 +144,7 @@ export async function doorObstructed(x: number, y: number, quietly: boolean, sta
                 name = `${possessiveName(name)} tail`;
             await plineWithContinuation(`${name} blocks the way!`);
         }
-        if (!canSpotMonster(occupant)) map_invisible(x, y);
+        if (!canSpotMonster(occupant)) await map_invisible(x, y);
         return true;
     }
     if (state.level.objects?.[x]?.[y]?.length) {

@@ -190,7 +190,7 @@ void test('saved birth history reaches extinction after restore and retains it w
     assert.equal(await saveGame(storage), true);
     freshGameplayRoom();
     requirePlayingGame(game);
-    assert.equal(restoreGame('BirthHistory', storage), true);
+    assert.equal(await restoreGame('BirthHistory', storage), true);
 
     assert.equal(speciesVital(NEWT).born, 119);
     const lastBirth = await makemonAt(null, 12, 10, CREATION_FLAGS);
@@ -203,7 +203,7 @@ void test('saved birth history reaches extinction after restore and retains it w
     assert.equal(await saveGame(storage), true);
     freshGameplayRoom();
     requirePlayingGame(game);
-    assert.equal(restoreGame('BirthHistory', storage), true);
+    assert.equal(await restoreGame('BirthHistory', storage), true);
     const afterExtinction = await makemonAt(null, 12, 10, CREATION_FLAGS);
 
     assert.equal(speciesVital(NEWT).born, 120);

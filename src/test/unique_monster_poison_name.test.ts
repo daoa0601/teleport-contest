@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a demon with a personal name poisons the hero without a definite article', async () => {
-    freshObjectRoom({ hero: { poisonResistance: true } });
+    await freshObjectRoom({ hero: { poisonResistance: true } });
     const demon = await createMonsterAt('Geryon', 11, 10, NO_MINVENT);
     demon.minvis = demon.perminvis = false;
     const messages: string[] = [];

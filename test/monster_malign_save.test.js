@@ -16,7 +16,7 @@ for (const { description, version } of [
     { description: 'current-format', version: SAVE_VERSION },
 ]) {
     void test(`restore rejects a ${description} monster without kill-alignment history before replacing live state`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = game.u;
         const watchman = await createMonsterAt('watchman', 11, 10, NO_MINVENT | MM_ANGRY);
         game.plname = 'Watchman';
@@ -35,7 +35,7 @@ for (const { description, version } of [
         saved.version = version;
         delete savedWatchman.malign;
         storage.setItem(key, encodeSavedGraph(saved));
-        assert.equal(restoreGame('Watchman', storage), false);
+        assert.equal(await restoreGame('Watchman', storage), false);
         assert.equal(game.u, hero);
         assert.equal(game.level, level);
         assert.equal(level.monsters[0], watchman);
@@ -43,13 +43,13 @@ for (const { description, version } of [
     });
 }
 void test('killing a restored hostile watchman rewards alignment without a murder penalty', async () => {
-    freshObjectRoom({ moves: 2000, hero: { uluck: 0 } });
+    await freshObjectRoom({ moves: 2000, hero: { uluck: 0 } });
     const watchman = await createMonsterAt('watchman', 11, 10, NO_MINVENT | MM_ANGRY);
     assert.equal(watchman.mpeaceful, 0);
     game.plname = 'Watchman';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Watchman', storage), true);
+    assert.equal(await restoreGame('Watchman', storage), true);
     requirePlayingGame(game);
     const restored = game.level.monsters.find(monster => monster.m_id === watchman.m_id);
     assert.ok(restored);
@@ -67,7 +67,7 @@ void test('killing a restored hostile watchman rewards alignment without a murde
 });
 for (const peaceful of [true, false]) {
     void test(`restoring a ${peaceful ? 'peaceful' : 'hostile'} pony retains its kill alignment after the hero changes alignment`, async () => {
-        freshObjectRoom({ gameplaySeed: 3n });
+        await freshObjectRoom({ gameplaySeed: 3n });
         requirePlayingGame(game);
         const pony = await createMonsterAt('pony', 11, 10, NO_MINVENT | (peaceful ? 0 : MM_ANGRY));
         assert.equal(!!pony.mpeaceful, peaceful);
@@ -75,7 +75,7 @@ for (const peaceful of [true, false]) {
         game.plname = 'Pony';
         const storage = memoryStorage();
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame('Pony', storage), true);
+        assert.equal(await restoreGame('Pony', storage), true);
         requirePlayingGame(game);
         const restored = game.level.monsters.find(monster => monster.m_id === pony.m_id);
         assert.ok(restored);

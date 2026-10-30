@@ -6,7 +6,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('editing the fruit option keeps the dungeon map visible beneath the prompt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await flush_screen(1);
     const input = resetInputState();
     input.feed('a');

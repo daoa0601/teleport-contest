@@ -11,7 +11,7 @@ import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 
 void test('a mind flayer uses #monster to strike nearby hostile minds', async () => {
-    freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+    await freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
     requireFixtureGame(game);
     const target = await createMonsterAt('floating eye', 11, 10);
     target.mhp = target.mhpmax = 1;
@@ -40,7 +40,7 @@ void test('a mind flayer uses #monster to strike nearby hostile minds', async ()
 
 void test('blind and sighted telepaths are found by their source chances',
     async () => {
-        freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+        await freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
         requireFixtureGame(game);
         const blindEye = await createMonsterAt('floating eye', 11, 10);
         blindEye.mhp = blindEye.mhpmax = 20;
@@ -67,7 +67,7 @@ void test('blind and sighted telepaths are found by their source chances',
     });
 
 void test('trying to mind blast without enough energy takes no time', async () => {
-    freshMonsterAbilityRoom('mind flayer', { energy: 9, right: 24 });
+    await freshMonsterAbilityRoom('mind flayer', { energy: 9, right: 24 });
     requireFixtureGame(game);
     const messages: string[] = [];
 
@@ -84,7 +84,7 @@ void test('trying to mind blast without enough energy takes no time', async () =
 });
 
 void test('a mind blast reaches the newest monster first', async () => {
-    freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+    await freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
     requireFixtureGame(game);
     const older = await createMonsterAt('jackal', 11, 10);
     older.mhp = older.mhpmax = 20;

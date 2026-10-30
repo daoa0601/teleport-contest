@@ -7,7 +7,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [adjective, blessed, cursed] of [['holy', true, false], ['unholy', false, true]] as const) {
     void test(`a potion of ${adjective} water wish specifies water and its beatitude`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const result = await readObjectName(`potion of ${adjective} water`, { wizardWish: true });
 

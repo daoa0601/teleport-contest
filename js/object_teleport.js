@@ -33,15 +33,15 @@ export async function relocateObjectRandomly(object, { state = game, publish = p
     const result = await applyFloorEffects(object, x, y, { state, publish, random });
     if (result.finished) {
         if (oldx !== 0 || oldy !== 0)
-            newsym(oldx, oldy);
+            await newsym(oldx, oldy);
         return false;
     }
     if (oldx !== 0 || oldy !== 0) {
         await settleRelocatedObject(object, oldx, oldy, x, y, state, publish);
-        newsym(oldx, oldy);
+        await newsym(oldx, oldy);
     }
     await placeObject(object, x, y, state);
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 function relocationPosition(oldx, oldy, region, state, random) {

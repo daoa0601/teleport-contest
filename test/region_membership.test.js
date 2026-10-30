@@ -18,7 +18,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const startsInside of [false, true]) {
     void test(`a pet swapped ${startsInside ? 'out of' : 'into'} gas keeps its prior exposure until its own movement`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
         initializePet(pet, { state: game });
@@ -35,7 +35,7 @@ for (const startsInside of [false, true]) {
     });
 }
 void test('gas affects existing occupants in map scan order, independently of monster creation order', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const right = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     const left = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
     left.mhp = right.mhp = 100;
@@ -50,7 +50,7 @@ void test('gas affects existing occupants in map scan order, independently of mo
     assert.ok(right.mhp < 100);
 });
 void test('gas deaths process the replacement occupant before the next member', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const jackal = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
     const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
@@ -73,7 +73,7 @@ void test('gas deaths process the replacement occupant before the next member', 
     assert.ok(soldier.mhp < 100);
 });
 void test('a monster teleporting into and out of gas changes its exposure', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     soldier.mhp = 100;
     const cloud = await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
@@ -90,7 +90,7 @@ void test('a monster teleporting into and out of gas changes its exposure', asyn
 });
 for (const startsInside of [false, true]) {
     void test(`knockback ${startsInside ? 'out of' : 'into'} gas changes the monster's exposure`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         soldier.mhp = 100;
         const cloud = await createHarmlessGasCloudSelection(game, [{ x: startsInside ? 11 : 13, y: 10 }], { ttl: 10 });
@@ -104,7 +104,7 @@ for (const startsInside of [false, true]) {
     });
 }
 void test('displacing another monster updates gas exposure for both actors', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const beast = await createMonsterAt('displacer beast', 12, 10, NO_MINVENT);
     const dog = await createMonsterAt('little dog', 13, 10, NO_MINVENT);
     beast.mhp = dog.mhp = 100;
@@ -120,7 +120,7 @@ void test('displacing another monster updates gas exposure for both actors', asy
     assert.equal(dog.mhp, 100);
 });
 void test('a pet walking out of a harmless cloud loses exposure before the cloud becomes poisonous', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 13, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -136,7 +136,7 @@ void test('a pet walking out of a harmless cloud loses exposure before the cloud
     assert.equal(pet.mhp, 100);
 });
 void test('saving after a hero/pet swap retains prior gas exposure after restore', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -151,7 +151,7 @@ void test('saving after a hero/pet swap retains prior gas exposure after restore
     game.plname = 'GasSaver';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('GasSaver', storage), true);
+    assert.equal(await restoreGame('GasSaver', storage), true);
     const restored = game.level.monsters.find(monster => monster.m_id === id);
     assert.ok(restored);
     await runLevelRegions(game, { publish: async () => { } });

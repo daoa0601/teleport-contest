@@ -128,7 +128,7 @@ export async function resolveMonsterCorpseChance(monster, { state = game, random
         await publish(monsterBodyCrumblesMessage(monster, state));
     if (death.explosion) {
         if (state === game)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         const explosion = await resolveMonsterDeathExplosion(monster, monster.mx, monster.my, death.explosion, { state, publish, random, rollDice });
         if (explosion.heroDied)
             return { leavesRemains: false, heroDied: true };
@@ -263,7 +263,7 @@ async function createPuddingGlob(monster, state, publish) {
     const glob = await placeMonsterPart(GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE, monster, state);
     const remains = await meldNearbyFloorGlobs(glob, { state, publish });
     setMonsterGivenName(monster, null);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return remains;
 }
 export async function createMonsterRemains(monster, state = game, { buried = false, zombify = false, noRevive = false, seen = false, publish = plineWithContinuation, } = {}) {
@@ -310,9 +310,9 @@ async function finishMonsterRemains(remains, monster, state) {
     if (monster.name)
         remains.oname = monster.name;
     const stacked = await stack_object(remains, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (stacked.ox !== monster.mx || stacked.oy !== monster.my)
-        newsym(stacked.ox, stacked.oy);
+        await newsym(stacked.ox, stacked.oy);
     return stacked;
 }
 // Native mondead() after recovery has failed. Kill credit and remains belong
@@ -331,7 +331,7 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
     await returnDeadKop(monster, state, rollOne);
     logDeadMonster(monster, state);
     if (state === game)
-        unmap_invisible(x, y, false);
+        await unmap_invisible(x, y, false);
     if (monster.mleashed)
         releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
@@ -355,7 +355,7 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
         finishShopkeeperDeparture(monster, state);
     }
     if (monster.wormno)
-        removeMonsterWormBody(monster);
+        await removeMonsterWormBody(monster);
     monster.dead = true;
     if (state.u.usteed === monster) {
         const result = await dismountHero(DISMOUNT_GENERIC, {
@@ -459,8 +459,8 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
         })
         : null;
     if (state === game) {
-        unmap_invisible(x, y, false);
-        newsym(x, y);
+        await unmap_invisible(x, y, false);
+        await newsym(x, y);
     }
     return {
         oldx: x, oldy: y, x, y,
@@ -476,7 +476,7 @@ export async function finishMonsterTrapDeath(monster, state, options) {
     const y = monster.my;
     const death = await finishMonsterKilled(monster, state, options);
     if (!death.survived && !death.heroDied && state === game)
-        newsym(x, y);
+        await newsym(x, y);
     return death;
 }
 // C monkilled(): the death line precedes recovery, but pet grief follows it.

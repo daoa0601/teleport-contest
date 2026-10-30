@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('pulling a tiny creature out of a pit releases its trap and updates its view of the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hook = await addInventoryObject(GRAPPLING_HOOK, { wielded: true, owornmask: W_WEP });
     game.uwep = game.u.uwep = hook;
     installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
@@ -34,7 +34,7 @@ void test('pulling a tiny creature out of a pit releases its trap and updates it
 });
 
 void test('a hook alerts a waiting invisible creature before pulling it in', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hook = await addInventoryObject(GRAPPLING_HOOK, { wielded: true, owornmask: W_WEP });
     game.uwep = game.u.uwep = hook;
     installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });

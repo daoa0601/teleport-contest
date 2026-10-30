@@ -42,7 +42,7 @@ async function completeScoredGame(storage: StorageBackend, { name, role = 'valky
 async function scoredWorld(identity: Parameters<typeof completeScoredGame>[1] = { name: 'Ada' }) {
     const storage = memoryStorage();
     await completeScoredGame(storage, identity);
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = storage;
     return storage;
@@ -52,7 +52,7 @@ void test('selection reads completed games in their saved high-score rank order'
     const storage = memoryStorage();
     await completeScoredGame(storage, { name: 'Ada' });
     await completeScoredGame(storage, { name: 'Borin', role: 'wizard', female: false, points: 200 });
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = storage;
 
@@ -69,8 +69,8 @@ void test('selection reads completed games in their saved high-score rank order'
     assert.equal(loadScoreRecords().length, 2);
 });
 
-void test('an empty readable high-score list has no identity to select', () => {
-    freshObjectRoom();
+void test('an empty readable high-score list has no identity to select', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
 
@@ -87,7 +87,7 @@ for (const sighted of [true, false]) {
         if (!sighted) {
             setHeroBlindnessTurns(10);
             game.u.detectMonsters = true;
-            vision_recalc(0);
+            await vision_recalc(0);
         }
 
         assert.ok(monster);
@@ -195,7 +195,7 @@ void test('a genocided score form is rejected while visible selection retains it
     requirePlayingGame(game);
     let named;
     for (let seed = 1; seed <= 32 && !named; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.storage = storage;
         assert.ok(game.mvitals != null, 'Expected game.mvitals to be initialized');
@@ -229,7 +229,7 @@ for (const [kind, type] of [['corpse', CORPSE], ['statue', STATUE]] as const) {
     });
 
     void test(`an empty record gives a generated ${kind} an unnamed player-role fallback`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.storage = memoryStorage();
 

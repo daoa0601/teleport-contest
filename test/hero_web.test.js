@@ -16,14 +16,14 @@ function webAtHero() {
         && trap.ttyp === WEB);
 }
 void test('a giant spider can spin a web', async () => {
-    freshMonsterAbilityRoom('giant spider');
+    await freshMonsterAbilityRoom('giant spider');
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
     assert.equal(webAtHero()?.madeby_u, 1);
     assert.equal(game.context.move, 1);
 });
 void test('a cave spider can choose hiding instead of spinning', async () => {
-    freshMonsterAbilityRoom('cave spider');
+    await freshMonsterAbilityRoom('cave spider');
     requireFixtureGame(game);
     await floorObject(ROCK, game.u.ux, game.u.uy);
     await runMonsterAbilityCommand('h');
@@ -31,7 +31,7 @@ void test('a cave spider can choose hiding instead of spinning', async () => {
     assert.equal(webAtHero(), undefined);
 });
 void test('a spider cannot anchor a web in water', async () => {
-    const level = freshMonsterAbilityRoom('giant spider');
+    const level = await freshMonsterAbilityRoom('giant spider');
     requireFixtureGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     await runMonsterAbilityCommand();
@@ -44,7 +44,7 @@ for (const { terrain, name, description } of [
     { terrain: LADDER, name: 'ladder', description: 'ladder terrain covering stairs' },
 ]) {
     void test(`a spider cannot hide a stairway with a web on ${description}`, async () => {
-        const level = freshMonsterAbilityRoom('giant spider');
+        const level = await freshMonsterAbilityRoom('giant spider');
         requireFixtureGame(game);
         const x = game.u.ux;
         const y = game.u.uy;
@@ -67,7 +67,7 @@ for (const { terrain, name } of [
     { terrain: STAIRS, name: 'stairs' }, { terrain: LADDER, name: 'ladder' },
 ]) {
     void test(`webbing bare ${name} terrain fails silently without a stairway`, async () => {
-        const level = freshMonsterAbilityRoom('giant spider');
+        const level = await freshMonsterAbilityRoom('giant spider');
         requireFixtureGame(game);
         level.requireAt(game.u.ux, game.u.uy).typ = terrain;
         game.stairs = null;
@@ -78,7 +78,7 @@ for (const { terrain, name } of [
     });
 }
 void test('webbing over a pit removes it and buries its contents', async () => {
-    const level = freshMonsterAbilityRoom('giant spider');
+    const level = await freshMonsterAbilityRoom('giant spider');
     requireFixtureGame(game);
     const dart = await floorObject(DART, game.u.ux, game.u.uy);
     addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
@@ -88,7 +88,7 @@ void test('webbing over a pit removes it and buries its contents', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('web fluid makes an animal release a swallowed spider', async () => {
-    freshMonsterAbilityRoom('giant spider', {
+    await freshMonsterAbilityRoom('giant spider', {
         right: 24,
         gameplaySeed: 918,
     });
@@ -103,7 +103,7 @@ void test('web fluid makes an animal release a swallowed spider', async () => {
     assert.equal(result.spentTime, false);
 });
 void test('an expelled worm finds room beyond the nearby blocked squares', async () => {
-    const level = freshMonsterAbilityRoom('giant spider', { right: 26 });
+    const level = await freshMonsterAbilityRoom('giant spider', { right: 26 });
     requireFixtureGame(game);
     const x = game.u.ux;
     const y = game.u.uy;
@@ -123,7 +123,7 @@ void test('an expelled worm finds room beyond the nearby blocked squares', async
     assert.equal(worm.mspec_used, 7, 'release must not shorten an existing cooldown');
 });
 void test('expulsion restores the punishment ball and chain to the floor', async () => {
-    const level = freshMonsterAbilityRoom('giant spider');
+    const level = await freshMonsterAbilityRoom('giant spider');
     requireFixtureGame(game);
     const { ball, chain } = await installPunishedHero();
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);

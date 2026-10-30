@@ -29,7 +29,7 @@ for (const [type, label] of [
     [STATUE, 'statue'],
 ] as const) {
     void test(`a ${label} requested at <0,0> lands on the level with its requested identity`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 19n });
+        const level = await freshObjectRoom({ gameplaySeed: 19n });
         requirePlayingGame(game);
         const species = MONSTER_NAME.indexOf('giant');
         const flags = CORPSTAT_INIT | CORPSTAT_FEMALE | (type === STATUE ? CORPSTAT_HISTORIC : 0);
@@ -45,7 +45,7 @@ for (const [type, label] of [
 }
 
 void test('an explicit corpse square is kept instead of choosing a random square', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const species = MONSTER_NAME.indexOf('giant');
 
@@ -57,7 +57,7 @@ void test('an explicit corpse square is kept instead of choosing a random square
 });
 
 void test('a parked guard leaves one corpse on the level, not at its parking coordinates', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const guard = await createMonsterAt('guard', 12, 10);
     guard.mhp = 0;
@@ -73,7 +73,7 @@ void test('a parked guard leaves one corpse on the level, not at its parking coo
 });
 
 void test('requesting a Rider corpse does not revive it during initial placement', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requirePlayingGame(game);
     const death = MONSTER_NAME.indexOf('Death');
 
@@ -95,7 +95,7 @@ void test('requesting a Rider corpse does not revive it during initial placement
 
 for (const female of [false, true]) {
     void test(`petrification records a ${female ? 'female' : 'male'} monster in its statue`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 19n });
+        const level = await freshObjectRoom({ gameplaySeed: 19n });
         requirePlayingGame(game);
         const monster = await createMonsterAt(
             'giant',

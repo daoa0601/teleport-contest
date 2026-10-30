@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('mail offers reading without promising to activate magic', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mail = await addInventoryObject(OBJECT_NAMES.indexOf('mail'));
     const input = resetInputState();
     planInput(input, t, [

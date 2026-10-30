@@ -15,7 +15,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const property of ['levitation', 'flying']) {
     void test(`${property} stops inside solid terrain and resumes after it opens`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         grantIntrinsicProperty(property, 'outside');
         const location = game.level.requireAt(game.u.ux, game.u.uy);
@@ -29,7 +29,7 @@ for (const property of ['levitation', 'flying']) {
         assert.match(game._pending_message, /start (to float in the air|flying)/);
     });
     void test(`saving inside a closed door preserves suppressed ${property}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.plname = `Terrain-${property}`;
         grantIntrinsicProperty(property, 'outside');
@@ -39,7 +39,7 @@ for (const property of ['levitation', 'flying']) {
         await switchHeroTerrain();
         const storage = memoryStorage();
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame(game.plname, storage), true);
+        assert.equal(await restoreGame(game.plname, storage), true);
         assert.equal(game.u[property], false);
         game.level.requireAt(game.u.ux, game.u.uy).typ = ROOM;
         await switchHeroTerrain();
@@ -47,7 +47,7 @@ for (const property of ['levitation', 'flying']) {
     });
 }
 void test('levitation takes a trapped hero out of a pit and lets a boulder fill it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_PIT;
@@ -63,7 +63,7 @@ void test('levitation takes a trapped hero out of a pit and lets a boulder fill 
     assert.match(game._pending_message, /float up, out of the pit/);
 });
 void test('releasing a ground trap resumes flight with feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
     game.u.utrap = 4;
@@ -78,7 +78,7 @@ void test('releasing a ground trap resumes flight with feedback', async () => {
 // C spoteffects(): without the terrainstatus option iflags.terrain_typ stays
 // MAX_TYPE, so every same-square call reruns switch_terrain() and float_up().
 void test('same-terrain spot effects repeat blocked levitation feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_BEARTRAP;

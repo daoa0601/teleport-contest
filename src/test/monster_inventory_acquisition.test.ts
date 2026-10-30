@@ -48,7 +48,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 
 for (const flight of ['_thrownObject', '_kickedObject'] as const) {
     void test(`monster pickup releases the ${flight === '_thrownObject' ? 'thrown' : 'kicked'} object from flight`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         const dagger = await knownObject(DAGGER);
@@ -67,7 +67,7 @@ for (const light of [
     { type: TALLOW_CANDLE, quantity: 3, message: 'The tallow candles go out.' },
 ]) {
     void test(`an engulfed hero sees ${light.quantity === 1 ? 'a lamp' : 'a candle stack'} go out before pickup`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
         game.u.uswallow = 1;
@@ -87,7 +87,7 @@ for (const light of [
 
 for (const part of ['ball', 'chain'] as const) {
     void test(`monster pickup refuses the hero's attached ${part} without disturbing punishment`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         installPagerInput(resetInputState(), {
@@ -109,7 +109,7 @@ for (const part of ['ball', 'chain'] as const) {
 }
 
 void test('a pet returns a fetched item but keeps its worn saddle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     const saddle = pony.saddle;
@@ -128,8 +128,8 @@ void test('a pet returns a fetched item but keeps its worn saddle', async () => 
 const PM_LEPRECHAUN = 63;
 const PM_SHOPKEEPER = 271;
 
-function freshInventoryState(seed = 1) {
-    freshObjectRoom({
+async function freshInventoryState(seed = 1) {
+    await freshObjectRoom({
         right: 17,
         gameplaySeed: seed,
         recalculateVision: false,
@@ -186,7 +186,7 @@ function assertMonsterOwns(monster: Monster, object: GameObject) {
 
 void test('makemon startup inventory links every identity to the final actor',
     async () => {
-        freshInventoryState(2101);
+        await freshInventoryState(2101);
         requirePlayingGame(game);
         const flags = MM_NOGRP | MM_NOWAIT | MM_NOMSG | MM_NOCOUNTBIRTH;
         const monster = await makemonAt(PM_SHOPKEEPER, 12, 10, flags);
@@ -204,7 +204,7 @@ void test('makemon startup inventory links every identity to the final actor',
 
 void test('runtime leprechaun creation links its money to the finished monster',
     async () => {
-        freshInventoryState(2102);
+        await freshInventoryState(2102);
         requirePlayingGame(game);
 
         const monster = await makemonAt(PM_LEPRECHAUN, 12, 10, MM_NOMSG);
@@ -219,7 +219,7 @@ void test('runtime leprechaun creation links its money to the finished monster',
     });
 
 void test('direct add_to_minv linkage does not invent carrying effects', async () => {
-    freshInventoryState(2104);
+    await freshInventoryState(2104);
     requirePlayingGame(game);
     const monster = await createInventoryMonster();
     const figurine = await mksobj(FIGURINE, true, false);
@@ -231,7 +231,7 @@ void test('direct add_to_minv linkage does not invent carrying effects', async (
 });
 
 void test('ordinary add_to_minv head-links each unmerged identity by default', async () => {
-    freshInventoryState(2112);
+    await freshInventoryState(2112);
     requirePlayingGame(game);
     const monster = await createInventoryMonster();
     const oldest = await mksobj(DAGGER, true, false);
@@ -248,7 +248,7 @@ void test('ordinary add_to_minv head-links each unmerged identity by default', a
 
 void test('special-level inventory transfer removes floor ownership and head-links',
     async () => {
-        freshInventoryState(2103);
+        await freshInventoryState(2103);
         requirePlayingGame(game);
         const monster = await createInventoryMonster({
             mnum: PM_SHOPKEEPER,
@@ -271,7 +271,7 @@ void test('special-level inventory transfer removes floor ownership and head-lin
 
 void test('pet mpickobj ownership survives the complete pickup and release cycle',
     async () => {
-        freshInventoryState(2105);
+        await freshInventoryState(2105);
         requirePlayingGame(game);
         const pet = await createMonsterAt('pony', 13, 10);
         initializePet(pet, { state: game });
@@ -316,7 +316,7 @@ void test('pet mpickobj ownership survives the complete pickup and release cycle
 
 void test('covetous ground tactics head-link the source artifact through mpickobj',
     async () => {
-        freshInventoryState(2106);
+        await freshInventoryState(2106);
         requirePlayingGame(game);
         const wizard = await createInventoryMonster({
             mnum: 285,
@@ -348,7 +348,7 @@ void test('covetous ground tactics head-link the source artifact through mpickob
     });
 
 void test('bullwhip snatch transfers a live hero weapon through mpickobj', async () => {
-    freshInventoryState(2107);
+    await freshInventoryState(2107);
     requirePlayingGame(game);
     const monster = await createBullwhipMonster();
     const dagger = await addInventoryItem(await mksobj(DAGGER, true, false));
@@ -366,7 +366,7 @@ void test('bullwhip snatch transfers a live hero weapon through mpickobj', async
 
 void test('direct add_to_minv merges monster gold into the first live identity',
     async () => {
-        freshInventoryState(2109);
+        await freshInventoryState(2109);
         requirePlayingGame(game);
         const monster = await createInventoryMonster();
         const first = await mksobj(GOLD_PIECE, true, false);
@@ -396,7 +396,7 @@ void test('direct add_to_minv merges monster gold into the first live identity',
 
 void test('bullwhip mpickobj frees a compatible incoming weapon after merging',
     async () => {
-        freshInventoryState(2110);
+        await freshInventoryState(2110);
         requirePlayingGame(game);
         const monster = await createBullwhipMonster();
         const survivor = await mksobj(DAGGER, true, false);
@@ -428,7 +428,7 @@ void test('bullwhip mpickobj frees a compatible incoming weapon after merging',
 
 void test('monster stack merging stops the incoming glob timer before averaging delays',
     async () => {
-        freshInventoryState(2111);
+        await freshInventoryState(2111);
         requirePlayingGame(game);
         const monster = await createInventoryMonster();
         const survivor = await mksobj(GLOB_OF_GRAY_OOZE, true, false);
@@ -460,7 +460,7 @@ void test('monster stack merging stops the incoming glob timer before averaging 
         game.moves = 103;
         const timer = claimNextDueObjectTimer(game, game.moves);
         assert.ok(timer);
-        runClaimedGlobTimer(timer, game, game.moves);
+        await runClaimedGlobTimer(timer, game, game.moves);
         assert.equal(survivor.owt, 59);
         assert.equal(incoming.where, 'gone');
         assert.deepEqual(objectTimers(incoming), []);
@@ -468,7 +468,7 @@ void test('monster stack merging stops the incoming glob timer before averaging 
     });
 
 void test('bullwhip theft removes the luck of a carried stone', async () => {
-    freshInventoryState();
+    await freshInventoryState();
     requirePlayingGame(game);
     const monster = await createBullwhipMonster();
     const stone = await addInventoryItem(await knownObject(LUCKSTONE));
@@ -488,7 +488,7 @@ for (const [whereTo, destination, stackCount] of [
     [1, 'the monster', 2], [2, 'the hero', 1],
 ] as const) {
     void test(`bullwhip placement under ${destination} leaves ${stackCount} dagger stacks`, async () => {
-        freshInventoryState();
+        await freshInventoryState();
         requirePlayingGame(game);
         const monster = await createBullwhipMonster();
         const x = whereTo === 1 ? monster.mx : game.u.ux;
@@ -529,7 +529,7 @@ void test('a nymph marks its stolen item through the normal turn loop', async ()
 });
 
 void test('a pet with only worn gear and a useful key still walks toward fetchable cargo', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const pet = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -547,7 +547,7 @@ void test('a pet with only worn gear and a useful key still walks toward fetchab
 
 for (const hungry of [false, true]) {
     void test(`a ${hungry ? 'hungry' : 'content'} carnivore ${hungry ? 'seeks an ordinary corpse' : 'follows its master'}`, async () => {
-        freshObjectRoom({ right: 20 });
+        await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         const pet = await createMonsterAt('housecat', 13, 10, NO_MINVENT);
         initializePet(pet, { state: game });

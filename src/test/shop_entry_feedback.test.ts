@@ -9,7 +9,7 @@ import { withMessagePages } from './support/planned-input.js';
 
 for (const situation of ['deaf', 'invisible', 'deaf robbed', 'deaf surcharge', 'deaf angry'] as const) {
     void test(`shop entry gives its native feedback to a ${situation} customer`, async () => {
-        freshObjectRoom({ left: 3, hero: { ux: 7, uy: 10 } });
+        await freshObjectRoom({ left: 3, hero: { ux: 7, uy: 10 } });
         const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.female = true;

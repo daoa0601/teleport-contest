@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('inventory-menu wield refuses coins without replacing the weapon or taking time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);
     const coins = await addInventoryObject(GOLD_PIECE, { quan: 50 });
@@ -24,7 +24,7 @@ void test('inventory-menu wield refuses coins without replacing the weapon or ta
     assert.equal(coins.quan, 50);
 });
 void test('typing gold at the wield prompt explains the refusal and takes no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const input = resetInputState();
     await answerPrompts(rhack('w'.charCodeAt(0)), input, [

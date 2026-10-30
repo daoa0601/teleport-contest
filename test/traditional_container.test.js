@@ -26,7 +26,7 @@ for (const { artifact, sight, detail } of [
     { artifact: 'Sting', sight: 'hallucinating', detail: ', flickering [a-z -]+' },
 ]) {
     void test(`traditional put-in names wielded ${artifact} with ${sight} vision`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
         const sack = await addInventoryObject(SACK, { invlet: 'a', cknown: true });
         installPagerInput(resetInputState(), { expected: /Sting flickers light blue!/, limit: 2 });
         const weapon = await addInventoryItem(await artifactObject(artifact));

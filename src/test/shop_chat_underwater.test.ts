@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a submerged customer cannot request shop quotes or spend a chat turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createStaffedShop();
     await floorObject(DAGGER, 10, 10);
     game.u.uinwater = true;

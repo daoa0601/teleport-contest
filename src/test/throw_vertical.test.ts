@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 void test('unimpaired upward throws catch returning weapons and restore their equipment slots', async () => {
     for (const weapon of ['aklys', 'Mjollnir', 'boomerang'] as const) {
-        freshObjectRoom({
+        await freshObjectRoom({
             role: 'valkyrie', flags: { fixinv: false },
             hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } },
         });
@@ -58,7 +58,7 @@ void test('unimpaired upward throws catch returning weapons and restore their eq
 });
 
 void test('catching an upward-thrown singleton from the inventory head moves it to the last floating letter', async () => {
-    freshObjectRoom({ flags: { fixinv: false } });
+    await freshObjectRoom({ flags: { fixinv: false } });
     const aklys = await addInventoryWeapon(AKLYS);
     const club = await addInventoryWeapon(CLUB);
     const rock = await addInventoryObject(ROCK);
@@ -76,7 +76,7 @@ void test('catching an upward-thrown singleton from the inventory head moves it 
 
 for (const fixinv of [false, true]) {
     void test(`catching an unworn boomerang from the middle of inventory leaves the quiver empty with ${fixinv ? 'fixed' : 'floating'} letters`, async () => {
-        freshObjectRoom({ flags: { fixinv, pickup_thrown: true } });
+        await freshObjectRoom({ flags: { fixinv, pickup_thrown: true } });
         const club = await addInventoryWeapon(CLUB);
         const boomerang = await addInventoryWeapon(BOOMERANG);
         const rock = await addInventoryObject(ROCK);
@@ -95,7 +95,7 @@ for (const fixinv of [false, true]) {
 }
 
 void test('throwing downward announces the object hitting the floor at the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const club = await addInventoryWeapon(CLUB);
 
     await throwInventoryObject(club, '>');
@@ -108,7 +108,7 @@ void test('throwing downward announces the object hitting the floor at the hero'
 });
 
 void test('a club tossed upward falls onto the hero before hitting the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const club = await addInventoryWeapon(CLUB);
     const messages: string[] = [];
@@ -124,7 +124,7 @@ void test('a club tossed upward falls onto the hero before hitting the floor', a
 });
 
 void test('a hard helmet limits falling weapon damage before the ring damage bonus', async () => {
-    freshObjectRoom({ hero: { udaminc: 6 } });
+    await freshObjectRoom({ hero: { udaminc: 6 } });
     const helmet = await addInventoryObject(HELMET);
     game.uarmh = game.u.uarmh = helmet;
     const club = await addInventoryWeapon(CLUB);
@@ -135,7 +135,7 @@ void test('a hard helmet limits falling weapon damage before the ring damage bon
 });
 
 void test('a scroll tossed upward falls harmlessly onto the hero', async () => {
-    freshObjectRoom({ hero: { udaminc: 6 } });
+    await freshObjectRoom({ hero: { udaminc: 6 } });
     const scroll = await addInventoryObject(SCR_IDENTIFY);
     const messages: string[] = [];
     resetInputState().beforeRead = () => { messages.push(game._pending_message); };
@@ -148,7 +148,7 @@ void test('a scroll tossed upward falls harmlessly onto the hero', async () => {
 });
 
 void test('firing a cream pie upward splashes onto the face when underwater', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pie = await addInventoryObject(CREAM_PIE);
     game.underwater = true;
     await setQuiverObject(pie);
@@ -162,7 +162,7 @@ void test('firing a cream pie upward splashes onto the face when underwater', as
 });
 
 void test('a potion falling back onto the hero cuts them with its bottle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.underwater = true;
     const potion = await addInventoryObject(POT_WATER);
@@ -175,7 +175,7 @@ void test('a potion falling back onto the hero cuts them with its bottle', async
 
 for (const wearHelmet of [false, true]) {
     void test(`a rock falling onto a xorn ${wearHelmet ? 'hits its helmet' : 'passes harmlessly through'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         installPolymorphedHero('xorn');
         game.underwater = true;
         if (wearHelmet) {
@@ -194,7 +194,7 @@ for (const wearHelmet of [false, true]) {
 }
 
 void test('a named rock falling harmlessly through a xorn uses its simple name for the hit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('xorn');
     const rock = await addInventoryObject(ROCK, { oname: 'Ripple' });
     const messages: string[] = [];

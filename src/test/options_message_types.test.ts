@@ -62,7 +62,7 @@ async function editMessageTypes(script: readonly Answer[]): Promise<string[]> {
 }
 
 void test('adding a hide rule through options suppresses matching messages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await editMessageTypes([
         { prompt: 'add new message type', keys: 'a' },
@@ -82,7 +82,7 @@ void test('adding a hide rule through options suppresses matching messages', asy
 });
 
 void test('message type listing uses canonical names and newest rules first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=noshow "bell"\nMSGTYPE=more "gong"');
 
     const views = await editMessageTypes([
@@ -97,7 +97,7 @@ void test('message type listing uses canonical names and newest rules first', as
 });
 
 void test('removing several message types preserves the other rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=hide "bell"\nMSGTYPE=stop "gong"\nMSGTYPE=norep "chime"');
 
     const views = await editMessageTypes([
@@ -116,7 +116,7 @@ void test('removing several message types preserves the other rules', async () =
 });
 
 void test('invalid message patterns report their regex error and return to the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await editMessageTypes([
         { prompt: 'Do what?', keys: 'a' },
@@ -129,7 +129,7 @@ void test('invalid message patterns report their regex error and return to the e
 });
 
 void test('cancelling the message type picker keeps existing rules and returns to the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MSGTYPE=hide "bell"');
 
     const views = await editMessageTypes([
@@ -146,7 +146,7 @@ void test('cancelling the message type picker keeps existing rules and returns t
 });
 
 void test('cancelling message pattern input exits the editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await editMessageTypes([
         { prompt: 'Do what?', keys: 'a' },

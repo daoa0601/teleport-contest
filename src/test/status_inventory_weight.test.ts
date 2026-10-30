@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('status redraw measures the current load after a corpse loses weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._encumbranceLevel = 1;
     await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('jackal'), oeaten: 31 });
 

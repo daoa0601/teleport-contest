@@ -4,8 +4,8 @@ import { hallucinatedDeityName } from '../js/alignment.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { roles } from '../js/roles.js';
 import { freshObjectRoom } from './support/object-room.js';
-function hallucinatedGods(role) {
-    freshObjectRoom({ role, gameplaySeed: 47n });
+async function hallucinatedGods(role) {
+    await freshObjectRoom({ role, gameplaySeed: 47n });
     requirePlayingGame(game);
     if (role === 'priest') {
         const pantheon = roles.find(candidate => candidate.key === 'rogue');
@@ -14,9 +14,9 @@ function hallucinatedGods(role) {
     }
     return Array.from({ length: 128 }, () => hallucinatedDeityName(-1, game, true));
 }
-void test('a Priest borrowing gods does not change hallucinated god choices', () => {
-    const ordinary = hallucinatedGods('rogue');
-    const borrowed = hallucinatedGods('priest');
+void test('a Priest borrowing gods does not change hallucinated god choices', async () => {
+    const ordinary = await hallucinatedGods('rogue');
+    const borrowed = await hallucinatedGods('priest');
     for (let index = 0; index < ordinary.length; index++)
         assert.equal(borrowed[index], ordinary[index], `hallucinated god ${index + 1} must use the source role table`);
 });

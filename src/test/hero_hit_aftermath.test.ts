@@ -21,7 +21,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 
 async function createTemple({ hitPoints = 100 } = {}) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: hitPoints, uhpmax: 100, uac: 30 },
         flags: { disclose: '-i -a -v -c -o' },
     });
@@ -49,7 +49,7 @@ async function createTemple({ hitPoints = 100 } = {}) {
         intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
     };
     updateHeroRoomMembership(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     return { priest, altar, level };
 }
 
@@ -108,7 +108,7 @@ for (const protectedShrine of [false, true]) {
 
 for (const target of ['watchman', 'shopkeeper', 'goblin', 'hostile watchman']) {
     void test(`a hit on a ${target} ${target === 'watchman' || target === 'shopkeeper' ? 'alerts' : 'does not alert'} the Minetown watch`, async () => {
-        freshObjectRoom({ right: 22 });
+        await freshObjectRoom({ right: 22 });
         const defender = target === 'shopkeeper'
             ? (await createStaffedShop({ left: 15, right: 20, keeperX: 16 })).shopkeeper
             : await createMonsterAt(target === 'hostile watchman' ? 'watchman' : target, 11, 10, NO_MINVENT);
@@ -130,7 +130,7 @@ for (const target of ['watchman', 'shopkeeper', 'goblin', 'hostile watchman']) {
 }
 
 void test('a deaf hero still angers the watch without guard announcement', async () => {
-    freshObjectRoom({ hero: { deafTurns: 20 } });
+    await freshObjectRoom({ hero: { deafTurns: 20 } });
     const defender = await createMonsterAt('watchman', 11, 10, NO_MINVENT);
     defender.mpeaceful = 1;
     const guard = await createMonsterAt('watch captain', 14, 13, NO_MINVENT);

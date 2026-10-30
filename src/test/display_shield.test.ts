@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('turning sparkle off suppresses the shield animation', async () => {
-    freshObjectRoom({ flags: { sparkle: false } });
+    await freshObjectRoom({ flags: { sparkle: false } });
     let frames = 0;
     game.animationFrame = async () => { frames++; };
 

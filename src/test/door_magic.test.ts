@@ -30,36 +30,36 @@ import { createStaffedShop } from './support/shop.js';
 function screen() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
-function freshDoor(options = {}) {
-    freshObjectRoom({ left: 2, right: 30, flags: { verbose: true }, ...options });
+async function freshDoor(options = {}) {
+    await freshObjectRoom({ left: 2, right: 30, flags: { verbose: true }, ...options });
     requireFixtureGame(game);
     delete game.rogue_level;
     const input = resetInputState();
     installPagerInput(input, { expected: /door|trap|crash|shatter|click|shop|damage|pay|earlier announcement|medallion|looks much better|But wait/i, limit: 30 });
     return input;
 }
-function doorAt(x: number, y: number, mask: number, type = DOOR) {
+async function doorAt(x: number, y: number, mask: number, type = DOOR) {
     const door = requireGameLevel(game).requireAt(x, y);
     door.typ = type;
     door.doormask = mask;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     return door;
 }
 
 for (const type of [WAN_OPENING, SPE_KNOCK] as const) {
     void test(`${type === WAN_OPENING ? 'opening wand' : 'knock spell'} unlocks an ordinary door while preserving its trap`, async () => {
-        freshDoor();
+        await freshDoor();
         const source = await knownObject(type);
-        const door = doorAt(11, 10, D_LOCKED | D_TRAPPED);
+        const door = await doorAt(11, 10, D_LOCKED | D_TRAPPED);
         assert.equal(await changeDoorByMagic(source, 11, 10), true);
         assert.equal(door.doormask, D_CLOSED | D_TRAPPED);
         assert.equal(await changeDoorByMagic(source, 11, 10), false);
     });
     void test(`${type === WAN_OPENING ? 'opening wand' : 'knock spell'} reveals a secret door without opening or detonating it`, async () => {
-        freshDoor();
+        await freshDoor();
         const source = await knownObject(type);
-        const door = doorAt(11, 10, D_LOCKED | D_TRAPPED, SDOOR);
+        const door = await doorAt(11, 10, D_LOCKED | D_TRAPPED, SDOOR);
         await changeDoorByMagic(source, 11, 10);
         assert.equal(door.typ, DOOR);
         assert.equal(door.doormask, D_CLOSED | D_TRAPPED);
@@ -68,9 +68,9 @@ for (const type of [WAN_OPENING, SPE_KNOCK] as const) {
 
 for (const [mask, label] of [[D_NODOOR, 'doorway'], [D_BROKEN, 'broken door'], [D_ISOPEN, 'open door'], [D_CLOSED, 'closed door']] as const) {
     void test(`locking magic constructs or repairs and locks a ${label}`, async () => {
-        freshDoor();
+        await freshDoor();
         const source = await knownObject(SPE_WIZARD_LOCK);
-        const door = doorAt(11, 10, mask | D_TRAPPED);
+        const door = await doorAt(11, 10, mask | D_TRAPPED);
         assert.equal(await changeDoorByMagic(source, 11, 10), true);
         assert.equal(door.doormask, D_LOCKED | D_TRAPPED);
         assert.equal(await changeDoorByMagic(source, 11, 10), false);
@@ -78,19 +78,19 @@ for (const [mask, label] of [[D_NODOOR, 'doorway'], [D_BROKEN, 'broken door'], [
 }
 
 void test('locking a secret door does not reveal or alter it', async () => {
-    freshDoor();
+    await freshDoor();
     const source = await knownObject(WAN_LOCKING);
-    const door = doorAt(11, 10, D_NODOOR, SDOOR);
+    const door = await doorAt(11, 10, D_NODOOR, SDOOR);
     assert.equal(await changeDoorByMagic(source, 11, 10), false);
     assert.equal(door.typ, SDOOR);
     assert.equal(door.doormask, D_NODOOR);
 });
 
 void test('locking magic cannot assemble a door over a floor trap', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     const source = await knownObject(SPE_WIZARD_LOCK);
-    const door = doorAt(11, 10, D_NODOOR);
+    const door = await doorAt(11, 10, D_NODOOR);
     game.level.traps.push({ tx: 11, ty: 10, ttyp: PIT, tseen: false, once: false, launch: { x: 0, y: 0 } });
     assert.equal(await changeDoorByMagic(source, 11, 10), false);
     assert.equal(door.doormask, D_NODOOR);
@@ -100,9 +100,9 @@ void test('locking magic cannot assemble a door over a floor trap', async () => 
 
 for (const observed of [false, true] as const) {
     void test(`a ${observed ? 'seen' : 'unseen'} locking wand respects floor obstruction ${observed ? 'with feedback' : 'silently'}`, async () => {
-        freshDoor();
+        await freshDoor();
         const source = await knownObject(WAN_LOCKING, { dknown: observed });
-        const door = doorAt(11, 10, D_ISOPEN);
+        const door = await doorAt(11, 10, D_ISOPEN);
         await floorObject(ROCK, 11, 10);
         assert.equal(await changeDoorByMagic(source, 11, 10), false);
         assert.equal(door.doormask, D_ISOPEN);
@@ -112,12 +112,12 @@ for (const observed of [false, true] as const) {
 }
 
 void test('an unseen monster obstructing a lock is marked without revealing its identity', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     const monster = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     monster.minvis = true;
     const source = await knownObject(WAN_LOCKING, { dknown: false });
-    doorAt(11, 10, D_ISOPEN);
+    await doorAt(11, 10, D_ISOPEN);
     assert.equal(await changeDoorByMagic(source, 11, 10), false);
     assert.equal(game.level.requireAt(11, 10).remembered_glyph?.kind, 'invisible');
     await flush_screen();
@@ -126,12 +126,12 @@ void test('an unseen monster obstructing a lock is marked without revealing its 
 
 for (const appearance of [M_AP_OBJECT, M_AP_FURNITURE] as const) {
     void test(`a known ${appearance === M_AP_OBJECT ? 'object' : 'furniture'} disguise keeps native locking obstruction rules`, async () => {
-        freshDoor();
+        await freshDoor();
         const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
         mimic.m_ap_type = appearance | M_AP_F_DKNOWN;
         mimic.mappearance = appearance === M_AP_OBJECT ? ROCK : CmapSymbol.fountain;
         const source = await knownObject(SPE_WIZARD_LOCK);
-        const door = doorAt(11, 10, D_ISOPEN);
+        const door = await doorAt(11, 10, D_ISOPEN);
         assert.equal(await changeDoorByMagic(source, 11, 10), appearance === M_AP_FURNITURE);
         assert.equal(door.doormask, appearance === M_AP_FURNITURE ? D_LOCKED : D_ISOPEN);
         assert.equal(mimic.m_ap_type, appearance | M_AP_F_DKNOWN);
@@ -139,11 +139,11 @@ for (const appearance of [M_AP_OBJECT, M_AP_FURNITURE] as const) {
 }
 
 void test('Rogue locking hides an unobstructed doorway even when there is a floor trap', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     game.rogue_level = createSpecialLevel({ ...game.u.uz });
     const source = await knownObject(WAN_LOCKING);
-    const door = doorAt(11, 10, D_NODOOR);
+    const door = await doorAt(11, 10, D_NODOOR);
     game.level.traps.push({ tx: 11, ty: 10, ttyp: PIT, tseen: false, once: false, launch: { x: 0, y: 0 } });
     assert.equal(await changeDoorByMagic(source, 11, 10), true);
     assert.equal(door.typ, SDOOR);
@@ -151,11 +151,11 @@ void test('Rogue locking hides an unobstructed doorway even when there is a floo
 });
 
 void test('an obstructed Rogue doorway keeps its original terrain after the dust cloud dissipates', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     game.rogue_level = createSpecialLevel({ ...game.u.uz });
     const source = await knownObject(SPE_WIZARD_LOCK);
-    const door = doorAt(11, 10, D_NODOOR);
+    const door = await doorAt(11, 10, D_NODOOR);
     await floorObject(ROCK, 11, 10);
     assert.equal(await changeDoorByMagic(source, 11, 10), false);
     assert.equal(door.typ, DOOR);
@@ -164,20 +164,20 @@ void test('an obstructed Rogue doorway keeps its original terrain after the dust
 
 for (const type of [WAN_STRIKING, SPE_FORCE_BOLT] as const) {
     void test(`${type === WAN_STRIKING ? 'striking wand' : 'force-bolt spell'} breaks an untrapped closed door and exposes the room beyond`, async () => {
-        freshDoor();
+        await freshDoor();
         requireFixtureGame(game);
         for (let y = 6; y <= 14; y++) game.level.requireAt(11, y).typ = STONE;
         const source = await knownObject(type);
-        const door = doorAt(11, 10, D_CLOSED);
+        const door = await doorAt(11, 10, D_CLOSED);
         assert.equal(cansee(13, 10), false);
         assert.equal(await changeDoorByMagic(source, 11, 10), true);
         assert.equal(door.doormask, D_BROKEN);
         assert.equal(cansee(13, 10), true);
     });
     void test(`${type === WAN_STRIKING ? 'striking wand' : 'force-bolt spell'} reveals and destroys a secret door`, async () => {
-        freshDoor();
+        await freshDoor();
         const source = await knownObject(type);
-        const door = doorAt(11, 10, D_NODOOR, SDOOR);
+        const door = await doorAt(11, 10, D_NODOOR, SDOOR);
         assert.equal(await changeDoorByMagic(source, 11, 10), true);
         assert.equal(door.typ, DOOR);
         assert.equal(door.doormask, D_BROKEN);
@@ -186,13 +186,13 @@ for (const type of [WAN_STRIKING, SPE_FORCE_BOLT] as const) {
 
 for (const trapped of [false, true] as const) {
     void test(`${trapped ? 'an exploding' : 'a broken'} empty door wakes monsters within its native noise radius without hurting the hero`, async () => {
-        freshDoor();
+        await freshDoor();
         requireFixtureGame(game);
         const source = await knownObject(WAN_STRIKING);
         const near = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
         const farther = await createMonsterAt('orc', 16, 10, NO_MINVENT);
         near.msleeping = farther.msleeping = 1;
-        const door = doorAt(11, 10, D_CLOSED | (trapped ? D_TRAPPED : 0));
+        const door = await doorAt(11, 10, D_CLOSED | (trapped ? D_TRAPPED : 0));
         const hp = game.u.uhp;
         await changeDoorByMagic(source, 11, 10);
         assert.equal(door.doormask, trapped ? D_NODOOR : D_BROKEN);
@@ -203,11 +203,11 @@ for (const trapped of [false, true] as const) {
 }
 
 void test('a remotely exploded occupied door damages and stuns its monster and teaches surviving trap knowledge', async () => {
-    freshDoor();
+    await freshDoor();
     const occupant = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     occupant.mhp = occupant.mhpmax = 50;
     const source = await knownObject(WAN_STRIKING);
-    const door = doorAt(11, 10, D_CLOSED | D_TRAPPED);
+    const door = await doorAt(11, 10, D_CLOSED | D_TRAPPED);
     await changeDoorByMagic(source, 11, 10);
     assert.equal(door.doormask, D_NODOOR);
     assert.ok(occupant.mhp < 50 && occupant.mhp >= 35);
@@ -217,13 +217,13 @@ void test('a remotely exploded occupied door damages and stuns its monster and t
 
 for (const lifesaved of [false, true] as const) {
     void test(`door-explosion death ${lifesaved ? 'uses the monster amulet before learning the trap' : 'removes the monster without crediting a hero kill'}`, async () => {
-        freshDoor();
+        await freshDoor();
         requireFixtureGame(game);
         const occupant = await createMonsterAt('orc', 11, 10, NO_MINVENT);
         if (lifesaved) await equipMonsterObject(occupant, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
         occupant.mhp = 1;
         const source = await knownObject(WAN_STRIKING);
-        doorAt(11, 10, D_CLOSED | D_TRAPPED);
+        await doorAt(11, 10, D_CLOSED | D_TRAPPED);
         const experience = game.u.uexp || 0;
         await changeDoorByMagic(source, 11, 10);
         assert.equal(monsterAtPosition(game.level, occupant.mx, occupant.my) === occupant, lifesaved);
@@ -237,12 +237,12 @@ for (const lifesaved of [false, true] as const) {
 }
 
 void test('the explosion message pauses before noise, stun, or damage are applied to the occupant', async () => {
-    const input = freshDoor();
+    const input = await freshDoor();
     const occupant = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     occupant.mhp = 50;
     occupant.mstun = 0;
     const source = await knownObject(WAN_STRIKING);
-    const door = doorAt(11, 10, D_CLOSED | D_TRAPPED);
+    const door = await doorAt(11, 10, D_CLOSED | D_TRAPPED);
     await plineWithContinuation('An earlier announcement fills most of the message line now.');
     input.beforeRead = null;
     input.display = null;
@@ -258,10 +258,10 @@ void test('the explosion message pauses before noise, stun, or damage are applie
 });
 
 void test('a changed door interrupts the matching lock occupation while an unchanged locked door does not', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     const source = await knownObject(WAN_LOCKING);
-    const door = doorAt(11, 10, D_LOCKED);
+    const door = await doorAt(11, 10, D_LOCKED);
     const occupation: PickLockOccupation = { tool: await knownObject(LOCK_PICK), key: 'pick-lock', text: 'picking the lock', door, x: 11, y: 10,
         remaining: 51, usedtime: 5, chance: 10 };
     game._occupation = occupation;
@@ -274,11 +274,11 @@ void test('a changed door interrupts the matching lock occupation while an uncha
 });
 
 void test('breaking a shop entrance records repair damage while billing remains with ray traversal', async () => {
-    freshDoor();
+    await freshDoor();
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, doorX: 11 });
     const source = await knownObject(WAN_STRIKING);
-    doorAt(11, 10, D_CLOSED);
+    await doorAt(11, 10, D_CLOSED);
     await changeDoorByMagic(source, 11, 10);
     assert.ok(game.level.damagelist !== null && game.level.damagelist !== undefined);
     const repair = game.level.damagelist.find(record => record.place.x === 11 && record.place.y === 10);
@@ -289,13 +289,13 @@ void test('breaking a shop entrance records repair damage while billing remains 
 
 
 void test('a moving soldier reaches the same pageable door explosion owner before taking damage', async () => {
-    const input = freshDoor({ left: 8, right: 14, top: 10, bottom: 10, heroX: 12 });
+    const input = await freshDoor({ left: 8, right: 14, top: 10, bottom: 10, heroX: 12 });
     requireFixtureGame(game);
     const soldier = await createMonsterAt('soldier', 9, 10, NO_MINVENT);
     soldier.mhp = soldier.mhpmax = 50;
     soldier.mstun = 0;
     soldier.movement = 12;
-    const door = doorAt(10, 10, D_CLOSED | D_TRAPPED);
+    const door = await doorAt(10, 10, D_CLOSED | D_TRAPPED);
     initRng(1n);
     await plineWithContinuation('An earlier announcement fills most of the message line now.');
     input.beforeRead = null;
@@ -323,12 +323,12 @@ void test('a moving soldier reaches the same pageable door explosion owner befor
 
 for (const occupied of [false, true] as const) {
     void test(`a deaf unconscious hero does not hear ${occupied ? 'an occupied' : 'an empty'} door explosion`, async () => {
-        freshDoor({ hero: { deafTurns: 20, usleep: 1 } });
+        await freshDoor({ hero: { deafTurns: 20, usleep: 1 } });
         requireFixtureGame(game);
         game._helplessTurns = 2;
         if (occupied) await createMonsterAt('orc', 11, 10, NO_MINVENT);
         const source = await knownObject(WAN_STRIKING);
-        const door = doorAt(11, 10, D_CLOSED | D_TRAPPED);
+        const door = await doorAt(11, 10, D_CLOSED | D_TRAPPED);
         await changeDoorByMagic(source, 11, 10);
         assert.equal(door.doormask, D_NODOOR);
         await flush_screen();

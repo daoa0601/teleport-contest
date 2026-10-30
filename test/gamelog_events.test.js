@@ -16,7 +16,7 @@ function logTexts() {
 // shows it under "Logged events:").  The first kill of the game also logs
 // exper.c's "killed for the first time".
 void test('killing a tame kitten chronicles the murder with the hero pronoun', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     game.flags.female = false;
     const kitten = await createMonsterAt('kitten', 11, 10);
     kitten.mtame = 1;
@@ -24,7 +24,7 @@ void test('killing a tame kitten chronicles the murder with the hero pronoun', a
     assert.deepEqual(logTexts(), ['killed for the first time', 'murdered his faithful kitten']);
 });
 void test('killing a named pet chronicles the given name first', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     game.flags.female = true;
     const dog = await createMonsterAt('little dog', 11, 10);
     dog.mtame = 1;
@@ -34,7 +34,7 @@ void test('killing a named pet chronicles the given name first', async () => {
 });
 // A peaceful non-tame death costs alignment but leaves no murder line.
 void test('killing a peaceful monster does not chronicle a murder', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mpeaceful = 1;
     await finishHeroMonsterKillOutcome(jackal, 11, 10, { noCorpse: true });
@@ -44,7 +44,7 @@ void test('killing a peaceful monster does not chronicle a murder', async () => 
 // undead, so the line uses "destroyed", and the first kill of the game
 // logs xkilled()'s conduct line first.
 void test('destroying a unique vampire chronicles the unique kill', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     const vlad = await createMonsterAt('Vlad the Impaler', 11, 10);
     await finishHeroMonsterKillOutcome(vlad, 11, 10, { noCorpse: true });
     assert.deepEqual(logTexts(), ['killed for the first time', 'destroyed Vlad the Impaler']);
@@ -52,7 +52,7 @@ void test('destroying a unique vampire chronicles the unique kill', async () => 
 // Medusa's first death records achievement #12 instead of a plain unique
 // line (mon.c:3001-3002), which livelogs "killed Medusa".
 void test('the first Medusa kill chronicles through her achievement', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     const medusa = await createMonsterAt('Medusa', 11, 10);
     await finishHeroMonsterKillOutcome(medusa, 11, 10, { noCorpse: true });
     assert.deepEqual(logTexts(), ['killed for the first time', 'killed Medusa']);
@@ -62,7 +62,7 @@ void test('the first Medusa kill chronicles through her achievement', async () =
 // death must be rejected before any "general store proprietor" line is
 // chronicled for it.
 void test('a shopkeeper without shop history is rejected, not chronicled', async () => {
-    freshObjectRoom({ role: 'valkyrie' });
+    await freshObjectRoom({ role: 'valkyrie' });
     const keeper = await createMonsterAt('shopkeeper', 11, 10);
     keeper.isshk = 1;
     await assert.rejects(() => finishHeroMonsterKillOutcome(keeper, 11, 10, { noCorpse: true }), /lacks shop history/);

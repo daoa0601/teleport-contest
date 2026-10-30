@@ -8,7 +8,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the queued inventory adjustment asks only for the selected item destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     input.feed(`${dagger.invlet}i`);
@@ -43,7 +43,7 @@ void test('the queued inventory adjustment asks only for the selected item desti
     }
 });
 void test('collecting a later inventory stack keeps all compatible items in the selected slot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER, { quan: 2, spe: 0 });
     const selected = await knownObject(DAGGER, { quan: 3, spe: 0, where: 'inventory', invlet: 'b' });
     const later = await knownObject(DAGGER, { quan: 4, spe: 0, where: 'inventory', invlet: 'c' });

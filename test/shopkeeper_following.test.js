@@ -31,7 +31,7 @@ function followCustomer(keeper, name = 'Mira') {
     keeper.eshk.customer = game.plname;
 }
 void test('a keeper stops following a different customer after greeting the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Robin';
     const { shopkeeper } = await createStaffedShop();
@@ -43,7 +43,7 @@ void test('a keeper stops following a different customer after greeting the hero
     assert.deepEqual([shopkeeper.mx, shopkeeper.my], [11, 10]);
 });
 void test('a following keeper reminds a Samurai customer without stepping away', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     requirePlayingGame(game);
     game.plname = 'Robin';
     const { shopkeeper } = await createStaffedShop();
@@ -57,7 +57,7 @@ for (const [species, deaf, pronoun, hand] of [
     ['red dragon', false, 'its', 'foreclaw'],
 ]) {
     void test(`a following ${species} gestures when ${deaf ? 'the customer is deaf' : 'it cannot speak'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop();
         if (species !== 'shopkeeper')
@@ -71,7 +71,7 @@ for (const [species, deaf, pronoun, hand] of [
     });
 }
 void test('following keepers share the five-turn reminder interval', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const first = (await createStaffedShop({ left: 14, right: 16, keeperX: 14 })).shopkeeper;
     const second = (await createStaffedShop({ left: 19, right: 21, keeperX: 19 })).shopkeeper;
@@ -91,7 +91,7 @@ void test('following keepers share the five-turn reminder interval', async () =>
     assert.match(await keeperTurnMessages(second), /Didn't you forget to pay/);
 });
 void test('restoring a game resets the unsaved shop reminder interval', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     followCustomer(shopkeeper);
@@ -99,7 +99,7 @@ void test('restoring a game resets the unsaved shop reminder interval', async ()
     const messages = await keeperTurnMessages(shopkeeper);
     assert.match(messages, /Didn't you forget to pay/);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     await cls();
     const restored = game.level.monsters.find(monster => monster.isshk);
     assert.ok(restored);
@@ -107,7 +107,7 @@ void test('restoring a game resets the unsaved shop reminder interval', async ()
     assert.match(restoredMessages, /Didn't you forget to pay/);
 });
 void test('a silent keeper drops a mismatched customer without a reminder gesture', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     followCustomer(shopkeeper);
@@ -119,7 +119,7 @@ void test('a silent keeper drops a mismatched customer without a reminder gestur
     assert.deepEqual([shopkeeper.mx, shopkeeper.my], [11, 10]);
 });
 void test('a polymorphed speaking keeper uses the general Samurai greeting', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     await changeMonsterForm(shopkeeper, MONSTER_NAME.indexOf('red naga'));
@@ -129,7 +129,7 @@ void test('a polymorphed speaking keeper uses the general Samurai greeting', asy
 });
 for (const species of ['shopkeeper', 'grid bug']) {
     void test(`a diagonal following ${species} can close the gap to its customer`, async () => {
-        freshObjectRoom({ moves: 1 });
+        await freshObjectRoom({ moves: 1 });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ keeperY: 11 });
         if (species !== 'shopkeeper')
@@ -142,7 +142,7 @@ for (const species of ['shopkeeper', 'grid bug']) {
     });
 }
 void test('a keeper finishes the mistaken-customer message before ending pursuit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     followCustomer(shopkeeper);

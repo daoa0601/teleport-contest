@@ -17,7 +17,7 @@ for (const { surface, underlay, submerged } of [
     { surface: 'water', underlay: DB_MOAT, submerged: true },
 ]) {
     void test(`dipping a lantern beneath a raised bridge over ${surface} ${submerged ? 'submerges it' : 'only splashes it'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const bridge = level.requireAt(10, 10);
         bridge.typ = DRAWBRIDGE_UP;
         bridge.drawbridgemask = DB_WEST | underlay;
@@ -41,7 +41,7 @@ for (const { surface, underlay, submerged } of [
             assert.doesNotMatch(text, /lantern goes out!/);
     });
     void test(`splashing a humanoid's lantern beneath a raised bridge over ${surface} ${submerged ? 'submerges it' : 'keeps its light and battery'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const goblin = await createMonsterAt('goblin', 11, 10);
         const lantern = await knownObject(BRASS_LANTERN, { age: 300 });
         await addObjectToMonsterInventory(goblin, lantern);

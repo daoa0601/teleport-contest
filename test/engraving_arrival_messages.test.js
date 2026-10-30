@@ -11,7 +11,7 @@ import { floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('reading dust after picking up gold appends the location before paging the inscription', async () => {
-    freshObjectRoom({ flags: { pickup: true } });
+    await freshObjectRoom({ flags: { pickup: true } });
     const engraving = makeEngravingAt(10, 10, 'a faded warning', null, 0, DUST);
     await floorObject(GOLD_PIECE, 10, 10, { quan: 37 });
     const input = resetInputState();
@@ -22,7 +22,7 @@ void test('reading dust after picking up gold appends the location before paging
     assert.equal(engraving?.eread, true);
 });
 void test('a short dust inscription and a short existing line fit without a pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     makeEngravingAt(10, 10, 'Hi', null, 0, DUST);
     await pline('Gold.');
     await autopickupAtHero();

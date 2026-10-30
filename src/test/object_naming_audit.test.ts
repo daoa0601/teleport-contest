@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('glob shrink feedback includes partly eaten when its caller requests it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const glob = await addInventoryObject(GLOB_OF_GRAY_OOZE, { oeaten: 10, owt: 20 });
     game.iflags.partly_eaten_hack = true;
 

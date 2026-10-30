@@ -62,7 +62,7 @@ void test('restoring reads the birthday back from its saved local-time text', as
 
     // An hour passes before the player restores.
     context.mock.timers.setTime(now + 3600 * 1000);
-    assert.equal(restoreGame('Clockwatcher', storage), true);
+    assert.equal(await restoreGame('Clockwatcher', storage), true);
 
     // C saves 11:00 EST text for the winter birthday and reads it back
     // with the inherited summer EDT offset: an hour earlier.

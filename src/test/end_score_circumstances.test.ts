@@ -9,8 +9,8 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
-function endingRoom() {
-    freshObjectRoom({ flags: { bones: false, disclose: 'none' }, hero: { urexp: 100 } });
+async function endingRoom() {
+    await freshObjectRoom({ flags: { bones: false, disclose: 'none' }, hero: { urexp: 100 } });
     game.storage = memoryStorage();
     game.iflags.toptenwin = false;
     const input = resetInputState();
@@ -25,7 +25,7 @@ function endingRoom() {
 }
 
 void test('a quit score records the real Amulet and ongoing helplessness', async () => {
-    endingRoom();
+    await endingRoom();
     await addInventoryObject(AMULET_OF_YENDOR);
     game._helplessReason = 'paralyzed by a floating eye';
     game._helplessTurns = 4;
@@ -38,7 +38,7 @@ void test('a quit score records the real Amulet and ongoing helplessness', async
 });
 
 void test('an escape score records carrying a fake Amulet', async () => {
-    endingRoom();
+    await endingRoom();
     await addInventoryObject(FAKE_AMULET_OF_YENDOR);
 
     await finishLivingGame('escaped');

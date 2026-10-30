@@ -10,7 +10,7 @@ import { installHeroWeaponSkills } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const under of [DB_FLOOR, DB_ICE]) {
     void test(`a whip aimed down below a raised bridge over ${under === DB_FLOOR ? 'ground' : 'ice'} hits the hero's foot`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const square = level.requireAt(10, 10);
         square.typ = DRAWBRIDGE_UP;
@@ -23,7 +23,7 @@ for (const under of [DB_FLOOR, DB_ICE]) {
         assert.match(game._pending_message, /hit your foot with your bullwhip/);
     });
     void test(`a hook can grip ${under === DB_FLOOR ? 'ground' : 'ice'} below a raised bridge`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const square = level.requireAt(12, 10);
         square.typ = DRAWBRIDGE_UP;
         square.drawbridgemask = under;

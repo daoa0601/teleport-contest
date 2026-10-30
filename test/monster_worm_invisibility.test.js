@@ -19,15 +19,15 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
 async function visibleWorm() {
-    freshObjectRoom({ right: 25 });
+    await freshObjectRoom({ right: 25 });
     const worm = await createMonsterAt('long worm', 16, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-    initializeMonsterWormBody(worm, { segmentCount: 3, random: () => 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 3, random: () => 0 });
     assertWormBody(worm);
     assert.equal(worm.wormSegments.length, 3);
     worm.msleeping = 0;
     installPagerInput(resetInputState(), { expected: /worm|shards|evaporates|appears|transparent/, limit: 8 });
     for (const segment of worm.wormSegments) {
-        newsym(segment.x, segment.y);
+        await newsym(segment.x, segment.y);
         assert.equal(glyphAt(segment.x, segment.y)?.kind, 'monster');
     }
     return worm;
@@ -79,7 +79,7 @@ for (const cursed of [false, true]) {
         if (cursed) {
             setMonsterPermanentInvisibility(worm);
             for (const segment of worm.wormSegments) {
-                newsym(segment.x, segment.y);
+                await newsym(segment.x, segment.y);
                 assert.notEqual(glyphAt(segment.x, segment.y)?.kind, 'monster');
             }
         }

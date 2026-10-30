@@ -82,7 +82,7 @@ void test('a game restored on a deep level keeps deep-level gem selection', asyn
     game.specialLevels?.clear();
     game.flags.bones = false;
     await mklev();
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     initRng(17n);
 
     const selections = Array.from({ length: 200 }, () =>

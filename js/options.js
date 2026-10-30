@@ -3027,7 +3027,7 @@ const NO_VISUAL_CHANGE = { redraw: false, customReset: false };
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
-function applyBooleanVisualChange(name) {
+async function applyBooleanVisualChange(name) {
     if (name === 'wizweight' && game.flags.fixinv === false)
         reassignInventoryLetters();
     if (name === 'terrainstatus')
@@ -3040,7 +3040,7 @@ function applyBooleanVisualChange(name) {
         return NO_VISUAL_CHANGE;
     }
     if (name === 'dark_room' || name === 'lit_corridor') {
-        vision_recalc(2);
+        await vision_recalc(2);
         game.vision_full_recalc = 1;
         return { redraw: requestBooleanValue('color'), customReset: false };
     }
@@ -3143,7 +3143,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
         setRequestBoolean(option, value);
         if (option[0] === 'rest_on_space')
             game.commandBindings.setRestOnSpace(value);
-        const pending = applyBooleanVisualChange(option[0]);
+        const pending = await applyBooleanVisualChange(option[0]);
         if (giveMessages)
             await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
         await resetBooleanVisuals(pending);
@@ -3192,7 +3192,7 @@ async function doRequestMenuOptions() {
                 setRequestBoolean(option, value);
                 if (option[0] === 'rest_on_space')
                     game.commandBindings.setRestOnSpace(value);
-                const change = applyBooleanVisualChange(option[0]);
+                const change = await applyBooleanVisualChange(option[0]);
                 pending = { redraw: pending.redraw || change.redraw,
                     customReset: pending.customReset || change.customReset };
                 if (giveBooleanMessage)
@@ -3514,7 +3514,7 @@ export async function doOptions(menuRequested = false) {
         let pending = NO_VISUAL_CHANGE;
         if (option) {
             setRequestBoolean(option, !requestBooleanValue(option[0]));
-            pending = applyBooleanVisualChange(option[0]);
+            pending = await applyBooleanVisualChange(option[0]);
         }
         else
             pending = { redraw: await editCompoundOption(name, false), customReset: false };

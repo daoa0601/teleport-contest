@@ -16,7 +16,7 @@ const toplText = () => requireScreenRow(0).map(cell => cell.ch).join('').trimEnd
 // installs while paging earlier prose is such a write, and it must display
 // in full rather than cut at the dismissed window's old left edge.
 void test('a message written after a dismissed pile corner shows in full', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10, {
         oname: 'a very long name that pushes the window edge left',
     });

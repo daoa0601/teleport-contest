@@ -3,22 +3,22 @@ import test from 'node:test';
 import { encyclopediaEntries } from '../js/encyclopedia.js';
 import { initializeFruitRegistry } from '../js/fruit.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('an unfamiliar custom fruit uses the edible fruit encyclopedia entry', () => {
-    freshObjectRoom();
+void test('an unfamiliar custom fruit uses the edible fruit encyclopedia entry', async () => {
+    await freshObjectRoom();
     initializeFruitRegistry('moonberry');
     const entries = encyclopediaEntries('2 uncursed moonberries');
     assert.equal(entries.length, 1);
     assert.ok(entries[0]?.lines.some(line => line.includes('this is edible')));
 });
-void test('an article-prefixed custom fruit shows only the fruit entry even when its name is a weapon', () => {
-    freshObjectRoom();
+void test('an article-prefixed custom fruit shows only the fruit entry even when its name is a weapon', async () => {
+    await freshObjectRoom();
     initializeFruitRegistry('dagger');
     const entries = encyclopediaEntries('a dagger');
     assert.equal(entries.length, 1);
     assert.ok(entries[0]?.lines.some(line => line.includes('this is edible')));
 });
-void test('a longer prefix preserves the weapon entry after the custom fruit entry', () => {
-    freshObjectRoom();
+void test('a longer prefix preserves the weapon entry after the custom fruit entry', async () => {
+    await freshObjectRoom();
     initializeFruitRegistry('dagger');
     const entries = encyclopediaEntries('an uncursed dagger');
     assert.equal(entries.length, 2);

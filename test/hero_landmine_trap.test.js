@@ -12,7 +12,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a hero-triggered land mine changes the level around the blast', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 19n });
+    const level = await freshObjectRoom({ gameplaySeed: 19n });
     requireFixtureGame(game);
     const mine = addTrap(level, LANDMINE, 10, 10);
     const rock = await floorObject(ROCK, 10, 10);

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a silver weapon sears a vampire hero after its hit message', async () => {
-    freshRoomWithPolymorphedHero('vampire', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
+    await freshRoomWithPolymorphedHero('vampire', { polymorph: { hitPoints: 100 }, hero: { uac: 10 } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     goblin.mux = game.u.ux;
@@ -33,7 +33,7 @@ void test('a silver weapon sears a vampire hero after its hit message', async ()
 });
 
 async function silverDaggerHitOnHuman(infected: boolean) {
-    freshObjectRoom({ hero: { uac: 10, uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uac: 10, uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     if (infected) game.u.ulycn = MONSTER_NAME.indexOf('werejackal');
     const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

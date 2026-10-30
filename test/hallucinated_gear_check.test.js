@@ -11,7 +11,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function perceivedMonsterAfterGearCheck(creation) {
-    freshObjectRoom();
+    await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 14, 10, MM_NOGRP | NO_MINVENT);
     soldier.mpeaceful = true;
     const armor = await knownObject(SPLINT_MAIL);
@@ -26,7 +26,7 @@ async function perceivedMonsterAfterGearCheck(creation) {
         const result = await reassessMonsterArmor(soldier);
         assert.equal(result?.consumed, false);
     }
-    newsym(soldier.mx, soldier.my);
+    await newsym(soldier.mx, soldier.my);
     assert.ok(armor.owornmask, 'The existing suit stays worn.');
     const glyph = glyphAt(soldier.mx, soldier.my);
     assert.ok(glyph?.kind === 'monster');

@@ -20,7 +20,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 async function hallucinatedRockAppearanceAfterWizIdentify(
     menuEntries: readonly number[],
 ): Promise<number> {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 99 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 99 } });
     requirePlayingGame(game);
     game.flags.debug = true;
     // Unidentified objects (dknown unset by the unobserved admission) are

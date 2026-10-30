@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { propertyIsActive, propertyTimeout } from '../js/properties.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('two lava refusals without a safe landing grant five turns to escape', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).typ = LAVAPOOL;

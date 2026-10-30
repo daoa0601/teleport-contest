@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a fatal acid cure after hero petrification awards experience without breaking pacifism', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 13, 10, NO_MINVENT);
     giant.mhp = 1;
@@ -36,7 +36,7 @@ void test('a fatal acid cure after hero petrification awards experience without 
 });
 
 void test('a fatal acid cure without hero credit leaves the inventory but no corpse', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 13, 10, NO_MINVENT);
     giant.mhp = 1;

@@ -26,7 +26,7 @@ async function corpse(species, age = game.moves) {
     return await knownObject(CORPSE, { corpsenm: nameToMonster(species), age });
 }
 void test('pet diets prefer meat for dogs, apples for horses, and bananas for monkeys', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const horse = await createMonsterAt('pony', 12, 10);
     const monkey = await createMonsterAt('monkey', 13, 10);
@@ -41,7 +41,7 @@ void test('pet diets prefer meat for dogs, apples for horses, and bananas for mo
     assert.equal(quality(horse, banana), ACCFOOD);
 });
 void test('starvation relaxes food preferences only for a tame non-minion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const apple = await knownObject(APPLE);
     starve(dog);
@@ -53,7 +53,7 @@ void test('starvation relaxes food preferences only for a tame non-minion', asyn
     assert.equal(quality(dog, apple), MANFOOD);
 });
 void test('a blind carnivore with eyes seeks carrots, but an eyeless carnivore does not', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const piercer = await createMonsterAt('rock piercer', 12, 10);
     const carrot = await knownObject(CARROT);
@@ -63,7 +63,7 @@ void test('a blind carnivore with eyes seeks carrots, but an eyeless carnivore d
     assert.equal(quality(piercer, carrot), MANFOOD);
 });
 void test('corpse decay follows the fifty-turn threshold and slowing by ice', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await pet('little dog');
     const meat = await corpse('newt', 51);
     assert.equal(quality(dog, meat), CADAVER);
@@ -76,7 +76,7 @@ void test('corpse decay follows the fifty-turn threshold and slowing by ice', as
     assert.equal(quality(dog, await corpse('lizard', 0)), CADAVER);
 });
 void test('fungi only fetch corpses while ghouls prefer old flesh and stale eggs', async () => {
-    freshObjectRoom({ moves: 500 });
+    await freshObjectRoom({ moves: 500 });
     const fungus = await pet('violet fungus');
     const ghoul = await createMonsterAt('ghoul', 12, 10);
     initializePet(ghoul);
@@ -94,7 +94,7 @@ void test('fungi only fetch corpses while ghouls prefer old flesh and stale eggs
     assert.equal(quality(ghoul, await knownObject(MEATBALL)), TABU);
 });
 void test('pets account for gained poison, acid, and stone resistance when judging food', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const poisonous = await corpse('killer bee');
     const acidic = await corpse('acid blob');
@@ -108,7 +108,7 @@ void test('pets account for gained poison, acid, and stone resistance when judgi
     assert.equal(quality(dog, petrifying), CADAVER);
 });
 void test('pets avoid shapeshifter corpses unless starving or abused', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const chameleon = await corpse('chameleon');
     assert.equal(quality(dog, chameleon), MANFOOD);
@@ -119,7 +119,7 @@ void test('pets avoid shapeshifter corpses unless starving or abused', async () 
     assert.equal(quality(dog, chameleon), CADAVER);
 });
 void test('same-race humanoid flesh is taboo except for native starvation and orc exceptions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dwarf = await pet('dwarf');
     const elf = await createMonsterAt('elf', 12, 10);
     const orc = await createMonsterAt('orc', 13, 10);
@@ -134,7 +134,7 @@ void test('same-race humanoid flesh is taboo except for native starvation and or
     assert.equal(quality(orc, await corpse('orc')), CADAVER);
 });
 void test('pyrolisk eggs and slime are unsafe food; starvation permits slime', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     const salamander = await createMonsterAt('salamander', 12, 10);
     const egg = await knownObject(EGG, { corpsenm: nameToMonster('pyrolisk') });
@@ -147,7 +147,7 @@ void test('pyrolisk eggs and slime are unsafe food; starvation permits slime', a
     assert.equal(quality(dog, slime), ACCFOOD);
 });
 void test('a killer bee refuses royal jelly while a living queen is on its level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bee = await pet('killer bee');
     const jelly = await knownObject(LUMP_OF_ROYAL_JELLY);
     assert.equal(quality(bee, jelly), DOGFOOD);
@@ -157,7 +157,7 @@ void test('a killer bee refuses royal jelly while a living queen is on its level
     assert.equal(quality(bee, jelly), DOGFOOD);
 });
 void test('metal eaters distinguish iron, rustproof iron, silver, and tins', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const rustMonster = await pet('rust monster');
     const xorn = await createMonsterAt('xorn', 12, 10);
     const dagger = await knownObject(DAGGER);
@@ -170,7 +170,7 @@ void test('metal eaters distinguish iron, rustproof iron, silver, and tins', asy
     assert.equal(quality(xorn, await knownObject(TIN)), APPORT);
 });
 void test('cube digestion, silver hatred, garlic, and dangerous jewelry take precedence over fetching', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cube = await pet('gelatinous cube');
     const vampire = await createMonsterAt('vampire', 12, 10);
     const dog = await createMonsterAt('little dog', 13, 10);
@@ -184,7 +184,7 @@ void test('cube digestion, silver hatred, garlic, and dangerous jewelry take pre
     assert.equal(quality(dog, await knownObject(HEAVY_IRON_BALL)), UNDEF);
 });
 void test('quest artifacts are protected and pets avoid weapon poison and trapped containers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet('little dog');
     assert.ok(game.urole);
     const artifact = await artifactObject(game.urole.artifactName, { cursed: true });

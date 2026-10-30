@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const kind of ['lamp', 'egg']) {
     void test(`a migrating monster's ${kind} timer runs without a map location`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const carrier = await createMonsterAt('goblin', 12, 10);
         const object = await knownObject(kind === 'lamp' ? OIL_LAMP : EGG, {
             initialize: false, age: 1, corpsenm: MONSTER_NAME.indexOf('crocodile'),

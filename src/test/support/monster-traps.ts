@@ -29,7 +29,7 @@ export async function freshMonsterTrapRoom(trapType: number, {
     monster = {},
     trap = {},
 }: MonsterTrapRoomOptions = {}) {
-    const level = freshObjectRoom({ ...room, ...(gameplaySeed === undefined ? {} : { gameplaySeed }) });
+    const level = await freshObjectRoom({ ...room, ...(gameplaySeed === undefined ? {} : { gameplaySeed }) });
     const {
         mnum,
         species = 'giant',

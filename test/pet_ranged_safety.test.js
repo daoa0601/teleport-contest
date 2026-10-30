@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 async function rangedRoom() {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     const pet = await createMonsterAt('winter wolf', 10, 10, BIRTH_FLAGS);
     initializePet(pet);
     const target = await createMonsterAt('orc-captain', 13, 10, BIRTH_FLAGS);
@@ -22,7 +22,7 @@ void test('a pet avoids a ranged target with an allied long-worm tail behind it'
     requirePlayingGame(game);
     const friend = await createMonsterAt('long worm', 16, 11, BIRTH_FLAGS);
     initializePet(friend);
-    initializeMonsterWormBody(friend, { segmentCount: 0 });
+    await initializeMonsterWormBody(friend, { segmentCount: 0 });
     friend.wormSegments = [{ x: 15, y: 10 }, { x: 16, y: 10 }];
     assert.equal(bestPetRangedTarget(pet, game), null);
 });
@@ -31,7 +31,7 @@ void test('a hostile long-worm tail does not hide a ranged target farther along 
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 12, 11, BIRTH_FLAGS);
     worm.mpeaceful = 0;
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     worm.wormSegments = [{ x: 11, y: 10 }, { x: 12, y: 10 }];
     assert.equal(bestPetRangedTarget(pet, game), target);
 });

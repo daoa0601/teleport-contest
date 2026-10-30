@@ -9,7 +9,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('ice below a raised bridge delays a floor glob shrinking', async () => {
-    const level = freshObjectRoom({ moves: 43 });
+    const level = await freshObjectRoom({ moves: 43 });
     const square = level.requireAt(12, 10);
     square.typ = DRAWBRIDGE_UP;
     square.drawbridgemask = DB_ICE;

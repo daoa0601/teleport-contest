@@ -19,7 +19,7 @@ void test('golems are born with the fixed hit points of their material', async (
         ['straw golem', 20], ['gold golem', 60], ['iron golem', 120],
     ];
     for (const [name, hp] of expectations) {
-        freshObjectRoom({ gameplaySeed: 1n });
+        await freshObjectRoom({ gameplaySeed: 1n });
         const golem = await makemonAt(MONSTER_NAME.indexOf(name), 12, 10, MM_NOMSG | NO_MINVENT);
         assert.ok(golem, `${name} must be born`);
         assert.equal(golem.mhp, hp, `${name} has the golemhp() total`);
@@ -29,7 +29,7 @@ void test('golems are born with the fixed hit points of their material', async (
 void test('riders roll ten hit dice regardless of their menacing level', async () => {
     for (const name of ['Death', 'Pestilence', 'Famine']) {
         for (let seed = 1n; seed <= 8n; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             const rider = await makemonAt(MONSTER_NAME.indexOf(name), 12, 10, MM_NOMSG | NO_MINVENT);
             assert.ok(rider, `${name} must be born (seed ${seed})`);
             assert.ok(rider.mhp >= 11 && rider.mhp <= 80, `${name} hit points ${rider.mhp} outside 10d8 with the all-ones boost`);
@@ -39,7 +39,7 @@ void test('riders roll ten hit dice regardless of their menacing level', async (
 });
 void test('Angels are born with a blessed, rustproof weapon and a real shield', async () => {
     for (let seed = 1n; seed <= 24n; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const angel = await makemonAt(MONSTER_NAME.indexOf('Angel'), 12, 10, MM_NOMSG);
         assert.ok(angel);
         const weapon = angel.minvent.find(item => item.otyp === LONG_SWORD || item.otyp === SILVER_MACE);
@@ -59,7 +59,7 @@ void test('Angels are born with a blessed, rustproof weapon and a real shield', 
 });
 void test('Archon lords always carry a shield of reflection', async () => {
     for (let seed = 1n; seed <= 24n; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const archon = await makemonAt(MONSTER_NAME.indexOf('Archon'), 12, 10, MM_NOMSG);
         assert.ok(archon);
         assert.ok(archon.minvent.some(item => item.otyp === SHIELD_OF_REFLECTION), `Archon lords always carry the shield of reflection (seed ${seed})`);
@@ -75,7 +75,7 @@ void test('a small-group species birth adds a hostile cluster around the hero', 
     assert.ok((MONSTER_GENO[jackal] ?? 0) & G_SGROUP, 'jackal is a small-group species');
     let groups = 0;
     for (let seed = 1n; seed <= 32n && groups < 4; seed++) {
-        const level = freshObjectRoom({ gameplaySeed: seed });
+        const level = await freshObjectRoom({ gameplaySeed: seed });
         genocideExcept(jackal);
         const leader = await makemonAt(null, game.u.ux, game.u.uy, NO_MINVENT | MM_NOMSG);
         if (!leader)
@@ -100,7 +100,7 @@ void test('a large-group species birth can surround the hero with a swarm', asyn
     let groups = 0;
     let largest = 0;
     for (let seed = 1n; seed <= 64n && groups < 4; seed++) {
-        const level = freshObjectRoom({ gameplaySeed: seed });
+        const level = await freshObjectRoom({ gameplaySeed: seed });
         genocideExcept(bee);
         const leader = await makemonAt(null, game.u.ux, game.u.uy, NO_MINVENT | MM_NOMSG);
         if (!leader)

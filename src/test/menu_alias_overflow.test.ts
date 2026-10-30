@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const statement of ['BIND=;:menu_search', 'OPTIONS=menu_search:;']) {
     void test(`overflowing menu aliases with ${statement} prints a notice without pausing`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const configuration = parseNethackrc([
             ...Array.from({ length: 32 }, () => 'BIND=;:menu_search'), statement,
         ].join('\n'));

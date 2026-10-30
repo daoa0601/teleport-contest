@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C zap.c:zap_over_floor() boils a pool into a pit and calls mintrap() on a
 // monster there, which finishes the fall: message, damage and trap sighting.
 void test('a swimmer under a pool boiled into a pit falls into the new pit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = POOL;
     const eel = await createMonsterAt('giant eel', 11, 10);
     eel.mundetected = 0;

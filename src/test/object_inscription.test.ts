@@ -32,7 +32,7 @@ async function readOutput(object: GameObject) {
 for (const [type, garment] of [[T_SHIRT, 'T-shirt'], [ALCHEMY_SMOCK, 'apron']] as const) {
     for (const eroded of [false, true]) {
         void test(`end-of-game ${eroded ? 'eroded' : 'intact'} ${garment} text agrees with reading without adding literacy`, async () => {
-            freshObjectRoom({ flags: { verbose: false } });
+            await freshObjectRoom({ flags: { verbose: false } });
             requirePlayingGame(game);
             game.ubirthday = 12345;
             const object = await knownObject(type, {
@@ -63,7 +63,7 @@ for (const [type, garment] of [[T_SHIRT, 'T-shirt'], [ALCHEMY_SMOCK, 'apron']] a
 }
 
 void test('dummy and minimal naming views omit end-of-game inscriptions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const shirt = await knownObject(T_SHIRT, { bknown: false });
     game.program_state.gameover = true;
@@ -75,7 +75,7 @@ void test('dummy and minimal naming views omit end-of-game inscriptions', async 
 });
 
 void test('candy stack disclosure pluralizes the bar before its wrapper and personal name', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const candy = await knownObject(CANDY_BAR, {
         bknown: false, spe: 2, quan: 3, oname: 'Snack',
@@ -99,7 +99,7 @@ void test('candy stack disclosure pluralizes the bar before its wrapper and pers
 });
 
 void test('a blank candy wrapper remains absent from disclosure and does not grant literacy', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const candy = await knownObject(CANDY_BAR, { bknown: false, spe: 0 });
     game.program_state.gameover = true;
@@ -117,7 +117,7 @@ void test('a blank candy wrapper remains absent from disclosure and does not gra
 });
 
 void test('Hawaiian disclosure uses a singular motif while reading describes the full design', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.ubirthday = 0;
     const shirt = await knownObject(HAWAIIAN_SHIRT, { bknown: false, o_id: 10 });
@@ -137,7 +137,7 @@ void test('Hawaiian disclosure uses a singular motif while reading describes the
 });
 
 void test('end-of-game naming adds no inscription to an ordinary weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const club = await knownObject(CLUB, { bknown: false });
     game.program_state.gameover = true;

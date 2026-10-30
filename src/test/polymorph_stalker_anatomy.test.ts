@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 void test('a stalker hits its head when cursed levitation throws it into the ceiling', async () => {
-    freshRoomWithPolymorphedHero('stalker');
+    await freshRoomWithPolymorphedHero('stalker');
     const potion = await addInventoryObject(POT_LEVITATION, { cursed: true });
     const input = resetInputState();
     const messages: string[] = [];

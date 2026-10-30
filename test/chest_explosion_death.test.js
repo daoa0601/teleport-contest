@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 for (const lifeSaving of [false, true]) {
     void test(`disarming an exploding chest ${lifeSaving ? 'uses life saving and resumes the command' : 'kills a hero who cannot survive the blast'}`, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
                 uluck: -13, uhp: 1, uhpmax: 80, fumbling: true,
             } });
         requirePlayingGame(game);
@@ -42,7 +42,7 @@ for (const lifeSaving of [false, true]) {
     });
 }
 void test('disarming a named chest preserves its name in the fatal explosion', async () => {
-    freshObjectRoom({ hero: { uluck: -13, uhp: 1, uhpmax: 80, fumbling: true } });
+    await freshObjectRoom({ hero: { uluck: -13, uhp: 1, uhpmax: 80, fumbling: true } });
     requirePlayingGame(game);
     await floorObject(CHEST, 10, 10, {
         otrapped: true, tknown: true, dknown: true, oname: 'Treasure',
@@ -57,7 +57,7 @@ void test('disarming a named chest preserves its name in the fatal explosion', a
 });
 for (const lifeSaving of [false, true]) {
     void test(`a shop chest explosion charges destroyed ${lifeSaving ? 'purchases before life saving' : 'stock before death and inheritance'}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             hero: { uluck: -13, uhp: 1, uhpmax: 80, fumbling: true },
             flags: { disclose: '-i -a -v -c -o', tombstone: false, bones: false },
         });

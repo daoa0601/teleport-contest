@@ -9,7 +9,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const condition of ['responsive', 'asleep', 'paralyzed'] as const) {
     void test(`deaf chat ${condition === 'responsive' ? 'rouses' : 'does not rouse'} a ${condition} waiting shopkeeper`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.mstrategy = STRAT_CLOSE | STRAT_WAITFORU;

@@ -54,7 +54,7 @@ export async function finishReturningThrow({
 }: ReturningThrowOptions): Promise<boolean> {
     requirePlayingGame(state);
     if (rn2(100) === 0) {
-        tetherDisplay?.clear();
+        await tetherDisplay?.clear();
         await plineWithContinuation(`${definiteObjectAction(object, 'fail', state)} to return!`);
         return false;
     }
@@ -68,7 +68,7 @@ export async function finishReturningThrow({
         if ((returned.owornmask ?? 0) & W_QUIVER) await setQuiverObject(null, state);
         await setPrimaryWeapon(returned, state);
         setTwoWeaponCombat(twoWeapons, state);
-        if (cansee(impact.x, impact.y)) newsym(impact.x, impact.y);
+        if (cansee(impact.x, impact.y)) await newsym(impact.x, impact.y);
         return true;
     }
 

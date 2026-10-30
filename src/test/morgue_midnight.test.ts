@@ -10,7 +10,7 @@ import type { Room } from '../js/map_types.js';
 // which is the localtime()-normalized hour of getnow(), not the fixed
 // datetime's literal hour string.
 async function enterMorgue(datetime: string) {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.datetime = datetime;
     const room: Room = {
         lx: 8, hx: 18, ly: 8, hy: 12, rtype: MORGUE,

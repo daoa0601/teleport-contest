@@ -29,7 +29,7 @@ for (const [species, peaceful, message] of [
     ['Pestilence', false, '"Who do you think you are, War?"'],
 ] as const) {
     void test(`chat gets the native response from a ${peaceful ? 'peaceful' : 'hostile'} ${species}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt(species, 11, 10);
         monster.mpeaceful = peaceful;
         monster.msleeping = 0;
@@ -42,7 +42,7 @@ for (const [species, peaceful, message] of [
 }
 
 void test('a trapped humanoid tells the hero where its trap is', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const dwarf = await createMonsterAt('dwarf', 11, 10);
     dwarf.mpeaceful = 1;
     dwarf.mtrapped = 1;
@@ -56,7 +56,7 @@ void test('a trapped humanoid tells the hero where its trap is', async () => {
 });
 
 void test('a hungry tame humanoid asks for food before discussing its interests', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dwarf = await createMonsterAt('dwarf', 11, 10);
     initializePet(dwarf, { state: game });
     assert.ok(dwarf.edog);
@@ -68,7 +68,7 @@ void test('a hungry tame humanoid asks for food before discussing its interests'
 });
 
 void test('a shrieker wakes sleeping monsters elsewhere on the level', async () => {
-    freshObjectRoom({ right: 28 });
+    await freshObjectRoom({ right: 28 });
     await createMonsterAt('shrieker', 11, 10);
     const sleeper = await createMonsterAt('goblin', 26, 10);
     sleeper.msleeping = 1;
@@ -81,7 +81,7 @@ void test('a shrieker wakes sleeping monsters elsewhere on the level', async () 
 });
 
 void test('a skeleton frightens the hero into two turns of immobility', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createMonsterAt('skeleton', 11, 10);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -95,7 +95,7 @@ void test('a skeleton frightens the hero into two turns of immobility', async ()
 });
 
 void test('a zombie can stay quiet while chat still spends a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createMonsterAt('human zombie', 11, 10);
     initRng(2);
 
@@ -105,7 +105,7 @@ void test('a zombie can stay quiet while chat still spends a turn', async () => 
 });
 
 void test('a peaceful vampire responds with its potion claim', async () => {
-    freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
     const vampire = await createMonsterAt('vampire', 11, 10);
     vampire.mpeaceful = 1;
 
@@ -116,7 +116,7 @@ void test('a peaceful vampire responds with its potion claim', async () => {
 });
 
 void test('skeleton chat holds input while two world turns pass, then restores movement', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.flags.rndmongen = false;
     const skeleton = await createMonsterAt('skeleton', 11, 10);
     skeleton.mpeaceful = 1;
@@ -138,7 +138,7 @@ void test('skeleton chat holds input while two world turns pass, then restores m
 });
 
 void test('chat with a cancelled incubus complains about a severe headache', async () => {
-    freshObjectRoom({ flags: { female: true } });
+    await freshObjectRoom({ flags: { female: true } });
     const incubus = await createMonsterAt('amorous demon', 11, 10);
     incubus.female = false;
     incubus.mcan = 1;
@@ -165,7 +165,7 @@ async function chatSetup(species: number | string, {
     hero?: object; seed?: number; monster?: ChatOverrides;
     clock?: () => void;
 } = {}) {
-    freshObjectRoom(hero ? { hero } : undefined);
+    await freshObjectRoom(hero ? { hero } : undefined);
     if (clock) clock();
     if (seed !== undefined) initRng(seed);
     const monster = await createMonsterAt(species, 11, 10);
@@ -427,7 +427,7 @@ void test('a sober gnome grunts its orcish reply', async () => {
 });
 
 void test('Death quotes Snuff without claiming a misquote', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const novel = await knownObject(SPE_NOVEL, {});
     novel.novelidx = 38; // Snuff: no Death, so no misquote suffix
     game.inventory.push(novel);
@@ -441,7 +441,7 @@ void test('Death quotes Snuff without claiming a misquote', async () => {
 });
 
 void test('Death quotes The Wee Free Men without a misquote', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const novel = await knownObject(SPE_NOVEL, {});
     novel.novelidx = 29; // The Wee Free Men
     game.inventory.push(novel);
@@ -454,7 +454,7 @@ void test('Death quotes The Wee Free Men without a misquote', async () => {
 });
 
 void test('a helmeted hero is asked to undress by a nurse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.uarmh = game.u.uarmh = await knownObject(HELMET, {});
     const nurse = await createMonsterAt('nurse', 11, 10);
     nurse.mpeaceful = 1;
@@ -466,7 +466,7 @@ void test('a helmeted hero is asked to undress by a nurse', async () => {
 });
 
 async function chatWithPlayerMonster(species: string, seed: number) {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wizardRole = roles.find(role => role.key === 'wizard');
     assert.ok(wizardRole, 'the wizard role record is required');
     game.urole = wizardRole;
@@ -494,7 +494,7 @@ void test('an endgame player monster of another class talks trash', async () => 
 });
 
 void test('a were-howl wakes sleepers within eleven squares', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     game.flags.moonphase = 4;
@@ -516,7 +516,7 @@ void test('a were-howl wakes sleepers within eleven squares', async () => {
 });
 
 void test('a giant guffaw wakes only sleepers within seven squares', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     initRng(0);

@@ -12,7 +12,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a pet driven by Conflict breaks its leash and attacks the hero\'s current body', async () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
     requirePlayingGame(game);
     installPolymorphedHero('floating eye');
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');

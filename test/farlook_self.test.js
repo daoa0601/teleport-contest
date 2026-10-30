@@ -10,9 +10,9 @@ import { races } from '../js/roles.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const role of ['wizard', 'knight']) {
     void test(`farlook identifies the ${role} on the hero's square`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         game.plname = 'Aster';
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         assert.equal(await farlookLocationDescription(game.u.ux, game.u.uy), `human ${role} called Aster`);
     });
 }
@@ -61,30 +61,30 @@ const selfSightCases = [
 ];
 for (const { name, hero, description } of selfSightCases) {
     void test(`self-farlook describes the ${name}`, async () => {
-        freshObjectRoom({ role: 'wizard', hero });
+        await freshObjectRoom({ role: 'wizard', hero });
         game.plname = 'Aster';
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         assert.equal(await farlookLocationDescription(game.u.ux, game.u.uy), description);
     });
 }
 void test('self-farlook explains monster detection when the hero is hidden', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { uundetected: true, detectMonsters: true } });
+    await freshObjectRoom({ role: 'wizard', hero: { uundetected: true, detectMonsters: true } });
     const description = await farlookLocationDescription(game.u.ux, game.u.uy);
     assert.ok(description.endsWith(' [seen: monster detection]'), description);
 });
 void test('farlook respects terrain-only mode on the hero square', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     game.iflags.terrainmode = TER_MAP;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     assert.equal(await farlookLocationDescription(game.u.ux, game.u.uy), 'floor of a room');
 });
 for (const showrace of [true, false]) {
     void test(`self-farlook describes the displayed gnome glyph with showrace=${showrace}`, async () => {
         const race = races.find(candidate => candidate.name === 'gnome');
         assert.ok(race);
-        freshObjectRoom({ role: 'wizard', race, flags: { tips: false, showrace } });
+        await freshObjectRoom({ role: 'wizard', race, flags: { tips: false, showrace } });
         game.plname = 'Aster';
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         const input = resetInputState();
         input.feed(';.');
         await rhack(0);
@@ -98,10 +98,10 @@ for (const showrace of [true, false]) {
     void test(`self-farlook describes a polymorphed gnome with showrace=${showrace}`, async () => {
         const race = races.find(candidate => candidate.name === 'gnome');
         assert.ok(race);
-        freshObjectRoom({ role: 'wizard', race, flags: { tips: false, showrace },
+        await freshObjectRoom({ role: 'wizard', race, flags: { tips: false, showrace },
             hero: { umonnum: nameToMonster('newt'), mh: 8, mhmax: 8 } });
         game.plname = 'Aster';
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         const input = resetInputState();
         input.feed(';.');
         await rhack(0);
@@ -113,10 +113,10 @@ for (const showrace of [true, false]) {
 }
 for (const form of ['ghost', 'shade']) {
     void test(`self-farlook includes the blank symbol's ambiguity while polymorphed into a ${form}`, async () => {
-        freshObjectRoom({ role: 'wizard', flags: { tips: false },
+        await freshObjectRoom({ role: 'wizard', flags: { tips: false },
             hero: { umonnum: nameToMonster(form), mh: 8, mhmax: 8 } });
         game.plname = 'Aster';
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
         const input = resetInputState();
         input.feed(';.');
         await rhack(0);

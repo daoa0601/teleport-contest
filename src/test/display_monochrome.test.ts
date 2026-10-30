@@ -8,10 +8,10 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const typ of [SINK, LAVAPOOL]) {
     void test(`monochrome terrain ${typ} remains distinct from its matching fountain or water symbol`, async () => {
-        const level = freshObjectRoom({ flags: { color: false, use_inverse: true } });
+        const level = await freshObjectRoom({ flags: { color: false, use_inverse: true } });
         level.requireAt(11, 10).typ = typ;
 
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         assert.equal(requireScreenCell(10, 11).attr & ATR_INVERSE, ATR_INVERSE);

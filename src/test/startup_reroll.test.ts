@@ -35,7 +35,7 @@ for (const [type, identifiedName] of [
     [JADE, 'an uncursed jade stone'],
 ] as const) {
     void test(`reroll previews ${identifiedName} without discovering its type`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await addInventoryObject(type, {
             typeKnown: false, known: false, bknown: false,
             dknown: false, observed: false, spe: 1,

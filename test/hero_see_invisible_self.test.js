@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 const heroCell = () => game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch;
 void test('an invisible hero who gains see invisible is drawn again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     pushKeys(' '.repeat(10));
     await applyPotionLikeInvisibility({ random: () => 1, rollDice: () => 20 });
     await flush_screen(1);

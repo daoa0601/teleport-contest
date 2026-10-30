@@ -28,9 +28,9 @@ async function restoreUntilHidden(monster) {
         await hideMonsterOnRestore(monster);
 }
 void test('restored mimics disguise themselves with floor objects and preserve the square vision', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('small mimic', 12, 10);
-    revealMonsterAppearance(mimic);
+    await revealMonsterAppearance(mimic);
     await floorObject(APPLE, 12, 10);
     assert.equal(cansee(12, 10), true);
     assert.equal(couldsee(12, 10), true);
@@ -44,9 +44,9 @@ void test('restored mimics disguise themselves with floor objects and preserve t
 });
 void test('restoration does not disguise a cancelled, sleeping, or frozen mimic', async () => {
     for (const condition of ['cancelled', 'sleeping', 'frozen']) {
-        freshObjectRoom();
+        await freshObjectRoom();
         const mimic = await createMonsterAt('small mimic', 12, 10);
-        revealMonsterAppearance(mimic);
+        await revealMonsterAppearance(mimic);
         if (condition === 'cancelled')
             mimic.mcan = true;
         if (condition === 'sleeping')
@@ -60,7 +60,7 @@ void test('restoration does not disguise a cancelled, sleeping, or frozen mimic'
     }
 });
 void test('restored trappers hide on room floors, while ceiling hiders need a ceiling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const trapper = await createMonsterAt('trapper', 12, 10);
     trapper.mundetected = 0;
     await restoreUntilHidden(trapper);
@@ -78,7 +78,7 @@ void test('restored trappers hide on room floors, while ceiling hiders need a ce
     assert.equal(!!piercer.mundetected, true);
 });
 void test('restored floor hiders reject corridors, holds, and non-pit traps', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const trapper = await createMonsterAt('trapper', 12, 10);
     trapper.mundetected = 0;
     requireGameLevel().requireAt(12, 10).typ = CORR;
@@ -96,7 +96,7 @@ void test('restored floor hiders reject corridors, holds, and non-pit traps', as
     assert.equal(!!piercer.mundetected, false);
 });
 void test('a sensed adjacent hider remains exposed during restoration', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     const piercer = await createMonsterAt('rock piercer', 11, 10);
     piercer.mundetected = 0;
     await restoreUntilHidden(piercer);
@@ -104,20 +104,20 @@ void test('a sensed adjacent hider remains exposed during restoration', async ()
     assert.equal(cansee(11, 10), true);
 });
 void test('concealers need ten coins or a non-coin object to hide underneath', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const spider = await unseenMonster('cave spider');
     const coins = await floorObject(GOLD_PIECE, 12, 10, { quan: 9 });
     assert.equal(await hideMonsterUnder(spider), false);
     coins.quan = coins.quantity = 10;
     assert.equal(await hideMonsterUnder(spider), true);
     coins.quan = coins.quantity = 9;
-    maybeUnhideAt(12, 10);
+    await maybeUnhideAt(12, 10);
     assert.equal(!!spider.mundetected, false);
     await floorObject(ROCK, 12, 10);
     assert.equal(await hideMonsterUnder(spider), true);
 });
 void test('tame concealers refuse every pile containing a cursed item', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const spider = await unseenMonster('cave spider');
     initializePet(spider);
     await floorObject(ROCK, 12, 10);
@@ -131,7 +131,7 @@ void test('tame concealers refuse every pile containing a cursed item', async ()
     assert.equal(await hideMonsterUnder(spider), true);
 });
 void test('petrifying corpses alone cannot cover an unresistant concealer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const spider = await unseenMonster('cave spider');
     await floorObject(CORPSE, 12, 10, { corpsenm: nameToMonster('cockatrice') });
     assert.equal(await hideMonsterUnder(spider), false);
@@ -142,7 +142,7 @@ void test('petrifying corpses alone cannot cover an unresistant concealer', asyn
     assert.equal(await hideMonsterUnder(spider), true);
 });
 void test('non-pit traps and liquids prevent concealment beneath objects', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const spider = await unseenMonster('cave spider');
     await floorObject(ROCK, 12, 10);
     const trap = await maketrap(12, 10, WEB);
@@ -159,7 +159,7 @@ void test('non-pit traps and liquids prevent concealment beneath objects', async
     assert.equal(await hideMonsterUnder(spider), false);
 });
 void test('eels cannot hide from an underwater hero with line of sight or on the Water Plane', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const level = requireGameLevel();
     level.requireAt(12, 10).typ = POOL;
     const eel = await unseenMonster('giant eel');
@@ -170,7 +170,7 @@ void test('eels cannot hide from an underwater hero with line of sight or on the
         level.requireAt(11, y).typ = STONE;
         vision_note_blocker_change(11, y);
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(couldsee(12, 10), false);
     assert.equal(await hideMonsterUnder(eel), true);
     const currentLevel = game.u.uz;
@@ -180,7 +180,7 @@ void test('eels cannot hide from an underwater hero with line of sight or on the
     assert.equal(await hideMonsterUnder(eel), false);
 });
 void test('visible hiding names the pet before concealment and repaints after the pending message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     const snake = await createMonsterAt('garter snake', 12, 10);
@@ -188,7 +188,7 @@ void test('visible hiding names the pet before concealment and repaints after th
     setMonsterGivenName(snake, 'Ribbon');
     snake.mundetected = 0;
     await floorObject(APPLE, 12, 10);
-    newsym(12, 10);
+    await newsym(12, 10);
     await flush_screen();
     assert.equal(canSeeMonster(snake), true);
     const snakeDisplayRow = snake.my + 1;

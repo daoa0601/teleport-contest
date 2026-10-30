@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { freshTurnRoom } from './support/playable-room.js';
-function ambientBirthRoom({ unseenRoom = true } = {}) {
+async function ambientBirthRoom({ unseenRoom = true } = {}) {
     freshTurnRoom({ right: 14 });
     requirePlayingGame(game);
     if (unseenRoom) {
@@ -20,7 +20,7 @@ function ambientBirthRoom({ unseenRoom = true } = {}) {
             }
         }
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     // Select the ordinary once-per-turn birth opportunity.
     initRng(167n);
     pushKeys('.\x1b' + ' '.repeat(40));
@@ -30,7 +30,7 @@ async function spendBirthTurn() {
     await moveloop_core();
 }
 void test('an ambient newborn has sight and can locate a visible hero', async () => {
-    ambientBirthRoom();
+    await ambientBirthRoom();
     requirePlayingGame(game);
     await spendBirthTurn();
     assert.ok(requireGameLevel().monsters.length > 0);
@@ -43,14 +43,14 @@ void test('an ambient newborn has sight and can locate a visible hero', async ()
     assert.equal(monster.muy, game.u.uy);
 });
 void test('ambient generation respects a level that forbids random monsters', async () => {
-    ambientBirthRoom();
+    await ambientBirthRoom();
     requirePlayingGame(game);
     requireGameLevel().flags.rndmongen = false;
     await spendBirthTurn();
     assert.equal(requireGameLevel().monsters.length, 0);
 });
 void test('ambient generation can fall back to visible floor when no unseen square exists', async () => {
-    ambientBirthRoom({ unseenRoom: false });
+    await ambientBirthRoom({ unseenRoom: false });
     requirePlayingGame(game);
     await spendBirthTurn();
     assert.ok(requireGameLevel().monsters.length > 0);

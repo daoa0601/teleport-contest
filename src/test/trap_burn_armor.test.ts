@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const wornResistance of [false, true]) {
     void test(`a fire trap ${wornResistance ? 'protects armor through a worn fire-resistance ring' : 'burns armor despite innate fire resistance'}`, async () => {
-        const level = freshObjectRoom({ hero: { fireResistance: true } });
+        const level = await freshObjectRoom({ hero: { fireResistance: true } });
         requirePlayingGame(game);
         const armor = await addInventoryObject(LEATHER_ARMOR, { oeroded: 0 });
         wearHeroArmor(armor);

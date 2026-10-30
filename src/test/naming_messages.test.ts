@@ -81,7 +81,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('fire damage describes an unidentified potion by its appearance and personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await floorObject(POT_HEALING, 11, 10, {
         typeKnown: false, oextra: { oname: 'Emergency' },
     });
@@ -96,7 +96,7 @@ void test('fire damage describes an unidentified potion by its appearance and pe
 });
 
 void test('cracking crystal armor uses its simple armor name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await floorObject(OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10, { oextra: { oname: 'Prism' } });
     const messages: string[] = [];
 
@@ -106,7 +106,7 @@ void test('cracking crystal armor uses its simple armor name', async () => {
 });
 
 void test('grease does not protect crystal armor from impact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await addInventoryObject(OBJECT_NAMES.indexOf('crystal plate mail'), { greased: true });
     const messages: string[] = [];
 
@@ -119,7 +119,7 @@ void test('grease does not protect crystal armor from impact', async () => {
 });
 
 void test('crystal armor cracks visibly at its impact square rather than its old position', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await knownObject(OBJECT_NAMES.indexOf('crystal plate mail'), { ox: 50, oy: 18 });
     const messages: string[] = [];
 
@@ -131,7 +131,7 @@ void test('crystal armor cracks visibly at its impact square rather than its old
 });
 
 void test('blessed crystal armor reports protection from impact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await floorObject(OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10, { blessed: true });
     const messages: string[] = [];
 
@@ -143,7 +143,7 @@ void test('blessed crystal armor reports protection from impact', async () => {
 });
 
 void test('a potion stack heats up with one plural noun and no stack count', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.flags.temperature = 1;
     const potions = await knownObject(POT_HEALING, { quan: 2, typeKnown: true });
     const messages: string[] = [];
@@ -156,7 +156,7 @@ void test('a potion stack heats up with one plural noun and no stack count', asy
 
 for (const condition of ['frozen', 'sleeping', 'unseen', 'level creation'] as const) {
     void test(`silent slowing of a ${condition} golem preserves the next hallucinated message`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const fleshGolem = await createMonsterAt('flesh golem', 11, 10);
         const ironGolem = await createMonsterAt('iron golem', 10, 11);
@@ -183,7 +183,7 @@ for (const condition of ['frozen', 'sleeping', 'unseen', 'level creation'] as co
 }
 
 void test('a swallowed corpse stack is described without its species when digested', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     game.u.uswallow = true;
@@ -199,7 +199,7 @@ void test('a swallowed corpse stack is described without its species when digest
 });
 
 void test('a strangling amulet uses its simple type name without a personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION, {
         typeKnown: true, oextra: { oname: 'Choker' },
@@ -213,7 +213,7 @@ void test('a strangling amulet uses its simple type name without a personal name
 });
 
 void test('a chest gas trap retains the chest personal name', async () => {
-    freshObjectRoom({ hero: { uluck: -13, poisonResistance: true } });
+    await freshObjectRoom({ hero: { uluck: -13, poisonResistance: true } });
     const chest = await floorObject(CHEST, 10, 10, { otrapped: true, oextra: { oname: 'Cache' } });
     const messages: string[] = [];
 
@@ -226,7 +226,7 @@ void test('a chest gas trap retains the chest personal name', async () => {
 });
 
 void test('checking a chest for traps retains its personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, { otrapped: false, oextra: { oname: 'Cache' } });
     const messages: string[] = [];
 
@@ -290,7 +290,7 @@ void test('an invisible but seen sleeper keeps its invisibility adjective', asyn
     requirePlayingGame(game);
     game.u.seeInvisible = true;
     monster.minvis = true;
-    const event = beginMonsterSleepGasTrap(monster, trap, game, { rollOne: () => 5 });
+    const event = await beginMonsterSleepGasTrap(monster, trap, game, { rollOne: () => 5 });
     const messages: string[] = [];
 
     await finishMonsterSleepGasTrap(monster, event, { publish: text => { messages.push(text); } });
@@ -299,7 +299,7 @@ void test('an invisible but seen sleeper keeps its invisibility adjective', asyn
 });
 
 void test('putting on luminous armor retains the suit personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { oextra: { oname: 'Dawn' } });
     wearHeroArmor(armor);
 
@@ -309,7 +309,7 @@ void test('putting on luminous armor retains the suit personal name', async () =
 });
 
 void test('a luminous artifact whose identity is not fully known keeps its base item name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await artifactObject('Sunsword');
     const messages: string[] = [];
 
@@ -319,7 +319,7 @@ void test('a luminous artifact whose identity is not fully known keeps its base 
 });
 
 void test('lighting an engulfing monster uses its personal name and possessive', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     setMonsterGivenName(worm, 'James');
@@ -332,7 +332,7 @@ void test('lighting an engulfing monster uses its personal name and possessive',
 });
 
 void test('a ghostly bow keeps its personal name when adjusted for the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bow = await knownObject(BOW, { ghostly: true, oextra: { oname: 'Heirloom' } });
 
     const message = finishGhostlyPickup(bow, game);
@@ -341,7 +341,7 @@ void test('a ghostly bow keeps its personal name when adjusted for the hero', as
 });
 
 void test('a locked container keeps its personal name when opened', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, { olocked: true, oextra: { oname: 'Cache' } });
 
     await useContainer(chest);
@@ -350,7 +350,7 @@ void test('a locked container keeps its personal name when opened', async () => 
 });
 
 void test('Sokoban pickup refusal retains a boulder personal name', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.flags.sokoban_rules = true;
     const boulder = await floorObject(BOULDER, 10, 10, { oextra: { oname: 'Atlas' } });
 
@@ -360,7 +360,7 @@ void test('Sokoban pickup refusal retains a boulder personal name', async () => 
 });
 
 void test('a potion called by the hero evaporates without its appearance adjective', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const target = await createMonsterAt('kitten', 11, 10);
     const potion = await knownObject(POT_HEALING, { typeKnown: false });
     (game._objectCallNames ??= {})[POT_HEALING] = 'Rescue';
@@ -373,7 +373,7 @@ void test('a potion called by the hero evaporates without its appearance adjecti
 });
 
 void test('blinding venom describes a named ghost with its possessive species name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ghost = await createMonsterAt('ghost', 11, 10);
     setMonsterGivenName(ghost, 'James');
     const venom = await knownObject(BLINDING_VENOM);
@@ -384,7 +384,7 @@ void test('blinding venom describes a named ghost with its possessive species na
 });
 
 void test('a hurled named ghost keeps its possessive name when bumping into the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ghost = await createMonsterAt('ghost', 11, 10);
     setMonsterGivenName(ghost, 'James');
     const messages: string[] = [];
@@ -395,7 +395,7 @@ void test('a hurled named ghost keeps its possessive name when bumping into the 
 });
 
 void test('a slipping stack of named daggers is described and conjugated as a stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.dx = 1;
     const daggers = await knownObject(DAGGER, { greased: true, quan: 2, oextra: { oname: 'Fliers' } });
@@ -408,7 +408,7 @@ void test('a slipping stack of named daggers is described and conjugated as a st
 });
 
 void test('a web snags a named thrown dagger', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, WEB, 11, 10);
     const dagger = await knownObject(DAGGER, { oextra: { oname: 'Webcatcher' } });
     const messages: string[] = [];
@@ -420,7 +420,7 @@ void test('a web snags a named thrown dagger', async () => {
 });
 
 void test('a drawbridge passes through a named ghost without losing its species name', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bridge = level.requireAt(12, 10);
     bridge.typ = DRAWBRIDGE_UP;
     bridge.drawbridgemask = DB_NORTH | DB_MOAT;
@@ -435,7 +435,7 @@ void test('a drawbridge passes through a named ghost without losing its species 
 });
 
 void test('glob merging retains a user-assigned type name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await floorObject(GLOB_OF_GRAY_OOZE, 11, 10);
     const second = await floorObject(GLOB_OF_GRAY_OOZE, 12, 10);
     (game._objectCallNames ??= {})[GLOB_OF_GRAY_OOZE] = 'Goo';
@@ -447,7 +447,7 @@ void test('glob merging retains a user-assigned type name', async () => {
 });
 
 void test('alteration billing describes an unidentified potion by its simple name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper, roomno } = await createStaffedShop();
     game.u.ushops = [roomno];
@@ -462,7 +462,7 @@ void test('alteration billing describes an unidentified potion by its simple nam
 });
 
 void test('an unseen chest appearance is learned after choosing the trap-discovery wording', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, { otrapped: true, tknown: true, dknown: false });
     const messages: string[] = [];
 
@@ -476,7 +476,7 @@ void test('anti-magic feedback retains the invisibility of a seen dragon', async
     const { monster, trap } = await freshMonsterTrapRoom(ANTI_MAGIC, {
         room: { hero: { seeInvisible: true } }, monster: { species: 'red dragon', minvis: true },
     });
-    const event = applyMonsterAntiMagicTrap(monster, { trap, rollDice: () => 2 });
+    const event = await applyMonsterAntiMagicTrap(monster, { trap, rollDice: () => 2 });
     const messages: string[] = [];
 
     await finishMonsterAntiMagicTrap(monster, event, game, { publish: text => { messages.push(text); } });
@@ -508,7 +508,7 @@ void test('vibrations beneath a named ghost retain the ghost species name', asyn
 });
 
 void test('a named ghost carrying a reviving corpse retains its species name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ghost = await createMonsterAt('ghost', 11, 10);
     setMonsterGivenName(ghost, 'James');
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('troll') });
@@ -520,7 +520,7 @@ void test('a named ghost carrying a reviving corpse retains its species name', a
 });
 
 void test('a named ghost reeling from a kick retains its species name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ghost = await createMonsterAt('ghost', 11, 10);
     setMonsterGivenName(ghost, 'James');
     const messages: string[] = [];
@@ -532,7 +532,7 @@ void test('a named ghost reeling from a kick retains its species name', async ()
 });
 
 void test('probing a stack of statues names and conjugates the whole stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const statues = await floorObject(STATUE, 11, 10, {
         quan: 2, corpsenm: MONSTER_NAME.indexOf('newt'),
     });
@@ -543,7 +543,7 @@ void test('probing a stack of statues names and conjugates the whole stack', asy
 });
 
 void test('a stack of spellbooks slams shut with its plural name when cursed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const books = await addInventoryObject(SPE_FORCE_BOLT, { blessed: true, quan: 2 });
     await studyBook(books);
     books.blessed = false;
@@ -556,7 +556,7 @@ void test('a stack of spellbooks slams shut with its plural name when cursed', a
 });
 
 void test('undead turning resurrects Medusa without an article before her personal species name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const corpse = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
     pushKeys(' '.repeat(10));
 

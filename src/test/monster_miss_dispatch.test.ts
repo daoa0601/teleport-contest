@@ -29,7 +29,7 @@ for (const scenario of [
         invisible: true, blind: true, margin: 1, hit: false },
 ]) {
     void test(scenario.name, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 0 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 0 } });
         requirePlayingGame(game);
         if (scenario.invisible) grantIntrinsicProperty('invisible', 'outside');
         const monster = await createMonsterAt(scenario.species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -49,7 +49,7 @@ for (const scenario of [
 }
 
 void test('mummy wrapping prevents hidden invisibility from reducing monster accuracy', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('invisible', 'outside');
     wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
@@ -68,7 +68,7 @@ void test('mummy wrapping prevents hidden invisibility from reducing monster acc
 
 for (const species of ['goblin', 'ettin']) {
     void test(`a ${species} readies its dagger before trying the wrong hero location`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         grantIntrinsicProperty('invisible', 'outside');
         const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

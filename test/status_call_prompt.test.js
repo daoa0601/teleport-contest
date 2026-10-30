@@ -9,7 +9,7 @@ import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('calling a potion displays pending condition changes before the unread message pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await uninitializedObject(POT_CONFUSION, { dknown: true, typeKnown: false });
     await bot();
     await plineWithContinuation('You feel somewhat dizzy.');

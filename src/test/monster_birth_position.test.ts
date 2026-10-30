@@ -15,7 +15,7 @@ const RAT = MONSTER_NAME.indexOf('sewer rat');
 const BIRTH_FLAGS = MM_NOGRP | MM_NOMSG | NO_MINVENT;
 
 void test('requesting a monster on the hero places it nearby and remembers the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const rat = await makemonAt(RAT, game.u.ux, game.u.uy, BIRTH_FLAGS);
@@ -28,7 +28,7 @@ void test('requesting a monster on the hero places it nearby and remembers the h
 });
 
 void test('near-hero birth searches beyond the adjacent ring when it is blocked', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     for (let dx = -1; dx <= 1; dx++) {
@@ -45,7 +45,7 @@ void test('near-hero birth searches beyond the adjacent ring when it is blocked'
 });
 
 void test('MM_ADJACENTOK permits birth beside an occupied requested square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const occupant = await createMonsterAt('goblin', 12, 10, BIRTH_FLAGS);
 
     const rat = await makemonAt(RAT, 12, 10, BIRTH_FLAGS | MM_ADJACENTOK);
@@ -56,7 +56,7 @@ void test('MM_ADJACENTOK permits birth beside an occupied requested square', asy
 });
 
 void test('birth fails at an occupied explicit square without MM_ADJACENTOK', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     await createMonsterAt('goblin', 12, 10, BIRTH_FLAGS);
     const count = level.monsters.length;
 
@@ -68,7 +68,7 @@ void test('random birth on a scare scroll selects a species that does not fear i
     const goblin = MONSTER_NAME.indexOf('goblin');
     const soldier = MONSTER_NAME.indexOf('soldier');
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.mvitals = Array.from({ length: SPECIAL_PM }, (_, species) => ({
             mvflags: species === goblin || species === soldier ? 0 : G_GENOD,
@@ -87,7 +87,7 @@ void test('random birth on a scare scroll selects a species that does not fear i
 });
 
 void test('random birth prefers a stairway when every usable square is visible', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.viz_array = Array.from({ length: 21 }, () => new Uint8Array(80).fill(2));
     game.stairs = { sx: 16, sy: 14, up: true, isladder: false, u_traversed: false,
@@ -102,7 +102,7 @@ void test('random birth prefers a stairway when every usable square is visible',
 });
 
 void test('MM_IGNOREWATER permits a random land-monster birth in a flooded level', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const level = await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = POOL;
@@ -116,7 +116,7 @@ void test('MM_IGNOREWATER permits a random land-monster birth in a flooded level
 });
 
 void test('explicit birth outside the map does not create an actor or count a birth', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const born = game.mvitals?.[RAT]?.born;
     pushKeys(' '.repeat(10));
 

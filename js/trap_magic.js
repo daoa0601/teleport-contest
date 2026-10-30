@@ -62,7 +62,7 @@ export async function openHoldingTrap(target, { state = game } = {}) {
         state.vision_full_recalc = 1;
         await resetHeroTrap(true, state);
         if (state.vision_full_recalc)
-            vision_recalc(0);
+            await vision_recalc(0);
         return result(true, true, state);
     }
     if (!('mnum' in target) || !trap)

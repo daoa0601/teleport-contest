@@ -35,7 +35,7 @@ for (const saveWhileAway of [false, true]) {
         if (saveWhileAway) {
             const storage = memoryStorage();
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
         }
         await gotoLevel({ dlevel: 1 }, { arrival: 'stairs' });
         const keeper = requireGameLevel().monsters.find(monster => monster.m_id === first.shopkeeper.m_id);

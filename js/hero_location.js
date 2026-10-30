@@ -24,11 +24,11 @@ export async function placeHeroOnLevel(x, y, state = game) {
     if (hero.uz?.dnum !== hero.uz0?.dnum || hero.uz?.dlevel !== hero.uz0?.dlevel) {
         hero.ux0 = x;
         hero.uy0 = y;
-        map_location(x, y, false);
+        await map_location(x, y, false);
         state.iflags.terrain_typ = MAX_TYPE;
     }
     else if (!heroIsBlind(state) && !heroIsHallucinating(state) && !hero.uswallow)
-        see_nearby_objects();
+        await see_nearby_objects();
     await senseBuriedObjects(state);
 }
 //# sourceMappingURL=hero_location.js.map

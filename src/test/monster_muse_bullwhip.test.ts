@@ -17,7 +17,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 void test('a monster bullwhip cannot wrap around the hero\'s heavy iron ball', async () => {
     let failuresToWrap = 0;
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ heroX: 10, heroY: 10 });
+        await freshObjectRoom({ heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
@@ -41,7 +41,7 @@ void test('a monster bullwhip cannot wrap around the hero\'s heavy iron ball', a
 });
 
 void test('a bullwhip can snatch a cursed secondary weapon because it is not welded', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 10 });
+    await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
@@ -69,7 +69,7 @@ void test('monster bullwhip messages omit the wielded corpse species', async () 
         { destination: 3, announcement: 'The soldier snatches the corpse!' },
     ];
     for (const { destination, announcement } of outcomes) {
-        freshObjectRoom({ heroX: 10, heroY: 10 });
+        await freshObjectRoom({ heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
@@ -94,7 +94,7 @@ void test('a named weapon remains free while the disarm announcement waits for i
     let sawFreeWeapon = false;
     let disarms = 0;
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ heroX: 10, heroY: 10 });
+        await freshObjectRoom({ heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);

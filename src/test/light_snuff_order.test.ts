@@ -25,8 +25,8 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { gotoLevel } from '../js/level_change.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function freshDarkRoom() {
-    const level = freshObjectRoom({ left: 2, right: 30 });
+async function freshDarkRoom() {
+    const level = await freshObjectRoom({ left: 2, right: 30 });
     requirePlayingGame(game);
     for (let x = 2; x <= 30; x++)
         for (let y = 6; y <= 14; y++) {
@@ -34,7 +34,7 @@ function freshDarkRoom() {
             level.requireAt(x, y).waslit = false;
         }
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     installPagerInput(input, {
         expected: /darkness|candle|Candle|lamp|Lamp|flame|Flame/,
@@ -45,7 +45,7 @@ function freshDarkRoom() {
 
 for (const newest of ['lamp', 'candles'] as const) {
     void test(`a darkness effect snuffs only the ${newest} of two burning stacks sharing a square`, async () => {
-        freshDarkRoom();
+        await freshDarkRoom();
         const candles = await floorObject(WAX_CANDLE, 15, 10, { quantity: 9, age: 400 });
         const lamp = await floorObject(OIL_LAMP, 15, 10, { age: 400 });
         assert.ok(candles && lamp);
@@ -58,7 +58,7 @@ for (const newest of ['lamp', 'candles'] as const) {
             assert.equal(beginObjectBurn(lamp), true);
             assert.equal(beginObjectBurn(candles), true);
         }
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(18, 10), true);
 
         await lightRoom(false);
@@ -68,7 +68,7 @@ for (const newest of ['lamp', 'candles'] as const) {
         assert.equal(!!survivor.lamplit, true,
             'the older light source keeps burning where only one is snuffed');
         assert.equal(!!snuffed.lamplit, false);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(15, 10), true,
             'the surviving source still lights its own square');
         await flush_screen(1);
@@ -76,7 +76,7 @@ for (const newest of ['lamp', 'candles'] as const) {
 }
 
 void test('a restore reverses the saved light order, so the older light takes the next snuff', async () => {
-    freshDarkRoom();
+    await freshDarkRoom();
     const candles = await floorObject(WAX_CANDLE, 15, 10, { quantity: 9, age: 400 });
     const lamp = await floorObject(OIL_LAMP, 15, 10, { age: 400 });
     assert.ok(candles && lamp);
@@ -86,7 +86,7 @@ void test('a restore reverses the saved light order, so the older light takes th
     game.plname = 'Snufford';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Snufford', storage), true);
+    assert.equal(await restoreGame('Snufford', storage), true);
     const revivedCandles = floorObjectsAt(requireGameLevel(), 15, 10)
         .find(object => object.otyp === WAX_CANDLE);
     const revivedLamp = floorObjectsAt(requireGameLevel(), 15, 10)
@@ -145,7 +145,7 @@ void test('re-entering a level reverses its saved light order', async () => {
 });
 
 void test('an engulfer snuffs the newest source on its square rather than the swallowed one', async () => {
-    freshDarkRoom();
+    await freshDarkRoom();
     const worm = await createMonsterAt('purple worm', 15, 10, NO_MINVENT);
     // The candle burns on the worm's square first, then a lamp is lit there.
     const candles = await floorObject(WAX_CANDLE, 15, 10, { quantity: 4, age: 400 });
@@ -154,7 +154,7 @@ void test('an engulfer snuffs the newest source on its square rather than the sw
     const lamp = await floorObject(OIL_LAMP, 15, 10, { age: 400 });
     assert.ok(lamp);
     assert.equal(beginObjectBurn(lamp), true);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     unlinkObject(candles, game);
     const carried = await addObjectToMonsterInventory(worm, candles);

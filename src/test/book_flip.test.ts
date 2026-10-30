@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const SPE_NOVEL = OBJECT_NAMES.indexOf('novel');
 
 void test('underwater page flipping is refused without using time or identifying the book', async () => {
-    freshObjectRoom({ hero: { uinwater: 1 } });
+    await freshObjectRoom({ hero: { uinwater: 1 } });
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_BLANK_PAPER, { typeKnown: false });
 
@@ -56,7 +56,7 @@ for (const { name, hero, message } of [
     },
 ]) {
     void test(`flipping the Book of the Dead: ${name}`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         requirePlayingGame(game);
         const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
         resetInputState().feed(' ');
@@ -72,7 +72,7 @@ for (const { name, hero, message } of [
 
 for (const hallucinating of [false, true]) {
     void test(`blind page flipping feels ${hallucinating ? 'freshly picked' : 'rough and dry'} pages without identifying blank paper`, async () => {
-        freshObjectRoom({ hero: { blindTurns: 10, hallucinationTurns: hallucinating ? 10 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: 10, hallucinationTurns: hallucinating ? 10 : 0 } });
         requirePlayingGame(game);
         const book = await addInventoryObject(SPE_BLANK_PAPER, { typeKnown: false });
         resetInputState().feed(' ');
@@ -88,7 +88,7 @@ for (const hallucinating of [false, true]) {
 }
 
 void test('blank paper is identified after the flip message has been dismissed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_BLANK_PAPER, { typeKnown: false });
     const input = resetInputState();
@@ -107,7 +107,7 @@ void test('blank paper is identified after the flip message has been dismissed',
 });
 
 void test('hallucinating blank-paper flipping identifies its poor plot', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_BLANK_PAPER, { typeKnown: false });
     resetInputState().feed(' ');
@@ -121,7 +121,7 @@ void test('hallucinating blank-paper flipping identifies its poor plot', async (
 
 for (const type of [SPE_FORCE_BOLT, SPE_NOVEL]) {
     void test(`hallucination animates initials in ${OBJECT_NAMES[type]}`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
         requirePlayingGame(game);
         const book = await addInventoryObject(type);
         resetInputState().feed(' ');
@@ -133,7 +133,7 @@ for (const type of [SPE_FORCE_BOLT, SPE_NOVEL]) {
 }
 
 void test('a novel invites reading and uses its book name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const novel = await addInventoryObject(SPE_NOVEL);
     const input = resetInputState();
@@ -150,7 +150,7 @@ void test('a novel invites reading and uses its book name', async () => {
 });
 
 void test('an unidentified novel is a paperback book rather than a spellbook', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const novel = await addInventoryObject(SPE_NOVEL, { typeKnown: false });
     const input = resetInputState();
@@ -167,7 +167,7 @@ void test('an unidentified novel is a paperback book rather than a spellbook', a
 });
 
 void test('flipping an unseen spellbook does not reveal its type or personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_FORCE_BOLT, {
         observed: false,
@@ -199,7 +199,7 @@ for (const [studies, expected] of [
     [8, 'extremely faded'],
 ] as const) {
     void test(`a spellbook studied ${studies} times reports ${expected} ink without learning its spell`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const book = await addInventoryObject(SPE_FORCE_BOLT, { spestudied: studies });
         resetInputState().feed(' ');

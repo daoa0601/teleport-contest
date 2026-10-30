@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 for (const portion of ['partly used', 'intact', 'fully used']) {
     void test(`paying for ${portion} goods keeps the payment quantity until wrapped feedback finishes`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const daggers = await addInventoryObject(DAGGER, {
             quan: 2, oextra: { oname: 'the long and winding road through the northern mountains to the distant sea' },
         });
@@ -62,7 +62,7 @@ for (const portion of ['partly used', 'intact', 'fully used']) {
     });
 }
 void test('an unaffordable used portion keeps its quantity until payment feedback returns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, {
         quan: 3, oextra: { oname: 'the long and winding road through the northern mountains to the distant sea' },
     });
@@ -94,7 +94,7 @@ void test('an unaffordable used portion keeps its quantity until payment feedbac
 for (const contained of [false, true]) {
     for (const deaf of [false, true]) {
         void test(`a ${deaf ? 'gestured' : 'spoken'} refusal to buy ${contained ? 'contained' : 'loose'} partly used goods keeps the used quantity through the pager`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const sack = contained ? await addInventoryObject(SACK, { cknown: true }) : null;
             const daggers = sack ? await knownObject(DAGGER, { quan: 3 })
                 : await addInventoryObject(DAGGER, { quan: 3 });

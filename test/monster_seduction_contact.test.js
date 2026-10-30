@@ -30,7 +30,7 @@ for (const { description, callName, personalName, expected } of [
         expected: 'ring called Evening ... named Wedding ...' },
 ]) {
     void test(`a seduction prompt preserves ${description} using native name shortening`, async () => {
-        const level = freshObjectRoom({ flags: { female: true } });
+        const level = await freshObjectRoom({ flags: { female: true } });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         game._objectCallNames = { [RIN_ADORNMENT]: callName };
@@ -57,7 +57,7 @@ for (const { description, callName, personalName, expected } of [
 }
 for (const blind of [false, true]) {
     void test(`a ${blind ? 'blind' : 'sighted'} hero ${blind ? 'does not learn' : 'learns'} an unseen adornment ring's appearance from the seduction prompt`, async () => {
-        const level = freshObjectRoom({ flags: { female: true }, hero: { blindTurns: blind ? 20 : 0 } });
+        const level = await freshObjectRoom({ flags: { female: true }, hero: { blindTurns: blind ? 20 : 0 } });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         assert.ok(game.objectDescriptions);
@@ -84,7 +84,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('a leap-day demand reveals a blind priest\'s carried gloves and their curse', async () => {
-    const level = freshObjectRoom({ role: 'priest', flags: { female: false }, hero: { blindTurns: 20 } });
+    const level = await freshObjectRoom({ role: 'priest', flags: { female: false }, hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     game.datetime = '20000229120000';
@@ -110,7 +110,7 @@ void test('a leap-day demand reveals a blind priest\'s carried gloves and their 
     assert.match(messages.join('\n'), /named winter mittens and eleven more pairs of gloves/);
 });
 void test('a leap-day demand names worn gloves before other carried gloves', async () => {
-    const level = freshObjectRoom({ flags: { female: false } });
+    const level = await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     game.datetime = '20000229120000';
@@ -138,7 +138,7 @@ for (const female of [false, true]) {
     for (const goodOutcome of [false, true]) {
         const species = female ? 'succubus' : 'incubus';
         void test(`a tame ${species} is called yours during ${goodOutcome ? 'successful' : 'unsuccessful'} seduction`, async () => {
-            const level = freshObjectRoom({ flags: { female: !female } });
+            const level = await freshObjectRoom({ flags: { female: !female } });
             requirePlayingGame(game);
             level.flags.noteleport = true;
             const demon = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -163,7 +163,7 @@ for (const female of [false, true]) {
     }
 }
 void test('a bad seduction outcome displays the next hallucinated demon identity', async () => {
-    const level = freshObjectRoom({ flags: { female: true },
+    const level = await freshObjectRoom({ flags: { female: true },
         hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
@@ -184,7 +184,7 @@ void test('a bad seduction outcome displays the next hallucinated demon identity
     assert.ok(messages.includes(`${satisfiedDemon} seems to have enjoyed it more than you...`), messages.join('\n'));
 });
 void test('declining an incubus armor-removal prompt keeps the suit and ends seduction', async () => {
-    const level = freshObjectRoom({ flags: { female: true } });
+    const level = await freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -205,7 +205,7 @@ void test('declining an incubus armor-removal prompt keeps the suit and ends sed
     assert.match(messages.join('\n'), /You're such a sweet lady; I wish/);
 });
 void test('successful seduction raises energy, tires the demon, and ends its attack sequence', async () => {
-    const level = freshObjectRoom({ flags: { female: true }, hero: { uen: 3, uenmax: 10, uenpeak: 10 } });
+    const level = await freshObjectRoom({ flags: { female: true }, hero: { uen: 3, uenmax: 10, uenpeak: 10 } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -221,7 +221,7 @@ void test('successful seduction raises energy, tires the demon, and ends its att
     assert.equal(attack.attackerDone, true);
 });
 void test('a same-sex incubus contact leaves the hero alone and keeps later claw attacks available', async () => {
-    freshObjectRoom({ flags: { female: false } });
+    await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     incubus.female = false;
@@ -235,7 +235,7 @@ void test('a same-sex incubus contact leaves the hero alone and keeps later claw
     assert.equal(messages.length, 0);
 });
 void test('a deaf hero loses an adornment ring to a succubus without a confirmation prompt', async () => {
-    const level = freshObjectRoom({ flags: { female: false } });
+    const level = await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     level.flags.noteleport = true;
     setPropertyTimeout('deaf', 20);
@@ -252,7 +252,7 @@ void test('a deaf hero loses an adornment ring to a succubus without a confirmat
     assert.equal(ring.where, 'minvent');
 });
 void test('a fatally exhausting seduction is recorded without an article', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 40, urexp: 100 },
         flags: { female: true, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
     });

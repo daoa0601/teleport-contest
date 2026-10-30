@@ -24,7 +24,7 @@ void test('healing a scroll mimic reports the bare type name', async () => {
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = SCR_MAGIC_MAPPING;
-    newsym(mimic.mx, mimic.my);
+    await newsym(mimic.mx, mimic.my);
 
     await hitMonsterWithWand(mimic, await knownObject(SPE_HEALING));
 

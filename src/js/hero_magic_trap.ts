@@ -142,7 +142,7 @@ async function toggleIntrinsicInvisibility(): Promise<void> {
         game.u.invisibleTurns = 0;
     } else grantIntrinsicProperty('invisible', 'outside', game);
     syncHeroInvisibility(game);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
 }
 
 async function hear(text: string): Promise<void> {

@@ -75,7 +75,7 @@ export async function finishMonsterSqueakyBoard(
             await publish(
                 `A board beneath ${monsterName(monster, { state })} squeaks ${event.note} loudly.`,
             );
-            seeTrap(event.trap, state);
+            await seeTrap(event.trap, state);
         } else if (!event.mindless) {
             await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }

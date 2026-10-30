@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('engulfing discards lock progress even after the hero is expelled', async () => {
-    const level = freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
+    const level = await freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;

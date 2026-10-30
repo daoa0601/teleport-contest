@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('a potion item action drinks the selected potion while standing on a fountain', async t => {
-    const level = freshObjectRoom({ hero: { uhp: 1 } });
+    const level = await freshObjectRoom({ hero: { uhp: 1 } });
     const square = level.at(game.u.ux, game.u.uy);
     assert.ok(square);
     square.typ = FOUNTAIN;
@@ -28,7 +28,7 @@ void test('a potion item action drinks the selected potion while standing on a f
 });
 
 void test('the apply action lights a carried oil lamp', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lamp = await addInventoryObject(OIL_LAMP, { age: 100, lamplit: false });
     const input = resetInputState();
     planInput(input, t, [
@@ -42,7 +42,7 @@ void test('the apply action lights a carried oil lamp', async t => {
 });
 
 void test('a ring item action calls the selected type', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION, { typeKnown: false });
     const input = resetInputState();
     planInput(input, t, [
@@ -57,7 +57,7 @@ void test('a ring item action calls the selected type', async t => {
 });
 
 void test('a wand item action zaps the selected wand', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wand = await addInventoryObject(WAN_NOTHING, { spe: 3 });
     const input = resetInputState();
     planInput(input, t, [
@@ -72,7 +72,7 @@ void test('a wand item action zaps the selected wand', async t => {
 });
 
 void test('an armor item action wears the selected boots', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('low boots'));
     const input = resetInputState();
     planInput(input, t, [
@@ -86,7 +86,7 @@ void test('an armor item action wears the selected boots', async t => {
 });
 
 void test('a lamp item action rubs the lamp without asking what to rub', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lamp = await addInventoryObject(OIL_LAMP);
     const input = resetInputState();
     planInput(input, t, [

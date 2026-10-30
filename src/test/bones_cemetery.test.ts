@@ -46,7 +46,7 @@ void test('an ancestor becomes known when the hero maps their resting square', a
     await restoreBones(storage);
 
     assert.doesNotMatch(await readDungeonOverview(), /Ada|Final resting place/);
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
 
     const overview = await readDungeonOverview();
     assert.match(overview, /Final resting place for\s+Ada-Cav-Hum-Mal-Law, killed by a kobold\./);
@@ -108,7 +108,7 @@ for (const death of [
         await finishOrdinaryDeath({ killer: death.killer, deathType: death.type });
 
         await restoreBones(storage);
-        map_location(30, 10, false);
+        await map_location(30, 10, false);
         const ancestor = `Ada-Cav-Hum-Mal-Law, ${death.cause}.`;
         const overview = await readDungeonOverview();
         assert.ok(overview.includes(ancestor), overview);
@@ -151,7 +151,7 @@ void test('known ancestors keep a level in the overview after leaving and restor
     requireGameLevel().requireAt(30, 10).typ = CORR;
     assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), true);
     await restoreBones(storage);
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
     await readDungeonOverview();
     game._levelCache = new Map([['0:8', { level: createRoomLevel(), stairs: null, savedAt: game.moves }]]);
 
@@ -162,7 +162,7 @@ void test('known ancestors keep a level in the overview after leaving and restor
     const display = requireGameDisplay();
     resetGame();
     game.nhDisplay = display;
-    assert.equal(restoreGame('Newcomer', storage), true);
+    assert.equal(await restoreGame('Newcomer', storage), true);
     const overview = await readDungeonOverview();
     assert.match(overview, /Level 7:[\s\S]*Ada-Cav-Hum-Mal-Law, killed by a kobold\./);
 });

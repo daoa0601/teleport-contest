@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('unholy water makes a cursed secondary weapon drop during two-weapon combat', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const main = await addInventoryObject(DAGGER);
     const secondary = await addInventoryObject(DAGGER, { spe: 1 });
     const water = await addInventoryObject(POT_WATER, { cursed: true });

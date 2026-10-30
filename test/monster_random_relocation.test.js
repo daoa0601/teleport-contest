@@ -25,7 +25,7 @@ function tower(boundary, prototype = 'wizard2') {
     game.level.upTeleportRegion = { ...game.level.downTeleportRegion };
 }
 void test('the Wizard prefers the upstairs within the current dungeon', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     resetInputState().beforeRead = () => {
@@ -42,7 +42,7 @@ void test('the Wizard prefers the upstairs within the current dungeon', async ()
 });
 for (const bottom of [false, true]) {
     void test(`the Wizard blocks the tower ${bottom ? 'up' : 'down'} ladder when the hero is inside`, async () => {
-        freshObjectRoom({ right: 30 });
+        await freshObjectRoom({ right: 30 });
         requirePlayingGame(game);
         tower({ lx: 8, ly: 6, hx: 18, hy: 14 }, bottom ? 'wizard3' : 'wizard2');
         const wizard = await createMonsterAt('Wizard of Yendor', 24, 10);
@@ -56,7 +56,7 @@ for (const bottom of [false, true]) {
     });
 }
 void test('the Wizard can cross the tower boundary to guard upstairs when the hero is outside', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     tower({ lx: 20, ly: 6, hx: 28, hy: 14 });
     const wizard = await createMonsterAt('Wizard of Yendor', 24, 10);
@@ -67,7 +67,7 @@ void test('the Wizard can cross the tower boundary to guard upstairs when the he
     assert.deepEqual([wizard.mx, wizard.my], [16, 12]);
 });
 void test('an occupied preferred stair sends the Wizard to an ordinary valid destination', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     const wizard = await createMonsterAt('Wizard of Yendor', 14, 10);
     stairsAt(16, 12);
@@ -79,7 +79,7 @@ void test('an occupied preferred stair sends the Wizard to an ordinary valid des
     assert.ok(wizard.mx !== 16 || wizard.my !== 12);
 });
 void test('a migrating Wizard does not take the upstairs shortcut', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     resetInputState().beforeRead = () => {
@@ -94,7 +94,7 @@ void test('a migrating Wizard does not take the upstairs shortcut', async () => 
 });
 for (const inside of [false, true]) {
     void test(`a tower migrant remains ${inside ? 'inside' : 'outside'} its boundary`, async () => {
-        freshObjectRoom({ right: 24 });
+        await freshObjectRoom({ right: 24 });
         requirePlayingGame(game);
         tower({ lx: 12, ly: 6, hx: 18, hy: 14 });
         const orc = await createMonsterAt('orc', inside ? 14 : 20, 10);
@@ -106,7 +106,7 @@ for (const inside of [false, true]) {
     });
 }
 void test('random arrival falls back to a legal square when its preferred region is inaccessible', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     game.level.downTeleportRegion = { lx: 50, ly: 10, hx: 55, hy: 12 };
     const orc = await createMonsterAt('orc', 14, 10);
@@ -147,7 +147,7 @@ function enableMonsterControl() {
     game._monTelecontrol = true;
 }
 void test('controlled relocation starts at the monster, not the hero or a travel target', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     game._travelTarget = { x: 21, y: 12 };
@@ -161,7 +161,7 @@ void test('controlled relocation starts at the monster, not the hero or a travel
     assert.equal(game.context.move, 1);
 });
 void test('cancelling monster control resumes random relocation', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     const orc = await createMonsterAt('orc', 14, 10);
@@ -172,7 +172,7 @@ void test('cancelling monster control resumes random relocation', async () => {
     assert.equal(monsterAtPosition(game.level, orc.mx, orc.my), orc);
 });
 void test('the hero square cannot be forced as a controlled monster destination', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     const orc = await createMonsterAt('orc', 11, 10);
@@ -184,7 +184,7 @@ void test('the hero square cannot be forced as a controlled monster destination'
 });
 for (const force of ['y', 'n']) {
     void test(`an invalid controlled destination can be ${force === 'y' ? 'forced' : 'declined'}`, async () => {
-        freshObjectRoom({ right: 24 });
+        await freshObjectRoom({ right: 24 });
         requirePlayingGame(game);
         enableMonsterControl();
         const orc = await createMonsterAt('orc', 24, 10);
@@ -201,7 +201,7 @@ for (const force of ['y', 'n']) {
     });
 }
 void test('the fuzzer falls back without offering to force an invalid destination', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     game.flags.debug_fuzzer = 1;
@@ -213,7 +213,7 @@ void test('the fuzzer falls back without offering to force an invalid destinatio
 });
 for (const disabled of ['wizard mode', 'option']) {
     void test(`monster control does not prompt without ${disabled}`, async () => {
-        freshObjectRoom({ right: 24 });
+        await freshObjectRoom({ right: 24 });
         requirePlayingGame(game);
         enableMonsterControl();
         if (disabled === 'wizard mode')
@@ -228,7 +228,7 @@ for (const disabled of ['wizard mode', 'option']) {
     });
 }
 void test('derived control uses the supplied destination and ignores teleport boundaries', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     const orc = await createMonsterAt('orc', 14, 10);
@@ -245,7 +245,7 @@ void test('derived control uses the supplied destination and ignores teleport bo
     assert.deepEqual([orc.mx, orc.my], [14, 10], 'the selector leaves relocation to its caller');
 });
 void test('cancelling derived control leaves the caller to use its original destination', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     const orc = await createMonsterAt('orc', 14, 10);
@@ -257,7 +257,7 @@ void test('cancelling derived control leaves the caller to use its original dest
     assert.deepEqual([orc.mx, orc.my], [14, 10]);
 });
 void test('an invalid control default starts at the monster current position', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     enableMonsterControl();
     const orc = await createMonsterAt('orc', 14, 10);

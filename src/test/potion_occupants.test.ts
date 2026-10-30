@@ -32,7 +32,7 @@ async function open(source: GameObject) {
 }
 
 void test('an ordinary bottle appearance never releases an occupant', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('ruby');
     assert.equal((await open(source)).released, false);
@@ -41,7 +41,7 @@ void test('an ordinary bottle appearance never releases an occupant', async () =
 });
 
 void test('an unopened occupant roll leaves the potion available to its effect owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('milky', {}, 1n);
     assert.equal((await open(source)).released, false);
@@ -52,7 +52,7 @@ void test('an unopened occupant roll leaves the potion available to its effect o
 for (const [appearance, species] of [['milky', ghost], ['smoky', djinni]] satisfies [string, number][]) {
     for (const [name, flag] of [['extinct', G_EXTINCT], ['genocided', G_GENOD]] satisfies [string, number][]) {
         void test(`${name} ${appearance} occupants cannot emerge`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             const source = await bottle(appearance);
             assert.ok(game.mvitals);
@@ -64,7 +64,7 @@ for (const [appearance, species] of [['milky', ghost], ['smoky', djinni]] satisf
 }
 
 void test('a sighted ghost release creates a real nearby ghost and frightens the hero', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const source = await bottle('milky');
     assert.equal((await open(source)).released, true);
@@ -78,7 +78,7 @@ void test('a sighted ghost release creates a real nearby ghost and frightens the
 });
 
 void test('a blind ghost release has vague feedback and does not frighten the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroBlindnessTurns(20);
     const source = await bottle('milky');
@@ -89,7 +89,7 @@ void test('a blind ghost release has vague feedback and does not frighten the he
 });
 
 void test('hallucinated ghost feedback does not change the actual released species', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const source = await bottle('milky');
     await open(source);
@@ -99,7 +99,7 @@ void test('hallucinated ghost feedback does not change the actual released speci
 });
 
 void test('ghost fright does not shorten an existing longer involuntary delay', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('milky');
     game._helplessTurns = 6;
@@ -108,7 +108,7 @@ void test('ghost fright does not shorten an existing longer involuntary delay', 
 });
 
 void test('a thankful djinni becomes a real initialized pet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', {}, 75n);
     assert.equal((await open(source)).released, true);
@@ -121,7 +121,7 @@ void test('a thankful djinni becomes a real initialized pet', async () => {
 });
 
 void test('a peaceful djinni remains untamed and has peaceful alignment value', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky');
     await open(source);
@@ -133,7 +133,7 @@ void test('a peaceful djinni remains untamed and has peaceful alignment value', 
 });
 
 void test('a disturbed djinni is hostile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', {}, 48n);
     await open(source);
@@ -145,7 +145,7 @@ void test('a disturbed djinni is hostile', async () => {
 });
 
 void test('a departing djinni vanishes without dying or leaving a corpse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', {}, 27n);
     await open(source);
@@ -155,7 +155,7 @@ void test('a departing djinni vanishes without dying or leaving a corpse', async
 });
 
 void test('blessing can turn a peaceful outcome into a wish', async () => {
-    freshObjectRoom({ context: { move: 1 } });
+    await freshObjectRoom({ context: { move: 1 } });
     requirePlayingGame(game);
     const source = await bottle('smoky', { blessed: true });
     const result = await open(source);
@@ -166,7 +166,7 @@ void test('blessing can turn a peaceful outcome into a wish', async () => {
 });
 
 void test('cursing can turn a peaceful outcome into hostility', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', { cursed: true });
     await open(source);
@@ -174,7 +174,7 @@ void test('cursing can turn a peaceful outcome into hostility', async () => {
 });
 
 void test('a blessed bottle can still release a hostile djinni', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', { blessed: true }, 48n);
     await open(source);
@@ -182,7 +182,7 @@ void test('a blessed bottle can still release a hostile djinni', async () => {
 });
 
 void test('a cursed bottle can still release a djinni that simply leaves', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await bottle('smoky', { cursed: true }, 47n);
     await open(source);
@@ -191,7 +191,7 @@ void test('a cursed bottle can still release a djinni that simply leaves', async
 });
 
 void test('a blind and deaf hero still receives the djinni speech', async () => {
-    freshObjectRoom({ hero: { deafTurns: 30 } });
+    await freshObjectRoom({ hero: { deafTurns: 30 } });
     requirePlayingGame(game);
     setHeroBlindnessTurns(20);
     const source = await bottle('smoky', { cursed: true });
@@ -201,10 +201,10 @@ void test('a blind and deaf hero still receives the djinni speech', async () => 
 });
 
 void test('the wish giver leaves the world before the real wish prompt while its image remains', async () => {
-    freshObjectRoom({ context: { move: 1 } });
+    await freshObjectRoom({ context: { move: 1 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('djinni', 11, 10);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const input = resetInputState();
     const wish = grantMonsterWish(monster);
     try {
@@ -229,7 +229,7 @@ void test('the wish giver leaves the world before the real wish prompt while its
 // C zap.c makewish(): a verbose wish names the offer before its prompt,
 // whichever effect grants it.
 void test('a bottled djinni wish offers an object before asking for it', async () => {
-    freshObjectRoom({ context: { move: 1 } });
+    await freshObjectRoom({ context: { move: 1 } });
     requirePlayingGame(game);
     const source = await bottle('smoky', { blessed: true });
     const input = resetInputState();

@@ -17,7 +17,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('wizard polymorph rejects a forbidden form and accepts the next choice', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('polyself\nMedusa\n');
@@ -37,7 +37,7 @@ void test('wizard polymorph rejects a forbidden form and accepts the next choice
 });
 
 void test('cancelling wizard polymorph leaves the current body alone', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const health = game.u.uhp;
     pushKeys('polyself\n\x1b');
@@ -50,7 +50,7 @@ void test('cancelling wizard polymorph leaves the current body alone', async () 
 });
 
 void test('a selected monster class excludes its genocided members', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     for (const name of ['water nymph', 'mountain nymph']) {
         const vital = game.mvitals?.[nameToMonster(name)];
@@ -65,7 +65,7 @@ void test('a selected monster class excludes its genocided members', async () =>
 });
 
 void test('a controlled polymorph wand lets a lycanthrope request its wolf form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_POLYMORPH, {
         spe: 3,
@@ -82,7 +82,7 @@ void test('a controlled polymorph wand lets a lycanthrope request its wolf form'
 });
 
 void test('dragon mail becomes skin and returns as scales after saving', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.plname = 'Dragon';
     const armor = await addInventoryObject(RED_DRAGON_SCALE_MAIL, {
@@ -98,7 +98,7 @@ void test('dragon mail becomes skin and returns as scales after saving', async (
     assert.equal(game.u.umonnum, nameToMonster('red dragon'));
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Dragon', storage), true);
+    assert.equal(await restoreGame('Dragon', storage), true);
     const restoredArmor = game.inventory.find(
         object => object.otyp === RED_DRAGON_SCALES,
     );
@@ -117,7 +117,7 @@ void test('dragon mail becomes skin and returns as scales after saving', async (
 });
 
 void test('genocide prevents dragon armor from merging into the hero', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const dragon = nameToMonster('red dragon');
     const vital = game.mvitals?.[dragon];
@@ -136,7 +136,7 @@ void test('genocide prevents dragon armor from merging into the hero', async () 
 });
 
 void test('a genocided form refusal uses the current female species name', async () => {
-    freshObjectRoom({ flags: { debug: true, female: true } });
+    await freshObjectRoom({ flags: { debug: true, female: true } });
     const vital = game.mvitals?.[nameToMonster('gnome king')];
     assert.ok(vital);
     vital.mvflags |= G_GENOD;

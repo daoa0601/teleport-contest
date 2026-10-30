@@ -7,7 +7,7 @@ import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('venom falling onto a cobra hero displays its resulting blindness', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     await bot();
 
     await useHeroSpit({

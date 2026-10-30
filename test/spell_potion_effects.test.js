@@ -53,7 +53,7 @@ for (const [blessed, minimum, maximum] of [[false, 100, 109], [true, 160, 169]])
     });
 }
 void test('haste leaves wounded legs intact instead of taking the speed-potion cure branch', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await woundHeroLegs('left', 20);
     await applyPotionSpell(await source(SPE_HASTE_SELF));
@@ -61,7 +61,7 @@ void test('haste leaves wounded legs intact instead of taking the speed-potion c
     assert.equal(game.u.veryFast, true);
 });
 void test('haste through speed boots renews energy instead of announcing a new acceleration', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const boots = await addInventoryObject(SPEED_BOOTS);
     wearHeroArmor(boots);
@@ -72,7 +72,7 @@ void test('haste through speed boots renews energy instead of announcing a new a
     assert.ok((game.u.veryFastTurns ?? 0) >= 100);
 });
 void test('haste commits its duration after its actual speed feedback resumes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const spell = await source(SPE_HASTE_SELF);
     await pline('You carefully examine the old inscriptions covering this long corridor.');
@@ -89,7 +89,7 @@ void test('haste commits its duration after its actual speed feedback resumes', 
     assert.ok((game.u.veryFastTurns ?? 0) >= 100);
 });
 void test('ordinary restoration recovers one drained base attribute', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 5;
     game.u.amax.a[A_STR] = 16;
@@ -104,7 +104,7 @@ void test('ordinary restoration recovers one drained base attribute', async () =
     assert.match(game._pending_message, /makes you feel good/);
 });
 void test('blessed restoration recovers all drained bases and clears abuse while retaining positive exercise', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 5;
     game.u.amax.a[A_STR] = 16;
@@ -123,7 +123,7 @@ void test('blessed restoration recovers all drained bases and clears abuse while
     assert.match(game._pending_message, /makes you feel great/);
 });
 void test('restoration preserves hunger and leg penalties and reports only feeling better', async () => {
-    freshObjectRoom({ hero: { uhs: WEAK } });
+    await freshObjectRoom({ hero: { uhs: WEAK } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 5;
     game.u.amax.a[A_STR] = 16;
@@ -137,7 +137,7 @@ void test('restoration preserves hunger and leg penalties and reports only feeli
     assert.match(game._pending_message, /makes you feel better/);
 });
 void test('restoration does not recover lost levels or cure illness and deafness', async () => {
-    freshObjectRoom({ hero: { ulevel: 3, ulevelmax: 8, sickTurns: 10, sickType: SICK_ALL, deafTurns: 9 } });
+    await freshObjectRoom({ hero: { ulevel: 3, ulevelmax: 8, sickTurns: 10, sickType: SICK_ALL, deafTurns: 9 } });
     requirePlayingGame(game);
     await applyPotionSpell(await source(SPE_RESTORE_ABILITY, { blessed: true }));
     assert.equal(game.u.ulevel, 3);
@@ -146,7 +146,7 @@ void test('restoration does not recover lost levels or cure illness and deafness
     assert.match(game._pending_message, /feel better/);
 });
 void test('restoration applies base recovery only after its prose is acknowledged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 5;
     const spell = await source(SPE_RESTORE_ABILITY, { blessed: true });
@@ -165,7 +165,7 @@ void test('restoration applies base recovery only after its prose is acknowledge
 });
 for (const [blessed, minimum, maximum] of [[false, 11, 150], [true, 251, 300]]) {
     void test(`${blessed ? 'blessed' : 'ordinary'} levitation grants the source duration and descent control`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const spell = await source(SPE_LEVITATION, { blessed });
         await applyPotionSpell(spell);
@@ -176,7 +176,7 @@ for (const [blessed, minimum, maximum] of [[false, 11, 150], [true, 251, 300]]) 
     });
 }
 void test('blocked levitation accumulates timeout without trying to float through rock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(10, 10).typ = STONE;
     await switchHeroTerrain();
@@ -186,7 +186,7 @@ void test('blocked levitation accumulates timeout without trying to float throug
     assert.ok(!game.u.levitating);
 });
 void test('invisibility grants temporary invisibility without consuming or identifying its source', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const spell = await source(SPE_INVISIBILITY, { observed: false, typeKnown: false, known: false });
     const result = await applyPotionSpell(spell);
@@ -198,7 +198,7 @@ void test('invisibility grants temporary invisibility without consuming or ident
     assert.equal(game._knownObjectTypes?.has(spell.otyp), false);
 });
 void test('a spell cannot pass through worn mummy wrapping', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING);
     wearHeroArmor(wrapping);
@@ -209,18 +209,18 @@ void test('a spell cannot pass through worn mummy wrapping', async () => {
     assert.match(game._pending_message, /itchy under your mummy wrapping/);
 });
 void test('already invisible heroes get a longer spell timeout without potion fallback prose', async () => {
-    freshObjectRoom({ hero: { invisibleTurns: 10 } });
+    await freshObjectRoom({ hero: { invisibleTurns: 10 } });
     requirePlayingGame(game);
     await applyPotionSpell(await source(SPE_INVISIBILITY));
     assert.ok((game.u.invisibleTurns ?? 0) > 10);
     assert.doesNotMatch(game._pending_message || '', /feeling for a moment/);
 });
 void test('blessed monster detection reveals a remote monster persistently without a browse prompt', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('dog', 20, 10, NO_MINVENT);
     game.level.requireAt(20, 10).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(monster), false);
     const spell = await source(SPE_DETECT_MONSTERS, { blessed: true });
     await applyPotionSpell(spell);
@@ -230,23 +230,23 @@ void test('blessed monster detection reveals a remote monster persistently witho
     assert.equal(game.level.requireAt(monster.mx, monster.my).disp_ch, monster.symbol);
 });
 void test('repeated long-lasting monster detection adds only one native turn', async () => {
-    freshObjectRoom({ hero: { monsterDetectionTurns: 300 } });
+    await freshObjectRoom({ hero: { monsterDetectionTurns: 300 } });
     requirePlayingGame(game);
     await createMonsterAt('dog', 12, 10, NO_MINVENT);
     await applyPotionSpell(await source(SPE_DETECT_MONSTERS, { blessed: true }));
     assert.equal(game.u.monsterDetectionTurns, 301);
 });
 void test('persistent detection clears an old unseen-monster marker', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.hero_memory = true;
-    map_invisible(14, 10);
+    await map_invisible(14, 10);
     await applyPotionSpell(await source(SPE_DETECT_MONSTERS, { blessed: true }));
     assert.notEqual(game.level.requireAt(14, 10).remembered_glyph?.kind, 'invisible');
     assert.match(game._pending_message, /feel lonely/);
 });
 void test('treasure detection senses actual non-gold objects at the hero position', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(LONG_SWORD, 10, 10);
     const spell = await source(SPE_DETECT_TREASURE);
@@ -256,7 +256,7 @@ void test('treasure detection senses actual non-gold objects at the hero positio
     assert.equal(game.inventory.includes(spell), true);
 });
 void test('empty treasure detection reports absence without trying to call or consume the spell', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const spell = await source(SPE_DETECT_TREASURE);
     const result = await applyPotionSpell(spell);
@@ -266,7 +266,7 @@ void test('empty treasure detection reports absence without trying to call or co
     assert.equal(game.u.uconduct?.literate || 0, 0);
 });
 void test('removing the actual mummy wrapping lets the next invisibility spell work', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING);
     wearHeroArmor(wrapping);
@@ -281,14 +281,14 @@ void test('removing the actual mummy wrapping lets the next invisibility spell w
     assert.ok((game.u.invisibleTurns ?? 0) >= 106);
 });
 void test('persistent detection caps the native timeout instead of overflowing it', async () => {
-    freshObjectRoom({ hero: { monsterDetectionTurns: TIMEOUT } });
+    await freshObjectRoom({ hero: { monsterDetectionTurns: TIMEOUT } });
     requirePlayingGame(game);
     await createMonsterAt('dog', 12, 10, NO_MINVENT);
     await applyPotionSpell(await source(SPE_DETECT_MONSTERS, { blessed: true }));
     assert.equal(game.u.monsterDetectionTurns, TIMEOUT);
 });
 void test('the public skilled cast dispatch grants blessed haste and disposes only its pseudo source', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     installHeroWeaponSkills({ [P_ESCAPE_SPELL]: P_SKILLED });
     const book = await source(SPE_HASTE_SELF);
@@ -300,7 +300,7 @@ void test('the public skilled cast dispatch grants blessed haste and disposes on
     assert.equal(game.u.uconduct?.literate || 0, 0);
 });
 void test('expert invisibility casting remains temporary rather than gaining a blessed potion effect', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     installHeroWeaponSkills({ [P_ESCAPE_SPELL]: P_EXPERT });
     await castSpell(SPE_INVISIBILITY, { force: true });
@@ -309,7 +309,7 @@ void test('expert invisibility casting remains temporary rather than gaining a b
     assert.equal(hasIntrinsicProperty('invisible', 'outside'), false);
 });
 void test('ordinary monster detection browses the real map without granting persistent detection', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('dog', 14, 10, NO_MINVENT);
     const spell = await source(SPE_DETECT_MONSTERS);
@@ -337,7 +337,7 @@ void test('the real turn expiry removes the persistent detection view of an unse
     const monster = await createMonsterAt('dog', 20, 10, NO_MINVENT);
     monster.msleeping = 1;
     game.level.requireAt(20, 10).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     await applyPotionSpell(await source(SPE_DETECT_MONSTERS, { blessed: true }));
     assert.equal(game.level.requireAt(20, 10).disp_glyph?.kind, 'monster');
     game.u.monsterDetectionTurns = 1;

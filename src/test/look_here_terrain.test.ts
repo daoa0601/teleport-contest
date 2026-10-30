@@ -30,7 +30,7 @@ function recordMessages(): () => string[] {
 // not hear about the doorway again, whether walking onto it or using ':'.
 for (const how of ['autopickup', 'look'] as const) {
     void test(`blind ${how} on a doorway names the surface once`, async () => {
-        freshObjectRoom({ flags: { pickup: false } });
+        await freshObjectRoom({ flags: { pickup: false } });
         requireFixtureGame(game);
         const loc = requireGameLevel().at(game.u.ux, game.u.uy);
         assert.ok(loc);
@@ -52,7 +52,7 @@ for (const how of ['autopickup', 'look'] as const) {
 
 // look_here() names a seen trap before the objects, exactly once.
 void test('looking at an object on a seen trap names the trap once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     addTrap(requireGameLevel(), SQKY_BOARD, game.u.ux, game.u.uy, { tseen: true });
     await floorObject(DART, game.u.ux, game.u.uy, { quan: 1 });
@@ -69,7 +69,7 @@ void test('looking at an object on a seen trap names the trap once', async () =>
 // replaces the whole screen at column zero instead of a right-hand corner.
 for (const overlay of [true, false]) {
     void test(`a looked-at pile ${overlay ? 'overlays a corner' : 'fills the screen'} when menu_overlay is ${overlay ? 'on' : 'off'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         game.flags.menu_overlay = overlay;
         await floorObject(DART, game.u.ux, game.u.uy, { quan: 1 });

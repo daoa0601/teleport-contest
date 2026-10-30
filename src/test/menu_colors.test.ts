@@ -23,7 +23,7 @@ import { createSpecialLevel } from './support/topology.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 
 async function packWithBlessedDagger() {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER, { blessed: true });
     await addInventoryObject(FOOD_RATION);
 }
@@ -136,7 +136,7 @@ void test('turning menucolors off leaves menu entries uncolored', async () => {
 });
 
 void test('putstr-filled windows stay plain while add_menu_str windows are recolored', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
     const questText: QuestText = { output: 'menu', raw: '',
         lines: ['"So you have returned, pilgrim."', '"Go forth again."'], synopsis: null };
@@ -161,7 +161,7 @@ void test('putstr-filled windows stay plain while add_menu_str windows are recol
 });
 
 void test('the skill enhancement group headings keep their own style', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     ensureHeroSkills(game);
     applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
 

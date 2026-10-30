@@ -20,6 +20,6 @@ export async function breakSinkAt(x: number, y: number, state: GameState = game)
     countLevelFeatures(state);
     location.looted = F_LOOTED;
     location.blessedftn = 0;
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }

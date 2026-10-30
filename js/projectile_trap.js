@@ -43,7 +43,7 @@ export async function beginMonsterProjectileTrap(monster, trap, state = game, { 
         if (event.finished) {
             deleteTrap(trap, state);
             if (state === game)
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
         }
         return event;
     }
@@ -53,7 +53,7 @@ export async function beginMonsterProjectileTrap(monster, trap, state = game, { 
     if (projectileType === DART && random(6) === 0)
         missile.opoisoned = 1;
     if (visibility.inSight)
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     const hit = findMonsterArmorClass(monster) + (trap.ttyp === ARROW_TRAP ? 8 : 7) + (missile.spe ?? 0) <=
         rollOne(20);
     return {
@@ -78,7 +78,7 @@ export async function finishMonsterProjectileTrap(monster, event, state = game, 
         await publish(`${subject} triggers a trap but nothing happens.`);
         deleteTrap(event.trap, state);
         if (state === game)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         event.finished = true;
         return event;
     }

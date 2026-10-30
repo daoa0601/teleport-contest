@@ -25,7 +25,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const lifesaving of [false, true]) {
     void test(`monster breath ${lifesaving ? 'resumes the same ray after life saving' : 'finishes a fatal hero hit with its default death owner'}`, async () => {
-        freshObjectRoom({ left: 7, right: 30, top: 6, bottom: 14,
+        await freshObjectRoom({ left: 7, right: 30, top: 6, bottom: 14,
             hero: { uhp: 1, uhpmax: 100, uac: 30 },
             flags: { disclose: '-i -a -v -c -o' } });
         requirePlayingGame(game);
@@ -61,7 +61,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('a swallowed wolf breathes into its engulfer without ending the engulf', async () => {
-    freshMonsterAbilityRoom('winter wolf cub', { energy: 30 });
+    await freshMonsterAbilityRoom('winter wolf cub', { energy: 30 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mhp = worm.mhpmax = 100;
@@ -76,7 +76,7 @@ void test('a swallowed wolf breathes into its engulfer without ending the engulf
     assert.match(game._pending_message, /The blast of frost rips into the purple worm[.!]/);
 });
 void test('monster breath does not cross the map while the hero is swallowed', async () => {
-    freshMonsterAbilityRoom('winter wolf cub', { energy: 30 });
+    await freshMonsterAbilityRoom('winter wolf cub', { energy: 30 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     await installSwallowedHero(worm);

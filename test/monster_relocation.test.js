@@ -18,7 +18,7 @@ import { maketrap } from '../js/mklev.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('relocating an engulfer carries its swallowed hero without releasing the hold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     game.u.ux = worm.mx;
@@ -36,7 +36,7 @@ void test('relocating an engulfer carries its swallowed hero without releasing t
     assert.deepEqual([game.u.ux0, game.u.uy0], [10, 10]);
 });
 void test('a swallowed hero sees the shared teleport message and stomach at the destination', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     game.u.ux = worm.mx;
@@ -51,7 +51,7 @@ void test('a swallowed hero sees the shared teleport message and stomach at the 
     assert.equal(requireScreenRow(11)[10]?.ch, ' ', 'the old hero position is cleared');
 });
 void test('a relocated holder keeps an adjacent grip but releases a distant hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const owlbear = await createMonsterAt('owlbear', 11, 10);
     game.u.ustuck = owlbear;
@@ -63,7 +63,7 @@ void test('a relocated holder keeps an adjacent grip but releases a distant hero
     assert.ok(owlbear.mspec_used > 0, 'the released holder cannot immediately grab again');
 });
 void test('relocation updates a monster’s perceived position of a visible hero', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     const orc = await createMonsterAt('hill orc', 11, 10);
     orc.mux = 10;
@@ -73,7 +73,7 @@ void test('relocation updates a monster’s perceived position of a visible hero
     assert.deepEqual([orc.mux, orc.muy], [18, 10]);
 });
 void test('relocation clears stale trapping but a same-square request does not attempt escape', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const orc = await createMonsterAt('hill orc', 11, 10);
     await maketrap(11, 10, PIT);
@@ -89,21 +89,21 @@ async function topline() {
     return requireScreenRow(0).map(cell => cell.ch).join('').trim();
 }
 void test('a visible relocation describes arrival next to the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const orc = await createMonsterAt('hill orc', 15, 10);
     await relocateMonsterTo(orc, 11, 10, { flags: RLOC_MSG });
     assert.equal(await topline(), 'The hill orc vanishes and reappears next to you.');
 });
 void test('a visible relocation beyond nearby range describes movement farther away', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const orc = await createMonsterAt('hill orc', 15, 10);
     await relocateMonsterTo(orc, 24, 10, { flags: RLOC_MSG });
     assert.equal(await topline(), 'The hill orc vanishes and reappears farther away.');
 });
 void test('an unseen marked arrival is introduced once with an indefinite name', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const orc = await createMonsterAt('hill orc', 30, 10);
@@ -114,7 +114,7 @@ void test('an unseen marked arrival is introduced once with an indefinite name',
 });
 for (const mode of ['suppressed', 'level generation']) {
     void test(`${mode} relocation does not announce a marked arrival`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.requireAt(30, 10).typ = ROOM;
         const orc = await createMonsterAt('hill orc', 30, 10);
@@ -128,7 +128,7 @@ for (const mode of ['suppressed', 'level generation']) {
     });
 }
 void test('vanishing waits for the previous topline before changing the map', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const orc = await createMonsterAt('hill orc', 11, 10);
@@ -143,7 +143,7 @@ void test('vanishing waits for the previous topline before changing the map', as
     assert.equal(await topline(), 'The hill orc vanishes!');
 });
 void test('relocation exposes a concealed monster when its new square has no cover', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(APPLE, 11, 10);
     const spider = await createMonsterAt('cave spider', 11, 10);
@@ -160,7 +160,7 @@ for (const { species, peaceful, asleep, hallucinating, interrupted } of [
     { species: 'acid blob', peaceful: true, hallucinating: true, interrupted: true },
 ]) {
     void test(`${asleep ? 'sleeping ' : ''}${peaceful ? 'peaceful' : 'hostile'} ${species} ${interrupted ? 'interrupts' : 'does not interrupt'} searching on relocation${hallucinating ? ' while the hero hallucinates' : ''}`, async () => {
-        freshObjectRoom({ right: 30 });
+        await freshObjectRoom({ right: 30 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 26, 10);
         monster.mpeaceful = peaceful;
@@ -177,7 +177,7 @@ for (const { species, peaceful, asleep, hallucinating, interrupted } of [
     });
 }
 void test('a resident keeper becomes angry when relocated out of its shop', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     const dagger = await addInventoryObject(DAGGER);
@@ -196,7 +196,7 @@ void test('a resident keeper becomes angry when relocated out of its shop', asyn
     assert.equal(!!dagger.unpaid, false);
 });
 void test('goods carried out of a shop settle only billed items and clear no-charge marks', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     const orc = await createMonsterAt('hill orc', 13, 10);
@@ -217,7 +217,7 @@ void test('goods carried out of a shop settle only billed items and clear no-cha
     assert.match(await topline(), /^You owe .* 40 zorkmids for it!$/);
 });
 void test('goods moved between shops keep their original bill and no-charge marks', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     await createStaffedShop({ left: 19, right: 25, keeperX: 22, keeperY: 10 });
@@ -236,7 +236,7 @@ void test('goods moved between shops keep their original bill and no-charge mark
     assert.equal(!!own.no_charge, true);
 });
 void test('an untrapped monster does not trigger a trap merely by relocating onto it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const orc = await createMonsterAt('hill orc', 11, 10);
     await maketrap(15, 10, PIT);
@@ -246,7 +246,7 @@ void test('an untrapped monster does not trigger a trap merely by relocating ont
     assert.equal(orc.mhp, hp);
 });
 void test('an already trapped giant can climb out of the pit at its relocation destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 11, 10);
     await maketrap(11, 10, PIT);
@@ -259,7 +259,7 @@ void test('an already trapped giant can climb out of the pit at its relocation d
     assert.equal(await topline(), 'The hill giant climbs easily out of the pit.');
 });
 void test('relocating a trapped long worm does not run a head-only trap escape', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10);
     assert.ok(worm.wormno);
@@ -269,7 +269,7 @@ void test('relocating a trapped long worm does not run a head-only trap escape',
     assert.ok(worm.mtrapped);
 });
 void test('a relocated shopkeeper reports both its move and anger', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     const input = resetInputState();
@@ -284,7 +284,7 @@ void test('a relocated shopkeeper reports both its move and anger', async () => 
     assert.equal(!!shopkeeper.mpeaceful, false);
 });
 void test('a unicorn gift reports one relocation after its acceptance', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const unicorn = await createMonsterAt('gray unicorn', 11, 10);
     unicorn.mpeaceful = 0;
@@ -302,7 +302,7 @@ void test('a unicorn gift reports one relocation after its acceptance', async ()
     assert.equal(gem.where, 'minvent');
 });
 void test('a Tengu reaches its landing fire only after its teleport message is acknowledged', async () => {
-    freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
     requirePlayingGame(game);
     game._moveloopStarted = true;
     game.u.umovement = 12;
@@ -337,7 +337,7 @@ void test('a Tengu reaches its landing fire only after its teleport message is a
     assert.ok(tengu.mhp < 100, 'the ordinary movement tail still triggers the landing fire');
 });
 void test('a Tengu refused a teleport bites only after the refusal is acknowledged', async () => {
-    freshObjectRoom({ left: 4, right: 20, top: 10, bottom: 10, hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ left: 4, right: 20, top: 10, bottom: 10, hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     game.level.flags.noteleport = true;
     game._moveloopStarted = true;

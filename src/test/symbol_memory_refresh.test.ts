@@ -47,7 +47,7 @@ void test('a cached level redraws its memory when symbols changed elsewhere', as
 // character depends on the color and dark_room options, which the saved
 // memory already encodes.
 void test('restoring preserves the blank dark-room character without color', async () => {
-    freshObjectRoom({ flags: { color: false } });
+    await freshObjectRoom({ flags: { color: false } });
     requirePlayingGame(game);
     game.plname = 'Dark';
     const location = game.level?.at(3, 2);
@@ -58,7 +58,7 @@ void test('restoring preserves the blank dark-room character without color', asy
     const storage = memoryStorage();
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Dark', storage), true);
+    assert.equal(await restoreGame('Dark', storage), true);
     // dorecover() finishes with a full repaint of the restored memory.
     await docrt();
     await flush_screen(1);

@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const resistant of [false, true]) {
     void test(`an ice troll's cold claw ${resistant ? 'cannot chill a cold-resistant hero' : 'damages and chills the hero'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, coldResistance: resistant } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, coldResistance: resistant } });
         requirePlayingGame(game);
         const troll = await createMonsterAt('ice troll', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         troll.mux = game.u.ux;
@@ -35,7 +35,7 @@ for (const resistant of [false, true]) {
 }
 for (const removeCloak of [false, true]) {
     void test(`a protection cloak ${removeCloak ? 'stops cancelling cold when removed, before AC updates' : 'cancels a cold claw while worn'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
         wearHeroArmor(cloak);

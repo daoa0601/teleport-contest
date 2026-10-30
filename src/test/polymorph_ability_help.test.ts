@@ -14,7 +14,7 @@ for (const [form, help] of [
     ['mind flayer', 'emit a mental blast'],
 ] as const) {
     void test(`a polymorph trap explains how to ${help} in ${form} form`, async () => {
-        const level = freshObjectRoom({ hero: { polymorphControl: true }, gameplaySeed: 2n });
+        const level = await freshObjectRoom({ hero: { polymorphControl: true }, gameplaySeed: 2n });
         const trap = addTrap(level, POLY_TRAP, game.u.ux, game.u.uy);
         const input = resetInputState();
         const messages: string[] = [];

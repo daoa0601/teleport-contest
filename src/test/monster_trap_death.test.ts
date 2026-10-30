@@ -139,7 +139,7 @@ void test('a straw pet killed by an exploding potion in a fire trap receives a r
 
 for (const [name, trapType] of [['pit', PIT], ['bear trap', BEAR_TRAP]] as const) {
     void test(`a monster knocked into a ${name} does not award the hero kill credit`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('pony', 11, 10);
         monster.mhp = 1;
@@ -159,7 +159,7 @@ for (const [name, trapType] of [['pit', PIT], ['bear trap', BEAR_TRAP]] as const
 }
 
 void test('an unseen pet crushed by a moving drawbridge gives a sad feeling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.context.mon_moving = true;
     const monster = await createMonsterAt('little dog', 12, 10);
@@ -170,7 +170,7 @@ void test('an unseen pet crushed by a moving drawbridge gives a sad feeling', as
     location.drawbridgemask = DB_NORTH | DB_MOAT;
     const wall = game.level.requireAt(12, 9);
     wall.typ = DOOR;
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
 
     await answerPrompts(moveDrawbridgeOccupants(

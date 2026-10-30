@@ -32,7 +32,7 @@ async function topline() {
     return row.map(cell => cell.ch).join('').trim();
 }
 void test('an immobile named monster keeps its personal name in the fear message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10);
     setMonsterGivenName(pet, 'Fido');
@@ -41,7 +41,7 @@ void test('an immobile named monster keeps its personal name in the fear message
     assert.equal(await topline(), 'The immobile Fido seems to flinch.');
 });
 void test('fear inserts immobility into a player monster title', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const knight = await createMonsterAt('knight', 11, 10);
     setMonsterGivenName(knight, 'Alex the Gallant');
@@ -50,7 +50,7 @@ void test('fear inserts immobility into a player monster title', async () => {
     assert.equal(await topline(), 'Alex the immobile Gallant seems to flinch.');
 });
 void test('an immobile shopkeeper is called by its shop name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Izchak';
@@ -60,7 +60,7 @@ void test('an immobile shopkeeper is called by its shop name', async () => {
     assert.equal(await topline(), 'The immobile Izchak seems to flinch.');
 });
 void test('an immobile mount is described with its saddle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     pony.mcanmove = 0;
@@ -68,7 +68,7 @@ void test('an immobile mount is described with its saddle', async () => {
     assert.equal(await topline(), 'The immobile saddled pony seems to flinch.');
 });
 void test('sensing an unseen monster does not reveal its reaction to fear', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     const stalker = await createMonsterAt('stalker', 11, 10);
     assert.equal(canSpotMonster(stalker), true);
@@ -78,7 +78,7 @@ void test('sensing an unseen monster does not reveal its reaction to fear', asyn
     assert.equal(await topline(), '');
 });
 void test('a disguised mimic stays silent even with additional appearance flags', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_FURNITURE | 0x08;
@@ -88,7 +88,7 @@ void test('a disguised mimic stays silent even with additional appearance flags'
     assert.equal(await topline(), '');
 });
 void test('a sticky hero retains its grip on a frightened monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('owlbear');
     const goblin = await createMonsterAt('goblin', 11, 10);
@@ -98,7 +98,7 @@ void test('a sticky hero retains its grip on a frightened monster', async () => 
     assert.equal(goblin.mflee, 1);
 });
 void test('a frightened holder releases the hero and cannot immediately grab again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const python = await createMonsterAt('python', 11, 10);
     game.u.ustuck = python;
@@ -109,7 +109,7 @@ void test('a frightened holder releases the hero and cannot immediately grab aga
     assert.equal(await topline(), 'You get released!');
 });
 void test('a frightened engulfer expels the hero onto the trap below it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     addTrap(level, PIT, game.u.ux, game.u.uy);
@@ -123,7 +123,7 @@ void test('a frightened engulfer expels the hero onto the trap below it', async 
     assert.ok((game.u.utrap ?? 0) > 0);
 });
 void test('fear preserves untimed flight and caps repeated timed flight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10);
     await makeMonsterFlee(goblin, { turns: 1, announce: false });
@@ -137,7 +137,7 @@ void test('fear preserves untimed flight and caps repeated timed flight', async 
     assert.equal(goblin.mflee, 1);
 });
 void test('first-only fear still releases the hero but does not extend flight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const python = await createMonsterAt('python', 11, 10);
     await makeMonsterFlee(python, { turns: 4, announce: false });
@@ -149,7 +149,7 @@ void test('first-only fear still releases the hero but does not extend flight', 
     assert.equal(python.mtrack.length, 0);
 });
 void test('a Vrock releases poison gas when frightened, then needs time to recover', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const vrock = await createMonsterAt('vrock', 11, 10);
     assert.equal(vrock.mspec_used ?? 0, 0);
@@ -173,7 +173,7 @@ void test('a Vrock releases poison gas when frightened, then needs time to recov
     assert.equal(game.level.regions.length, 2);
 });
 void test('fear has no effect on a dead Vrock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const vrock = await createMonsterAt('vrock', 11, 10);
     vrock.mhp = 0;
@@ -186,7 +186,7 @@ void test('fear has no effect on a dead Vrock', async () => {
     assert.equal(await topline(), '');
 });
 async function swallowedGarlicArena(lifeSaving = false) {
-    const level = freshObjectRoom({ hero: { uhp: 1 } });
+    const level = await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const vampire = await createMonsterAt('vampire', 11, 10);
     await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
@@ -226,7 +226,7 @@ void test('life saving after garlic expulsion resumes fear and melee damage', as
     assert.ok(vampire.mhp < 100);
 });
 void test('fatal expulsion from horn music leaves later listeners asleep', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 1 } });
+    const level = await freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const observer = await createMonsterAt('goblin', 12, 10);
     observer.msleeping = 1;
@@ -241,7 +241,7 @@ void test('fatal expulsion from horn music leaves later listeners asleep', async
     assert.equal(observer.msleeping, 1);
 });
 async function gremlinAndSunsword() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gremlin = await createMonsterAt('gremlin', 11, 10);
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
@@ -290,7 +290,7 @@ void test('a gremlin can cry out about bright light when the hero can hear', asy
     assert.ok([...messages].some(message => message.includes('The gremlin flees from the painful light of Sunsword.')));
 });
 void test('glowing gold dragon scales are named as the source of gremlin fear', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gremlin = await createMonsterAt('gremlin', 11, 10);
     const scales = await addInventoryObject(GOLD_DRAGON_SCALES);
@@ -315,7 +315,7 @@ void test('gremlin prose prefers Sunsword when armor supplies the actual light',
     assert.equal(await topline(), 'The gremlin flees from the painful light of Sunsword.');
 });
 async function swallowedMagicbaneArena(fatalLanding) {
-    const level = freshObjectRoom({ hero: { uhp: fatalLanding ? 1 : 40 } });
+    const level = await freshObjectRoom({ hero: { uhp: fatalLanding ? 1 : 40 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mhp = worm.mhpmax = 100;

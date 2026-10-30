@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('descending with an iron ball acknowledges the fall before clearing the old map', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 }, gameplaySeed: 7 });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 }, gameplaySeed: 7 });
     requirePlayingGame(game);
     await punishHero(null, game);
     game._pending_message = '';

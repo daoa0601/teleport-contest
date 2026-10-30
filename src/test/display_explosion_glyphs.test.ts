@@ -17,7 +17,7 @@ import { requireScreenCell } from './support/screen.js';
 const SCROLL_CLASS = 9;
 
 void test('an ASCII explosion keeps its border position and fiery glyph type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.symset = 'ASCII';
     let frames = 0;
     game.animationFrame = async () => {
@@ -32,7 +32,7 @@ void test('an ASCII explosion keeps its border position and fiery glyph type', a
 });
 
 void test('a default game shows the shield of a monster resisting an explosion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.symset = 'ASCII';
     await createMonsterAt('red mold', 15, 10, NO_MINVENT);
     let shieldFrames = 0;
@@ -46,7 +46,7 @@ void test('a default game shows the shield of a monster resisting an explosion',
 });
 
 void test('a dark explosion uses the default fiery glyph and orange border', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.symset = 'ASCII';
     let frames = 0;
     game.animationFrame = async () => {
@@ -63,7 +63,7 @@ void test('a dark explosion uses the default fiery glyph and orange border', asy
 });
 
 void test('digging into a magic trap uses the same magical explosion glyphs', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000 } });
+    const level = await freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000 } });
     game.symset = 'ASCII';
     addTrap(level, MAGIC_TRAP, 10, 10);
     installPagerInput(resetInputState(), { expected: /trap|blast|Boom|caught/, limit: 8 });

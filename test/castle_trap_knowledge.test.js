@@ -8,7 +8,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a thinking monster born in the Castle avoids unfamiliar-looking trapdoors', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     game.stronghold_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     const xorn = await createMonsterAt('xorn', 10, 10, MM_NOGRP | NO_MINVENT);
@@ -18,7 +18,7 @@ void test('a thinking monster born in the Castle avoids unfamiliar-looking trapd
     assert.equal(destinations.some(square => square.x === 11 && square.y === 10), false);
 });
 void test('a mindless Castle monster is born without trapdoor knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.stronghold_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     const zombie = await createMonsterAt('human zombie', 12, 10, MM_NOGRP | NO_MINVENT);

@@ -26,7 +26,7 @@ async function unseenPolymorph(target, x) {
     return game._pending_message;
 }
 void test('a hero smells a monster that polymorphs where it cannot be seen', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
     assert.equal(await unseenPolymorph(giantEel, 11), 'You smell fish.');
@@ -34,7 +34,7 @@ void test('a hero smells a monster that polymorphs where it cannot be seen', asy
     assert.equal(await unseenPolymorph(rothe, 13), 'You notice a bovine smell.');
 });
 void test('a smell-free species stays silent even in a scented class', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
     // White unicorns are held smell-free by the species switch so the
@@ -42,7 +42,7 @@ void test('a smell-free species stays silent even in a scented class', async () 
     assert.equal(await unseenPolymorph(whiteUnicorn, 11), '');
 });
 void test('a hero without a sense of smell notices nothing', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
     const original = game.u.umonnum;

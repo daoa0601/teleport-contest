@@ -38,7 +38,7 @@ function captureMessages(feed: string): string[] {
 async function sitOnVladsThrone(
     seed: bigint, bases: Bases, maximums: Bases, feed: string,
 ): Promise<string[]> {
-    freshObjectRoom({ flags: { debug: true, verbose: true } });
+    await freshObjectRoom({ flags: { debug: true, verbose: true } });
     requirePlayingGame(game);
     game.u.uz = { dnum: 3, dlevel: 8 };
     game.dungeons[3] = createDungeon({ dname: "Vlad's Tower" });
@@ -105,7 +105,7 @@ void test('a cursed throne loss at the minimum trades maximum for part of the ex
     for (let seed = 1n; seed < 40n; seed++) {
         const bases: Bases = [3, 3, 3, 3, 3, 3];
         const maximums: Bases = [12, 12, 12, 12, 12, 12];
-        freshObjectRoom({ flags: { debug: true, verbose: true } });
+        await freshObjectRoom({ flags: { debug: true, verbose: true } });
         requirePlayingGame(game);
         game.u.acurr.a = [...bases];
         game.u.amax.a = [...maximums];
@@ -155,7 +155,7 @@ void test('a cursed throne loss at the minimum trades maximum for part of the ex
 // reports "Your innate strength has improved." on the msgflg-0 attempt of a
 // blessed gain ability (potion.c peffect_gain_ability).
 void test('a blessed gain ability under gauntlets of power reports the innate gain', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     game.u.acurr.a = [16, 18, 18, 18, 18, 18];
     game.u.amax.a = [16, 18, 18, 18, 18, 18];

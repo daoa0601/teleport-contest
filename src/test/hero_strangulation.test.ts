@@ -25,7 +25,7 @@ async function wearSetupAmulet(amulet: GameObject) {
 }
 
 void test('putting on the amulet starts strangulation and taking it off stops it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     pushKeys(`${amulet.invlet}        `);
@@ -45,7 +45,7 @@ void test('putting on the amulet starts strangulation and taking it off stops it
 });
 
 void test('an immune body stops strangulation until the human body returns', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await wearSetupAmulet(amulet);
@@ -63,7 +63,7 @@ void test('an immune body stops strangulation until the human body returns', asy
 });
 
 void test('R removes the only accessory even when armor is also worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(armor);
@@ -79,7 +79,7 @@ void test('R removes the only accessory even when armor is also worn', async () 
 });
 
 void test('changing between vulnerable bodies restarts the countdown', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     await wearSetupAmulet(await addInventoryObject(AMULET_OF_STRANGULATION));
     await advanceHeroStrangulation();
@@ -92,7 +92,7 @@ void test('changing between vulnerable bodies restarts the countdown', async () 
 });
 
 void test('a headless cloud can wear the amulet without being strangled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('fog cloud');
 
     await wearSetupAmulet(await addInventoryObject(AMULET_OF_STRANGULATION));
@@ -101,7 +101,7 @@ void test('a headless cloud can wear the amulet without being strangled', async 
 });
 
 void test('a vampire is strangled despite not needing to breathe', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('vampire');
 
@@ -111,7 +111,7 @@ void test('a vampire is strangled despite not needing to breathe', async () => {
 });
 
 void test('declining death from strangulation consumes the amulet', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await wearSetupAmulet(amulet);
@@ -132,7 +132,7 @@ void test('declining death from strangulation consumes the amulet', async () => 
 });
 
 void test('strangulation kills a monster form without returning the hero to human form', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -g -c -o' } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -g -c -o' } });
     requireFixtureGame(game);
     installPolymorphedHero('vampire');
     const form = game.u.umonnum;

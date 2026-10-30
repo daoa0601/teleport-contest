@@ -16,10 +16,10 @@ export function monsterIsHelpless(monster) {
     return !!(monster.msleeping
         || !monster.mcanmove || (monster.mfrozen ?? 0) > 0);
 }
-export function putMonsterToSleep(monster, turns) {
+export async function putMonsterToSleep(monster, turns) {
     if (!monster.mcanmove)
         return false;
-    finishMonsterEating(monster);
+    await finishMonsterEating(monster);
     const duration = turns + (monster.mfrozen ?? 0);
     if (duration > 0) {
         monster.mcanmove = 0;

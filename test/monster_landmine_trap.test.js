@@ -96,7 +96,7 @@ void test('a forced land mine activation can reveal its trigger below a flying m
     assert.match(messages[0] ?? '', /trigger appears in a pile of soil/);
 });
 void test('the blast scatters loose objects away from the mine', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const rock = await floorObject(ROCK, 11, 10);
     await scatterFloorObjects(11, 10, 4, {

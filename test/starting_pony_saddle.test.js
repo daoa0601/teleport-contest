@@ -29,12 +29,12 @@ async function startKnight(options = '') {
     return pony;
 }
 void test('a starting pony receives a fully identified saddle when it is visible', async () => {
-    freshObjectRoom({ role: 'knight' });
+    await freshObjectRoom({ role: 'knight' });
     const pony = await makedog();
     assert.ok(pony);
     const saddle = monsterSaddle(pony);
     assert.ok(saddle, 'The starting pony must wear a saddle');
-    newsym(pony.mx, pony.my);
+    await newsym(pony.mx, pony.my);
     assert.equal(await farlookLocationDescription(pony.mx, pony.my), 'tame saddled pony');
     assert.equal(await inventoryItemDescription(saddle), 'an uncursed saddle (being worn)');
     assert.equal(saddle.known, true);

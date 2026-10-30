@@ -28,11 +28,11 @@ async function sturdyJackalAt(x, y) {
     const monster = await createMonsterAt('jackal', x, y);
     monster.mhp = monster.mhpmax = 1000;
     monster.mpeaceful = false;
-    newsym(x, y);
+    await newsym(x, y);
     return monster;
 }
 void test('saving preserves the last sensed polearm target when several targets are in reach', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     requirePlayingGame(game);
     game.plname = 'Reach';
     await wieldReachWeapon(HALBERD);
@@ -44,7 +44,7 @@ void test('saving preserves the last sensed polearm target when several targets 
     await sturdyJackalAt(10, 12);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Reach', storage), true);
+    assert.equal(await restoreGame('Reach', storage), true);
     installPagerInput(resetInputState(), {
         expected: /halberd|jackal|welcome back|moon|Friday/, limit: 5,
     });
@@ -59,7 +59,7 @@ void test('saving preserves the last sensed polearm target when several targets 
     assert.equal(game.context.move, 1);
 });
 void test('saving cannot reset the once-per-turn distant strike from Snickersnee', async () => {
-    freshObjectRoom({ moves: 0 });
+    await freshObjectRoom({ moves: 0 });
     requirePlayingGame(game);
     game.plname = 'Snickersnee';
     const artifact = artifactByName('Snickersnee');
@@ -72,7 +72,7 @@ void test('saving cannot reset the once-per-turn distant strike from Snickersnee
     const hpAfterFirst = target.mhp;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Snickersnee', storage), true);
+    assert.equal(await restoreGame('Snickersnee', storage), true);
     installPagerInput(resetInputState(), {
         expected: /jackal|Shkinng|welcome back|moon|Friday/, limit: 5,
     });

@@ -14,7 +14,7 @@ for (const graphics of ['ASCII', 'DECgraphics', 'Rogue']) {
                 const kind = ladder ? 'ladder' : 'staircase';
                 const selected = `${branch ? 'branch ' : ''}${kind} ${direction}`;
                 void test(`${graphics} farlook explains the displayed ${selected} symbol`, async () => {
-                    const level = freshObjectRoom({ flags: { tips: false } });
+                    const level = await freshObjectRoom({ flags: { tips: false } });
                     requirePlayingGame(game);
                     game.symset = graphics === 'Rogue' ? 'DECgraphics' : graphics;
                     if (graphics === 'Rogue')
@@ -25,7 +25,7 @@ for (const graphics of ['ASCII', 'DECgraphics', 'Rogue']) {
                     game.stairs = { sx: 11, sy: 10, up, isladder: ladder,
                         tolev: { dnum: branch ? 1 : 0, dlevel: 1 },
                         u_traversed: true, next: null };
-                    newsym(11, 10);
+                    await newsym(11, 10);
                     const display = requireGameDisplay();
                     const messageRows = () => display.grid.slice(0, 3)
                         .map(row => row.map(cell => cell.ch).join('')).join(' ');

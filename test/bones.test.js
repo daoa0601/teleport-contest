@@ -394,7 +394,7 @@ void test("bones retain physical terrain but not the dead adventurer's terrain m
     requirePlayingGame(game);
     const location = requireGameLevel().requireAt(30, 10);
     location.typ = FOUNTAIN;
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
     assert.equal(location.lastseentyp, FOUNTAIN);
     assert.equal(saveBonesLevel(), true);
     freshBonesRoom(storage);
@@ -412,7 +412,7 @@ void test("magic mapping bones does not recover the old adventurer's unseen obje
     requireGameLevel().requireAt(30, 10).typ = CORR;
     const potion = await knownObject(POT_HEALING);
     placeCreatedObject(potion, 30, 10);
-    map_object(potion, true);
+    await map_object(potion, true);
     assert.equal(requireGameLevel().requireAt(30, 10).disp_ch, '!');
     assert.equal(saveBonesLevel(), true);
     const { payload: saved } = storedBones(storage);
@@ -422,9 +422,9 @@ void test("magic mapping bones does not recover the old adventurer's unseen obje
     pushKeys('yn');
     await mklev();
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(30, 10), false);
-    mapLevel();
+    await mapLevel();
     assert.equal(requireGameLevel().requireAt(30, 10).disp_ch, '#');
     const remembered = requireGameLevel().requireAt(30, 10).remembered_glyph;
     assert.ok(remembered, 'mapping did not remember the corridor');
@@ -441,7 +441,7 @@ void test('a pet prefers food dropped after bones load over equally close bones 
     requirePlayingGame(game);
     pushKeys('yn');
     await mklev();
-    vision_recalc(0);
+    await vision_recalc(0);
     placeCreatedObject(await knownObject(TRIPE_RATION), 16, 12);
     const dog = await createMonsterAt('little dog', 14, 12, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);

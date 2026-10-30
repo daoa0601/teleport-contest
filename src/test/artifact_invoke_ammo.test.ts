@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { floorObjectsAt } from './support/level-state.js';
 
 void test('the Longbow drops conjured arrows when the hero is fumbling', async () => {
-    const level = freshObjectRoom({ role: 'ranger', hero: { ualign: { type: -1, record: 10 } } });
+    const level = await freshObjectRoom({ role: 'ranger', hero: { ualign: { type: -1, record: 10 } } });
     requirePlayingGame(game);
     grantIntrinsicProperty('fumbling', 'outside', game);
     const bow = await artifactObject('The Longbow of Diana', { invlet: 'a', where: 'inventory', age: 0 });

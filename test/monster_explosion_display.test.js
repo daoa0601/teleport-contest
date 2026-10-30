@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 void test('a poisonous monster explosion displays a noxious green blast', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     game.symset = 'ASCII';
     const colors = [];
     game.animationFrame = async () => { colors.push(requireScreenCell(13, 10).color); };
@@ -18,7 +18,7 @@ void test('a poisonous monster explosion displays a noxious green blast', async 
     assert.ok(colors.every(color => color === CLR_GREEN), 'The noxious blast is green.');
 });
 void test('an unsupported monster explosion style reports the damage type and continues with a fiery blast', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     const input = resetInputState();
     installPagerInput(input, { expected: /bad explosion type|Program in disorder|Please report/, limit: 6 });
     let diagnosticShown = false;

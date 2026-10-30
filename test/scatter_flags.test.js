@@ -8,7 +8,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a missile that ignores monsters also passes the swallowed hero at their shared square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const swallower = await createMonsterAt('purple worm', 12, 10);
     await installSwallowedHero(swallower);
     await floorObject(POT_FRUIT_JUICE, 11, 10);

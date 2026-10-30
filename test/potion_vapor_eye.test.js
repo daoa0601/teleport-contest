@@ -7,7 +7,7 @@ import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('cursed ability vapors sting a breathless gas spore in its optic nerves', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('gas spore');
     const potion = await knownObject(POT_RESTORE_ABILITY, { cursed: true });

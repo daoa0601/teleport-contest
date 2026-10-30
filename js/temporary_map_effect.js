@@ -18,9 +18,9 @@ export class TemporaryMapEffect {
     changeGlyph(glyph) {
         this.glyph = glyph;
     }
-    // Callers with their own frame publication can draw synchronously, then
-    // flush. show() supplies tmp_at()'s ordinary flush boundary.
-    draw(x, y) {
+    // Callers with their own frame publication draw before flushing.
+    // show() supplies tmp_at()'s ordinary flush boundary.
+    async draw(x, y) {
         if (!isok(x, y))
             return false;
         if (this.style === 'beam' || this.style === 'all' || this.style === 'tether') {
@@ -32,57 +32,57 @@ export class TemporaryMapEffect {
                 const previous = this.positions.at(-1);
                 if (previous) {
                     const tether = zapdir_to_glyph(Math.sign(game.u.ux - previous.x), Math.sign(game.u.uy - previous.y), 2);
-                    this.paint(previous.x, previous.y, tether);
+                    await this.paint(previous.x, previous.y, tether);
                 }
             }
         }
         else {
-            this.clear();
+            await this.clear();
             if (this.style === 'flash' && !cansee(x, y))
                 return false;
         }
         this.positions.push({ x, y });
-        this.paint(x, y, this.glyph);
+        await this.paint(x, y, this.glyph);
         return true;
     }
     async show(x, y) {
-        if (this.draw(x, y))
+        if (await this.draw(x, y))
             await flush_screen(0);
     }
     // A returning tether restores its far end before advancing the weapon.
-    retract() {
+    async retract() {
         if (this.style !== 'tether' || this.positions.length < 2)
             return false;
         const end = this.positions.pop();
         const previous = this.positions.at(-1);
         if (!end || !previous)
             throw new Error('A returning tether needs two saved positions');
-        newsym(end.x, end.y);
-        this.paint(previous.x, previous.y, this.glyph);
+        await newsym(end.x, end.y);
+        await this.paint(previous.x, previous.y, this.glyph);
         return true;
     }
     async end(backtrack = false) {
         try {
             if (backtrack) {
-                while (this.retract()) {
+                while (await this.retract()) {
                     await flush_screen(0);
                     await game.animationFrame?.();
                 }
             }
         }
         finally {
-            this.clear();
+            await this.clear();
         }
     }
-    clear() {
+    async clear() {
         // Keep repeated coordinates: each native saved entry is restored,
         // including its independent hallucinated map projection.
         for (const position of this.positions)
-            newsym(position.x, position.y);
+            await newsym(position.x, position.y);
         this.positions.length = 0;
     }
-    paint(x, y, glyph) {
-        show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr ?? 0, glyph);
+    async paint(x, y, glyph) {
+        await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr ?? 0, glyph);
     }
 }
 //# sourceMappingURL=temporary_map_effect.js.map

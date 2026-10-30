@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const protection of ['none', 'helmet', 'armor class', 'tame']) {
     void test(`a hidden piercer drops onto the arriving hero with ${protection}`, async () => {
-        freshObjectRoom({ hero: { uac: protection === 'armor class' ? -20 : 50 } });
+        await freshObjectRoom({ hero: { uac: protection === 'armor class' ? -20 : 50 } });
         requirePlayingGame(game);
         const piercer = await createMonsterAt('rock piercer', 11, 10, MM_NOGRP | NO_MINVENT);
         if (protection === 'tame') initializePet(piercer);
@@ -40,7 +40,7 @@ for (const protection of ['none', 'helmet', 'armor class', 'tame']) {
 }
 
 void test('surprising a peaceful ceiling hider makes it hostile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lurker = await createMonsterAt('lurker above', 11, 10, MM_NOGRP | NO_MINVENT);
     lurker.mpeaceful = 1;
     lurker.mundetected = 1;
@@ -54,7 +54,7 @@ void test('surprising a peaceful ceiling hider makes it hostile', async () => {
 });
 
 void test('a concealed piercer stops running even when its fall misses the hero', async () => {
-    freshObjectRoom({ hero: { uac: -20 } });
+    await freshObjectRoom({ hero: { uac: -20 } });
     const piercer = await createMonsterAt('rock piercer', 11, 10, MM_NOGRP | NO_MINVENT);
     piercer.mpeaceful = 0;
     piercer.mundetected = 1;
@@ -73,7 +73,7 @@ void test('a concealed piercer stops running even when its fall misses the hero'
 for (const blind of [false, true]) {
     for (const misses of [false, true]) {
         void test(`a falling named piercer ${misses ? 'misses' : 'hits'} a ${blind ? 'blind' : 'sighted'} hero`, async () => {
-            freshObjectRoom({ hero: { uac: misses ? -20 : 50 } });
+            await freshObjectRoom({ hero: { uac: misses ? -20 : 50 } });
             requirePlayingGame(game);
             setHeroBlindnessTurns(blind ? 10 : 0);
             const piercer = await createMonsterAt('rock piercer', 11, 10, MM_NOGRP | NO_MINVENT);

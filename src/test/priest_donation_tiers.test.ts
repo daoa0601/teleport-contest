@@ -19,7 +19,7 @@ import { createRoom } from './support/topology.js';
 // the tests derive each offer from the printed suggestion instead of any
 // particular random roll.  Distinct seeds per case keep that honest.
 async function donationTemple(record: number, seed: bigint) {
-    const level = freshObjectRoom({ hero: { ulevelpeak: 1, ualign: { type: 0, record } } });
+    const level = await freshObjectRoom({ hero: { ulevelpeak: 1, ualign: { type: 0, record } } });
     requirePlayingGame(game);
     const room = createRoom({ lx: 7, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];

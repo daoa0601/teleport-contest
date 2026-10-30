@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 for (const carriesAmulet of [false, true]) {
     void test(`a branch stair at the dungeon entrance ${carriesAmulet ? 'keeps an Amulet carrier in the dungeon' : 'lets a monster escape the dungeon'}`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { uz: { dnum: 0, dlevel: 1 } } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { uz: { dnum: 0, dlevel: 1 } } });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' }), createDungeon({ dname: 'The Gnomish Mines' })];
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -37,7 +37,7 @@ for (const carriesAmulet of [false, true]) {
     });
 }
 void test('a ladder across a dungeon branch uses the special-stair escape and arrival', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' }), createDungeon({ dname: 'The Gnomish Mines' })];
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -58,7 +58,7 @@ void test('a ladder across a dungeon branch uses the special-stair escape and ar
 });
 for (const ladder of [false, true]) {
     void test(`a floating monster cannot escape through older upstairs beneath a downward ${ladder ? 'ladder' : 'staircase'}`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('floating eye', 10, 10, MM_ANGRY | NO_MINVENT);
         monster.mhp = 1;

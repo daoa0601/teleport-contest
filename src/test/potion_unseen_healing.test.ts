@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('healing an invisible monster does not reveal its recovered health or sight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('dog', game.u.ux + 1, game.u.uy);
     monster.minvis = true;
     monster.mhp = 2;

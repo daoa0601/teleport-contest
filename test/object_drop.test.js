@@ -18,7 +18,7 @@ const MEATBALL = OBJECT_NAMES.indexOf('meatball');
 const PURPLE_WORM = 'purple worm';
 // C do.c:809-814: dropping releases wielded/quivered/swap slots first.
 void test('dropping releases the weapon slots and stacks on the floor', async () => {
-    freshObjectRoom({ gameplaySeed: 61 });
+    await freshObjectRoom({ gameplaySeed: 61 });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(OBJECT_NAMES.indexOf('dagger'));
     await setPrimaryWeapon(dagger, game);
@@ -33,7 +33,7 @@ void test('dropping releases the weapon slots and stacks on the floor', async ()
 });
 // C dropz -> flooreffects: a boulder over a pool never lands.
 void test('floor effects consume the dropped object before placement', async () => {
-    freshObjectRoom({ gameplaySeed: 62 });
+    await freshObjectRoom({ gameplaySeed: 62 });
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const boulder = await floorObject(OBJECT_NAMES.indexOf('boulder'), 11, 10);
@@ -45,7 +45,7 @@ void test('floor effects consume the dropped object before placement', async () 
 });
 // C do.c:816-825: a digester swallower instantly eats dropped food.
 void test('a digesting swallower instantly digests dropped meat', async () => {
-    freshObjectRoom({ gameplaySeed: 63 });
+    await freshObjectRoom({ gameplaySeed: 63 });
     requirePlayingGame(game);
     const worm = await createMonsterAt(PURPLE_WORM, game.u.ux, game.u.uy);
     game.u.uswallow = 1;
@@ -58,7 +58,7 @@ void test('a digesting swallower instantly digests dropped meat', async () => {
     assert.equal(worm.minvent.includes(meat), false);
 });
 void test('a dropped cockatrice corpse petrifies its engulfer and gives the hero kill credit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt(PURPLE_WORM, 11, 10);
     await installSwallowedHero(worm);
@@ -75,7 +75,7 @@ void test('a dropped cockatrice corpse petrifies its engulfer and gives the hero
     assert.equal(statue.contents?.includes(corpse) ?? false, false);
 });
 void test('a dropped petrifying corpse gives unseen life-saving feedback without releasing the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const amulet = await equipMonsterObject(worm, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -99,7 +99,7 @@ void test('a dropped petrifying corpse gives unseen life-saving feedback without
 });
 // Non-food dropped while swallowed joins the swallower's pack.
 void test('dropped junk while swallowed joins the swallower pack', async () => {
-    freshObjectRoom({ gameplaySeed: 64 });
+    await freshObjectRoom({ gameplaySeed: 64 });
     requirePlayingGame(game);
     const worm = await createMonsterAt(PURPLE_WORM, game.u.ux, game.u.uy);
     game.u.uswallow = 1;
@@ -111,7 +111,7 @@ void test('dropped junk while swallowed joins the swallower pack', async () => {
 });
 // C dothrow.c:610-613: soft terrain or water bypasses breakage outright.
 void test('hitfloor over a pool drops without impact breakage', async () => {
-    freshObjectRoom({ gameplaySeed: 65 });
+    await freshObjectRoom({ gameplaySeed: 65 });
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const flask = await knownObject(POT_OIL);
@@ -125,7 +125,7 @@ void test('hitfloor over a pool drops without impact breakage', async () => {
 // C dothrow.c:616-639: the verbose landing line names the surface, or the
 // seen trap's edge.
 void test('hitfloor names the seen pit edge', async () => {
-    freshObjectRoom({ gameplaySeed: 66 });
+    await freshObjectRoom({ gameplaySeed: 66 });
     requirePlayingGame(game);
     addTrap(game.level, PIT, game.u.ux, game.u.uy, { tseen: true });
     const gem = await knownObject(OBJECT_NAMES.indexOf('diamond'), {});

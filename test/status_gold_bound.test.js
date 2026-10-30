@@ -6,7 +6,7 @@ import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('the status purse stops at six digits without discarding carried gold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroGoldAmount(game, 1234567);
     await bot();
     const row = requireScreenRow(23).map(cell => cell.ch).join('');

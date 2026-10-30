@@ -46,16 +46,16 @@ export async function attackHostileMonster(monster: Monster, x: number, y: numbe
     if (Upolyd(game.u) && monsterHasNoAttacks(heroSpecies(game))) {
         await plineWithContinuation('You have no way to attack monsters physically.');
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (exceedsActionCapacity(game)) {
         await plineWithContinuation('You cannot fight while so heavily loaded.');
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (await checkHeroAttackOverexertion()) {
-        finishAttackDisplay(monster, x, y);
+        await finishAttackDisplay(monster, x, y);
         return true;
     }
     if (game.u.twoweap && !await canBeginTwoWeaponCombat(game))
@@ -82,7 +82,7 @@ export async function attackHostileMonster(monster: Monster, x: number, y: numbe
         await attackWithHumanForm(monster, x, y, attack, confirmationOverridden);
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    finishAttackDisplay(monster, x, y);
+    await finishAttackDisplay(monster, x, y);
     return true;
 }
 
@@ -163,7 +163,7 @@ async function cleaveAroundTarget(targetX: number, targetY: number, attack: Atta
         if (!isok(x, y)) continue;
         const monster = monsterAtPosition(game.level, x, y);
         if (!monster) {
-            unmap_invisible(x, y);
+            await unmap_invisible(x, y);
             continue;
         }
         const accuracy = await findHeroMeleeHitThreshold(monster, attack[0], primaryWeapon(), { firstAttack: true });
@@ -196,9 +196,9 @@ function secondaryWeapon(): GameObject | null {
     return game.uswapwep || game.u.uswapwep || null;
 }
 
-function finishAttackDisplay(monster: Monster, x: number, y: number): void {
+async function finishAttackDisplay(monster: Monster, x: number, y: number): Promise<void> {
     if (game.context.forcefight && !monster.dead && monster.mhp > 0
         && !canSpotMonster(monster) && !(game.u.uswallow && game.u.ustuck === monster)
         && game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible')
-        map_invisible(x, y);
+        await map_invisible(x, y);
 }

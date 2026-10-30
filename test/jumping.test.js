@@ -18,8 +18,8 @@ import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
-function readyJump({ knight = false, ...room } = {}) {
-    freshObjectRoom({ flags: { tips: false, pickup: false }, ...room });
+async function readyJump({ knight = false, ...room } = {}) {
+    await freshObjectRoom({ flags: { tips: false, pickup: false }, ...room });
     grantIntrinsicProperty('jumping', knight ? 'outside' : 'form');
     return resetInputState();
 }
@@ -27,7 +27,7 @@ function text() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
 void test('physical jump refuses a hero without jumping before asking for a target', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requireFixtureGame(game);
     const input = resetInputState();
     input.feed('jump\n');
@@ -38,7 +38,7 @@ void test('physical jump refuses a hero without jumping before asking for a targ
     assert.equal(input.isBlocked, false);
 });
 void test('jump target selection suspends before movement and Escape spends no time or nutrition', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     const before = game.u.uhunger;
     const jumping = jumpHero();
@@ -50,7 +50,7 @@ void test('jump target selection suspends before movement and Escape spends no t
     assert.equal(game.u.uhunger, before);
 });
 void test('installing a knight jump selection redraws its valid squares before input', async () => {
-    const input = readyJump({ knight: true, flags: { tips: false, verbose: false } });
+    const input = await readyJump({ knight: true, flags: { tips: false, verbose: false } });
     const jumping = jumpHero();
     await input.waitUntilBlocked();
     const display = requireGameDisplay(game);
@@ -62,7 +62,7 @@ void test('installing a knight jump selection redraws its valid squares before i
     assert.deepEqual(cursor, [11, 13]);
 });
 void test('physical jump lands, pays nutrition, and installs its delay', async () => {
-    const input = readyJump({ hero: { uhunger: 900 } });
+    const input = await readyJump({ hero: { uhunger: 900 } });
     requireFixtureGame(game);
     input.feed('lll.');
     const result = await jumpHero();
@@ -74,7 +74,7 @@ void test('physical jump lands, pays nutrition, and installs its delay', async (
     assert.ok(game.u.uhunger >= 875 && game.u.uhunger < 900);
 });
 void test('jump landing performs native autopickup on the final square', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     game.flags.pickup = true;
     game.flags.pickup_types = '$';
@@ -86,7 +86,7 @@ void test('jump landing performs native autopickup on the final square', async (
     assert.equal(gold.where, 'inventory');
 });
 void test('a fresh jumping spell supplies the physical command fallback through real casting', async () => {
-    freshObjectRoom({ role: 'wizard', flags: { tips: false }, hero: {
+    await freshObjectRoom({ role: 'wizard', flags: { tips: false }, hero: {
             uen: 100, uenmax: 100, ulevel: 20,
             acurr: { a: [12, 18, 18, 12, 12, 12] },
         } });
@@ -102,18 +102,18 @@ void test('a fresh jumping spell supplies the physical command fallback through 
     assert.equal(game.u.ux, 13);
 });
 void test('innate knight jumping accepts a knight move and rejects an orthogonal jump', async () => {
-    let input = readyJump({ knight: true });
+    let input = await readyJump({ knight: true });
     requireFixtureGame(game);
     input.feed('lll.');
     assert.equal((await jumpHero()).spentTime, false);
     assert.match(game._last_message, /Illegal move/);
-    input = readyJump({ knight: true });
+    input = await readyJump({ knight: true });
     input.feed('llj.');
     assert.equal((await jumpHero()).spentTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [12, 11]);
 });
 void test('magic jumping bypasses physical anatomy and hunger admission', async () => {
-    const input = readyJump({ hero: {
+    const input = await readyJump({ hero: {
             umonnum: MONSTER_NAME.indexOf('giant eel'), mh: 20, mhmax: 20,
             uhunger: 90,
         } });
@@ -124,7 +124,7 @@ void test('magic jumping bypasses physical anatomy and hunger admission', async 
     assert.ok(game.u.uhunger < 90);
 });
 void test('physical weakness refuses a target while magic can bounce inside a swallower', async () => {
-    readyJump({ hero: { uhunger: 100 } });
+    await readyJump({ hero: { uhunger: 100 } });
     requireFixtureGame(game);
     assert.equal((await jumpHero()).spentTime, false);
     assert.match(game._last_message, /lack the strength/);
@@ -134,7 +134,7 @@ void test('physical weakness refuses a target while magic can bounce inside a sw
     assert.equal(game.u.ux, 10);
 });
 void test('physical jumps reject a diagonal open doorway while magic uses the same later collision owner', async () => {
-    let input = readyJump();
+    let input = await readyJump();
     requireFixtureGame(game);
     const door = game.level.requireAt(10, 10);
     door.typ = DOOR;
@@ -143,7 +143,7 @@ void test('physical jumps reject a diagonal open doorway while magic uses the sa
     input.feed('nj.');
     assert.equal((await jumpHero()).spentTime, false);
     assert.match(game._last_message, /diagonally out of a doorway/);
-    input = readyJump();
+    input = await readyJump();
     const magicDoor = game.level.requireAt(10, 10);
     magicDoor.typ = DOOR;
     magicDoor.doormask = D_ISOPEN;
@@ -153,7 +153,7 @@ void test('physical jumps reject a diagonal open doorway while magic uses the sa
     assert.deepEqual([game.u.ux, game.u.uy], [11, 12]);
 });
 void test('jumping crosses water without drowning and lands on dry terrain', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     game.level.requireAt(11, 10).typ = POOL;
     game.level.requireAt(12, 10).typ = POOL;
@@ -163,7 +163,7 @@ void test('jumping crosses water without drowning and lands on dry terrain', asy
     assert.equal(!!game.u.uinwater, false);
 });
 void test('ordinary pits are crossed but the landing pit catches the hero', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     addTrap(game.level, PIT, 11, 10, { tseen: true });
     addTrap(game.level, PIT, 13, 10, { tseen: true });
@@ -175,7 +175,7 @@ void test('ordinary pits are crossed but the landing pit catches the hero', asyn
     assert.ok((game.u.utrap ?? 0) > 0);
 });
 void test('a blocking monster wakes and stops the jump before its square', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     const monster = await createMonsterAt(MONSTER_NAME.indexOf('wumpus'), 12, 10);
     monster.msleeping = 1;
@@ -186,11 +186,11 @@ void test('a blocking monster wakes and stops the jump before its square', async
     assert.equal(monster.mpeaceful, 0);
 });
 void test('jumping discovers a hidden animal using its native object pronoun', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     const monster = await createMonsterAt(MONSTER_NAME.indexOf('wumpus'), 12, 10);
     monster.mundetected = 1;
-    newsym(12, 10);
+    await newsym(12, 10);
     input.feed('lll.' + ' '.repeat(8));
     await jumpHero();
     assert.equal(monster.mundetected, 0);
@@ -198,19 +198,19 @@ void test('jumping discovers a hidden animal using its native object pronoun', a
     assert.match(game._last_message, /You find a wumpus by bumping into it\./);
 });
 void test('an unseen humanoid collision does not reveal species or replace its sex with it', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     const monster = await createMonsterAt(MONSTER_NAME.indexOf('human'), 12, 10);
     monster.minvis = 1;
     monster.female = false;
-    newsym(12, 10);
+    await newsym(12, 10);
     input.feed('lll.' + ' '.repeat(8));
     await jumpHero();
     assert.equal(game.u.ux, 11);
     assert.match(game._last_message, /You find someone by bumping into him\./);
 });
 void test('a petrifying jump collision uses the real monster death and statue owner', async () => {
-    const input = readyJump({ hero: {
+    const input = await readyJump({ hero: {
             umonnum: MONSTER_NAME.indexOf('cockatrice'), mh: 20, mhmax: 20,
         } });
     requireFixtureGame(game);
@@ -227,7 +227,7 @@ void test('a petrifying jump collision uses the real monster death and statue ow
     assert.equal(game.u.uconduct.killer, 1);
 });
 void test('a Sokoban pit ends the jump and is applied as the landing trap', async () => {
-    const input = readyJump();
+    const input = await readyJump();
     requireFixtureGame(game);
     game.level.flags.sokoban_rules = true;
     addTrap(game.level, PIT, 11, 10, { tseen: true });
@@ -238,7 +238,7 @@ void test('a Sokoban pit ends the jump and is applied as the landing trap', asyn
     assert.ok((game.u.utrap ?? 0) > 0);
 });
 void test('jumping frees a web and removes its trap before travelling', async () => {
-    const input = readyJump({ hero: { utrap: 4, utraptype: TT_WEB } });
+    const input = await readyJump({ hero: { utrap: 4, utraptype: TT_WEB } });
     requireFixtureGame(game);
     const web = addTrap(game.level, WEB, 10, 10, { tseen: true });
     input.feed('lll.' + ' '.repeat(8));
@@ -248,7 +248,7 @@ void test('jumping frees a web and removes its trap before travelling', async ()
     assert.equal(game.level.traps.includes(web), false);
 });
 void test('escaping a bear trap costs health and wounds a leg', async () => {
-    const input = readyJump({ hero: { utrap: 4, utraptype: TT_BEARTRAP } });
+    const input = await readyJump({ hero: { utrap: 4, utraptype: TT_BEARTRAP } });
     requireFixtureGame(game);
     addTrap(game.level, BEAR_TRAP, 10, 10, { tseen: true });
     input.feed('lll.' + ' '.repeat(8));
@@ -260,7 +260,7 @@ void test('escaping a bear trap costs health and wounds a leg', async () => {
     assert.equal(game.u.ux, 13);
 });
 void test('a buried ball keeps the hero trapped and strains both legs without hunger cost', async () => {
-    const input = readyJump({ hero: { utrap: 4, utraptype: TT_BURIEDBALL, uhunger: 900 } });
+    const input = await readyJump({ hero: { utrap: 4, utraptype: TT_BURIEDBALL, uhunger: 900 } });
     requireFixtureGame(game);
     input.feed('lll.' + ' '.repeat(8));
     assert.equal((await jumpHero()).spentTime, true);
@@ -270,19 +270,19 @@ void test('a buried ball keeps the hero trapped and strains both legs without hu
     assert.equal(game.u.uhunger, 900);
 });
 void test('jumping in place triggers a trap, while an empty square takes no time', async () => {
-    let input = readyJump();
+    let input = await readyJump();
     requireFixtureGame(game);
     input.feed('.');
     assert.equal((await jumpHero(1)).spentTime, false);
     assert.match(game._last_message, /decide not to jump/);
-    input = readyJump();
+    input = await readyJump();
     addTrap(game.level, PIT, 10, 10);
     input.feed('.' + ' '.repeat(8));
     assert.equal((await jumpHero(1)).spentTime, true);
     assert.equal(game.u.utraptype, TT_PIT);
 });
 void test('jump marking leaves the hero visible and resets for the next selection', async () => {
-    const input = readyJump({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
+    const input = await readyJump({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
     const jumping = jumpHero();
     await input.waitUntilBlocked();
     input.feed('$$');

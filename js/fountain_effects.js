@@ -62,7 +62,7 @@ export async function applyDippedCoinFate({ fate, loc, dungeonLevels = 1, dungeo
         ? dippedCoinMessage(resolvedLiquidName(liquidName))
         : '';
     exerciseWisdom();
-    repaint();
+    await repaint();
     return { ...effect, message };
 }
 export async function applyFountainGemDiscovery({ loc, blind = false, announce = async () => { }, chooseGem, createGem, placeGem, repaint = () => { }, exerciseWisdom = () => { }, }) {
@@ -82,7 +82,7 @@ export async function applyFountainGemDiscovery({ loc, blind = false, announce =
     const gem = await createGem(gemType);
     placeGem(gem);
     loc.looted = (loc.looted ?? 0) | 1;
-    repaint();
+    await repaint();
     exerciseWisdom();
     return { discovered: true, message, gemType, gem };
 }

@@ -35,7 +35,7 @@ void test('restoring a save removes an expired thick cloud without prolonging it
     const storage = memoryStorage();
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('CloudSaver', storage), true);
+    assert.equal(await restoreGame('CloudSaver', storage), true);
 
     assert.equal(game.level?.regions.length, 0);
 });

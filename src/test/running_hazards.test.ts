@@ -8,7 +8,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('rushing stops before a known trap on its very first step', async () => {
-    const level = freshObjectRoom({ flags: { mention_walls: true } });
+    const level = await freshObjectRoom({ flags: { mention_walls: true } });
     addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     pushKeys(' '.repeat(10));
 
@@ -21,7 +21,7 @@ void test('rushing stops before a known trap on its very first step', async () =
 });
 
 void test('a blind runner keeps its direction instead of following an unseen corridor bend', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 10 } });
     for (let x = 9; x <= 13; x++)
         for (let y = 8; y <= 11; y++) level.requireAt(x, y).typ = STONE;
     level.requireAt(10, 10).typ = CORR;
@@ -37,7 +37,7 @@ void test('a blind runner keeps its direction instead of following an unseen cor
 });
 
 void test('a sighted rush stops at a known pool edge during continuation', async () => {
-    const level = freshObjectRoom({ flags: { mention_walls: true } });
+    const level = await freshObjectRoom({ flags: { mention_walls: true } });
     level.requireAt(12, 10).typ = POOL;
     pushKeys(' '.repeat(10));
 

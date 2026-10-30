@@ -15,7 +15,7 @@ const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
 const PM_VAMPIRE = MONSTER_NAME.indexOf('vampire');
 const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
 void test('a vampire uses #monster to assume one of its animal forms', async () => {
-    freshMonsterAbilityRoom('vampire', { gameplaySeed: 8231n });
+    await freshMonsterAbilityRoom('vampire', { gameplaySeed: 8231n });
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE;
     await runMonsterAbilityCommand(' '.repeat(4));
@@ -24,7 +24,7 @@ void test('a vampire uses #monster to assume one of its animal forms', async () 
     assert.equal(game.context.move, 1);
 });
 void test('ordinary polymorph records the vampire form across later shifts', async () => {
-    freshHeroConditionRoom({
+    await freshHeroConditionRoom({
         role: 'archeologist', hero: { umonster: 0 },
     });
     requirePlayingGame(game);
@@ -35,7 +35,7 @@ void test('ordinary polymorph records the vampire form across later shifts', asy
     assert.equal(game.u.mcham, PM_VAMPIRE);
 });
 void test('a shifted vampire can return to its vampire form', async () => {
-    freshMonsterAbilityRoom('vampire bat');
+    await freshMonsterAbilityRoom('vampire bat');
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE;
     pushKeys('                ');
@@ -45,7 +45,7 @@ void test('a shifted vampire can return to its vampire form', async () => {
     assert.equal(game.u.mcham, PM_VAMPIRE);
 });
 void test('a vampire leader can take wolf form', async () => {
-    freshMonsterAbilityRoom('vampire leader');
+    await freshMonsterAbilityRoom('vampire leader');
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE_LEADER;
     pushKeys('wolf\n                ');
@@ -54,7 +54,7 @@ void test('a vampire leader can take wolf form', async () => {
     assert.equal(game.u.mcham, PM_VAMPIRE_LEADER);
 });
 void test('polymorph control can decline a vampire form without saving time', async () => {
-    freshMonsterAbilityRoom('vampire');
+    await freshMonsterAbilityRoom('vampire');
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE;
     await wearPolymorphControlRing();
@@ -63,7 +63,7 @@ void test('polymorph control can decline a vampire form without saving time', as
     assert.equal(game.context.move, 1);
 });
 void test('unchanging prevents vampire shape changing but still uses a turn', async () => {
-    freshMonsterAbilityRoom('vampire');
+    await freshMonsterAbilityRoom('vampire');
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE;
     game.u.unchanging = true;
@@ -73,7 +73,7 @@ void test('unchanging prevents vampire shape changing but still uses a turn', as
     assert.match(game._pending_message, /fail to transform/);
 });
 void test('a genocided animal form leaves the vampire unchanged', async () => {
-    freshMonsterAbilityRoom('vampire');
+    await freshMonsterAbilityRoom('vampire');
     requirePlayingGame(game);
     game.u.mcham = PM_VAMPIRE;
     assert.ok(game.mvitals);

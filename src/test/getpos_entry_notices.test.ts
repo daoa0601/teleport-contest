@@ -38,7 +38,7 @@ async function wieldedHalberd() {
 // getpos("the spot to hit"), whose tutorial, verbose notice, and goal line
 // all reach the topline before the first pick key.
 void test('a first-time polearm aim offers the tutorial and names the spot to hit', async t => {
-    freshObjectRoom({ flags: { tips: true, verbose: true } });
+    await freshObjectRoom({ flags: { tips: true, verbose: true } });
     const pole = await wieldedHalberd();
     await startLuaCore(t);
     const input = resetInputState();
@@ -57,7 +57,7 @@ void test('a first-time polearm aim offers the tutorial and names the spot to hi
 // C apply.c:jump() shares getpos("the desired position"); the tutorial and
 // the verbose notice precede the goal line on the topline.
 void test('a first-time jump aim explains itself before the desired-position goal', async t => {
-    freshObjectRoom({ flags: { tips: true, verbose: true } });
+    await freshObjectRoom({ flags: { tips: true, verbose: true } });
     grantIntrinsicProperty('jumping', 'form');
     await startLuaCore(t);
     const input = resetInputState();
@@ -81,7 +81,7 @@ async function startTravelEngine(): Promise<{ type: (keys: string) => Promise<vo
     game.u.ux = 10;
     game.u.uy = 10;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     clearMessageWindow();
     await docrt();
     // One no-time command first paints the status lines the engine queued
@@ -143,7 +143,7 @@ void test('autodescribe flushes the pending topline before the first recall', as
 // through hack.c:end_running(), so a no-time command that clears a leftover
 // travel run never asks the status window to repaint the time field.
 void test('a no-time command after a travel run leaves the displayed turn count stale', async () => {
-    freshObjectRoom({ flags: { tips: false, time: true } });
+    await freshObjectRoom({ flags: { tips: false, time: true } });
     game.context.botl = true;
     updateStatusLines();
     const shown = statusTime();

@@ -37,7 +37,7 @@ async function unseenJackalAt(x, y) {
     return unseen;
 }
 void test('a thrown object stopping on an unspotable monster leaves a remembered I', async () => {
-    freshObjectRoom({ right: 20, gameplaySeed: 4201n });
+    await freshObjectRoom({ right: 20, gameplaySeed: 4201n });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
     const unseen = await unseenJackalAt(13, 10);
@@ -48,10 +48,10 @@ void test('a thrown object stopping on an unspotable monster leaves a remembered
     assert.equal(glyphAt(13, 10)?.kind, 'invisible');
 });
 void test('a thrown object flying over a stale remembered I erases it', async () => {
-    freshObjectRoom({ right: 20, gameplaySeed: 4202n });
+    await freshObjectRoom({ right: 20, gameplaySeed: 4202n });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
-    map_invisible(12, 10);
+    await map_invisible(12, 10);
     await unseenJackalAt(14, 10);
     const club = await carriedClub();
     await throwClubRight(club);

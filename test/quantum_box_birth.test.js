@@ -9,7 +9,7 @@ import { objectWeight } from '../js/weight.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a quantum mechanic carries a sealed box owning a correctly weighted, undecayed cat', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initRng(37n);
     const mechanic = await createMonsterAt('quantum mechanic', 12, 10);

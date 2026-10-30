@@ -84,7 +84,7 @@ async function makeGasCloud(state, cells, ttl, damage, silent, publish) {
                 if (regionContains(region, x, y))
                     vision_note_blocker_change(x, y);
                 if (cansee(x, y))
-                    newsym(x, y);
+                    await newsym(x, y);
             }
         }
     }
@@ -220,7 +220,7 @@ export async function rescueHeroFromRegion(state = game) {
         }
     }
     else if (cloud) {
-        removeGasCloud(cloud, state);
+        await removeGasCloud(cloud, state);
         await plineWithContinuation('The gas cloud enveloping you dissipates.');
     }
     else {
@@ -353,7 +353,7 @@ async function affectMonsterWithGas(region, monster, state, { publish, rollOne, 
 }
 // C region.c:remove_region(). Unlink before rebuilding the blocker table so
 // this cloud no longer hides the terrain, while overlapping clouds still do.
-function removeGasCloud(region, state) {
+async function removeGasCloud(region, state) {
     const level = requireGameLevel(state);
     const index = level.regions.indexOf(region);
     if (index < 0)
@@ -380,21 +380,21 @@ function removeGasCloud(region, state) {
         return;
     for (const cell of region.cells)
         if (cansee(cell.x, cell.y))
-            newsym(cell.x, cell.y);
+            await newsym(cell.x, cell.y);
 }
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
-export function restoreLevelRegions(state, elapsed) {
+export async function restoreLevelRegions(state, elapsed) {
     const regions = requireGameLevel(state).regions;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0)
             continue;
         region.ttl = Math.max(0, region.ttl - elapsed);
         if (region.ttl === 0)
-            removeGasCloud(region, state);
+            await removeGasCloud(region, state);
     }
 }
-function expireRegions(state) {
+async function expireRegions(state) {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
     const level = requireGameLevel(state);
@@ -418,7 +418,7 @@ function expireRegions(state) {
                     dissipatedInSight++;
             }
         }
-        removeGasCloud(region, state);
+        await removeGasCloud(region, state);
     }
     return { aroundHero: dissipatedAroundHero, inSight: dissipatedInSight };
 }
@@ -440,7 +440,7 @@ function maintainCloudForFog(region, species) {
 export async function runLevelRegions(state, { publish = plineWithContinuation, rollOne = rnd, wake = async () => { }, die, onMonsterDeath, onAnger, } = {}) {
     if (!state?.level?.regions?.length)
         return [];
-    const dissipation = expireRegions(state);
+    const dissipation = await expireRegions(state);
     const events = [];
     for (const region of state.level.regions) {
         if (region.ttl > 0)

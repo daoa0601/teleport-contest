@@ -8,7 +8,7 @@ import { initRng } from '../js/rng.js';
 import { requireScreenRow } from './support/screen.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('fountain self-knowledge opens magical enlightenment before the feeling subsides', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const input = resetInputState();
     const pages = [];

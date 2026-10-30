@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const count of ['', '2']) {
     void test(`quivering ${count ? 'part of' : 'all of'} an unknown welded stack reports its name and native time`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const daggers = await addInventoryObject(DAGGER, { cursed: true, bknown: false, quan: 5 });
         await setPrimaryWeapon(daggers);
         resetInputState();

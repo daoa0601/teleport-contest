@@ -12,7 +12,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 for (const experienced of [false, true]) {
     void test(`a goblin born ${experienced ? 'in Gehennom' : 'in the main dungeon'} ${experienced ? 'can hit' : 'misses'} with its first ray wand`, async () => {
-        freshObjectRoom({ left: 7, right: 20, heroX: 14, heroY: 10,
+        await freshObjectRoom({ left: 7, right: 20, heroX: 14, heroY: 10,
             hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: experienced ? 'Gehennom' : 'The Dungeons of Doom',

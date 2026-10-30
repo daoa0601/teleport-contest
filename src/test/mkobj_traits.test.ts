@@ -6,7 +6,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
 void test('a drained troll corpse retains enough maximum HP for its base species level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const troll = await createMonsterAt('troll', 12, 10);
     troll.m_lev = 0;
     troll.mhpmax = 1;
@@ -19,7 +19,7 @@ void test('a drained troll corpse retains enough maximum HP for its base species
 });
 
 void test('saving a high-level troll preserves an already viable HP maximum', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const troll = await createMonsterAt('troll', 12, 10);
     troll.m_lev = 20;
     troll.mhpmax = 10;

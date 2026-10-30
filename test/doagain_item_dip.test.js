@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // empty, so the replayed item-action dip always reports
 // impossible("dip_into: where is potion?") and fails without taking a turn.
 void test('do-again of an item-action dip reports the missing potion letter', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     // A live game can save, so impossible() adds the save-and-reload hint.
     game.program_state.something_worth_saving = true;
     const potion = await addInventoryObject(POT_HEALING, { quan: 2 });
@@ -57,7 +57,7 @@ void test('do-again of an item-action dip reports the missing potion letter', as
 // object choices; only the item-action potion letter, answered from
 // CQ_CANNED, is missing from the repeat queue.
 void test('do-again of a normal dip replays both object choices', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.program_state.something_worth_saving = true;
     const dagger = await addInventoryObject(DAGGER, { cursed: true });
     const water = await addInventoryObject(POT_WATER, { blessed: true, quan: 2 });

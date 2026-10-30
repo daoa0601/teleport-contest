@@ -8,8 +8,8 @@ import { freshObjectRoom } from './support/object-room.js';
 // C insight.c:show_conduct(ENL_GAMEINPROGRESS): the in-game #conduct view
 // reports genocides, wish details, Sokoban rule violations, and (in wizard
 // mode) every achievement with present-tense wording.
-void test('#conduct reports broken conducts and achievements in present tense', () => {
-    freshObjectRoom({ flags: { debug: true } });
+void test('#conduct reports broken conducts and achievements in present tense', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.u.uconduct = { wishes: 3, wisharti: 1, sokocheat: 1 };
     game.u.uachieved = [ACH_SOKO, ACH_SHOP];
@@ -27,8 +27,8 @@ void test('#conduct reports broken conducts and achievements in present tense', 
 // contraction table, so the literals "have not violated" (insight.c:2220)
 // and "have not wished" (insight.c:2211) render contracted, as native
 // recordings show ("You haven't wished for any artifacts.").
-void test('#conduct renders clean records with enlght_line contractions', () => {
-    freshObjectRoom({ flags: { debug: true } });
+void test('#conduct renders clean records with enlght_line contractions', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.u.uconduct = { wishes: 2 };
     game.u.uachieved = [ACH_SOKO];
@@ -40,8 +40,8 @@ void test('#conduct renders clean records with enlght_line contractions', () => 
 });
 // C insight.c:show_achievements(): the Amulet's present tense is always
 // "have"/"have obtained"; "delivered" is the past tense for an ascension.
-void test('#conduct keeps the Amulet present tense independent of ascension', () => {
-    freshObjectRoom({ flags: { debug: true } });
+void test('#conduct keeps the Amulet present tense independent of ascension', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.u.uachieved = [ACH_AMUL];
     game.u.uhave = { amulet: false };

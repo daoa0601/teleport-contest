@@ -13,7 +13,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('potion vapor requests a confusion status update after its dizziness message', async () => {
-    freshObjectRoom({ hero: { uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhs: NOT_HUNGRY } });
     const potion = await uninitializedObject(POT_CONFUSION, { dknown: false });
     await bot();
 
@@ -25,7 +25,7 @@ void test('potion vapor requests a confusion status update after its dizziness m
 });
 
 void test('blindness vapor displays Blind on the next message flush', async () => {
-    freshObjectRoom({ hero: { uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhs: NOT_HUNGRY } });
     const potion = await uninitializedObject(POT_BLINDNESS, { dknown: false });
     await bot();
 

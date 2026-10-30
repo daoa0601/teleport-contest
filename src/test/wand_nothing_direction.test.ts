@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // rn2(2) ? NODIR : IMMEDIATE.  mkobj.c and dozap() read that direction.
 
 async function wandChargesFor(direction: number) {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.wandNothingDirection = direction;
     initRng(7);
     const charges: number[] = [];
@@ -33,7 +33,7 @@ void test('a wand of nothing that needs a direction is made with four to eight c
 });
 
 void test('zapping a directionless wand of nothing asks for no direction', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.wandNothingDirection = 1;
     const wand = await addInventoryObject(WAN_NOTHING, { spe: 3 });

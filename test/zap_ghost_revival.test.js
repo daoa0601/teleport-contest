@@ -11,10 +11,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('reviving a ghost\'s former body removes the ghost from its visible square', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true } });
+    await freshObjectRoom({ hero: { seeInvisible: true } });
     requirePlayingGame(game);
     const ghost = await createMonsterAt('ghost', 13, 11);
-    newsym(13, 11);
+    await newsym(13, 11);
     assert.equal(glyphAt(13, 11)?.kind, 'monster');
     await floorObject(CORPSE, 10, 10, {
         corpsenm: MONSTER_NAME.indexOf('troll'), oextra: { omid: ghost.m_id },
@@ -29,7 +29,7 @@ void test('reviving a ghost\'s former body removes the ghost from its visible sq
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('troll')));
 });
 void test('undead turning cannot merge a killed ghost into the body revived by the same zap', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true } });
+    await freshObjectRoom({ hero: { seeInvisible: true } });
     requirePlayingGame(game);
     const ghost = await createMonsterAt('ghost', 11, 10);
     ghost.mhp = 1;

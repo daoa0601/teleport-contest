@@ -7,7 +7,7 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a quest leader can attempt her second spell after fumbling her first', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const leader = await createMonsterAt('Neferet the Green', 16, 10, NO_MINVENT);
     leader.mstrategy = 0;

@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createSpecialLevel } from './support/topology.js';
 
 void test('a clinging steed drowns on dismount when there is no ceiling', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const wumpus = await createSaddledSteed('wumpus');
     await runExtendedCommand('ride', 'l');

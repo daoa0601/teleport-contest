@@ -12,7 +12,7 @@ import { withMessagePages } from './support/planned-input.js';
 import { createStaffedShop } from './support/shop.js';
 for (const keeper of ['giant eel', 'shopkeeper']) {
     void test(`a ${keeper} gestures to reject buying a partly used stack before its used portion`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const daggers = await addInventoryObject(DAGGER, { quan: 2 });
         const { shopkeeper } = await createStaffedShop({ bill: [
                 { bo_id: daggers.o_id, bquan: 3, price: 4, useup: false },

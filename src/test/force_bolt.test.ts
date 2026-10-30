@@ -39,7 +39,7 @@ async function createJackal(x = 12) {
 
 
 void test('force bolt damages a monster in its path', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     const monster = await createJackal();
@@ -70,7 +70,7 @@ void test('magic resistance bounces a self-zapped wand of striking', async () =>
 
 void test('force bolt breaks a locked door and continues through its square',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         requireFixtureGame(game);
         await learnSpell(SPE_FORCE_BOLT);
         const door = game.level.requireAt(12, 10);
@@ -85,7 +85,7 @@ void test('force bolt breaks a locked door and continues through its square',
     });
 
 void test('force bolt collapses a lowered drawbridge', async () => {
-    const level = freshCasterRoom();
+    const level = await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     const bridge = level.requireAt(12, 10);
@@ -104,7 +104,7 @@ void test('force bolt collapses a lowered drawbridge', async () => {
 });
 
 void test('force bolt fractures a boulder into rocks', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     const boulder = await floorObject(BOULDER, 12, 10, {
@@ -121,7 +121,7 @@ void test('force bolt fractures a boulder into rocks', async () => {
 
 void test('force bolt cracks glass armor beneath multiple boulders',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         requireFixtureGame(game);
         await learnSpell(SPE_FORCE_BOLT);
         await floorObject(BOULDER, 12, 10);
@@ -141,7 +141,7 @@ void test('force bolt cracks glass armor beneath multiple boulders',
 
 void test('force bolt breaks fragile floor objects and continues past them',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         await learnSpell(SPE_FORCE_BOLT);
         const potion = await floorObject(POT_WATER, 12, 10);
         const club = await floorObject(CLUB, 12, 10);
@@ -157,7 +157,7 @@ void test('force bolt breaks fragile floor objects and continues past them',
 
 void test('force bolt detonates a pyrolisk egg through the fire explosion rules',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         requireFixtureGame(game);
         await learnSpell(SPE_FORCE_BOLT);
         game.u.uhp = game.u.uhpmax = 100;
@@ -171,7 +171,7 @@ void test('force bolt detonates a pyrolisk egg through the fire explosion rules'
     });
 
 void test('force bolt releases the monster from a statue trap', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     initRng(9401n);
@@ -198,7 +198,7 @@ void test('force bolt releases the monster from a statue trap', async () => {
 });
 
 void test('force bolt aimed down strikes the floor pile and engraving', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     const boulder = await floorObject(BOULDER, game.u.ux, game.u.uy, {
@@ -217,7 +217,7 @@ void test('force bolt aimed down strikes the floor pile and engraving', async ()
 });
 
 void test('a downward force bolt skips the object concealing the hero', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     // A vocal cobra can chant while hiding under objects; a silent spider
@@ -236,7 +236,7 @@ void test('a downward force bolt skips the object concealing the hero', async ()
 
 void test('an upward force bolt hits the concealment cover when no ceiling rock falls',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         requireFixtureGame(game);
         await learnSpell(SPE_FORCE_BOLT);
         installPolymorphedHero('cobra');
@@ -253,7 +253,7 @@ void test('an upward force bolt hits the concealment cover when no ceiling rock 
     });
 
 void test('force bolt aimed up can dislodge a rock from the ceiling', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     game.u.uhp = game.u.uhpmax = 100;
@@ -268,7 +268,7 @@ void test('force bolt aimed up can dislodge a rock from the ceiling', async () =
 });
 
 void test('force bolt shatters a trapdoor and drops the hero to the next level', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     game.u.uz = { dnum: 0, dlevel: 1 };

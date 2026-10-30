@@ -13,7 +13,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('inventory glob comparison shares beatitude knowledge before absorption', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const first = await addInventoryItem(await knownObject(GLOB_OF_GRAY_OOZE, { bknown: false }));
     const incoming = await knownObject(GLOB_OF_GRAY_OOZE, { bknown: true, oname: 'Lunch' });
@@ -28,7 +28,7 @@ void test('inventory glob comparison shares beatitude knowledge before absorptio
 });
 
 void test('inventory glob merging stops the incoming timer before averaging shrink delays', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     requirePlayingGame(game);
     const first = await addInventoryItem(await knownObject(GLOB_OF_GRAY_OOZE, { age: 0 }));
     const incoming = await knownObject(GLOB_OF_GRAY_OOZE, { age: 0 });
@@ -43,7 +43,7 @@ void test('inventory glob merging stops the incoming timer before averaging shri
     game.moves = 133;
     const timer = claimNextDueObjectTimer(game, game.moves);
     assert.ok(timer);
-    runClaimedGlobTimer(timer, game, game.moves);
+    await runClaimedGlobTimer(timer, game, game.moves);
 
     assert.equal(first.owt, weight - 1);
 });
@@ -55,7 +55,7 @@ for (const [survivorSlot, incomingSlot, expectedSlot] of [
     ['quiver', 'secondary', 'uswapwep'],
 ] as const) {
     void test(`merging ${survivorSlot} and ${incomingSlot} stacks keeps the ${expectedSlot} slot`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const first = await addInventoryItem(await knownObject(ARROW, { quan: 2, nomerge: true }));
         const incoming = await addInventoryItem(await knownObject(ARROW, { quan: 3, nomerge: true }));

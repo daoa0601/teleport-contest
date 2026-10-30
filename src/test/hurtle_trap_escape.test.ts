@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a pony knocked into a web immediately tries to pull free', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createMonsterAt('pony', 11, 10);
     pony.mhp = 100;

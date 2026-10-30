@@ -85,7 +85,7 @@ export async function applyMagicbaneHit(
     if (showEffects) {
         await publish(`The magic-absorbing blade ${verb}s ${targetName}!`);
         if (effect === 'probe' && defender !== 'hero' && !canSpotMonster(defender)) {
-            map_invisible(defender.mx, defender.my);
+            await map_invisible(defender.mx, defender.my);
         }
     }
 

@@ -17,8 +17,8 @@ import { setPropertyTimeout } from '../js/properties.js';
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
 
-function freshPriest(alignment: -1 | 0 | 1 = 1) {
-    freshObjectRoom({
+async function freshPriest(alignment: -1 | 0 | 1 = 1) {
+    await freshObjectRoom({
         left: 6, right: 14, top: 6, bottom: 14,
         role: 'priest',
         hero: {
@@ -38,7 +38,7 @@ function freshPriest(alignment: -1 | 0 | 1 = 1) {
 
 void test('a lawful priest destroys a zombie and frightens a tougher mummy',
     async () => {
-        freshPriest(1);
+        await freshPriest(1);
         requirePlayingGame(game);
         const zombie = await createMonsterAt(PM_HUMAN_ZOMBIE, 11, 10);
         zombie.m_lev = 4;
@@ -60,7 +60,7 @@ void test('a lawful priest destroys a zombie and frightens a tougher mummy',
     });
 
 void test('a chaotic priest makes a weak undead monster peaceful', async () => {
-    freshPriest(-1);
+    await freshPriest(-1);
     requirePlayingGame(game);
     const zombie = await createMonsterAt(PM_HUMAN_ZOMBIE, 11, 10);
     zombie.m_lev = 4;
@@ -76,7 +76,7 @@ void test('a chaotic priest makes a weak undead monster peaceful', async () => {
 });
 
 void test('#turn is refused in any hellish dungeon, even with a different dungeon name', async () => {
-    freshPriest(1);
+    await freshPriest(1);
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Infernal Caves', flags: { hellish: true } })];
     const zombie = await createMonsterAt('human zombie', 11, 10);
@@ -93,7 +93,7 @@ void test('#turn is refused in any hellish dungeon, even with a different dungeo
 void test('a hallucinating priest calls upon different imagined deities with #turn', async () => {
     const invocations = new Set<string>();
     for (let seed = 1n; seed <= 4n; seed++) {
-        freshPriest(1);
+        await freshPriest(1);
         requirePlayingGame(game);
         game.u.hallucinationTurns = 50;
         initRng(seed);
@@ -107,7 +107,7 @@ void test('a hallucinating priest calls upon different imagined deities with #tu
 });
 
 void test('an attempted #turn breaks atheism even when strangulation prevents chanting', async () => {
-    freshPriest(1);
+    await freshPriest(1);
     requirePlayingGame(game);
     setPropertyTimeout('strangled', 6);
 
@@ -126,7 +126,7 @@ void test('an attempted #turn breaks atheism even when strangulation prevents ch
 });
 
 void test('a confused #turn wakes its target before the faltering voice is announced', async () => {
-    freshPriest(1);
+    await freshPriest(1);
     requirePlayingGame(game);
     const zombie = await createMonsterAt('human zombie', 11, 10);
     zombie.mpeaceful = false;

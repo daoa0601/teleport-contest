@@ -474,7 +474,7 @@ async function disarmHoldingTrap(trap, options) {
             await publish(`You succeed in removing ${possessiveTrap(trap)} web.`);
         removeTrap(trap, state);
     }
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     return true;
 }
 async function disarmLandmine(trap, options) {
@@ -515,7 +515,7 @@ async function disarmSqueakyBoard(trap, options) {
     }
     await options.publish('You repair the squeaky board.');
     removeTrap(trap, options.state);
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     await awardExperience(1, 5, options.state, options.publish);
     return true;
 }
@@ -647,7 +647,7 @@ async function fillPitWithBoulder(x, y, state, publish) {
     else if (!heroIsDeaf(state)) {
         await publish('You hear a boulder settle.');
     }
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 async function canLiftMonster(monster, trap, weight, carrying, options) {
@@ -820,7 +820,7 @@ async function triggerDoorTrap(door, x, y, { state, publish, rollOne }) {
         return;
     door.doormask = D_NODOOR;
     vision_note_blocker_change(x, y);
-    newsym(x, y);
+    await newsym(x, y);
     if (roomsAt(state.level, x, y, SHOPBASE).length)
         addShopDamage(x, y, 0, state);
 }

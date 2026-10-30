@@ -13,7 +13,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a rust trap washes grease off the full name of a worn suit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const suit = await addInventoryObject(RING_MAIL, { greased: true });
     await wearHeroArmor(suit);
     suit.oname = 'Raincoat';

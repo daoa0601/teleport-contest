@@ -75,7 +75,7 @@ export async function fightSeenWebWithForce(x, y, state = game) {
         await useHeroSkill(weaponType, 1, { state });
     }
     deleteTrap(trap, state);
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 //# sourceMappingURL=hero_web_fight.js.map

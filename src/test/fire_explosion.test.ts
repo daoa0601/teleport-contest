@@ -33,7 +33,7 @@ void test('a fire explosion burns the hero and monsters in adjacent squares',
 
 for (const female of [false, true] as const) {
     void test(`fatal burning oil records the ${female ? 'female' : 'male'} native self-inflicted cause`, async () => {
-        freshObjectRoom({ flags: { female }, hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ flags: { female }, hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const oil = await floorObject(POT_OIL, 10, 10);
         beginObjectBurn(oil);

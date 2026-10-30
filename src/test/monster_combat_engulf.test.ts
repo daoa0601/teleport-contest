@@ -27,7 +27,7 @@ import { installPagerInput } from './support/pager-input.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function engulfRoom(attackerSpecies = 'fog cloud', defenderSpecies = 'orc') {
-    const level = freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true },
+    const level = await freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true },
         hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt(attackerSpecies, 11, 10, BIRTH_FLAGS);

@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('digging away a covering boulder exposes a hiding monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const spider = await createMonsterAt('cave spider', 11, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
     spider.mundetected = 1;

@@ -12,9 +12,9 @@ import { freshObjectRoom } from './support/object-room.js';
 // completes. The "m" prefix skips domove_fight_empty()'s thin-air attack, so
 // the clearing falls to the move attempt alone.
 void test('a no-pick move attempt clears a remembered unseen monster at its destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('blue jelly');
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     assert.equal(glyphAt(11, 10)?.kind, 'invisible');
     pushKeys('l' + ' '.repeat(8));
     await rhack('m'.charCodeAt(0));

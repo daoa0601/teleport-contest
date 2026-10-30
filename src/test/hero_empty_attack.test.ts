@@ -24,8 +24,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function emptyArena(form?: string) {
-    freshObjectRoom({
+async function emptyArena(form?: string) {
+    await freshObjectRoom({
         left: 1, right: 20, top: 0, bottom: 20,
         flags: { verbose: true, disclose: '-i -a -v -c -o' },
         hero: { uhp: 200, uhpmax: 200 },
@@ -55,7 +55,7 @@ async function command(keys: string, expected: RegExp, seed = 71n): Promise<stri
 }
 
 void test('an empty flaming-sphere attack kills a bystander with hero credit and spends the form', async () => {
-    const state = emptyArena('flaming sphere');
+    const state = await emptyArena('flaming sphere');
     const bystander = await createMonsterAt('newt', 10, 11, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     bystander.mhp = 1;
     bystander.mpeaceful = false;
@@ -75,7 +75,7 @@ void test('an empty flaming-sphere attack kills a bystander with hero credit and
 });
 
 void test('an empty light explosion wakes nearby monsters without applying a targeted flash', async () => {
-    const state = emptyArena('yellow light');
+    const state = await emptyArena('yellow light');
     const near = await createMonsterAt('orc', 16, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     const boundary = await createMonsterAt('orc', 17, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     near.msleeping = boundary.msleeping = 1;
@@ -90,7 +90,7 @@ void test('an empty light explosion wakes nearby monsters without applying a tar
 });
 
 void test('a gas-spore death explosion cannot be invoked by force fighting empty air', async () => {
-    const state = emptyArena('gas spore');
+    const state = await emptyArena('gas spore');
 
     const messages = await command('Fl', /attack thin air/);
 
@@ -101,11 +101,11 @@ void test('a gas-spore death explosion cannot be invoked by force fighting empty
 
 for (const offEdge of [false, true]) {
     void test(`an explosive form is spent on ${offEdge ? 'the edge of the map' : 'a stone obstacle'}`, async () => {
-        const state = emptyArena('black light');
+        const state = await emptyArena('black light');
         if (offEdge) state.u.ux = 1;
         else {
             state.level.requireAt(11, 10).typ = STONE;
-            newsym(11, 10);
+            await newsym(11, 10);
         }
 
         const messages = await command(offEdge ? 'Fh' : 'Fl', /explode|return to human|can see again/);
@@ -120,11 +120,11 @@ for (const offEdge of [false, true]) {
 
 for (const [terrain, name] of [[FOUNTAIN, 'fountain'], [DOOR, 'closed door'], [POOL, 'water']] as const) {
     void test(`an empty attack names the ${name} without entering it`, async () => {
-        const state = emptyArena();
+        const state = await emptyArena();
         const location = state.level.requireAt(11, 10);
         location.typ = terrain;
         if (terrain === DOOR) location.doormask = D_CLOSED;
-        newsym(11, 10);
+        await newsym(11, 10);
 
         const messages = await command('Fl', /harmlessly attack/);
 
@@ -134,13 +134,13 @@ for (const [terrain, name] of [[FOUNTAIN, 'fountain'], [DOOR, 'closed door'], [P
 }
 
 void test('blind attacks cannot identify an unseen piece of furniture', async () => {
-    const state = emptyArena();
+    const state = await emptyArena();
     await makeBlinded(20, { state, talk: false });
     const location = state.level.requireAt(11, 10);
     location.typ = FOUNTAIN;
     location.seenv = 0;
     location.remembered_glyph = null;
-    newsym(11, 10);
+    await newsym(11, 10);
 
     const messages = await command('Fl', /harmlessly attack/);
 
@@ -150,12 +150,12 @@ void test('blind attacks cannot identify an unseen piece of furniture', async ()
 
 for (const terrain of [STONE, SCORR, SDOOR]) {
     void test(`arboreal terrain ${terrain} is displayed and named as a tree`, async () => {
-        const state = emptyArena();
+        const state = await emptyArena();
         state.level.flags.arboreal = true;
         const location = state.level.requireAt(11, 10);
         location.typ = terrain;
         if (terrain === SDOOR) location.arboreal_sdoor = true;
-        newsym(11, 10);
+        await newsym(11, 10);
 
         const messages = await command('Fl', /harmlessly attack/);
 
@@ -168,10 +168,10 @@ for (const terrain of [STONE, SCORR, SDOOR]) {
 
 for (const hallucinating of [false, true]) {
     void test(`a ${hallucinating ? 'hallucinated' : 'visible'} statue receives an empty attack`, async () => {
-        emptyArena();
+        await emptyArena();
         await floorObject(STATUE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('orc') });
         if (hallucinating) await makeHallucinated(20, { talk: false });
-        newsym(11, 10);
+        await newsym(11, 10);
 
         const messages = await command('Fl', /harmlessly attack/);
 
@@ -180,8 +180,8 @@ for (const hallucinating of [false, true]) {
 }
 
 void test('a remembered invisible monster consumes one search-by-attack and then permits movement', async () => {
-    const state = emptyArena();
-    map_invisible(11, 10);
+    const state = await emptyArena();
+    await map_invisible(11, 10);
 
     const messages = await command('l', /attack thin air/);
 
@@ -193,8 +193,8 @@ void test('a remembered invisible monster consumes one search-by-attack and then
 });
 
 void test('move-without-pickup bypasses an empty invisible marker', async () => {
-    const state = emptyArena();
-    map_invisible(11, 10);
+    const state = await emptyArena();
+    await map_invisible(11, 10);
 
     const messages = await command('ml', /./);
 
@@ -204,7 +204,7 @@ void test('move-without-pickup bypasses an empty invisible marker', async () => 
 
 for (const waterPlane of [false, true]) {
     void test(`an underwater attack at ${waterPlane ? 'an air bubble' : 'dry land'} describes what the hero can reach`, async () => {
-        const state = emptyArena();
+        const state = await emptyArena();
         state.u.uinwater = true;
         state.underwater = true;
         state.level.requireAt(10, 10).typ = POOL;
@@ -212,7 +212,7 @@ for (const waterPlane of [false, true]) {
             state.water_level = { ...state.u.uz, flags: { town: false }, alignment: null };
             state.level.requireAt(11, 10).typ = AIR;
         }
-        newsym(11, 10);
+        await newsym(11, 10);
 
         // Keep this attack aimed at the chosen terrain; turbulence has its
         // own movement tests and can otherwise consume this attempt.
@@ -225,12 +225,12 @@ for (const waterPlane of [false, true]) {
 
 for (const obstacle of ['wall', 'boulder', 'statue'] as const) {
     void test(`force fighting a ${obstacle} with a pick starts the real digging occupation`, async () => {
-        const state = emptyArena();
+        const state = await emptyArena();
         const pick = await addInventoryObject(PICK_AXE);
         await setPrimaryWeapon(pick);
         if (obstacle === 'wall') state.level.requireAt(11, 10).typ = STONE;
         else await floorObject(obstacle === 'boulder' ? BOULDER : STATUE, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
 
         const messages = await command('Fl', /start (?:digging|hitting|chipping)/);
 
@@ -242,10 +242,10 @@ for (const obstacle of ['wall', 'boulder', 'statue'] as const) {
 }
 
 void test('an invisible marker prevents force fighting with a pick from starting a dig', async () => {
-    const state = emptyArena();
+    const state = await emptyArena();
     await setPrimaryWeapon(await addInventoryObject(PICK_AXE));
     state.level.requireAt(11, 10).typ = STONE;
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
 
     const messages = await command('Fl', /harmlessly attack/);
 
@@ -260,9 +260,9 @@ void test('an invisible marker prevents force fighting with a pick from starting
 // avoid_running_into_trap_or_liquid() stop an 'F'+direction forcefight at
 // a known trap before domove_fight_empty() can attack, spending no turn.
 void test('a leftover travel run silently stops a forcefight at a known trap', async () => {
-    emptyArena();
+    await emptyArena();
     const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     game.context.run = 8;
     const movesBefore = game.moves;
 
@@ -275,9 +275,9 @@ void test('a leftover travel run silently stops a forcefight at a known trap', a
 });
 
 void test('a forcefight without a lingering run attacks thin air over a known trap', async () => {
-    emptyArena();
+    await emptyArena();
     const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     game.context.run = 0;
 
     const messages = await command('Fh', /attack thin air/);
@@ -291,9 +291,9 @@ void test('a forcefight without a lingering run attacks thin air over a known tr
 // avoid_running_into_trap_or_liquid() stops each counted step at the known
 // trap before domove_fight_empty() can attack.
 void test('a counted forcefight with a leftover travel run also stops at the trap', async () => {
-    emptyArena();
+    await emptyArena();
     const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     game.context.run = 8;
     const movesBefore = game.moves;
 
@@ -309,14 +309,14 @@ void test('a counted forcefight with a leftover travel run also stops at the tra
 // (nomul(0) for "!is_safemon || forcefight"), and domove_fight_empty()
 // nomuls too (hack.c:2323), so a counted 'F'+direction never repeats.
 void test('a counted forcefight at a monster swings once', async () => {
-    emptyArena();
+    await emptyArena();
     const target = await createMonsterAt('stalker', 9, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     target.mhp = target.mhpmax = 500;
     target.mpeaceful = false;
-    newsym(9, 10);
+    await newsym(9, 10);
     const bystander = await createMonsterAt('newt', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     bystander.mpeaceful = false;
-    newsym(11, 10);
+    await newsym(11, 10);
     game.context.run = 2;
     game.multi = 3;
     const healthBefore = target.mhp;

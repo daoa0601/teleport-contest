@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the split count cursor follows the digits and the empty count after erasing them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 40 });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [

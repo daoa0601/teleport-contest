@@ -69,7 +69,7 @@ void test('saving and restoring preserves an unidentified glass quote when the c
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     context.mock.timers.setTime(now + 3600 * 1000);
-    assert.equal(restoreGame('Gem customer', storage), true);
+    assert.equal(await restoreGame('Gem customer', storage), true);
     const restoredGem = game.inventory.find(object => object.invlet === 'a');
     assert.ok(restoredGem);
     assert.equal(shopObjectUnitCost(restoredGem), price);

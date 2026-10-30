@@ -201,7 +201,7 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
     }
 
     if (object.oclass === POTION_CLASS) {
-        if (disguised) revealMonsterAppearance(monster);
+        if (disguised) await revealMonsterAppearance(monster);
         monster.msleeping = 0;
         const potionOptions: PotionHitOptions = {
             state,
@@ -240,7 +240,7 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
         state, rollOne: options.rollOne, rollDice: options.rollDice,
     });
     if (object.otyp === ACID_VENOM && monsterHasAcidResistance(monster)) damage = 0;
-    if (disguised) revealMonsterAppearance(monster);
+    if (disguised) await revealMonsterAppearance(monster);
     monster.msleeping = 0;
     if (visible) {
         if (object.otyp === EGG) {
@@ -366,7 +366,7 @@ async function fractureObject(object: GameObject, x: number, y: number, state: G
             await placeObject(nextBoulder, x, y, state);
         }
     }
-    newsym(x, y);
+    await newsym(x, y);
 }
 
 async function prepareScatteredObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<ScatterNode | null> {
@@ -516,7 +516,7 @@ export async function scatterFloorObjects(
     let moved = 0;
     for (const node of nodes) {
         if (!node.object) {
-            newsym(node.x, node.y);
+            await newsym(node.x, node.y);
             continue;
         }
         const quantity = node.object.quan ?? node.object.quantity ?? 1;
@@ -535,14 +535,14 @@ export async function scatterFloorObjects(
             await stack_object(object, state);
         }
         if (node.x !== x || node.y !== y) moved += quantity;
-        newsym(node.x, node.y);
+        await newsym(node.x, node.y);
     }
-    newsym(x, y);
+    await newsym(x, y);
     if (state.u.ux === x && state.u.uy === y && state.u.uundetected
-        && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80)) hideHeroUnder(state);
+        && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80)) await hideHeroUnder(state);
     const originMonster = monsterAt(state, x, y);
     if (originMonster?.mtrapped) originMonster.mtrapped = 0;
-    maybeUnhideAt(x, y, state);
+    await maybeUnhideAt(x, y, state);
     if (lostGoods && shop) {
         const creditUsed = creditBefore - (shop.eshk.credit ?? 0);
         const debitAdded = (shop.eshk.debit ?? 0) - debitBefore;

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const sight of ['sighted', 'blind', 'blind and invisible'] as const) {
     void test(`fountain water grants permanent see-invisible to a ${sight} hero`, async () => {
-        const level = freshObjectRoom({ hero: { blindTurns: sight === 'sighted' ? 0 : 30 } });
+        const level = await freshObjectRoom({ hero: { blindTurns: sight === 'sighted' ? 0 : 30 } });
         level.requireAt(10, 10).typ = FOUNTAIN;
         if (sight === 'blind and invisible') grantIntrinsicProperty('invisible', 'outside');
         resetInputState().feed('y' + ' '.repeat(10));
@@ -26,7 +26,7 @@ for (const sight of ['sighted', 'blind', 'blind and invisible'] as const) {
 }
 
 void test('fountain monster detection describes the taste when there are no monsters', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const input = resetInputState();
     const messages: string[] = [];

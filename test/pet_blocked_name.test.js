@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['kitten', 'little dog', 'housecat']) {
     void test(`a blocked ${species} is named by its current species`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const pet = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
         initializePet(pet);
         // This seed makes the ordinary one-in-seven displacement refusal.

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const blind of [false, true]) {
     void test(`a ${blind ? 'blind' : 'sighted'} hero detecting an invisible monster cannot see its recovery`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('jackal', 12, 10, MM_ANGRY | NO_MINVENT);
         const amulet = await equipMonsterObject(monster,

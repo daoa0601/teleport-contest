@@ -22,8 +22,8 @@ import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function iceBridge() {
-    freshObjectRoom();
+async function iceBridge() {
+    await freshObjectRoom();
     requireFixtureGame(game);
     const bridge = game.level.requireAt(12, 10);
     bridge.typ = DRAWBRIDGE_UP;
@@ -34,7 +34,7 @@ function iceBridge() {
 }
 
 void test('melting beneath a lowered bridge lets the hero pick up unearthed gold', async () => {
-    const bridge = iceBridge();
+    const bridge = await iceBridge();
     requireFixtureGame(game);
     const gold = await floorObject(GOLD_PIECE, 12, 10);
     const amount = gold.quan;
@@ -54,7 +54,7 @@ void test('melting beneath a lowered bridge lets the hero pick up unearthed gold
 });
 
 void test('melting a bear trap releases the hero into blocked levitation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { ux: x, uy: y } = game.u;
     const ice = game.level.requireAt(x, y);
@@ -78,7 +78,7 @@ void test('melting a bear trap releases the hero into blocked levitation', async
 });
 
 void test('a filling boulder leaves the hero dry on a raised bridge', async () => {
-    const bridge = iceBridge();
+    const bridge = await iceBridge();
     requireFixtureGame(game);
     const boulder = await floorObject(BOULDER, 12, 10);
     const bell = await floorObject(BELL_OF_OPENING, 12, 10);
@@ -100,7 +100,7 @@ void test('a filling boulder leaves the hero dry on a raised bridge', async () =
 });
 
 void test('a lowered-bridge melt timer reports the Native no-pool diagnostic and leaves its boulder free', async () => {
-    const bridge = iceBridge();
+    const bridge = await iceBridge();
     requireFixtureGame(game);
     bridge.drawbridgemask = DB_NORTH | DB_MOAT;
     initRng(2n);
@@ -124,7 +124,7 @@ void test('a lowered-bridge melt timer reports the Native no-pool diagnostic and
 });
 
 void test('consecutive visible thawing does not repeat the same announcement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     for (const x of [11, 12] as const) {
         const ice = game.level.requireAt(x, 10);
@@ -144,7 +144,7 @@ void test('consecutive visible thawing does not repeat the same announcement', a
 });
 
 void test('melting a raised bridge settles the next boulder after the first one sinks', async () => {
-    const bridge = iceBridge();
+    const bridge = await iceBridge();
     const first = await floorObject(BOULDER, 12, 10);
     const second = await floorObject(BOULDER, 12, 10);
     initRng(11n);

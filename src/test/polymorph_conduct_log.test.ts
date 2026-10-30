@@ -6,7 +6,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the chronicle records the first monster transformation once', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     pushKeys('polyself\nnewt\n                        ');
     await rhack('#'.charCodeAt(0));
     resetInputState();

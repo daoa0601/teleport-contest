@@ -56,8 +56,8 @@ function screen() {
     assert.ok(game.nhDisplay);
     return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');
 }
-function freshLight({ dark = false, ...options }: ObjectRoomOptions & { dark?: boolean } = {}) {
-    const level = freshObjectRoom({ left: 2, right: 30, ...options });
+async function freshLight({ dark = false, ...options }: ObjectRoomOptions & { dark?: boolean } = {}) {
+    const level = await freshObjectRoom({ left: 2, right: 30, ...options });
     requirePlayingGame(game);
     if (dark) {
         for (let x = 2; x <= 30; x++)
@@ -66,7 +66,7 @@ function freshLight({ dark = false, ...options }: ObjectRoomOptions & { dark?: b
                 level.requireAt(x, y).waslit = false;
             }
         vision_reset();
-        vision_recalc(0);
+        await vision_recalc(0);
     }
     const input = resetInputState();
     installPagerInput(input, {
@@ -114,7 +114,7 @@ async function billed(object: GameObject, quantity = objectQuantity(object)) {
 
 for (const initialize of [false, true]) {
     void test(`a newly created oil potion burns for 400 turns with initialization ${initialize}`, async () => {
-        freshLight({ moves: 10 });
+        await freshLight({ moves: 10 });
         const oil = await addInventoryItem(await mksobj(POT_OIL, initialize, false));
         await lightCocktail(oil);
 
@@ -134,7 +134,7 @@ for (const initialize of [false, true]) {
 
 for (const type of [TALLOW_CANDLE, WAX_CANDLE]) {
     void test(`an applied ${type === TALLOW_CANDLE ? 'tallow' : 'wax'} candle stack lights and restores remaining fuel when snuffed`, async () => {
-        freshLight();
+        await freshLight();
         requirePlayingGame(game);
         const candles = await addInventoryObject(type, { quantity: 4, age: 200 });
         assert.equal((await useCandle(candles)).spentTime, true);
@@ -151,18 +151,18 @@ for (const type of [TALLOW_CANDLE, WAX_CANDLE]) {
 }
 
 void test('attaching part of a lit stack transfers its actual fuel and reduces the remaining light radius', async () => {
-    freshLight({ dark: true });
+    await freshLight({ dark: true });
     requirePlayingGame(game);
     const candles = await addInventoryObject(WAX_CANDLE, { quantity: 9, age: 200 });
     assert.ok(candles);
     beginObjectBurn(candles);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), true);
     const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, { spe: 0, age: 0 });
     game.moves += 10;
 
     const applied = await useCandle(candles);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(applied.object, candles);
     assert.equal(objectQuantity(candles), 2);
@@ -177,7 +177,7 @@ void test('attaching part of a lit stack transfers its actual fuel and reduces t
 });
 
 void test('adding an unlit candle to a lit candelabrum expands its light without restarting its fuel', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, { spe: 3, age: 200 });
     beginObjectBurn(holder);
@@ -194,7 +194,7 @@ void test('adding an unlit candle to a lit candelabrum expands its light without
 });
 
 void test('fresh unpaid candles become a used-up bill on first ignition only', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candles = await addInventoryObject(TALLOW_CANDLE, {
         quantity: 2,
@@ -214,7 +214,7 @@ void test('fresh unpaid candles become a used-up bill on first ignition only', a
 });
 
 void test('attaching billed candles consumes only the attached quantity on their shop bill', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candles = await addInventoryObject(TALLOW_CANDLE, { quantity: 4, age: 200 });
     const keeper = await billed(candles);
@@ -234,7 +234,7 @@ void test('attaching billed candles consumes only the attached quantity on their
 
 for (const onStairs of [false, true]) {
     void test(`seven candles at the invocation position ${onStairs ? 'on stairs consume fuel rapidly' : 'keep their full fuel'}`, async () => {
-        freshLight();
+        await freshLight();
         requirePlayingGame(game);
         game.valley_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
         game.dungeons = [
@@ -268,7 +268,7 @@ for (const onStairs of [false, true]) {
 }
 
 void test('an empty candelabrum gives the attachment tip when candles are carried', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, { spe: 0 });
     await addInventoryObject(WAX_CANDLE);
@@ -281,7 +281,7 @@ void test('an empty candelabrum gives the attachment tip when candles are carrie
 });
 
 void test('candelabrum ignition pauses before consuming fuel and resumes its source operation', async () => {
-    const input = freshLight();
+    const input = await freshLight();
     requirePlayingGame(game);
     input.beforeRead = null;
     input.display = null;
@@ -306,7 +306,7 @@ void test('candelabrum ignition pauses before consuming fuel and resumes its sou
 });
 
 void test('lighting a potion stack splits one identity; snuffing it rejoins and averages the fuel', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const stack = await addInventoryObject(POT_OIL, { quantity: 3, age: 200 });
 
@@ -331,7 +331,7 @@ for (const [slot, install] of [
     ['quiver', setQuiverObject],
 ] as const) {
     void test(`snuffing oil in the ${slot} preserves its identity and equipment slot`, async () => {
-        freshLight();
+        await freshLight();
         requirePlayingGame(game);
         const stack = await addInventoryObject(POT_OIL, { quantity: 3, age: 200 });
         const oil = splitObjectStack(stack, 1);
@@ -349,7 +349,7 @@ for (const [slot, install] of [
 }
 
 void test('lighting billed oil charges fuel tax and retains the full used-up bill', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const oil = await addInventoryObject(POT_OIL, { age: 200 });
     const keeper = await billed(oil);
@@ -363,7 +363,7 @@ void test('lighting billed oil charges fuel tax and retains the full used-up bil
 });
 
 void test('a split lit potion falls to the actual floor when the inventory has no slot', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     for (let index = 0; index < 51; index++)
         await addInventoryObject(ROCK, { oextra: { oname: `stone ${index}` } });
@@ -381,7 +381,7 @@ void test('a split lit potion falls to the actual floor when the inventory has n
 });
 
 void test('underwater ignition fails but an already lit candle can still be snuffed', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candle = await addInventoryObject(TALLOW_CANDLE, { age: 200 });
     beginObjectBurn(candle);
@@ -398,7 +398,7 @@ void test('underwater ignition fails but an already lit candle can still be snuf
 
 for (const blind of [false, true]) {
     void test(`a cursed candelabrum refuses ignition ${blind ? 'silently when blind' : 'with flickering feedback'}`, async () => {
-        freshLight({ hero: { blindTurns: blind ? 10 : 0 } });
+        await freshLight({ hero: { blindTurns: blind ? 10 : 0 } });
         requirePlayingGame(game);
         const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, {
             spe: 7,
@@ -421,7 +421,7 @@ for (const [type, expected] of [
     [MAGIC_LAMP, 'lamp'],
 ] as const) {
     void test(`the shared ${type === MAGIC_LAMP ? 'magic' : 'oil'} lamp owner preserves its burn behavior`, async () => {
-        freshLight();
+        await freshLight();
         requirePlayingGame(game);
         const lamp = await addInventoryObject(type, { spe: 1, age: 200 });
         await useLamp(lamp);
@@ -435,7 +435,7 @@ for (const [type, expected] of [
 }
 
 void test('candle timers announce short fuel and low flames before consuming the stack', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candles = await addInventoryObject(WAX_CANDLE, { quantity: 2, age: 76 });
     assert.ok(candles);
@@ -457,7 +457,7 @@ void test('candle timers announce short fuel and low flames before consuming the
 });
 
 void test('a burning quivered potion remains equipped during its expiry pager and is removed after acknowledgment', async () => {
-    const input = freshLight();
+    const input = await freshLight();
     requirePlayingGame(game);
     const oil = await addInventoryObject(POT_OIL, { age: 1 });
     await setQuiverObject(oil);
@@ -487,7 +487,7 @@ void test('a burning quivered potion remains equipped during its expiry pager an
 
 for (const type of [TALLOW_CANDLE, POT_OIL]) {
     void test(`a blind hero ${type === TALLOW_CANDLE ? 'feels carried candles expire' : 'receives no oil-expiry sight notice'}`, async () => {
-        freshLight({ hero: { blindTurns: 10 } });
+        await freshLight({ hero: { blindTurns: 10 } });
         requirePlayingGame(game);
         const light = await addInventoryObject(type, { age: 1 });
         beginObjectBurn(light);
@@ -505,7 +505,7 @@ for (const type of [TALLOW_CANDLE, POT_OIL]) {
 }
 
 void test('a candelabrum survives candle expiry with empty sockets and its original weight', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, { spe: 7, age: 1 });
     beginObjectBurn(holder);
@@ -520,7 +520,7 @@ void test('a candelabrum survives candle expiry with empty sockets and its origi
 });
 
 void test('expiring partially used unpaid candles preserves the used-up bill object', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candle = await addInventoryObject(TALLOW_CANDLE, { age: 1 });
     const keeper = await billed(candle);
@@ -536,7 +536,7 @@ void test('expiring partially used unpaid candles preserves the used-up bill obj
 });
 
 void test('an overdue floor candle expires silently and reveals a monster which was hiding beneath it', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const candles = await floorObject(WAX_CANDLE, 14, 10, { age: 1 });
     const spider = await createMonsterAt('cave spider', 14, 10, NO_MINVENT);
@@ -554,7 +554,7 @@ void test('an overdue floor candle expires silently and reveals a monster which 
 });
 
 void test('monster-carried candles retain their carrier in visible burn warnings', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     const candles = await addObjectToMonsterInventory(
@@ -573,7 +573,7 @@ void test('monster-carried candles retain their carrier in visible burn warnings
 });
 
 void test('overweight acquisition undoes a merge before dropping only the newly acquired stack', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const carried = await addInventoryObject(FOOD_RATION, { quantity: 5 });
     const added = await knownObject(FOOD_RATION, { quantity: 200, where: 'free' });
@@ -591,7 +591,7 @@ void test('overweight acquisition undoes a merge before dropping only the newly 
 
 void test('automatic quivering applies to held missiles but fumbling drops them instead', async () => {
     for (const fumbling of [false, true]) {
-        freshLight({ flags: { autoquiver: true } });
+        await freshLight({ flags: { autoquiver: true } });
         requirePlayingGame(game);
         if (fumbling) grantIntrinsicProperty('fumbling', 'outside');
         const dart = await knownObject(DART, { where: 'free' });
@@ -605,7 +605,7 @@ void test('automatic quivering applies to held missiles but fumbling drops them 
 });
 
 void test('a wished-for unsafe corpse is dropped rather than held bare-handed', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const corpse = await knownObject(CORPSE, {
         corpsenm: MONSTER_NAME.indexOf('cockatrice'),
@@ -622,7 +622,7 @@ void test('a wished-for unsafe corpse is dropped rather than held bare-handed', 
 });
 
 void test('a cursed loadstone bypasses the holding burden limit', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const stone = await knownObject(LOADSTONE, { quantity: 100, cursed: true, where: 'free' });
 
@@ -633,7 +633,7 @@ void test('a cursed loadstone bypasses the holding burden limit', async () => {
 });
 
 void test('#apply attaches exactly the available sockets and spends time while retaining surplus candles', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const holder = await addInventoryObject(CANDELABRUM_OF_INVOCATION, { spe: 5, age: 200 });
     const candles = await addInventoryObject(TALLOW_CANDLE, { quantity: 4, age: 200 });
@@ -647,7 +647,7 @@ void test('#apply attaches exactly the available sockets and spends time while r
 });
 
 void test('#apply lights one oil identity and a later #apply snuffs and merges it', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const stack = await addInventoryObject(POT_OIL, { quantity: 3, age: 200 });
 
@@ -667,7 +667,7 @@ void test('#apply lights one oil identity and a later #apply snuffs and merges i
 });
 
 void test('swallowing prevents candle handling and oil ignition while occupied candelabrum candles only flicker', async () => {
-    freshLight();
+    await freshLight();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 12, 10, NO_MINVENT);
     const candles = await addInventoryObject(WAX_CANDLE, { age: 200 });
@@ -694,7 +694,7 @@ void test('swallowing prevents candle handling and oil ignition while occupied c
 });
 
 void test('holding a rejecting artifact uses its real blast and leaves it on the floor', async () => {
-    freshLight({ hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 0 } } });
+    await freshLight({ hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const sword = await artifactObject('Excalibur', { where: 'free' });
     installPagerInput(resetInputState(), {

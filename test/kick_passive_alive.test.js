@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function kickIntoTrap(species, hitPoints, seed, trapType = ROCKTRAP) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'monk',
         flags: { verbose: true },
         hero: {

@@ -17,17 +17,17 @@ for (const [type, name] of [
     [SPIKED_PIT, 'spiked pit'], [LANDMINE, 'land-mine'],
 ]) {
     void test(`a lethal ${name} hit refreshes the hallucinated corpse after its creation`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('hill giant') });
         initRng(1n);
-        newsym(11, 10);
+        await newsym(11, 10);
         const firstAppearance = glyphAt(11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         const refreshedAppearance = glyphAt(11, 10);
         assert.ok(firstAppearance?.kind === 'object');
         assert.ok(refreshedAppearance?.kind === 'object');
         assert.notEqual(firstAppearance.glyph, refreshedAppearance.glyph);
-        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
         monster.mhp = 1;

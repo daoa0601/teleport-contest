@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 void test('a boulder fills a monster-dug pit before the digger can fall into it', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     level.flags.hardfloor = true;
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -38,7 +38,7 @@ void test('a boulder fills a monster-dug pit before the digger can fall into it'
     assert.equal(messages.some(message => message.includes('falls into')), false);
 });
 void test('falling into a new monster-dug pit teaches the digger and sighted witnesses', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     level.flags.hardfloor = true;
     const digger = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -56,7 +56,7 @@ void test('falling into a new monster-dug pit teaches the digger and sighted wit
     assert.equal(monsterKnowsTrap(blindWitness, { ttyp: PIT }), false);
 });
 void test('a digger bungles a familiar pit and takes damage after its avoidance attempt', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     level.flags.hardfloor = true;
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -74,7 +74,7 @@ void test('a digger bungles a familiar pit and takes damage after its avoidance 
 });
 for (const cursed of [true, false]) {
     void test(`an unseen, unheard ${cursed ? 'cursed' : 'ordinary'} teleport scroll does not ask for a name`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
@@ -99,7 +99,7 @@ for (const cursed of [true, false]) {
     });
 }
 void test('hearing an unseen monster read an unknown teleport scroll permits naming it', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -120,7 +120,7 @@ void test('hearing an unseen monster read an unknown teleport scroll permits nam
     assert.equal(prompts, 1);
 });
 void test('a swallowing steam vortex envelops the hero before its move resumes from message input', async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 10, context: { mon_moving: true } });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 10, context: { mon_moving: true } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('steam vortex', 10, 10, MM_ANGRY | NO_MINVENT);
     placeMonsterAt(monster, game.u.ux, game.u.uy);
@@ -145,7 +145,7 @@ void test('a swallowing steam vortex envelops the hero before its move resumes f
     assert.equal(game._lastPlineKind, PLNMSG_ENVELOPED_IN_GAS);
 });
 void test('a deaf telepath can name a previously seen scroll after sensing the reader teleport', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     const scroll = await addObjectToMonsterInventory(monster, await knownObject(SCR_TELEPORTATION, {
@@ -155,7 +155,7 @@ void test('a deaf telepath can name a previously seen scroll after sensing the r
     game.u.telepathy = true;
     game.u.deafTurns = 10;
     await makeBlinded(10, { state: game, talk: false });
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSenseMonster(monster), true);
     const input = resetInputState();
     let prompts = 0;

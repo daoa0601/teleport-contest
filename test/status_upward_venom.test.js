@@ -6,7 +6,7 @@ import { useHeroSpit } from '../js/hero_spit.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { requireScreenRow } from './support/screen.js';
 void test('venom falling onto a cobra hero displays its resulting blindness', async () => {
-    freshMonsterAbilityRoom('cobra');
+    await freshMonsterAbilityRoom('cobra');
     await bot();
     await useHeroSpit({
         readDirection: async () => ({ key: '<', dx: 0, dy: 0, dz: -1 }),

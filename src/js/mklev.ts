@@ -1974,7 +1974,7 @@ async function makemon(
         pendingMonster.mtrapseen = -1; // quest leaders and nemeses know every trap
     if (mmflags & MM_MINVIS) {
         setMonsterPermanentInvisibility(pendingMonster);
-        newsym(pendingMonster.mx, pendingMonster.my);
+        await newsym(pendingMonster.mx, pendingMonster.my);
     }
     if (mndx === PM_STALKER || mndx === PM_BLACK_LIGHT)
         setMonsterPermanentInvisibility(pendingMonster);
@@ -1997,7 +1997,7 @@ async function makemon(
     const shaped = await initialShapechangedBirth(pendingMonster);
     if (shaped) {
         if (requestedByHero) {
-            newsym(shaped.mx, shaped.my);
+            await newsym(shaped.mx, shaped.my);
             setMonsterApparentHeroPosition(shaped, game, rn2);
         }
         setMonsterMalign(shaped);
@@ -2039,7 +2039,7 @@ async function makemon(
         // coordinate was the hero's occupied square, but only outside level
         // creation.  enexto() has already moved the actor, so preserve that
         // caller fact separately from final x/y.
-        newsym(pendingMonster.mx, pendingMonster.my);
+        await newsym(pendingMonster.mx, pendingMonster.my);
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
     }
 
@@ -2060,7 +2060,7 @@ async function makemon(
         pendingMonster.mpeaceful = 1;
 
     if (mndx === PM_LONG_WORM)
-        initializeMonsterWormBody(pendingMonster, {
+        await initializeMonsterWormBody(pendingMonster, {
             allowTail: !(mmflags & MM_NOTAIL),
         });
 
@@ -3365,7 +3365,7 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
             placeCreatedObject(boulder, launch.x, launch.y);
             await stack_object(boulder);
             trap.launch = launch;
-            newsym(launch.x, launch.y);
+            await newsym(launch.x, launch.y);
             trap.launch2 = {
                 x: x - (launch.x - x), y: y - (launch.y - y),
             };
@@ -4019,7 +4019,7 @@ async function getbones(): Promise<boolean> {
     restoreBonesFloorOrder(game.level);
     restoreLevelTimers(game);
     await restoreBonesMonsters(game.level, game);
-    restoreLevelRegions(game, 0);
+    await restoreLevelRegions(game, 0);
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
@@ -8040,7 +8040,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
     // underlying terrain even though the live level cell was updated.
-    if (active?.premapped) premap_detect();
+    if (active?.premapped) await premap_detect();
     await fixupMedusa(active);
 }
 
@@ -9061,11 +9061,11 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     const doorLoc = level.requireAt(entrance.x, entrance.y);
     if (doorLoc.doormask === D_NODOOR) {
         doorLoc.doormask = D_ISOPEN;
-        newsym(entrance.x, entrance.y);
+        await newsym(entrance.x, entrance.y);
     }
     if (doorLoc.typ === SDOOR) {
         convertSecretDoor(doorLoc);
-        newsym(entrance.x, entrance.y);
+        await newsym(entrance.x, entrance.y);
     }
     if (doorLoc.doormask & D_TRAPPED) doorLoc.doormask = D_LOCKED;
 

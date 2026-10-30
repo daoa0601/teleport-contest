@@ -5,7 +5,7 @@ import { vomitHero } from '../js/hero_illness.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an acidic hero vomiting melts ice below a raised drawbridge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('yellow dragon', { hitPoints: 1000 });
     const square = level.requireAt(10, 10);
     square.typ = DRAWBRIDGE_UP;

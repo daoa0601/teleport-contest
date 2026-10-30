@@ -12,7 +12,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('lifting one gold piece at the strained threshold asks to continue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const capacity = weightCapacity(game);
     const carried = invWeight(game) + capacity;
     await addInventoryObject(DART, { quantity: 2 * capacity - 1 - carried });

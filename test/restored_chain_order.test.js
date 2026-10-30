@@ -23,7 +23,7 @@ for (const cached of [false, true]) {
         if (cached)
             freshConnectedLevels();
         else
-            freshObjectRoom();
+            await freshObjectRoom();
         requirePlayingGame(game);
         game.flags.verbose = false;
         for (const x of [11, 14])
@@ -42,7 +42,7 @@ for (const cached of [false, true]) {
         else {
             const storage = memoryStorage();
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
         }
         await u_on_upstairs();
         assert.equal(game.u.ux, 11, 'Restoring prepends each saved stair, selecting the older upstairs first');
@@ -50,7 +50,7 @@ for (const cached of [false, true]) {
     });
 }
 void test('restoring lets the shopkeeper repair the older saved breach first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { roomno, shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     for (const y of [9, 11]) {
         const wall = requireGameLevel().requireAt(8, y);
@@ -64,8 +64,8 @@ void test('restoring lets the shopkeeper repair the older saved breach first', a
     game.moves += 5;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
-    vision_recalc(0);
+    assert.equal(await restoreGame(game.plname, storage), true);
+    await vision_recalc(0);
     const keeper = requireGameLevel().monsters.find(monster => monster.m_id === shopkeeper.m_id);
     assert.ok(keeper && hasShopkeeperData(keeper));
     const input = resetInputState();
@@ -75,7 +75,7 @@ void test('restoring lets the shopkeeper repair the older saved breach first', a
     assert.equal(requireGameLevel().requireAt(8, 11).typ, DOOR, 'One repair leaves the newer breach open');
 });
 void test('hallucinating trap detection visits the older restored trap before newer traps', async () => {
-    freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
     requireGameLevel().requireAt(30, 10).typ = DOOR;
     await maketrap(30, 10, PIT);
     initRng(123n);
@@ -83,14 +83,14 @@ void test('hallucinating trap detection visits the older restored trap before ne
     await detectTraps(null);
     const single = requireGameLevel().requireAt(30, 10).remembered_glyph;
     assert.ok(single?.kind === 'object');
-    freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
     requireGameLevel().requireAt(30, 10).typ = DOOR;
     requireGameLevel().requireAt(32, 10).typ = DOOR;
     await maketrap(30, 10, PIT);
     await maketrap(32, 10, PIT);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     initRng(123n);
     resetInputState().feed('.');
     await detectTraps(null);
@@ -99,12 +99,12 @@ void test('hallucinating trap detection visits the older restored trap before ne
     assert.equal(older.otyp, single.otyp, 'The older restored trap gets the first imaginary object');
 });
 void test('restoring rebuilds the fruit registry before resolving ambiguous fruit wishes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pluralFruit = addFruit('guavas');
     addFruit('guava');
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const wished = await readObjectName('guavas', { wizardWish: true });
     assert.ok(wished && !wished.noWish);
     assert.equal(wished.object.spe, pluralFruit, 'The restored older exact fruit name precedes the newer plural match');

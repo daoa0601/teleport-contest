@@ -17,7 +17,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 // C dig.c digactualhole(): the Castle's holes deliver their victims to the
 // Valley of Gehennom rather than the nominal next level.
 void test('a hole in the Castle drops its victim into the Valley', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 }),
         createDungeon({ dname: 'Gehennom', num_dunlevs: 25 }),
@@ -44,7 +44,7 @@ void test('a hole in the Castle drops its victim into the Valley', async () => {
 // C dig.c digactualhole(): a shopkeeper taking the fall turns angry even
 // though the hole was not aimed at her.
 void test('a shopkeeper falling through a dug hole turns angry', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const keeper = await createMonsterAt('shopkeeper', 11, 10);
     keeper.mpeaceful = 1;

@@ -16,6 +16,7 @@ import {
 } from './display.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import type { GameState } from './game_state.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
@@ -77,7 +78,8 @@ export async function zapDigWithObject(
             const location = level.requireAt(x, y);
             if (cansee(x, y)) {
                 visibleCells.push({ x, y });
-                show_glyph_cell(x, y, '*', CLR_WHITE, false);
+                await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0,
+                    { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
 
@@ -162,7 +164,7 @@ export async function zapDigWithObject(
         }
     } finally {
         if (!state.program_state.gameover)
-            for (const cell of visibleCells) newsym(cell.x, cell.y);
+            for (const cell of visibleCells) await newsym(cell.x, cell.y);
     }
 
     if (flowingPit && isok(flowingPit.x, flowingPit.y)) {
@@ -219,7 +221,7 @@ async function digVertically(state: GameState, direction: number): Promise<void>
     placeCreatedObject(rock, hero.ux, hero.uy, state);
     observeObjectForNaming(rock, { state });
     await stack_object(rock, state);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
 }
 
 // null permits digging; an empty string rejects it without a message.

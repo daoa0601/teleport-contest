@@ -8,7 +8,7 @@ import { msummon, summonMinion } from '../js/minion.js';
 import { summonNastyMonsters } from '../js/mklev.js';
 
 void test('a demon summon knows the hero position at birth', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const devil = await createMonsterAt('bone devil', 13, 10, NO_MINVENT);
 
     const summoned = await msummon(devil);
@@ -21,7 +21,7 @@ void test('a demon summon knows the hero position at birth', async () => {
 });
 
 void test('a divine minion knows the hero position at birth', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const minion = await summonMinion(0);
 
@@ -31,7 +31,7 @@ void test('a divine minion knows the hero position at birth', async () => {
 });
 
 void test('a monster spell creates nasties without knowledge of the hero position', async () => {
-    freshObjectRoom({ right: 40 });
+    await freshObjectRoom({ right: 40 });
     const lich = await createMonsterAt('master lich', 30, 10, NO_MINVENT);
     lich.mux = game.u.ux;
     lich.muy = game.u.uy;

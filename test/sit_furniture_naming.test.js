@@ -12,17 +12,17 @@ async function topline() {
 // sit.c:sit() names furniture through defsyms[] explanations; the throne
 // explanation is "opulent throne" (include/defsym.h S_throne), not "throne".
 void test('sitting on a throne announces the opulent throne', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     level.requireAt(10, 10).typ = THRONE;
     await runExtendedCommand('sit', '\x1b');
     assert.ok((await topline()).startsWith('You sit on the opulent throne.'), `topline was: ${await topline()}`);
 });
 void test('sitting on a sink or grave keeps the defsyms explanation', async () => {
-    const sinkLevel = freshObjectRoom({ flags: { debug: true } });
+    const sinkLevel = await freshObjectRoom({ flags: { debug: true } });
     sinkLevel.requireAt(10, 10).typ = SINK;
     await runExtendedCommand('sit', '');
     assert.ok((await topline()).startsWith('You sit on the sink.'), `topline was: ${await topline()}`);
-    const graveLevel = freshObjectRoom({ flags: { debug: true } });
+    const graveLevel = await freshObjectRoom({ flags: { debug: true } });
     graveLevel.requireAt(10, 10).typ = GRAVE;
     await runExtendedCommand('sit', '');
     assert.ok((await topline()).startsWith('You sit on the grave.'), `topline was: ${await topline()}`);

@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('lethal light damage is fully applied before the gremlin death message pauses', async () => {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     const wand = await addInventoryObject(WAN_LIGHT, { spe: 3 });
     const gremlin = await createMonsterAt('gremlin', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     setMonsterGivenName(gremlin, 'An Inordinately Long Gremlin Name');

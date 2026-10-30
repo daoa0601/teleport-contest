@@ -11,7 +11,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 void test('a lich can teleport beside the hero and cast an indirect spell in the same turn', async () => {
     let castAfterTeleport = false;
     for (let seed = 1; seed <= 128; seed++) {
-        freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, hero: { uhp: 500, uhpmax: 500 } });
+        await freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, hero: { uhp: 500, uhpmax: 500 } });
         requirePlayingGame(game);
         const lich = await createMonsterAt('master lich', 20, 10, MM_NOWAIT | NO_MINVENT);
         lich.mpeaceful = 1;

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const raised of [false, true]) {
     for (const wall of [false, true]) {
         void test(`applying a key at a ${raised ? 'raised' : 'lowered'} drawbridge ${wall ? 'portcullis' : 'span'} identifies the absent lock`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             const span = level.requireAt(wall ? 12 : 11, 10);
             span.typ = raised ? DRAWBRIDGE_UP : DRAWBRIDGE_DOWN;
             span.drawbridgemask = DB_WEST;

@@ -18,7 +18,7 @@ async function makeMitre() {
     return mitre;
 }
 void test('the noncombat Mitre repels an undead covetous carrier', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const lich = await createMonsterAt('master lich', 12, 10, NO_MINVENT);
@@ -34,7 +34,7 @@ void test('the noncombat Mitre repels an undead covetous carrier', async () => {
 });
 for (const undead of [false, true]) {
     void test(`a coaligned priest touching the Mitre ${undead ? 'as an undead form is blasted' : 'is unharmed'}`, async () => {
-        freshObjectRoom({ role: 'priest' });
+        await freshObjectRoom({ role: 'priest' });
         requirePlayingGame(game);
         initializeArtifacts();
         const mitre = await makeMitre();

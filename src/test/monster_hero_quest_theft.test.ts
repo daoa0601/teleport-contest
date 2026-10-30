@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const worn of [false, true]) {
     void test(`Scorpius steals a ${worn ? 'cursed worn' : 'carried'} quest artifact before the Amulet and still hurts the hero`, async () => {
-        freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: true } });
         requirePlayingGame(game);
         const amulet = await addInventoryObject(AMULET_OF_YENDOR);
         const mitre = await addInventoryItem(await artifactObject('The Mitre of Holiness', { cursed: worn }));
@@ -48,7 +48,7 @@ for (const worn of [false, true]) {
 
 for (const removing of [false, true]) {
     void test(`stealing the worn Mitre leaves unrelated armor ${removing ? 'removal' : 'dressing'} in progress`, async () => {
-        freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: true } });
         requirePlayingGame(game);
         const mitre = await addInventoryItem(await artifactObject('The Mitre of Holiness'));
         wearHeroArmor(mitre);

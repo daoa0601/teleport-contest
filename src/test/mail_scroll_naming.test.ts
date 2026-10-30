@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
 
 void test('an identified scroll of mail omits "uncursed" from its inventory name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const mail = await addInventoryObject(SCROLL_OF_MAIL, {
         spe: 1, bknown: true, known: true, dknown: true, typeKnown: true,
@@ -25,7 +25,7 @@ void test('an identified scroll of mail omits "uncursed" from its inventory name
 });
 
 void test('ordinary scrolls keep "uncursed" while implicit_uncursed is on', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const scroll = await addInventoryObject(SCR_IDENTIFY, {
         bknown: true, known: true, dknown: true, typeKnown: true,
@@ -35,7 +35,7 @@ void test('ordinary scrolls keep "uncursed" while implicit_uncursed is on', asyn
 });
 
 void test('turning implicit_uncursed off shows the mail scroll as uncursed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.flags.implicit_uncursed = false;
     try {
         const mail = await addInventoryObject(SCROLL_OF_MAIL, {
@@ -49,7 +49,7 @@ void test('turning implicit_uncursed off shows the mail scroll as uncursed', asy
 });
 
 void test('a scroll of mail with unknown beatitude counts as fully identified', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const mail = await addInventoryObject(SCROLL_OF_MAIL, {
         spe: 1, bknown: false, known: true, dknown: true, typeKnown: true,

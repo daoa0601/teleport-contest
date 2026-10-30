@@ -8,7 +8,7 @@ import { requireScreenCell, requireScreenRow } from './support/screen.js';
 
 for (const autodescribe of [false, true]) {
     void test(`a dismissed wrapped targeting goal restores the map with autodescribe ${autodescribe ? 'on' : 'off'}`, async () => {
-        freshObjectRoom({ top: 0, bottom: 5, heroY: 2, iflags: { autodescribe } });
+        await freshObjectRoom({ top: 0, bottom: 5, heroY: 2, iflags: { autodescribe } });
         const goal = 'the staircase beyond the fountain and the altar at the far end of the unexplored room';
         const input = resetInputState();
         input.feed('$');

@@ -29,7 +29,7 @@ function breathe(direction, options = {}) {
     });
 }
 void test('a winter wolf uses #monster to breathe frost at a target', async () => {
-    const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 1;
     jackal.m_lev = 1;
@@ -47,14 +47,14 @@ void test('a winter wolf uses #monster to breathe frost at a target', async () =
     assert.notEqual(monsterAtPosition(level, jackal.mx, jackal.my), jackal);
 });
 void test('cancelling breath direction spends energy but does not spend a turn', async () => {
-    freshMonsterAbilityRoom('red dragon', { energy: 30 });
+    await freshMonsterAbilityRoom('red dragon', { energy: 30 });
     const result = await breathe(27);
     assert.ok(!result.spentTime, 'A cancelled direction must not spend a turn');
     assert.equal(result.reason, 'cancelled');
     assert.equal(game.u.uen, 15);
 });
 void test('disintegration breath destroys a shield before hurting its wearer', async () => {
-    freshMonsterAbilityRoom('black dragon', { energy: 30 });
+    await freshMonsterAbilityRoom('black dragon', { energy: 30 });
     const shield = await knownObject(SMALL_SHIELD, {
         worn: true, owornmask: W_ARMS,
     });
@@ -70,7 +70,7 @@ void test('disintegration breath destroys a shield before hurting its wearer', a
     assert.equal(jackal.minvent.includes(shield), false);
 });
 void test('fatal disintegration destroys ordinary gear but spares black scales', async () => {
-    const level = freshMonsterAbilityRoom('black dragon', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('black dragon', { energy: 30 });
     const sword = await knownObject(LONG_SWORD);
     const scales = await knownObject(BLACK_DRAGON_SCALES);
     const jackal = await createMonsterAt('jackal', 11, 10);
@@ -87,7 +87,7 @@ void test('fatal disintegration destroys ordinary gear but spares black scales',
     assert.ok(floorObjectsAt(level, 11, 10).includes(scales));
 });
 void test('acid breath corrodes a monster weapon and armor', async () => {
-    freshMonsterAbilityRoom('yellow dragon', { energy: 30 });
+    await freshMonsterAbilityRoom('yellow dragon', { energy: 30 });
     const sword = await knownObject(LONG_SWORD);
     const helmet = await knownObject(HELMET);
     const jackal = await createMonsterAt('jackal', 11, 10);
@@ -104,7 +104,7 @@ void test('acid breath corrodes a monster weapon and armor', async () => {
     assert.equal(helmet.oeroded2, 1);
 });
 void test('lightning breath can melt iron bars', async () => {
-    const level = freshMonsterAbilityRoom('blue dragon', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('blue dragon', { energy: 30 });
     level.rooms.push(createRoom({ lx: 7, hx: 16, ly: 6, hy: 14 }));
     level.nroom = 1;
     for (let x = 7; x <= 16; x++) {
@@ -124,7 +124,7 @@ void test('lightning breath can melt iron bars', async () => {
     assert.equal(bars.typ, ROOM);
 });
 void test('breath fired while swallowed hits the engulfer directly', async () => {
-    const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     worm.mx = game.u.ux;
     worm.my = game.u.uy;

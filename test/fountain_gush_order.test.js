@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a fountain announces overflowing water before creatures drown in the new pools', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const victims = [];
     for (const [x, y] of [[9, 9], [9, 11], [11, 9], [11, 11]])
@@ -28,7 +28,7 @@ void test('a fountain announces overflowing water before creatures drown in the 
     assert.ok(overflow >= 0 && drowning > overflow, `Overflow must be announced before drowning: ${text}`);
 });
 void test('a pet drowned by a hero-made fountain overflow is the hero\'s kill', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = FOUNTAIN;
     const pets = [];

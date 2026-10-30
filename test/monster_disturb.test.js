@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 for (const peaceful of [false, true]) {
     void test(`a disturbed ${peaceful ? 'peaceful' : 'hostile'} gnome announces waking before wielding`, async () => {
-        freshObjectRoom({ hero: { aggravateMonster: true, uac: -1000 } });
+        await freshObjectRoom({ hero: { aggravateMonster: true, uac: -1000 } });
         requirePlayingGame(game);
         const gnome = await createMonsterAt('gnome', 11, 10, NO_MINVENT);
         await addObjectToMonsterInventory(gnome, await mksobj(AKLYS, true, false), game);

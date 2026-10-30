@@ -9,7 +9,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const form of ['human', 'dog']) {
     void test(`deaf shop chat describes hearing in a ${form} body`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         if (form === 'dog') installPolymorphedHero('dog');

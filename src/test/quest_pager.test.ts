@@ -17,8 +17,8 @@ function dungeonNamed(dname: string) {
     };
 }
 
-void test('quest text substitutions follow the native code table', () => {
-    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+void test('quest text substitutions follow the native code table', async () => {
+    await freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
     game.plname = 'Sigrid';
     game.u.ulevel = 14;
     game.u.ualign = { type: 1, record: 10 };
@@ -59,8 +59,8 @@ void test('quest text substitutions follow the native code table', () => {
 for (const [name, ending] of [
     ['line feed', '\n'], ['carriage return', '\r'], ['CRLF', '\r\n'],
 ] as const) {
-    void test(`quest line conversion stops at ${name}`, () => {
-        freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+    void test(`quest line conversion stops at ${name}`, async () => {
+        await freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
         game.plname = 'Sigrid';
 
         assert.equal(convertQuestLine(`Welcome, %p${ending}Return %o.`, game), 'Welcome, Sigrid');
@@ -68,14 +68,14 @@ for (const [name, ending] of [
     });
 }
 
-void test('quest guardians are named without an article in singular and plural', () => {
-    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+void test('quest guardians are named without an article in singular and plural', async () => {
+    await freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
 
     assert.equal(convertQuestLine('%g; %gp; %gP', game), 'warrior; warriors; Warriors');
 });
 
-void test('shortened quest artifact names consume pronoun suffixes', () => {
-    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+void test('shortened quest artifact names consume pronoun suffixes', async () => {
+    await freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
 
     assert.equal(
         convertQuestLine('Keep %O safe: %Oh must return home. Protect %Oi and %Oj power.', game),
@@ -87,8 +87,8 @@ void test('shortened quest artifact names consume pronoun suffixes', () => {
     );
 });
 
-void test('shortened plural quest artifact names use singular pronouns', () => {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 11n });
+void test('shortened plural quest artifact names use singular pronouns', async () => {
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 11n });
 
     assert.equal(
         convertQuestLine('Recover %o: %oh belong here. Recover %O: %Oh belongs here.', game),
@@ -109,8 +109,8 @@ const deityCases: {
 ];
 
 for (const { role, alignment, deity, title } of deityCases) {
-    void test(`quest text addresses ${deity} as a ${title} after an alignment change`, () => {
-        freshObjectRoom({ role, gameplaySeed: 11n });
+    void test(`quest text addresses ${deity} as a ${title} after an alignment change`, async () => {
+        await freshObjectRoom({ role, gameplaySeed: 11n });
         game.u.ualignbase = [alignment, alignment];
         game.u.ualign = { type: -1, record: 0 };
 

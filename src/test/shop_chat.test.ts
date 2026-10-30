@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 
 for (const situation of ['angry', 'following', 'wrong customer', 'bill', 'debt', 'credit', 'robbed', 'surcharge', 'ordinary'] as const) {
     void test(`chatting with a shopkeeper describes ${situation}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER);
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
@@ -69,7 +69,7 @@ for (const situation of ['angry', 'following', 'wrong customer', 'bill', 'debt',
 }
 
 void test('a sleeping shopkeeper does not chat or spend a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.msleeping = 1;

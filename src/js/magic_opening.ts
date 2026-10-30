@@ -34,7 +34,7 @@ export async function openit(state: GameState = game) {
         return -1;
     }
     let opened = 0;
-    const cells = clearAreaCells(state.u.ux, state.u.uy, BOLT_LIM, {
+    const cells = await clearAreaCells(state.u.ux, state.u.uy, BOLT_LIM, {
         ignoreBlockers: Is_airlevel(state.u.uz) || Is_waterlevel(state.u.uz),
     });
     for (const { x, y } of cells) {
@@ -59,18 +59,18 @@ export async function openit(state: GameState = game) {
                 location.doormask = D_NODOOR;
             } else location.doormask = D_ISOPEN;
             vision_note_blocker_change(x, y);
-            newsym(x, y);
+            await newsym(x, y);
             opened++;
         } else if (location.typ === SCORR) {
             revealSecretCorridor(x, y);
-            newsym(x, y);
+            await newsym(x, y);
             opened++;
         } else {
             const trap = state.level.traps.find(t => t.tx === x && t.ty === y);
             if (trap) {
                 if (!trap.tseen && trap.ttyp !== STATUE_TRAP) {
                     trap.tseen = true;
-                    newsym(x, y);
+                    await newsym(x, y);
                     opened++;
                 }
                 const target = x === state.u.ux && y === state.u.uy ? state.u

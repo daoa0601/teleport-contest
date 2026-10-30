@@ -14,13 +14,13 @@ for (const { surface, name, accessible } of [
     { surface: DB_FLOOR, name: 'bedrock', accessible: false },
 ]) {
     void test(`an invisible hero's guessed position ${accessible ? 'can' : 'cannot'} lie on ${name} beneath a raised drawbridge`, async () => {
-        const level = freshObjectRoom({ hero: { invisibleTurns: 50 } });
+        const level = await freshObjectRoom({ hero: { invisibleTurns: 50 } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
         const bridge = level.requireAt(11, 11);
         bridge.typ = DRAWBRIDGE_UP;
         bridge.drawbridgemask = surface;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(couldsee(11, 11), true, 'The exposed surface must be in line of sight');
         let guessesOnBridge = 0;
         for (let seed = 0; seed < 64; seed++) {

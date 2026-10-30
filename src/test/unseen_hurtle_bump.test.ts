@@ -13,12 +13,12 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an unseen humanoid hurtled into a blind hero is someone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     const gnome = await createMonsterAt('gnome lord', ux + 2, uy, NO_MINVENT);
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     await hurtleMonster(gnome, -1, 0, 3, { random: () => 0 });
 

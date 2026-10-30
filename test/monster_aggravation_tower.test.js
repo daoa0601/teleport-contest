@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const cannotMove of [0, false]) {
     void test(`aggravation can release paralysis stored as a ${typeof cannotMove} flag`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const goblin = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
         goblin.mcanmove = cannotMove;
         goblin.mfrozen = 20;
@@ -19,7 +19,7 @@ for (const cannotMove of [0, false]) {
 }
 for (const sleeperInside of [false, true]) {
     void test(`aggravation spell selection ${sleeperInside ? 'recognizes' : 'ignores'} a sleeper ${sleeperInside ? 'inside' : 'outside'} the caster's tower area`, async () => {
-        freshObjectRoom({ right: 25 });
+        await freshObjectRoom({ right: 25 });
         requirePlayingGame(game);
         game._activeSpecialLevel = {
             prototype: 'wizard1', file: 'wizard1.lua',

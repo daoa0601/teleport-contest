@@ -24,8 +24,8 @@ import { installPolymorphedHero, installSwallowedHero } from './support/hero-sta
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-function room() {
-    freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+async function room() {
+    await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
     pushKeys(' '.repeat(200));
 }
 async function carryWand(type, { charges = 3, ...overrides } = {}) {
@@ -41,7 +41,7 @@ async function wieldArtifact(name) {
 }
 for (const type of [WAN_STRIKING, WAN_MAGIC_MISSILE]) {
     void test(`Magicbane prevents direct self-damage from ${OBJECT_NAMES[type]}`, async () => {
-        room();
+        await room();
         requireFixtureGame(game);
         await wieldArtifact('Magicbane');
         const watcher = await createMonsterAt('jackal', 12, 10);
@@ -57,7 +57,7 @@ for (const [artifact, type, memory] of [
     ['Frost Brand', WAN_COLD, M_SEEN_COLD],
 ]) {
     void test(`${artifact} protects from the matching elemental self-zap`, async () => {
-        room();
+        await room();
         requireFixtureGame(game);
         await wieldArtifact(artifact);
         const watcher = await createMonsterAt('jackal', 12, 10);
@@ -69,7 +69,7 @@ for (const [artifact, type, memory] of [
     });
 }
 void test('an unresisted strike returns damage for the caller without applying it twice', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const result = await zapHeroWithObject(await carryWand(WAN_STRIKING));
     assert.ok(result.damage >= 2 && result.damage <= 24);
@@ -77,7 +77,7 @@ void test('an unresisted strike returns damage for the caller without applying i
     assert.equal(result.heroDied, false);
 });
 void test('shock resistance prevents damage but does not prevent the lightning flash', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     grantIntrinsicProperty('shockResistance', 'outside');
     const result = await zapHeroWithObject(await carryWand(WAN_LIGHTNING));
@@ -86,7 +86,7 @@ void test('shock resistance prevents damage but does not prevent the lightning f
     assert.ok(heroIsBlind());
 });
 void test('a resisted fire self-zap repairs the hero iron-golem body', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('iron golem', { hitPoints: 5, maxHitPoints: 100 });
     const result = await zapHeroWithObject(await carryWand(WAN_FIRE));
@@ -95,7 +95,7 @@ void test('a resisted fire self-zap repairs the hero iron-golem body', async () 
     assert.ok(game.u.mh <= 100);
 });
 void test('sleeping yourself ends an occupation and installs real helplessness', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     resetInputState().feed('4s');
     await rhack(0);
@@ -108,7 +108,7 @@ void test('sleeping yourself ends an occupation and installs real helplessness',
     assert.ok(game.u.usleep);
 });
 void test('sleep resistance leaves the hero awake', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     grantIntrinsicProperty('sleepResistance', 'outside');
     await zapHeroWithObject(await carryWand(WAN_SLEEP));
@@ -116,7 +116,7 @@ void test('sleep resistance leaves the hero awake', async () => {
     assert.ok(!game.u.usleep);
 });
 void test('self-cancellation removes a worn ring bonus and neutralizes carried objects', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 3 });
     await wearHeroAccessory(ring, 'uleft');
@@ -133,14 +133,14 @@ void test('self-cancellation removes a worn ring bonus and neutralizes carried o
     assert.equal(wand.spe, 4);
 });
 void test('self-cancellation returns a changed hero to the original body', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('wolf');
     await zapHeroWithObject(await carryWand(WAN_CANCELLATION));
     assert.ok(!Upolyd(game.u));
 });
 void test('Unchanging keeps a living changed body through self-cancellation', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('wolf');
     await wearHeroAccessory(await addInventoryObject(AMULET_OF_UNCHANGING), 'uamul');
@@ -149,7 +149,7 @@ void test('Unchanging keeps a living changed body through self-cancellation', as
     assert.equal(MONSTER_NAME[game.u.umonnum], 'wolf');
 });
 void test('plain healing restores the current body without curing unblessed blindness', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('wolf', { hitPoints: 1, maxHitPoints: 40 });
     await makeBlinded(20);
@@ -160,7 +160,7 @@ void test('plain healing restores the current body without curing unblessed blin
     assert.ok(heroIsBlind());
 });
 void test('extra healing clears sticky blindness while keeping its maximum HP', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     game.u.uhp = 195;
     game.u.ucreamed = 10;
@@ -172,7 +172,7 @@ void test('extra healing clears sticky blindness while keeping its maximum HP', 
     assert.ok(!heroIsBlind());
 });
 void test('self stone-to-flesh retouches a changed body before transforming carried stones', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('stone golem');
     const diamond = await addInventoryObject(DIAMOND, { bypass: true });
@@ -185,7 +185,7 @@ void test('self stone-to-flesh retouches a changed body before transforming carr
     assert.ok(game.inventory.some(object => object.otyp === MEATBALL));
 });
 void test('self stone-to-flesh respects item bypasses when the hero does not change form', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const diamond = await addInventoryObject(DIAMOND, { bypass: true });
     game.context.bypasses = true;
@@ -194,7 +194,7 @@ void test('self stone-to-flesh respects item bypasses when the hero does not cha
     assert.ok(game.inventory.includes(diamond));
 });
 void test('self stone-to-flesh merges all newly transformed inventory stacks', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     await addInventoryObject(ROCK, { quan: 2, oname: 'First' });
     await addInventoryObject(ROCK, { quan: 3, oname: 'Second' });
@@ -205,7 +205,7 @@ void test('self stone-to-flesh merges all newly transformed inventory stacks', a
     assert.equal(meat[0]?.quan, 9);
 });
 void test('self-opening releases a holding trap before reaching a carried locked box', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const box = await addInventoryObject(CHEST, { olocked: true });
     addTrap(game.level, BEAR_TRAP, game.u.ux, game.u.uy, { tseen: true });
@@ -218,7 +218,7 @@ void test('self-opening releases a holding trap before reaching a carried locked
     assert.equal(box.olocked, false);
 });
 void test('self-probing reveals carried container state without exposing nested contents', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const box = await unopenedCatBox({ where: 'inventory', dknown: false, lknown: false });
     const cat = box.contents?.[0];
@@ -233,7 +233,7 @@ void test('self-probing reveals carried container state without exposing nested 
     assert.equal(cat.dknown, false);
 });
 void test('successive speed effects extend the timeout and saturate at its limit', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     await zapHeroWithObject(await carryWand(WAN_SPEED_MONSTER));
     const first = game.u.veryFastTurns;
@@ -245,7 +245,7 @@ void test('successive speed effects extend the timeout and saturate at its limit
     assert.equal(game.u.veryFastTurns, TIMEOUT);
 });
 void test('zero-length speed magic does not leave permanent very-fast movement', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     await speedUpHero(0);
     assert.equal(game.u.veryFastTurns, 0);
@@ -253,7 +253,7 @@ void test('zero-length speed magic does not leave permanent very-fast movement',
     assert.equal(heroHasRemovableSpeed(), false);
 });
 void test('a self-speed zap retains its input boundary before granting the timeout', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const wand = await carryWand(WAN_SPEED_MONSTER);
     const input = resetInputState();
@@ -274,7 +274,7 @@ void test('a self-speed zap retains its input boundary before granting the timeo
     assert.ok((game.u.veryFastTurns ?? 0) >= 50);
 });
 void test('slowing removes intrinsic and timed speed while retaining worn speed boots', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     grantIntrinsicProperty('fast', 'outside');
     await speedUpHero(25);
@@ -287,7 +287,7 @@ void test('slowing removes intrinsic and timed speed while retaining worn speed 
     assert.equal(heroHasRemovableSpeed(), false);
 });
 void test('slowing removes a fast timeout before refreshing the effective property', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     setPropertyTimeout('fast', 20);
     assert.equal(heroHasRemovableSpeed(), true);
@@ -297,14 +297,14 @@ void test('slowing removes a fast timeout before refreshing the effective proper
     assert.equal(heroHasRemovableSpeed(), false);
 });
 void test('self-probing uses the current form level and health', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     installPolymorphedHero('wolf', { hitPoints: 13, maxHitPoints: 40 });
     const form = game.u.umonnum;
     assert.ok(heroStatusLine().includes(`Level ${MONSTER_LEVEL[form]}  HP 13(40)`));
 });
 void test('probe status distinguishes sticky-goop blindness from covered blindness', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     game.u.ucreamed = 10;
     await makeBlinded(10);
@@ -313,7 +313,7 @@ void test('probe status distinguishes sticky-goop blindness from covered blindne
     assert.match(heroStatusLine(), /blind, covered by sticky goop/);
 });
 void test('probe status masks appearance knowledge and omits mounted leg wounds', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     game.u.m_ap_type = M_AP_F_DKNOWN;
     assert.doesNotMatch(heroStatusLine(), /disguised/);
@@ -326,7 +326,7 @@ void test('probe status masks appearance knowledge and omits mounted leg wounds'
     assert.doesNotMatch(heroStatusLine(), /injured/);
 });
 void test('probe status describes engulfment and omits the outside gas cloud', async () => {
-    room();
+    await room();
     requireFixtureGame(game);
     const cloud = await createMonsterAt('fog cloud', 11, 10);
     await installSwallowedHero(cloud);

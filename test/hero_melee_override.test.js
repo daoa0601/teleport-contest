@@ -20,7 +20,7 @@ for (const { force, confirm, form, swings } of [
     { force: false, confirm: true, form: 'ettin', swings: 2 },
 ]) {
     void test(`Stormbringer ${force ? 'obeys a forced attack' : confirm ? 'overrides attack confirmation' : 'attacks without confirmation'}${form ? ' in an ettin form' : ''}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             role: 'barbarian', flags: { verbose: true, confirm },
             hero: { uhitinc: 100, ualign: { type: -1, record: 0 } },
         });

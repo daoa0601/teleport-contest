@@ -105,7 +105,7 @@ void test('scare monster scroll gives nearby laughter without automatically disc
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant ant', 11, 10);
     const source = await scroll(SCR_SCARE_MONSTER);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     const result = await applyScrollEffects(source);
 

@@ -13,8 +13,8 @@ import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function creationRoom() {
-    const level = freshObjectRoom({ flags: { debug: true }, gameplaySeed: 17n });
+async function creationRoom() {
+    const level = await freshObjectRoom({ flags: { debug: true }, gameplaySeed: 17n });
     requirePlayingGame(game);
     const input = resetInputState();
     const messages: string[] = [];
@@ -23,7 +23,7 @@ function creationRoom() {
 }
 
 void test('wizard creation retries an unknown species and announces its replacement once', async () => {
-    const { level, input, messages } = creationRoom();
+    const { level, input, messages } = await creationRoom();
     input.feed('not a monster\n');
     input.beforeRead = () => {
         messages.push(game._pending_message);
@@ -40,7 +40,7 @@ void test('wizard creation retries an unknown species and announces its replacem
 });
 
 void test('wizard creation applies saddle, gender, invisibility, sleep, and disposition together', async () => {
-    const { level, input } = creationRoom();
+    const { level, input } = await creationRoom();
     input.feed('female invisible sleeping saddled peaceful pony\n');
 
     await rhack(7);
@@ -57,7 +57,7 @@ void test('wizard creation applies saddle, gender, invisibility, sleep, and disp
 });
 
 void test('wizard creation accepts a monster class symbol', async () => {
-    const { level, input } = creationRoom();
+    const { level, input } = await creationRoom();
     input.feed('b\n');
 
     await rhack(7);
@@ -67,7 +67,7 @@ void test('wizard creation accepts a monster class symbol', async () => {
 });
 
 void test('hallucinated wizard creation displays the newborn before its final appearance', async () => {
-    const { level, input } = creationRoom();
+    const { level, input } = await creationRoom();
     game.u.hallucinationTurns = 20;
     // Native makemon() redraws a monster created by the hero before inventory
     // initialization and at completion. A newt cannot perform armor checks.
@@ -93,7 +93,7 @@ void test('hallucinated wizard creation displays the newborn before its final ap
 
 for (const useScroll of [false, true]) {
     void test(`hallucinated ${useScroll ? 'scroll' : 'wizard'} creation names each armor slot before displaying a human`, async () => {
-        const { level, input, messages } = creationRoom();
+        const { level, input, messages } = await creationRoom();
         const scroll = useScroll
             ? await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true })
             : null;
@@ -131,7 +131,7 @@ for (const useScroll of [false, true]) {
 
 for (const request of ['I', 'invisible monster']) {
     void test(`wizard creation resolves "${request}" to a permanently invisible stalker`, async () => {
-        const { level, input } = creationRoom();
+        const { level, input } = await creationRoom();
         input.feed(`${request}\n`);
 
         await rhack(7);
@@ -147,7 +147,7 @@ for (const request of ['I', 'invisible monster']) {
 }
 
 void test('a wizard reading create monster chooses the species through the native creation prompt', async () => {
-    const { level, input } = creationRoom();
+    const { level, input } = await creationRoom();
     const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });
     input.beforeRead = () => {
         if (/Create what kind/.test(game._pending_message)) input.feed('newt\n');
@@ -163,7 +163,7 @@ void test('a wizard reading create monster chooses the species through the nativ
 });
 
 void test('a create-monster scroll keeps imposed invisibility through a chameleon birth', async () => {
-    const { level, input } = creationRoom();
+    const { level, input } = await creationRoom();
     const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });
     input.beforeRead = () => {
         input.feed(/Create what kind/.test(game._pending_message) ? 'invisible chameleon\n' : ' ');
@@ -195,7 +195,7 @@ for (const { request, species, female, surprised } of [
     { request: 'succubi', species: 'amorous demon', female: true, surprised: false },
 ]) {
     void test(`a create-monster scroll honors the gender hint in "${request}"`, async () => {
-        const { level, input, messages } = creationRoom();
+        const { level, input, messages } = await creationRoom();
         const scroll = await addInventoryObject(SCR_CREATE_MONSTER, { blessed: true, typeKnown: true });
         input.beforeRead = () => {
             messages.push(game._pending_message);

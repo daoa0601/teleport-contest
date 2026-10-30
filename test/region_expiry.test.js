@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('cloud dissipation is announced after surviving clouds affect their occupants', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createMonsterAt('soldier', 11, 10);
     await createGasCloudSelection(game, [{ x: 10, y: 10 }], 0, 0, async () => { });
     const active = await createGasCloudSelection(game, [{ x: 11, y: 10 }], 5, 8, async () => { });
@@ -22,7 +22,7 @@ void test('cloud dissipation is announced after surviving clouds affect their oc
     assert.deepEqual(messages, ['The soldier coughs!', 'The gas cloud around you dissipates.']);
 });
 void test('a cloud fading over a boulder leaves the hero view unrefreshed', async () => {
-    const level = freshObjectRoom({ right: 25 });
+    const level = await freshObjectRoom({ right: 25 });
     for (let x = 7; x <= 25; x++)
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).lit = false;
@@ -34,7 +34,7 @@ void test('a cloud fading over a boulder leaves the hero view unrefreshed', asyn
     const gx = game.u.ux - 3;
     const gy = game.u.uy;
     await createMonsterAt('goblin', gx, gy, MM_NOGRP | NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(gx, gy), false);
     // The goblin's spot lights up without anything asking for new sight.
     level.requireAt(gx, gy).lit = true;

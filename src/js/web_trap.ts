@@ -88,11 +88,11 @@ export async function maybeDestroyWeb(
         const subject = monster ? monsterName(monster, { capitalized: true, state }) : 'You';
         const verb = hero ? action : action === 'flow through' ? 'flows through' : `${action}s`;
         await publish(`${subject} ${verb} ${owner} spider web${destroy ? '!' : '.'}`);
-        if (!hero && !destroy) seeTrap(trap, state);
+        if (!hero && !destroy) await seeTrap(trap, state);
     }
     if (destroy) {
         deleteTrap(trap, state);
-        newsym(trap.tx, trap.ty);
+        await newsym(trap.tx, trap.ty);
     }
     return true;
 }
@@ -127,12 +127,12 @@ export async function finishMonsterWebTrap(
             await publish(`${name} tears through ${owner} spider web!`);
         } else {
             await publish(`${name} is caught in ${owner} spider web.`);
-            seeTrap(trap, state);
+            await seeTrap(trap, state);
         }
     }
     monster.mtrapped = tear ? 0 : 1;
     if (tear) {
         deleteTrap(trap, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
 }

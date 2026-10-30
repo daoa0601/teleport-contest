@@ -13,17 +13,17 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a polearm strikes a worm tail in range even when its head is out of range', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const polearm = await addInventoryObject(OBJECT_NAMES.indexOf('halberd'), { spe: 10 });
     await setPrimaryWeapon(polearm);
     installHeroWeaponSkills({ [P_POLEARMS]: P_BASIC });
     const worm = await createMonsterAt('long worm', 12, 9, NO_MINVENT | MM_NOTAIL);
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     worm.wormSegments = [{ x: 11, y: 8 }, { x: 10, y: 8 }];
     worm.mhp = worm.mhpmax = 100;
     worm.mpeaceful = 0;
     game._travelTipShown = true;
-    newsym(10, 8);
+    await newsym(10, 8);
 
     await applyInventoryObject(polearm, '.       ');
 

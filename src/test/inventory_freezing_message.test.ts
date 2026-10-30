@@ -7,7 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('freezing part of a known potion stack names the remaining stack in the plural', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potions = await addInventoryObject(POT_HEALING, { quan: 3 });
     const messages: string[] = [];
     let destructionRoll = 0;

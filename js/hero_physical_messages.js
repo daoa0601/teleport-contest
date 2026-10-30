@@ -115,7 +115,7 @@ export async function showHeroShadeMiss(monster, object, { state = game, publish
         const subject = thrown ? capitalizedDefiniteName(what, state) : `Your ${what}`;
         await publish(`${subject} ${verbForSubject(what, 'pass')} harmlessly through ${target}.`);
         if (!canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
     }
     monster.msleeping = 0;
     return true;

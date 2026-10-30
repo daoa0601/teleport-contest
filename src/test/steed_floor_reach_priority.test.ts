@@ -18,7 +18,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const pit of [false, true]) {
     void test(`an unskilled rider gets ${pit ? 'pit-edge feedback above a seen pit' : 'riding feedback while levitating'}`, async () => {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { pickup: false } });
         requirePlayingGame(game);
         const pony = await createSaddledSteed();
         setMonsterGivenName(pony, 'Pip');

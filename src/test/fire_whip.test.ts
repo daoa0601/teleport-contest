@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('fire applies a wielded bullwhip when autoquiver is disabled', async () => {
-    freshObjectRoom({ flags: { autoquiver: false } });
+    await freshObjectRoom({ flags: { autoquiver: false } });
     const whip = await addInventoryObject(BULLWHIP);
     await setPrimaryWeapon(whip);
     const input = resetInputState();
@@ -27,7 +27,7 @@ void test('fire applies a wielded bullwhip when autoquiver is disabled', async (
 });
 
 void test('cancelling fire with a wielded bullwhip after a timed command takes no time', async () => {
-    freshObjectRoom({ flags: { autoquiver: false } });
+    await freshObjectRoom({ flags: { autoquiver: false } });
     const whip = await addInventoryObject(BULLWHIP);
     await setPrimaryWeapon(whip);
     await rhack('.'.charCodeAt(0));

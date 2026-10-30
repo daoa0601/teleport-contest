@@ -115,7 +115,7 @@ async function readMonsterEarthScroll(monster, scroll, seen, options) {
     else if (cansee(x, y)) {
         await publish(`The ${ceilingName(x, y, state)} rumbles in the middle of nowhere!`);
         if (monster.minvis)
-            map_invisible(x, y);
+            await map_invisible(x, y);
         if (seen)
             learnObjectType(scroll.otyp, state);
     }

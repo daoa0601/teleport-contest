@@ -18,7 +18,7 @@ void test('an applied axe sparks against a boulder and may bruise its wielder', 
         [2n, 'Sparks fly as you whack the boulder.', 40],
     ] as const;
     for (const [seed, message, hp] of expectations) {
-        freshObjectRoom();
+        await freshObjectRoom();
         const boulder = await knownObject(BOULDER);
         placeCreatedObject(boulder, 11, 10, game);
         const axe = await addInventoryObject(AXE, { spe: 0 });
@@ -39,7 +39,7 @@ void test('an applied axe sparks against a boulder and may bruise its wielder', 
 // C dig.c use_pick_axe2(): an underwater hero cannot dig at all.
 void test('an underwater hero cannot dig sideways', async () => {
     for (const tool of [PICK_AXE, AXE] as const) {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.u.uinwater = 1;
         const item = await addInventoryObject(tool, { spe: 0 });
         game.uwep = game.u.uwep = item;

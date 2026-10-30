@@ -225,7 +225,7 @@ for (const { seed, lifeSavedInside, holderHp } of [
                 const storage = memoryStorage();
                 game.plname = 'EngulfRecovery';
                 assert.equal(await saveGame(storage), true);
-                assert.equal(restoreGame('EngulfRecovery', storage), true);
+                assert.equal(await restoreGame('EngulfRecovery', storage), true);
                 await restoregamePreamble();
             }
             messages.length = 0;

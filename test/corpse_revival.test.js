@@ -45,8 +45,8 @@ const PM_GUARD = 272;
 const PM_GHOST = 287;
 const PM_DOPPELGANGER = 270;
 const PM_WIZARD_OF_YENDOR = 285;
-function freshState() {
-    freshObjectRoom({ objectInitializationSeed: 900n });
+async function freshState() {
+    await freshObjectRoom({ objectInitializationSeed: 900n });
 }
 async function trollCorpse() {
     return await untimedCorpse(PM_TROLL, { age: game.moves });
@@ -58,7 +58,7 @@ async function reviveNow(corpse, seed = 12) {
     return runClaimedCorpseRevivalTimer(claimed, game, game.moves);
 }
 void test('a new troll corpse can receive the missing revival timer', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await createCorpstatAt(CORPSE, null, PM_TROLL, 12, 10, 8);
     const [timer] = objectTimers(corpse);
@@ -68,7 +68,7 @@ void test('a new troll corpse can receive the missing revival timer', async () =
     assert.ok(timer.deadline <= game.moves + 50);
 });
 void test('a troll corpse on the floor rises as a live troll', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     placeCreatedObject(corpse, 12, 10);
@@ -82,7 +82,7 @@ void test('a troll corpse on the floor rises as a live troll', async () => {
     assert.equal(corpse.where, 'gone');
 });
 void test('reviving one corpse from a sack reduces its load and keeps the remaining stack', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const sack = await knownObject(SACK, { initialize: false });
     placeCreatedObject(sack, 12, 10);
@@ -101,7 +101,7 @@ void test('reviving one corpse from a sack reduces its load and keeps the remain
     assert.equal(game.level.monsters.filter(monster => monster.mnum === PM_TROLL).length, 1);
 });
 void test('explicit revival magic overrides a corpse no-revive flag', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     placeCreatedObject(corpse, 12, 10);
@@ -114,7 +114,7 @@ void test('explicit revival magic overrides a corpse no-revive flag', async () =
     assert.equal(corpse.where, 'gone');
 });
 void test('a named corpse revives with a fresh identity and its saved name and health', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const troll = await createMonsterAt(PM_TROLL, 12, 10);
     troll.name = 'Grond';
@@ -136,7 +136,7 @@ void test('a named corpse revives with a fresh identity and its saved name and h
     assert.equal(event.monster.mhp, troll.mhpmax);
 });
 void test('a pet killed by the hero does not revive tame', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const troll = await createMonsterAt(PM_TROLL, 12, 10);
     initializePet(troll, { state: game });
@@ -166,7 +166,7 @@ void test('a pet killed by the hero does not revive tame', async () => {
     assert.equal(event.monster.edog.mhpmax_penalty, 0);
 });
 void test('a reviving corpse stops being the hero\'s meal', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     placeCreatedObject(corpse, 12, 10);
@@ -198,7 +198,7 @@ void test('a reviving corpse stops being the hero\'s meal', async () => {
     assert.ok(event.monster.mhp < event.monster.mhpmax);
 });
 void test('a revived body receives its ghost inventory without dropping it', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const ghost = await createMonsterAt(PM_GHOST, 13, 10);
     const knife = await mksobj(CRYSKNIFE, false, false);
@@ -218,7 +218,7 @@ void test('a revived body receives its ghost inventory without dropping it', asy
     assert.equal(knife.otyp, CRYSKNIFE);
 });
 void test('a substitute revival does not absorb the linked ghost', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const ghost = await createMonsterAt(PM_GHOST, 12, 10);
     initializePet(ghost, { state: game });
@@ -241,7 +241,7 @@ void test('a substitute revival does not absorb the linked ghost', async () => {
     assert.ok(!event.monster.minvent?.includes(sack));
 });
 void test('shapechanger protection keeps a unique corpse as a doppelganger', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     game.u.protectionFromShapeChangers = true;
     const corpse = await mksobj(CORPSE, true, false);
@@ -257,7 +257,7 @@ void test('shapechanger protection keeps a unique corpse as a doppelganger', asy
         || (event.monster.cham !== undefined && event.monster.cham < 0));
 });
 void test('reviving the quest leader clears the dead-leader state', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const leader = await createMonsterAt(game.urole.ldrnum, 12, 10);
     assert.ok(game.quest_status);
@@ -282,7 +282,7 @@ void test('reviving the quest leader clears the dead-leader state', async () => 
     assert.equal(game.quest_status.killed_leader, true);
 });
 void test('shapechanger protection keeps a revived chameleon in its natural form', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     game.u.protectionFromShapeChangers = true;
     const corpse = await untimedCorpse(PM_CHAMELEON);
@@ -294,7 +294,7 @@ void test('shapechanger protection keeps a revived chameleon in its natural form
     assert.equal(event.monster.cham, -1);
 });
 void test('a troll corpse in the pack revives beside the hero', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     corpse.where = 'inventory';
@@ -308,7 +308,7 @@ void test('a troll corpse in the pack revives beside the hero', async () => {
     assert.equal(Math.max(Math.abs(event.monster.mx - game.u.ux), Math.abs(event.monster.my - game.u.uy)), 1);
 });
 void test('a troll reviving from a wielded stack writhes out of the hero\'s grasp', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     corpse.quan = corpse.quantity = 2;
@@ -324,7 +324,7 @@ void test('a troll reviving from a wielded stack writhes out of the hero\'s gras
     assert.ok(game.inventory.includes(corpse));
 });
 void test('a troll corpse revives from a sack in the hero pack', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const sack = await mksobj(SACK, false, false);
     sack.where = 'inventory';
@@ -342,7 +342,7 @@ void test('a troll corpse revives from a sack in the hero pack', async () => {
     assert.equal(sack.contents.length, 0);
 });
 void test('a monster drops a corpse when it revives from its pack', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const carrier = await createMonsterAt(PM_LEOCROTTA, 12, 10);
     const corpse = await trollCorpse();
@@ -355,7 +355,7 @@ void test('a monster drops a corpse when it revives from its pack', async () => 
     assert.equal(carrier.minvent?.includes(corpse), false);
 });
 void test('revival in an unseen carrier sack does not reveal the sack appearance', async () => {
-    freshState();
+    await freshState();
     const carrier = await createMonsterAt(PM_LEOCROTTA, 12, 10);
     carrier.minvis = 1;
     const sack = await knownObject(SACK, { initialize: false, dknown: false });
@@ -368,7 +368,7 @@ void test('revival in an unseen carrier sack does not reveal the sack appearance
     assert.equal(sack.dknown, false, 'an unseen sack keeps its appearance unknown');
 });
 void test('a buried troll corpse claws out through a new pit', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await trollCorpse();
     corpse.where = 'buried';
@@ -387,7 +387,7 @@ void test('a buried troll corpse claws out through a new pit', async () => {
     assert.equal(game.level.buriedObjects.includes(corpse), false);
 });
 void test('a buried human corpse on a zombify timer rises as a zombie', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const corpse = await mksobj(CORPSE, true, false);
     set_corpsenm(corpse, PM_HUMAN);
@@ -408,7 +408,7 @@ void test('a buried human corpse on a zombify timer rises as a zombie', async ()
     assert.equal(corpse.where, 'gone');
 });
 void test('a zombifying kill leaves a corpse which will rise', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const victim = await createMonsterAt(PM_GIANT, 12, 10);
     victim.name = 'Gorm';
@@ -436,7 +436,7 @@ void test('a zombifying kill leaves a corpse which will rise', async () => {
 });
 for (const mode of ['magic', 'immediate', 'timer', 'timer in stasis']) {
     void test(`${mode} Rider revival ${mode === 'timer' ? 'relocates' : 'does not relocate'} an occupying monster`, async () => {
-        freshState();
+        await freshState();
         requirePlayingGame(game);
         const blocker = await createMonsterAt('goblin', 12, 10);
         const corpse = await untimedCorpse(MONSTER_NAME.indexOf('Death'));
@@ -465,11 +465,11 @@ for (const mode of ['magic', 'immediate', 'timer', 'timer in stasis']) {
     });
 }
 void test('timer displacement feedback finishes before the corpse revives', async () => {
-    freshObjectRoom({ left: 11, right: 12, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 11, right: 12, top: 10, bottom: 10,
         heroX: 11, heroY: 10 });
     requirePlayingGame(game);
     terrainAt(20, 10).typ = ROOM;
-    vision_recalc(0);
+    await vision_recalc(0);
     const worm = await createMonsterAt('long worm', 12, 10, MM_NOTAIL | NO_MINVENT);
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('Death'));
     placeCreatedObject(corpse, 12, 10);

@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 async function heldHero() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('owlbear', 9, 10, NO_MINVENT);
     holder.mcanmove = 1;
@@ -52,7 +52,7 @@ void test('a tame holder without conflict always lets the hero pull free', async
 });
 
 void test('pulling free from a sea monster removes Grab from the same step status line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('giant eel', 9, 10, NO_MINVENT);
     holder.mtame = 10;
@@ -184,7 +184,7 @@ void test('a frozen holder is easier to escape', async () => {
 });
 
 void test('a pet refuses to swap onto a trap under the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(dog, { state: game });

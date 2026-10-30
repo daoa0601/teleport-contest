@@ -21,7 +21,7 @@ void test('a hallucinating hero names the flooding liquid from the display roll'
         [103n, 'water'],
     ] as const;
     for (const [seed, liquid] of expectations) {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uhp: 500, uhpmax: 500, hallucinationTurns: 50 },
         });
         // Three neighbouring pools give fillholetyp() one effective pool slot.

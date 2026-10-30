@@ -13,7 +13,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the throw suggestions menu includes carried coins alongside weapons', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     await addInventoryObject(GOLD_PIECE, { quan: 80 });
     const input = resetInputState();
@@ -32,7 +32,7 @@ void test('the throw suggestions menu includes carried coins alongside weapons',
 });
 
 void test('the throw prompt puts coins before a weapon acquired earlier with fixinv disabled', async () => {
-    freshObjectRoom({ flags: { fixinv: false } });
+    await freshObjectRoom({ flags: { fixinv: false } });
     await addInventoryObject(DAGGER);
     await addInventoryObject(GOLD_PIECE, { quan: 80 });
     const input = resetInputState();
@@ -49,7 +49,7 @@ void test('the throw prompt puts coins before a weapon acquired earlier with fix
 const hammerRoles: readonly RoleKey[] = ['caveman', 'valkyrie'];
 for (const role of hammerRoles) {
     void test(`the throw prompt ${role === 'valkyrie' ? 'suggests' : 'downplays'} wielded Mjollnir for a strong ${role}`, async () => {
-        freshObjectRoom({ role, hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } } });
+        await freshObjectRoom({ role, hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } } });
         const hammer = await addInventoryItem(await artifactObject('Mjollnir'));
         await setPrimaryWeapon(hammer);
         const dagger = await addInventoryObject(DAGGER);

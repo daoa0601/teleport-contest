@@ -17,13 +17,13 @@ function topline(): string {
 }
 
 void test('travel keeps its selected stair description until another message replaces it', async () => {
-    const level = freshObjectRoom({ flags: { tips: false } });
+    const level = await freshObjectRoom({ flags: { tips: false } });
     level.requireAt(14, 10).typ = STAIRS;
     level.requireAt(14, 10).ladder = LA_DOWN;
     level.dnstair = { x: 14, y: 10 };
     game.stairs = { sx: 14, sy: 10, up: false, isladder: false,
         tolev: { dnum: 0, dlevel: 9 }, u_traversed: false, next: null };
-    newsym(14, 10);
+    await newsym(14, 10);
     const input = resetInputState();
     input.feed('>.');
 
@@ -36,7 +36,7 @@ void test('travel keeps its selected stair description until another message rep
 
 for (const killed of [false, true]) {
     void test(`travel ${killed ? 'continues past a killed' : 'stops beside a living'} adjacent monster`, async () => {
-        freshObjectRoom({ flags: { tips: false } });
+        await freshObjectRoom({ flags: { tips: false } });
         const input = resetInputState();
         input.feed('llll.');
         await rhack('_'.charCodeAt(0));

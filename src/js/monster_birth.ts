@@ -25,7 +25,7 @@ export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 
     if (monsterEmitsLight(monster.mnum)) state.vision_full_recalc = 1;
     if (state.in_mklev) return monster;
 
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (!(flags & MM_NOMSG)) {
         const appearance = M_AP_TYPE(monster);
         let exclaim = !(flags & MM_NOEXCLAM);

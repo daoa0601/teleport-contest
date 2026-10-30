@@ -333,7 +333,7 @@ async function mountSteed(steed, force, [dx, dy]) {
         steed.mtame--;
         steed.pet = steed.mtame > 0;
         if (!steed.mtame) {
-            newsym(steed.mx, steed.my);
+            await newsym(steed.mx, steed.my);
             const leash = steed.mleashed ? ' and its leash comes off' : '';
             await pline(`${monsterName(steed, { capitalized: true })} resists${leash}!`);
             if (steed.mleashed)
@@ -425,7 +425,7 @@ async function wakeSteedForRiding(steed) {
     if (((steed.m_ap_type ?? 0) & M_AP_TYPMASK) && MONSTER_SYMBOL[steed.mnum] !== 13) {
         steed.m_ap_type = 0;
         steed.mappearance = 0;
-        newsym(steed.mx, steed.my);
+        await newsym(steed.mx, steed.my);
     }
 }
 // C steed.c:use_saddle(). The command owns selection and the success roll;
@@ -736,7 +736,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
             state._steedDismounting = false;
         }
         if (reason === DISMOUNT_BONES) {
-            if (!(await moveSteedOffHero(state, steed, random)))
+            if (!await moveSteedOffHero(state, steed, random))
                 await randomMonsterRelocation(steed, {
                     state, flags: RLOC_ERR | RLOC_NOMSG,
                 });
@@ -795,7 +795,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 }
             }
         }
-        else if (!(await moveSteedOffHero(state, steed, random))) {
+        else if (!await moveSteedOffHero(state, steed, random)) {
             if (reason === DISMOUNT_BYCHOICE) {
                 await finishHeroMonsterKill(steed, steed.mx, steed.my);
                 adjustHeroAlignment(-1, state);
@@ -916,7 +916,7 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
     const resisted = tameness > 0
         && (hero.ulevel ?? 1) + tameness >= roll(20);
     if (!resisted) {
-        newsym(steed.mx, steed.my);
+        await newsym(steed.mx, steed.my);
         const dismount = await dismountHero(DISMOUNT_THROWN, {
             state,
             random,

@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an egg scattered by an exploding bag petrifies a monster without crediting the hero', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const soldier = await createMonsterAt('soldier', 11, 11);
     const bag = await addInventoryObject(BAG_OF_HOLDING, {
         invlet: 'a', initialize: false, cknown: true,

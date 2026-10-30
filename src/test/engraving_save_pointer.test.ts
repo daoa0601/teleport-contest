@@ -8,7 +8,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('saving rewinds the worn engraving pointer, and restoring skips its erased prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const engraving = makeEngravingAt(12, 10, '   a warning!', null, 0, DUST);
     assert.ok(engraving);
@@ -19,13 +19,13 @@ void test('saving rewinds the worn engraving pointer, and restoring skips its er
     assert.equal(await saveGame(storage), true);
 
     assert.equal(engraving.text, '   a warning!', 'native save_engravings resets the live pointer to the buffer start');
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     assert.equal(engravingAt(12, 10)?.text, 'a warning!');
     assert.equal(engravingAt(12, 10)?.pristine, '   a warning!');
 });
 
 void test('restoring and saving again preserves the remembered engraving buffer prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const engraving = makeEngravingAt(12, 10, '   a warning!', null, 0, DUST);
     assert.ok(engraving);
@@ -33,7 +33,7 @@ void test('restoring and saving again preserves the remembered engraving buffer 
     assert.equal(await saveGame(storage), true);
 
     for (let cycle = 1; cycle <= 2; cycle++) {
-        assert.equal(restoreGame(game.plname, storage), true);
+        assert.equal(await restoreGame(game.plname, storage), true);
         const restored = engravingAt(12, 10);
         assert.ok(restored);
         assert.equal(restored.rememberedText, 'a warning!');

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('digging into a magical trap reveals a secret door in the blast', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000 } });
+    const level = await freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000 } });
     addTrap(level, MAGIC_TRAP, 10, 10);
     const door = level.requireAt(11, 10);
     door.typ = SDOOR;
@@ -25,7 +25,7 @@ void test('digging into a magical trap reveals a secret door in the blast', asyn
 });
 
 void test('a trap blast outside the held hero does not double damage to the holder', async () => {
-    const level = freshObjectRoom({ right: 18, hero: { uhp: 1000, uhpmax: 1000 } });
+    const level = await freshObjectRoom({ right: 18, hero: { uhp: 1000, uhpmax: 1000 } });
     requireFixtureGame(game);
     const holder = await createMonsterAt('giant ant', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const neighbor = await createMonsterAt('giant ant', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

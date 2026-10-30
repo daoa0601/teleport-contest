@@ -7,7 +7,7 @@ import { ROCK } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('menu-prefixed wizard wishing repeats a previous wish', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     await runExtendedCommand('wizwish', 'rock\n');
     const input = resetInputState();

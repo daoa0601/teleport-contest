@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('Lua end-turn effects still reach a hero removing armor for a nymph', async t => {
-    freshObjectRoom({ flags: { female: true } });
+    await freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -41,7 +41,7 @@ void test('Lua end-turn effects still reach a hero removing armor for a nymph', 
 });
 
 void test('crawl mode shows five frames for each unfinished armor-theft turn', async () => {
-    freshObjectRoom({ flags: { female: true, runmode: 'crawl' } });
+    await freshObjectRoom({ flags: { female: true, runmode: 'crawl' } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);

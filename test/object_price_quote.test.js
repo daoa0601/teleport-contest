@@ -20,7 +20,7 @@ async function discoveryText() {
     return text;
 }
 void test('save and restore retain only observed shop prices and keep extending their ranges', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Price memory';
     recordObjectKnowledge(POT_HEALING);
     recordObjectKnowledge(POT_WATER);
@@ -29,8 +29,8 @@ void test('save and restore retain only observed shop prices and keep extending 
     recordObjectPriceQuote(POT_WATER, 8, 'sell');
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
-    assert.equal(restoreGame('Price memory', storage), true);
+    await freshObjectRoom();
+    assert.equal(await restoreGame('Price memory', storage), true);
     const restored = await discoveryText();
     assert.match(restored, /potion of healing[^\n]*\{buy 24-36\}/);
     assert.match(restored, /potion of water[^\n]*\{sell 8\}/);

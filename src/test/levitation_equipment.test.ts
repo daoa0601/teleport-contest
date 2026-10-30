@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 
 async function ringAbovePit() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     addTrap(game.level, PIT, game.u.ux, game.u.uy, { tseen: true });
     return await addInventoryObject(RIN_LEVITATION, { invlet: 'a', dknown: true });

@@ -21,28 +21,28 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 for (const darkRoom of [true, false]) {
     void test(`remembered lit corridors ${darkRoom ? 'darken' : 'stay bright'} with dark_room ${darkRoom}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         game.flags.dark_room = darkRoom;
         game.flags.color = true;
         const corridor = level.requireAt(11, 10);
         corridor.typ = CORR;
         corridor.lit = true;
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
         game.u.ux = 30;
         level.requireAt(30, 10).typ = ROOM;
-        vision_recalc(0);
-        newsym(11, 10);
+        await vision_recalc(0);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(cansee(11, 10), false);
         assert.equal(requireScreenCell(10, 11).color, darkRoom ? NO_COLOR : CLR_WHITE);
     });
 }
 void test('known terrain uses the ordinary corridor colour and restores its lighting afterward', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, lit_corridor: true } });
+    const level = await freshObjectRoom({ flags: { tips: false, lit_corridor: true } });
     level.requireAt(11, 10).typ = CORR;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
     const input = resetInputState();
@@ -60,13 +60,13 @@ void test('known terrain uses the ordinary corridor colour and restores its ligh
     assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
 });
 void test('redrawing an unseen detected monster preserves its remembered lit floor', async () => {
-    const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+    const level = await freshObjectRoom({ flags: { dark_room: true, color: true },
         hero: { monsterDetection: true } });
     await createMonsterAt('goblin', 11, 10, NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     const floor = level.requireAt(11, 10);
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(11, 10), false);
     assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(CmapSymbol.room));
     await docrt();
@@ -78,24 +78,24 @@ for (const { name, terrain, litGlyph, darkGlyph } of [
     { name: 'corridor', terrain: CORR, litGlyph: CmapSymbol.litcorr, darkGlyph: CmapSymbol.corr },
 ]) {
     void test(`redrawing an unseen Warning preserves the remembered lit ${name} until the monster leaves`, async () => {
-        const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+        const level = await freshObjectRoom({ flags: { dark_room: true, color: true },
             hero: { warning: true } });
         const floor = level.requireAt(11, 10);
         floor.typ = terrain;
         floor.lit = true;
-        newsym(11, 10);
+        await newsym(11, 10);
         const xorn = await createMonsterAt('xorn', 11, 10, NO_MINVENT);
         xorn.mpeaceful = false;
         xorn.m_lev = 8;
         setHeroBlindnessTurns(10);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(11, 10), false);
         await redrawMap();
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, '2');
         assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(litGlyph), `Warning must preserve the remembered lit ${name}`);
         placeMonsterAt(xorn, 13, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         assert.equal(floor.remembered_glyph?.glyph, cmapToGlyph(darkGlyph), `the unoccupied ${name} must darken outside sight`);
     });
 }
@@ -107,61 +107,61 @@ function currentFeatures() {
     return record.features;
 }
 for (const permanentlyLit of [true, false]) {
-    void test(`clearing an unseen monster restores ${permanentlyLit ? 'a previously lit room floor' : 'darkness in an unlit room'}`, () => {
-        const level = freshObjectRoom({ recalculateVision: false });
+    void test(`clearing an unseen monster restores ${permanentlyLit ? 'a previously lit room floor' : 'darkness in an unlit room'}`, async () => {
+        const level = await freshObjectRoom({ recalculateVision: false });
         requirePlayingGame(game);
         const location = level.requireAt(11, 10);
         location.lit = permanentlyLit;
         location.waslit = !permanentlyLit;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(11, 10), true);
-        map_invisible(11, 10);
+        await map_invisible(11, 10);
         level.requireAt(30, 10).typ = ROOM;
         game.u.ux = 30;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(11, 10), false);
-        unmap_invisible(11, 10);
+        await unmap_invisible(11, 10);
         assert.equal(location.disp_ch, permanentlyLit ? '.' : ' ');
         assert.notEqual(location.remembered_glyph?.kind, 'invisible');
     });
 }
-void test('the overview keeps mapped features until their changed terrain is learned', () => {
-    const level = freshObjectRoom();
+void test('the overview keeps mapped features until their changed terrain is learned', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const location = level.requireAt(30, 10);
     location.typ = FOUNTAIN;
     assert.equal(cansee(30, 10), false);
-    mapLevel();
+    await mapLevel();
     assert.equal(location.lastseentyp, FOUNTAIN);
     assert.equal(currentFeatures().nfount, 1);
     location.typ = SINK;
     assert.equal(currentFeatures().nfount, 1);
     assert.equal(currentFeatures().nsink, 0);
-    mapLevel();
+    await mapLevel();
     assert.equal(currentFeatures().nfount, 0);
     assert.equal(currentFeatures().nsink, 1);
 });
-void test('premapping draws distant features without recording them as visited terrain', () => {
-    const level = freshObjectRoom();
+void test('premapping draws distant features without recording them as visited terrain', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const location = level.requireAt(30, 10);
     location.typ = FOUNTAIN;
     assert.equal(cansee(30, 10), false);
-    premap_detect();
+    await premap_detect();
     assert.equal(location.disp_ch, '{');
     assert.equal(location.lastseentyp, STONE);
     assert.equal(currentFeatures().nfount, 0);
-    mapLevel();
+    await mapLevel();
     assert.equal(currentFeatures().nfount, 1);
 });
 for (const movement of ['grounded', 'flying', 'levitation']) {
-    void test(`a blind ${movement} hero ${movement === 'levitation' ? 'does not learn' : 'learns'} changed terrain underfoot from the overview`, () => {
-        const level = freshObjectRoom();
+    void test(`a blind ${movement} hero ${movement === 'levitation' ? 'does not learn' : 'learns'} changed terrain underfoot from the overview`, async () => {
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const location = level.requireAt(game.u.ux, game.u.uy);
         assert.equal(location.lastseentyp, ROOM);
         setHeroBlindnessTurns(5);
-        vision_recalc(0);
+        await vision_recalc(0);
         if (movement !== 'grounded') {
             grantIntrinsicProperty(movement, 'outside');
             assert.equal(propertyIsActive(movement), true);
@@ -176,7 +176,7 @@ void test('terrain memory survives stairs, saved cached levels, and revisiting a
     const { source } = freshConnectedLevels();
     requirePlayingGame(game);
     source.requireAt(30, 10).typ = FOUNTAIN;
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
     source.requireAt(30, 10).typ = ROOM;
     const input = resetInputState();
     const descending = rhack('>'.charCodeAt(0));
@@ -195,12 +195,12 @@ void test('terrain memory survives stairs, saved cached levels, and revisiting a
     }
     assert.equal(game.u.uz.dlevel, 2);
     game.level.requireAt(30, 10).typ = SINK;
-    map_location(30, 10, false);
+    await map_location(30, 10, false);
     game.level.requireAt(30, 10).typ = ROOM;
     game.plname = 'Cartographer';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Cartographer', storage), true);
+    assert.equal(await restoreGame('Cartographer', storage), true);
     assert.equal(game.level.requireAt(30, 10).lastseentyp, SINK);
     const cached = game._levelCache?.get('0:1');
     assert.ok(cached);

@@ -28,12 +28,12 @@ async function createWormWithTail(head, tail) {
             location.typ = x === tail.x && y === tail.y ? ROOM : STONE;
         }
     }
-    removeMonsterWormBody(worm);
+    await removeMonsterWormBody(worm);
     placeMonsterAt(worm, worm.mx, worm.my);
-    initializeMonsterWormBody(worm, { segmentCount: 1 });
+    await initializeMonsterWormBody(worm, { segmentCount: 1 });
     for (const [location, type] of surroundings)
         location.typ = type;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(monsterAtPosition(game.level, tail.x, tail.y), worm);
     return worm;
 }
@@ -50,7 +50,7 @@ async function watchCombat(attacker) {
 }
 for (const tame of [true, false]) {
     void test(`a ${tame ? 'pet' : 'confused'} owlbear can strike a worm tail but cannot hug it`, async () => {
-        const level = freshObjectRoom({ heroX: 13, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 13, heroY: 10 });
         requirePlayingGame(game);
         const worm = await createWormWithTail({ x: 12, y: 11 }, { x: 12, y: 10 });
         const owlbear = await createMonsterAt('owlbear', 11, 10, MM_ANGRY | NO_MINVENT);
@@ -76,7 +76,7 @@ for (const tame of [true, false]) {
         level.requireAt(11, 9).typ = STONE;
         level.requireAt(11, 11).typ = STONE;
         level.requireAt(12, 9).typ = STONE;
-        vision_recalc(0);
+        await vision_recalc(0);
         initRng(1n);
         const messages = await watchCombat(owlbear);
         assert.ok(worm.mhp < 200, 'the selected tail shares the worm health');
@@ -87,7 +87,7 @@ for (const tame of [true, false]) {
 }
 for (const species of ['long worm', 'air elemental']) {
     void test(`an owlbear ${species === 'long worm' ? 'can hug a worm head' : 'cannot hug an unsolid defender'}`, async () => {
-        freshObjectRoom({ heroX: 9, heroY: 10 });
+        await freshObjectRoom({ heroX: 9, heroY: 10 });
         requirePlayingGame(game);
         const owlbear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
         initializePet(owlbear, { state: game });
@@ -112,7 +112,7 @@ for (const species of ['long worm', 'air elemental']) {
     });
 }
 void test('a pet cannot claw a distant worm head by standing next to its tail', async () => {
-    freshObjectRoom({ heroX: 9, heroY: 10 });
+    await freshObjectRoom({ heroX: 9, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createWormWithTail({ x: 13, y: 10 }, { x: 12, y: 10 });
     const owlbear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
@@ -131,7 +131,7 @@ void test('an owlbear hugs automatically only after both preceding claws hit', a
     let hugs = 0;
     let interruptedHugs = 0;
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ heroX: 9, heroY: 10 });
+        await freshObjectRoom({ heroX: 9, heroY: 10 });
         requirePlayingGame(game);
         const owlbear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
         initializePet(owlbear, { state: game });
@@ -157,7 +157,7 @@ void test('an owlbear hugs automatically only after both preceding claws hit', a
     assert.ok(hugs > 0 && interruptedHugs > 0, 'exercise both successful and interrupted grabs');
 });
 void test('a mimic cannot adhere to an unsolid monster', async () => {
-    freshObjectRoom({ heroX: 9, heroY: 10 });
+    await freshObjectRoom({ heroX: 9, heroY: 10 });
     requirePlayingGame(game);
     const mimic = await createMonsterAt('large mimic', 11, 10, NO_MINVENT);
     initializePet(mimic, { state: game });
@@ -178,7 +178,7 @@ void test('a mimic cannot adhere to an unsolid monster', async () => {
     assert.match(messages, /adhere attempt passes right through the air elemental!/);
 });
 void test('ordinary sticking contact still damages a solid worm tail', async () => {
-    freshObjectRoom({ heroX: 9, heroY: 10 });
+    await freshObjectRoom({ heroX: 9, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createWormWithTail({ x: 12, y: 11 }, { x: 12, y: 10 });
     const mimic = await createMonsterAt('large mimic', 11, 10, NO_MINVENT);
@@ -200,7 +200,7 @@ void test('ordinary sticking contact still damages a solid worm tail', async () 
     assert.doesNotMatch(messages, /adhere attempt|fails to hold/);
 });
 void test('a failed hold does not reveal an unseen unsolid defender', async () => {
-    freshObjectRoom({ heroX: 9, heroY: 10 });
+    await freshObjectRoom({ heroX: 9, heroY: 10 });
     requirePlayingGame(game);
     const owlbear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
     initializePet(owlbear, { state: game });
@@ -221,7 +221,7 @@ void test('a failed hold does not reveal an unseen unsolid defender', async () =
 void test("a blind floating eye's passive can enable a hug after a missed claw", async () => {
     let hugsAfterMiss = 0;
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ heroX: 9, heroY: 10 });
+        await freshObjectRoom({ heroX: 9, heroY: 10 });
         requirePlayingGame(game);
         const owlbear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
         initializePet(owlbear, { state: game });

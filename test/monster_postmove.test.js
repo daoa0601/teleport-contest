@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 async function stationaryPetAttack(species, seed) {
-    freshObjectRoom({ hero: { ux: 12, uy: 10 } });
+    await freshObjectRoom({ hero: { ux: 12, uy: 10 } });
     requirePlayingGame(game);
     const pet = await createMonsterAt(species, 9, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -41,13 +41,13 @@ void test('a pet can hide under its floor cover after attacking without moving',
     assert.equal(pet.mundetected, 1);
 });
 void test('a moving cobra refreshes its hallucination after checking for floor cover', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const cobra = await createMonsterAt('cobra', 14, 10, MM_ANGRY | NO_MINVENT);
     cobra.msleeping = 0;
     // Arrival and the post-move hiding check both redraw an exposed cobra.
     initRng(1n);
-    newsym(cobra.mx, cobra.my);
-    newsym(cobra.mx, cobra.my);
+    await newsym(cobra.mx, cobra.my);
+    await newsym(cobra.mx, cobra.my);
     const refreshed = glyphAt(cobra.mx, cobra.my);
     assert.ok(refreshed?.kind === 'monster');
     initRng(1n);
@@ -245,7 +245,7 @@ void test('a pet cobra hides under its cover after biting the hero under Conflic
     assert.equal(cobra.mundetected, 1);
 });
 void test('hurtling into a web catches the monster and announces it once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | NO_MINVENT);
     await maketrap(12, 10, WEB);

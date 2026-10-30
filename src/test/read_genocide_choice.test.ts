@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const blessed of [false, true]) {
     void test(`declining ${blessed ? 'class' : 'species'} genocide records the choice without breaking genocideless conduct`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(/do you want to genocide/.test(game._pending_message)

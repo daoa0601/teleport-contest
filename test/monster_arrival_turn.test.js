@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('a newly arrived frozen monster clears arrival while retaining its waiting order', async () => {
-    freshObjectRoom({ hero: { invisibleTurns: 20 } });
+    await freshObjectRoom({ hero: { invisibleTurns: 20 } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 14, 10, MM_ANGRY | NO_MINVENT);
     goblin.mstrategy = STRAT_ARRIVE | STRAT_WAITFORU;

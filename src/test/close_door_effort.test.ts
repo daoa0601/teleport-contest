@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a weak hero spends a turn against a resisting open door', async () => {
-    const level = freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
+    const level = await freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_ISOPEN;
@@ -28,13 +28,13 @@ void test('a weak hero spends a turn against a resisting open door', async () =>
 
 for (const obstruction of ['object', 'monster'] as const) {
     void test(`closing refuses a doorway occupied by an ${obstruction}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_ISOPEN;
         if (obstruction === 'object') await floorObject(ROCK, 11, 10);
         else await createMonsterAt('xorn', 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         pushKeys('l');
         await rhack('c'.charCodeAt(0));
         assert.equal(door.doormask, D_ISOPEN);
@@ -45,7 +45,7 @@ for (const obstruction of ['object', 'monster'] as const) {
 
 void test('a tiny hero with hands cannot close a door', async () => {
     const form = MONSTER_NAME.indexOf('leprechaun');
-    const level = freshObjectRoom({ hero: { umonnum: form, mh: 20, mhmax: 20 } });
+    const level = await freshObjectRoom({ hero: { umonnum: form, mh: 20, mhmax: 20 } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_ISOPEN;
@@ -57,14 +57,14 @@ void test('a tiny hero with hands cannot close a door', async () => {
 });
 
 void test('closing a door blocks sight behind it', async () => {
-    const level = freshObjectRoom({ hero: { acurr: { a: [25, 25, 25, 25, 25, 25] } } });
+    const level = await freshObjectRoom({ hero: { acurr: { a: [25, 25, 25, 25, 25, 25] } } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_ISOPEN;
-    vision_recalc(0);
+    await vision_recalc(0);
     pushKeys('l');
     await rhack('c'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(door.doormask, D_CLOSED);
     assert.equal(couldsee(12, 10), false);
 });
@@ -72,7 +72,7 @@ void test('closing a door blocks sight behind it', async () => {
 for (const raised of [false, true]) {
     for (const wall of [false, true]) {
         void test(`closing at a ${raised ? 'raised' : 'lowered'} drawbridge ${wall ? 'wall' : 'span'} reports its state`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             const span = level.requireAt(wall ? 12 : 11, 10);
             span.typ = raised ? DRAWBRIDGE_UP : DRAWBRIDGE_DOWN;
             span.drawbridgemask = DB_WEST;

@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [type, name] of [[ROBE, 'robe'], [MUMMY_WRAPPING, 'wrapping']] as const) {
     void test(`fire describes a worn ${name} by its simple armor name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const cloak = await addInventoryObject(type);
         await wearHeroArmor(cloak);
         const messages: string[] = [];
@@ -33,7 +33,7 @@ for (const [type, name] of [[ROBE, 'robe'], [MUMMY_WRAPPING, 'wrapping']] as con
 
 for (const role of ['ranger', 'priest'] as const) {
     void test(`a ${role} observes a monster's named suit when fire hits it`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         const suit = await equipMonsterObject(goblin, await knownObject(LEATHER_ARMOR, {
             oname: 'Patchwork', dknown: false, bknown: false,
@@ -50,7 +50,7 @@ for (const role of ['ranger', 'priest'] as const) {
 }
 
 void test('a blind priest learns a burned suit\'s beatitude without seeing its name', async () => {
-    freshObjectRoom({ role: 'priest' });
+    await freshObjectRoom({ role: 'priest' });
     const suit = await addInventoryObject(LEATHER_ARMOR);
     await wearHeroArmor(suit);
     suit.oname = 'Patchwork';
@@ -67,7 +67,7 @@ void test('a blind priest learns a burned suit\'s beatitude without seeing its n
 });
 
 void test('a rust trap calls a worn ring mail suit mail', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const suit = await addInventoryObject(RING_MAIL);
     await wearHeroArmor(suit);
     const trap = addTrap(level, RUST_TRAP, 10, 10);
@@ -81,7 +81,7 @@ void test('a rust trap calls a worn ring mail suit mail', async () => {
 });
 
 void test('a rust trap uses the full name of ring mail wielded in the right hand', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const suit = await addInventoryObject(RING_MAIL);
     await setPrimaryWeapon(suit);
     const trap = addTrap(level, RUST_TRAP, 10, 10);
@@ -96,7 +96,7 @@ void test('a rust trap uses the full name of ring mail wielded in the right hand
 
 for (const [type, label] of [[OIL_LAMP, 'oil lamp'], [MAGIC_LAMP, 'magic lamp']] as const) {
     void test(`a rust trap silently extinguishes a blind priest's wielded ${label} without revealing its beatitude`, async () => {
-        const level = freshObjectRoom({ role: 'priest' });
+        const level = await freshObjectRoom({ role: 'priest' });
         const lamp = await addInventoryObject(type, { age: 200, spe: 1 });
         await setPrimaryWeapon(lamp);
         assert.equal(beginObjectBurn(lamp, game, game.moves), true);
@@ -117,7 +117,7 @@ for (const [type, label] of [[OIL_LAMP, 'oil lamp'], [MAGIC_LAMP, 'magic lamp']]
 }
 
 void test('a rust trap names an unlit wielded lamp and reveals its beatitude to a blind priest', async () => {
-    const level = freshObjectRoom({ role: 'priest' });
+    const level = await freshObjectRoom({ role: 'priest' });
     const lamp = await addInventoryObject(OIL_LAMP);
     await setPrimaryWeapon(lamp);
     setHeroBlindnessTurns(10);

@@ -9,12 +9,12 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('closing while blind and engulfed does not spend time redisplaying known terrain after redraw', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     const engulfer = await createMonsterAt('air elemental', 11, 10);
-    feel_location(11, 10);
+    await feel_location(11, 10);
     game.u.uswallow = true;
     game.u.ustuck = engulfer;
-    swallowed(true);
+    await swallowed(true);
     pushKeys('\x12l');
 
     await rhack('c'.charCodeAt(0));
@@ -24,7 +24,7 @@ void test('closing while blind and engulfed does not spend time redisplaying kno
 });
 
 void test('closing while blind spends time learning an unknown floor', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 10 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 10 } });
     level.requireAt(11, 10).lastseentyp = STONE;
     pushKeys('l');
 
@@ -35,11 +35,11 @@ void test('closing while blind spends time learning an unknown floor', async () 
 });
 
 void test('opening at a hallucinated monster does not spend time on its changing appearance', async () => {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     await createMonsterAt('jackal', 11, 10);
-    map_background(11, 10, false);
+    await map_background(11, 10, false);
     level.requireAt(11, 10).lastseentyp = ROOM;
-    newsym(11, 10);
+    await newsym(11, 10);
     pushKeys('l');
 
     await rhack('o'.charCodeAt(0));

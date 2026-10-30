@@ -12,7 +12,7 @@ void test('an imp walking toward the hero finishes its turn before taunting', as
     for (let seed = 1; seed <= 8; seed++) {
         const health = [];
         for (const invisible of [false, true]) {
-            freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+            await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
                 heroX: 14, heroY: 10, hero: { uhp: 200, uhpmax: 200, uac: 100 } });
             requirePlayingGame(game);
             const goblin = await createMonsterAt('goblin', 15, 10, MM_ANGRY | NO_MINVENT);

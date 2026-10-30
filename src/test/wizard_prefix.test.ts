@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the menu prefix reports that it has no effect on #wizgenesis before requesting a monster', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const messages: string[] = [];
     const input = resetInputState();

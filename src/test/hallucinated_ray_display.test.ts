@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 void test('each hallucinated ray hit uses the next perceived monster identity', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         right: 30, flags: { verbose: true }, hero: { hallucinationTurns: 20 },
     });
     const first = await createMonsterAt('orc', 11, 10, MONSTER_FLAGS);
@@ -38,7 +38,7 @@ void test('each hallucinated ray hit uses the next perceived monster identity', 
 });
 
 void test('a hallucinated Rider gets a fresh identity in each resurrection message', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 20 } });
     const rider = await createMonsterAt('Death', 11, 10, MONSTER_FLAGS);
     rider.mhp = rider.mhpmax = 100;
     initRng(7n);
@@ -63,7 +63,7 @@ void test('a hallucinated Rider gets a fresh identity in each resurrection messa
 });
 
 void test('a one-eyed hero sees a Rider reintegrate before one eye', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     installPolymorphedHero('Cyclops');
     const rider = await createMonsterAt('Death', 11, 10, MONSTER_FLAGS);
     rider.mhp = rider.mhpmax = 100;

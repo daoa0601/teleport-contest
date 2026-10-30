@@ -586,10 +586,10 @@ export function selection_from_mkroom(room: Room | null = null): Selection {
     return selection;
 }
 
-export function selection_force_newsyms(selection: Selection) {
+export async function selection_force_newsyms(selection: Selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
-            if (selection_getpoint(x, y, selection)) newsym_force(x, y);
+            if (selection_getpoint(x, y, selection)) await newsym_force(x, y);
 }
 
 const GROW_DIRECTIONS: Readonly<Record<string, number>> = {

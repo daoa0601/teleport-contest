@@ -33,8 +33,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 
-function freshGlobState(seed = 1) {
-    freshObjectRoom({
+async function freshGlobState(seed = 1) {
+    await freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,
         context: { move: 0, nopick: false },
         gameplaySeed: seed,
@@ -52,7 +52,7 @@ function shrinkTimer(glob: GameObject) {
 }
 
 void test('fresh glob variants own identity, weight, species, and first timer', async () => {
-    freshGlobState(7);
+    await freshGlobState(7);
     requireFixtureGame(game);
     const variants = [
         [GLOB_OF_GRAY_OOZE, 206],
@@ -78,7 +78,7 @@ void test('fresh glob variants own identity, weight, species, and first timer', 
 
 void test('floor stack merging stops the incoming timer before averaging glob shrink delays',
     async () => {
-        freshGlobState(17);
+        await freshGlobState(17);
         requireFixtureGame(game);
         const old = await mksobj(GLOB_OF_GRAY_OOZE, true, false);
         const placed = await mksobj(GLOB_OF_GRAY_OOZE, true, false);
@@ -108,13 +108,13 @@ void test('floor stack merging stops the incoming timer before averaging glob sh
         game.moves = 153;
         const timer = claimNextDueObjectTimer(game, game.moves);
         assert.ok(timer);
-        runClaimedGlobTimer(timer, game, game.moves);
+        await runClaimedGlobTimer(timer, game, game.moves);
         assert.equal(placed.owt, 59);
     });
 
 void test('exact visible floor callback shrinks once and schedules a fresh attempt',
     async () => {
-        freshGlobState(8);
+        await freshGlobState(8);
         requireFixtureGame(game);
         const glob = placeCreatedObject(
             await mksobj(GLOB_OF_GRAY_OOZE, true, false), 12, 10,
@@ -122,7 +122,7 @@ void test('exact visible floor callback shrinks once and schedules a fresh attem
         glob.oeaten = 12;
         const first = shrinkTimer(glob);
         game.moves = first.deadline;
-        const event = runClaimedGlobTimer(
+        const event = await runClaimedGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
         assert.ok(event, 'The due object timer must produce its effect.');
@@ -140,7 +140,7 @@ void test('exact visible floor callback shrinks once and schedules a fresh attem
     });
 
 void test('visible final floor shrink deletes the glob before fade prose', async () => {
-    freshGlobState(9);
+    await freshGlobState(9);
     requireFixtureGame(game);
     const glob = placeCreatedObject(
         await mksobj(GLOB_OF_GREEN_SLIME, true, false), 12, 10,
@@ -148,7 +148,7 @@ void test('visible final floor shrink deletes the glob before fade prose', async
     const timer = shrinkTimer(glob);
     glob.owt = 1;
     game.moves = timer.deadline;
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -162,14 +162,14 @@ void test('visible final floor shrink deletes the glob before fade prose', async
 
 void test('overdue floor callback catches up arithmetically without prose',
     async () => {
-        freshGlobState(10);
+        await freshGlobState(10);
         requireFixtureGame(game);
         const glob = placeCreatedObject(
             await mksobj(GLOB_OF_BROWN_PUDDING, true, false), 12, 10,
         );
         const first = shrinkTimer(glob);
         game.moves = first.deadline + 26;
-        const event = runClaimedGlobTimer(
+        const event = await runClaimedGlobTimer(
             claimNextDueObjectTimer(game, game.moves), game, game.moves,
         );
         assert.ok(event, 'The due object timer must produce its effect.');
@@ -183,7 +183,7 @@ void test('overdue floor callback catches up arithmetically without prose',
     });
 
 void test('inventory threshold prose precedes reschedule and retains live mass', async () => {
-    freshGlobState(11);
+    await freshGlobState(11);
     requireFixtureGame(game);
     const glob = await mksobj(GLOB_OF_BLACK_PUDDING, true, false);
     glob.where = 'inventory';
@@ -191,7 +191,7 @@ void test('inventory threshold prose precedes reschedule and retains live mass',
     game.inventory = [glob];
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -209,7 +209,7 @@ void test('inventory threshold prose precedes reschedule and retains live mass',
 });
 
 void test('inventory dissolution precedes deletion and then relieves capacity', async () => {
-    freshGlobState(12);
+    await freshGlobState(12);
     requireFixtureGame(game);
     game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 3;
     game.u.acurr.a[A_CON] = game.u.amax.a[A_CON] = 3;
@@ -223,7 +223,7 @@ void test('inventory dissolution precedes deletion and then relieves capacity', 
     game._encumbranceLevel = nearCapacity(game);
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -242,7 +242,7 @@ void test('inventory dissolution precedes deletion and then relieves capacity', 
 });
 
 void test('active eating postpones glob shrinkage and interruption lets shrinking resume', async () => {
-    freshGlobState(13);
+    await freshGlobState(13);
     requireFixtureGame(game);
     const glob = await addInventoryItem(await mksobj(GLOB_OF_GRAY_OOZE, true, false));
     const input = resetInputState();
@@ -253,7 +253,7 @@ void test('active eating postpones glob shrinkage and interruption lets shrinkin
     assert.ok(game._occupation, 'the hero is still eating the glob');
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -264,13 +264,13 @@ void test('active eating postpones glob shrinkage and interruption lets shrinkin
     await stopHeroOccupation();
     for (let attempt = 0; glob.owt === 20 && attempt < 8; attempt++) {
         game.moves = shrinkTimer(glob).deadline;
-        runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
+        await runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     }
     assert.equal(glob.owt, 19, 'an interrupted meal no longer prevents natural shrinkage');
 });
 
 void test('ice reduces overdue floor shrinkage to one third', async () => {
-    freshGlobState(14);
+    await freshGlobState(14);
     requireFixtureGame(game);
     const glob = placeCreatedObject(
         await mksobj(GLOB_OF_GRAY_OOZE, true, false), 12, 10,
@@ -280,7 +280,7 @@ void test('ice reduces overdue floor shrinkage to one third', async () => {
     scheduleObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB, 50, game);
     game.moves = 126;
 
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -291,7 +291,7 @@ void test('ice reduces overdue floor shrinkage to one third', async () => {
 });
 
 void test('a glob buried under ice does not shrink', async () => {
-    freshGlobState(15);
+    await freshGlobState(15);
     requireFixtureGame(game);
     const glob = await mksobj(GLOB_OF_BROWN_PUDDING, true, false);
     glob.where = 'buried';
@@ -303,7 +303,7 @@ void test('a glob buried under ice does not shrink', async () => {
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
 
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -316,7 +316,7 @@ void test('a glob buried under ice does not shrink', async () => {
 });
 
 void test('a glob inside a carried sack makes the sack lighter', async () => {
-    freshGlobState(16);
+    await freshGlobState(16);
     requireFixtureGame(game);
     const sack = await mksobj(SACK, true, false);
     const glob = await mksobj(GLOB_OF_GRAY_OOZE, true, false);
@@ -330,7 +330,7 @@ void test('a glob inside a carried sack makes the sack lighter', async () => {
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
 
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -342,7 +342,7 @@ void test('a glob inside a carried sack makes the sack lighter', async () => {
 });
 
 void test('a monster-carried glob disappears from its pack', async () => {
-    freshGlobState(17);
+    await freshGlobState(17);
     requireFixtureGame(game);
     const carrier = await createMonsterAt('human', 12, 10);
     const glob = await mksobj(GLOB_OF_GREEN_SLIME, true, false);
@@ -351,7 +351,7 @@ void test('a monster-carried glob disappears from its pack', async () => {
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
 
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -362,7 +362,7 @@ void test('a monster-carried glob disappears from its pack', async () => {
 });
 
 void test('a glob keeps shrinking while it is falling between levels', async () => {
-    freshGlobState(18);
+    await freshGlobState(18);
     requireFixtureGame(game);
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', ...{ num_dunlevs: 2, flags: {} } })];
@@ -379,7 +379,7 @@ void test('a glob keeps shrinking while it is falling between levels', async () 
         random: range => range === 3 ? 0 : 99,
     });
     game.moves = timer.deadline;
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');
@@ -391,7 +391,7 @@ void test('a glob keeps shrinking while it is falling between levels', async () 
 });
 
 void test('a dissolving wielded glob clears the hero weapon slot', async () => {
-    freshGlobState(19);
+    await freshGlobState(19);
     requireFixtureGame(game);
     const glob = await mksobj(GLOB_OF_BLACK_PUDDING, true, false);
     glob.where = 'inventory';
@@ -406,7 +406,7 @@ void test('a dissolving wielded glob clears the hero weapon slot', async () => {
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
 
-    const event = runClaimedGlobTimer(
+    const event = await runClaimedGlobTimer(
         claimNextDueObjectTimer(game, game.moves), game, game.moves,
     );
     assert.ok(event, 'The due object timer must produce its effect.');

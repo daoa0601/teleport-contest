@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a negative wizard throne choice keeps the randomly selected healing effect', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { debug: true }, gameplaySeed: 40n,
         hero: { uhp: 10, uhpmax: 40 },
     });
@@ -15,7 +15,7 @@ void test('a negative wizard throne choice keeps the randomly selected healing e
     assert.equal(game.u.confusionTurns ?? 0, 0);
 });
 void test('a wizard throne choice reads the integer prefix before trailing text', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { debug: true }, gameplaySeed: 40n,
         hero: { uhp: 10, uhpmax: 40 },
     });

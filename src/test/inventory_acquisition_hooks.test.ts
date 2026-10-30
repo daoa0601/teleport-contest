@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('pickup merges into the quiver before an earlier compatible inventory stack', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const reserve = await addInventoryObject(DART, { quan: 2 });
     const quiver = await addInventoryObject(DART, { quan: 3, nomerge: true });
     quiver.nomerge = false;

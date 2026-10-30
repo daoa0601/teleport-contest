@@ -45,7 +45,7 @@ for (const [terrain, trapType, holdType] of [
     ['room', null, null], ['pit', PIT, TT_PIT], ['bear trap', BEAR_TRAP, TT_BEARTRAP],
 ]) {
     void test(`wizard position teleport applies pickup and landing effects over a ${terrain}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 10, right: trapType === null ? 12 : 11, top: 10, bottom: 10,
             flags: { debug: true, pickup: true },
         });
@@ -73,7 +73,7 @@ for (const [terrain, trapType, holdType] of [
 }
 for (const cancelFirst of [false, true]) {
     void test(`controlled scroll teleport recalls a travel destination${cancelFirst ? ' after cancellation' : ''}`, async () => {
-        freshObjectRoom({ flags: { debug: true, tips: false } });
+        await freshObjectRoom({ flags: { debug: true, tips: false } });
         requirePlayingGame(game);
         pushKeys('lll.');
         await rhack('_'.charCodeAt(0));
@@ -87,7 +87,7 @@ for (const cancelFirst of [false, true]) {
     });
 }
 void test('wizard position teleport clears the travel destination before choosing a location', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false } });
     pushKeys('lll.');
     await rhack('_'.charCodeAt(0));
     assert.equal(game.u.ux, 11);
@@ -96,7 +96,7 @@ void test('wizard position teleport clears the travel destination before choosin
     assert.equal(game.u.uy, 10);
 });
 void test('a steed carrying the Amulet blocks wizard teleport without losing the travel destination', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight', flags: { debug: true, tips: false }, hero: { ulevel: 30 },
     });
     requirePlayingGame(game);
@@ -120,7 +120,7 @@ void test('a steed carrying the Amulet blocks wizard teleport without losing the
     assert.equal(game.u.uy, 10);
 });
 void test('a seen fixed teleport trap preserves the travel destination for a later scroll', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false, pickup: true } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false, pickup: true } });
     requirePlayingGame(game);
     pushKeys('lll.');
     await rhack('_'.charCodeAt(0));
@@ -146,7 +146,7 @@ void test('a seen fixed teleport trap preserves the travel destination for a lat
     assert.equal(game.u.uy, 10);
 });
 void test('an unseen fixed teleport trap does not override the chosen wizard destination', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     pushKeys('lll.');
     await rhack('_'.charCodeAt(0));

@@ -15,7 +15,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 // is that the pile glyphs redrawn after the loot command come from a display
 // stream advanced by the number of menu entries shown.
 async function hallucinatedRockAppearanceAfterLoot(menuEntries) {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 99 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 99 } });
     const sack = await floorObject(SACK, 10, 10);
     const contents = [];
     for (const otyp of menuEntries) {

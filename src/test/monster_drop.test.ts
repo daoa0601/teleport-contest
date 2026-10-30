@@ -36,7 +36,7 @@ async function createArtifact(name: string) {
 }
 
 void test('an unseen monster dropping a visible object does not reveal its species', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     kitten.minvis = true;
     const gold = await addObjectToMonsterInventory(kitten, await knownObject(GOLD_PIECE));
@@ -51,7 +51,7 @@ void test('an unseen monster dropping a visible object does not reveal its speci
 });
 
 void test('postmortem inventory release drops every remaining object', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const key = await knownObject(SKELETON_KEY);
@@ -72,7 +72,7 @@ void test('postmortem inventory release drops every remaining object', async () 
 });
 
 void test('a dropped crysknife is named before losing its held form', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const knife = await equipMonsterObject(monster, await knownObject(CRYSKNIFE), W_WEP);
@@ -87,7 +87,7 @@ void test('a dropped crysknife is named before losing its held form', async () =
 });
 
 void test('a monster keeps its boot speed while the drop message awaits dismissal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const boots = await equipMonsterObject(monster, await knownObject(SPEED_BOOTS), W_ARMF);
@@ -111,7 +111,7 @@ void test('a monster keeps its boot speed while the drop message awaits dismissa
 });
 
 void test('dropping a ridden saddle leaves it on the floor before the rider falls', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -137,7 +137,7 @@ void test('dropping a ridden saddle leaves it on the floor before the rider fall
 });
 
 void test('protected drops keep the current quest artifact but not a foreign one', async () => {
-    freshObjectRoom({ role: 'caveman' });
+    await freshObjectRoom({ role: 'caveman' });
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const amulet = await knownObject(AMULET_OF_YENDOR);
@@ -156,7 +156,7 @@ void test('protected drops keep the current quest artifact but not a foreign one
 });
 
 void test('a protected object from an off-map monster relocates to the live level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const amulet = await addObjectToMonsterInventory(monster, await knownObject(AMULET_OF_YENDOR));
@@ -173,7 +173,7 @@ void test('a protected object from an off-map monster relocates to the live leve
 
 for (const uncreate of [false, true]) {
     void test(`discarding inventory ${uncreate ? 'allows' : 'prevents'} recreating a discarded artifact`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         const sting = await createArtifact('Sting');
@@ -191,7 +191,7 @@ for (const uncreate of [false, true]) {
 }
 
 void test('discard removes contents and burning objects without uncreating a contained artifact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const chest = await addObjectToMonsterInventory(monster, await knownObject(CHEST));
@@ -217,7 +217,7 @@ void test('discard removes contents and burning objects without uncreating a con
 });
 
 void test('a live monster drop applies lava destruction before floor placement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('fire giant', 11, 10, NO_MINVENT);
     game.level.requireAt(11, 10).typ = LAVAPOOL;
@@ -233,7 +233,7 @@ void test('a live monster drop applies lava destruction before floor placement',
 });
 
 void test('a pet releases cargo but keeps its worn equipment and useful key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     initializePet(pet, { state: game });
@@ -254,7 +254,7 @@ void test('a pet releases cargo but keeps its worn equipment and useful key', as
 });
 
 void test('a vault guard loses its gold rather than dropping it with other cargo', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const guard = await createMonsterAt('guard', 11, 10, NO_MINVENT);
     guard.isgd = true;

@@ -13,7 +13,7 @@ import { addTrap } from './support/level-state.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('force fighting a seen web with a blunt weapon cannot cut it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, WEB, 11, 10, { tseen: true });
     const mace = await addInventoryObject(MACE);
     await setPrimaryWeapon(mace);
@@ -26,7 +26,7 @@ void test('force fighting a seen web with a blunt weapon cannot cut it', async (
     assert.ok(level.traps.includes(trap), 'The web survives a blunt weapon.');
 });
 void test('Sting cuts a seen web away under force fighting', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, WEB, 11, 10, { tseen: true });
     await setPrimaryWeapon(await addInventoryItem(await artifactObject('Sting')));
     initRng(1n);
@@ -37,7 +37,7 @@ void test('Sting cuts a seen web away under force fighting', async () => {
     assert.equal(level.traps.includes(trap), false);
 });
 void test('a weak blade hacks a seen web ineffectually', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, WEB, 11, 10, { tseen: true });
     const dagger = await addInventoryObject(DAGGER, { spe: -5 });
     await setPrimaryWeapon(dagger);
@@ -51,7 +51,7 @@ void test('a weak blade hacks a seen web ineffectually', async () => {
     assert.ok(level.traps.includes(trap), 'The web survives the failed cut.');
 });
 void test('a strong blade cuts a seen web away', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, WEB, 11, 10, { tseen: true });
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);

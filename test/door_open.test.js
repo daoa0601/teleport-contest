@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 for (const command of ['o', 'l']) {
     for (const halfDamage of [false, true]) {
         void test(`${command === 'o' ? 'explicit' : 'automatic'} opening explodes a trapped door${halfDamage ? ' with half physical damage' : ''}`, async () => {
-            const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+            const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
             requireFixtureGame(game);
             const door = level.requireAt(11, 10);
             door.typ = DOOR;
@@ -129,14 +129,14 @@ void test('a stunned hero redirects an explicit opening away from the requested 
     assert.equal(game.context.move, 1, 'impaired direction selection spends the turn');
 });
 void test('opening toward yourself inspects the floor for loot', async () => {
-    freshObjectRoom({ flags: { cmdassist: false } });
+    await freshObjectRoom({ flags: { cmdassist: false } });
     pushKeys('.');
     await rhack('o'.charCodeAt(0));
     assert.equal(game._pending_message, "You don't find anything here to loot.");
     assert.equal(game.context.move, 0);
 });
 void test('closing toward yourself spends a turn because the hero blocks the way', async () => {
-    freshObjectRoom({ flags: { cmdassist: false } });
+    await freshObjectRoom({ flags: { cmdassist: false } });
     pushKeys('.');
     await rhack('c'.charCodeAt(0));
     assert.equal(game._pending_message, 'You are in the way!');

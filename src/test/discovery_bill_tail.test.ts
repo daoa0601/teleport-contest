@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('gem repricing stops at a used-up bill item as the native bill traversal does', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const usedPotion = await knownObject(POT_HEALING, { typeKnown: false, unpaid: true });
     const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS, { typeKnown: false, unpaid: true });
     const oldPrice = shopObjectUnitCost(glass);

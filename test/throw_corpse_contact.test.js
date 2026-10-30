@@ -8,7 +8,7 @@ import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('throwing a cockatrice corpse bare-handed petrifies before releasing it', async () => {
-    freshObjectRoom({ flags: { bones: false } });
+    await freshObjectRoom({ flags: { bones: false } });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const corpse = await addInventoryObject(CORPSE, {

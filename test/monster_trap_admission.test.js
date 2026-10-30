@@ -87,12 +87,12 @@ for (const type of [PIT, SPIKED_PIT]) {
             monster: { species: 'red dragon', hitPoints: 80 },
         });
         requirePlayingGame(game);
-        newsym(11, 10);
+        await newsym(11, 10);
         await openFallingTrap(monster);
         setHeroBlindnessTurns(10);
-        vision_recalc(0);
+        await vision_recalc(0);
         placeMonsterAt(monster, 12, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, '^', 'the newly revealed pit must replace remembered floor beneath the flyer');
     });

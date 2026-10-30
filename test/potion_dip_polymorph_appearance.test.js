@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SCROLL_CLASS = 9;
 void test('dipping into polymorph reports the new item appearance like prinv()', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     // The polymorphed replacement starts unseen (dknown clear); C's prinv()
     // names it via doname()->xname(), which observes the appearance first.

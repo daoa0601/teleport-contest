@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const running of [false, true]) {
     void test(`falling into a pit ${running ? 'while running' : 'with a single step'} hides later births beyond its edge`, async () => {
-        const level = freshObjectRoom({ gameplaySeed: 3 });
+        const level = await freshObjectRoom({ gameplaySeed: 3 });
         requirePlayingGame(game);
         game._moveloopStarted = true;
         game.u.umovement = 12;

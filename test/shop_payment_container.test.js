@@ -13,7 +13,7 @@ import { withMessagePages } from './support/planned-input.js';
 import { createStaffedShop } from './support/shop.js';
 for (const unpaidContainer of [false, true]) {
     void test(`buying contents of a ${unpaidContainer ? 'shop-owned' : 'no-charge'} floor sack clears ownership flags after feedback`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await floorObject(SACK, 10, 10, {
             cknown: true,
             oextra: { oname: 'the long and winding road through the northern mountains to the distant sea' },

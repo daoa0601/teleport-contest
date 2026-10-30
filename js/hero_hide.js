@@ -37,11 +37,11 @@ function heroHidingAbility(state) {
 export function heroHasHidingAbility(state = game) {
     return !!heroHidingAbility(state);
 }
-function revealHero(ability, state, refresh) {
+async function revealHero(ability, state, refresh) {
     state.u.uundetected = 0;
     if (ability.mimic)
         state.u.m_ap_type = M_AP_NOTHING;
-    refresh(state.u.ux, state.u.uy);
+    await refresh(state.u.ux, state.u.uy);
 }
 function heldReason(state) {
     const holder = state.u.ustuck;
@@ -127,7 +127,7 @@ export async function useHeroHide({ state = game, publish = plineWithContinuatio
         if (state.u.uundetected
             || (ability.mimic
                 && (state.u.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING)) {
-            revealHero(ability, state, refresh);
+            await revealHero(ability, state, refresh);
         }
         return { used: true, spentTime: false, reason: 'blocked' };
     }
@@ -178,7 +178,7 @@ export async function useHeroHide({ state = game, publish = plineWithContinuatio
     else {
         state.u.uundetected = 1;
     }
-    refresh(state.u.ux, state.u.uy);
+    await refresh(state.u.ux, state.u.uy);
     await publish(`You are now ${heroHidingStatus(state)}.`);
     return { used: true, spentTime: true };
 }

@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('chatting with a peaceful demon offers a bribe even if it last saw the hero elsewhere', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const demon = await createMonsterAt('Baalzebub', 11, 10);
     demon.mux = 8;
     demon.muy = 8;
@@ -25,7 +25,7 @@ void test('chatting with a peaceful demon offers a bribe even if it last saw the
 });
 
 void test('a tame bribe-speaking demon gives the peaceful doom response', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const demon = await createMonsterAt('Baalzebub', 11, 10);
     demon.minvis = demon.perminvis = false;
     demon.mtame = 10;

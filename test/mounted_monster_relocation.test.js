@@ -47,7 +47,7 @@ function answerTeleport(keys) {
 }
 for (const outcome of ['arrive', 'stay', 'cancel', 'blocked']) {
     void test(`relocating a ridden pony uses the hero teleport rules: ${outcome}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             role: 'knight', hero: { ulevel: 30 },
             flags: { tips: false, verbose: false, pickup: true },
         });
@@ -89,7 +89,7 @@ for (const outcome of ['arrive', 'stay', 'cancel', 'blocked']) {
 }
 for (const lifeSaving of [false, true]) {
     void test(`mounted relocation reports ${lifeSaving ? 'recovery' : 'permanent death'} at its destination`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             role: 'knight', hero: { ulevel: 30 },
             flags: { tips: false, verbose: false, pickup: false },
         });
@@ -129,7 +129,7 @@ for (const lifeSaving of [false, true]) {
     });
 }
 void test('an uncontrolled mounted relocation keeps the ridden pony off the monster grid', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

@@ -92,7 +92,7 @@ async function eatMetal(monster, context) {
             return 1;
         if (rollOne(25) < 3)
             placeCreatedObject(await mksobj(ROCK, true, false), monster.mx, monster.my, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         return 1;
     }
     return 0;
@@ -145,7 +145,7 @@ async function eatOrEngulfPile(monster, context) {
         if (mealInterrupted(monster, context))
             return 1;
         if (monster.minvis)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
     }
     if (!mealInterrupted(monster, context) && engulfed > 0) {
         if (cansee(monster.mx, monster.my) && state.flags.verbose)
@@ -176,7 +176,7 @@ async function eatCorpse(monster, context) {
             await describeSound('a masticating sound.', context);
         await consumeMonsterObject(monster, meal, state, context);
         if (!mealInterrupted(monster, context) && monster.mnum === originalSpecies && monster.minvis)
-            newsym(x, y);
+            await newsym(x, y);
         return 1;
     }
     return 0;
@@ -195,7 +195,7 @@ async function reviveMeal(object, { state, publish }) {
     if (revival)
         for (const message of revival.messages)
             await publish(message);
-    newsym(x, y);
+    await newsym(x, y);
     return !!revival?.monster;
 }
 function chokingObject(object) {

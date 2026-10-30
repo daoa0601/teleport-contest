@@ -38,7 +38,7 @@ function steedInput() {
 }
 
 async function mountedPony() {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -80,7 +80,7 @@ for (const refusesSwap of [true, false]) {
 }
 
 void test('mounting clears map occupancy and dismounting restores it without relinking the actor', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const older = await createMonsterAt('lichen', 8, 10);
     const pony = await createSaddledSteed();
@@ -103,7 +103,7 @@ void test('saving a mounted game restores one shared steed identity with no map 
     game.plname = 'Rider';
     const id = pony.m_id;
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Rider', storage), true);
+    assert.equal(await restoreGame('Rider', storage), true);
     const restored = game.level.monsters.find(monster => monster.m_id === id);
     assert.ok(restored);
     assert.equal(game.u.usteed, restored);

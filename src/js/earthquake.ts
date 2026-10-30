@@ -131,7 +131,7 @@ async function flowLiquidIntoChasm(x: number, y: number, trap: Trap, liquid: num
             monsterMoving: false,
         });
     }
-    newsym(x, y);
+    await newsym(x, y);
 }
 
 function finishEarthquakeLiquidDeath(
@@ -285,7 +285,7 @@ async function openChasm(
     else if (game.u?.ux === x && game.u?.uy === y)
         await dropHeroIntoChasm(hadPitBeforeEarthquake);
     else
-        newsym(x, y);
+        await newsym(x, y);
     return true;
 }
 
@@ -294,7 +294,7 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
     if ((await wakeMonster(monster, { attacked: true })).heroDied) return true;
     if (monster.mundetected) {
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (monsterSpeciesHidesOnCeiling(monster.mnum)) {
             if (cansee(monster.mx, monster.my)) {
                 await plineWithContinuation(
@@ -366,7 +366,7 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
     }
     location.doormask = D_NODOOR;
     vision_note_blocker_change(x, y);
-    newsym(x, y);
+    await newsym(x, y);
     if (cansee(x, y))
         await plineWithContinuation('The door collapses.');
     if (roomsAt(game.level, x, y, SHOPBASE).length)

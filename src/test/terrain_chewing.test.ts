@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const terrain of [STONE, TREE, VWALL, DOOR]) {
     void test(`a rock mole chews through terrain ${terrain} before entering it`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         installPolymorphedHero('rock mole');
         const target = level.requireAt(11, 10);
         target.typ = terrain;
@@ -33,7 +33,7 @@ for (const terrain of [STONE, TREE, VWALL, DOOR]) {
 }
 
 void test('a rock mole eats a floor boulder instead of pushing it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('rock mole');
     const boulder = await floorObject(BOULDER, 11, 10);
     pushKeys(' '.repeat(20));
@@ -47,7 +47,7 @@ void test('a rock mole eats a floor boulder instead of pushing it', async () => 
 });
 
 void test('a tunnelling form hurts its teeth on undiggable stone', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('rock mole');
     const target = level.requireAt(11, 10);
     target.typ = STONE;
@@ -61,7 +61,7 @@ void test('a tunnelling form hurts its teeth on undiggable stone', async () => {
 });
 
 void test('a rock mole keeps running after finishing a boulder meal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('rock mole');
     const boulder = await floorObject(BOULDER, 11, 10);
     pushKeys(' '.repeat(20));

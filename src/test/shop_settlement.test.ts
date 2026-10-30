@@ -26,7 +26,7 @@ import { memoryStorage } from './support/memory-storage.js';
 
 
 async function twoShops() {
-    freshObjectRoom({ right: 27 });
+    await freshObjectRoom({ right: 27 });
     requirePlayingGame(game);
     const west = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     const east = await createStaffedShop({
@@ -141,7 +141,7 @@ void test('a consumed purchase can be paid after saving and restoring', async ()
     const storage = memoryStorage();
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('BillSaver', storage), true);
+    assert.equal(await restoreGame('BillSaver', storage), true);
     const keeper = game.level.monsters.find(monster => monster.m_id === keeperId);
     assert.ok(keeper);
     const [purchase] = await itemizedShopBill(keeper);
@@ -176,7 +176,7 @@ void test('hero death settles nested purchases and frees used-up bill identities
 });
 
 void test('postmortem inheritance names the real keeper even while the hero hallucinated', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+InheritanceControl';

@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('placing a monster over itself diagnoses the occupied square and retains the monster', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const monster = await createMonsterAt('goblin', 12, 10);
     monster.mpeaceful = 0;
     const input = resetInputState();
@@ -25,7 +25,7 @@ void test('placing a monster over itself diagnoses the occupied square and retai
 });
 
 void test('forced relocation reports an occupied square before replacing its mapped monster', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const resident = await createMonsterAt('goblin', 12, 10);
     const incoming = await createMonsterAt('goblin', 14, 10);
     resident.mpeaceful = incoming.mpeaceful = 0;
@@ -45,7 +45,7 @@ void test('forced relocation reports an occupied square before replacing its map
 });
 
 void test('an overwritten monster can walk again and clears the monster mapped at its old coordinates', async () => {
-    const level = freshObjectRoom({ context: { mon_moving: true } });
+    const level = await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const resident = await createMonsterAt('goblin', 12, 10);
     const incoming = await createMonsterAt('goblin', 14, 10);
@@ -66,9 +66,9 @@ void test('an overwritten monster can walk again and clears the monster mapped a
 });
 
 void test('overwriting a worm segment changes map occupancy without removing the segment from its body', async () => {
-    const level = freshObjectRoom({ left: 7, right: 25 });
+    const level = await freshObjectRoom({ left: 7, right: 25 });
     const worm = await createMonsterAt('long worm', 18, 10);
-    initializeMonsterWormBody(worm, { segmentCount: 3 });
+    await initializeMonsterWormBody(worm, { segmentCount: 3 });
     const segment = worm.wormSegments?.[0];
     assert.ok(segment, 'The live worm has a tail segment');
     const incoming = await createMonsterAt('goblin', 8, 10);

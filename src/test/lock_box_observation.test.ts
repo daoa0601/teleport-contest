@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const action of ['apply', 'force'] as const) {
     for (const blind of [false, true]) {
         void test(`a ${blind ? 'blind ' : ''}Priest learns a box's beatitude from the ${action} lock question`, async () => {
-            freshObjectRoom({ role: 'priest', hero: { blindTurns: blind ? 20 : 0 } });
+            await freshObjectRoom({ role: 'priest', hero: { blindTurns: blind ? 20 : 0 } });
             const box = await floorObject(CHEST, 10, 10, {
                 initialize: false, olocked: true, lknown: false,
                 cursed: true, bknown: false, dknown: false,

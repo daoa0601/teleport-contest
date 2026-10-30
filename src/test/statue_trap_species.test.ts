@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a statue trap can choose a pony when the alternative is a co-aligned unicorn', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const pony = MONSTER_NAME.indexOf('pony');
     const unicorn = MONSTER_NAME.indexOf('gray unicorn');
     game.mvitals = Array.from({ length: SPECIAL_PM }, (_, species) => ({

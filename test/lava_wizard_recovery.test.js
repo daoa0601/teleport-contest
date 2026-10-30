@@ -11,7 +11,7 @@ import { wearHeroArmor, findArmorClass } from '../js/armor.js';
 import { LEATHER_ARMOR, POT_WATER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 void test('lava destroys armor while keeping its cached AC through the death refusal question', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 0 });
     wearHeroArmor(armor);
     assert.equal(findArmorClass(), 8);
@@ -32,7 +32,7 @@ void test('lava destroys armor while keeping its cached AC through the death ref
     assert.equal(questionAC, 8);
 });
 void test('a wizard who declines lava death recovers and teleports to safety', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
+    const level = await freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
     level.requireAt(10, 10).typ = LAVAPOOL;
     const input = resetInputState();
     const burning = heroLiquidEffects();
@@ -86,7 +86,7 @@ function refuseLiquidDeaths() {
 for (const mode of ['debug', 'explore']) {
     for (const cause of ['sinking', 'drowning']) {
         void test(`${mode} death refusal rescues a ${cause} hero to dry ground`, async () => {
-            const level = freshObjectRoom({ flags: { [mode]: true, bones: false } });
+            const level = await freshObjectRoom({ flags: { [mode]: true, bones: false } });
             const { ux, uy } = game.u;
             for (let x = ux - 1; x <= ux + 1; x++) {
                 for (let y = uy - 1; y <= uy + 1; y++)
@@ -113,7 +113,7 @@ for (const mode of ['debug', 'explore']) {
     }
 }
 void test('two drowning refusals survive even when the level has no dry landing', async () => {
-    const level = freshObjectRoom({ flags: { explore: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { explore: true, bones: false } });
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).typ = POOL;
@@ -129,7 +129,7 @@ void test('two drowning refusals survive even when the level has no dry landing'
 });
 for (const mode of ['debug', 'explore']) {
     void test(`${mode} drowning rescue ends levitation landing feedback without a dry destination`, async () => {
-        const level = freshObjectRoom({ flags: { [mode]: true, bones: false } });
+        const level = await freshObjectRoom({ flags: { [mode]: true, bones: false } });
         for (let x = 7; x <= 16; x++) {
             for (let y = 6; y <= 14; y++)
                 level.requireAt(x, y).typ = POOL;
@@ -148,7 +148,7 @@ for (const mode of ['debug', 'explore']) {
     });
 }
 void test('drowning recovery describes the ice at its landing square', async () => {
-    const level = freshObjectRoom({ flags: { explore: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { explore: true, bones: false } });
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).typ = ICE;
@@ -165,7 +165,7 @@ void test('drowning recovery describes the ice at its landing square', async () 
 });
 for (const hallucinating of [false, true]) {
     void test(`drowning rescue onto lava describes the surface ${hallucinating ? 'with' : 'without'} hallucination`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             gameplaySeed: 42,
             flags: { explore: true, bones: false },
             hero: {
@@ -203,7 +203,7 @@ for (const hallucinating of [false, true]) {
 // C lava_effects() -> destroy_items(): a boiling potion's damage goes through
 // losehp(), which says "You die..." before done() asks the wizard "Die?".
 void test('a potion boiling in lava kills a fire-resistant hero with the ordinary death line', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     level.requireAt(10, 10).typ = LAVAPOOL;
     game.u.fireResistance = true;
     game.u.uhp = 1;

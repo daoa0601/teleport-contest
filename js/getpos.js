@@ -456,10 +456,10 @@ function getposArea(state) {
 }
 // C getpos.c:getpos_sethilite(). Install after the caller's question and
 // before getpos's tutorial or instructions can flush these forced redraws.
-export function prepareMapPositionHighlights(isValidLocation) {
-    setMapPositionHighlights(isValidLocation, game.iflags.bgcolors !== false);
+export async function prepareMapPositionHighlights(isValidLocation) {
+    await setMapPositionHighlights(isValidLocation, game.iflags.bgcolors !== false);
 }
-function setMapPositionHighlights(isValidLocation, background) {
+async function setMapPositionHighlights(isValidLocation, background) {
     const previous = game._mapPositionHighlight;
     if (isValidLocation)
         game._mapPositionHighlight = { isValidLocation, background };
@@ -470,7 +470,7 @@ function setMapPositionHighlights(isValidLocation, background) {
     // getpos_sethilite() redraws the union of the old and new selections,
     // once per square, when the rule or background color changes.
     for (const { x, y } of validMapSquares((x, y) => !!previous?.isValidLocation(x, y) || !!isValidLocation?.(x, y)))
-        newsym_force(x, y);
+        await newsym_force(x, y);
 }
 function getposCycleKind(key) {
     const kinds = ['mon', 'obj', 'door', 'unexplored', 'all', 'valid'];
@@ -563,18 +563,18 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     const defaultHilite = game.iflags.bgcolors !== false ? 'background' : 'normal';
     const hilite = { state: defaultHilite };
     let marking = null;
-    const clearMarking = () => {
-        marking?.clear();
+    const clearMarking = async () => {
+        await marking?.clear();
         marking = null;
     };
-    const setHilite = (next) => {
+    const setHilite = async (next) => {
         hilite.state = next;
-        setMapPositionHighlights(isValidLocation, hilite.state === 'background');
+        await setMapPositionHighlights(isValidLocation, hilite.state === 'background');
     };
-    const refreshHilite = () => {
+    const refreshHilite = async () => {
         if (hilite.state === 'symbols') {
-            clearMarking();
-            setHilite(defaultHilite);
+            await clearMarking();
+            await setHilite(defaultHilite);
         }
         // docrt_flags(docrtRefresh) resends the current glyphs and requests
         // a status redraw; it does not recalculate sight or hallucinations.
@@ -602,7 +602,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     commandBindings.lockMouseButtons(true);
     try {
         if (isValidLocation)
-            setMapPositionHighlights(isValidLocation, hilite.state === 'background');
+            await setMapPositionHighlights(isValidLocation, hilite.state === 'background');
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
@@ -698,7 +698,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                         hasValidLocations: !!isValidLocation, force,
                     });
                 }
-                refreshHilite();
+                await refreshHilite();
                 showGoal = true;
                 continue;
             }
@@ -706,14 +706,14 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 if (isValidLocation) {
                     switch (hilite.state) {
                         case 'normal':
-                            setHilite('symbols');
+                            await setHilite('symbols');
                             break;
                         case 'symbols':
-                            clearMarking();
-                            setHilite(defaultHilite);
+                            await clearMarking();
+                            await setHilite(defaultHilite);
                             break;
                         case 'background':
-                            setHilite('normal');
+                            await setHilite('normal');
                             break;
                     }
                 }
@@ -850,7 +850,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         // exitgetpos() clears the validity callbacks and force-redraws their
         // old selection once, also replacing any active '$' marks.
         if (isValidLocation)
-            setMapPositionHighlights(null, game.iflags.bgcolors !== false);
+            await setMapPositionHighlights(null, game.iflags.bgcolors !== false);
     }
 }
 //# sourceMappingURL=getpos.js.map

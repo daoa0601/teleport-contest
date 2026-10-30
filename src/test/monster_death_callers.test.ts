@@ -53,7 +53,7 @@ void test('a gas-cloud death during the world turn uses the native cause message
 });
 
 void test('monster-caused light kills a visible pet gremlin without an extra death line', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const gremlin = await createMonsterAt('gremlin', 11, 10, BIRTH_FLAGS);
     initializePet(gremlin);
     gremlin.mhp = 1;
@@ -71,7 +71,7 @@ void test('monster-caused light kills a visible pet gremlin without an extra dea
 
 for (const visible of [true, false]) {
     void test(`a lethal returning club ${visible ? 'announces its visible victim' : 'gives grief for an unseen pet'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const soldier = await createMonsterAt('soldier', 13, 10, BIRTH_FLAGS);
         initializePet(soldier);
         soldier.mconf = 1;
@@ -95,7 +95,7 @@ for (const visible of [true, false]) {
 }
 
 void test('an involuntary dismount with no landing room announces the steed death without hero blame', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
     assert.equal(game.u.usteed, pony);
@@ -106,7 +106,7 @@ void test('an involuntary dismount with no landing room announces the steed deat
                 level.requireAt(x, y).typ = STONE;
         }
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     const alignment = game.u.ualign?.record;
 
     await dismountHero(DISMOUNT_GENERIC);

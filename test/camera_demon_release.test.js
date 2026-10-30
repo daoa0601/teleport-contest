@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a breaking camera releases an imp or a homunculus, never another demon', async () => {
     const released = [];
     for (let seed = 1n; seed <= 40n; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.feed(' '.repeat(4));

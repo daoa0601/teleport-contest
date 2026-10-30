@@ -13,7 +13,7 @@ const LEATHER_GLOVES = 159;
 // C trap.c:lava_effects() names each burning worn item with
 // Yobjnam2(obj, "burst"): a single pair of gloves takes the singular verb.
 void test('a worn pair of gloves bursts into flame in lava', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = LAVAPOOL;
     }

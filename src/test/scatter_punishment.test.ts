@@ -6,7 +6,7 @@ import { installPunishedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('scattering a punishment chain shatters it and frees the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { chain } = await installPunishedHero();
     const messages: string[] = [];
 

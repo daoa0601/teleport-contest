@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function kickIntoTrap(species: string, hitPoints: number, seed: bigint, trapType = ROCKTRAP) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'monk',
         flags: { verbose: true },
         hero: {

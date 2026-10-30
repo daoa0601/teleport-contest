@@ -9,7 +9,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('Grimtooth prevents poison damage while the bite still hurts', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('giant spider', 11, 10, NO_MINVENT);
     const defender = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
     await equipMonsterObject(defender, await artifactObject('Grimtooth'), W_WEP);

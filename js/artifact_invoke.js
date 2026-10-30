@@ -176,7 +176,7 @@ async function invokeProperty(object, artifact, state, publish, rollDice, scaled
         await nothingSpecial(object, state, publish);
         return { used: true, ready: true, on };
     }
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
     if (on) {
         const transparency = heroIsHallucinating(state) ? 'normal' : 'strange';
         await publish(`Your body takes on a ${transparency} transparency...`);

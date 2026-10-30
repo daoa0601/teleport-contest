@@ -29,7 +29,7 @@ async function effect(type: number, properties: KnownObjectOverrides = {}) {
 }
 
 void test('hallucination resistance leaves both perception and timeout unchanged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('hallucinationResistance', 'outside');
     const result = await effect(POT_HALLUCINATION);
@@ -39,7 +39,7 @@ void test('hallucination resistance leaves both perception and timeout unchanged
 });
 
 void test('cursed hallucination adds its native duration without enlightenment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const result = await effect(POT_HALLUCINATION, { cursed: true });
     assert.equal(result.nothing, false);
@@ -49,7 +49,7 @@ void test('cursed hallucination adds its native duration without enlightenment',
 });
 
 void test('repeated hallucination extends the timeout but reports no new effect', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 100 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 100 } });
     requirePlayingGame(game);
     const result = await effect(POT_HALLUCINATION, { cursed: true });
     assert.equal(result.nothing, true);
@@ -60,7 +60,7 @@ for (const [label, properties, minimum] of [
     ['blessed', { blessed: true }, 300], ['uncursed', {}, 600],
 ] as const) {
     void test(`${label} hallucination uses its native duration`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await effect(POT_HALLUCINATION, properties);
         assert.ok((game.u.hallucinationTurns ?? 0) >= minimum
@@ -70,7 +70,7 @@ for (const [label, properties, minimum] of [
 }
 
 void test('blessed booze heals and nourishes without confusion', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhunger: 140, uhs: HUNGRY } });
+    await freshObjectRoom({ hero: { uhp: 20, uhunger: 140, uhs: HUNGRY } });
     requirePlayingGame(game);
     const result = await effect(POT_BOOZE, { blessed: true });
     assert.equal(result.unknown, 1);
@@ -81,7 +81,7 @@ void test('blessed booze heals and nourishes without confusion', async () => {
 });
 
 void test('diluted booze nourishes and confuses without healing', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhunger: 900, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhp: 20, uhunger: 900, uhs: NOT_HUNGRY } });
     requirePlayingGame(game);
     await effect(POT_BOOZE, { odiluted: true });
     assert.equal(game.u.uhp, 20);
@@ -91,7 +91,7 @@ void test('diluted booze nourishes and confuses without healing', async () => {
 });
 
 void test('booze confusion hits a weak hero harder and preserves current-body healing', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhunger: 20, uhs: WEAK } });
+    await freshObjectRoom({ hero: { uhp: 20, uhunger: 20, uhs: WEAK } });
     requirePlayingGame(game);
     installPolymorphedHero('dog', { hitPoints: 5, maxHitPoints: 10 });
     await effect(POT_BOOZE);
@@ -101,7 +101,7 @@ void test('booze confusion hits a weak hero harder and preserves current-body he
 });
 
 void test('drinking booze while satiated adds nutrition without meal choking', async () => {
-    freshObjectRoom({ hero: { uhunger: 1995, uhs: SATIATED } });
+    await freshObjectRoom({ hero: { uhunger: 1995, uhs: SATIATED } });
     requirePlayingGame(game);
     await effect(POT_BOOZE, { blessed: true });
     assert.equal(game.u.uhunger, 2025);
@@ -110,7 +110,7 @@ void test('drinking booze while satiated adds nutrition without meal choking', a
 });
 
 void test('cursed booze causes unconsciousness and a headache wake-up message', async () => {
-    freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY } });
     requirePlayingGame(game);
     await effect(POT_BOOZE, { cursed: true });
     assert.equal(game.u.uhunger, 910);
@@ -120,7 +120,7 @@ void test('cursed booze causes unconsciousness and a headache wake-up message', 
 });
 
 void test('cursed enlightenment creates uncertainty without granting attributes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const result = await effect(POT_ENLIGHTENMENT, { cursed: true });
     assert.equal(result.unknown, 1);
@@ -130,7 +130,7 @@ void test('cursed enlightenment creates uncertainty without granting attributes'
 });
 
 void test('blessed enlightenment grants intelligence and wisdom before opening its real pages', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const potion = await knownObject(POT_ENLIGHTENMENT, { blessed: true });
     const input = resetInputState();
@@ -152,7 +152,7 @@ for (const [label, properties, minimum] of [
     ['cursed', { cursed: true }, 37],
 ] as const) {
     void test(`${label} paralysis freezes the hero for its native duration`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await effect(POT_PARALYSIS, properties);
         assert.ok((game._helplessTurns ?? 0) >= minimum && (game._helplessTurns ?? 0) <= minimum + 9);
@@ -162,7 +162,7 @@ for (const [label, properties, minimum] of [
         assert.match(game._pending_message, /feet are frozen to the floor/);
     });
     void test(`${label} sleeping stops an occupation and causes sleep for its native duration`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         resetInputState().feed('6s');
         await rhack(0);
@@ -176,7 +176,7 @@ for (const [label, properties, minimum] of [
 }
 
 void test('an actually worn free-action ring prevents paralysis and sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     resetInputState().feed(' ');
     await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
@@ -190,7 +190,7 @@ void test('an actually worn free-action ring prevents paralysis and sleep', asyn
 });
 
 void test('visible monsters learn resisted sleep and forget it after an unresisted dose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('dog', game.u.ux + 1, game.u.uy);
     grantIntrinsicProperty('sleepResistance', 'outside');
@@ -204,7 +204,7 @@ void test('visible monsters learn resisted sleep and forget it after an unresist
 });
 
 void test('a sleeping dose preserves a longer paralysis but changes recovery to waking up', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await effect(POT_PARALYSIS, { cursed: true });
     const paralysis = game._helplessTurns;
@@ -216,7 +216,7 @@ void test('a sleeping dose preserves a longer paralysis but changes recovery to 
 });
 
 void test('levitation changes paralysis feedback without changing its delay', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     await effect(POT_PARALYSIS);
@@ -225,7 +225,7 @@ void test('levitation changes paralysis feedback without changing its delay', as
 });
 
 void test('repeated confusion accumulates duration without identifying a new sensation', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 10 } });
+    await freshObjectRoom({ hero: { confusionTurns: 10 } });
     requirePlayingGame(game);
     const result = await effect(POT_CONFUSION, { blessed: true });
     assert.equal(result.nothing, true);
@@ -233,7 +233,7 @@ void test('repeated confusion accumulates duration without identifying a new sen
 });
 
 void test('confusion during hallucination produces ambiguous trippy feedback', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 100 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 100 } });
     requirePlayingGame(game);
     const result = await effect(POT_CONFUSION, { cursed: true });
     assert.equal(result.unknown, 1);
@@ -242,14 +242,14 @@ void test('confusion during hallucination produces ambiguous trippy feedback', a
 });
 
 void test('blessed gain ability raises every available base attribute', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     await effect(POT_GAIN_ABILITY, { blessed: true });
     assert.ok(game.u.acurr.a.every(value => value === 13));
 });
 
 void test('uncursed gain ability raises one attribute', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await effect(POT_GAIN_ABILITY);
     assert.equal(game.u.acurr.a.filter(value => value === 13).length, 1);
@@ -257,7 +257,7 @@ void test('uncursed gain ability raises one attribute', async () => {
 });
 
 void test('cursed gain ability tastes foul without altering attributes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const result = await effect(POT_GAIN_ABILITY, { cursed: true });
     assert.equal(result.unknown, 1);
@@ -266,7 +266,7 @@ void test('cursed gain ability tastes foul without altering attributes', async (
 });
 
 void test('sustain ability prevents gains and reports no effective change', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('sustainAbility', 'outside');
     const result = await effect(POT_GAIN_ABILITY, { blessed: true });
@@ -275,7 +275,7 @@ void test('sustain ability prevents gains and reports no effective change', asyn
 });
 
 void test('blessed gain ability leaves attributes at their racial maxima and reports the limit', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     game.u.acurr.a = [...game.urace.attrmax];
     game.u.amax.a = [...game.urace.attrmax];
@@ -286,7 +286,7 @@ void test('blessed gain ability leaves attributes at their racial maxima and rep
 });
 
 void test('a worn dunce cap blocks intellect gains even when ordinary verbosity is off', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.u.acurr.a = [...game.urace.attrmax];
     game.u.amax.a = [...game.urace.attrmax];
@@ -307,7 +307,7 @@ void test('a worn dunce cap blocks intellect gains even when ordinary verbosity 
 });
 
 void test('blindness applies a timeout and repeated blindness extends it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const first = await effect(POT_BLINDNESS, { blessed: true });
     const initial = game.u.blindTurns;
@@ -323,7 +323,7 @@ void test('blindness applies a timeout and repeated blindness extends it', async
 });
 
 void test('the Eyes mask new potion blindness and repeated doses retain the underlying timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await wearEyewear(await artifactObject('The Eyes of the Overworld'));
     const first = await effect(POT_BLINDNESS);

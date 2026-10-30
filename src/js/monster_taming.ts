@@ -107,8 +107,8 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
     if (announce && canSpotMonster(monster)) {
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} seems quite ${heroIsHallucinating(state) ? 'approachable' : 'friendly'}.`);
     }
-    newsym(monster.mx, monster.my);
-    if (monster.wormno) redrawMonsterWorm(monster, state);
+    await newsym(monster.mx, monster.my);
+    if (monster.wormno) await redrawMonsterWorm(monster, state);
     if ((MONSTER_ATTACKS[monster.mnum] || []).some(([type]) => type === AT_WEAP)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state);

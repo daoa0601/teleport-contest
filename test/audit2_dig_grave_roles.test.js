@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C dig.c dig_up_grave(): an archeologist feels like a despicable
 // grave-robber and loses three alignment points for a lawful dig.
 void test('a lawful archeologist despairs while digging up a grave', async () => {
-    const level = freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
+    const level = await freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
     const archeologist = roles.find(candidate => candidate.key === 'archeologist');
     if (!archeologist)
         throw new Error('The archeologist role record is required');

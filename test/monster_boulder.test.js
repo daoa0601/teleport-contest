@@ -11,7 +11,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 void test('a keeper fractures a boulder, then must wait before breaking another', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const first = await floorObject(BOULDER, 12, 10);
@@ -30,7 +30,7 @@ void test('a keeper fractures a boulder, then must wait before breaking another'
     assert.equal(game.u.uconduct.sokocheat ?? 0, 0);
 });
 void test('a Rider can keep breaking boulders without a spell cooldown', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const rider = await createMonsterAt('Death', 11, 10);
     rider.mspec_used = 8;
@@ -44,7 +44,7 @@ void test('a Rider can keep breaking boulders without a spell cooldown', async (
     assert.equal(rider.mspec_used, 8);
 });
 void test('rock throwing alone does not let a giant magically fracture a boulder', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 11, 10);
     const boulder = await floorObject(BOULDER, 12, 10);
@@ -53,7 +53,7 @@ void test('rock throwing alone does not let a giant magically fracture a boulder
     assert.ok(floorObjectsAt(game.level, 12, 10).includes(boulder));
 });
 void test('monster fracture retains a billed boulder charge but does not bill its rocks', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const boulder = await floorObject(BOULDER, 12, 10);
@@ -78,14 +78,14 @@ void test('monster fracture retains a billed boulder charge but does not bill it
     assert.notEqual(usedBoulder.o_id, boulder.o_id);
 });
 void test('an empty destination does not spend a keeper spell cooldown', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     await breakMonsterBoulder(shopkeeper, 13, 10);
     assert.equal(shopkeeper.mspec_used ?? 0, 0);
 });
 void test('a proper-named quest leader keeps its name in the incantation message', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const leader = await createMonsterAt('Lord Carnarvon', 11, 10);
     await floorObject(BOULDER, 12, 10);

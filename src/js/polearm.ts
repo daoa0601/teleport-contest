@@ -205,7 +205,7 @@ async function chooseTarget(
 ) {
     await pline('Where do you want to hit?');
     const valid = (x: number, y: number) => validPolearmPosition(x, y, min, max, state);
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
     await showGetposInstructions(state);
@@ -324,13 +324,13 @@ export async function usePolearm(
         );
         // trap.c activate_statue_trap() reports success as the released
         // monster pointer; use_pole() tests only that pointer.
-        const activated = trapAt ? !!(await activateStatueTrapAt(cc.x, cc.y, { state })) : false;
+        const activated = trapAt ? !!await activateStatueTrapAt(cc.x, cc.y, { state }) : false;
         if (!activated) {
             await pline('Thump!  Your blow bounces harmlessly off the statue.');
             await wakeMonstersNearWithMessages(cc.x, cc.y, 25, state);
         }
     } else {
-        unmap_invisible(cc.x, cc.y);
+        await unmap_invisible(cc.x, cc.y);
 
         if (
             glyph?.kind === 'object' &&

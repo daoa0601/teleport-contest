@@ -10,7 +10,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('seeing the defender allows an unseen attacker to announce its weapon swing', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
     const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);

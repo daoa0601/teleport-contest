@@ -57,8 +57,8 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
     state._monsterEngulf = { attacker, defender, defenderExposed: false };
     try {
         await placeMonsterOnMap(attacker, target.x, target.y, state);
-        newsym(origin.x, origin.y);
-        newsym(target.x, target.y);
+        await newsym(origin.x, origin.y);
+        await newsym(target.x, target.y);
         state._monsterSwallower = attacker;
         let result;
         try {
@@ -80,9 +80,9 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
                 await placeMonsterOnMap(attacker, destination.x, destination.y, state);
             state._monsterEngulf = previousEngulf;
             if (destination !== target)
-                newsym(target.x, target.y);
+                await newsym(target.x, target.y);
             if (!alreadyPlaced)
-                newsym(destination.x, destination.y);
+                await newsym(destination.x, destination.y);
             const liquid = await resolveMonsterLiquid(attacker, state, {
                 announce: publish, random, rollOne, rollDice,
                 finishDeath: (monster, death) => finishMonsterLiquidDeath(monster, {
@@ -102,7 +102,7 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
         if (attackerDied) {
             await placeMonsterOnMap(defender, target.x, target.y, state);
             state._monsterEngulf = previousEngulf;
-            newsym(target.x, target.y);
+            await newsym(target.x, target.y);
         }
         else {
             if (cansee(target.x, target.y)) {
@@ -113,8 +113,8 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
             await placeMonsterOnMap(attacker, origin.x, origin.y, state);
             await placeMonsterOnMap(defender, target.x, target.y, state);
             state._monsterEngulf = previousEngulf;
-            newsym(origin.x, origin.y);
-            newsym(target.x, target.y);
+            await newsym(origin.x, origin.y);
+            await newsym(target.x, target.y);
         }
         return result;
     }

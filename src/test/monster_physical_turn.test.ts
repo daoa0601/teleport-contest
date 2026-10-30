@@ -19,7 +19,7 @@ import { installPagerInput } from './support/pager-input.js';
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 
 async function conflictFight(attacker = 'orc', target = 'hill giant') {
-    freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30, uhp: 20, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30, uhp: 20, uhpmax: 40 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const flags = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
@@ -30,7 +30,7 @@ async function conflictFight(attacker = 'orc', target = 'hill giant') {
     defender.mhp = defender.mhpmax = 100;
     defender.msleeping = 1;
     defender.movement = 0;
-    vision_recalc(0);
+    await vision_recalc(0);
     installPagerInput(resetInputState(), {
         expected: /orc|giant|shade|horse|mastodon|worm|shrieker|pudding|troll|blade|medallion|But wait|flayer|brain|Death|thought/,
         limit: 20,

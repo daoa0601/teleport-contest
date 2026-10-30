@@ -22,7 +22,7 @@ import type { RoleKey } from '../js/roles.js';
 import type { HeroPhysicalAttackMode } from '../js/hero_physical_types.js';
 
 async function contactRoom(role: RoleKey = 'tourist', species = 'hill giant') {
-    freshObjectRoom({ role, flags: { verbose: false } });
+    await freshObjectRoom({ role, flags: { verbose: false } });
     requirePlayingGame(game);
     const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
     monster.mhp = monster.mhpmax = 100;

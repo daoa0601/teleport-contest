@@ -27,7 +27,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('known egg contents name their species without acquired egg-type knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const egg = await mksobj(EGG, false, false);
     egg.corpsenm = MONSTER_NAME.indexOf('cockatrice');
     egg.quan = 2;
@@ -38,8 +38,8 @@ void test('known egg contents name their species without acquired egg-type knowl
 });
 
 
-function freshEggState(seed: RngSeed) {
-    freshObjectRoom({
+async function freshEggState(seed: RngSeed) {
+    await freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,
         hero: { deafTurns: 0 },
         flags: { female: true },
@@ -61,7 +61,7 @@ function hatchTimer(egg: GameObject) {
 
 void test('fresh floor egg hatches visibly, teaches its type, and is deleted',
     async () => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         const egg = placeCreatedObject(await mksobj(EGG, true, false), 12, 10);
         assert.equal(egg.corpsenm, MONSTER_NAME.indexOf('giant spider'));
@@ -91,7 +91,7 @@ void test('fresh floor egg hatches visibly, teaches its type, and is deleted',
 
 void test('floor egg stack hatches a younger form and schedules its remainder',
     async () => {
-        freshEggState(10);
+        await freshEggState(10);
         requireFixtureGame(game);
         const egg = placeCreatedObject(await mksobj(EGG, true, false), 12, 10);
         assert.equal(egg.corpsenm, 328); // crocodile
@@ -122,7 +122,7 @@ void test('floor egg stack hatches a younger form and schedules its remainder',
 
 void test('overdue floor hatching is silent and does not teach egg identity',
     async () => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         const egg = placeCreatedObject(await mksobj(EGG, true, false), 12, 10);
         assert.ok(egg.corpsenm !== undefined);
@@ -141,7 +141,7 @@ void test('overdue floor hatching is silent and does not teach egg identity',
 
 void test('genocide consumes the hatch attempt but leaves the egg untimed',
     async () => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         const egg = placeCreatedObject(await mksobj(EGG, true, false), 12, 10);
         assert.ok(egg.corpsenm !== undefined);
@@ -164,7 +164,7 @@ void test('genocide consumes the hatch attempt but leaves the egg untimed',
 
 void test('unowned carried egg hatches beside a female hero before pack deletion',
     async () => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         const egg = await mksobj(EGG, true, false);
         egg.where = 'inventory';
@@ -190,11 +190,11 @@ void test('unowned carried egg hatches beside a female hero before pack deletion
 
 void test('blind carried hatching uses tactile prose and does not teach identity',
     async () => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         game.blind = true;
         game.u.blindTurns = 10;
-        vision_recalc(0);
+        await vision_recalc(0);
         const egg = await mksobj(EGG, true, false);
         egg.where = 'inventory';
         game.inventory = [egg];
@@ -214,7 +214,7 @@ void test('blind carried hatching uses tactile prose and does not teach identity
 
 void test('carried egg stack keeps its remainder and short timer after pack prose',
     async () => {
-        freshEggState(10);
+        await freshEggState(10);
         requireFixtureGame(game);
         const egg = await mksobj(EGG, true, false);
         egg.where = 'inventory';
@@ -239,7 +239,7 @@ void test('carried egg stack keeps its remainder and short timer after pack pros
     });
 
 void test('a hero-laid floor egg hatches a tame monster', async () => {
-    freshEggState(2);
+    await freshEggState(2);
     requireFixtureGame(game);
     const egg = placeCreatedObject(await mksobj(EGG, true, false), 12, 10);
     egg.spe = 1;
@@ -263,7 +263,7 @@ void test('a hero-laid pack egg cries for its mommy with the C gerund', async ()
     // those rules are pinned separately in ing_suffix.test.ts; this locks
     // the assembled message through the public hatch-timer path.
     const cry = async (species: string) => {
-        freshEggState(2);
+        await freshEggState(2);
         requireFixtureGame(game);
         const egg = await mksobj(EGG, true, false);
         egg.corpsenm = MONSTER_NAME.indexOf(species);
@@ -289,7 +289,7 @@ void test('a hero-laid pack egg cries for its mommy with the C gerund', async ()
 });
 
 void test('a dragon egg in the pack hatches a tame dragon', async () => {
-    freshEggState(2);
+    await freshEggState(2);
     requireFixtureGame(game);
     const egg = await mksobj(EGG, true, false);
     egg.corpsenm = 143; // gray dragon
@@ -313,7 +313,7 @@ void test('a dragon egg in the pack hatches a tame dragon', async () => {
 });
 
 void test('an egg hatches out of a visible monster pack', async () => {
-    freshEggState(2);
+    await freshEggState(2);
     requireFixtureGame(game);
     const egg = await mksobj(EGG, true, false);
     egg.quan = egg.quantity = 1;

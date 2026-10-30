@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const name of ['Vorpal Blade', 'The Tsurugi of Muramasa']) {
     void test(`${name} beheading retains fatal damage after a large damage reduction`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt('gnome', 12, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         monster.mhp = monster.mhpmax = 10;
         const sword = await artifactObject(name);

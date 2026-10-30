@@ -10,7 +10,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a monster that grows into a genocided adult leaves that body behind', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const kop = await createMonsterAt('Keystone Kop', 11, 10, NO_MINVENT);
     kop.female = true;

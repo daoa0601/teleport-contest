@@ -20,7 +20,7 @@ async function helpText(goal: string): Promise<string> {
 }
 
 void test('position help uses rebound movement and target keys', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     assert.equal(game.commandBindings.bindKey(104, 'nothing').accepted, true);
     assert.equal(game.commandBindings.bindKey(115, 'movewest').accepted, true);
     assert.equal(game.commandBindings.bindSpecialKey(113, 'getpos.mon.next'), true);
@@ -32,7 +32,7 @@ void test('position help uses rebound movement and target keys', async () => {
 });
 
 void test('position help describes the active menu, area filter, and fast-move modes', async () => {
-    freshObjectRoom({ iflags: { getloc_usemenu: true, getloc_filter: 2, getloc_moveskip: true } });
+    await freshObjectRoom({ iflags: { getloc_usemenu: true, getloc_filter: 2, getloc_moveskip: true } });
 
     const text = await helpText('a location');
 
@@ -43,7 +43,7 @@ void test('position help describes the active menu, area filter, and fast-move m
 });
 
 void test('monster-only position help omits the unrelated target controls', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const text = await helpText('a monster');
 
@@ -52,7 +52,7 @@ void test('monster-only position help omits the unrelated target controls', asyn
 });
 
 void test('terrain detection help includes only the applicable controls', async () => {
-    freshObjectRoom({ iflags: { terrainmode: TER_MAP | TER_DETECT } });
+    await freshObjectRoom({ iflags: { terrainmode: TER_MAP | TER_DETECT } });
 
     const text = await helpText('anything of interest');
 

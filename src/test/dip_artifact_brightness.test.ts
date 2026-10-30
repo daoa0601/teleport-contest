@@ -18,7 +18,7 @@ for (const change of [
 ]) {
     for (const blind of [false, true]) {
         void test(`water can ${change.action} wielded Sunsword${blind ? ' while blind' : ' and announce its changed light'}`, async () => {
-            freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+            await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
             const artifact = artifactByName('Sunsword');
             assert.ok(artifact);
             const sword = await addInventoryObject(LONG_SWORD, {

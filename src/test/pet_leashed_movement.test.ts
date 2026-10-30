@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function leashDog(x = 12) {
-    const level = freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', x, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);

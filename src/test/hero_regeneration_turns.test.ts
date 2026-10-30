@@ -83,7 +83,7 @@ void test('Regeneration adds healing to ordinary human recovery rather than repl
 });
 
 void test('a moving stressed hero cannot recover ordinary HP', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhpmax: 40, umoved: true } });
+    await freshObjectRoom({ hero: { uhp: 20, uhpmax: 40, umoved: true } });
     initRng(17n);
 
     for (let turn = 1; turn <= 20; turn++) await regenerateHeroHp(MOD_ENCUMBER, turn);
@@ -92,7 +92,7 @@ void test('a moving stressed hero cannot recover ordinary HP', async () => {
 });
 
 void test('sleepiness supplies two points of sleeping recovery despite movement encumbrance', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhpmax: 40, umoved: true, usleep: 1 } });
+    await freshObjectRoom({ hero: { uhp: 20, uhpmax: 40, umoved: true, usleep: 1 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('sleepy', 'outside');
     initRng(17n);
@@ -103,7 +103,7 @@ void test('sleepiness supplies two points of sleeping recovery despite movement 
 });
 
 void test('a dry eel loses HP without drying to death or healing at the twentieth turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('giant eel', { hitPoints: 10, maxHitPoints: 20 });
     initRng(17n);
 

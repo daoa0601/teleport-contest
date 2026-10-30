@@ -116,7 +116,7 @@ void test('Grayswandir halves its silver bonus before doubling weapon damage', a
 });
 
 void test('shade contact recognizes a silver wand after its material has been shuffled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.ok(game.objectMaterials);
     const type = game.objectMaterials.findIndex((material, otyp) =>
         otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
@@ -128,7 +128,7 @@ void test('shade contact recognizes a silver wand after its material has been sh
 });
 
 void test('a wand which lost its silver material passes through a shade', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.ok(game.objectMaterials);
     const type = game.objectMaterials.findIndex((material, otyp) =>
         otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
@@ -145,7 +145,7 @@ void test('a cream pie has no physical weapon damage', async () => {
 });
 
 void test('the hero cold resistance stops Frost Brand doubling without reducing blessed contact damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('vampire');
     const frostBrand = await artifactObject('Frost Brand', { blessed: true });
     const defender = { mnum: heroSpecies(game) };

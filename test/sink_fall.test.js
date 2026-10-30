@@ -19,8 +19,8 @@ import { createDungeon } from './support/topology.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
-function sinkSpot(gameplaySeed = 45300n) {
-    const level = freshObjectRoom({ gameplaySeed });
+async function sinkSpot(gameplaySeed = 45300n) {
+    const level = await freshObjectRoom({ gameplaySeed });
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     game.u.levitationTurns = 40;
@@ -42,7 +42,7 @@ async function wearBoots() {
     return boots;
 }
 void test('a timeout levitation over a sink crashes and ends levitation', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     assert.equal(game.u.levitating, true);
     const before = game.u.uhp;
@@ -56,7 +56,7 @@ void test('a timeout levitation over a sink crashes and ends levitation', async 
     assert.equal(game.u.levitationTurns, 0);
 });
 void test('innate levitation only wobbles and keeps the hero afloat', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'form');
     const before = game.u.uhp;
@@ -67,7 +67,7 @@ void test('innate levitation only wobbles and keeps the hero afloat', async () =
     assert.equal(game.u.levitating, true);
 });
 void test("the hero's own flight takes control instead of crashing", async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
     const before = game.u.uhp;
@@ -80,7 +80,7 @@ void test("the hero's own flight takes control instead of crashing", async () =>
     assert.equal(game.u.flying, true);
 });
 void test('worn levitation rings come off over a sink even while flying', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
     const ring = await wearRing('uleft');
@@ -95,7 +95,7 @@ void test('worn levitation rings come off over a sink even while flying', async 
     assert.ok(game.inventory.includes(ring));
 });
 void test('falling removes worn levitation rings from both hands', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     const left = await wearRing('uleft');
     const right = await wearRing('uright');
@@ -109,7 +109,7 @@ void test('falling removes worn levitation rings from both hands', async () => {
     assert.equal(game.u.levitating, false);
 });
 void test('levitation boots come off a wobbling hero without ending levitation', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'form');
     const boots = await wearBoots();
@@ -124,13 +124,13 @@ void test('levitation boots come off a wobbling hero without ending levitation',
     assert.equal(game.u.levitating, true);
 });
 void test('falling on a floor weapon hurts again', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     const before = game.u.uhp;
     initRng(777n);
     await fallIntoSink();
     const crashOnly = before - game.u.uhp;
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     await floorObject(ARROW, game.u.ux, game.u.uy);
     const withWeaponBefore = game.u.uhp;
@@ -142,7 +142,7 @@ void test('falling on a floor weapon hurts again', async () => {
     assert.match(game._pending_message, /You fell on .*arrow\./);
 });
 void test('a fatal crash discloses without levitation while items stay worn', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     const ring = await wearRing('uleft');
     game.u.uhp = 3;
@@ -163,7 +163,7 @@ void test('a fatal crash discloses without levitation while items stay worn', as
     assert.deepEqual(disclosure, { levitating: false, ringWorn: true });
 });
 void test('falling with a wielded cockatrice corpse turns the hero to stone', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     game.uwep = await untimedCorpse(MONSTER_NAME.indexOf('cockatrice'));
     pushKeys(' ');
@@ -179,7 +179,7 @@ void test('falling with a wielded cockatrice corpse turns the hero to stone', as
     assert.match(game._pending_message, /You turn to stone/);
 });
 void test('a crash interrupts donning armor and loses the partial wear', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     const boots = await addInventoryObject(LEVITATION_BOOTS);
     pushKeys(boots.invlet);
@@ -193,7 +193,7 @@ void test('a crash interrupts donning armor and loses the partial wear', async (
     assert.equal(boots.worn, false);
 });
 void test('sink results survive a save and restore round trip', async () => {
-    sinkSpot();
+    await sinkSpot();
     requirePlayingGame(game);
     const ring = await wearRing('uleft');
     game.plname = 'SinkFall';
@@ -202,7 +202,7 @@ void test('sink results survive a save and restore round trip', async () => {
     assert.equal(game.u.levitating, false);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     assert.equal(game.u.levitating, false);
     assert.equal(game.uleft, null);
     // restore rebuilds object identities, so match by type and wear state
@@ -212,7 +212,7 @@ void test('sink results survive a save and restore round trip', async () => {
 void test('a fatal sink fall records the crash without a killer prefix', async () => {
     // C hack.c:dosinkfall() kills with "fell onto a sink" and
     // NO_KILLER_PREFIX, so topten.c:formatkiller() adds no "killed by".
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 100, urexp: 100 },
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o', tombstone: true },
     });

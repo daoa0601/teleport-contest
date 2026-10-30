@@ -14,7 +14,7 @@ import { planInput } from './support/planned-input.js';
 // showsyms[SYM_BOULDER + SYM_OFF_X] before the trap symbol, so a BOULDER=
 // override selects rock-class object detection instead of a distant vision.
 void test('searching for the configured boulder symbol detects large stones', async (t) => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { verbose: false, tips: false },
         hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } },
     });
@@ -38,7 +38,7 @@ void test('searching for the configured boulder symbol detects large stones', as
     assert.equal(ball.spe, 1);
 });
 void test('a class symbol shared with the boulder override also detects large stones', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: false, tips: false },
         hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } },
     });

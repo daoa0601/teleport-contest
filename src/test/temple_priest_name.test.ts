@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const species of ['aligned cleric', 'high cleric']) {
     void test(`a visible hallucinated ${species} introduces itself as a poohbah`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const priest = await createMonsterAt(species, 11, 10, NO_MINVENT);
         priest.ispriest = 1;

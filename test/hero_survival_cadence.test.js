@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { requireScreenRow } from './support/screen.js';
 for (const recovery of ['life saving', 'explore refusal']) {
     void test(`${recovery} announces survival once after the remaining movement ration is spent`, async () => {
-        freshObjectRoom({ flags: { explore: recovery === 'explore refusal' },
+        await freshObjectRoom({ flags: { explore: recovery === 'explore refusal' },
             hero: { uhp: 1, uhpmax: 40 } });
         requirePlayingGame(game);
         if (recovery === 'life saving')

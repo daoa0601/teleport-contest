@@ -7,7 +7,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshCasterRoom } from './support/hero-state.js';
 
 void test('wizard casting reaches an unknown spell on the second page without energy or practice', async () => {
-    freshCasterRoom({ flags: { debug: true }, energy: 0 });
+    await freshCasterRoom({ flags: { debug: true }, energy: 0 });
     requirePlayingGame(game);
     game.spells = [];
     const skills = ensureHeroSkills(game);
@@ -28,7 +28,7 @@ void test('wizard casting reaches an unknown spell on the second page without en
 });
 
 void test('cancelling wizard casting spends no time', async () => {
-    freshCasterRoom({ flags: { debug: true } });
+    await freshCasterRoom({ flags: { debug: true } });
     requirePlayingGame(game);
 
     await runExtendedCommand('wizcast', '\x1b');

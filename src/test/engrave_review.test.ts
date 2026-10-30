@@ -22,7 +22,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
 
 void test('a dull blade warning is acknowledged before the writing announcement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const dagger = await addInventoryWeapon(DAGGER, { spe: -3 });
     const input = resetInputState();
@@ -40,7 +40,7 @@ void test('a dull blade warning is acknowledged before the writing announcement'
 });
 
 void test('the dull blade warning includes the number of daggers in a stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const daggers = await addInventoryWeapon(DAGGER, { quan: 3, spe: -3 });
     const input = resetInputState();
@@ -58,7 +58,7 @@ void test('the dull blade warning includes the number of daggers in a stack', as
 });
 
 void test('writing inside a jelly names the stack of daggers in the plural', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const jelly = await createMonsterAt('ochre jelly', game.u.ux + 1, game.u.uy);
     await installSwallowedHero(jelly);
@@ -76,7 +76,7 @@ void test('writing inside a jelly names the stack of daggers in the plural', asy
 });
 
 void test('writing on an altar names the stack of daggers in the plural', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const square = game.level.requireAt(game.u.ux, game.u.uy);
     square.typ = ALTAR;
@@ -97,7 +97,7 @@ void test('writing on an altar names the stack of daggers in the plural', async 
 });
 
 void test('a levitating wand user acknowledges the gesture before disturbing a grave', async () => {
-    freshObjectRoom({ hero: { levitation: true } });
+    await freshObjectRoom({ hero: { levitation: true } });
     requireFixtureGame(game);
     const grave = game.level.requireAt(game.u.ux, game.u.uy);
     grave.typ = GRAVE;
@@ -117,7 +117,7 @@ void test('a levitating wand user acknowledges the gesture before disturbing a g
 
 for (const levitating of [false, true]) {
     void test(`blind polymorph leaves a replacement carving unread${levitating ? ' and out of reach' : ' but felt'}`, async () => {
-        freshObjectRoom({ hero: { levitation: levitating } });
+        await freshObjectRoom({ hero: { levitation: levitating } });
         requireFixtureGame(game);
         await makeBlinded(20, { talk: false });
         makeEngravingAt(game.u.ux, game.u.uy, 'old carving', null, game.moves, ENGRAVE);
@@ -166,7 +166,7 @@ void test('carving with a stack names the daggers before dulling one', async () 
 });
 
 void test('fatal light while engraving ends the command before asking for writing', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
     });
     requireFixtureGame(game);
@@ -190,7 +190,7 @@ void test('fatal light while engraving ends the command before asking for writin
 for (const blind of [false, true]) {
     void test(blind ? 'a blind writer leaves an unseen wand unidentified'
         : 'a sighted writer observes and identifies an unseen light wand', async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
         requireFixtureGame(game);
         const wand = await addInventoryObject(WAN_LIGHT, {
             spe: 3, observed: false, dknown: false, known: false, typeKnown: false,
@@ -215,7 +215,7 @@ for (const blind of [false, true]) {
 }
 
 void test('the forced stylus menu can show all objects and return to likely candidates', async () => {
-    freshObjectRoom({ flags: { force_invmenu: true } });
+    await freshObjectRoom({ flags: { force_invmenu: true } });
     requireFixtureGame(game);
     await addInventoryObject(DAGGER);
     const potion = await addInventoryObject(POT_HEALING);
@@ -291,7 +291,7 @@ void test('an owlbear writes with a fingertip', async () => {
 });
 
 void test('a unique native autocomplete entry completes the tip command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const input = resetInputState();
     input.feed('ti');
@@ -304,7 +304,7 @@ void test('a unique native autocomplete entry completes the tip command', async 
 });
 
 void test('wizard-only commands do not autocomplete in ordinary play', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const input = resetInputState();
     input.feed('le');

@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const carryLuckstone of [false, true]) {
     void test(`a luckstone ${carryLuckstone ? 'improves' : 'is needed to improve'} an otherwise missed throw`, async () => {
-        freshObjectRoom({ hero: { ulevel: 1, uluck: 0, uhitinc: 5 } });
+        await freshObjectRoom({ hero: { ulevel: 1, uluck: 0, uhitinc: 5 } });
         installHeroWeaponSkills({ [P_DAGGER]: P_BASIC });
         if (carryLuckstone)
             await addInventoryObject(LUCKSTONE);

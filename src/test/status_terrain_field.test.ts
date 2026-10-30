@@ -12,7 +12,7 @@ function status(): string {
 }
 
 void test('terrain status describes the last seen floor instead of revealing a changed feature', async () => {
-    const level = freshObjectRoom({ flags: { terrainstatus: true }, hero: { uhs: 1 } });
+    const level = await freshObjectRoom({ flags: { terrainstatus: true }, hero: { uhs: 1 } });
     const location = level.requireAt(10, 10);
     location.typ = FOUNTAIN;
     location.lastseentyp = ROOM;
@@ -24,10 +24,10 @@ void test('terrain status describes the last seen floor instead of revealing a c
 });
 
 void test('stepping onto known ice updates terrain status during the next flush', async () => {
-    const level = freshObjectRoom({ flags: { terrainstatus: true, pickup: false }, hero: { uhs: 1 } });
+    const level = await freshObjectRoom({ flags: { terrainstatus: true, pickup: false }, hero: { uhs: 1 } });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = ICE;
-    map_location(11, 10, true);
+    await map_location(11, 10, true);
     await bot();
 
     await rhack('l'.charCodeAt(0));

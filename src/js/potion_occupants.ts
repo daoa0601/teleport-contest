@@ -122,12 +122,12 @@ export async function grantMonsterWish(monster: Monster, {
     await removeWishGrantingMonster(monster);
     if (state.program_state.gameover) return;
     if (projection)
-        show_glyph_cell(mx, my, projection.ch, projection.color,
+        await show_glyph_cell(mx, my, projection.ch, projection.color,
             projection.decgfx, projection.attr, projection.glyph);
     try {
         await makeWish();
     } finally {
         state.context.move = spentTime;
-        newsym(mx, my);
+        await newsym(mx, my);
     }
 }

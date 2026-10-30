@@ -131,7 +131,7 @@ async function eatMetal(monster: Monster, context: FloorMealContext): Promise<0 
         if (mealInterrupted(monster, context)) return 1;
         if (rollOne(25) < 3)
             placeCreatedObject(await mksobj(ROCK, true, false), monster.mx, monster.my, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         return 1;
     }
     return 0;
@@ -177,7 +177,7 @@ async function eatOrEngulfPile(monster: Monster, context: FloorMealContext): Pro
             if (mealInterrupted(monster, context) || monster.mnum !== originalSpecies) return 1;
         }
         if (mealInterrupted(monster, context)) return 1;
-        if (monster.minvis) newsym(monster.mx, monster.my);
+        if (monster.minvis) await newsym(monster.mx, monster.my);
     }
     if (!mealInterrupted(monster, context) && engulfed > 0) {
         if (cansee(monster.mx, monster.my) && state.flags.verbose) await publish(engulfMessage);
@@ -203,7 +203,7 @@ async function eatCorpse(monster: Monster, context: FloorMealContext): Promise<0
         else await describeSound('a masticating sound.', context);
         await consumeMonsterObject(monster, meal, state, context);
         if (!mealInterrupted(monster, context) && monster.mnum === originalSpecies && monster.minvis)
-            newsym(x, y);
+            await newsym(x, y);
         return 1;
     }
     return 0;
@@ -220,7 +220,7 @@ async function reviveMeal(object: GameObject, { state, publish }: FloorMealConte
     const x = object.ox, y = object.oy;
     const revival = await reviveCorpseImmediately(object, state);
     if (revival) for (const message of revival.messages) await publish(message);
-    newsym(x, y);
+    await newsym(x, y);
     return !!revival?.monster;
 }
 

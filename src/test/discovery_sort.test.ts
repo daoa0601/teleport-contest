@@ -13,7 +13,7 @@ import { planInput } from './support/planned-input.js';
 
 for (const mode of ['c', 'a', '2', '3']) {
     void test(`sortdiscoveries:${mode} alphabetizes discoveries and ignores their encounter markers`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(`OPTIONS=sortdiscoveries:${mode}`);
         recordObjectKnowledge(POT_HEALING);
         recordObjectKnowledge(POT_BOOZE);
@@ -40,7 +40,7 @@ for (const mode of ['c', 'a', '2', '3']) {
 }
 
 void test('sortloot discoveries group armor by slot and observe their temporary type views', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=sortdiscoveries:s');
     recordObjectKnowledge(SPEED_BOOTS);
     recordObjectKnowledge(LEATHER_GLOVES);
@@ -65,7 +65,7 @@ void test('sortloot discoveries group armor by slot and observe their temporary 
 });
 
 void test('the menu prefix chooses and retains the discovery sort order', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectKnowledge(POT_HEALING);
     const input = resetInputState();
     input.feed('\\');
@@ -82,13 +82,13 @@ void test('the menu prefix chooses and retains the discovery sort order', async 
 });
 
 void test('the chosen discovery order survives saving and restoring', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Discovery sorter';
     applyNethackrc('OPTIONS=sortdiscoveries:c');
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
+    await freshObjectRoom();
 
-    assert.equal(restoreGame('Discovery sorter', storage), true);
+    assert.equal(await restoreGame('Discovery sorter', storage), true);
     assert.equal(game.flags.discosort, 'c');
 });

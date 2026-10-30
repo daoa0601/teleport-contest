@@ -22,7 +22,7 @@ import { createStaffedShop } from './support/shop.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 // A staffed shop with a real west wall gap candidate and a door entrance.
 async function damageShop({ bill = [], role = 'caveman', moves = 100 } = {}) {
-    freshObjectRoom({
+    await freshObjectRoom({
         ...SHOP, role, moves,
         hero: { ualign: { type: 1, record: 10 } },
     });
@@ -51,7 +51,7 @@ async function damageShop({ bill = [], role = 'caveman', moves = 100 } = {}) {
     wallSquare.edge = true;
     wallSquare.lit = true;
     wallSquare.waslit = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     game.u.ux0 = 4;
     game.u.uy0 = 10;
     await checkSpecialRoom();
@@ -226,7 +226,7 @@ void test('an unseen corner repair restores the corner\'s wall mode', async () =
     const before = terrain_glyph(corner, 8, 10).ch;
     game.u.blindTurns = 20;
     syncBlindness(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     addShopDamage(8, 10, SHOP_WALL_COST);
     // A monster dug through the corner, leaving an open gap.
     corner.typ = ROOM;
@@ -486,7 +486,7 @@ void test('sensing a nearby keeper does not reveal its trap repair to a blind he
     const { shopkeeper, roomno } = await damageShop();
     game.blind = true;
     game.u.telepathy = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSpotMonster(shopkeeper), true);
     requireGameLevel(game).requireAt(12, 11).roomno = roomno;
     addTrap(requireGameLevel(game), 6, 12, 11, { tseen: 1 });
@@ -510,7 +510,7 @@ void test('telepathy does not reveal an unheard shop repair incantation', async 
     game.u.deafTurns = 10;
     game.deaf = true;
     game.u.telepathy = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     const level = requireGameLevel(game);
     level.requireAt(12, 11).roomno = roomno;
     addTrap(level, 6, 12, 11, { tseen: 1 });

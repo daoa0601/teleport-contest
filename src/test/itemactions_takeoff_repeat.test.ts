@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // reports "Not wearing any armor or accessories." instead of an unknown
 // extended command.
 void test('repeating the item-actions takeoff reports nothing worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cloak = await addInventoryObject(ELVEN_CLOAK);
     wearHeroArmor(cloak);
     const input = resetInputState();

@@ -16,7 +16,7 @@ import { requireScreenRow } from './support/screen.js';
 // temporary mksobj() corpse supplies the description (its species taken from
 // the remembered glyph) exactly as for any remembered object.
 void test('the object detection browse names a monster-carried corpse from its glyph species', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     const input = resetInputState();
     const carrier = await createMonsterAt('kitten', 12, 10);

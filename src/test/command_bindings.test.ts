@@ -89,7 +89,7 @@ for (const [entry, keys, configuration] of [
     ['extended command', '#known\n', ''],
 ] as const) {
     void test(`the discoveries ${entry} opens its menu without spending a turn`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         recordObjectKnowledge(POT_HEALING);
         if (configuration) applyNethackrc(configuration);
         const moves = game.moves;
@@ -185,7 +185,7 @@ void test('restore retains the current key bindings rather than the saved proces
     applyNethackrc('BIND=!:movewest');
     assert.equal(await saveGame(storage), true);
     applyNethackrc('BIND=!:moveeast');
-    assert.equal(restoreGame('Keys', storage), true);
+    assert.equal(await restoreGame('Keys', storage), true);
     await rhack(code('!'));
     assert.equal(game.u.ux, 11);
 });
@@ -221,7 +221,7 @@ void test('restoring keeps the current keypad and Space command until the next o
     assert.equal(await saveGame(storage), true);
     applyNethackrc('OPTIONS=!rest_on_space,number_pad:1');
     applyNethackrc('BIND=<space>:search');
-    assert.equal(restoreGame('Layout', storage), true);
+    assert.equal(await restoreGame('Layout', storage), true);
     assert.equal(game.iflags.num_pad, true);
     assert.equal(game.flags.rest_on_space, true);
     assert.equal(command(game.commandBindings, ' '), 'search');

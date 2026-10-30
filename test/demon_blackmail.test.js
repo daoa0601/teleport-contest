@@ -17,7 +17,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a peaceful invisible demon prince reveals itself and attacks a penniless hero', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const prince = await createMonsterAt('Baalzebub', 11, 10, NO_MINVENT);
     prince.msleeping = 0;
@@ -32,7 +32,7 @@ void test('a peaceful invisible demon prince reveals itself and attacks a pennil
     assert.equal(!!prince.mpeaceful, false, 'a hero without spendable gold cannot buy safe passage');
 });
 void test('a demon attacks a wealthy hero who is still putting on armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await addInventoryObject(RING_MAIL);
     pushKey(armor.invlet);
@@ -54,7 +54,7 @@ void test('a demon attacks a wealthy hero who is still putting on armor', async 
     assert.equal(game.uarm, armor);
 });
 void test('a zero bribe leaves the next hallucinated demon identity for its anger message', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
     requirePlayingGame(game);
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
     demon.mpeaceful = 1;
@@ -73,7 +73,7 @@ void test('a zero bribe leaves the next hallucinated demon identity for its ange
     assert.equal(heroGoldAmount(game), 1000);
 });
 void test('a demon greeting reports the force that prevents its teleport', async () => {
-    const level = freshObjectRoom({ hero: {
+    const level = await freshObjectRoom({ hero: {
             mtimedone: 50, umonnum: MONSTER_NAME.indexOf('water demon'),
         } });
     requirePlayingGame(game);
@@ -89,7 +89,7 @@ void test('a demon greeting reports the force that prevents its teleport', async
     assert.equal(demon.my, 10);
 });
 void test('an unseen demon angered by Excalibur appears as tension in a sleeping hero\'s dream', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
     demon.minvis = true;

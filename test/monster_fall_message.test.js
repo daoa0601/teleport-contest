@@ -15,7 +15,7 @@ for (const kind of [HOLE, TRAPDOOR, MAGIC_PORTAL]) {
         requirePlayingGame(game);
         const xorn = await createMonsterAt('xorn', 11, 10);
         const trap = addTrap(game.level, kind, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
-        vision_recalc(0);
+        await vision_recalc(0);
         const input = resetInputState();
         await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
         const fall = triggerImmediateMonsterTrap(xorn, game, { random: () => 0 });

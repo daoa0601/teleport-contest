@@ -53,7 +53,7 @@ for (const condition of ['underwater', 'asleep and deaf', 'acoustics disabled', 
         if (condition === 'asleep and deaf') setPropertyTimeout('deaf', 10);
         if (condition.startsWith('asleep')) await putHeroToSleep(5);
         if (condition === 'acoustics disabled') game.flags.acoustics = false;
-        vision_recalc(0);
+        await vision_recalc(0);
 
         assert.equal(await openDrawbridge(12, 10), true);
 
@@ -93,7 +93,7 @@ void test('a deaf unconscious hero gets no unseen door-opening message', async (
     setPropertyTimeout('deaf', 10);
     game._helplessTurns = 5;
     game._helplessDoneMessage = 'You regain consciousness.';
-    vision_recalc(0);
+    await vision_recalc(0);
     requirePlayingGame(game);
     const messages: string[] = [];
 

@@ -8,14 +8,14 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function separatedPet({ tame, moves, seed }) {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     initRng(seed);
     const dog = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);
     assert.ok(dog.edog);
     dog.edog.hungrytime = game.moves; // keep the starvation rules out of this.
     dog.mtame = tame;
-    catchUpMonster(dog, moves, game);
+    await catchUpMonster(dog, moves, game);
     return dog;
 }
 void test('a pet whose absence matches its bond goes untame yet stays peaceful', async () => {

@@ -16,7 +16,7 @@ import { addTrap } from './support/level-state.js';
 
 for (const blocked of [false, true]) {
     void test(`displacing a peaceful giant ${blocked ? 'stops when its boulder cannot move' : 'pushes its boulder before swapping'}`, async () => {
-        const level = freshObjectRoom({ flags: { pickup: false } });
+        const level = await freshObjectRoom({ flags: { pickup: false } });
         const giant = await createMonsterAt('titan', 11, 10, MM_NOGRP | NO_MINVENT);
         giant.mpeaceful = 1;
         await addInventoryObject(ROCK, { quan: 30 });
@@ -43,7 +43,7 @@ for (const blocked of [false, true]) {
 }
 
 void test('the hero must fit a diagonal gap before checking whether the pet can swap through it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('titan');
     const horse = await createMonsterAt('horse', 11, 9, MM_NOGRP | NO_MINVENT);
     initializePet(horse);
@@ -59,7 +59,7 @@ void test('the hero must fit a diagonal gap before checking whether the pet can 
 });
 
 void test('tight shoulders stop displacement before the doorway-exit warning', async () => {
-    const level = freshObjectRoom({ flags: { mention_walls: true } });
+    const level = await freshObjectRoom({ flags: { mention_walls: true } });
     installPolymorphedHero('titan');
     const pet = await createMonsterAt('kitten', 11, 9, NO_MINVENT);
     initializePet(pet);
@@ -77,7 +77,7 @@ void test('tight shoulders stop displacement before the doorway-exit warning', a
 });
 
 void test('an intact destination doorway stops displacement before tight shoulders', async () => {
-    const level = freshObjectRoom({ flags: { mention_walls: true } });
+    const level = await freshObjectRoom({ flags: { mention_walls: true } });
     installPolymorphedHero('titan');
     const pet = await createMonsterAt('kitten', 11, 9, NO_MINVENT);
     initializePet(pet);
@@ -95,7 +95,7 @@ void test('an intact destination doorway stops displacement before tight shoulde
 });
 
 void test('a displaced gremlin splits in the departure fountain before the hero enters a pit', async () => {
-    const level = freshObjectRoom({ flags: { pickup: false } });
+    const level = await freshObjectRoom({ flags: { pickup: false } });
     level.requireAt(10, 10).typ = FOUNTAIN;
     const gremlin = await createMonsterAt('gremlin', 11, 10, NO_MINVENT);
     initializePet(gremlin);
@@ -119,7 +119,7 @@ void test('a displaced gremlin splits in the departure fountain before the hero 
 });
 
 void test('a spider hides under cover after swapping with a pet', async () => {
-    freshObjectRoom({ flags: { pickup: false } });
+    await freshObjectRoom({ flags: { pickup: false } });
     installPolymorphedHero('cave spider');
     const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(pet);
@@ -133,7 +133,7 @@ void test('a spider hides under cover after swapping with a pet', async () => {
 });
 
 void test('a mimic reveals its disguise even when a trapped pet refuses the swap', async () => {
-    const level = freshObjectRoom({ flags: { tips: false } });
+    const level = await freshObjectRoom({ flags: { tips: false } });
     installPolymorphedHero('small mimic');
     game.u.m_ap_type = M_AP_OBJECT;
     game.u.mappearance = BOULDER;

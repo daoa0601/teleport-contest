@@ -55,7 +55,7 @@ export function canSeeMonsterCombat(attacker: Monster, defender: Monster): boole
 export async function revealMonsterCombatDefender(defender: Monster, state: GameState = game): Promise<void> {
     if (!defender.mundetected) return;
     defender.mundetected = 0;
-    newsym(defender.mx, defender.my);
+    await newsym(defender.mx, defender.my);
     if (!canSeeMonster(defender) || canSenseMonster(defender)) return;
     if (heroIsUnaware(state)) {
         const unique = !!((MONSTER_GENO[defender.mnum] ?? 0) & G_UNIQ);
@@ -77,7 +77,7 @@ export async function prepareMonsterCombatContact(
     aggressor: Monster, defender: Monster, attack: AttackTuple, weapon: GameObject | null,
     { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d }: MonsterContactOptions,
 ): Promise<'contact' | 'shade-miss'> {
-    revealAttackingMonsters(aggressor, defender, visible);
+    await revealAttackingMonsters(aggressor, defender, visible);
     const compatibility = aggressor.mcan ? 0 : seductionCompatibility(aggressor, defender, attack, state);
     if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
@@ -105,7 +105,7 @@ export async function showMonsterCombatMiss(
     aggressor: Monster, defender: Monster, attack: AttackTuple,
     { state = game, visible, publish = plineWithContinuation }: MonsterCombatMessageOptions,
 ): Promise<void> {
-    revealAttackingMonsters(aggressor, defender, visible);
+    await revealAttackingMonsters(aggressor, defender, visible);
     if (!visible) {
         await reportMonsterCombatNoise(aggressor, state, { publish });
         return;
@@ -129,7 +129,7 @@ export async function rejectMonsterShadeContact(
         const subject = thrown ? capitalizedDefiniteName(what, state)
             : `${possessiveName(monsterName(aggressor, { state, capitalized: true }))} ${what}`;
         await publish(`${subject} ${verbForSubject(what, 'pass')} harmlessly through ${target}.`);
-        if (!canSpotMonster(defender)) map_invisible(defender.mx, defender.my);
+        if (!canSpotMonster(defender)) await map_invisible(defender.mx, defender.my);
     }
     defender.msleeping = 0;
     return true;
@@ -186,11 +186,11 @@ async function showSilverContact(
     await publish(`${possessiveName(subject)} ${simpleName} sears ${target}!`);
 }
 
-function revealAttackingMonsters(aggressor: Monster, defender: Monster, visible: boolean): void {
+async function revealAttackingMonsters(aggressor: Monster, defender: Monster, visible: boolean): Promise<void> {
     let changed = false;
     for (const monster of [defender, aggressor]) {
         if (M_AP_TYPE(monster)) {
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
             changed = true;
         } else if (monster.mundetected) {
             monster.mundetected = 0;
@@ -199,8 +199,8 @@ function revealAttackingMonsters(aggressor: Monster, defender: Monster, visible:
     }
     if (!visible) return;
     for (const monster of [aggressor, defender]) {
-        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
-        else if (changed) newsym(monster.mx, monster.my);
+        if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
+        else if (changed) await newsym(monster.mx, monster.my);
     }
 }
 

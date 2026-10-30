@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a hurtling monster bumps into an unseen monster described as it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     orc.minvis = true;
@@ -24,7 +24,7 @@ void test('a hurtling monster bumps into an unseen monster described as it', asy
 });
 
 void test('a returning unidentified club names an unseen thrower with its', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const club = await knownObject(AKLYS, { known: false, typeKnown: false, dknown: true });
     orc.minvis = true;

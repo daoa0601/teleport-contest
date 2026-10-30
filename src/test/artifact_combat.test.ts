@@ -24,7 +24,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const maximumRoll = (range: number) => range;
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 
-test.beforeEach(() => freshObjectRoom({ recalculateVision: false }));
+test.beforeEach(async () => await freshObjectRoom({ recalculateVision: false }));
 
 void test('Excalibur gets its accuracy and damage against any monster', async () => {
     const excalibur = await artifactObject('Excalibur');
@@ -134,7 +134,7 @@ for (const [raceName, artifactName, maximumBonus] of [
     void test(`${artifactName} targets a ${raceName} hero's race only while unpolymorphed`, async () => {
         const race = races.find((race) => race.name === raceName);
         assert.ok(race);
-        freshObjectRoom({ role: 'wizard', race });
+        await freshObjectRoom({ role: 'wizard', race });
         requirePlayingGame(game);
         const artifact = await artifactObject(artifactName, { spe: 0 });
         const ordinary = await uninitializedObject(artifact.otyp, { spe: 0 });

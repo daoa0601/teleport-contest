@@ -48,7 +48,7 @@ void test('down deliberately enters a known pit while flying', async () => {
 });
 
 void test('up names a mounted pony without its saddle when it remains in a pit', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

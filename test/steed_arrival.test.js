@@ -12,8 +12,8 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-function ridingRoom() {
-    freshObjectRoom({
+async function ridingRoom() {
+    await freshObjectRoom({
         role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100 },
         flags: { pickup: false, tips: false },
     });
@@ -30,7 +30,7 @@ function invocationLevel() {
     game.u.uz = { dnum: 0, dlevel: 29 };
 }
 void test('mounting on the invocation square announces the vibration beneath the steed', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     invocationLevel();
@@ -43,7 +43,7 @@ void test('mounting on the invocation square announces the vibration beneath the
     assert.equal(game.context.move, 1);
 });
 void test('dismounting onto the invocation square announces the vibration under the hero', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -65,7 +65,7 @@ void test('dismounting onto the invocation square announces the vibration under 
     assert.equal(game.context.move, 1);
 });
 void test('a dismount drags a trailing punishment ball without a walking delay', async () => {
-    ridingRoom();
+    await ridingRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('curing sickness and sliming removes both displayed conditions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await startHeroSickness({ turns: 10, type: SICK_NONVOMITABLE });
     await setHeroSlimingTimeout(10);
     await bot();

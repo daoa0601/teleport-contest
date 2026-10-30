@@ -26,8 +26,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
-function diggingRoom(options = {}) {
-    const level = freshObjectRoom({ right: 25, ...options });
+async function diggingRoom(options = {}) {
+    const level = await freshObjectRoom({ right: 25, ...options });
     requireFixtureGame(game);
     game.u.dx = 1;
     game.u.dy = 0;
@@ -58,7 +58,7 @@ async function trappedHero() {
 
 for (const otyp of [WAN_DIGGING, SPE_DIG] as const) {
     void test(`${otyp === SPE_DIG ? 'a spell' : 'a wand'} digs using the live hero direction`, async () => {
-        const { level } = diggingRoom();
+        const { level } = await diggingRoom();
         requireFixtureGame(game);
         game.u.dx = 0;
         game.u.dy = -1;
@@ -74,21 +74,21 @@ for (const otyp of [WAN_DIGGING, SPE_DIG] as const) {
 }
 
 void test('ordinary digging opens a wall and updates visibility beyond it', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     for (let y = 6; y <= 14; y++) level.requireAt(11, y).typ = HWALL;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
 
     await zapDigWithObject(await diggingObject());
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(level.requireAt(11, 10).typ, DOOR);
     assert.equal(cansee(12, 10), true);
 });
 
 void test('a cavern wall becomes corridor and an ordinary tree becomes floor', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     level.flags.is_cavernous_lev = true;
     level.requireAt(11, 10).typ = HWALL;
     level.requireAt(12, 10).typ = TREE;
@@ -100,7 +100,7 @@ void test('a cavern wall becomes corridor and an ordinary tree becomes floor', a
 });
 
 void test('nondiggable ordinary rock stops the beam before later terrain', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     const rock = level.requireAt(11, 10);
     rock.typ = STONE;
     rock.wall_info = W_NONDIGGABLE;
@@ -114,7 +114,7 @@ void test('nondiggable ordinary rock stops the beam before later terrain', async
 
 for (const terrain of [HWALL, TREE, STONE, SDOOR] as const) {
     void test(`maze digging stops after opening terrain ${terrain}`, async () => {
-        const { level } = diggingRoom();
+        const { level } = await diggingRoom();
         level.flags.is_maze_lev = true;
         level.requireAt(11, 10).typ = terrain;
         level.requireAt(12, 10).typ = HWALL;
@@ -128,7 +128,7 @@ for (const terrain of [HWALL, TREE, STONE, SDOOR] as const) {
 }
 
 void test('Earth ignores the maze stopping rule', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     requireFixtureGame(game);
     level.flags.is_maze_lev = true;
     game.earth_level = createSpecialLevel({ ...game.u.uz });
@@ -142,7 +142,7 @@ void test('Earth ignores the maze stopping rule', async () => {
 });
 
 void test('upward digging respects helmets, half damage, and places the falling rock', async () => {
-    diggingRoom();
+    await diggingRoom();
     requireFixtureGame(game);
     game.u.dz = -1;
     game.uarmh = await knownObject(HELMET);
@@ -157,7 +157,7 @@ void test('upward digging respects helmets, half damage, and places the falling 
 });
 
 void test('a downward beam striking a ladder falls back as rock', async () => {
-    const { level, messages } = diggingRoom();
+    const { level, messages } = await diggingRoom();
     requireFixtureGame(game);
     level.requireAt(10, 10).typ = LADDER;
     game.stairs = { sx: 10, sy: 10, isladder: true, up: false,
@@ -173,7 +173,7 @@ void test('a downward beam striking a ladder falls back as rock', async () => {
 
 for (const environment of ['underwater', 'air_level', 'water_level'] as const) {
     void test(`vertical digging has no effect ${environment}`, async () => {
-        diggingRoom();
+        await diggingRoom();
         requireFixtureGame(game);
         if (environment === 'underwater') game.u.uinwater = 1;
         else game[environment] = createSpecialLevel({ ...game.u.uz });
@@ -189,7 +189,7 @@ for (const environment of ['underwater', 'air_level', 'water_level'] as const) {
 }
 
 void test('digging down disarms a bear trap while opening a pit in a hard floor', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     requireFixtureGame(game);
     game.u.dz = 1;
     level.flags.hardfloor = true;
@@ -205,7 +205,7 @@ void test('digging down disarms a bear trap while opening a pit in a hard floor'
 });
 
 void test('digging down opens a hole below a levitating hero', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     requireFixtureGame(game);
     game.u.dz = 1;
     grantIntrinsicProperty('levitation', 'outside');
@@ -217,7 +217,7 @@ void test('digging down opens a hole below a levitating hero', async () => {
 });
 
 void test('digging from a pit opens one adjacent pit, exposing buried objects', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     const ownPit = await trappedHero();
     const dagger = await knownObject(DAGGER);
     addBuriedObject(dagger, 11, 10);
@@ -235,7 +235,7 @@ void test('digging from a pit opens one adjacent pit, exposing buried objects', 
 });
 
 void test('a beam through an already connected pit links the newly reached pit back', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     const ownPit = await trappedHero();
     const adjacent = await maketrap(11, 10, PIT);
     assert.ok(adjacent);
@@ -251,7 +251,7 @@ void test('a beam through an already connected pit links the newly reached pit b
 
 void test('pit-side digging is blocked by a wall foundation and iron bars', async () => {
     for (const terrain of [HWALL, IRONBARS] as const) {
-        const { level, messages } = diggingRoom();
+        const { level, messages } = await diggingRoom();
         requireFixtureGame(game);
         await trappedHero();
         level.requireAt(11, 10).typ = terrain;
@@ -266,7 +266,7 @@ void test('pit-side digging is blocked by a wall foundation and iron bars', asyn
 });
 
 void test('pit-side digging of a boulder consumes the boulder instead of making a pit', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     await trappedHero();
     const boulder = await floorObject(BOULDER, 11, 10);
 
@@ -277,7 +277,7 @@ void test('pit-side digging of a boulder consumes the boulder instead of making 
 });
 
 void test('opening a pit into water floods every connected pit and releases its occupants', async () => {
-    const { level, input } = diggingRoom();
+    const { level, input } = await diggingRoom();
     installPagerInput(input, { expected: /pit|water/, limit: 4 });
     requireFixtureGame(game);
     grantIntrinsicProperty('swimming', 'outside');
@@ -301,7 +301,7 @@ void test('opening a pit into water floods every connected pit and releases its 
 
 for (const [species, remainingHp] of [['purple worm', 1], ['Juiblex', 11]] as const) {
     void test(`digging escapes ${species} without killing its holder`, async () => {
-        diggingRoom();
+        await diggingRoom();
         requireFixtureGame(game);
         const holder = await createMonsterAt(species, 10, 10, MM_NOGRP | NO_MINVENT);
         holder.mhp = 21;
@@ -318,7 +318,7 @@ for (const [species, remainingHp] of [['purple worm', 1], ['Juiblex', 11]] as co
 }
 
 void test('a whirling engulfer is unaffected by digging', async () => {
-    diggingRoom();
+    await diggingRoom();
     requireFixtureGame(game);
     const holder = await createMonsterAt('air elemental', 10, 10, MM_NOGRP | NO_MINVENT);
     const hp = holder.mhp;
@@ -333,7 +333,7 @@ void test('a whirling engulfer is unaffected by digging', async () => {
 });
 
 void test('a visible town wall dug by magic brings the watch under arrest orders', async () => {
-    const { level } = diggingRoom();
+    const { level } = await diggingRoom();
     level.flags.has_town = true;
     const guard = await createMonsterAt('watchman', 10, 9, MM_NOGRP | NO_MINVENT);
     guard.mpeaceful = 1;
@@ -347,7 +347,7 @@ void test('a visible town wall dug by magic brings the watch under arrest orders
 
 for (const [terrain, cost] of [[DOOR, SHOP_DOOR_COST], [HWALL, SHOP_WALL_COST]] as const) {
     void test(`digging shop terrain ${terrain} records repairs and angers an unpaid keeper`, async () => {
-        const { level } = diggingRoom();
+        const { level } = await diggingRoom();
         const { shopkeeper } = await createStaffedShop({ keeperX: 10, keeperY: 9,
             doorX: 11, doorY: 10 });
         const target = level.requireAt(11, 10);
@@ -366,7 +366,7 @@ for (const [terrain, cost] of [[DOOR, SHOP_DOOR_COST], [HWALL, SHOP_WALL_COST]] 
 }
 
 void test('falling-rock damage waits until its message has been acknowledged', async () => {
-    const { input } = diggingRoom();
+    const { input } = await diggingRoom();
     requireFixtureGame(game);
     input.beforeRead = null;
     input.display = null;
@@ -387,7 +387,7 @@ void test('falling-rock damage waits until its message has been acknowledged', a
 });
 
 void test('an actual pit destroying an altar retains its original alignment in the message', async () => {
-    const { level, messages } = diggingRoom();
+    const { level, messages } = await diggingRoom();
     requireFixtureGame(game);
     const altar = level.requireAt(12, 10);
     altar.typ = ALTAR;

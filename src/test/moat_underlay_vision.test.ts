@@ -7,8 +7,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
 
 for (const bridge of [false, true]) {
-    void test(`underwater light is blocked by ${bridge ? 'a moat below a raised bridge' : 'a moat'}`, () => {
-        const level = freshObjectRoom();
+    void test(`underwater light is blocked by ${bridge ? 'a moat below a raised bridge' : 'a moat'}`, async () => {
+        const level = await freshObjectRoom();
         const square = level.requireAt(11, 10);
         square.typ = bridge ? DRAWBRIDGE_UP : MOAT;
         square.drawbridgemask = DB_MOAT;

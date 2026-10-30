@@ -14,7 +14,7 @@ import { requireScreenRow } from './support/screen.js';
 for (const subject of ['hero', 'monster']) {
     for (const verbose of [false, true]) {
         void test(`accepting a ${subject} teleport clears its prompt with autodescribe off and verbose ${verbose}`, async () => {
-            freshObjectRoom({
+            await freshObjectRoom({
                 flags: { tips: false, verbose }, iflags: { autodescribe: false },
             });
             const monster = subject === 'monster'
@@ -37,7 +37,7 @@ for (const subject of ['hero', 'monster']) {
     }
 }
 void test('finding a stair by its symbol leaves the teleport message blank with autodescribe off', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { tips: false, verbose: false }, iflags: { autodescribe: false },
     });
     level.requireAt(11, 10).typ = STAIRS;
@@ -59,7 +59,7 @@ void test('finding a stair by its symbol leaves the teleport message blank with 
     assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '');
 });
 void test('a stair search after redraw preserves the restored targeting prompt with autodescribe off', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { tips: false, verbose: false }, iflags: { autodescribe: false },
     });
     level.requireAt(11, 10).typ = STAIRS;
@@ -80,11 +80,11 @@ void test('a stair search after redraw preserves the restored targeting prompt w
     assert.equal(destination?.y, 10);
 });
 void test('a chosen teleport description remains visible beside a corner floor-pile window', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const location = level.requireAt(11, 10);
     location.typ = STAIRS;
     level.upstair = { x: 11, y: 10 };
-    newsym(11, 10);
+    await newsym(11, 10);
     const apple = await floorObject(APPLE, 10, 10);
     const dagger = await floorObject(DAGGER, 10, 10);
     const input = resetInputState();

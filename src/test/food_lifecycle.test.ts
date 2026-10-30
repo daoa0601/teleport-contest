@@ -25,10 +25,10 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
-function mealRoom(raceName: RaceName = 'human') {
+async function mealRoom(raceName: RaceName = 'human') {
     const race = races.find(candidate => candidate.name === raceName);
     assert.ok(race);
-    freshObjectRoom({ race, gameplaySeed: 41n, hero: { uhunger: 200, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ race, gameplaySeed: 41n, hero: { uhunger: 200, uhs: NOT_HUNGRY } });
     return acknowledgeMessages();
 }
 
@@ -45,7 +45,7 @@ async function finishMeal() {
 }
 
 void test('finishing a floor corpse releases its identity and its decay timer', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('gnome')),
         game.u.ux, game.u.uy);
@@ -62,7 +62,7 @@ void test('finishing a floor corpse releases its identity and its decay timer', 
 });
 
 void test('eating one corpse from a floor stack leaves the other corpse able to decay', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('gnome'),
         { quan: 2, quantity: 2 }), game.u.ux, game.u.uy);
@@ -83,7 +83,7 @@ void test('eating one corpse from a floor stack leaves the other corpse able to 
 });
 
 void test('one carried ration is split for eating without consuming the untouched stack', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const stack = await addInventoryObject(FOOD_RATION, { quan: 2, age: game.moves });
     input.feed(stack.invlet);
@@ -104,7 +104,7 @@ void test('one carried ration is split for eating without consuming the untouche
 });
 
 void test('consuming a wielded food item clears the real weapon slot', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const carrot = await addInventoryObject(CARROT, { age: game.moves });
     await setPrimaryWeapon(carrot);
@@ -118,7 +118,7 @@ void test('consuming a wielded food item clears the real weapon slot', async () 
 });
 
 void test('food disappearing during a meal stops further eating without gaining more nutrition', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const ration = await floorObject(FOOD_RATION, game.u.ux, game.u.uy, { age: game.moves });
     input.feed('y');
@@ -134,7 +134,7 @@ void test('food disappearing during a meal stops further eating without gaining 
 });
 
 void test('revival interrupts the last bite without consuming the body before its monster returns', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('sewer rat')),
         game.u.ux, game.u.uy);
@@ -159,7 +159,7 @@ void test('revival interrupts the last bite without consuming the body before it
 });
 
 void test('taking a bite of shop food retains its charge after the food is consumed', async () => {
-    mealRoom();
+    await mealRoom();
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop();
     const input = acknowledgeMessages();
@@ -176,7 +176,7 @@ void test('taking a bite of shop food retains its charge after the food is consu
 });
 
 void test('a saved interrupted meal resumes its remaining bites without starting a second meal', async () => {
-    const input = mealRoom();
+    const input = await mealRoom();
     requireFixtureGame(game);
     game.plname = 'Meal';
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
@@ -187,7 +187,7 @@ void test('a saved interrupted meal resumes its remaining bites without starting
     const nutrition = game.u.uhunger;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Meal', storage), true);
+    assert.equal(await restoreGame('Meal', storage), true);
     const restored = game.inventory.find(object => object.otyp === FOOD_RATION);
     assert.ok(restored !== null && restored !== undefined);
     assert.ok(restored.invlet);
@@ -207,7 +207,7 @@ for (const [race, type, nutrition] of [
     ['dwarf', CRAM_RATION, 699], // The three bite bonuses each round down.
 ] as const) {
     void test(`${race} gains the native nutrition from familiar trail food`, async () => {
-        const input = mealRoom(race);
+        const input = await mealRoom(race);
         requireFixtureGame(game);
         const food = await addInventoryObject(type);
         input.feed(food.invlet);
@@ -220,7 +220,7 @@ for (const [race, type, nutrition] of [
 }
 
 void test('polymorph changes each later bite without restoring partly eaten food', async () => {
-    const input = mealRoom('elf');
+    const input = await mealRoom('elf');
     requireFixtureGame(game);
     const food = await addInventoryObject(LEMBAS_WAFER);
     input.feed(food.invlet);

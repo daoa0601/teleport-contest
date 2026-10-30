@@ -106,7 +106,7 @@ async function createStatueMonster(statue: StatueObject, x: number, y: number, s
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
         markQuestLeaderAlive(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
         if (monster.mtame && !monster.isminion)
             await makePetWary(monster, { wasDead: true, state });
@@ -155,7 +155,7 @@ async function describeAnimation(statue: StatueObject, monster: Monster, x: numb
         ? monsterName(monster, { article: 'a', state })
         : 'something';
     await pline(`You find ${description} posing as a statue.`);
-    if (!canSpotMonster(monster) && heroIsBlind(state)) map_invisible(x, y);
+    if (!canSpotMonster(monster) && heroIsBlind(state)) await map_invisible(x, y);
     await stopHeroOccupation(state);
 }
 
@@ -196,7 +196,7 @@ export async function animateStatue(statue: GameObject, x: number, y: number, {
 
     nameReleasedMonster(monster, statue);
     // C animate_statue(): a mimic shows itself; other hiders stop hiding.
-    if (!revealMonsterAppearance(monster).revealed) monster.mundetected = 0;
+    if (!(await revealMonsterAppearance(monster)).revealed) monster.mundetected = 0;
     monster.msleeping = 0;
     if (!magic) {
         monster.mtame = 0;
@@ -244,6 +244,6 @@ export async function activateStatueTrapAt(
         monster = result.monster;
         if (monster || !result.unique) break;
     }
-    feel_newsym(x, y);
+    await feel_newsym(x, y);
     return monster;
 }

@@ -15,7 +15,7 @@ import { installPagerInput } from './support/pager-input.js';
 // and every other carried object one; the highest ticket picks the plain
 // unworn possession here.
 void test('the theft draw can pick a lone unworn item among worn gear', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const cloak = await addInventoryObject(ELVEN_CLOAK);
     const dagger = await addInventoryObject(DAGGER);
@@ -34,7 +34,7 @@ void test('the theft draw can pick a lone unworn item among worn gear', async ()
 // C steal.c:steal() drops the cloak from the weighted pass while body armor
 // is present, then rewrites a suit selection into the covering cloak.
 void test('a nymph after a suited and cloaked hero leaves with the cloak', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const cloak = await addInventoryObject(LEATHER_CLOAK);

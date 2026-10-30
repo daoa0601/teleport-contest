@@ -26,7 +26,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 import { createDungeon } from './support/topology.js';
 void test('#wizmakemap clears old sight before acknowledging the replacement level', async (t) => {
-    const oldLevel = freshObjectRoom({
+    const oldLevel = await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });
@@ -49,7 +49,7 @@ void test('#wizmakemap clears old sight before acknowledging the replacement lev
 void test('#wizmakemap loading bones does not make a cached bones level familiar again', async () => {
     const storage = memoryStorage();
     for (const dlevel of [1, 2]) {
-        freshObjectRoom({ hero: { uz: { dnum: 0, dlevel } }, flags: { debug: true } });
+        await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel } }, flags: { debug: true } });
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         game.storage = storage;
         game.plname = 'Ada';
@@ -74,7 +74,7 @@ void test('#wizmakemap loading bones does not make a cached bones level familiar
     assert.doesNotMatch(game._pending_message, /sense of deja vu|been here before|place .*familiar/, 'Returning to a cached level must not repeat first-arrival familiarity');
 });
 void test('#wizmakemap returns an adjacent leashed pet after releasing its mundane restraints', async (t) => {
-    const oldLevel = freshObjectRoom({
+    const oldLevel = await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });
@@ -108,7 +108,7 @@ void test('#wizmakemap returns an adjacent leashed pet after releasing its munda
     assert.equal(game.context.move, 0);
 });
 void test('#wizmakemap discards a distant pet and an adjacent untamed pursuer', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });
@@ -133,7 +133,7 @@ void test('#wizmakemap discards a distant pet and an adjacent untamed pursuer', 
     assert.equal(guard.mhp, 0, 'A vault guard must not survive its discarded vault');
 });
 void test('#wizmakemap removes an off-level priest whose temple is being replaced', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });
@@ -153,7 +153,7 @@ void test('#wizmakemap removes an off-level priest whose temple is being replace
     assert.equal(requireGameLevel().monsters.includes(priest), false);
 });
 void test('#wizmakemap leaves an Amulet-bearing pet behind and loosens its leash', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });
@@ -175,7 +175,7 @@ void test('#wizmakemap leaves an Amulet-bearing pet behind and loosens its leash
     assert.equal(requireGameLevel().monsters.includes(pet), false);
 });
 void test('#wizmakemap cannot bring a pet that has not noticed the hero', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
         flags: { debug: true, bones: false },
     });

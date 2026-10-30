@@ -34,7 +34,7 @@ function screenText() {
 }
 
 void test('apply lists suggested objects in inventory-letter order while preserving the inventory chain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await addInventoryObject(CLUB, { invlet: 'a' });
     await addInventoryObject(EUCALYPTUS_LEAF, { invlet: 'Z' });
@@ -52,7 +52,7 @@ void test('apply lists suggested objects in inventory-letter order while preserv
 });
 
 void test('apply accepts an unsuggested carried object and reports that it cannot be used', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const club = await addInventoryObject(CLUB);
     await addInventoryObject(OIL_LAMP);
@@ -66,7 +66,7 @@ void test('apply accepts an unsuggested carried object and reports that it canno
 });
 
 void test('apply refuses to open an empty suggestion set when only unusable objects are held', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await addInventoryObject(CLUB);
 
@@ -77,7 +77,7 @@ void test('apply refuses to open an empty suggestion set when only unusable obje
 });
 
 void test('coins keep apply available without advertising their letter and dispatch the real flip', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 7 });
     const input = resetInputState();
@@ -93,7 +93,7 @@ void test('coins keep apply available without advertising their letter and dispa
 });
 
 void test('applying a book reaches page flipping and blank-paper discovery', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_BLANK_PAPER, { typeKnown: false });
     resetInputState().feed(book.invlet + ' ');
@@ -108,7 +108,7 @@ void test('applying a book reaches page flipping and blank-paper discovery', asy
 
 for (const menuKey of ['?', '*']) {
     void test(`apply ${menuKey} menu ${menuKey === '?' ? 'limits the list to suggestions' : 'includes all carried items'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await addInventoryObject(CLUB);
         await addInventoryObject(OIL_LAMP);
@@ -134,7 +134,7 @@ for (const menuKey of ['?', '*']) {
 }
 
 void test('an unknown potion keeps apply available but only discovered oil becomes a suggestion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const oil = await addInventoryObject(POT_OIL, { typeKnown: false, invlet: 'o' });
     await addInventoryObject(POT_HEALING, { invlet: 'h' });
@@ -154,7 +154,7 @@ void test('an unknown potion keeps apply available but only discovered oil becom
 });
 
 void test('recognizing touchstones removes other recognized gray stones from apply suggestions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const loadstone = await addInventoryObject(LOADSTONE, { typeKnown: false, invlet: 'l' });
     const input = resetInputState();
@@ -173,7 +173,7 @@ void test('recognizing touchstones removes other recognized gray stones from app
 });
 
 void test('force_invmenu begins with suggestions and can reveal all inventory', async () => {
-    freshObjectRoom({ flags: { force_invmenu: true, verbose: true } });
+    await freshObjectRoom({ flags: { force_invmenu: true, verbose: true } });
     requirePlayingGame(game);
     const club = await addInventoryObject(CLUB);
     await addInventoryObject(OIL_LAMP);
@@ -197,7 +197,7 @@ void test('force_invmenu begins with suggestions and can reveal all inventory', 
 });
 
 void test('nonconstant inventory letters are reassigned before the apply prompt', async () => {
-    freshObjectRoom({ flags: { fixinv: false, verbose: true } });
+    await freshObjectRoom({ flags: { fixinv: false, verbose: true } });
     requirePlayingGame(game);
     await addInventoryObject(CLUB, { invlet: 'Z' });
     await addInventoryObject(OIL_LAMP, { invlet: 'm' });
@@ -216,7 +216,7 @@ void test('nonconstant inventory letters are reassigned before the apply prompt'
 });
 
 void test('rub refuses an empty applicable inventory and rejects a carried non-rubbable object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const club = await addInventoryObject(CLUB);
     await runExtendedCommand('rub');
@@ -230,7 +230,7 @@ void test('rub refuses an empty applicable inventory and rejects a carried non-r
 });
 
 void test('apply rejects a count and resumes object selection after its message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const club = await addInventoryObject(CLUB);
     await addInventoryObject(OIL_LAMP);
@@ -247,7 +247,7 @@ void test('apply rejects a count and resumes object selection after its message'
 });
 
 void test('choosing empty hands for apply mimes the action without consuming time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await addInventoryObject(OIL_LAMP);
     resetInputState().feed('-');
@@ -259,7 +259,7 @@ void test('choosing empty hands for apply mimes the action without consuming tim
 });
 
 void test('Return cancels apply without leaving an unanswered prompt when verbose is disabled', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const lamp = await addInventoryObject(OIL_LAMP);
     resetInputState().feed('\n');
@@ -272,7 +272,7 @@ void test('Return cancels apply without leaving an unanswered prompt when verbos
 });
 
 void test('applying an unequipped silver item burns a werecreature before its ordinary action', async () => {
-    freshObjectRoom({ hero: { ulycn: 0 } });
+    await freshObjectRoom({ hero: { ulycn: 0 } });
     requirePlayingGame(game);
     const saber = await addInventoryObject(OBJECT_NAMES.indexOf('silver saber'));
     await addInventoryObject(OIL_LAMP);
@@ -289,7 +289,7 @@ void test('applying an unequipped silver item burns a werecreature before its or
 
 for (const onStairs of [false, true]) {
     void test(`a silver-hating hero ${onStairs ? 'cannot' : 'can'} handle the invocation bell on the ritual square${onStairs ? ' after stairs replace it' : ''}`, async () => {
-        freshObjectRoom({ hero: { ulycn: 0, uz: { dnum: 1, dlevel: 4 } } });
+        await freshObjectRoom({ hero: { ulycn: 0, uz: { dnum: 1, dlevel: 4 } } });
         requirePlayingGame(game);
         game.dungeons = [
             createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 }),

@@ -11,8 +11,8 @@ function dungeonNamed(dname) {
         levelFill: undefined, themeRooms: undefined,
     };
 }
-function valkyrieAtQuestEntrance() {
-    freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
+async function valkyrieAtQuestEntrance() {
+    await freshObjectRoom({ role: 'valkyrie', gameplaySeed: 11n });
     game.flags.female = true;
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.u.uevent = {};
@@ -27,7 +27,7 @@ function valkyrieAtQuestEntrance() {
         }];
 }
 void test('the quest leader calls the hero by role leader and home names', async () => {
-    valkyrieAtQuestEntrance();
+    await valkyrieAtQuestEntrance();
     const call = await prepareMainQuestPortalCall({}, game);
     assert.deepEqual(call, [
         'You receive a faint telepathic message from the Norn:',

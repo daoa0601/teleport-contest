@@ -118,8 +118,8 @@ void test('an invalid pet type retains the previous preference', () => {
     assert.equal(settings.preferred_pet, 'c');
 });
 
-void test('configuration fragments update the live pet preference, including random', () => {
-    freshObjectRoom();
+void test('configuration fragments update the live pet preference, including random', async () => {
+    await freshObjectRoom();
     game.preferred_pet = 'n';
 
     applyNethackrc('OPTIONS=pettype:feline');
@@ -135,7 +135,7 @@ void test('horse preference leaves ordinary roles choosing between a dog and a c
     const species = new Set<string | undefined>();
     for (let seed = 1n; seed <= 12n; seed++) {
         const settings = parseNethackrc('OPTIONS=pettype:horse');
-        freshObjectRoom({ role: 'barbarian', gameplaySeed: seed });
+        await freshObjectRoom({ role: 'barbarian', gameplaySeed: seed });
         if (settings.preferred_pet !== undefined) game.preferred_pet = settings.preferred_pet;
 
         const pet = await makedog();
@@ -149,7 +149,7 @@ void test('horse preference leaves ordinary roles choosing between a dog and a c
 });
 
 void test('only the first starting pet receives the configured name', async () => {
-    freshObjectRoom({ role: 'ranger', flags: { dogname: 'Wags' } });
+    await freshObjectRoom({ role: 'ranger', flags: { dogname: 'Wags' } });
     const first = await makedog();
     assert.ok(first);
     resetInputState().feed(' '.repeat(10));

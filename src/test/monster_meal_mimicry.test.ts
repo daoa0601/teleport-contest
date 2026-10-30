@@ -19,11 +19,11 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a dog borrowing a kitten appearance is revealed when its meal finishes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
     dog.meating = 4;
-    newsym(dog.mx, dog.my);
+    await newsym(dog.mx, dog.my);
     initRng(1n);
     const input = resetInputState();
 
@@ -34,7 +34,7 @@ void test('a dog borrowing a kitten appearance is revealed when its meal finishe
     assert.equal(dog.mnum, MONSTER_NAME.indexOf('little dog'));
     assert.equal(dog.m_ap_type, M_AP_MONSTER);
     assert.equal(dog.mappearance, MONSTER_NAME.indexOf('kitten'));
-    finishMonsterEating(dog);
+    await finishMonsterEating(dog);
     assert.equal(dog.m_ap_type, M_AP_NOTHING);
     assert.equal(dog.meating, 0);
     const glyph = glyphAt(dog.mx, dog.my);
@@ -43,13 +43,13 @@ void test('a dog borrowing a kitten appearance is revealed when its meal finishe
 });
 
 void test('a dog appearing as a sink releases its attached leash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
     const leash = await addInventoryObject(LEASH, { leashmon: dog.m_id });
     dog.mleashed = 1;
     dog.meating = 4;
-    newsym(dog.mx, dog.my);
+    await newsym(dog.mx, dog.my);
     initRng(2n);
     const input = resetInputState();
 
@@ -64,11 +64,11 @@ void test('a dog appearing as a sink releases its attached leash', async () => {
 });
 
 void test('Escape at an earlier warning prevents another mimic meal message pause', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
     dog.meating = 4;
-    newsym(dog.mx, dog.my);
+    await newsym(dog.mx, dog.my);
     await plineWithContinuation('Your little dog is confused from hunger.');
     initRng(1n);
     const input = resetInputState();
@@ -82,7 +82,7 @@ void test('Escape at an earlier warning prevents another mimic meal message paus
 });
 
 void test('sleep interrupts a mimic meal and removes the borrowed appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
     dog.meating = 4;
@@ -92,7 +92,7 @@ void test('sleep interrupts a mimic meal and removes the borrowed appearance', a
         { prompt: /kitten appear[\s\S]*--More--/, keys: ' ' },
     ]);
 
-    assert.equal(putMonsterToSleep(dog, 6), true);
+    assert.equal(await putMonsterToSleep(dog, 6), true);
 
     assert.equal(dog.m_ap_type, M_AP_NOTHING);
     assert.equal(dog.meating, 0);
@@ -101,10 +101,10 @@ void test('sleep interrupts a mimic meal and removes the borrowed appearance', a
 });
 
 void test('sleep with no duration lasts until the monster is awakened', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
 
-    assert.equal(putMonsterToSleep(dog, 0), true);
+    assert.equal(await putMonsterToSleep(dog, 0), true);
 
     assert.equal(!!dog.msleeping, true);
     assert.equal(!!dog.mcanmove, true);
@@ -112,7 +112,7 @@ void test('sleep with no duration lasts until the monster is awakened', async ()
 });
 
 void test('an unseen mimic meal changes appearance without asking for input', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(30, 15).typ = ROOM;
     const eater = await createMonsterAt('little dog', 30, 15);
     initializePet(eater);
@@ -128,7 +128,7 @@ void test('an unseen mimic meal changes appearance without asking for input', as
 });
 
 void test('protection from shape changers suppresses a meal disguise and restores one already present', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
     dog.meating = 4;
@@ -148,7 +148,7 @@ void test('protection from shape changers suppresses a meal disguise and restore
 });
 
 void test('mimicking while mounted dismounts the hero without a riding accident', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pony = await createSaddledSteed('pony', { x: game.u.ux, y: game.u.uy });
     game.u.usteed = pony;
@@ -168,7 +168,7 @@ void test('mimicking while mounted dismounts the hero without a riding accident'
 });
 
 void test('a sleeping mimic resumes its disguise when the last protective ring is removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('small mimic', 11, 10);
     assert.notEqual(mimic.m_ap_type, M_AP_NOTHING);
     const leftRing = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);

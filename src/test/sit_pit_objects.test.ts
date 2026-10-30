@@ -9,7 +9,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('sitting at a known pit edge enters the pit rather than sitting on its objects', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, PIT, 10, 10, { tseen: true });
     const rock = await floorObject(ROCK, 10, 10);
 

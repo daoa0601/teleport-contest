@@ -32,13 +32,13 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
         const trapped = !!(location.doormask & D_TRAPPED);
         location.doormask = trapped ? D_NODOOR : D_BROKEN;
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         if (trapped) {
             const trap = await triggerMonsterDoorTrap(monster, sawMonster || canSeeMonster(monster), {
                 state, random, rollOne, publish,
             });
             if (trap.killed)
-                newsym(x, y);
+                await newsym(x, y);
             return { died: trap.killed, heroDied: trap.heroDied };
         }
         if (state.flags.verbose && !heroIsUnaware(state) && random(3) === 0)
@@ -49,7 +49,7 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
         location.typ = CORR;
         location.flags = location.wall_info = 0;
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         await publish(formatDraftMessage(false, state, random));
         return { died: false, heroDied: false };
     }
@@ -83,7 +83,7 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
         else
             placeCreatedObject(await mksobj(pile === 1 ? BOULDER : ROCK, true, false), x, y, state);
     }
-    newsym(x, y);
+    await newsym(x, y);
     if (!level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
         vision_note_blocker_change(x, y);
     return { died: false, heroDied: false };

@@ -25,7 +25,7 @@ import { requireScreenCell } from './support/screen.js';
 import { ensureQuestStatus } from '../js/quest.js';
 
 void test('blessed teleportation grants destination control and applies arrival pickup', async () => {
-    freshObjectRoom({ flags: { tips: false, pickup: true } });
+    await freshObjectRoom({ flags: { tips: false, pickup: true } });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_TELEPORTATION, { blessed: true });
     const gem = await floorObject(DIAMOND, 14, 10);
@@ -42,7 +42,7 @@ void test('blessed teleportation grants destination control and applies arrival 
 });
 
 void test('cancelling a blessed teleport learns the scroll without moving', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_TELEPORTATION, { blessed: true });
     pushKeys('\x1b');
@@ -57,7 +57,7 @@ void test('cancelling a blessed teleport learns the scroll without moving', asyn
 });
 
 void test('a teleport restriction reveals an ordinary scroll before any destination input', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.noteleport = true;
     const scroll = await addInventoryObject(SCR_TELEPORTATION);
@@ -86,7 +86,7 @@ void test('a cursed scroll changes levels when the hero controls teleportation',
 
 for (const restriction of ['amulet', 'sokoban', 'endgame']) {
     void test(`${restriction} blocks cursed level teleportation but still identifies it`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (restriction === 'amulet') game.u.uhave.amulet = true;
         if (restriction === 'sokoban') game.sokoban_dnum = game.u.uz.dnum;
@@ -165,8 +165,8 @@ void test('named destinations require a visited level in a reachable branch', ()
     assert.equal(levelDepthByName('minetn'), 0);
 });
 
-void test('random Quest teleportation cannot pass the unvisited locate level or leave the Quest', () => {
-    freshObjectRoom();
+void test('random Quest teleportation cannot pass the unvisited locate level or leave the Quest', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.quest_dnum = 0;
     game.u.uz.dlevel = 2;
@@ -180,8 +180,8 @@ void test('random Quest teleportation cannot pass the unvisited locate level or 
     assert.ok(destinations.some(depth => depth === 12));
 });
 
-void test('random Gehennom teleportation cannot reach the Sanctum before invocation', () => {
-    freshObjectRoom();
+void test('random Gehennom teleportation cannot reach the Sanctum before invocation', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uz.dlevel = 5;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',  depth_start: 26, num_dunlevs: 6, flags: { hellish: true } })];
@@ -191,8 +191,8 @@ void test('random Gehennom teleportation cannot reach the Sanctum before invocat
         assert.ok(randomTeleportDepth() < 31);
 });
 
-void test('Fort Ludios random teleport stays on its isolated level', () => {
-    freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
+void test('Fort Ludios random teleport stays on its isolated level', async () => {
+    await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 } } });
     requirePlayingGame(game);
     game.knox_level = createSpecialLevel(game.u.uz);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom',  depth_start: 1, num_dunlevs: 1, flags: {} })];
@@ -332,7 +332,7 @@ void test('the wizard destination menu bypasses confused numeric input', async (
 
 for (const overlay of [true, false]) {
     void test(`choosing a wizard destination ${overlay ? 'preserves uncovered' : 'redraws once for'} hallucinated monsters`, async () => {
-        freshObjectRoom({ flags: { menu_overlay: overlay }, hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ flags: { menu_overlay: overlay }, hero: { hallucinationTurns: 20 } });
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
         game.specialLevels = new Map([['oracle', createSpecialLevel({ dnum: 0, dlevel: 5 })]]);
         await createMonsterAt('jackal', 8, 10);

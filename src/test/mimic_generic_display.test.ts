@@ -17,12 +17,12 @@ for (const { disguise, otyp } of [
         { distance: 'distant', x: 15 },
     ]) {
         void test(`a ${distance} mimic's ${disguise} disguise shows the strange-object symbol`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             const mimic = await createMonsterAt('large mimic', x, 10, NO_MINVENT);
             mimic.m_ap_type = M_AP_OBJECT;
             mimic.mappearance = otyp;
 
-            newsym(x, 10);
+            await newsym(x, 10);
             await flush_screen(1);
 
             assert.equal(requireGameDisplay().grid[11]?.[x - 1]?.ch, ']');
@@ -34,12 +34,12 @@ for (const { disguise, otyp } of [
 // uhitm.c:that_is_a_mimic() names the object glyph shown on the map, so a
 // zero-class gem disguise is announced as the strange object it displays.
 void test('stumbling onto a gem-disguised mimic names the strange object it showed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('large mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = DIAMOND;
     mimic.msleeping = 0;
-    newsym(11, 10);
+    await newsym(11, 10);
     const messages: string[] = [];
 
     await stumbleOntoMimic(mimic, game, async message => { messages.push(message); });

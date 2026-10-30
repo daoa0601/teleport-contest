@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 
 async function guardianStep(cursed: boolean): Promise<number> {
-    freshObjectRoom({ left: 10, right: 22, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 10, right: 22, top: 10, bottom: 10 });
     const guardian = await createMonsterAt('Angel', 20, 10, MM_EMIN | NO_MINVENT);
     guardian.mtame = 10;
     guardian.mpeaceful = 1;

@@ -88,7 +88,7 @@ for (const lifeSaving of [false, true]) {
 
 for (const fixed of [false, true]) {
     void test(`ordinary strength loss ${fixed ? 'respects fixed abilities' : 'reduces the base value and clears exercise'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_STR] = 12;
         game.u._exercise = [7, 7, 7, 7, 7, 7];
@@ -103,7 +103,7 @@ for (const fixed of [false, true]) {
 }
 
 void test('strength loss below the minimum becomes HP and maximum-HP damage', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
 
@@ -116,7 +116,7 @@ void test('strength loss below the minimum becomes HP and maximum-HP damage', as
 });
 
 void test('frailty does not raise a pre-existing HP maximum below the current level', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhpmax: 20, ulevel: 30 } });
+    await freshObjectRoom({ hero: { uhp: 20, uhpmax: 20, ulevel: 30 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
 
@@ -127,7 +127,7 @@ void test('frailty does not raise a pre-existing HP maximum below the current le
 });
 
 void test('frailty waits for life saving before reducing maximum HP or strength', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -161,7 +161,7 @@ void test('frailty waits for life saving before reducing maximum HP or strength'
 });
 
 void test('frailty after rehumanization leaves human maximum HP and strength alone', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const humanStrength = game.u.acurr.a[A_STR];
     installPagerInput(resetInputState(), {
@@ -182,7 +182,7 @@ void test('frailty after rehumanization leaves human maximum HP and strength alo
 });
 
 void test('a surviving monster body takes frailty without damaging human HP', async () => {
-    freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
     installPolymorphedHero('kobold', { hitPoints: 100 });
     game.u.acurr.a[A_STR] = 4;

@@ -20,7 +20,7 @@ for (const { form, objectType, field } of [
     { form: 'red mold', objectType: CLUB, field: 'oeroded' },
 ] as const) {
     void test(`a missile touching the hero's ${form} body suffers its passive erosion`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         installPolymorphedHero(form);
         const projectile = await floorObject(objectType, game.u.ux, game.u.uy);
 
@@ -35,7 +35,7 @@ for (const { form, objectType, field } of [
 }
 
 void test('grease protects a projectile from a rust-monster hero and can wear off', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('rust monster');
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { greased: true });
 
@@ -49,7 +49,7 @@ void test('grease protects a projectile from a rust-monster hero and can wear of
 
 for (const form of ['rust monster', 'red mold', 'disenchanter']) {
     void test(`a cancelled ${form} hero leaves an impacting object intact`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         installPolymorphedHero(form);
         game.u.mcan = true;
         const projectile = await floorObject(form === 'red mold' ? CLUB : ARROW,
@@ -66,7 +66,7 @@ for (const form of ['rust monster', 'red mold', 'disenchanter']) {
 }
 
 void test('a cancelled acid-blob hero can still corrode an impacting arrow', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('acid blob');
     game.u.mcan = true;
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy);
@@ -79,7 +79,7 @@ void test('a cancelled acid-blob hero can still corrode an impacting arrow', asy
 });
 
 void test('a steam-vortex hero does not burn a wooden projectile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('steam vortex');
     const club = await floorObject(CLUB, game.u.ux, game.u.uy);
 
@@ -91,7 +91,7 @@ void test('a steam-vortex hero does not burn a wooden projectile', async () => {
 });
 
 void test('a disenchanter hero drains an impacting arrow without taking ownership or announcing hero equipment', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('disenchanter');
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { spe: 3 });
     const messages: string[] = [];
@@ -109,7 +109,7 @@ void test('a disenchanter hero drains an impacting arrow without taking ownershi
 });
 
 void test('a monster disenchanter still drains and describes the hero\'s carried weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     const club = await addInventoryObject(CLUB, { spe: 3 });
     const messages: string[] = [];
@@ -125,7 +125,7 @@ void test('a monster disenchanter still drains and describes the hero\'s carried
 });
 
 void test('an ordinary human hero has no passive object damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrow = await floorObject(ARROW, game.u.ux, game.u.uy, { spe: 3 });
 
     await applyMonsterPassiveToObject(game.u, arrow, {
@@ -138,7 +138,7 @@ void test('an ordinary human hero has no passive object damage', async () => {
 });
 
 void test("a dual-wielding hero's weaponless blow disenchants the secondary weapon half the time", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     const primary = await addInventoryObject(DAGGER, { spe: 5 });

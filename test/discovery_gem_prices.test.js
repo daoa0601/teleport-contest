@@ -9,7 +9,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 void test('learning a glass gem reprices every billed stack of that type, including container contents', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS, { typeKnown: false, dknown: true, unpaid: true });
     const potion = await addInventoryObject(POT_HEALING, { typeKnown: false, unpaid: true });
     const sack = await addInventoryObject(SACK);
@@ -30,7 +30,7 @@ void test('learning a glass gem reprices every billed stack of that type, includ
 });
 for (const phase of ['startup', 'gameover']) {
     void test(`learning a gem during ${phase} leaves the shop bill alone`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS, { typeKnown: false, dknown: true, unpaid: true });
         const { shopkeeper } = await createStaffedShop({ bill: [
                 { bo_id: glass.o_id, bquan: 1, price: 177, useup: false },

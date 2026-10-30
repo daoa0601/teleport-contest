@@ -64,7 +64,7 @@ function monsterHelpless(monster) {
     // C mon.c:helpless().
     return !monster.mcanmove || !!monster.msleeping;
 }
-function recallMigratingWizard() {
+async function recallMigratingWizard() {
     // C wizard.c:resurrect() migrating_mons scan.  Returns a placed wizard
     // or null; placement failure re-queues the monster for later attempts.
     // Migration arrays append where C prepends to migrating_mons.
@@ -77,7 +77,7 @@ function recallMigratingWizard() {
         let elapsed = (game.moves ?? 0) - (candidate.mlstmv ?? game.moves ?? 0);
         if (!(elapsed > 0))
             continue;
-        catchUpMonster(candidate, elapsed, game);
+        await catchUpMonster(candidate, elapsed, game);
         if (elapsed >= 0x7fffffff)
             elapsed = 0x7fffffff - 1;
         elapsed = Math.trunc(elapsed / 50);

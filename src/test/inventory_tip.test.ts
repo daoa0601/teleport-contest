@@ -15,7 +15,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { planInput } from './support/planned-input.js';
 
 void test('the inventory tip action spills a carried sack while ignoring a floor container', async t => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const dagger = await knownObject(DAGGER, { where: 'free' });
     await addObjectToContainer(sack, dagger);
@@ -43,7 +43,7 @@ void test('the inventory tip action spills a carried sack while ignoring a floor
 });
 
 void test('cancelling a tip destination keeps the contents and spends a turn', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const dagger = await knownObject(DAGGER, { where: 'free' });
     await addObjectToContainer(sack, dagger);
@@ -64,7 +64,7 @@ void test('cancelling a tip destination keeps the contents and spends a turn', a
 });
 
 void test('tipping a locked carried container learns the lock and leaves its contents inside', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: false, lknown: false, olocked: true });
     const dagger = await knownObject(DAGGER, { where: 'free' });
     await addObjectToContainer(sack, dagger);
@@ -86,7 +86,7 @@ void test('tipping a locked carried container learns the lock and leaves its con
 });
 
 void test('tipping into another carried sack merges its contents and updates both weights', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const source = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const target = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const daggers = await knownObject(DAGGER, { initialize: false, where: 'free', quan: 3 });
@@ -116,7 +116,7 @@ void test('tipping into another carried sack merges its contents and updates bot
 });
 
 void test('tipping a bag of tricks empties all its charges in one turn', async t => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bag = await addInventoryObject(BAG_OF_TRICKS, { cknown: false, spe: 2 });
     const input = resetInputState();
     planInput(input, t, [
@@ -136,7 +136,7 @@ void test('tipping a bag of tricks empties all its charges in one turn', async t
 });
 
 void test('tipping a horn of plenty creates all its remaining food or drink inside the chosen sack', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const horn = await addInventoryObject(HORN_OF_PLENTY, { spe: 2, blessed: true });
     const target = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const input = resetInputState();
@@ -159,7 +159,7 @@ void test('tipping a horn of plenty creates all its remaining food or drink insi
 });
 
 void test('a cancellation wand tipped into a bag of holding destroys the wand and the destination bag', async t => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const source = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const target = await addInventoryObject(BAG_OF_HOLDING, { initialize: false, cknown: true });
     const wand = await knownObject(WAN_CANCELLATION, { where: 'free', spe: 1 });
@@ -185,7 +185,7 @@ void test('a cancellation wand tipped into a bag of holding destroys the wand an
 });
 
 void test('the tip command asks about a floor sack and spills it after confirmation', async t => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const sack = await floorObject(SACK, game.u.ux, game.u.uy, { initialize: false, cknown: false });
     const dagger = await knownObject(DAGGER, { initialize: false, where: 'free' });
     await addObjectToContainer(sack, dagger);
@@ -205,7 +205,7 @@ void test('the tip command asks about a floor sack and spills it after confirmat
 });
 
 void test('declining a floor sack continues to carried-object selection for tipping', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const floorSack = await floorObject(SACK, game.u.ux, game.u.uy, { initialize: false, cknown: false });
     const carried = await addInventoryObject(SACK, { initialize: false, cknown: false });
     const input = resetInputState();
@@ -225,7 +225,7 @@ void test('declining a floor sack continues to carried-object selection for tipp
 });
 
 void test('a tipped bag explosion credits the hero when scattered contents kill a monster', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const source = await addInventoryObject(SACK, { initialize: false, cknown: true });
     const target = await addInventoryObject(BAG_OF_HOLDING, { initialize: false, cknown: true });
     const wand = await knownObject(WAN_CANCELLATION, { where: 'free', spe: 1 });

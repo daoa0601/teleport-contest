@@ -20,7 +20,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 void test('wounding both legs lowers temporary Dexterity once and reduces carrying capacity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await addInventoryObject(HEAVY_IRON_BALL);
     const dexterity = currentAttribute(A_DEX);
@@ -43,7 +43,7 @@ void test('wounding both legs lowers temporary Dexterity once and reduces carryi
     assert.ok(messages.includes('Your movements are now unencumbered.'));
 });
 void test('leg recovery names the current monster body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('little dog');
     await woundHeroLegs('left', 10);
@@ -52,7 +52,7 @@ void test('leg recovery names the current monster body', async () => {
     assert.ok(messages.includes('Your rear leg feels better.'));
 });
 void test('a mounted leg recovery heals the steed without claiming the hero feels it', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requireFixtureGame(game);
     const steed = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -69,7 +69,7 @@ void test('a mounted leg recovery heals the steed without claiming the hero feel
 for (const command of ['o', 'l']) {
     void test(`a leg wound reduces the chance to open a door with ${command}`, async () => {
         for (const wounded of [false, true]) {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             const door = level.requireAt(11, 10);
             door.typ = DOOR;
             door.doormask = D_CLOSED;
@@ -122,7 +122,7 @@ void test('timed leg recovery interrupts a meal after the recovery message', asy
         < messages.indexOf('You stop eating the food ration.'));
 });
 void test("the hero turning to stone does not heal a mounted steed's legs", async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requireFixtureGame(game);
     const steed = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

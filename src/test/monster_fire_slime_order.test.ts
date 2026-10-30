@@ -14,7 +14,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const resistant of [false, true]) {
     void test(`a fire attack burns inventory and lights candles before curing slime${resistant ? ' despite fire resistance' : ''}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, fireResistance: resistant } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, fireResistance: resistant } });
         requirePlayingGame(game);
         const scroll = await addInventoryObject(SCR_IDENTIFY);
         const candle = await addInventoryObject(TALLOW_CANDLE, { age: 100 });
@@ -57,7 +57,7 @@ for (const resistant of [false, true]) {
 
 for (const cancelled of [false, true]) {
     void test(`${cancelled ? 'cancelled fire preserves slime' : 'fire cures slime'} when inventory escapes the attack`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const candle = await addInventoryObject(TALLOW_CANDLE, { age: 100 });
         startHeroSliming({ state: game, turns: 8, killer: 'green slime' });

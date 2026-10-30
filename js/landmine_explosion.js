@@ -64,7 +64,7 @@ async function fillMineHoleWithLiquid(x, y, trap, liquid, state, options) {
     const effect = await options.resolveLiquid?.(liquid);
     if ((effect && 'died' in effect && effect.died) || state.program_state?.gameover)
         return;
-    newsym(x, y);
+    await newsym(x, y);
 }
 export async function explodeLandMine(trap, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, seeSquare = false, heroCaused = !state.context.mon_moving, finishMonsterDeath = null, finishMonsterKill = null, resolveLiquid = null, } = {}) {
     const x = trap.tx;
@@ -114,7 +114,7 @@ export async function explodeLandMine(trap, state = game, { publish = plineWithC
             else {
                 survivingTrap.ttyp = PIT;
                 survivingTrap.madeby_u = false;
-                seeTrap(survivingTrap, state);
+                await seeTrap(survivingTrap, state);
             }
         }
     }

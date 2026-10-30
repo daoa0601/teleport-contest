@@ -15,7 +15,7 @@ const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVE
 // it when the confusion roll fails, and each of the four d4 damage rolls
 // (spec_dbon, probe, stun, and none further) lands at full value.
 void test('Magicbane stuns a visible monster without confusing it', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     jackal.mhp = jackal.mhpmax = 30;
@@ -44,7 +44,7 @@ void test('Magicbane stuns a visible monster without confusing it', async () => 
 // feedback with a shield effect instead of making it flee, and the retained
 // stun and confusion produce the combined status sentence.
 void test('Magicbane reports a resisted scare with the retained stun and confusion', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const archon = await createMonsterAt('archon', 12, 10, TEST_MONSTER_FLAGS);
     archon.mhp = archon.mhpmax = 88;
@@ -78,7 +78,7 @@ void test('Magicbane reports a resisted scare with the retained stun and confusi
 // C artifact.c Mb_hit(): an enchanted Magicbane still probes insightfully when
 // its 3*abs(spe) roll comes up; the probing verb names the current form.
 void test('Magicbane probes insightfully at +1 enchantment', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     jackal.mhp = jackal.mhpmax = 30;
@@ -108,7 +108,7 @@ void test('Magicbane probes insightfully at +1 enchantment', async () => {
 // C artifact.c artifact_hit(): Vorpal Blade's beheading of a male hallucinating
 // hero adds the "Good job Henry, but that wasn't Anne." aside.
 void test('a hallucinating male hero mocks a Vorpal beheading with the Henry line', async () => {
-    freshObjectRoom({ flags: { female: false } });
+    await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     await makeHallucinated(20, { talk: false });
     const jackal = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
@@ -132,7 +132,7 @@ void test('a hallucinating male hero mocks a Vorpal beheading with the Henry lin
 // C artifact.c artifact_hit(): Vorpal Blade cuts through a noncorporeal
 // monster's neck without the fatal beheading damage.
 void test('Vorpal Blade slices through a ghost without beheading it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ghost = await createMonsterAt('ghost', 12, 10, TEST_MONSTER_FLAGS);
     ghost.mhp = ghost.mhpmax = 30;
@@ -153,7 +153,7 @@ void test('Vorpal Blade slices through a ghost without beheading it', async () =
 // its cooldown is refused, unsets the property, and extends the cooldown by
 // 3d10 turns without charging power.
 void test('invoking the Heart of Ahriman during its cooldown extends the wait', async () => {
-    freshObjectRoom({ role: 'barbarian', hero: { uen: 50, uenmax: 50 } });
+    await freshObjectRoom({ role: 'barbarian', hero: { uen: 50, uenmax: 50 } });
     requirePlayingGame(game);
     const heart = await artifactObject('The Heart of Ahriman', {
         invlet: 'a', where: 'inventory', age: 1000,

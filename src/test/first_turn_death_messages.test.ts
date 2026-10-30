@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 
 for (const moves of [1, 2]) {
     void test(`death on turn ${moves} ${moves === 1 ? 'includes' : 'omits'} the early-death farewell`, async () => {
-        freshObjectRoom({ moves, flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });
+        await freshObjectRoom({ moves, flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });
         game.storage = memoryStorage();
         await pline('You die...');
         const input = resetInputState();
@@ -31,7 +31,7 @@ for (const moves of [1, 2]) {
 }
 
 void test('a first-turn fatal hit ending at minus one displays zero HP during the farewell', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         moves: 1,
         hero: { uhp: 4, uhpmax: 12 },
         flags: { bones: false, tombstone: false, disclose: '-i -a -v -g -c -o' },

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 
 void test('wizard mapping discovers traps even when furniture covers their map glyph', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     level.requireAt(40, 10).typ = FOUNTAIN;
     const trap = addTrap(level, PIT, 40, 10);
@@ -23,7 +23,7 @@ void test('wizard mapping discovers traps even when furniture covers their map g
 });
 
 void test('wizard mapping without hero memory opens the map browser and restores confusion and hallucination', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { debug: true, tips: false, verbose: true },
         hero: { confusionTurns: 12, hallucinationTurns: 15 },
     });

@@ -34,7 +34,7 @@ function forceSliming(range: number): number {
 }
 
 async function slimeAttack(species = 'orc', { visible = true } = {}) {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 83n });
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 83n });
     requirePlayingGame(game);
     if (visible) {
         ensureQuestStatus().touched_artifact = true;
@@ -42,7 +42,7 @@ async function slimeAttack(species = 'orc', { visible = true } = {}) {
         assert.equal(await wearEyewear(eyes), true);
     }
     installPolymorphedHero('green slime');
-    vision_recalc(0);
+    await vision_recalc(0);
     clearMessageWindow();
     const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
     monster.mhp = monster.mhpmax = 100;

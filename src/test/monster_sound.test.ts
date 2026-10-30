@@ -29,7 +29,7 @@ void test('without a fixed datetime, night follows the current recorder clock', 
 });
 
 void test('a zombie uses a groan for its growl', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const zombie = await createMonsterAt('human zombie', 11, 10);
 
     const sound = monsterGrowlSound(zombie);
@@ -38,7 +38,7 @@ void test('a zombie uses a groan for its growl', async () => {
 });
 
 void test('a shrieker uses the default scream for its growl', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const shrieker = await createMonsterAt('shrieker', 11, 10);
 
     const sound = monsterGrowlSound(shrieker);
@@ -47,7 +47,7 @@ void test('a shrieker uses the default scream for its growl', async () => {
 });
 
 void test('a hallucinated gecko sales pitch uses the shared currency name', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 100 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 100 } });
     const gecko = await createMonsterAt('gecko', 11, 10);
     initRng(913n);
     const expected = currency(15);

@@ -21,7 +21,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('throwing a wielded punishment ball releases the weapon but keeps the chain attached', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     pushKeys(' '.repeat(20));
     await punishHero();
@@ -45,7 +45,7 @@ void test('throwing a wielded punishment ball releases the weapon but keeps the 
     assert.ok(floorObjects(level).includes(chain));
 });
 void test('a thrown candle goes out while the rest of its carried stack stays lit', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const candles = await addInventoryObject(TALLOW_CANDLE, { quan: 3, age: 60, invlet: 'a' });
     beginObjectBurn(candles);
@@ -60,7 +60,7 @@ void test('a thrown candle goes out while the rest of its carried stack stays li
     assert.match(game._lastPlineMessage, /The candle's flame is extinguished/);
 });
 void test('a hard landing can break fragile contents of a thrown box', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const box = await addInventoryObject(LARGE_BOX, { initialize: false, contents: [], invlet: 'a' });
     const bottles = await knownObject(POT_WATER, { quan: 3 });
@@ -72,7 +72,7 @@ void test('a hard landing can break fragile contents of a thrown box', async () 
     assert.equal(box.cknown, false);
 });
 void test('a heavy thrown object hastens a buried zombie revival', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('human') });
     addBuriedObject(corpse, 11, 10, game);
