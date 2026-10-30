@@ -1,22 +1,53 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveloop_core, moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveloop_core, moveMonsterForHeroAttack, performMonsterTurn } from '../js/allmain.js';
 import { LEVEL_TELEP, MFAST, MM_ANGRY, MM_NOWAIT, NO_MINVENT, POLY_TRAP, TELEP_TRAP } from '../js/const.js';
 import { flush_screen, pline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { monsterAtPosition } from '../js/monster_location.js';
 import { finishDeferredMonsterMiscItem, takeMonsterTurn } from '../js/monmove.js';
 import { POT_FULL_HEALING, WAN_MAKE_INVISIBLE, WAN_SPEED_MONSTER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { syncBlindness } from '../js/senses.js';
 import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
+
+for (const trapX of [10, 11]) {
+    void test(`an unseen monster uses a polymorph trap ${trapX === 10 ? 'beneath it' : 'beside it'} without interrupting pending prose`, async () => {
+        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { blindTurns: 20 } });
+        requirePlayingGame(game);
+        syncBlindness();
+        vision_recalc(0);
+        const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | MM_NOWAIT | NO_MINVENT);
+        const oldSpecies = monster.mnum;
+        addTrap(level, POLY_TRAP, trapX, 10);
+        await pline('You hear a click.');
+        const input = resetInputState();
+        input.beforeRead = () => {
+            assert.fail(`The unseen transformation must not ask for input: ${game._pending_message}`);
+        };
+        initRng(1n);
+
+        await performMonsterTurn(monster, game);
+        await pline('You wait.');
+        await flush_screen(1);
+
+        assert.notEqual(monster.mnum, oldSpecies, 'The monster must complete its transformation');
+        assert.equal(monsterAtPosition(level, trapX, 10), monster);
+        if (trapX !== 10) assert.equal(monsterAtPosition(level, 10, 10), null);
+        assert.match(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '',
+            /^You hear a click\..*  You wait\.$/);
+    });
+}
 
 for (const { wandType, effect } of [
     { wandType: WAN_MAKE_INVISIBLE, effect: 'invisibility' },
