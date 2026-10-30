@@ -3580,8 +3580,7 @@ const BONES_VERSION = 19;
 
 // C files.c:set_bonesfile_name(): special levels keep their identity when
 // dungeon generation changes their depth; quest bones also belong to a role.
-function bonesLevelId(): string {
-    const location = game.u.uz;
+function bonesLevelId(location: DungeonLocation | undefined = game.u.uz): string {
     if (!location) throw new Error('Bones require an initialized dungeon location');
     const tag = game.dungeons[location.dnum]?.bonetag;
     if (!tag) return '';
@@ -3592,7 +3591,7 @@ function bonesLevelId(): string {
 }
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
-    return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
+    return `teleport-bones:${bonesLevelId(level)}`;
 }
 
 export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {

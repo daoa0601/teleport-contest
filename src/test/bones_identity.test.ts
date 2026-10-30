@@ -30,7 +30,7 @@ function moveBonesFile(storage: ReturnType<typeof memoryStorage>, destination: n
     const encoded = storage.getItem(key);
     assert.ok(encoded);
     storage.removeItem(key);
-    storage.setItem(`teleport-bones:0:${destination}`, encoded);
+    storage.setItem(`teleport-bones:D0.${destination}`, encoded);
 }
 
 function answerBonesPrompts(get = 'y', unlink = 'y'): string[] {
@@ -106,13 +106,13 @@ void test('mismatched bones void an ordinary game before level arrival', async (
     assert.equal(game.program_state.gameover, true);
     assert.equal(game.level, source, 'a void game must not generate or arrive on a replacement level');
     assert.equal(game.u.uroleplay?.numbones, 0, 'native done() ends before bones bookkeeping');
-    assert.ok(storage.getItem('teleport-bones:0:7'), 'the fatal path leaves the bones file in place');
+    assert.ok(storage.getItem('teleport-bones:D0.7'), 'the fatal path leaves the bones file in place');
     assert.equal(loadScoreRecords()[0]?.death, 'trickery');
     assert.ok(screens.some(screen => screen.includes('This game is void.')));
     assert.doesNotMatch(game._messageHistory.join('\n'), /You die|This is bones level/);
 });
 
-void test('a changed dungeon bones tag rejects a file at the same dungeon index', async () => {
+void test('a changed dungeon bones tag leaves another dungeon file available', async () => {
     const storage = memoryStorage();
     bonesRoom(storage);
     assert.equal(saveBonesLevel(), true);
@@ -125,10 +125,12 @@ void test('a changed dungeon bones tag rejects a file at the same dungeon index'
     await mklev();
 
     assert.equal(!!game._restoredBones, false);
-    assert.match(game._messageHistory.join('\n'), /This is bones level 'D0\.6', not 'M0\.6'!/);
+    assert.equal(game.u.uroleplay?.numbones, 0);
+    assert.equal(storage.length, 1);
+    assert.doesNotMatch(game._messageHistory.join('\n'), /trickery|This is bones level/);
 });
 
-void test('quest bones retain the role code of their creator', async t => {
+void test('quest bones are kept separately for each role', async t => {
     const storage = memoryStorage();
     bonesRoom(storage);
     game.quest_dnum = 0;
@@ -145,7 +147,9 @@ void test('quest bones retain the role code of their creator', async t => {
     await mklev();
 
     assert.equal(!!game._restoredBones, false);
-    assert.match(game._messageHistory.join('\n'), /This is bones level 'DKni\.6', not 'DWiz\.6'!/);
+    assert.equal(game.u.uroleplay?.numbones, 0);
+    assert.equal(storage.length, 1);
+    assert.doesNotMatch(game._messageHistory.join('\n'), /trickery|This is bones level/);
 });
 
 void test('a special level bones tag permits restoration when its depth changes', async () => {
@@ -154,7 +158,6 @@ void test('a special level bones tag permits restoration when its depth changes'
     game.specialLevels = new Map([['town', createSpecialLevel({ dnum: 0, dlevel: 6, bonetag: 'T' })]]);
     requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
     assert.equal(saveBonesLevel(), true);
-    moveBonesFile(storage, 7);
     bonesRoom(storage, 7);
     game.specialLevels = new Map([['town', createSpecialLevel({ dnum: 0, dlevel: 7, bonetag: 'T' })]]);
     answerBonesPrompts();
@@ -165,4 +168,36 @@ void test('a special level bones tag permits restoration when its depth changes'
     assert.equal(requireGameLevel().requireAt(15, 10).typ, FOUNTAIN);
     assert.equal(game.u.uroleplay?.numbones, 1);
     assert.doesNotMatch(game._messageHistory.join('\n'), /trickery/);
+});
+
+void test('a dungeon retains its bones when dungeon indices change', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    game.dungeons.unshift(createDungeon({ dname: 'The Gnomish Mines', num_dunlevs: 10, bonetag: 'M' }));
+    game.u.uz = { dnum: 1, dlevel: 6 };
+    answerBonesPrompts();
+
+    await mklev();
+
+    assert.equal(game._restoredBones, true);
+    assert.equal(storage.length, 0);
+    assert.doesNotMatch(game._messageHistory.join('\n'), /trickery/);
+});
+
+void test('ordinary dungeon bones can be found by a hero of another role', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    assert.equal(saveBonesLevel(), true);
+    freshPlayableRoom({ role: 'wizard', flags: { debug: true }, hero: { uz: { dnum: 0, dlevel: 6 } } });
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+    game.storage = storage;
+    init_objects();
+    answerBonesPrompts();
+
+    await mklev();
+
+    assert.equal(game._restoredBones, true);
+    assert.equal(game.u.uroleplay?.numbones, 1);
 });
