@@ -35,6 +35,7 @@ import { wizTimeoutQueue } from './timeout_queue.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizRumorCheck } from './wizard_rumor_check.js';
+import { wizCustom } from './wizard_custom.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
 import { wizFlipLevel } from './wizard_flip_level.js';
@@ -3850,6 +3851,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell()],
     ['wizrumorcheck', wizRumorCheck],
+    ['wizcustom', wizCustom],
     ['wizbury', wizBury],
     ['wiztelekinesis', wizTelekinesis],
     ['migratemons', wizMigrateMonsters],

@@ -17,7 +17,7 @@ export enum CmapSymbol {
     altar = 33, grave = 34, throne = 35, sink = 36, fountain = 37,
     pool = 38, ice = 39, lava = 40, lavawall = 41,
     vodbridge = 42, hodbridge = 43, vcdbridge = 44, hcdbridge = 45,
-    air = 46, cloud = 47, water = 48, arrowTrap = 49,
+    air = 46, cloud = 47, water = 48, arrowTrap = 49, web = 66,
     vbeam = 74, hbeam = 75, lslant = 76, rslant = 77,
     digbeam = 78, flashbeam = 79, boomleft = 80, boomright = 81,
     shieldFirst = 82, poisoncloud = 86, goodpos = 87,

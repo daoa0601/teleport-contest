@@ -2511,7 +2511,7 @@ function isDefaultSymsetName(name) {
 }
 // options.c:optfn_symset() get_val: the loaded set's name, ", active" while
 // the primary set is current, and the handling the set declared.
-function symsetMenuValue() {
+export function symsetMenuValue() {
     const name = game.symset;
     if (!name)
         return 'default';

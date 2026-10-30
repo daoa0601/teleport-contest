@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeActions } from '../scripts/lib/session-types.mjs';
-import { LEGAL_CHARACTERS, RECIPE_NAMES, ROLES, RACES, DEPTH_TOUR_TARGETS, makeRecipe, acceptsCharacter, isLegalCharacter, validateRecipeRecording, } from '../scripts/holdout/recipes.mjs';
+import { LEGAL_CHARACTERS, RECIPES, RECIPE_NAMES, ROLES, RACES, DEPTH_TOUR_TARGETS, makeRecipe, acceptsCharacter, isLegalCharacter, validateRecipeRecording, } from '../scripts/holdout/recipes.mjs';
 const DT = '20000110090000';
 function has(combo) {
     return LEGAL_CHARACTERS.some((c) => c.role === combo.role && c.race === combo.race
@@ -114,11 +114,19 @@ for (const name of RECIPE_NAMES) {
         assert.ok(segmentAt(doc, 0).nethackrc.includes('!news'));
         assert.ok(segmentAt(doc, 0).nethackrc.includes('time'));
         assert.ok(segmentAt(doc, 0).nethackrc.includes('symset:DECgraphics'));
-        // The explicit legal character rides in the OPTIONS line.
-        assert.ok(segmentAt(doc, 0).nethackrc.includes(`role:${character.role}`));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes(`race:${character.race}`));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes(`gender:${character.gender}`));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes(`align:${character.align}`));
+        const recipe = RECIPES[name];
+        assert.ok(recipe);
+        const rc = segmentAt(doc, 0).nethackrc;
+        if (recipe.characterSelection === 'startup') {
+            assert.doesNotMatch(rc, /(?:^OPTIONS=|,)(?:role|race|gender|align):(?!random(?:,|\n|$))[^,\n]+/m, 'startup selection leaves facets unset or random');
+        }
+        else {
+            // Other recipes preset the requested legal character.
+            assert.ok(rc.includes(`role:${character.role}`));
+            assert.ok(rc.includes(`race:${character.race}`));
+            assert.ok(rc.includes(`gender:${character.gender}`));
+            assert.ok(rc.includes(`align:${character.align}`));
+        }
     });
 }
 void test('segment 0 uses the requested seed unchanged', () => {

@@ -18,7 +18,7 @@ import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
 import { selectCharacter } from './character_selection.js';
-import { MAX_MSG_HISTORY } from './const.js';
+import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
@@ -271,6 +271,7 @@ export class Engine {
         }
         if (opts.configErrors.some(report => report.errors.length > 0))
             this.display.clearScreen();
+        this.showStartupNotice();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
         let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
@@ -372,6 +373,14 @@ export class Engine {
             throw new Error('Character selection requires an initialized display');
         return display;
     }
+    // wintty.c:tty_init_nhwindows() leaves this base-window notice visible
+    // until name entry or character selection opens a full-screen menu.
+    showStartupNotice() {
+        const display = this.requireDisplay();
+        for (const [index, line] of [COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B,
+            COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D].entries())
+            display.putstr(0, 4 + index, line, NO_COLOR);
+    }
     // wintty.c tty_askname(). An empty answer or Escape re-asks: the hint
     // lands one row above the prompt, the prompt row itself is cleared and
     // redrawn in place, and ten failures give up. No fabricated default
@@ -379,12 +388,8 @@ export class Engine {
     async _readPlayerName(row = 12, showCopyright = true) {
         const display = this.requireDisplay();
         display.clearScreen();
-        if (showCopyright) {
-            display.putstr(0, 4, 'NetHack, Copyright 1985-2026', NO_COLOR);
-            display.putstr(9, 5, 'By Stichting Mathematisch Centrum and M. Stephenson.', NO_COLOR);
-            display.putstr(9, 6, 'Version 5.0.0 MacOS, built May  2 2026 12:00:00.', NO_COLOR);
-            display.putstr(9, 7, 'See license for details.', NO_COLOR);
-        }
+        if (showCopyright)
+            this.showStartupNotice();
         const prompt = 'Who are you? ';
         for (let tryct = 1;; tryct++) {
             if (tryct > 1) {
@@ -432,6 +437,7 @@ export class Engine {
             if (!cancelled && name) {
                 // tty_curs() steps past the line to echo the accepted return.
                 display.setCursor(0, row + 1);
+                game.iflags.renameallowed = true;
                 return parseCharacterName(name);
             }
         }

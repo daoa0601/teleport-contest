@@ -89,6 +89,7 @@ export interface InterfaceFlags {
     debug_overwrite_stairs?: boolean;
     getdir_click?: number;
     remember_getpos?: boolean;
+    renameallowed?: boolean;
     getloc_travelmode?: boolean;
     getpos_coords?: 'n' | 'm' | 's' | 'c' | 'f';
     getloc_filter?: 0 | 1 | 2;

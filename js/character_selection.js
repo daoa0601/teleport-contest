@@ -115,9 +115,10 @@ class CharacterSelection {
                 const window = this.startMenu();
                 addChoice(window, 'yes', 'y', 'Yes; start game', true);
                 addChoice(window, 'again', 'n', 'No; choose role again');
-                addChoice(window, 'rename', 'a', 'Not yet; choose another name');
+                if (game.iflags.renameallowed)
+                    addChoice(window, 'rename', 'a', 'Not yet; choose another name');
                 addChoice(window, 'quit', 'q', 'Quit');
-                const answer = await finishMenu(window, 'Is this ok? [ynaq]', 'yes');
+                const answer = await finishMenu(window, `Is this ok? [yn${game.iflags.renameallowed ? 'a' : ''}q]`, 'yes');
                 if (answer === 'quit')
                     return null;
                 if (answer === 'yes')

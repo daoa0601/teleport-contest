@@ -6,12 +6,12 @@ import { Terminal } from '../js/terminal.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { memoryStorage } from './support/memory-storage.js';
 
-async function selection(moves: string, options = '') {
+async function selection(moves: string, options = '', askName = false) {
     const engine = await runSegment({
         seed: 19,
         datetime: '20260801120000',
-        nethackrc: `OPTIONS=name:Selector,!legacy,!tutorial,!tips${options ? ',' + options : ''}`,
-        moves,
+        nethackrc: `OPTIONS=${askName ? '' : 'name:Selector,'}!legacy,!tutorial,!tips${options ? ',' + options : ''}`,
+        moves: (askName ? 'Selector\n' : '') + moves,
         storage: memoryStorage(),
     });
     await engine.lua.destroy();
@@ -88,7 +88,7 @@ void test('the unconstrained question lists race, role, gender and alignment in 
 void test('the character confirmation menu clears the answered opening question', async () => {
     const menu = await selection('y');
 
-    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /Is this ok\? \[ynq\]/);
     assert.doesNotMatch(menu, /Shall I pick/);
 });
 
@@ -134,19 +134,19 @@ void test('star chooses a compatible random race and proceeds to gender', async 
 
 void test('uppercase race and alignment shortcuts select the corresponding choices', async () => {
     const menu = await selection('npHfL');
-    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /Is this ok\? \[ynq\]/);
     assert.match(menu, /Selector the lawful female human Priestess/);
     assert.match(menu, /y \* Yes; start game/);
 });
 
 void test('confirmation rename retains every selected facet', async () => {
-    const menu = await selection('nphflaChanged\n');
+    const menu = await selection('nphflaChanged\n', '', true);
     assert.match(menu, /Is this ok\? \[ynaq\]/);
     assert.match(menu, /Changed the lawful female human Priestess/);
 });
 
 void test('confirmation rename normalizes the name and ignores character suffixes', async () => {
-    const menu = await selection('nphflaA.da-wiz-elf-m-cha\n');
+    const menu = await selection('nphflaA.da-wiz-elf-m-cha\n', '', true);
     assert.match(menu, /Is this ok\? \[ynaq\]/);
     assert.match(menu, /A_da the lawful female human Priestess/);
     assert.equal(game.plname, 'A_da');
@@ -154,7 +154,7 @@ void test('confirmation rename normalizes the name and ignores character suffixe
 
 void test('automatic picking produces a complete confirmation identity', async () => {
     const menu = await selection('y', 'role:priest,gender:female');
-    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /Is this ok\? \[ynq\]/);
     assert.match(menu, /Selector the (?:lawful|neutral|chaotic) female (?:human|elven) Priestess/);
     assert.doesNotMatch(menu, /<role>|<race>|<gender>|<alignment>/);
 });
@@ -237,7 +237,7 @@ for (const shortcut of ['a', '*', '@']) {
 
 void test('random gender and alignment choices reach confirmation', async () => {
     const menu = await selection('nph**');
-    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /Is this ok\? \[ynq\]/);
     assert.match(menu, /Selector the (?:lawful|neutral|chaotic) (?:male|female) human Priest(?:ess)?/);
 });
 
@@ -252,7 +252,7 @@ void test('explicitly random role configuration starts without confirmation when
 
 void test('rigid initial choices go directly to confirmation when they resolve the missing facets', async () => {
     const menu = await selection('', 'role:samurai,gender:male');
-    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /Is this ok\? \[ynq\]/);
     assert.match(menu, /Selector the lawful male human Samurai/);
     assert.doesNotMatch(menu, /Shall I pick/);
 });

@@ -9,6 +9,7 @@ import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js'
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
+import { cmapToRogueColor } from './glyph_customizations.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -1328,6 +1329,29 @@ const decWallColors = new Map([
 // of character handling; every other set leaves branch walls gray
 // (clear_symsetentry() → clear_all_glyphmap_colors()).
 const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
+// wizcmds.c:wizcustom_callback() prints the loaded showsyms byte before
+// wintty.c:g_putch() converts high-bit characters to an alternate font.
+export function cmapSymbolByte(symbol) {
+    const shown = shownSymbolSet();
+    const name = shown.name?.toLowerCase();
+    if (!shown.rogue && (name === 'decgraphics' || name === 'curses')) {
+        const ch = decFurnitureSymbols.get(symbol);
+        if (ch !== undefined)
+            return ch.charCodeAt(0) | 0x80;
+    }
+    // Named S_ overrides are identical in the primary and Rogue sets.
+    const set = name ? ROGUE_SYMSETS[name] : undefined;
+    const trap = symbol >= CmapSymbol.arrowTrap && symbol < CmapSymbol.vbeam;
+    const vibrating = symbol === CmapSymbol.arrowTrap + VIBRATING_SQUARE - 1;
+    const trapSymbol = vibrating ? '~' : symbol === CmapSymbol.web ? '"' : '^';
+    const ch = rogueCmapSymbol(set ?? null, symbol)
+        ?? (shown.rogue && trap && !vibrating ? set?.trapSymbol : undefined)
+        ?? (shown.rogue ? rogueFurnitureSymbols.get(symbol) : undefined)
+        ?? MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol) ?? (trap ? trapSymbol : undefined);
+    if (ch === undefined)
+        throw new RangeError(`Unknown dungeon symbol ${symbol}`);
+    return ch.charCodeAt(0);
+}
 function furnitureDisplayGlyph(appearance) {
     const symbol = MAP_SYMBOLS[appearance];
     if (!symbol)
@@ -1860,22 +1884,10 @@ function isRogueShowraceHeroGlyph(glyph, x, y) {
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
 // `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
 // and the object/monster branches of reset_glyphmap().
-function rogueColorsActive() {
+export function rogueColorsActive() {
+    const set = activeRogueSymset();
     return Is_rogue_level(game.u?.uz) && game.flags.color !== false
-        && ROGUE_SYMSETS[game.rogueSymset?.toLowerCase() ?? '']?.color === true;
-}
-// display.c:cmap_to_roguecolor().
-function cmapToRogueColor(index) {
-    if (index >= CmapSymbol.vwall && index <= CmapSymbol.hcdoor)
-        return CLR_BROWN;
-    if (index >= CmapSymbol.arrowTrap && index <= CmapSymbol.arrowTrap + 21)
-        return CLR_MAGENTA;
-    if (index === CmapSymbol.corr || index === CmapSymbol.litcorr)
-        return CLR_GRAY;
-    if (index >= CmapSymbol.room && index <= CmapSymbol.water
-        && index !== CmapSymbol.darkroom)
-        return CLR_GREEN;
-    return NO_COLOR;
+        && set?.ibm === true && set.color === true;
 }
 // The Rogue color tables of reset_glyphmap(); null keeps the glyph's own
 // color where the native branches have no rogue override (explosions, the

@@ -2454,7 +2454,7 @@ function isDefaultSymsetName(name: string): boolean {
 
 // options.c:optfn_symset() get_val: the loaded set's name, ", active" while
 // the primary set is current, and the handling the set declared.
-function symsetMenuValue(): string {
+export function symsetMenuValue(): string {
     const name = game.symset;
     if (!name) return 'default';
     const active = !Is_rogue_level(game.u?.uz) ? ', active' : '';

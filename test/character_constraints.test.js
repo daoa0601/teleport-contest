@@ -30,7 +30,7 @@ void test('a random role honors a specified dwarven lawful male character', asyn
 void test('a Knight with forced missing facets goes directly to confirmation', async () => {
     await start('role:Knight,gender:male');
     const heading = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('');
-    assert.match(heading ?? '', /Is this ok\? \[ynaq\]/);
+    assert.match(heading ?? '', /Is this ok\? \[ynq\]/);
 });
 void test('the sole valid Knight race and alignment replace incompatible options', async () => {
     await start('role:Knight,race:orc,gender:male,align:chaotic');
