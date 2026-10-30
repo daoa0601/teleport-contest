@@ -12,6 +12,7 @@ import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { visibleCommandKey } from './command_keys.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
 import { truncateRawMessage } from './pline_text.js';
+import { showChoiceWindow } from './windows.js';
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
     // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
     // prompt and are echoed as pline("%s %s", query, buf). A queued non-key
@@ -277,7 +278,9 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
             result = { answer: '\x1b', count: game._ynNumber ?? 0n };
         }
         else {
-            result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
+            result = game.flags.query_menu && game.nhDisplay && menuResponses(responses)
+                ? await queryResponseMenu(query, responses, defaultAnswer)
+                : await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
             if (addCommandQueue)
                 rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
         }
@@ -288,6 +291,29 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
     if (!game._inDoAgain || game.flags.debug)
         await reportInvalidYnAnswer(query, responses, defaultAnswer, result.answer, alternative);
     return { ...result, answer: alternative };
+}
+function menuResponses(responses) {
+    return responses === 'yn' || responses === 'ynq' || responses === 'ynaq'
+        || responses === 'rl' || responses === 'hsq';
+}
+// cmd.c:yn_function_menu(): the preselected answer wins when the menu is
+// cancelled; choosing another answer overrides it. This path keeps yn_number
+// from the previous tty question because it never calls tty_yn_function().
+async function queryResponseMenu(query, responses, defaultAnswer) {
+    const choices = responses === 'rl' ? [['r', 'Right'], ['l', 'Left']]
+        : responses === 'hsq' ? [['h', 'Hide'], ['s', 'Spin a web'], ['q', 'Quit']]
+            : [['y', 'Yes'], ['n', 'No']];
+    if (responses === 'ynaq')
+        choices.push(['a', 'All']);
+    if (responses === 'ynq' || responses === 'ynaq')
+        choices.push(['q', 'Quit']);
+    const selected = await showChoiceWindow({ title: query, entries: choices.map(([key, text]) => ({
+            key, text, marker: key === defaultAnswer ? '*' : '-',
+        })) });
+    const answer = selected === 0 || selected === 27 ? defaultAnswer : String.fromCharCode(selected);
+    await pline(`${query} ${keyText(answer ? answer.charCodeAt(0) : 0)}`);
+    clearMessageWindow();
+    return { answer, count: game._ynNumber ?? 0n };
 }
 async function reportInvalidYnAnswer(query, responses, defaultAnswer, answer, alternative) {
     const shownDefault = defaultAnswer ? visibleCommandKey(defaultAnswer.charCodeAt(0)) : '';
