@@ -154,6 +154,14 @@ export function shopResident(roomno: number | undefined, state: GameState = game
     return keeper;
 }
 
+// C replshk(): the bill stays on eshk; reconnect the room's resident.
+// Carried remains can revive on a level without the original room.
+export function restoreShopkeeperResidency(monster: Monster, state: GameState = game): void {
+    if (!hasShopkeeperData(monster)) return;
+    const room = roomForRoomno(state.level, monster.eshk.shoproom);
+    if (room) room.resident = monster;
+}
+
 export function currentShopResident(state: GameState = game): Shopkeeper | null {
     requireLiveGame(state);
     return shopResident(state.u.ushops?.[0], state);
