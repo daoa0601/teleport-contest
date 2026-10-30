@@ -3,6 +3,7 @@ import test from 'node:test';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { migrateMonsterOffLevel, prepareMonsterDeparture } from '../js/monster_migration.js';
@@ -10,6 +11,7 @@ import { clearMonsterWormFromMap, initializeMonsterWormBody, removeMonsterWormBo
 import { relocateMonsterTo } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { assertWormBody } from './support/worms.js';
 async function placedWorm(segmentCount) {
     freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, heroX: 10, heroY: 10 });
@@ -18,7 +20,8 @@ async function placedWorm(segmentCount) {
     initializeMonsterWormBody(worm, { segmentCount });
     assertWormBody(worm);
     assert.equal(worm.wormSegments.length, segmentCount);
-    const squares = [{ x: worm.mx, y: worm.my }, ...worm.wormSegments];
+    const squares = [{ x: worm.mx, y: worm.my },
+        ...worm.wormSegments.map(({ x, y }) => ({ x, y }))];
     for (const { x, y } of squares) {
         newsym(x, y);
         assert.equal(monsterAtPosition(game.level, x, y), worm);
@@ -108,4 +111,29 @@ void test('placing a discarded worm head does not restore its discarded tail', a
         assert.notEqual(glyphAt(x, y)?.kind, 'monster');
     }
 });
+for (const square of ['head', 'tail']) {
+    for (const removal of ['relocation', 'discard']) {
+        void test(`${removal} clears a replacement occupant at the worm's ${square} square`, async () => {
+            const { worm } = await placedWorm(3);
+            requirePlayingGame(game);
+            const point = square === 'head' ? { x: worm.mx, y: worm.my } : worm.wormSegments[0];
+            assert.ok(point);
+            const replacement = await createMonsterAt('goblin', 8, 8, MM_ANGRY | NO_MINVENT);
+            await answerPrompts(relocateMonsterTo(replacement, point.x, point.y), resetInputState(), [
+                { prompt: /placing goblin[\s\S]*over .*long worm[\s\S]*--More--/, keys: ' ' },
+                { prompt: /Program in disorder![\s\S]*--More--/, keys: ' ' },
+            ]);
+            const { x, y } = point;
+            assert.equal(monsterAtPosition(game.level, x, y), replacement);
+            if (removal === 'relocation')
+                clearMonsterWormFromMap(worm);
+            else
+                removeMonsterWormBody(worm);
+            assert.equal(monsterAtPosition(game.level, x, y), null, 'Removing a worm clears its segment squares, including an overwritten map slot.');
+            assert.notEqual(glyphAt(x, y)?.kind, 'monster', 'Removal immediately redraws the cleared square.');
+            assert.ok(game.level.monsters.includes(replacement));
+            assert.deepEqual({ x: replacement.mx, y: replacement.my }, { x, y });
+        });
+    }
+}
 //# sourceMappingURL=monster_worm_removal.test.js.map
