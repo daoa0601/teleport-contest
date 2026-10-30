@@ -4676,7 +4676,11 @@ export async function flipSpecialLevel(flp, extras = false) {
             }
             if (!monster.wormSegments)
                 throw new Error('Long worm has no segment list.');
-            monster.wormSegments = monster.wormSegments.map(segment => transform(segment.x, segment.y, false));
+            for (const segment of monster.wormSegments) {
+                const position = transform(segment.x, segment.y, false);
+                segment.x = position.x;
+                segment.y = position.y;
+            }
         }
     }
     if (extras) {

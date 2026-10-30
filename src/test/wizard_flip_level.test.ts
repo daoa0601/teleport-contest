@@ -3,15 +3,23 @@ import test from 'node:test';
 import { punishHero } from '../js/punishment.js';
 import { moveObject } from '../js/floor_object.js';
 import { rhack } from '../js/cmd.js';
-import { DB_DIR, DB_EAST, DB_WEST, DRAWBRIDGE_DOWN, PIT } from '../js/const.js';
+import {
+    DB_DIR, DB_EAST, DB_WEST, DRAWBRIDGE_DOWN,
+    MM_ANGRY, MM_NOTAIL, NO_MINVENT, PIT,
+} from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { monsterAtPosition } from '../js/monster_location.js';
+import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { DAGGER } from '../js/object_data.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
+import { relocateMonsterTo } from '../js/teleport.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
+import { assertWormBody } from './support/worms.js';
 
 void test('#wizfliplevel reflects the active level and its position-dependent effects', async t => {
     // C get_level_extends() expands this room to x=7..15, y=7..13.
@@ -115,3 +123,46 @@ void test('a flip replaces a punishment pair that straddles the flip boundary', 
     assert.equal(ball, game.uball);
     assert.equal(chain, game.uchain);
 });
+
+for (const axis of [1, 2, 3]) {
+    void test(`#wizfliplevel option ${axis} transforms a worm without remapping an overwritten segment`, async t => {
+        // The room's flip area is x=6..26, y=5..15.
+        const level = freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14,
+            flags: { debug: true } });
+        const worm = await createMonsterAt('long worm', 18, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
+        initializeMonsterWormBody(worm, { segmentCount: 3 });
+        assertWormBody(worm);
+        const overwritten = worm.wormSegments[0];
+        assert.ok(overwritten);
+        const vacant = { x: overwritten.x, y: overwritten.y };
+        const incoming = await createMonsterAt('goblin', 8, 8, MM_ANGRY | NO_MINVENT);
+        await answerPrompts(relocateMonsterTo(incoming, vacant.x, vacant.y), resetInputState(), [
+            { prompt: /placing goblin[\s\S]*over .*long worm[\s\S]*--More--/, keys: ' ' },
+            { prompt: /Program in disorder![\s\S]*--More--/, keys: ' ' },
+        ]);
+        await relocateMonsterTo(incoming, 8, 8);
+        assert.equal(monsterAtPosition(level, vacant.x, vacant.y), null);
+        const squares = [{ x: worm.mx, y: worm.my },
+            ...worm.wormSegments.slice(1).map(({ x, y }) => ({ x, y }))];
+        const health = worm.mhp;
+        const deadline = worm.wormGrowTime;
+        const moves = game.moves;
+        const input = resetInputState();
+        planInput(input, t, [{ prompt: /Flip 0=randomly/, keys: String(axis) }]);
+        input.feed('wizfliplevel\n');
+
+        await rhack('#'.charCodeAt(0));
+
+        const flipX = (x: number) => axis & 2 ? 32 - x : x;
+        const flipY = (y: number) => axis & 1 ? 20 - y : y;
+        assert.equal(monsterAtPosition(level, flipX(vacant.x), flipY(vacant.y)), null,
+            'The vacant segment square stays vacant after its map position is flipped.');
+        for (const { x, y } of squares)
+            assert.equal(monsterAtPosition(level, flipX(x), flipY(y)), worm);
+        assert.equal(worm.wormSegments.length, 3);
+        assert.equal(worm.mhp, health);
+        assert.equal(worm.wormGrowTime, deadline);
+        assert.equal(game.moves, moves);
+        assert.equal(game.context.move, 0);
+    });
+}

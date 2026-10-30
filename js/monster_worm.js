@@ -6,7 +6,7 @@ import { impossible } from './diagnostics.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { cloneMonster } from './monster_clone.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition, removeMonsterFromMapAt } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { mcalcmove } from './monster_speed.js';
 import { d, rn2, rnd } from './rng.js';
@@ -149,20 +149,19 @@ export function clearMonsterWormFromMap(monster) {
     for (let i = count - 1; i >= 0; i--) {
         const point = monster.wormSegments[i];
         if (point?.x) {
-            monster.wormSegments[i] = { x: 0, y: point.y };
-            clearWormSquare(monster, point);
+            clearWormSquare(point);
+            point.x = 0;
         }
     }
     if (monster.wormHead.x)
-        clearWormSquare(monster, monster.wormHead);
-    monster.wormHead = { x: 0, y: monster.wormHead.y };
+        clearWormSquare(monster.wormHead);
+    monster.wormHead.x = 0;
     return count;
 }
-function clearWormSquare(monster, point) {
-    // The hidden segment normally shares the live head's square. A literal
-    // head-only move can leave it behind; remove_worm follows the segments.
-    if (monster.mx === point.x && monster.my === point.y)
-        monster.headOnMap = false;
+function clearWormSquare(point) {
+    // C removes the map slot even if another monster has replaced this
+    // segment. A displaced live head is separate from the hidden segment.
+    removeMonsterFromMapAt(point.x, point.y);
     newsym(point.x, point.y);
 }
 export function removeMonsterWormBody(monster) {
