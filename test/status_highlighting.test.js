@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { bot, flush_screen, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetStatusHilites } from '../js/status_hilites.js';
+import { clearStatusHilites, resetStatusHilites } from '../js/status_hilites.js';
 import { addExperience } from '../js/exper.js';
 import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_EXP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, GT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, CLR_GREEN, CLR_BLUE, NO_COLOR } from '../js/terminal.js';
@@ -234,5 +234,16 @@ void test('time-only updates retain other fields and evaluate the time highlight
     resetStatusHilites();
     await bot();
     assert.equal(fieldCell('HP:12').color, NO_COLOR);
+});
+void test('a cleared rule keeps its stale color until the hilite reset repaints every field', async () => {
+    roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
+    await bot();
+    assert.equal(fieldCell('HP:40').color, CLR_RED);
+    clearStatusHilites();
+    await bot();
+    assert.equal(fieldCell('HP:40').color, CLR_RED, 'an unchanged field keeps the buffered color of a removed rule');
+    resetStatusHilites();
+    await bot();
+    assert.equal(fieldCell('HP:40').color, NO_COLOR, 'the reset round repaints unchanged fields without the rule');
 });
 //# sourceMappingURL=status_highlighting.test.js.map
