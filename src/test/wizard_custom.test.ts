@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { applyNethackrc } from '../js/options.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -50,6 +50,37 @@ void test('#wizcustom updates the base wall color when color is toggled', async 
         assert.equal(game.context.move, 0);
     }
 });
+
+for (const { label, options, byte, color, primary } of [
+    { label: 'default Rogue symbols', options: 'color', byte: 124, color: '08', primary: false },
+    { label: 'RogueIBM', options: 'color,roguesymset:RogueIBM', byte: 186, color: '08', primary: false },
+    { label: 'RogueEpyx', options: 'color,roguesymset:RogueEpyx', byte: 186, color: '07', primary: false },
+    { label: 'RogueEpyx without color', options: '!color,roguesymset:RogueEpyx', byte: 186, color: '08', primary: false },
+    { label: 'primary symbols with RogueEpyx configured', options: 'color,roguesymset:RogueEpyx', byte: 248, color: '08', primary: true },
+]) {
+    void test(`#wizcustom reports branch wall colors on Rogue with ${label}`, async () => {
+        freshObjectRoom({ flags: { debug: true } });
+        requirePlayingGame(game);
+        game.rogue_level = { ...game.u.uz };
+        applyNethackrc(`OPTIONS=symset:DECgraphics,${options}`);
+        if (primary) game.shownSymbols = { rogue: false, name: 'DECgraphics' };
+        const rows: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            rows.push(...(game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) ?? []));
+            input.feed(' ');
+        };
+
+        await runExtendedCommand('wizcustom');
+
+        for (const branch of ['mines', 'gehennom', 'knox', 'sokoban']) {
+            const wall = rows.find(row => row.includes(`G_vwall_${branch}`)) ?? '';
+            assert.ok(wall.includes(`'\\${byte}' ${color}`),
+                `${label} must report the loaded symbol and base color ${color}: ${wall}`);
+        }
+        assert.equal(game.context.move, 0);
+    });
+}
 
 for (const { symset, vertical, horizontal } of [
     { symset: 'DECgraphics', vertical: 248, horizontal: 241 },

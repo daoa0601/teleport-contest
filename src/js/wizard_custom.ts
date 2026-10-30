@@ -1,6 +1,6 @@
 // C wizcmds.c:wiz_custom()/wizcustom_callback(), glyphs.c:wizcustom_glyphids().
-import { NHW_MENU, PICK_NONE } from './const.js';
-import { customizedBranchWalls, docrt } from './display.js';
+import { Is_rogue_level, NHW_MENU, PICK_NONE } from './const.js';
+import { customizedBranchWalls, docrt, rogueColorsActive } from './display.js';
 import { game } from './gstate.js';
 import { symsetMenuValue } from './options.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -12,11 +12,13 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
 export async function wizCustom(): Promise<void> {
     const window = tty_create_nhwindow<number>(NHW_MENU);
     addMenuHeading(window, '    glyph  glyph identifier                             sym   clr customcolor unicode utf8');
+    // reset_glyphmap() also clears Rogue colors unless its active set enables IBM color.
+    const colorEnabled = game.flags.color !== false
+        && (!Is_rogue_level(game.u.uz) || rogueColorsActive());
     for (const wall of customizedBranchWalls()) {
         const baseColor = MAP_SYMBOLS[wall.symbol]?.color;
         if (baseColor === undefined) throw new Error(`Customized wall ${wall.id} has no base color`);
-        // display.c:reset_glyphmap() applies use_color to the base wall color.
-        const color = game.flags.color === false ? NO_COLOR : baseColor;
+        const color = colorEnabled ? baseColor : NO_COLOR;
         // color.h:NH_BASIC_COLOR tags palette indices in customcolor.
         const customColor = (0x1000000 | wall.color).toString(16).padStart(11, '0');
         const text = `[${String(wall.glyph).padStart(4, '0')}] ${wall.id.padEnd(44)} `

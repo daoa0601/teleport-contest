@@ -1899,9 +1899,10 @@ function isRogueShowraceHeroGlyph(glyph, x, y) {
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
 // `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
 // and the object/monster branches of reset_glyphmap().
-function rogueColorsActive() {
+export function rogueColorsActive() {
+    const set = activeRogueSymset();
     return Is_rogue_level(game.u?.uz) && game.flags.color !== false
-        && ROGUE_SYMSETS[game.rogueSymset?.toLowerCase() ?? '']?.color === true;
+        && set?.ibm === true && set.color === true;
 }
 // display.c:cmap_to_roguecolor().
 function cmapToRogueColor(index) {
