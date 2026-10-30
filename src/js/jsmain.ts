@@ -72,8 +72,9 @@ const UNICODE_TO_DEC = new Map(
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
 // literal blank cells; C emits DEC shift sequences and cursor-forward skips.
-export function serializeCapture(term: Terminal | null | undefined): string {
+export function serializeCapture(term: Terminal | GameDisplay | null | undefined): string {
     if (!term) return '';
+    const grid = term instanceof GameDisplay ? term.captureGrid : term.grid;
 
     const colorToFg = (color: TerminalColor): number => {
         if (typeof color !== 'number') return 39;
@@ -105,13 +106,13 @@ export function serializeCapture(term: Terminal | null | undefined): string {
     const painted = (cell: TerminalCell): boolean =>
         cell.ch !== ' ' || !!(cell.attr & styleMask);
     let lastRow = 0;
-    for (const [row, cells] of term.grid.entries()) {
+    for (const [row, cells] of grid.entries()) {
         if (cells.some(painted)) lastRow = row;
     }
 
     const lines: string[] = [];
     const decGraphics = /^DECgraphics$/i.test(game.symset || '');
-    for (const cells of term.grid.slice(0, lastRow + 1)) {
+    for (const cells of grid.slice(0, lastRow + 1)) {
         const firstCol = cells.findIndex(painted);
         if (firstCol < 0) {
             lines.push('');
@@ -205,8 +206,7 @@ class SegmentCapture {
         this.lastRngIndex = fullLog.length;
 
         const display = this.engine.display;
-        const terminal = display?.terminal;
-        this.screens.push(serializeCapture(terminal));
+        this.screens.push(serializeCapture(display));
         this.cursors.push(display
             ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
             : null);
@@ -216,9 +216,8 @@ class SegmentCapture {
 
     async animationFrame(): Promise<void> {
         const display = this.engine.display;
-        const terminal = display?.terminal;
         this.pendingAnimationFrames.push({
-            screen: serializeCapture(terminal),
+            screen: serializeCapture(display),
             cursor: display
                 ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
                 : null,

@@ -26,6 +26,7 @@ const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode
 export function serializeCapture(term) {
     if (!term)
         return '';
+    const grid = term instanceof GameDisplay ? term.captureGrid : term.grid;
     const colorToFg = (color) => {
         if (typeof color !== 'number')
             return 39;
@@ -65,13 +66,13 @@ export function serializeCapture(term) {
     const styleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
     const painted = (cell) => cell.ch !== ' ' || !!(cell.attr & styleMask);
     let lastRow = 0;
-    for (const [row, cells] of term.grid.entries()) {
+    for (const [row, cells] of grid.entries()) {
         if (cells.some(painted))
             lastRow = row;
     }
     const lines = [];
     const decGraphics = /^DECgraphics$/i.test(game.symset || '');
-    for (const cells of term.grid.slice(0, lastRow + 1)) {
+    for (const cells of grid.slice(0, lastRow + 1)) {
         const firstCol = cells.findIndex(painted);
         if (firstCol < 0) {
             lines.push('');
@@ -163,8 +164,7 @@ class SegmentCapture {
         this.rngSlices.push(fullLog.slice(this.lastRngIndex));
         this.lastRngIndex = fullLog.length;
         const display = this.engine.display;
-        const terminal = display?.terminal;
-        this.screens.push(serializeCapture(terminal));
+        this.screens.push(serializeCapture(display));
         this.cursors.push(display
             ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
             : null);
@@ -173,9 +173,8 @@ class SegmentCapture {
     }
     async animationFrame() {
         const display = this.engine.display;
-        const terminal = display?.terminal;
         this.pendingAnimationFrames.push({
-            screen: serializeCapture(terminal),
+            screen: serializeCapture(display),
             cursor: display
                 ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
                 : null,

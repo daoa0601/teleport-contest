@@ -3031,10 +3031,10 @@ function _buildScreenOutput() {
     if (display.grid) {
         if (preserveMessageRow) {
             for (let row = 1; row < display.rows; row++)
-                display.clearRow(row);
+                display.repaintRow(row);
         }
         else {
-            display.clearScreen();
+            display.repaintScreen();
             // tty_putmixed() folds DEC markers before update_topl() paints.
             // Only the graphics kludge paints the leading glyph cell.
             const msg = messageText;
@@ -3077,11 +3077,13 @@ function writeMapRow(display, y) {
         const highlight = game._mapPositionHighlight;
         const frameColor = highlight?.background && game.flags.color !== false
             && highlight.isValidLocation(x, y) ? HI_ZAP : null;
-        // Plane-of-Air AIR is a cyan space. Preserve its foreground color
-        // between cloud glyphs; ordinary default/gray blanks stay sparse.
+        // Plain blanks erase retained tty glyphs. Colored AIR spaces still
+        // use map painting so their foreground color survives.
         if (loc.disp_ch === ' ' && frameColor === null && !(attr & 5)
-            && (color === NO_COLOR || color === CLR_GRAY))
+            && (color === NO_COLOR || color === CLR_GRAY)) {
+            display.setCell(x - 1, y + 1, ' ', color, attr);
             continue;
+        }
         writeMapCell(display, x, y, loc, frameColor);
     }
 }
@@ -3106,7 +3108,9 @@ export function row_refresh(start, stop, y) {
 }
 function writeMapCell(display, x, y, loc, frameColor) {
     const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor);
+    const name = shownSymbolSet().name?.toLowerCase() ?? '';
+    const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
+    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor, byteGlyph);
 }
 // ── flush_screen ──
 export async function flush_screen(mode) {
