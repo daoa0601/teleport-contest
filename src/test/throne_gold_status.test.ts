@@ -25,7 +25,7 @@ void test('a throne updates the displayed purse after taking carried gold', asyn
 });
 
 void test('gold confiscation refreshes the purse before its announcement pages', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     level.requireAt(10, 10).typ = THRONE;
     setHeroGoldAmount(game, 250);
     await bot();

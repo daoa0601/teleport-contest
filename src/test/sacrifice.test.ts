@@ -375,7 +375,7 @@ for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']] as const) {
 }
 
 void test('declining divine death after a fake offering still spends the offering turn', async () => {
-    freshAltar({ flags: { debug: true }, hero: { ugangr: 10 } });
+    await freshAltar({ flags: { debug: true }, hero: { ugangr: 10 } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(FAKE_AMULET_OF_YENDOR, { known: true });
     initRng(2n);

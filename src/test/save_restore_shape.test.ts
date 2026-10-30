@@ -160,12 +160,12 @@ void test('a light-emitting revert during the restore shape pass does not restor
 });
 
 void test('restoring detection paints distant monsters after the welcome pager', async () => {
-    freshObjectRoom({ right: 30, role: 'wizard', flags: { female: false, initgend: 0 }, hero: { ualignbase: [0, 0] } });
+    await freshObjectRoom({ right: 30, role: 'wizard', flags: { female: false, initgend: 0 }, hero: { ualignbase: [0, 0] } });
     const level = game.level;
     assert.ok(level);
     for (let y = 6; y <= 14; y++) level.requireAt(15, y).typ = STONE;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     game.plname = 'Watcher';
     game.detectMonsters = true;
     await createMonsterAt('ogre', 20, 10);
@@ -175,7 +175,7 @@ void test('restoring detection paints distant monsters after the welcome pager',
     resetGame();
     game.nhDisplay = new GameDisplay(null);
     initRng(17n);
-    assert.equal(restoreGame('Watcher', storage), true);
+    assert.equal(await restoreGame('Watcher', storage), true);
     const input = resetInputState();
     let welcomed = false;
     input.display = {
