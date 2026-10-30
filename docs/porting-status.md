@@ -635,9 +635,14 @@ guessed travel steps, and the whole `findtravelpath()` search.
 Whole-file C audits since then: `vault.c`, `mthrowu.c`, `explode.c`,
 `dbridge.c`, `wizard.c`, `wield.c`, `allmain.c`, `do_name.c`, `getpos.c`,
 `sit.c`, `were.c`/`exper.c`, `worm.c`, `iactions.c`, `draft_message()`
-callers and `chest_trap()`. Files without a whole-file audit include
-`u_init.c`/`role.c`, `rumors.c`, `mondata.c`, `mkmap.c`, `mplayer.c`,
-`bones.c` and `pline.c`.
+callers and `chest_trap()`, and `u_init.c`/`role.c`, `rumors.c`,
+`mondata.c` and `pline.c` (the audit-init-misc unit found the port faithful
+in all five: every function compared with no play-reachable divergence;
+`.cache/audit-init-misc/final.md` records the verification, including the
+unreachable `init_attr()` subtract phase, the NO_CURS_ON_U flush that its
+only caller overrides, and the rumors padding of 60 bytes including the
+newline). Files without a whole-file audit include `mkmap.c`, `mplayer.c`
+and `bones.c`.
 
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
