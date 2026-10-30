@@ -22,6 +22,7 @@ import { ROUND12_RECIPES, validateRound12Recipe } from './round12-recipes.mjs';
 import { ROUND17_RECIPES, validateRound17Recipe } from './round17-recipes.mjs';
 import { ROUND21_RECIPES, validateRound21Recipe } from './round21-recipes.mjs';
 import { ROUND22_RECIPES, validateRound22Recipe } from './round22-recipes.mjs';
+import { ROUND24_RECIPES, validateRound24Recipe } from './round24-recipes.mjs';
 import { ROUND23_RECIPES, validateRound23Recipe } from './round23-recipes.mjs';
 export interface Character {
     role: string;
@@ -49,6 +50,8 @@ export interface Recipe {
     roles: string[] | null;
     /** Restricts the hero's gender when a mechanic depends on it. */
     genders?: string[];
+    /** Fixed native date ('YYYYMMDDHHMMSS') when a mechanic depends on it. */
+    datetime?: string;
     /** Startup selection leaves the character facets unset or random. */
     characterSelection?: 'preset' | 'startup';
     options: string[];
@@ -216,7 +219,8 @@ function key(...parts: string[]) {
  * @param {number} args.seed            integer seed (>= 10000 recommended);
  *                                      restore segments reuse it, fresh-game
  *                                      segments use seed + 1.
- * @param {string} args.datetime        'YYYYMMDDHHMMSS'; applies to all segments.
+ * @param {string} args.datetime        'YYYYMMDDHHMMSS'; applies to all segments
+ *                                      unless the recipe fixes its own date.
  * @param {{role:string,race:string,gender:string,align:string}} args.character
  * @param {string[]|string} [args.options] extra OPTIONS lines appended to the rc.
  * @param {string} [args.name]          player name (default 'Nomad'; ignored in
@@ -249,7 +253,7 @@ export function makeRecipe(recipeName: string, {
         extraOptions: [...userOptions, ...(recipe.options ?? []), ...overrides],
     });
 
-    const segments = recipe.build({ seed, datetime, rc, character },
+    const segments = recipe.build({ seed, datetime: recipe.datetime ?? datetime, rc, character },
         recipeName === 'depth-tour' ? normalizeTargets(targets) : undefined);
     return { version: 5, segments };
 }
@@ -534,6 +538,7 @@ addRecipes(ROUND17_RECIPES);
 addRecipes(ROUND21_RECIPES);
 addRecipes(ROUND22_RECIPES);
 addRecipes(ROUND23_RECIPES);
+addRecipes(ROUND24_RECIPES);
 export { RECIPES };
 
 export const RECIPE_NAMES = Object.keys(RECIPES);
@@ -857,6 +862,9 @@ for (const name of Object.keys(ROUND21_RECIPES)) {
 }
 for (const name of Object.keys(ROUND22_RECIPES)) {
     VALIDATORS[name] = recording => validateRound22Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND24_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound24Recipe(name, recording);
 }
 for (const name of Object.keys(ROUND23_RECIPES)) {
     VALIDATORS[name] = recording => validateRound23Recipe(name, recording);

@@ -94,8 +94,9 @@ for (const name of RECIPE_NAMES) {
         const doc = makeRecipe(name, { seed: 42424, datetime: DT, character });
         assert.equal(doc.version, 5);
         assert.ok(Array.isArray(doc.segments) && doc.segments.length >= 1);
+        const datetime = RECIPES[name]?.datetime ?? DT;
         for (const seg of doc.segments) {
-            assert.equal(seg.datetime, DT, 'datetime applies to every segment');
+            assert.equal(seg.datetime, datetime, 'datetime applies to every segment');
             assert.ok(typeof seg.nethackrc === 'string' && seg.nethackrc.length > 0);
             // Recipes are adaptive: every segment carries driver actions
             // whose keys entries request automatic --More-- dismissal.

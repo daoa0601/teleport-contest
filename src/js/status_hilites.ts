@@ -729,6 +729,7 @@ function statusHiliteRemove(id: number): boolean {
     const index = line.rule === null ? -1 : rules.indexOf(line.rule);
     if (index < 0) return false;
     rules.splice(index, 1);
+    if (line.rule) game.nhDisplay?.statusHighlights.removeRule(line.rule);
     return true;
 }
 

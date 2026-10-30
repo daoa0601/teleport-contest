@@ -4,7 +4,7 @@
 // itself keeps the default traditional order (monster level, then index).
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { finishOrdinaryDeath, vanquishedLines } from '../js/end.js';
+import { finishOrdinaryDeath, listGenocided, vanquishedLines } from '../js/end.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -131,6 +131,79 @@ void test('one vanquished species asks [ynq] while several offer [ynaq]', async 
         const ending = deathWithPrompts();
         const row = await advanceToQuestion(input, /creatures vanquished/);
         assert.equal(row, expected, `prompt choices for ${label}`);
+        await declineRemainingPrompts(input, ending);
+    }
+});
+// insight.c uses a local response buffer for vanquished creatures and string
+// literals for gone species. Neither qualifies for cmd.c:yn_menuable_resp().
+for (const multiple of [false, true]) {
+    void test(`query_menu keeps the ${multiple ? 'multiple' : 'single'}-species vanquished question inline`, async () => {
+        freshPlayableRoom({ flags: { query_menu: true, disclose: '-i -a nv -g -c -o' } });
+        requirePlayingGame(game);
+        recordSpecies('newt', 1);
+        if (multiple)
+            recordSpecies('jackal', 2);
+        const input = resetInputState();
+        const ending = deathWithPrompts();
+        try {
+            const row = await advanceToQuestion(input, /creatures vanquished/);
+            assert.equal(row, `Do you want an account of creatures vanquished? [${multiple ? 'ynaq' : 'ynq'}] (n)`);
+            if (!multiple) {
+                input.feed('a');
+                await input.waitUntilBlocked();
+                assert.match(screenText(), /Vanquished creatures:/, 'the unlisted All answer still shows the single-species list');
+                input.feed(' ');
+            }
+        }
+        finally {
+            await declineRemainingPrompts(input, ending);
+        }
+    });
+}
+for (const { label, mvflags } of [
+    { label: 'genocided', mvflags: G_GENOD },
+    { label: 'extinct', mvflags: G_EXTINCT },
+]) {
+    for (const multiple of [false, true]) {
+        void test(`query_menu keeps the ${multiple ? 'multiple' : 'single'}-species ${label} question inline`, async () => {
+            freshPlayableRoom({ flags: { query_menu: true } });
+            requirePlayingGame(game);
+            game.program_state.gameover = true;
+            recordSpecies('gnome', 0, mvflags);
+            if (multiple)
+                recordSpecies('newt', 0, mvflags);
+            const input = resetInputState();
+            const listing = listGenocided('n', true);
+            try {
+                await input.waitUntilBlocked();
+                const question = label === 'extinct'
+                    ? 'Do you want a list of extinct species?'
+                    : 'Do you want a list of species genocided?';
+                assert.equal(visibleRow(), `${question} [${multiple ? 'ynaq' : 'ynq'}] (n)`);
+                if (!multiple) {
+                    input.feed('a');
+                    await input.waitUntilBlocked();
+                    assert.match(screenText(), /species:/, 'the unlisted All answer still shows the single-species list');
+                }
+            }
+            finally {
+                input.feed('n ');
+                await listing;
+            }
+        });
+    }
+}
+void test('query_menu still offers named answers for the attributes disclosure question', async () => {
+    freshPlayableRoom({ flags: { query_menu: true, disclose: '-i na -v -g -c -o' } });
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    try {
+        await advanceToQuestion(input, /your attributes/);
+        assert.match(screenText(), /y - Yes/);
+        assert.match(screenText(), /n \* No/);
+        assert.match(screenText(), /q - Quit/);
+    }
+    finally {
         await declineRemainingPrompts(input, ending);
     }
 });

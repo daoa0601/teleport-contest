@@ -12,6 +12,7 @@ import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { visibleCommandKey } from './command_keys.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
 import { truncateRawMessage } from './pline_text.js';
+import { showChoiceWindow } from './windows.js';
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
     // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
     // prompt and are echoed as pline("%s %s", query, buf). A queued non-key
@@ -240,13 +241,15 @@ function renderChoicePrompt(message) {
 }
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
-export async function promptChoice(query, choices, defaultAnswer, { visibleChoices = choices.join(''), addCommandQueue = true } = {}) {
-    const result = await yn_function(query, choices.join(''), defaultAnswer, addCommandQueue, visibleChoices);
+export async function promptChoice(query, choices, defaultAnswer, { visibleChoices = choices.join(''), addCommandQueue = true, menuable = false } = {}) {
+    const result = await yn_function(query, choices.join(''), defaultAnswer, addCommandQueue, { visibleChoices, menuable });
     return choices.find(choice => choice === result.answer) ?? defaultAnswer;
 }
 // C cmd.c:yn_function() records the answer key, while yn_number remains
 // the last tty question's value. Replaying '#' does not read another count.
-export async function yn_function(query, responses, defaultAnswer = '', addCommandQueue = true, visibleChoices = responses?.split('\x1b')[0] ?? '') {
+// Only callers using C's shared response arrays opt into menus: equal text
+// in a local buffer or string literal does not pass yn_menuable_resp().
+export async function yn_function(query, responses, defaultAnswer = '', addCommandQueue = true, { visibleChoices = responses?.split('\x1b')[0] ?? '', menuable = false } = {}) {
     const queued = addCommandQueue ? takeRepeatCommand() : undefined;
     let result;
     if (queued) {
@@ -277,7 +280,9 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
             result = { answer: '\x1b', count: game._ynNumber ?? 0n };
         }
         else {
-            result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
+            result = menuable && game.flags.query_menu && game.nhDisplay && responses !== null
+                ? await queryResponseMenu(query, responses, defaultAnswer)
+                : await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
             if (addCommandQueue)
                 rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
         }
@@ -288,6 +293,25 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
     if (!game._inDoAgain || game.flags.debug)
         await reportInvalidYnAnswer(query, responses, defaultAnswer, result.answer, alternative);
     return { ...result, answer: alternative };
+}
+// cmd.c:yn_function_menu(): the preselected answer wins when the menu is
+// cancelled; choosing another answer overrides it. This path keeps yn_number
+// from the previous tty question because it never calls tty_yn_function().
+async function queryResponseMenu(query, responses, defaultAnswer) {
+    const choices = responses === 'rl' ? [['r', 'Right'], ['l', 'Left']]
+        : responses === 'hsq' ? [['h', 'Hide'], ['s', 'Spin a web'], ['q', 'Quit']]
+            : [['y', 'Yes'], ['n', 'No']];
+    if (responses === 'ynaq')
+        choices.push(['a', 'All']);
+    if (responses === 'ynq' || responses === 'ynaq')
+        choices.push(['q', 'Quit']);
+    const selected = await showChoiceWindow({ title: query, entries: choices.map(([key, text]) => ({
+            key, text, marker: key === defaultAnswer ? '*' : '-',
+        })) });
+    const answer = selected === 0 || selected === 27 ? defaultAnswer : String.fromCharCode(selected);
+    await pline(`${query} ${keyText(answer ? answer.charCodeAt(0) : 0)}`);
+    clearMessageWindow();
+    return { answer, count: game._ynNumber ?? 0n };
 }
 async function reportInvalidYnAnswer(query, responses, defaultAnswer, answer, alternative) {
     const shownDefault = defaultAnswer ? visibleCommandKey(defaultAnswer.charCodeAt(0)) : '';
@@ -455,13 +479,13 @@ async function readChoiceNumber(first, prompt, readAnswer, paint) {
     return null;
 }
 export function promptYesNo(message, defaultAnswer = 'n', addCommandQueue = true) {
-    return promptChoice(message, ['y', 'n'], defaultAnswer, { addCommandQueue });
+    return promptChoice(message, ['y', 'n'], defaultAnswer, { addCommandQueue, menuable: true });
 }
 export function promptYesNoQuit(message, defaultAnswer = 'q') {
-    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer);
+    return promptChoice(message, ['y', 'n', 'q'], defaultAnswer, { menuable: true });
 }
 export function promptYesNoAllQuit(message, defaultAnswer = 'y') {
-    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer);
+    return promptChoice(message, ['y', 'n', 'a', 'q'], defaultAnswer, { menuable: true });
 }
 // A per-question paranoia bit changes affirmative input from `y` to the full
 // line `yes`.  PARANOID_CONFIRM additionally removes the default and requires
@@ -474,7 +498,7 @@ export async function paranoidQuery(beParanoid, prompt, paranoiaBits = game.flag
 export async function paranoidYesNoQuit(beParanoid, prompt, acceptQuit = true, paranoiaBits = game.flags?.paranoia_bits ?? 0) {
     if (!beParanoid)
         return acceptQuit
-            ? promptChoice(prompt, ['y', 'n', 'q'], 'n', { addCommandQueue: false })
+            ? promptChoice(prompt, ['y', 'n', 'q'], 'n', { addCommandQueue: false, menuable: true })
             : promptYesNo(prompt, 'n', false);
     const confirmAll = !!(paranoiaBits & PARANOID_CONFIRM);
     const responseType = confirmAll ? acceptQuit ? '[yes|no|quit]' : '[yes|no]'

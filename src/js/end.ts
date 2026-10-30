@@ -1295,12 +1295,12 @@ export async function setVanqOrder(forVanquished: boolean): Promise<number> {
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
 async function ynQuestion(
     question: string, visible: 'ynq' | 'ynaq', defquery: DisclosureDefault,
-    { hiddenAll = false }: { hiddenAll?: boolean } = {},
+    { hiddenAll = false, menuable = false }: { hiddenAll?: boolean; menuable?: boolean } = {},
 ): Promise<'y' | 'n' | 'a' | 'q'> {
     const choices: Array<'y' | 'n' | 'a' | 'q'>
         = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
     return await promptChoice(
-        question, choices, defquery, { visibleChoices: visible },
+        question, choices, defquery, { visibleChoices: visible, menuable },
     );
 }
 
@@ -1332,7 +1332,7 @@ async function discloseGame({
                 ? `Do you want to see what you had when you ${deathVerb === 'quit' ? 'quit' : 'died'}?`
                 : 'Do you want your possessions identified?';
             const { ask, defquery } = shouldQueryDiscloseOption('i');
-            possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
+            possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery, { menuable: true })
                 : defquery;
         }
         if (possessionAnswer === 'y') {
@@ -1346,7 +1346,7 @@ async function discloseGame({
     if (!game.program_state.stopprint) {
         const { ask, defquery } = shouldQueryDiscloseOption('a');
         const attributes = ask
-            ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery)
+            ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery, { menuable: true })
             : defquery;
         if (attributes === 'y')
             await showFinalAttributes({ final: survived ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD, killer });
@@ -1389,7 +1389,7 @@ async function discloseGame({
         const question = 'Do you want to see your conduct'
             + (achievements > 0 ? ' and achievements' : '') + '?';
         const conduct = ask
-            ? await ynQuestion(question, 'ynq', defquery) : defquery;
+            ? await ynQuestion(question, 'ynq', defquery, { menuable: true }) : defquery;
         if (conduct === 'y')
             await showDisclosureOverlay(finalConductLines());
         if (conduct === 'q') return stopDisclosure();
@@ -1399,7 +1399,7 @@ async function discloseGame({
         const { ask, defquery } = shouldQueryDiscloseOption('o');
         const overview = ask
             ? await ynQuestion(
-                'Do you want to see the dungeon overview?', 'ynq', defquery,
+                'Do you want to see the dungeon overview?', 'ynq', defquery, { menuable: true },
             )
             : defquery;
         if (overview === 'y') {
@@ -1545,7 +1545,7 @@ function fixupDeath(how: number): void {
 
 export async function doquit() {
     const abandonTutorial = !!game._tutorialActive
-        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n') === 'y';
+        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n', { menuable: true }) === 'y';
     const answer = !abandonTutorial && await paranoidQuery(
         !!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?',
     );
@@ -1569,7 +1569,7 @@ export async function doquit() {
         return;
     }
     if (game.flags.debug) {
-        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q');
+        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q', { menuable: true });
         if (dump === 'y') {
             game.program_state.windows_exited = true;
             game.program_state.gameover = true;

@@ -5758,7 +5758,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
         // is recorded into CQ_REPEAT for the next do-again.
         const { answer } = await yn_function(
             `Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`,
-            'rl', '', true,
+            'rl', '', true, { menuable: true },
         );
         if (answer !== 'r' && answer !== 'l') {
             game.context.move = 0;

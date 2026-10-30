@@ -31,7 +31,7 @@ import {
     AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL,
 } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
-import { promptKey } from './tty_prompts.js';
+import { yn_function } from './query.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 
@@ -51,16 +51,9 @@ export function heroCanSpinWeb(state = game) {
     return webMaker(heroMonsterForm(state));
 }
 
-export async function chooseSpiderAbility(readKey = promptKey) {
-    for (;;) {
-        const key = await readKey('Hide [h] or spin a web [s]? ');
-        // The native restricted prompt maps quitchars (including NUL) to 'q'.
-        if ([0, 27, 32, 10, 13].includes(key)) return null;
-        const choice = String.fromCharCode(key).toLowerCase();
-        if (choice === 'q') return null;
-        if (choice === 'h') return 'hide';
-        if (choice === 's') return 'spin';
-    }
+export async function chooseSpiderAbility() {
+    const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q', true, { menuable: true });
+    return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
 }
 
 function trapAtHero(state: GameState) {
