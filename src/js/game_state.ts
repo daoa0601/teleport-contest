@@ -380,6 +380,7 @@ export interface GameState {
 
     // Native movement, helplessness and prayer scheduling.
     _moveloopStarted?: boolean;
+    _deferSeeMonsters?: boolean;
     _nextAttribCheck?: number;
     rndencode?: number;
     seer_turn?: number;
