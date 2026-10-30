@@ -6,7 +6,7 @@ import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
-import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, PL_PSIZ, QBUFSZ, SPE_LIM } from './const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, M_AP_OBJECT, M_AP_TYPE, PL_PSIZ, QBUFSZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { deleteObject } from './object_delete.js';
@@ -36,6 +36,7 @@ import { lookupNovelTitle } from './novel_titles.js';
 import { tryWizardTerrainWish, wishForWizardTrap } from './wish_terrain.js';
 export { japaneseItemName } from './japanese_item_name.js';
 export { parseWishText } from './wish_parse.js';
+const STRANGE_OBJECT = 0;
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
@@ -473,6 +474,14 @@ export function simpleObjectTypeName(otyp, state = game) {
     if (oclass === GEM_CLASS)
         return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
+}
+// C objnam.c:mimic_obj_name(): discovery describes the apparent object,
+// while the earlier meal message describes the shape the hero takes.
+export function mimicObjectName(monster, state = game) {
+    const appearance = monster.mappearance;
+    if (M_AP_TYPE(monster) !== M_AP_OBJECT || appearance === undefined || appearance === STRANGE_OBJECT)
+        return 'whatcha-may-callit';
+    return appearance === GOLD_PIECE ? 'gold' : simpleObjectTypeName(appearance, state);
 }
 // C obj_typename(): discoveries-style type name, call name, and appearance.
 export function objectTypeName(otyp, state = game) {

@@ -11,6 +11,7 @@ import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndCh
 import { cls, docrt, flush_screen, plineWithContinuation } from './display.js';
 import { initOverviewRecord, insideWizardTower, levelIsWizardTower, specialPrototypeAt } from './dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { rewindEngravingsForSave } from './engrave.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { deliverSpecialLevelMessages, placeHeroAtRandomArrival, resolveHeroArrivalCollision } from './level_change.js';
 import { maybeResetPick } from './lock_context.js';
@@ -194,4 +195,6 @@ async function returnToReplacementLevel(pets: readonly Monster[], wasInsideTower
     await flush_screen(1);
     await deliverSpecialLevelMessages();
     await checkSpecialRoom();
+    // C cmd.c:makemap_prepost(FALSE) checkpoints the replacement level.
+    if (game.flags.checkpoint ?? true) rewindEngravingsForSave(game.level);
 }

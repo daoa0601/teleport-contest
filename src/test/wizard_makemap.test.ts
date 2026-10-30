@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
+import { DUST, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
+import { makeEngravingAt, readEngravingAt, wipeEngravingAt } from '../js/engrave.js';
 import { initializePet } from '../js/dog.js';
 import { pline } from '../js/display.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -25,6 +26,31 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 import { createDungeon } from './support/topology.js';
+
+for (const checkpoint of [true, false]) {
+    void test(`#wizmakemap ${checkpoint ? 'checkpoints' : 'does not checkpoint'} recovered engraving text`, async () => {
+        const storage = memoryStorage();
+        await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 } }, flags: { debug: true } });
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+        game.storage = storage;
+        game.plname = 'Ada';
+        makeEngravingAt(12, 10, '   Stay away!', null, 0, DUST);
+        wipeEngravingAt(12, 10, 0);
+        assert.ok(saveBonesLevel());
+        await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 } }, flags: { debug: true, checkpoint } });
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+        game.storage = storage;
+        game.plname = 'Ada';
+        pushKeys('yn');
+
+        await wizMakeMap();
+
+        const messages: string[] = [];
+        await readEngravingAt(12, 10, async message => { messages.push(message); });
+        assert.ok(messages.includes(`You read: "${checkpoint ? '   ' : ''}Stay away!"`),
+            `Recovered engraving must show the text selected by checkpoint: ${messages.join(' | ')}`);
+    });
+}
 
 void test('#wizmakemap clears old sight before acknowledging the replacement level', async t => {
     const oldLevel = await freshObjectRoom({

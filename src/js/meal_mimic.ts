@@ -15,6 +15,7 @@ import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireM
 import { monsterName } from './monster_name.js';
 import { GOLD_PIECE, ORANGE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { mimicObjectName } from './objnam.js';
 import { heroIsUnchanging } from './polyself.js';
 import { heroIsHallucinating } from './senses.js';
 import { dismountHero } from './steed.js';
@@ -91,7 +92,7 @@ export async function disturbMealMimicry(monster: Monster, { state = game }: { s
         await plineWithContinuation(`Something ${picksUpGold ? 'tries to pick you up' : 'disturbs you'}!`);
     } else {
         const name = monsterName(monster, { state, article: 'none', exact: true });
-        const shape = hero.mappearance === ORANGE ? 'orange' : 'pile of gold';
+        const shape = mimicObjectName(hero, state);
         await plineWithContinuation(`Wait, ${name}!  That ${shape} is really ${
             withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))
         } named ${state.plname}!`);
