@@ -258,6 +258,9 @@ function searchWishNames(parsed, search, state) {
     }
     if (!search.oclass && search.actual) {
         const artifact = artifactByName(search.actual);
+        // Native replaces d.name even when the artifact lookup fails.
+        // Skill-category wishes reach this search before choosing a weapon.
+        parsed.personalName = artifact?.name ?? null;
         if (artifact)
             return { kind: 'object', type: artifact.baseType, fruit: null, artifact };
     }
