@@ -91,6 +91,7 @@ import { surfaceName, waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { identifyTrap } from './pager_traps.js';
 import { showLookList } from './pager_lists.js';
@@ -778,6 +779,29 @@ interface TravelDirection {
     checkVisited: boolean;
 }
 
+// hack.c:findtravelpath() uses DISP_ALL so search markers include unseen
+// squares. Crawl mode holds frontiers for three delays and guessed goals
+// for five; ending the effect restores the map before movement continues.
+async function showTravelSearch(
+    positions: readonly (readonly [number, number])[], warningLevel: 1 | 2, g: GameState,
+): Promise<void> {
+    if (!g.iflags.trav_debug) return;
+    const symbol = def_warnsyms[warningLevel];
+    if (!symbol) throw new Error(`Missing travel warning glyph ${warningLevel}`);
+    const effect = new TemporaryMapEffect('all', {
+        ch: symbol.ch, color: symbol.color, decgfx: false,
+        kind: 'warning', glyph: GlyphOffset.warning + warningLevel,
+    });
+    await effect.start();
+    try {
+        for (const [x, y] of positions) await effect.show(x, y);
+        const pauses = g.flags.runmode === 'crawl' ? (warningLevel === 1 ? 3 : 5) : 1;
+        for (let pause = 0; pause < pauses; pause++) await g.animationFrame?.();
+    } finally {
+        await effect.end();
+    }
+}
+
 // C findtravelpath(): each radius preserves cardinal-first frontier order.
 // Door, boulder and trap delays apply to each edge before TEST_TRAV, in all
 // three search modes. The origin starts unmarked, as in C's zeroed matrix.
@@ -815,6 +839,7 @@ async function searchTravelPath(
                 }
             }
         }
+        await showTravelSearch(next, 1, g);
         frontier = next;
     }
     return { distance, direction: null };
@@ -881,6 +906,7 @@ async function findGuessedTravelDirection(targetX: number, targetY: number, g: G
         }
     }
     if (pickX !== originX || pickY !== originY) {
+        await showTravelSearch([[pickX, pickY]], 2, g);
         const { direction } = await searchTravelPath(pickX, pickY, originX, originY, 'travel', g);
         return direction ? { ...direction, checkVisited: true } : null;
     }

@@ -1856,7 +1856,7 @@ async function makemon(
     mdat: number | null, x: number, y: number, mmflags: number, requestedByHero = false,
 ): Promise<MonsterBirthState | null> {
     const level = requireGameLevel();
-    if (mdat == null && level?.flags?.rndmongen === false) return null;
+    if (game.iflags.debug_mongen || mdat == null && level.flags.rndmongen === false) return null;
     const gpflags = GP_AVOID_MONPOS | GP_CHECKSCARY | (mmflags & MM_IGNOREWATER);
     if (x === 0 && y === 0) {
         const point = randomMonsterPosition(mdat, gpflags);
@@ -3002,6 +3002,8 @@ export async function makemonNear(
     mnum: number | null, centerX: number, centerY: number, flags = 0,
     requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy,
 ): Promise<MonsterBirthState | null> {
+    // C makemon() rejects the birth before the placement this wrapper owns.
+    if (game.iflags.debug_mongen) return null;
     const pos = findMonsterNearPosition(mnum, centerX, centerY, {
         ignoreWater: !!(flags & MM_IGNOREWATER),
     });
