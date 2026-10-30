@@ -6,7 +6,7 @@ import { pline } from './display.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import { colorName, queryAttributeSet, queryAttributeMenu, queryColorMenu } from './color_query.js';
-import type { StatusHiliteRule } from './flags.js';
+import type { InterfaceFlags, StatusHiliteRule } from './flags.js';
 import {
     BL_AC, BL_ALIGN, BL_ARMOR, BL_CAP, BL_CONDITION, BL_ENE, BL_ENEMAX, BL_EXP, BL_FLUSH,
     BL_HP, BL_HPMAX, BL_HUNGER, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF,
@@ -64,6 +64,11 @@ const STATUS_FIELDS: readonly { fld: number; name: string; anytype: AnyType; idx
 ];
 if (STATUS_FIELDS.length !== MAXBLSTATS) throw new Error('initblstats must list every status field');
 
+/** botl.c initblstats[] table for the config rule parser. */
+export function statusFieldTable() {
+    return STATUS_FIELDS;
+}
+
 // botl.c conditions[]: the picker order and canonical display names.
 const HILITE_CONDITIONS: readonly (readonly [number, string])[] = [
     [BL_MASK_BAREH, 'Bare'], [BL_MASK_BLIND, 'Blind'], [BL_MASK_BUSY, 'Busy'],
@@ -77,6 +82,11 @@ const HILITE_CONDITIONS: readonly (readonly [number, string])[] = [
     [BL_MASK_TERMILL, 'TermIll'], [BL_MASK_TETHERED, 'Teth'], [BL_MASK_TRAPPED, 'Trap'],
     [BL_MASK_UNCONSC, 'Out'], [BL_MASK_WOUNDEDL, 'WLegs'], [BL_MASK_HOLDING, 'UHold'],
 ];
+
+/** botl.c conditions[] for the config rule parser. */
+export function conditionEntries() {
+    return HILITE_CONDITIONS;
+}
 
 // botl.c condition_aliases[]; conditionbitmask2str() starts comparing at
 // index 1, so the "strangled" spelling never names a rendered mask.
@@ -100,11 +110,31 @@ const CONDITION_ALIASES: readonly (readonly [string, number])[] = [
         | BL_MASK_HOLDING],
 ];
 
+/** botl.c condition_aliases[] for the config rule parser. */
+export function conditionAliasEntries() {
+    return CONDITION_ALIASES;
+}
+
 // botl.c enc_stat[] (index SLT_ENCUMBER..OVERLOADED), the alignment texts,
 // and the hunger names hu_stat[] carries between Satiated and Hungry.
 const ENC_STAT: readonly string[] = ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'];
 const ALIGN_TEXTS: readonly string[] = ['chaotic', 'neutral', 'lawful'];
 const HUNGER_TEXTS: readonly (string | null)[] = ['Satiated', null, 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'];
+
+/** botl.c enc_stat[] indices SLT_ENCUMBER..OVERLOADED. */
+export function encStatNames() {
+    return ENC_STAT;
+}
+
+/** botl.c aligntxt[]. */
+export function alignTexts() {
+    return ALIGN_TEXTS;
+}
+
+/** botl.c hutxt[]: hu_stat[] names between Satiated and Starved. */
+export function hungerTexts() {
+    return HUNGER_TEXTS;
+}
 
 // threshold_value / is_out_of_range fragments of the out-of-range plines.
 const THRESHOLD_VALUE = 'hilite_status threshold ';
@@ -256,9 +286,8 @@ export function countStatusHilites(): number {
     return count;
 }
 
-export function clearStatusHilites(): void {
-    game.iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
-    game.iflags.condHilites = new Array<number>(BL_ATTCLR_MAX).fill(0);
+export function clearStatusHilites(iflags: InterfaceFlags = game.iflags): void {
+    iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
 }
 
 // botl.c reset_status_hilites(): repaint even when highlighting is off,

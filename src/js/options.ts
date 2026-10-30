@@ -21,7 +21,8 @@ import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
-import { countStatusHilites, statusHiliteMenu } from './status_hilites.js';
+import { clearStatusHilites, countStatusHilites, statusHiliteMenu } from './status_hilites.js';
+import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './status_hilite_parse.js';
 import { countBindKeys, handlerRebindKeys } from './rebind_keys.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -979,15 +980,21 @@ function handleConfigStatement(
     switch (statement) {
     // Accepted by the C table without effect in this port: path prefixes
     // are ignored on this platform, WIZKIT names a file this runtime cannot
-    // supply, and HILITE_STATUS and SYMBOLS/ROGUESYMBOLS validation need the
-    // status-hilite grammar and the symbol-name tables, which are missing —
-    // their bad-value diagnostics remain unported.
+    // supply, and SYMBOLS/ROGUESYMBOLS validation needs the symbol-name
+    // tables, which are missing — their bad-value diagnostics remain
+    // unported.
     case 'HACKDIR': case 'LEVELDIR': case 'LEVELS': case 'SAVEDIR':
     case 'BONESDIR': case 'DATADIR': case 'SCOREDIR': case 'LOCKDIR':
-    case 'CONFIGDIR': case 'TROUBLEDIR': case 'HILITE_STATUS':
+    case 'CONFIGDIR': case 'TROUBLEDIR':
     case 'ROGUESYMBOLS': case 'SYMBOLS': case 'WIZKIT':
     case 'QT_TILEWIDTH': case 'QT_TILEHEIGHT': case 'QT_FONTSIZE': case 'QT_COMPACT':
         break;
+    case 'HILITE_STATUS': {
+        const operations: StatusHiliteOperation[] = [];
+        parseStatusHl1(parsed.valueText, addError, true, operations);
+        replayStatusHiliteOperations(operations, result.iflags);
+        break;
+    }
     case 'MENUCOLOR': {
         const rule = parseMenuColoring(parsed.valueText, addError);
         if (rule) {
@@ -1370,6 +1377,16 @@ function parseConfiguration(
                 if (!raw && !negated) addError(`Missing parameter for '${stripped}'`);
                 const limit = negated ? 0 : raw ? cInteger(raw) : 5;
                 result.flags.pile_limit = limit < 0 ? 5 : limit;
+                continue;
+            }
+            if (canonical === 'hilite_status') {
+                if (!optionValue) addError('Value is mandatory for hilite_status');
+                else if (negated) clearStatusHilites(result.iflags);
+                else {
+                    const operations: StatusHiliteOperation[] = [];
+                    parseStatusHl1(optionValue, addError, true, operations);
+                    replayStatusHiliteOperations(operations, result.iflags);
+                }
                 continue;
             }
             if (canonical === 'statushilites') {
