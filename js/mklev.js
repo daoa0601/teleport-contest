@@ -2975,8 +2975,9 @@ export async function cloneHeroMonsterForm(state = game) {
 }
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
 export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy) {
-    // C makemon() rejects the birth before the placement this wrapper owns.
-    if (game.iflags.debug_mongen)
+    // Hero-origin placement belongs to makemon(), after its debug guard.
+    // Other callers, such as egg hatching, call enexto() before makemon().
+    if (requestedByHero && game.iflags.debug_mongen)
         return null;
     const pos = findMonsterNearPosition(mnum, centerX, centerY, {
         ignoreWater: !!(flags & MM_IGNOREWATER),

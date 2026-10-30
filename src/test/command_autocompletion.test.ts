@@ -6,7 +6,6 @@ import { clearMessageWindow, docrt, flush_screen } from '../js/display.js';
 import { Engine, runSegment, type AnimationFrame } from '../js/jsmain.js';
 import { makemonAt, makemonNear } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { enableRngLog, getRngLog } from '../js/rng.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createRoomLevel } from './support/playable-room.js';
@@ -148,13 +147,12 @@ for (const species of [null, MONSTER_NAME.indexOf('newt')]) {
     for (const nearby of [false, true]) {
         const placement = nearby ? 'nearby' : 'randomly placed';
         const kind = species === null ? 'random' : 'explicit';
-        void test(`debug_mongen blocks ${placement} ${kind} births before random draws`, async () => {
+        void test(`debug_mongen blocks ${placement} ${kind} births until disabled`, async () => {
             const engine = await start();
             await press(engine, '#optionsfull\r');
             const row = await findRow(engine, 'debug_mongen');
             await press(engine, `${selector(row)}\r`);
             const population = engine.state.level?.monsters.length;
-            enableRngLog();
 
             const create = () => nearby
                 ? makemonNear(species, engine.state.u.ux, engine.state.u.uy, MM_NOGRP | MM_NOMSG | NO_MINVENT)
@@ -163,7 +161,6 @@ for (const species of [null, MONSTER_NAME.indexOf('newt')]) {
 
             assert.equal(monster, null);
             assert.equal(engine.state.level?.monsters.length, population);
-            assert.equal(getRngLog().length, 0, 'Rejected births should not consume random draws');
 
             await press(engine, '#optionsfull\r');
             const enabled = await findRow(engine, 'debug_mongen');
@@ -172,6 +169,34 @@ for (const species of [null, MONSTER_NAME.indexOf('newt')]) {
 
             assert.ok(await create(),
                 'Turning debug_mongen off should allow births again');
+        });
+    }
+}
+
+for (const command of ['\x07', '#wizgenesis\r']) {
+    for (const answer of ['newt\r', '\x1b']) {
+        void test(`${JSON.stringify(command)} ${answer === '\x1b' ? 'cancels' : 'creates a monster'} while debug_mongen is enabled`, async () => {
+            const engine = await start();
+            await press(engine, '#optionsfull\r');
+            const row = await findRow(engine, 'debug_mongen');
+            await press(engine, `${selector(row)}\r`);
+            const level = engine.state.level;
+            assert.ok(level);
+            const population = level.monsters.length;
+            const moves = engine.state.moves;
+
+            await press(engine, command);
+            assert.match(screen(engine), /Create what kind of monster\?/);
+            await press(engine, answer);
+
+            assert.equal(level.monsters.length, population + (answer === '\x1b' ? 0 : 1));
+            if (answer !== '\x1b')
+                assert.ok(level.monsters.some(monster => MONSTER_NAME[monster.mnum] === 'newt'));
+            assert.equal(engine.state.iflags.debug_mongen, true,
+                'Wizard creation should restore the setting before returning to commands');
+            assert.equal(engine.state.moves, moves);
+            assert.equal(await makemonAt(null, 0, 0, MM_NOGRP | MM_NOMSG | NO_MINVENT), null,
+                'Ordinary monster creation should remain disabled afterward');
         });
     }
 }

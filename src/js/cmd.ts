@@ -3326,16 +3326,23 @@ async function wizWish() {
     await reportHeroEncumbrance();
 }
 
-// C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
-// create_particular().  The debug command remains zero-time.
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
     game.context.move = 0;
 }
 
+// wizcmds.c:wiz_genesis() allows deliberate creation while ordinary births
+// are disabled, then restores that setting even when the prompt is cancelled.
 async function wizGenesis() {
-    await createParticularMonster();
+    const mongenSaved = game.iflags.debug_mongen;
+    game.iflags.debug_mongen = false;
+    try {
+        await createParticularMonster();
+    } finally {
+        if (mongenSaved === undefined) delete game.iflags.debug_mongen;
+        else game.iflags.debug_mongen = mongenSaved;
+    }
     game.context.move = 0;
 }
 
