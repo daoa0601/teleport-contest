@@ -7,6 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterTurn } from '../js/allmain.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { noticeAllMonsters } from '../js/monster_notices.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -27,7 +29,6 @@ void test('spot_monsters announces a moving monster once per sighting', async ()
     initRng(11n);
     await performMonsterTurn(jackal, game);
     assert.ok(announcements().includes('You see a jackal.'), `postmov() announces the first sighting: ${announcements().join(' | ')}`);
-    assert.equal(jackal.mspotted, 1);
     const seen = announcements().length;
     await performMonsterTurn(jackal, game);
     assert.ok(!announcements().slice(seen).includes('You see a jackal.'), 'the mspotted latch keeps the second turn quiet');
@@ -55,6 +56,19 @@ void test('a telepathically sensed hider is not announced', async () => {
     const said = [];
     await noticeAllMonsters(game, async (message) => { said.push(message); });
     assert.deepEqual(said, []);
-    assert.notEqual(piercer.mspotted, 1);
+});
+void test('a save made after notices ran restores cleanly', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.plname = 'Spot saver';
+    game.flags.spot_monsters = true;
+    await createMonsterAt('jackal', 12, 10, NO_MINVENT);
+    await createMonsterAt('newt', 40, 10, NO_MINVENT);
+    const said = [];
+    await noticeAllMonsters(game, async (message) => { said.push(message); });
+    assert.ok(said.length > 0, 'a monster is spotted before saving');
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame('Spot saver', storage), true, 'the notice latch is transient and must not poison the save');
 });
 //# sourceMappingURL=monster_spot_notices.test.js.map

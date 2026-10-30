@@ -34,6 +34,7 @@ import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -248,6 +249,8 @@ async function moveHeroOutOfPit(destination, state) {
     if (landing.died)
         return;
     await announceInvocationSquare();
+    // C apply.c:3116 teleds() ends by noticing the new surroundings.
+    await noticeAllMonsters(state);
     state.vision_full_recalc = 1;
 }
 async function escapePit(targetX, targetY, monster, proficiency, attackMonster, state) {

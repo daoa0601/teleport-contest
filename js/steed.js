@@ -49,6 +49,7 @@ import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './monster_sleep.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, } from './hack.js';
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -407,6 +408,9 @@ async function mountSteed(steed, force, [dx, dy]) {
     // Mounting uses teleds(), whose invocation message follows spot effects.
     if (!game.program_state.gameover)
         await announceInvocationSquare();
+    // C steed.c:380 teleds() ends by noticing the mount square.
+    if (!game.program_state.gameover)
+        await noticeAllMonsters(game);
     game.context.botl = true;
     return true;
 }
@@ -778,6 +782,8 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                             location, died: true,
                         };
                     await announceInvocationSquare();
+                    // C steed.c:765 teleds() ends by noticing the landing.
+                    await noticeAllMonsters(state);
                     if (state.level.flags.sokoban_rules
                         && (state.level.objects[landing.x]?.[landing.y] || [])
                             .some(object => object.otyp === BOULDER)) {

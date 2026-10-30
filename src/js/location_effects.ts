@@ -2,6 +2,7 @@
 
 import { bot, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import type { HeroTeleportMovement } from './teleport.js';
 import type { MessagePublisher } from './display.js';
 import type { HeroTrapOptions } from './hero_traps.js';
@@ -73,6 +74,9 @@ export async function finishTeleportArrival(
     });
     if (result.died || game.program_state.gameover) return { ...result, died: true };
     await announceInvocationSquare();
+    // C teleport.c:teleds() ends with notice_all_mons() after the landing
+    // effects and the invocation message.
+    await noticeAllMonsters(game);
     return result;
 }
 

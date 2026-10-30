@@ -49,6 +49,7 @@ import { moveHeroByTeleport } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { cansee, vision_recalc } from './vision.js';
 import { nearCapacity } from './weight.js';
+import { noticeAllMonsters } from './monster_notices.js';
 
 const ANY = 0, HORIZONTAL = 1, VERTICAL = 2, DIAGONAL = 3;
 
@@ -267,6 +268,8 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
         newx: movement.x, newy: movement.y });
     if (state.program_state.gameover) return jumpResult(true, state);
     await announceInvocationSquare();
+    // C apply.c:2157 teleds() ends by noticing the landing surroundings.
+    await noticeAllMonsters(state);
     nomul(-1, state);
     state._helplessReason = 'jumping around';
     state._helplessDoneMessage = '';

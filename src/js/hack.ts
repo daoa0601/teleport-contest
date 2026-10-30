@@ -61,6 +61,7 @@ import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
 import { shopkeeperBlockingDoor } from './shop_blocking.js';
 import { shopkeeperName } from './monster_name.js';
 import { vision_recalc, vision_reset } from './vision.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import {
     inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED,
 } from './weight.js';
@@ -804,6 +805,8 @@ async function finishLiquidTeleport(
     const from = { x: movement.oldx, y: movement.oldy };
     const to = { x: movement.x, y: movement.y };
     const landing = await applyLandingEffects({ from, to });
+    // C trap.c teleds() ends by noticing the rescue landing.
+    if (!landing?.died) await noticeAllMonsters(state);
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
 
@@ -1060,6 +1063,8 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
                 from: { x, y },
                 to: { x: u.ux, y: u.uy },
             });
+            // C trap.c:5164 teleds() ends by noticing the landing square.
+            if (!landing?.died) await noticeAllMonsters(state);
             return {
                 entered: true, moved: true, died: !!landing?.died,
                 from: { x, y }, to: { x: u.ux, y: u.uy },

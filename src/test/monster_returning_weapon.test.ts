@@ -15,6 +15,8 @@ import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from '../js/monste
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -270,6 +272,31 @@ void test('a returning artifact striking its confused thrower adds artifact dama
     assert.match(said, /flies back toward the ogre, hitting his arm!/);
     assert.match(said, /fiery blade burns the ogre/);
     assert.equal(ogre.mhp, 42,
-        'the three-point base hit plus Fire Brand five fire damage');
+        'the four-point base hit doubled by Fire Brand');
+    assert.ok(floorObjectsAt(level, ogre.mx, ogre.my).includes(brand));
+});
+
+// C artifact.c:1456-1466: with a Null attacker and an unseen defender,
+// artifact_hit() applies spec_dbon() silently; an engulfed, unseen thrower
+// gets no "fiery blade" prose. The damage still lands.
+void test('a blind swallowed hero reads nothing when the thrower is struck by its returning artifact', async () => {
+    const level = freshObjectRoom();
+    const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
+    await installSwallowedHero(ogre);
+    setHeroBlindnessTurns(100);
+    ogre.mconf = true;
+    ogre.mhp = ogre.mhpmax = 50;
+    const brand = await artifactObject('Fire Brand');
+    const messages: string[] = [];
+
+    await returnMonsterWeapon(ogre, brand, 12, 10, {
+        publish: async (message: string) => { messages.push(message); },
+        random: limit => limit === 100 ? 1 : limit === 2 ? 1 : 0,
+        rollOne: range => range,
+    });
+
+    assert.doesNotMatch(messages.join('\n'), /fiery blade/,
+        'the unseen thrower realizes no artifact damage');
+    assert.equal(ogre.mhp, 42, 'the doubled Fire Brand damage still lands');
     assert.ok(floorObjectsAt(level, ogre.mx, ogre.my).includes(brand));
 });

@@ -76,6 +76,8 @@ function graphReplacer(): (key: string, value: unknown) => unknown {
         if (identity.kind === 'object') delete saved.bypass;
         // save.c:savemon() clears a flash interrupted by a panic save.
         if (identity.kind === 'monster') saved.mtemplit = 0;
+        // hack.c never saves mspotted; a restored monster starts unspotted.
+        if (identity.kind === 'monster') delete saved.mspotted;
         return saved;
     };
 }

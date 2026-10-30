@@ -508,6 +508,10 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     game.u.uz0 = { ...game.u.uz };
     if (game.flags.checkpoint ?? true)
         rewindEngravingsForSave(game.level);
+    // C do.c:1971-1972: goto_level() has closed its notice window by here,
+    // after every arrival message and the Tourist experience bonus, and
+    // announces the new level's monsters just before the annotation.
+    await noticeAllMonsters(game);
     const levelAnnotation = game._levelAnnotations?.get?.(`${newDepth.dnum}:${newDepth.dlevel}`);
     if (levelAnnotation) {
         await pline(`You remember this level as ${levelAnnotation}.`);
@@ -658,9 +662,6 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
             await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
-        // C goto_level(): docrt() and the notice window close before the
-        // level's monsters are announced.
-        await noticeAllMonsters(game);
         return false;
     }
     finally {

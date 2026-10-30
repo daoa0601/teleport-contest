@@ -985,9 +985,11 @@ async function beginInitialTurnMaintenance() {
     game.were_changes = 0;
     for await (const event of monsterDistressEvents(game.level?.monsters || [], game, rn2, game.moves, plineWithContinuation)) {
         if (event.kind === 'stationary-liquid') {
-            if (game.vision_full_recalc)
+            if (game.vision_full_recalc) {
                 vision_recalc(0);
-            await noticeAllMonsters(game);
+                // C vision_recalc() ends with notice_all_mons().
+                await noticeAllMonsters(game);
+            }
             await resolveMonsterLiquid(event.monster, game, {
                 announce: plineWithContinuation,
                 monsterMoving: false,
@@ -3505,9 +3507,11 @@ async function executeMonsterTurns() {
             somebodyCanMove = true;
         // C mon.c:movemon_singlemon() settles deferred visibility before the
         // actor's liquid checks, equipment changes, and movement decisions.
-        if (game.vision_full_recalc)
+        if (game.vision_full_recalc) {
             vision_recalc(0);
-        await noticeAllMonsters(game);
+            // C vision_recalc() ends with notice_all_mons().
+            await noticeAllMonsters(game);
+        }
         if (game.context.bypasses)
             clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
@@ -3791,8 +3795,8 @@ export async function runMoveloopCore() {
         if (g.vision_full_recalc) {
             vision_recalc(0);
             g.vision_full_recalc = 0;
+            await noticeAllMonsters(g);
         }
-        await noticeAllMonsters(g);
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose
     // flush_screen() draws the buffered map, only when the status changed.

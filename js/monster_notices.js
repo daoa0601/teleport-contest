@@ -1,11 +1,22 @@
 // C hack.c:notice_mon() and notice_all_mons(): the accessibility notices
 // behind the spot_monsters option (C a11y.mon_notices). C latches each
 // monster's mspotted and prints "You see <mon>." once per sighting; a
-// monster that can no longer be spotted drops its latch silently. C calls
-// notice_mon() at postmov() entry and catches every vision recalculation
-// up with notice_all_mons(); this port runs that catch-up at the hero-move,
-// end-of-command, monster-phase, level-arrival, and game-start vision
-// updates, the points whose notices a player can observe.
+// monster that can no longer be spotted drops its latch silently.
+// C calls notice_mon() at postmov() entry; every other announcement comes
+// from notice_all_mons() at the end of vision_recalc(). The port runs that
+// catch-up at the async ends of the recalculation sites: the hero's step
+// (hack.c:2972), the monster-phase and post-command drains that gate on
+// vision_full_recalc (allmain.c:471, 542, 580; mon.c:1186, 1258), every
+// teleds() landing (teleport.c:571, including jump, mount, dismount, pit
+// escape, and liquid rescues), level arrival after the arrival messages
+// (do.c:1971), and newgame after welcome() (allmain.c:848). C's other
+// vision_recalc() callers -- message output (pline.c:270), light sources
+// (light.c), eyewear (worn.c), digging, zaps, and pet movement -- are
+// drained synchronously by this port, so a monster that becomes spottable
+// in one of those flows is announced at the next ported anchor rather than
+// immediately. The notice_mon_off() windows (magic mapping, save, level
+// transition, newgame preamble) suppress notices in C and contain no ported
+// anchor, so the port needs no blocked counter.
 import { canSeeMonster, canSpotMonster, plineWithContinuation, } from './display.js';
 import { game } from './gstate.js';
 import { MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';

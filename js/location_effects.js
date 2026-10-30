@@ -1,6 +1,7 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
 import { bot, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
 import { applyHeroLiquidEffects } from './cmd.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
@@ -41,6 +42,9 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
     if (result.died || game.program_state.gameover)
         return { ...result, died: true };
     await announceInvocationSquare();
+    // C teleport.c:teleds() ends with notice_all_mons() after the landing
+    // effects and the invocation message.
+    await noticeAllMonsters(game);
     return result;
 }
 // C spoteffects() suppresses same-location recursion, but permits a changed
