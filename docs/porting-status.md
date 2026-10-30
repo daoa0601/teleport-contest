@@ -652,7 +652,14 @@ play-reachable divergence; `.cache/audit-insight/final.md` records the
 verification, including the dead "swimming"/"in water" branch that
 `Underwater (u.uinwater)` makes unreachable, the frozen-clock " none" elapsed
 time, and the three eval sessions whose vanquished `[ynq]` prompt now replays
-1:1).
+1:1), and `display.c` (the audit-display unit compared every function --
+newsym, the map_*/feel_* family, display_monster's mimic/appearance cases,
+warning glyphs, tmp_at, swallowed/under_water/under_ground, see_* and the
+glyph/color machinery -- with no play-reachable divergence;
+`.cache/audit-display/final.md` records the verification, including the
+display-RNG draw sites and orders, the DARKROOMSYM Rogue alias, the wall-angle
+matrices, and behavior tests for `mon_warning`/`under_water`, which the corpus
+never executes natively).
 
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
