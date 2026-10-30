@@ -25,6 +25,7 @@ import {
     checkGoldSymbol, reglyphSymbolSet,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
@@ -693,6 +694,9 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         else if (game.level.flags.fumaroles) await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
+        // C goto_level(): docrt() and the notice window close before the
+        // level's monsters are announced.
+        await noticeAllMonsters(game);
         return false;
     } finally {
         if (game.program_state?.gameover) game._mapFlushPaused = false;

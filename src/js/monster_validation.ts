@@ -220,6 +220,8 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         mavenge: optional(flag),
         meverseen: optional(flag),
         mtemplit: optional(flag),
+        // C never saves mspotted; restored monsters start unspotted.
+        mspotted: (entry): entry is undefined => entry === undefined,
         mundetected: optional(flag),
         minvis: optional(flag),
         perminvis: optional(flag),

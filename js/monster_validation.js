@@ -187,6 +187,8 @@ function monsterFields(value, context) {
         mavenge: optional(flag),
         meverseen: optional(flag),
         mtemplit: optional(flag),
+        // C never saves mspotted; restored monsters start unspotted.
+        mspotted: (entry) => entry === undefined,
         mundetected: optional(flag),
         minvis: optional(flag),
         perminvis: optional(flag),

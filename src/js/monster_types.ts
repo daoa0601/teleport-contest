@@ -184,6 +184,8 @@ export interface Monster extends MonsterPosition {
     mcloned?: MonsterFlag;
     mavenge?: MonsterFlag;
     meverseen?: MonsterFlag;
+    // C struct monst.mspotted: transient spot_monsters latch, never saved.
+    mspotted?: MonsterFlag;
     mtemplit?: MonsterFlag;
     mundetected?: MonsterFlag;
     minvis?: MonsterFlag;

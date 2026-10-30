@@ -5,6 +5,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -7589,6 +7590,9 @@ async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     if (u.umoved) {
         newsym(oldx, oldy);
         vision_recalc(1);
+        // C vision_recalc() ends with notice_all_mons(), before the
+        // invocation message.
+        await noticeAllMonsters(game);
         await announceInvocationSquare();
     }
     if (ballChainMove)

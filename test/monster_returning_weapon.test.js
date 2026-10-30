@@ -13,7 +13,7 @@ import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from '../js/monster_throw.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
-import { knownObject } from './support/game-objects.js';
+import { artifactObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -215,5 +215,26 @@ void test('life saving revives a monster killed by its returning club without ca
     assert.equal(soldier.minvent.some(object => object.otyp === AMULET_OF_LIFE_SAVING), false);
     assert.equal(soldier.mw, null);
     assert.ok(floorObjectsAt(game.level, soldier.mx, soldier.my).includes(aklys));
+});
+// C mthrowu.c:return_from_mtoss(): an artifact weapon that fails its catch
+// and hits its own thrower runs artifact_hit() with no attacker, so its
+// special effects and extra damage land before mhp loses the total.
+void test('a returning artifact striking its confused thrower adds artifact damage', async () => {
+    const level = freshObjectRoom();
+    const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
+    ogre.mconf = true;
+    ogre.mhp = ogre.mhpmax = 50;
+    const brand = await artifactObject('Fire Brand');
+    const messages = [];
+    await returnMonsterWeapon(ogre, brand, 12, 10, {
+        publish: async (message) => { messages.push(message); },
+        random: limit => limit === 100 ? 1 : limit === 2 ? 1 : 0,
+        rollOne: range => range,
+    });
+    const said = messages.join('\n');
+    assert.match(said, /flies back toward the ogre, hitting his arm!/);
+    assert.match(said, /fiery blade burns the ogre/);
+    assert.equal(ogre.mhp, 42, 'the three-point base hit plus Fire Brand five fire damage');
+    assert.ok(floorObjectsAt(level, ogre.mx, ogre.my).includes(brand));
 });
 //# sourceMappingURL=monster_returning_weapon.test.js.map

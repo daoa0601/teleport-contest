@@ -1,6 +1,7 @@
 import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
+import { noticeAllMonsters, noticeMonster } from './monster_notices.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -1177,6 +1178,7 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
     )) {
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) vision_recalc(0);
+            await noticeAllMonsters(game);
             await resolveMonsterLiquid(event.monster, game, {
                 announce: plineWithContinuation,
                 monsterMoving: false,
@@ -3343,6 +3345,8 @@ async function presentMonsterAttackEffects(
 async function presentMonsterPostMove(
     action: MonsterMovementAction, game: PlayingGameState,
 ): Promise<boolean> {
+    // C monmove.c:postmov() opens with notice_mon().
+    await noticeMonster(action.monster, game, plineWithContinuation);
     let movement = action.movement;
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.
@@ -3783,6 +3787,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // C mon.c:movemon_singlemon() settles deferred visibility before the
         // actor's liquid checks, equipment changes, and movement decisions.
         if (game.vision_full_recalc) vision_recalc(0);
+        await noticeAllMonsters(game);
         if (game.context.bypasses) clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
         const liquid = await resolveMonsterLiquid(actor, game, {
@@ -3927,6 +3932,8 @@ export async function newgame() {
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await welcome(true);
+    // C newgame(): welcome() finishes before the monsters are noticed.
+    await noticeAllMonsters(g);
     if (g.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
@@ -4072,6 +4079,7 @@ export async function runMoveloopCore() {
             vision_recalc(0);
             g.vision_full_recalc = 0;
         }
+        await noticeAllMonsters(g);
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose
     // flush_screen() draws the buffered map, only when the status changed.

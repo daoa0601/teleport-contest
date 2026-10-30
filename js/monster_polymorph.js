@@ -161,14 +161,19 @@ function acceptsShapechangerForm(baseMnum, targetMnum) {
         return true;
     return !((MONSTER_FLAGS2[targetMnum] ?? 0) & M2_NOPOLY);
 }
-function randomShape(baseMnum) {
+// C select_newcham_form()'s fifty-attempt fallback draws with validspecmon():
+// accept_newcham_form() plus the notake/nohead restriction that keeps
+// shopkeepers, priests, vault guards, and the quest leader in bodies that
+// can handle objects and speech. Only the Rogue level's early retries
+// consult it, matching the native loop condition.
+function randomShape(monster, baseMnum) {
     let targetMnum = -1;
     let triesLeft = 50;
     do {
         targetMnum = rn2(SPECIAL_PM);
         --triesLeft;
     } while (triesLeft > 0
-        && !acceptsShapechangerForm(baseMnum, targetMnum)
+        && !validSpecMon(monster, targetMnum, baseMnum, game)
         && triesLeft > 40
         && Is_rogue_level(game.u?.uz)
         && !/^[A-Z]$/.test(monsterClassSymbol(targetMnum)));
@@ -181,7 +186,7 @@ function dragonArmorForm(monster) {
 function selectOrdinaryPolymorphForm(monster) {
     const armorForm = dragonArmorForm(monster);
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
-        const targetMnum = armorForm ?? randomShape(-1);
+        const targetMnum = armorForm ?? randomShape(monster, -1);
         const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u?.uz);
         if (acceptsShapechangerForm(-1, targetMnum)
             && (!wantsUppercase
@@ -221,7 +226,7 @@ async function pickDoppelgangerChamForm(monster) {
 }
 async function selectDoppelgangerFormOnce(monster) {
     const targetMnum = await pickDoppelgangerChamForm(monster);
-    return targetMnum < 0 ? randomShape(PM_DOPPELGANGER) : targetMnum;
+    return targetMnum < 0 ? randomShape(monster, PM_DOPPELGANGER) : targetMnum;
 }
 async function selectDoppelgangerForm(monster) {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
@@ -233,12 +238,12 @@ async function selectDoppelgangerForm(monster) {
     }
     return null;
 }
-function selectChameleonForm() {
+function selectChameleonForm(monster) {
     const animals = chameleonAnimals();
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = !rn2(3)
             ? pickAnimalShape(animals)
-            : randomShape(PM_CHAMELEON);
+            : randomShape(monster, PM_CHAMELEON);
         const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u.uz);
         if (acceptsShapechangerForm(PM_CHAMELEON, targetMnum)
             && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
@@ -262,11 +267,11 @@ function pickAnimalShape(animals) {
         throw new RangeError('Chameleon selection is outside its animal list');
     return species;
 }
-function selectSandestinForm() {
+function selectSandestinForm(monster) {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = rn2(7)
             ? pickNastyShape((MONSTER_DIFFICULTY[PM_ARCHON] ?? 0) - 1)
-            : randomShape(PM_SANDESTIN);
+            : randomShape(monster, PM_SANDESTIN);
         const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u?.uz);
         if (acceptsShapechangerForm(PM_SANDESTIN, targetMnum)
             && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
@@ -462,7 +467,7 @@ async function selectControlledForm(monster, baseMnum, state) {
         await drawChamFormForControl(monster, baseMnum);
         let mnum = await wizForceChamForm(monster, state);
         if (mnum == null)
-            mnum = randomShape(baseMnum);
+            mnum = randomShape(monster, baseMnum);
         const wantsUppercase = triesLeft > 15 && Is_rogue_level(state.u.uz)
             && !/^[A-Z]$/.test(monsterClassSymbol(mnum));
         if (acceptsShapechangerForm(baseMnum, mnum) && !wantsUppercase)
@@ -621,12 +626,12 @@ export async function initialShapechangedBirth(monster) {
             targetMnum = null;
     }
     else if (baseMnum === PM_CHAMELEON) {
-        targetMnum = selectChameleonForm();
+        targetMnum = selectChameleonForm(monster);
         if (targetMnum === PM_CHAMELEON)
             targetMnum = null;
     }
     else if (baseMnum === PM_SANDESTIN) {
-        targetMnum = selectSandestinForm();
+        targetMnum = selectSandestinForm(monster);
     }
     else if (baseMnum === PM_VAMPIRE || baseMnum === PM_VAMPIRE_LEADER) {
         targetMnum = pickVampireShape(monster);
@@ -671,10 +676,10 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         targetMnum = await selectDoppelgangerForm(monster);
     }
     else if (targetMnum == null && baseMnum === PM_SANDESTIN) {
-        targetMnum = selectSandestinForm();
+        targetMnum = selectSandestinForm(monster);
     }
     else if (targetMnum == null && baseMnum === PM_CHAMELEON) {
-        targetMnum = selectChameleonForm();
+        targetMnum = selectChameleonForm(monster);
     }
     else if (targetMnum == null && (baseMnum === PM_VAMPIRE
         || baseMnum === PM_VAMPIRE_LEADER
