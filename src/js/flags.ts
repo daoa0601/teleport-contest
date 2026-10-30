@@ -86,7 +86,10 @@ export interface InterfaceFlags {
     autodescribe?: boolean;
     debug_fuzzer?: boolean;
     debug_hunger?: boolean;
+    debug_mongen?: boolean;
     debug_overwrite_stairs?: boolean;
+    sanity_check?: boolean;
+    trav_debug?: boolean;
     getdir_click?: number;
     remember_getpos?: boolean;
     renameallowed?: boolean;

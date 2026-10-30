@@ -68,6 +68,7 @@ import { surfaceName, waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { identifyTrap } from './pager_traps.js';
 import { showLookList } from './pager_lists.js';
@@ -566,6 +567,31 @@ function travelCellKnown(x, y, g) {
     const location = g.level?.at(x, y);
     return !!location && (!!location.seenv || !heroIsBlind(g) && couldsee(x, y));
 }
+// hack.c:findtravelpath() uses DISP_ALL so search markers include unseen
+// squares. Crawl mode holds frontiers for three delays and guessed goals
+// for five; ending the effect restores the map before movement continues.
+async function showTravelSearch(positions, warningLevel, g) {
+    if (!g.iflags.trav_debug)
+        return;
+    const symbol = def_warnsyms[warningLevel];
+    if (!symbol)
+        throw new Error(`Missing travel warning glyph ${warningLevel}`);
+    const effect = new TemporaryMapEffect('all', {
+        ch: symbol.ch, color: symbol.color, decgfx: false,
+        kind: 'warning', glyph: GlyphOffset.warning + warningLevel,
+    });
+    await effect.start();
+    try {
+        for (const [x, y] of positions)
+            await effect.show(x, y);
+        const pauses = g.flags.runmode === 'crawl' ? (warningLevel === 1 ? 3 : 5) : 1;
+        for (let pause = 0; pause < pauses; pause++)
+            await g.animationFrame?.();
+    }
+    finally {
+        await effect.end();
+    }
+}
 // C findtravelpath(): each radius preserves cardinal-first frontier order.
 // Door, boulder and trap delays apply to each edge before TEST_TRAV, in all
 // three search modes. The origin starts unmarked, as in C's zeroed matrix.
@@ -604,6 +630,7 @@ async function searchTravelPath(startX, startY, goalX, goalY, mode, g) {
                 }
             }
         }
+        await showTravelSearch(next, 1, g);
         frontier = next;
     }
     return { distance, direction: null };
@@ -670,6 +697,7 @@ async function findGuessedTravelDirection(targetX, targetY, g) {
         }
     }
     if (pickX !== originX || pickY !== originY) {
+        await showTravelSearch([[pickX, pickY]], 2, g);
         const { direction } = await searchTravelPath(pickX, pickY, originX, originY, 'travel', g);
         return direction ? { ...direction, checkVisited: true } : null;
     }
@@ -3344,15 +3372,25 @@ async function wizWish() {
     }
     await reportHeroEncumbrance();
 }
-// C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
-// create_particular().  The debug command remains zero-time.
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 async function wizPolyself() {
     await polymorphHero(POLY_CONTROLLED);
     game.context.move = 0;
 }
+// wizcmds.c:wiz_genesis() allows deliberate creation while ordinary births
+// are disabled, then restores that setting even when the prompt is cancelled.
 async function wizGenesis() {
-    await createParticularMonster();
+    const mongenSaved = game.iflags.debug_mongen;
+    game.iflags.debug_mongen = false;
+    try {
+        await createParticularMonster();
+    }
+    finally {
+        if (mongenSaved === undefined)
+            delete game.iflags.debug_mongen;
+        else
+            game.iflags.debug_mongen = mongenSaved;
+    }
     game.context.move = 0;
 }
 async function wizDetect() {
@@ -5061,18 +5099,9 @@ async function wizIdentify() {
 async function readExtendedCommand() {
     let lastExecuted = null;
     for (;;) {
-        const statusDisabled = game._statusUpdatesDisabled;
-        game._statusUpdatesDisabled = true;
-        let selected;
-        try {
-            selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
-        }
-        finally {
-            if (statusDisabled === undefined)
-                delete game._statusUpdatesDisabled;
-            else
-                game._statusUpdatesDisabled = statusDisabled;
-        }
+        // tty_get_ext_cmd() calls its line editor directly, bypassing core
+        // getlin()'s status suppression. Its prompt restores status after #?.
+        const selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
         if (selected?.handler !== 'doextlist')
             return { selected, lastExecuted };
         if (!await commandAllowed(selected))

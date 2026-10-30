@@ -1735,7 +1735,7 @@ async function chooseMimicAppearance(x, y) {
 }
 async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const level = requireGameLevel();
-    if (mdat == null && level?.flags?.rndmongen === false)
+    if (game.iflags.debug_mongen || mdat == null && level.flags.rndmongen === false)
         return null;
     const gpflags = GP_AVOID_MONPOS | GP_CHECKSCARY | (mmflags & MM_IGNOREWATER);
     if (x === 0 && y === 0) {
@@ -2975,6 +2975,10 @@ export async function cloneHeroMonsterForm(state = game) {
 }
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
 export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedByHero = centerX === game.u?.ux && centerY === game.u?.uy) {
+    // Hero-origin placement belongs to makemon(), after its debug guard.
+    // Other callers, such as egg hatching, call enexto() before makemon().
+    if (requestedByHero && game.iflags.debug_mongen)
+        return null;
     const pos = findMonsterNearPosition(mnum, centerX, centerY, {
         ignoreWater: !!(flags & MM_IGNOREWATER),
     });

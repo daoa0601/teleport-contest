@@ -5,7 +5,7 @@ import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MIN
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';
 import { pushKeys } from '../js/input.js';
-import { generateMedusaLevel, makemonAt, mksobj, rndmonnum, splitHeroMonsterForm, } from '../js/mklev.js';
+import { findMonsterNearPosition, generateMedusaLevel, makemonAt, makemonNear, mksobj, rndmonnum, splitHeroMonsterForm, } from '../js/mklev.js';
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
@@ -19,6 +19,26 @@ import { memoryStorage } from './support/memory-storage.js';
 const NEWT = MONSTER_NAME.indexOf('newt');
 const JACKAL = MONSTER_NAME.indexOf('jackal');
 const CREATION_FLAGS = MM_NOGRP | MM_NOMSG | NO_MINVENT;
+for (const centerX of [10, 12]) {
+    void test(`a rejected birth after caller placement at <${centerX},10> preserves later monster placement`, async () => {
+        freshGameplayRoom();
+        // timeout.c:hatch_egg() chooses a nearby square before asking
+        // makemon() to create a hatchling, even when births are disabled.
+        assert.ok(findMonsterNearPosition(NEWT, centerX, 10));
+        const afterPlacement = await makemonAt(NEWT, 0, 0, CREATION_FLAGS);
+        assert.ok(afterPlacement);
+        freshGameplayRoom();
+        game.iflags.debug_mongen = true;
+        const rejected = await makemonNear(NEWT, centerX, 10, CREATION_FLAGS, false);
+        assert.equal(rejected, null);
+        assert.equal(game.level?.monsters.length, 0);
+        game.iflags.debug_mongen = false;
+        const afterRejectedBirth = await makemonAt(NEWT, 0, 0, CREATION_FLAGS);
+        assert.ok(afterRejectedBirth);
+        assert.equal(afterRejectedBirth.mx, afterPlacement.mx, 'A later monster should appear where the placement-only attempt leaves it');
+        assert.equal(afterRejectedBirth.my, afterPlacement.my, 'Rejecting a birth should preserve the preceding placement attempt');
+    });
+}
 function speciesVital(species) {
     const vital = game.mvitals?.[species];
     assert.ok(vital, `Species ${species} must have its native population record`);
