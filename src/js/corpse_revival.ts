@@ -35,7 +35,7 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
-import { costlySpot, objectOwnershipPrefix } from './shk.js';
+import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
@@ -367,6 +367,7 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
     if (replacement != null) discardSavedBody(corpse);
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
+        restoreShopkeeperResidency(monster, state);
         markQuestLeaderAlive(monster, state);
         await newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);

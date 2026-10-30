@@ -17,7 +17,7 @@ import {
 import { makePetWary } from './dog.js';
 import { delobj } from './object_delete.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { costlySpot, objectOwnershipPrefix } from './shk.js';
+import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -105,6 +105,7 @@ async function createStatueMonster(statue: StatueObject, x: number, y: number, s
 
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
+        restoreShopkeeperResidency(monster, state);
         markQuestLeaderAlive(monster, state);
         await newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
