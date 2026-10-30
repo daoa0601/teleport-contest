@@ -10,6 +10,7 @@ import { wearHeroAccessory, removeHeroAccessory } from '../js/accessory.js';
 import { captureLevitationState, grantIntrinsicProperty, levitationIsPurelyTimed, revokeIntrinsicProperty, setPropertyTerrainBlocked, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
+import { setHeroGrip } from '../js/hero_grip.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, } from './support/game-objects.js';
@@ -333,5 +334,19 @@ void test('a dismount landing suppresses the message but not the pickup', async 
     assert.equal(game.u.levitating, false);
     assert.doesNotMatch(game._pending_message || '', /float gently/);
     assert.ok(game.inventory.includes(gem));
+});
+// C trap.c:float_down(): a holder that does not stick lets go with
+// "Startled, %s can no longer hold you!" naming it through mon_nam().
+void test('landing startles a holding monster named in lower case', async () => {
+    await freshObjectRoom({ gameplaySeed: 11 });
+    requirePlayingGame(game);
+    const lichen = await createMonsterAt('lichen', 11, 10);
+    setHeroGrip(lichen, game);
+    game.u.levitationTurns = 5;
+    installPagerInput(resetInputState(), { expected: /float gently|can no longer hold you/, limit: 3 });
+    await floatHeroDown(TIMEOUT, 0);
+    assert.equal(game.u.ustuck, null);
+    const messages = [...game._messageHistory, game._pending_message ?? ''].join('\n');
+    assert.match(messages, /Startled, the lichen can no longer hold you!/);
 });
 //# sourceMappingURL=levitation_landing.test.js.map
