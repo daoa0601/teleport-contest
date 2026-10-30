@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { BEAR_TRAP, D_NODOOR, DOOR, ENGRAVE } from '../js/const.js';
-import { newsym } from '../js/display.js';
-import { makeEngravingAt } from '../js/engrave.js';
+import { newsym, plineWithContinuation } from '../js/display.js';
+import { makeEngravingAt, readEngravingAt } from '../js/engrave.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER } from '../js/object_data.js';
+import { BOULDER, DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -67,6 +67,59 @@ for (const key of ['e', 'E']) {
             { prompt: /engravings[\s\S]*remembered text: "old words", obscured by \)[\s\S]*--More--/i, keys: ' ' },
         ]);
         assert.equal(engraving.rememberedText, 'old words');
+    });
+}
+for (const { text, shown } of [
+    { text: '\\north', shown: 'north' },
+    { text: 'north\\\\south', shown: 'north\\south' },
+    { text: '\\Gnot-a-glyph', shown: '\\Gnot-a-glyph' },
+    { text: 'north\\', shown: 'north' },
+]) {
+    void test(`listing remembered ${JSON.stringify(text)} decodes mixed text without changing the inscription`, async () => {
+        await freshObjectRoom({ flags: { tips: false } });
+        const engraving = makeEngravingAt(11, 10, text, null, 0, ENGRAVE);
+        assert.ok(engraving);
+        await readEngravingAt(11, 10, plineWithContinuation);
+        assert.ok(game._pending_message.includes(`You read: "${text}"`));
+        await floorObject(DAGGER, 11, 10);
+        await newsym(11, 10);
+        const input = resetInputState();
+        input.feed('e');
+        const listing = rhack('/'.charCodeAt(0));
+        try {
+            await input.waitUntilBlocked();
+            const page = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.ok(page.includes(`remembered text: "${shown}", obscured by )`), page);
+            assert.equal(engraving.text, text);
+            assert.equal(engraving.rememberedText, text);
+        }
+        finally {
+            input.feed(' ');
+            await listing;
+        }
+    });
+}
+for (const { name, shown } of [
+    { name: 'north\\south', shown: 'northsouth' },
+    { name: 'north\\', shown: 'north\\' },
+]) {
+    void test(`listing an object named ${JSON.stringify(name)} preserves its backslash glyph`, async () => {
+        await freshObjectRoom({ flags: { tips: false } });
+        game.boulderSym = '\\';
+        await floorObject(BOULDER, 11, 10, { oname: name, bknown: false });
+        await newsym(11, 10);
+        const input = resetInputState();
+        input.feed('o');
+        const listing = rhack('/'.charCodeAt(0));
+        try {
+            await input.waitUntilBlocked();
+            const page = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.ok(page.includes(`\\  a boulder named ${shown}`), page);
+        }
+        finally {
+            input.feed(' ');
+            await listing;
+        }
     });
 }
 void test('a covered engraving on DEC-only terrain lists no obscuring symbol', async () => {

@@ -22,6 +22,13 @@ export const ATR_INVERSE = 1;
 
 export type TextMenuEntry = string | TextMenuLine;
 
+// C windows.c:decode_mixed(), for the literal portions of putmixed() lines.
+// Callers render glyphs separately. A backslash quotes the next character;
+// a trailing backslash and an unrecognized glyph escape remain literal.
+export function decodeMixedLiteral(text: string): string {
+    return text.replace(/\\([^G])/gs, '$1');
+}
+
 export interface InventoryMenuItem<T = never> extends TextMenuLine {
     key?: string;
     value?: T;

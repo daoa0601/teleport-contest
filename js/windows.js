@@ -11,6 +11,12 @@ import { windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_en
 export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
+// C windows.c:decode_mixed(), for the literal portions of putmixed() lines.
+// Callers render glyphs separately. A backslash quotes the next character;
+// a trailing backslash and an unrecognized glyph escape remain literal.
+export function decodeMixedLiteral(text) {
+    return text.replace(/\\([^G])/gs, '$1');
+}
 function display() {
     return game.nhDisplay;
 }
