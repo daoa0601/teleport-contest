@@ -160,7 +160,8 @@ function key(...parts) {
  * @param {number} args.seed            integer seed (>= 10000 recommended);
  *                                      restore segments reuse it, fresh-game
  *                                      segments use seed + 1.
- * @param {string} args.datetime        'YYYYMMDDHHMMSS'; applies to all segments.
+ * @param {string} args.datetime        'YYYYMMDDHHMMSS'; applies to all segments
+ *                                      unless the recipe fixes its own date.
  * @param {{role:string,race:string,gender:string,align:string}} args.character
  * @param {string[]|string} [args.options] extra OPTIONS lines appended to the rc.
  * @param {string} [args.name]          player name (default 'Nomad'; ignored in
@@ -189,7 +190,7 @@ export function makeRecipe(recipeName, { seed, datetime, character, options = []
         playerName: name,
         extraOptions: [...userOptions, ...(recipe.options ?? []), ...overrides],
     });
-    const segments = recipe.build({ seed, datetime, rc, character }, recipeName === 'depth-tour' ? normalizeTargets(targets) : undefined);
+    const segments = recipe.build({ seed, datetime: recipe.datetime ?? datetime, rc, character }, recipeName === 'depth-tour' ? normalizeTargets(targets) : undefined);
     return { version: 5, segments };
 }
 // ---------------------------------------------------------------------------

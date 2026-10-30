@@ -60,12 +60,12 @@ export const ROUND24_RECIPES = {
         ]).flat(),
     ]),
     // mhitu.c:ld() selects this dialogue on February 29; it requires a male hero.
-    'leap-day-glove-demand': { genders: ['male'], ...recipe('leap-day-glove-demand', 'Refuse a succubus while carrying gloves on leap day.', [
+    'leap-day-glove-demand': { genders: ['male'], datetime: '20000229090000', ...recipe('leap-day-glove-demand', 'Refuse a succubus while carrying gloves on leap day.', [
             ...room(), ...wish('uncursed leather gloves'), identify(),
             ...Array.from({ length: 12 }, () => [keys('Wb'), ...create('hostile female amorous demon'),
                 ...Array.from({ length: 8 }, () => [answer('"Shall I remove your', 'n'), keys('m.'), answer('Die?', 'n')]).flat(),
             ]).flat(),
-        ], [], '20000229090000') },
+        ]) },
     'hilite-rule-editor': recipe('hilite-rule-editor', 'Edit numeric, changing, text and condition status rules, then remove a rule.', [
         choose('status highlight rules', 'O'), choose('hitpoints', ''), choose('Number threshold', ''),
         answer('Enter value for hitpoints threshold:', '20\r'), choose('Less than 20', ''), choose('red', ''), keys('\r'),
@@ -115,14 +115,14 @@ export const ROUND24_RECIPES = {
         keys('D'), answer('What kinds of thing do you want to drop?', 'u\r'), answer('What would you like to drop?', '\x1b'), keys('\x1bD'), answer('What kinds of thing do you want to drop?', 'B\r'), keys('q'),
     ], ['menustyle:traditional']),
 };
-function recipe(name, description, actions, options = [], date) {
+function recipe(name, description, actions, options = []) {
     const effects = EFFECTS[name];
     if (!effects)
         throw new Error(`unknown round-24 recipe ${name}`);
     return {
         roles: ['wizard'], options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none', 'debug_hunger', ...options],
         description, success: effects.map(([effect]) => effect),
-        build: ({ seed, datetime, rc }) => [{ seed, datetime: date ?? datetime, nethackrc: rc(), driver: [...actions, keys('\x1b:\x1b')] }],
+        build: ({ seed, datetime, rc }) => [{ seed, datetime, nethackrc: rc(), driver: [...actions, keys('\x1b:\x1b')] }],
     };
 }
 export function validateRound24Recipe(name, session) {
