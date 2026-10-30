@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
+import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOM, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
@@ -67,6 +67,24 @@ void test('a peaceful resident mills beside its altar and stays inside the templ
     assert.ok(altarDistance <= 2, `priest settled ${altarDistance} squares from its altar`);
     assert.equal(priest.mpeaceful, 1);
 });
+// C pri_move() uses histemple_at(), so shrine damage does not change milling.
+for (const shrine of [
+    { name: 'destroyed', type: ROOM, flags: 0 },
+    { name: 'converted', type: ALTAR, flags: AM_SHRINE | Align2amask(-1) },
+    { name: 'no longer a shrine', type: ALTAR, flags: Align2amask(0) },
+]) {
+    void test(`a resident keeps milling when its altar is ${shrine.name}`, async () => {
+        const { level, priest } = await templeWithResident(14, 8, false);
+        const altar = level.requireAt(12, 10);
+        altar.typ = shrine.type;
+        altar.flags = shrine.flags;
+        for (let turn = 0; turn < 16; turn++) {
+            await residentTurn(priest);
+            const distance = Math.max(Math.abs(priest.mx - 12), Math.abs(priest.my - 10));
+            assert.ok(distance <= 2, `turn ${turn}: priest wandered ${distance} squares from its former altar to <${priest.mx},${priest.my}>`);
+        }
+    });
+}
 // C priest.c:pri_move(): an angry resident inside the temple hunts the hero
 // instead of milling, closing in and striking with its clerical arsenal.
 void test('an angry resident hunts down and attacks the hero inside its temple', async () => {

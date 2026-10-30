@@ -36,7 +36,7 @@ function priestData(priest) {
 function minionData(priest) {
     return priest?.emin || priest?.mextra?.emin || null;
 }
-function priestInOwnTemple(priest, roomno, state = game) {
+export function priestInOwnTemple(priest, roomno, state = game) {
     const epri = priestData(priest);
     if (!priest?.ispriest || !epri || epri.shroom !== roomno
         || !sameLevel(epri.shrlevel, state.u?.uz))

@@ -441,7 +441,7 @@ import {
     finishMonsterKilled,
     finishMonsterLiquidDeath,
 } from './monster_death.js';
-import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
+import { inHeroSanctuary, priestInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory,
     linkObjectToMonsterInventory,
@@ -4505,7 +4505,8 @@ async function movePriest(
     rollOne: RollOne,
     calls: MonsterCallLog,
 ): Promise<MonsterMovement | null> {
-    if (!priestIsInOwnTemple(monster, state)) return null;
+    const roomno = roomsAt(state.level, monster.mx, monster.my, TEMPLE)[0];
+    if (roomno === undefined || !priestInOwnTemple(monster, roomno, state)) return null;
     const epri = monster.epri || monster.mextra?.epri;
     if (!epri) throw new Error('A temple priest must retain its temple state');
     let goalX = epri.shrpos.x + recordRandom(random, calls, 3) - 1;

@@ -165,7 +165,7 @@ import { applyMonsterContactPassive } from './monster_contact_passive.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { tryKnockback } from './knockback.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
-import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
+import { inHeroSanctuary, priestInOwnTemple } from './priest.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
 import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
 export { monsterCanCarryObject } from './monster_carry.js';
@@ -3571,7 +3571,8 @@ function specialMoverSeesHero(monster, state) {
         couldSeeFromHero(state, monster.mx, monster.my));
 }
 async function movePriest(monster, state, random, rollDice, rollOne, calls) {
-    if (!priestIsInOwnTemple(monster, state))
+    const roomno = roomsAt(state.level, monster.mx, monster.my, TEMPLE)[0];
+    if (roomno === undefined || !priestInOwnTemple(monster, roomno, state))
         return null;
     const epri = monster.epri || monster.mextra?.epri;
     if (!epri)

@@ -52,7 +52,7 @@ function minionData(priest: Monster | null | undefined): MinionData | null {
     return priest?.emin || priest?.mextra?.emin || null;
 }
 
-function priestInOwnTemple(
+export function priestInOwnTemple(
     priest: Monster, roomno: number, state: GameState = game,
 ): boolean {
     const epri = priestData(priest);
