@@ -13,7 +13,7 @@ import {
 import {
     A_DEX, IS_FURNITURE,
     IS_WATERWALL, Is_airlevel, Is_waterlevel,
-    LAVAWALL, TT_PIT, isok,
+    LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok,
 } from './const.js';
 import {
     canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
@@ -175,7 +175,7 @@ async function damageHeroWithWhip(whip: GameObject, state: GameState) {
     const possessivePronoun = female ? 'her' : 'his';
     return loseHeroHp(damage,
         `killed ${reflexive} with ${possessivePronoun} bullwhip`,
-        { state, publish: pline });
+        { state, publish: pline, killerFormat: NO_KILLER_PREFIX });
 }
 
 async function snatchPetrifyingCorpse(weapon: GameObject, state: GameState) {

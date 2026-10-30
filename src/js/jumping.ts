@@ -2,7 +2,7 @@
 import { setHeroGrip } from './hero_grip.js';
 import {
     ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL,
-    Is_airlevel, Is_waterlevel, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
+    Is_airlevel, Is_waterlevel, KILLED_BY, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
     TT_LAVA, TT_PIT, TT_WEB, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -154,7 +154,7 @@ async function escapeJumpTrap(target: Position, state: PlayingGameState): Promis
         let damage = rnd(10);
         if (hero.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
-        await loseHeroHp(damage, 'jumping out of a bear trap', { state });
+        await loseHeroHp(damage, 'jumping out of a bear trap', { state, killerFormat: KILLED_BY });
         if (state.program_state.gameover) return false;
         await woundHeroLegs(side, rn1(1000, 500), state);
         break;
