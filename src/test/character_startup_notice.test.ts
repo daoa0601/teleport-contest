@@ -24,4 +24,3 @@ void test('a configured name does not offer renaming in character confirmation',
     assert.doesNotMatch(text, /choose another name/);
     await engine.lua.destroy();
 });
-

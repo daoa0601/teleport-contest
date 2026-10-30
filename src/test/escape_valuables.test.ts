@@ -27,4 +27,3 @@ void test('escape lists gems by quantity before amulets', async () => {
     const summary = pages.find(page => page.includes('2 diamonds')) ?? '';
     assert.match(summary, /2 diamonds.*\n.*1 ruby.*\n.*1 amulet of reflection/);
 });
-
