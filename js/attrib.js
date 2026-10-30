@@ -69,6 +69,7 @@ function attributeLimits(attribute, state) {
         return [6, 6];
     return [3, 25];
 }
+// C attrib.c:extremeattr().
 export function attributeIsAtLimit(attribute, state = game) {
     requireAttributeIndex(attribute);
     const value = currentAttribute(attribute, state);

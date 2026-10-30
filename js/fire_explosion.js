@@ -9,6 +9,7 @@ import { endObjectBurn } from './light.js';
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 // Extinguish before the blast so death and bones cannot retain its light.
+// C explode.c:splatter_burning_oil().
 export async function explodeLitOilPotion(potion, x, y, { state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation, random = rn2, rollDice = d, } = {}) {
     const diluted = !!potion.odiluted;
     if (!potion.lamplit) {

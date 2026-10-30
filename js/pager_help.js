@@ -42,6 +42,7 @@ export async function contactHelp() {
         'visit our website "https://www.nethack.org/".',
     ]);
 }
+// C pager.c:setopt_cmd().
 export function setOptionsCommand() {
     const bindings = game.commandBindings;
     const full = bindings.keyForCommand('optionsfull');
@@ -51,6 +52,7 @@ export function setOptionsCommand() {
     const options = bindings.keyForCommand('options');
     return `'#optionsfull' or '${prefix ? visibleCommandKey(prefix) : '#reqmenu'} ${options ? visibleCommandKey(options) : '#options'}'`;
 }
+// C pager.c:domenucontrols().
 export async function menuControlsHelp() {
     const key = (command) => visibleCommandKey(game.commandBindings.menuKey(command));
     const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;

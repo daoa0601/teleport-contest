@@ -39,6 +39,7 @@ function corridorLocation(level, x, y) {
         throw new RangeError(`Vault corridor square (${x}, ${y}) is outside the map.`);
     return location;
 }
+// C vault.c:in_fcorridor().
 export function inVaultCorridor(guard, x, y) {
     requireVaultGuard(guard);
     const corridor = guard._egd;
@@ -49,6 +50,7 @@ export function inVaultCorridor(guard, x, y) {
     }
     return false;
 }
+// C vault.c:clear_fcorr().
 export async function clearVaultCorridor(guard, force = false, state = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);
@@ -117,6 +119,7 @@ function blackout(x, y, state) {
         }
     }
 }
+// C vault.c:parkguard().
 export async function parkVaultGuard(guard, state = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);

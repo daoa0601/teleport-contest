@@ -18,6 +18,8 @@ import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { couldsee } from './vision.js';
 const M1_NOEYES = 0x00001000;
 const M1_SEE_INVIS = 0x01000000;
+// C sounds.c:tiphat().
+// C sounds.c:responsive_mon_at().
 export async function tipWornHelmet(helmet) {
     const discovery = !helmet.bknown;
     if (helmet.cursed) {

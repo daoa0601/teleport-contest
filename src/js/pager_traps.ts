@@ -8,6 +8,7 @@ import { trapName } from './trap_name.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { commandResultCancelled } from './command_state.js';
 
+// C pager.c:doidtrap().
 export async function identifyTrap(): Promise<void> {
     game.context.move = 0;
     const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });

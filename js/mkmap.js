@@ -8,6 +8,15 @@ import { dig_corridor, wallifyMap } from './mklev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 import { isRoom } from './map_types.js';
+// C mkmap.c:init_map().
+// C mkmap.c:init_fill().
+// C mkmap.c:get_map().
+// C mkmap.c:pass_one().
+// C mkmap.c:pass_two().
+// C mkmap.c:pass_three().
+// C mkmap.c:join_map().
+// C mkmap.c:join_map_cleanup().
+// C mkmap.c:finish_map().
 export async function mkmap({ lit: lighting, foreground = ROOM, background = STONE, smoothed = true, joined = true, walled = true, icedPools = false, }) {
     const lit = litstate_rnd(lighting);
     const level = requireGameLevel();

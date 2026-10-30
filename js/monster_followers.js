@@ -15,6 +15,7 @@ const M2_STALK = 0x01000000;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 // The caller skips this entire transaction when iflags.nofollowers is set.
 // Returned monsters are detached from the old level in native mydogs order.
+// C dog.c:keepdogs().
 export async function collectLevelFollowers(state = game, petsOnly = false) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -115,6 +116,7 @@ async function staysBehind(monster, state) {
     }
     return true;
 }
+// C dog.c:keep_mon_accessible().
 function keepAccessible(monster, current) {
     if (monster.iswiz)
         return true;

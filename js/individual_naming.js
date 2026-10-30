@@ -13,6 +13,7 @@ import { playerName } from './player_name.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
 import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
+// C do_name.c:do_oname().
 export async function nameIndividualObject(object) {
     if (object.otyp === SPE_NOVEL) {
         await pline(`${objectOwnershipPrefix(object)}${simpleObjectName(object)} already has a published name.`);

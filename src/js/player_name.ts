@@ -2,6 +2,7 @@
 import { PL_PSIZ } from './const.js';
 import { getLine } from './query.js';
 
+// C do_name.c:name_from_player().
 export async function playerName(prompt: string): Promise<string | null> {
     const input = await getLine(prompt, (_ch, key) => key <= 255);
     if (input === null || input === '') return null;

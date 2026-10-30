@@ -11,6 +11,7 @@ import { roomsAt } from './room.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 
+// C monmove.c:leppie_stash().
 export async function stashLeprechaunGold(monster: Monster, state: GameState = game,
     random = rn2): Promise<void> {
     const level = requireGameLevel(state);

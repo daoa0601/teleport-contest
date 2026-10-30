@@ -24,6 +24,7 @@ export async function speedUpHero(duration, state = game) {
     await exerciseAttribute(A_DEX, true, state);
     setPropertyTimeout('fast', propertyTimeout('fast', state) + duration, state);
 }
+// C mhitu.c:u_slow_down().
 export async function slowHero(state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     setPropertyTimeout('fast', 0, state);

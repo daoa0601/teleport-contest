@@ -28,6 +28,7 @@ export function createCharacterFilters(): CharacterFilters {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
 
+// C role.c:gotrolefilter().
 export function hasCharacterFilters(filters: CharacterFilters): boolean {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
 }

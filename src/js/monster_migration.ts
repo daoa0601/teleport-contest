@@ -13,7 +13,7 @@ import {
     COLNO, In_endgame, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY,
     MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_PORTAL,
     MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP,
-    MIGR_WITH_HERO, MIGR_LEFTOVERS, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE,
+    MIGR_WITH_HERO, MIGR_LEFTOVERS, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE,
 } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { healMonster } from './mon.js';
@@ -239,10 +239,13 @@ export async function migrateMonsterToLevel(monster: Monster, destination: Dunge
     return await migrateMonsterOffLevel(monster, state, { dst: destination }, { kind, mode });
 }
 
+// C dog.c:update_mlstmv().
+// C dog.c:set_mon_lastmove().
 export function updateMonsterLastMove(state: GameState = game): void {
-    // C dog.c update_mlstmv(): anchor catchup before a level goes inactive.
-    for (const monster of state.level?.monsters || [])
-        monster.mlstmv = state.moves ?? 0;
+    for (const monster of state.level?.monsters || []) {
+        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        monster.mlstmv = state.moves;
+    }
 }
 
 // C dog.c mon_catchup_elapsed_time().

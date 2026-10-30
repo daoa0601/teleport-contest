@@ -17,6 +17,7 @@ import { rn2, rnd } from './rng.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { cansee } from './vision.js';
 
+// C monmove.c:mind_blast().
 export async function useMonsterMindBlast(
     monster: Monster, state: PlayingGameState, {
         resistsConflict, random = rn2, rollOne = rnd, publish = plineWithContinuation,

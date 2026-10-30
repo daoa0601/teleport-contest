@@ -57,6 +57,9 @@ const S_GHOST = 54;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 
+// C dbridge.c:set_entity().
+// C dbridge.c:m_to_e().
+// C dbridge.c:u_to_e().
 function entityAt(x: number, y: number, state: GameState): DrawbridgeEntity | null {
     if (state.u.ux === x && state.u.uy === y)
         return { hero: true, actor: state.u, x, y, species: heroSpecies(state), active: true };
@@ -75,6 +78,7 @@ function entitySymbol(entity: DrawbridgeEntity): number | null {
     return MONSTER_SYMBOL[entity.species] ?? null;
 }
 
+// C dbridge.c:e_nam().
 function entityName(entity: DrawbridgeEntity, state: GameState, capitalized = false): string {
     if (entity.hero) return capitalized ? 'You' : 'you';
     return monsterName(entity.actor, { state, capitalized });
@@ -140,6 +144,7 @@ function speciesSurvivesPool(entity: DrawbridgeEntity): boolean {
         || entityIsFloating(entity);
 }
 
+// C dbridge.c:e_survives_at().
 function entitySurvivesAt(entity: DrawbridgeEntity, state: GameState): boolean {
     if (entityIsNoncorporeal(entity)) return true;
     if (isPoolAt(entity.x, entity.y, state)) {
@@ -159,6 +164,7 @@ function entityAutomaticallyMissed(entity: DrawbridgeEntity, state: GameState): 
         || entityIsNoncorporeal(entity);
 }
 
+// C dbridge.c:e_missed().
 function entityMissed(entity: DrawbridgeEntity, state: GameState, chunks = false): boolean {
     if (entityAutomaticallyMissed(entity, state)) return true;
     let misses = 0;
@@ -173,6 +179,7 @@ function entityMissed(entity: DrawbridgeEntity, state: GameState, chunks = false
     return misses >= rnd(8);
 }
 
+// C dbridge.c:e_jumps().
 function entityJumps(entity: DrawbridgeEntity, state: GameState): boolean {
     const fumbling = entity.hero && !!(state.u?.fumbling
         || (state.u?.fumblingTurns ?? 0) > 0);
@@ -267,6 +274,7 @@ async function crushEntity(
 
 type Occupants = [DrawbridgeEntity | null, DrawbridgeEntity | null];
 
+// C dbridge.c:e_at().
 function occupantAt(occupants: Occupants, x: number, y: number): DrawbridgeEntity | null {
     return occupants.find(entity => entity?.active && entity.x === x && entity.y === y) ?? null;
 }
@@ -281,6 +289,7 @@ async function heroSpotEffects(state: GameState): Promise<void> {
     });
 }
 
+// C dbridge.c:e_died().
 async function dieMovingEntity(
     entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState,
     options: DrawbridgeOptions, occupants: Occupants, killer: string, death: DrawbridgeDeath,
@@ -305,6 +314,7 @@ async function dieMovingEntity(
             if (occupant?.actor === entity.actor) occupant.active = false;
 }
 
+// C dbridge.c:do_entity().
 async function handleEntity(
     entity: DrawbridgeEntity | null,
     bridge: DrawbridgeSquare,

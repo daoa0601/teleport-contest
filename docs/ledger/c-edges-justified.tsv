@@ -1790,3 +1790,55 @@ seffect_earth	closed_door	inlined	earthEffect rejects DOOR cells with D_CLOSED o
 seffect_enchant_armor	cap_spe	inlined	setEnchantment clamps armor enchantment to SPE_LIM after normal enchantment or scale-mail conversion (scroll_armor_effects.ts)
 grapple_range	uwep_skill_type	inlined	Callers pass hookSkill to hookRange; hookSkill selects P_TWO_WEAPON_COMBAT while dual wielding, otherwise the wielded hook's subtype (grappling_hook.ts)
 use_grapple	uwep_skill_type	inlined	hookSkill selects active two-weapon proficiency or the wielded hook's flail proficiency for range and aim (grappling_hook.ts)
+basics_enlightenment	enlght_line	inlined	basicsEnlightenmentLines constructs the present/past lines; insight.ts contracts and displays them
+basics_enlightenment	enlght_out	inlined	basicsEnlightenmentLines returns the ordered headings and lines to insight.ts for display
+basics_enlightenment	money_cnt	inlined	goldInsightLines uses heroGoldAmount to find the carried coin stack (enlightenment_background.ts)
+can_hide_under_obj	t_at	inlined	canMonsterHideUnderObjectAt finds the coordinate-matching trap in level.traps
+can_twoweapon	cant_wield_corpse	n/a	TWOWEAPOK rejects corpses before this branch, as the native comment states
+can_twoweapon	drop_uswapwep	inlined	canBeginTwoWeaponCombat calls dropSecondaryWeapon for cursed or slippery offhand weapons (two_weapon.ts)
+can_twoweapon	undiscovered_artifact	inlined	objectNameIsPlural checks the Eyes of the Overworld against artifact discoveries (objnam.ts)
+characteristics_enlightenment	enlght_out	inlined	characteristicEnlightenmentLines returns the heading and six attributes to insight.ts for display
+create_worm_tail	alloc	n/a	initializeUnplacedMonsterWormBody uses managed segment objects and a separate head instead of a C allocation chain
+do_oname	rnd_on_display_rng	inlined	nameIndividualObject uses rn2Display(2) plus one for the inscription scuff count (individual_naming.ts)
+do_oname	undiscovered_artifact	inlined	objectNameIsPlural checks the Eyes discovery before choosing this/these in the naming prompt (objnam.ts)
+dobreathe	ubuzz	inlined	breatheInDirection passes the breath ray type, attack dice and hero origin through castNativeRay (breath_ray.ts)
+docallcmd	cmdq_pop	inlined	doname reads the repeat or canned queue and clears a non-key entry before selecting a naming category (cmd.ts)
+dogaze	yn_function	inlined	confirmPeacefulGaze calls promptYesNo, then promptChoice and query.ts yn_function beyond the two-call reach limit
+domenucontrols	show_menu_controls	inlined	menuControlsHelp formats the native dolist=FALSE table using the current menu bindings (pager_help.ts)
+drop_weapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window
+drop_weapon	uswapwepgone	inlined	dropPolymorphWeapons clears the offhand with setSecondaryWeapon(null) before dropping it (polyself.ts)
+e_jumps	E_phrase	n/a	Only the native debugpline diagnostic uses this phrase
+e_jumps	is_fainted	inlined	heroIsUnaware includes the FAINTED hunger state for an involuntary delay (hero_sleep.ts)
+e_missed	is_fainted	inlined	heroIsUnaware includes the FAINTED hunger state when deciding whether a flyer can react (hero_sleep.ts)
+enhance_weapon_skill	add_skills_to_menu	inlined	enhancementMenu builds the native enhancement headings, skill entries, annotations and selection values (skills.ts)
+forcelock	wake_nearby	inlined	continueForceLock wakes monsters around the hero with ulevel times 20 distance for blunt forcing (lock.ts)
+give_may_advance_msg	handle_tip	inlined	giveMayAdvanceMessage checks tips and TIP_ENHANCE, records the bit and displays the first-use tip (skills.ts)
+goodpos_onscary	sobj_at	inlined	monsterTypeScaredFromPosition checks the floor pile for SCR_SCARE_MONSTER (teleport_rules.ts)
+holds_up_web	isok	inlined	holdsUpMonsterWeb rejects column zero and absent map cells before testing terrain (monmove.ts)
+holds_up_web	stairway_at	inlined	holdsUpMonsterWeb scans the stair chain for the coordinate and uses its up flag (monmove.ts)
+inhistemple	histemple_at	inlined	priestInOwnTemple checks priesthood, shrine level and temple room at the priest position (priest.ts)
+inside_region	inside_rect	inlined	regionContains tests the stored cloud cells, which represent the union of native region rectangles (regions.ts)
+is_pure	align_str	inlined	questPurity formats the three possible hero alignments directly for wizard diagnostics (quest.ts)
+join_map	add_room	inlined	mkmap constructs each bounded unlit irregular OROOM with door and subroom fields before joining components (mkmap.ts)
+keepdogs	dismount_steed	n/a	Native stay_behind is never set for a steed; its earlier branch clears trapping/eating instead
+leppie_stash	findgold	inlined	stashLeprechaunGold finds GOLD_PIECE in monster inventory (leprechaun_stash.ts)
+leppie_stash	g_at	inlined	stashLeprechaunGold finds the dropped coin stack on the floor before burial (leprechaun_stash.ts)
+leppie_stash	t_at	inlined	stashLeprechaunGold rejects coordinate-matching traps in level.traps (leprechaun_stash.ts)
+m_dowear_type	discover_object	inlined	wearSlot calls learnObjectType when new armor hides a previously visible monster (monworn.ts)
+m_search_items	t_at	inlined	searchMonsterItems finds the coordinate-matching trap in level.traps before considering that pile
+mayberem	dist2	inlined	stillTogether checks that both coordinate differences are at most one, equivalent to squared distance below three
+migr_booty_item	mksobj_migr_to_species	inlined	createStolenItem constructs the object, marks MIGR_TO_SPECIES and links it to the migration list (orc_raid.ts)
+monmulti	rounddiv	inlined	monsterVolleyCount uses trunc((spe+1)/3), the native rounding for a positive launcher enchantment
+namefloorobj	call_ok	inlined	nameFloorType needs only GETOBJ_EXCLUDE from call_ok and uses objectTypeIsCallable, then checks dknown (floor_naming.ts)
+one_characteristic	enlght_line	inlined	characteristicLine builds the native current/final sentence; insight.ts applies contractions before display
+rloc_pos_ok	tele_jump_ok	inlined	monsterTeleportDestinationOk uses crossesTeleportBoundary after goodPosition has validated the destination (teleport.ts)
+setopt_cmd	cmd_from_func	inlined	setOptionsCommand uses CommandBindings.keyForCommand, whose handler lookup preserves the native preferred-key rules
+setopt_cmd	cmdname_from_func	inlined	setOptionsCommand supplies the full fixed command names optionsfull, reqmenu and options when keys are absent
+shiny_orc_stuff	shiny_obj	inlined	giveShinyLoot calls randomTypeByDescription with shiny and RING_CLASS (orc_raid.ts)
+stop_occupation	maybe_finished_meal	inlined	stopHeroOccupation checks the food occupation progress and completes its last bite before clearing work (occupation.ts)
+tiphat	dist2	inlined	acknowledgeHelmetTip uses adjacent coordinate differences, equivalent to next2u squared distance below three
+untwoweapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window
+update_mlstmv	iter_mons	inlined	updateMonsterLastMove visits only positive-HP monsters with MON_FLOOR state, matching iter_mons admission
+ustatusline	align_str	inlined	heroStatusLine formats lawful, neutral, chaotic or unaligned from the hero alignment (hero_status.ts)
+ustatusline	fingers_or_gloves	inlined	heroStatusLine chooses the equipped gloves simple name or plural current-form fingers (hero_status.ts)
+watch_dig	get_iter_mons	inlined	watchDigging finds the newest living on-map watch member that sees the hero and is peaceful (digging_watch.ts)

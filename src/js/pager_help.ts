@@ -45,6 +45,7 @@ export async function contactHelp(): Promise<void> {
     ]);
 }
 
+// C pager.c:setopt_cmd().
 export function setOptionsCommand(): string {
     const bindings = game.commandBindings;
     const full = bindings.keyForCommand('optionsfull');
@@ -54,6 +55,7 @@ export function setOptionsCommand(): string {
     return `'#optionsfull' or '${prefix ? visibleCommandKey(prefix) : '#reqmenu'} ${options ? visibleCommandKey(options) : '#options'}'`;
 }
 
+// C pager.c:domenucontrols().
 export async function menuControlsHelp(): Promise<void> {
     const key = (command: string) => visibleCommandKey(game.commandBindings.menuKey(command));
     const wholeAndPage = (label: string, whole: string, page: string) =>

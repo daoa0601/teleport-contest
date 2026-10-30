@@ -94,6 +94,7 @@ function slotAllowed(monster, slot) {
             && !monsterIsCentaur(monster.mnum);
     return true;
 }
+// C worn.c:extra_pref().
 function preference(monster, object) {
     return armorBonus(object)
         + Number(object?.otyp === SPEED_BOOTS && monster?.permspeed !== 2) * 20;
@@ -182,6 +183,7 @@ function bestForSlot(monster, slot, creation, state) {
     }
     return { old, best };
 }
+// C worn.c:m_dowear_type().
 async function wearSlot(monster, slot, creation, state, publish) {
     if (monster.mfrozen)
         return null;

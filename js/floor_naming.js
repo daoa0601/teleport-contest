@@ -12,6 +12,7 @@ import { heroFormHidesUnderObjects } from './polyself.js';
 import { rankOf } from './quest_pager.js';
 import { rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
+// C do_name.c:namefloorobj().
 export async function nameFloorObject() {
     requirePlayingGame(game);
     const goal = `object on map (or '.' for one ${game.u.uundetected && heroFormHidesUnderObjects(game) ? 'over' : 'under'} you)`;

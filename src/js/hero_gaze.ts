@@ -176,6 +176,7 @@ interface HeroGazeOptions {
     die?: DeathHandler;
 }
 
+// C polyself.c:dogaze().
 export async function useHeroGaze({
     state = game,
     attack = heroGazeAttack(state),

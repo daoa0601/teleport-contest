@@ -9,6 +9,7 @@ import { flush_screen } from './display.js';
 import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
 import { impossible } from './diagnostics.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
+// C do_name.c:objtyp_is_callable().
 export function objectTypeIsCallable(object, state = game) {
     if (state._objectCallNames?.[object.otyp])
         return true;
@@ -26,6 +27,7 @@ export async function tryCallObjectType(object, state = game) {
     }
     return callObjectType(object, state);
 }
+// C do_name.c:docall_xname().
 export async function callObjectType(object, state = game) {
     if (!object.dknown)
         return { prompted: false, named: false, callName: null };

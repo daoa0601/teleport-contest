@@ -8,6 +8,7 @@ import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import { GOLD_PIECE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { roomsAt } from './room.js';
+// C monmove.c:leppie_stash().
 export async function stashLeprechaunGold(monster, state = game, random = rn2) {
     const level = requireGameLevel(state);
     if (monster.mnum !== MONSTER_NAME.indexOf('leprechaun') || monster.dead || monster.mhp <= 0

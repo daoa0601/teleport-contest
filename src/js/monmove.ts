@@ -441,7 +441,7 @@ import {
     finishMonsterKilled,
     finishMonsterLiquidDeath,
 } from './monster_death.js';
-import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
+import { inHeroSanctuary, priestInOwnTemple } from './priest.js';
 import {
     addObjectToMonsterInventory,
     linkObjectToMonsterInventory,
@@ -1957,6 +1957,7 @@ function nearbyFloorObjects(monster: Monster, state: PlayingGameState) {
         .map((entry) => entry.object);
 }
 
+// C dogmove.c:can_reach_location().
 function petCanReachLocation(
     monster: Monster,
     mx: number,
@@ -4504,7 +4505,8 @@ async function movePriest(
     rollOne: RollOne,
     calls: MonsterCallLog,
 ): Promise<MonsterMovement | null> {
-    if (!priestIsInOwnTemple(monster, state)) return null;
+    const roomno = roomsAt(state.level, monster.mx, monster.my, TEMPLE)[0];
+    if (roomno === undefined || !priestInOwnTemple(monster, roomno, state)) return null;
     const epri = monster.epri || monster.mextra?.epri;
     if (!epri) throw new Error('A temple priest must retain its temple state');
     let goalX = epri.shrpos.x + recordRandom(random, calls, 3) - 1;
@@ -7498,6 +7500,7 @@ async function maybeSpinMonsterWeb(
     return { roll, probability, created: true, trap };
 }
 
+// C monmove.c:holds_up_web().
 function holdsUpMonsterWeb(x: number, y: number, state: PlayingGameState): boolean {
     const location = state.level.at(x, y);
     if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
@@ -8945,6 +8948,7 @@ export async function runMonsterAction(
 
 // C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
 // Direct callers such as shop entry do not spend a scheduled movement ration.
+// C monmove.c:m_arrival().
 export async function beginMonsterDochug(
     monster: Monster,
     state: PlayingGameState,

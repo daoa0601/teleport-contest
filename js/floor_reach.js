@@ -61,6 +61,7 @@ export function floorReachProblem(state = game, { checkPit = false } = {}) {
         return 'shaft-edge';
     return null;
 }
+// C engrave.c:can_reach_floor().
 export function heroCanReachFloor(state = game, options = {}) {
     return floorReachProblem(state, options) === null;
 }

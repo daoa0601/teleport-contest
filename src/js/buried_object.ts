@@ -78,6 +78,7 @@ export function addBuriedObject(object: GameObject | null | undefined, x: number
     return object;
 }
 
+// C dig.c:bury_objs().
 export async function buryFloorObjectsAt(x: number, y: number, state: GameState = game, {
     publish = plineWithContinuation,
 }: BurialOptions = {}): Promise<GameObject[]> {

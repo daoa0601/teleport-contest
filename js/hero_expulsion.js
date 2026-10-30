@@ -42,6 +42,7 @@ export function holdingMonsterSubject(monster, state = game) {
     const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
+// C polyself.c:uunstick().
 export async function releaseHeroGrip(state = game, publish = plineWithContinuation) {
     const holder = state.u.ustuck;
     if (!holder)

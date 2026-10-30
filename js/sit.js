@@ -73,6 +73,7 @@ function eggTypeFromParent(parent) {
         return PM_GARGOYLE;
     return parent;
 }
+// C sit.c:lay_an_egg().
 async function layEgg() {
     const form = heroMonsterForm(game);
     if (form === null)

@@ -13,6 +13,7 @@ export function takePolymorphGenocide(state = game) {
     delete state._polymorphGenocideCause;
     return cause;
 }
+// C polyself.c:ugenocided().
 export function heroHasBeenGenocided(state = game) {
     const { u, urace } = requireInitializedGame(state);
     // This port's role.mnum is a role-table index; u.umonster stores its
@@ -23,6 +24,7 @@ export function heroHasBeenGenocided(state = game) {
         throw new Error('Hero genocide requires initialized species population state');
     return !!((roleVital.mvflags | raceVital.mvflags) & G_GENOD);
 }
+// C polyself.c:udeadinside().
 export function feelingAfterSelfGenocide(state = game) {
     const species = heroSpecies(state);
     if (!monsterIsNonliving(species))

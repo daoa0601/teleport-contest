@@ -141,6 +141,7 @@ const MITHRIL = 17;
 const S_EYE = 5;
 const S_LIGHT = 25;
 
+// C steed.c:rider_cant_reach().
 export function riderCannotReachMessage(state: GameState = game): string {
     const steed = state.u.usteed;
     if (!steed) throw new Error('A riding reach message requires a steed.');
@@ -240,6 +241,7 @@ export async function ridingPreventsMovement() {
 }
 
 // C hack.c moves the steed with the hero before resolving displacement.
+// C steed.c:exercise_steed().
 export async function moveSteedWithHero() {
     const hero = game.u;
     if (!hero.usteed) return;

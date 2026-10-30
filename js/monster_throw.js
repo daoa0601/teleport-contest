@@ -243,6 +243,7 @@ function monsterClassVolleyBonus(monster, missile, launcher) {
     }
     return bonus;
 }
+// C mthrowu.c:monmulti().
 export function monsterVolleyCount(monster, missile, launcher, rollOne = rnd) {
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
     const missileName = objectTypeName(missile);

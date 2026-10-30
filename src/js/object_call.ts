@@ -16,6 +16,7 @@ import { objectName, observeObjectForNaming } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 
+// C do_name.c:objtyp_is_callable().
 export function objectTypeIsCallable(object: Pick<GameObject, 'otyp' | 'oclass'>,
     state: GameState = game): boolean {
     if (state._objectCallNames?.[object.otyp]) return true;
@@ -47,6 +48,7 @@ export async function tryCallObjectType(
     return callObjectType(object, state);
 }
 
+// C do_name.c:docall_xname().
 export async function callObjectType(object: GameObject, state: GameState = game): Promise<ObjectCallResult> {
     if (!object.dknown) return { prompted: false, named: false, callName: null };
     // C docall() publishes buffered status before getlin() disables bot().

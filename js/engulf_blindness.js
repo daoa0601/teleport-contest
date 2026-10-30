@@ -9,6 +9,7 @@ import { MONSTER_ATTACKS } from './monster_data.js';
 import { d } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, setHeroBlindnessTurns, } from './senses.js';
 import { makeBlinded } from './sight_change.js';
+// C mhitu.c:gulp_blnd_check().
 export async function gulpBlindnessCheck({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     if (heroIsBlinded(state) || !hero.uswallow || !engulfCanBlindHero(state))

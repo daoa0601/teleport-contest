@@ -132,6 +132,7 @@ export async function hideHeroUnder(state = game) {
         await newsym(state.u.ux, state.u.uy);
     return undetected;
 }
+// C monmove.c:can_hide_under_obj().
 export function canMonsterHideUnderObjectAt(state, x, y) {
     const pile = state.level?.objects[x]?.[y] ?? [];
     if (pile[0]?.where !== 'floor')

@@ -208,6 +208,7 @@ export function weaponSkillDamageBonus(weapon: GameObject | null, state: GameSta
     return bonus;
 }
 
+// C weapon.c:weapon_type().
 export function weaponSkillType(weapon: GameObject | null): number {
     if (!weapon) return P_BARE_HANDED_COMBAT;
     if (![2, 6, 13].includes(weapon.oclass)) return P_NONE;
@@ -246,6 +247,7 @@ export async function useHeroSkill(skill: number, degree = 1, { state = game }: 
         await giveMayAdvanceMessage(skill, state);
 }
 
+// C weapon.c:can_advance().
 export function canAdvanceHeroSkill(skill: number, { state = game, speedy = false }: { state?: GameState; speedy?: boolean } = {}): boolean {
     const proficiency = ensureHeroSkills(state)?.[skill];
     if (!proficiency || proficiency.skill === P_ISRESTRICTED
@@ -256,6 +258,7 @@ export function canAdvanceHeroSkill(skill: number, { state = game, speedy = fals
         && (state.u.weapon_slots || 0) >= slotsRequiredToAdvance(skill, proficiency.skill);
 }
 
+// C weapon.c:give_may_advance_msg().
 async function giveMayAdvanceMessage(skill: number, state: GameState): Promise<void> {
     const kind = skill === P_NONE ? '' : skill <= P_LAST_WEAPON ? 'weapon '
         : skill <= P_LAST_SPELL ? 'spell casting ' : 'fighting ';
@@ -343,11 +346,14 @@ function initializedSkills(state: GameState): HeroSkill[] {
     return skills;
 }
 
+// C weapon.c:slots_required().
 function slotsRequiredToAdvance(skill: number, level: number): number {
     if (skill <= 27 || skill === 36) return level;
     return Math.trunc((level + 1) / 2);
 }
 
+// C weapon.c:add_weapon_skill().
+// C weapon.c:lose_weapon_skill().
 export async function adjustWeaponSkillSlots(change: number, state: GameState = game): Promise<void> {
     const hero = state.u;
     if (!hero || !Number.isInteger(change) || change === 0) return;
@@ -407,6 +413,7 @@ export async function drainHeroWeaponSkills(count: number, state: GameState = ga
     }
 }
 
+// C weapon.c:unrestrict_weapon_skill().
 export function unrestrictHeroSkill(type: number, state: GameState = game): void {
     const skill = ensureHeroSkills(state)?.[type];
     if (skill && skill.skill === 0) {
@@ -442,6 +449,7 @@ export function skillName(skill: number, state: GameState = game): string {
     return name;
 }
 
+// C weapon.c:enhance_weapon_skill().
 export async function doenhance() {
     game.context.tips = (game.context.tips || 0) | (1 << TIP_ENHANCE);
     let speedy = false;
@@ -522,6 +530,7 @@ function enhancementMenu(speedy: boolean, state: GameState): { items: InventoryM
     return { items, available };
 }
 
+// C weapon.c:could_advance().
 function couldAdvanceSkill(skill: number, state: GameState): boolean {
     const proficiency = state.u.weaponSkills?.[skill];
     return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill < proficiency.maxSkill
@@ -529,6 +538,7 @@ function couldAdvanceSkill(skill: number, state: GameState): boolean {
         && proficiency.advance >= practiceNeededToAdvance(proficiency.skill);
 }
 
+// C weapon.c:peaked_skill().
 function skillHasPeaked(skill: number, state: GameState): boolean {
     const proficiency = state.u.weaponSkills?.[skill];
     return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill >= proficiency.maxSkill

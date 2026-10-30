@@ -14,6 +14,7 @@ import {
 } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 
+// C mhitu.c:gulp_blnd_check().
 export async function gulpBlindnessCheck({
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<{

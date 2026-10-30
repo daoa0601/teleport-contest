@@ -120,6 +120,7 @@ async function confirmPeacefulGaze(monster, damageType, state) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
     return await promptYesNo(`Really ${action} ${monsterName(monster, { state })}?`) === 'y';
 }
+// C polyself.c:dogaze().
 export async function useHeroGaze({ state = game, attack = heroGazeAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, finishMonsterKill = finishHeroMonsterKill, die = finishHeroDeath, } = {}) {
     if (!attack)
         return { used: false, spentTime: false, reason: 'no-gaze' };

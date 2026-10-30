@@ -131,6 +131,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
     return changed;
 }
 
+// C lock.c:obstructed().
 export async function doorObstructed(x: number, y: number, quietly: boolean, state: PlayingGameState) {
     const occupant = monsterAtPosition(state.level, x, y);
     if (occupant && M_AP_TYPE(occupant) !== M_AP_FURNITURE) {

@@ -74,6 +74,7 @@ const IRON = 11;
 const MITHRIL = 17;
 const S_EYE = 5;
 const S_LIGHT = 25;
+// C steed.c:rider_cant_reach().
 export function riderCannotReachMessage(state = game) {
     const steed = state.u.usteed;
     if (!steed)
@@ -166,6 +167,7 @@ export async function ridingPreventsMovement() {
     return true;
 }
 // C hack.c moves the steed with the hero before resolving displacement.
+// C steed.c:exercise_steed().
 export async function moveSteedWithHero() {
     const hero = game.u;
     if (!hero.usteed)

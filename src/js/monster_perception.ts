@@ -139,6 +139,7 @@ const M_SEEN_BY_PROPERTY: Partial<Record<PropertyName, number>> = {
     reflection: M_SEEN_REFL,
 };
 
+// C mondata.c:cvt_prop_to_mseenres().
 export function seenResistanceForProperty(property: PropertyName): number {
     return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
 }

@@ -61,6 +61,7 @@ const POISON_EFFECT = [
     'You break out in hives!',
 ];
 
+// C attrib.c:poisontell().
 export function poisonAttributeMessage(
     attribute: number, state: GameState = game, exclaim = true,
 ): string {
@@ -75,6 +76,7 @@ export function poisonAttributeMessage(
     return text.startsWith('You feel ') ? formatFeltMessage(text.slice(9), state) : text;
 }
 
+// C attrib.c:adjuhploss().
 function adjustedDamageAfterMaxHpLoss(
     loss: number, oldHp: number, state: PlayingGameState,
 ): number {

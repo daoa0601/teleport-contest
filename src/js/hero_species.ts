@@ -134,6 +134,7 @@ export function heroWarnsOfMonster(monster: Pick<Monster, 'mnum'> | null | undef
         || warning.speciesidx === monster.mnum;
 }
 
+// C polyself.c:polysense().
 function setFormSenses(mnum: number, state: GameState) {
     const name = speciesEntry(MONSTER_NAME, mnum);
     const speciesidx = ['purple worm', 'baby purple worm'].includes(name)

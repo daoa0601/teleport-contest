@@ -65,6 +65,7 @@ export function objectNoLongerHeldSynchronously(
     for (const member of crysknifeReversions(object)) revertCrysknife(member);
 }
 
+// C do.c:obj_no_longer_held().
 export async function objectNoLongerHeld(
     object: GameObject | null | undefined, state: GameState = game,
 ): Promise<void> {

@@ -165,7 +165,7 @@ import { applyMonsterContactPassive } from './monster_contact_passive.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { tryKnockback } from './knockback.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
-import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
+import { inHeroSanctuary, priestInOwnTemple } from './priest.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
 import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
 export { monsterCanCarryObject } from './monster_carry.js';
@@ -1392,6 +1392,7 @@ function nearbyFloorObjects(monster, state) {
     })
         .map((entry) => entry.object);
 }
+// C dogmove.c:can_reach_location().
 function petCanReachLocation(monster, mx, my, fx, fy, state) {
     if (mx === fx && my === fy)
         return true;
@@ -3570,7 +3571,8 @@ function specialMoverSeesHero(monster, state) {
         couldSeeFromHero(state, monster.mx, monster.my));
 }
 async function movePriest(monster, state, random, rollDice, rollOne, calls) {
-    if (!priestIsInOwnTemple(monster, state))
+    const roomno = roomsAt(state.level, monster.mx, monster.my, TEMPLE)[0];
+    if (roomno === undefined || !priestInOwnTemple(monster, roomno, state))
         return null;
     const epri = monster.epri || monster.mextra?.epri;
     if (!epri)
@@ -6279,6 +6281,7 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
         addShopDamage(monster.mx, monster.my, 0, state);
     return { roll, probability, created: true, trap };
 }
+// C monmove.c:holds_up_web().
 function holdsUpMonsterWeb(x, y, state) {
     const location = state.level.at(x, y);
     if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
@@ -7364,6 +7367,7 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
 }
 // C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
 // Direct callers such as shop entry do not spend a scheduled movement ration.
+// C monmove.c:m_arrival().
 export async function beginMonsterDochug(monster, state, random = rn2, rollDice = d, rollOne = rnd) {
     const calls = DISCARDED_CALL_LOG;
     const nextToHero = distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1;

@@ -111,6 +111,7 @@ function attributeLimits(attribute: AttributeIndex, state: GameState): [minimum:
     return [3, 25];
 }
 
+// C attrib.c:extremeattr().
 export function attributeIsAtLimit(attribute: number, state: GameState = game): boolean {
     requireAttributeIndex(attribute);
     const value = currentAttribute(attribute, state);

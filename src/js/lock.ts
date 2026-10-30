@@ -139,6 +139,7 @@ export async function doforce(state: GameState = game): Promise<void> {
     state.context.move = 1;
 }
 
+// C lock.c:forcelock().
 export async function continueForceLock(occupation: ForceLockOccupation, state: GameState = game): Promise<boolean> {
     const box = occupation.container;
     if (!box) {
@@ -196,6 +197,7 @@ export async function continueForceLock(occupation: ForceLockOccupation, state: 
     return true;
 }
 
+// C lock.c:u_have_forceable_weapon().
 export function isForceableWeapon(weapon: GameObject | null | undefined): boolean {
     if (!weapon) return false;
     const weaponTool = isWeaponTool(weapon);

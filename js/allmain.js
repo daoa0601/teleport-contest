@@ -1005,6 +1005,7 @@ async function beginInitialTurnMaintenance() {
     }
     return finishInitialTurnMaintenanceAfterMonsterDistress(capacity, true);
 }
+// C allmain.c:maybe_generate_rnd_mon().
 async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferAmbientMessage) {
     const game = requireInitializedGame();
     allocateMonsterMovement(game.level?.monsters || [], rn2, game);

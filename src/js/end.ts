@@ -808,6 +808,7 @@ function plur(count: number): string {
     return count === 1 ? '' : 's';
 }
 
+// C role.c:Goodbye().
 function roleGoodbye() {
     return game.urole?.goodbye || 'Goodbye';
 }

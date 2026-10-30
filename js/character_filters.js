@@ -7,6 +7,7 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, 
 export function createCharacterFilters() {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
+// C role.c:gotrolefilter().
 export function hasCharacterFilters(filters) {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
 }

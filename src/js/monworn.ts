@@ -134,6 +134,7 @@ function slotAllowed(monster: Monster, slot: MonsterArmorSlot): boolean {
     return true;
 }
 
+// C worn.c:extra_pref().
 function preference(monster: Monster, object: GameObject): number {
     return armorBonus(object)
         + Number(object?.otyp === SPEED_BOOTS && monster?.permspeed !== 2) * 20;
@@ -213,6 +214,7 @@ function bestForSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean
     return { old, best };
 }
 
+// C worn.c:m_dowear_type().
 async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean, state: GameState, publish: MessagePublisher): Promise<MonsterArmorChange | null> {
     if (monster.mfrozen) return null;
     // Save the perceived identity before equipment can change visibility,

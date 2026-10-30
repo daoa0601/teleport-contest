@@ -37,6 +37,7 @@ export interface MonsterItemSearchResult {
     underfoot: GameObject | null;
 }
 
+// C monmove.c:m_search_items().
 export function searchMonsterItems(monster: Monster, state: PlayingGameState, {
     goal: initialGoal, approach: initialApproach, random, calls = [],
 }: MonsterItemSearchOptions): MonsterItemSearchResult {

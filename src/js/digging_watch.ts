@@ -25,6 +25,8 @@ export interface WatchDiggingOptions {
     publish?: MessagePublisher;
 }
 
+// C dig.c:watch_dig().
+// C dig.c:watchman_canseeu().
 export async function watchDigging(x: number, y: number, {
     state = game, monster = null, magic = true, publish = plineWithContinuation,
 }: WatchDiggingOptions = {}): Promise<boolean> {

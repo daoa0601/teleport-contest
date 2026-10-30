@@ -355,6 +355,7 @@ function floorObjects(state: PlayingGameState): GameObject[] {
         .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));
 }
 
+// C detect.c:o_in().
 function objectOfClass(object: GameObject, objectClass: number): GameObject | null {
     if (!objectClass) return null;
     if ((object.oclass ?? objectClassForType(object.otyp)) === objectClass) return object;
@@ -366,6 +367,7 @@ function objectOfClass(object: GameObject, objectClass: number): GameObject | nu
     return null;
 }
 
+// C detect.c:o_material().
 function objectOfMaterial(object: GameObject, material: number, state: GameState): GameObject | null {
     if (objectMaterial(object, state) === material) return object;
     for (const child of object.contents || []) {

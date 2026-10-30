@@ -255,6 +255,7 @@ export async function createPoisonGasCloud(
         gasCloudTtl(cloudSize, cells.length, random), damage, silentSingleCell, publish);
 }
 
+// C region.c:inside_region().
 function regionContains(region: GasCloud, x: number, y: number): boolean {
     return region.cells?.some(cell => cell.x === x && cell.y === y);
 }
@@ -300,6 +301,7 @@ export function heroIsInDangerousRegion(state: GameState = game): boolean {
         region.kind === 'gas-cloud' && region.heroInside);
 }
 
+// C region.c:region_safety().
 export async function rescueHeroFromRegion(state: GameState = game): Promise<void> {
     const level = requireGameLevel(state);
     const clouds = level.regions.filter(region =>

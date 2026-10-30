@@ -57,6 +57,7 @@ export function addBuriedObject(object, x, y, state = game) {
     (level.buriedObjects ??= []).unshift(object);
     return object;
 }
+// C dig.c:bury_objs().
 export async function buryFloorObjectsAt(x, y, state = game, { publish = plineWithContinuation, } = {}) {
     const level = requireGameLevel(state);
     const shop = costlySpot(x, y, state);

@@ -21,6 +21,7 @@ const POISON_EFFECT = [
     'You feel very sick!',
     'You break out in hives!',
 ];
+// C attrib.c:poisontell().
 export function poisonAttributeMessage(attribute, state = game, exclaim = true) {
     const punctuation = exclaim ? '!' : '.';
     if (attribute === A_STR && currentAttribute(A_STR, state) === 125)
@@ -33,6 +34,7 @@ export function poisonAttributeMessage(attribute, state = game, exclaim = true) 
     const text = message.replace(/!$/u, punctuation);
     return text.startsWith('You feel ') ? formatFeltMessage(text.slice(9), state) : text;
 }
+// C attrib.c:adjuhploss().
 function adjustedDamageAfterMaxHpLoss(loss, oldHp, state) {
     const hero = state.u;
     if (!Upolyd(hero) && hero.uhp < oldHp)

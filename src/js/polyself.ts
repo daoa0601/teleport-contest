@@ -429,6 +429,7 @@ async function finishHumanFormChange(
     return false;
 }
 
+// C polyself.c:dropp().
 async function dropCarriedObject(
     object: GameObject | null | undefined, options: { cancelledDon?: boolean } = {},
 ) {
@@ -897,6 +898,7 @@ async function changeArmorForHeroForm(mnum: number) {
     }
 }
 
+// C polyself.c:drop_weapon().
 async function dropPolymorphWeapons(alone: boolean) {
     requirePlayingGame(game);
     const primary = game.uwep || game.u.uwep;
@@ -965,6 +967,7 @@ function humanAttributeArrays() {
     return { base: u.acurr.a, max: u.amax.a };
 }
 
+// C attrib.c:redist_attr().
 function redistributeActiveAttributes() {
     requirePlayingGame(game);
     const { base, max } = humanAttributeArrays();

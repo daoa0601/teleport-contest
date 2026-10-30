@@ -121,6 +121,7 @@ export function realRayName(damageType: number, kind: RayNameKind): string {
     return name;
 }
 
+// C mthrowu.c:rnd_hallublast().
 export function displayRayName(damageType: number, kind: RayNameKind, { state = game, random = rn2 }: { state?: GameState; random?: typeof rn2 } = {}) {
     if (!heroIsHallucinating(state)) return realRayName(damageType, kind);
     const blast = hallucinationBlasts[random(hallucinationBlasts.length)];

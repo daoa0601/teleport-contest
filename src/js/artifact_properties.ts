@@ -76,6 +76,7 @@ export function setWornArtifactProperties(
 
 // worn.c counts all ordinary worn TELEPAT objects, plus one source for
 // every carried ESP artifact together, regardless of their number.
+// C worn.c:recalc_telepat_range().
 export function recalculateTelepathyRange(state: GameState): void {
     const worn = [state.uarm, state.uarmc, state.uarmh, state.uarms,
         state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,

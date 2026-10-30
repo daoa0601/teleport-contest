@@ -141,10 +141,12 @@ export function questGuardianName(g: GameState = game): string {
     return MONSTER_NAME[mnum] ?? '';
 }
 
+// C questpgr.c:homebase().
 export function questHomebase(g: GameState = game): string {
     return g.urole?.homebase ?? '';
 }
 
+// C questpgr.c:intermed().
 export function questIntermed(g: GameState = game): string {
     return g.urole?.intermediate ?? '';
 }

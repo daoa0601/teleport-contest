@@ -237,6 +237,7 @@ async function undressHero(context: SeductionContext, triedGloves: boolean): Pro
     if (!state.uarmc && !state.uarm) await maybeRemoveArmor(context, state.uarmu, 'shirt');
 }
 
+// C mhitu.c:mayberem().
 async function maybeRemoveArmor(context: SeductionContext, armor: GameObject | null | undefined, name: string): Promise<void> {
     if (!armor?.owornmask || !stillTogether(context)) return;
     const { state, who, publish, random } = context;

@@ -15,6 +15,7 @@ const M1_HERBIVORE = 0x40000000;
 // A starvation attempt ends this pet action even when an amulet saves it.
 // Check only at dog_move entry; sleeping, frozen and eating pets wait until
 // their next movement opportunity, as in dochug()/m_move().
+// C dogmove.c:dog_hunger().
 export async function applyPetHunger(monster, state) {
     const dog = monster.mtame ? monster.edog ?? monster.mextra?.edog : null;
     if (!dog || state.moves <= dog.hungrytime + DOG_WEAK)
@@ -52,6 +53,7 @@ export async function applyPetHunger(monster, state) {
     }
     return false;
 }
+// C dogmove.c:dog_starve().
 async function starvePet(monster, state) {
     if (monster.mleashed && monster !== state.u.usteed) {
         await plineWithContinuation('Your leash goes slack.');

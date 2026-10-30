@@ -232,6 +232,7 @@ async function undressHero(context, triedGloves) {
     if (!state.uarmc && !state.uarm)
         await maybeRemoveArmor(context, state.uarmu, 'shirt');
 }
+// C mhitu.c:mayberem().
 async function maybeRemoveArmor(context, armor, name) {
     if (!armor?.owornmask || !stillTogether(context))
         return;

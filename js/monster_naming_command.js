@@ -14,6 +14,7 @@ import { distantMonsterName, monsterPossessive, monsterSubjectPronoun, shopkeepe
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { takeCommandPosition } from './input.js';
+// C do_name.c:do_mgivenname().
 export async function nameChosenMonster() {
     requirePlayingGame(game);
     if (heroIsHallucinating(game)) {
@@ -90,6 +91,7 @@ export async function nameChosenMonster() {
         setMonsterGivenName(monster, name);
     }
 }
+// C do_name.c:alreadynamed().
 async function rejectExistingName(monster, oldName, proposed) {
     const subject = oldName.charAt(0).toUpperCase() + oldName.slice(1);
     const rider = monsterIsRider(monster);

@@ -128,6 +128,7 @@ async function scatterCarriedItems(state) {
             return;
     }
 }
+// C ball.c:ballrelease().
 export async function releaseCarriedBall(state, showMessage = false) {
     const ball = state.uball || state.u.uball;
     if (!ball || !carried(ball, state) || isWeldedPrimary(ball, state))
@@ -164,6 +165,7 @@ export async function reserveBallAndChainPlacement(state = game) {
     await unplaceBallAndChainCore(state);
     return pin;
 }
+// C ball.c:unplacebc_core().
 async function unplaceBallAndChainCore(state) {
     requireLiveGame(state);
     const ball = state.uball || state.u.uball;
@@ -213,6 +215,7 @@ export async function placeBallAndChain(state = game, publish = plineWithContinu
     await restoreBallAndChainPlacement(0, state, publish);
 }
 // A negative pin overrides the restriction during terminal object cleanup.
+// C ball.c:placebc_core().
 export async function restoreBallAndChainPlacement(pin, state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     if (state._ballChainRestriction && pin !== -1 && pin !== state._ballChainRestriction)
@@ -358,6 +361,7 @@ export async function dropBall(x, y, { state = game, publish = plineWithContinua
 function rememberedGlyphAt(x, y, state) {
     return locationAt(x, y, state).remembered_glyph;
 }
+// C ball.c:bc_order().
 export async function ballChainOrder(state = game) {
     requireLiveGame(state);
     const ball = state.uball || state.u?.uball;

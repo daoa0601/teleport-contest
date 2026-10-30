@@ -198,6 +198,7 @@ export function weaponSkillDamageBonus(weapon, state = game) {
     }
     return bonus;
 }
+// C weapon.c:weapon_type().
 export function weaponSkillType(weapon) {
     if (!weapon)
         return P_BARE_HANDED_COMBAT;
@@ -236,6 +237,7 @@ export async function useHeroSkill(skill, degree = 1, { state = game } = {}) {
     if (!wasEligible && canAdvanceHeroSkill(skill, { state }))
         await giveMayAdvanceMessage(skill, state);
 }
+// C weapon.c:can_advance().
 export function canAdvanceHeroSkill(skill, { state = game, speedy = false } = {}) {
     const proficiency = ensureHeroSkills(state)?.[skill];
     if (!proficiency || proficiency.skill === P_ISRESTRICTED
@@ -247,6 +249,7 @@ export function canAdvanceHeroSkill(skill, { state = game, speedy = false } = {}
     return proficiency.advance >= practiceNeededToAdvance(proficiency.skill)
         && (state.u.weapon_slots || 0) >= slotsRequiredToAdvance(skill, proficiency.skill);
 }
+// C weapon.c:give_may_advance_msg().
 async function giveMayAdvanceMessage(skill, state) {
     const kind = skill === P_NONE ? '' : skill <= P_LAST_WEAPON ? 'weapon '
         : skill <= P_LAST_SPELL ? 'spell casting ' : 'fighting ';
@@ -338,11 +341,14 @@ function initializedSkills(state) {
         throw new Error('Hero skills require an initialized role');
     return skills;
 }
+// C weapon.c:slots_required().
 function slotsRequiredToAdvance(skill, level) {
     if (skill <= 27 || skill === 36)
         return level;
     return Math.trunc((level + 1) / 2);
 }
+// C weapon.c:add_weapon_skill().
+// C weapon.c:lose_weapon_skill().
 export async function adjustWeaponSkillSlots(change, state = game) {
     const hero = state.u;
     if (!hero || !Number.isInteger(change) || change === 0)
@@ -401,6 +407,7 @@ export async function drainHeroWeaponSkills(count, state = game) {
         await plineWithContinuation(`You forget ${amount}your training in ${skillName(skill, state)}.`);
     }
 }
+// C weapon.c:unrestrict_weapon_skill().
 export function unrestrictHeroSkill(type, state = game) {
     const skill = ensureHeroSkills(state)?.[type];
     if (skill && skill.skill === 0) {
@@ -435,6 +442,7 @@ export function skillName(skill, state = game) {
         throw new RangeError(`Hero skill ${skill} has no name`);
     return name;
 }
+// C weapon.c:enhance_weapon_skill().
 export async function doenhance() {
     game.context.tips = (game.context.tips || 0) | (1 << TIP_ENHANCE);
     let speedy = false;
@@ -516,12 +524,14 @@ function enhancementMenu(speedy, state) {
     }
     return { items, available };
 }
+// C weapon.c:could_advance().
 function couldAdvanceSkill(skill, state) {
     const proficiency = state.u.weaponSkills?.[skill];
     return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill < proficiency.maxSkill
         && (state.u.skillRecord?.length || 0) < P_SKILL_LIMIT
         && proficiency.advance >= practiceNeededToAdvance(proficiency.skill);
 }
+// C weapon.c:peaked_skill().
 function skillHasPeaked(skill, state) {
     const proficiency = state.u.weaponSkills?.[skill];
     return !!proficiency && proficiency.skill !== P_ISRESTRICTED && proficiency.skill >= proficiency.maxSkill

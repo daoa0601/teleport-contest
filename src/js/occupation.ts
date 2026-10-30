@@ -8,6 +8,7 @@ import { game } from './gstate.js';
 import { clearCannedCommands, endVoluntaryMultiTurn } from './command_state.js';
 import type { GameState } from './game_state.js';
 
+// C allmain.c:stop_occupation().
 export async function stopHeroOccupation(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation, { finishMeal = true } = {},
 ) {

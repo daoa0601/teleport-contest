@@ -19,6 +19,7 @@ import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } fro
 import { announceWeaponWeld, explainTwoWeaponEnd } from './weapon_feedback.js';
 import { setPrimaryWeapon } from './weapon_slots.js';
 import { willWeld } from './weapon_type.js';
+// C wield.c:empty_handed().
 export function emptyHandedDescription(state = game) {
     if (state.uarmg || state.u.uarmg)
         return 'empty handed';

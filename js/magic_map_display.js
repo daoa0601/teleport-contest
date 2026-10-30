@@ -37,6 +37,7 @@ export function reconstrainMap({ saved }, state = game) {
 export async function clearDetectionMap(_state = game) {
     await cls();
 }
+// C detect.c:map_monst().
 export async function mapDetectedMonster(monster, showTail, state = game) {
     // Ghosts retain their space symbol. The detected glyph makes that space
     // visible through tty inverse video, independently of pet highlighting.
@@ -89,6 +90,7 @@ export async function browseDetectionMap(terrainMode, goal, { state = game, } = 
             state.iflags.terrainmode = savedTerrainMode;
     }
 }
+// C detect.c:map_redisplay().
 export async function redisplayDetectionMap(constraints, state = game) {
     reconstrainMap(constraints, state);
     await docrt();

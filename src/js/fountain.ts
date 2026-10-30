@@ -64,6 +64,7 @@ export async function dryFountainAt(x: number, y: number, {
     return true;
 }
 
+// C fountain.c:watchman_warn_fountain().
 async function warnAboutFountain(state: GameState, publish: MessagePublisher): Promise<void> {
     const watch = [...requireGameLevel(state).monsters].reverse().find(monster =>
         !monster.dead && monster.mhp > 0 && monster.mpeaceful

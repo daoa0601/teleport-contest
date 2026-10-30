@@ -52,6 +52,7 @@ export async function toggleTwoWeaponCombat(state: GameState = game): Promise<bo
     return rnd(20) > currentAttribute(A_DEX, state);
 }
 
+// C wield.c:can_twoweapon().
 export async function canBeginTwoWeaponCombat(state: GameState): Promise<boolean> {
     const primary = state.uwep || state.u.uwep;
     const secondary = state.uswapwep || state.u.uswapwep;
@@ -129,6 +130,7 @@ export async function dropSecondaryWeapon(state: GameState = game): Promise<void
     await dropInventoryObjectAtHero(object, { state });
 }
 
+// C wield.c:untwoweapon().
 export async function stopTwoWeaponCombat(state: GameState = game): Promise<void> {
     if (!state.u.twoweap) return;
     await plineWithContinuation('You can no longer wield two weapons at once.');

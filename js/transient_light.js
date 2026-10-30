@@ -41,6 +41,7 @@ export function discardFlashes(state = game) {
     delete state._transientLights;
     state.vision_full_recalc = 1;
 }
+// C light.c:transient_light_cleanup().
 export async function cleanupTransientLight(state = game) {
     requirePlayingGame(state);
     discardFlashes(state);
