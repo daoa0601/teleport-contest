@@ -16,7 +16,6 @@ attrib.c	acurr	chridx >= 0 && chridx < A_MAX	diagnostic	NHASSERT assertion condi
 bones.c	getbones	This is bones level '	out-of-scope	Wizard-mode pline for a mismatched bones file being read back (bones file I/O); the port rebuilds level contents from the session, never parsing bones files.
 bones.c	getbones	ancestor-nhuuid	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in bones.c:getbones(); serialized metadata, not displayed text. The port validates its own storage format.
 bones.c	savebones	ancestor-nhuuid	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in bones.c:savebones(); serialized metadata, not displayed text. The port validates its own storage format.
-botl.c	fieldids_alias	experience-points	composed	src/js/option_values.ts:rejectInvalidStatusField; The alias table is normalized by stripping - and _ before matching experiencepoints, like fieldids_alias for BL_EXP.
 botl.c	has_ltgt_percentnumber	<>=-+0123456789%	diagnostic	Character set for status-hilite percent-number bounds parsing, not a message.
 cmd.c	all_options_autocomplete	AUTOCOMPLETE=	out-of-scope	build_options() regenerates config-file text for writing the rc file or dump; host file output is outside the browser runtime.
 cmd.c	cmdnotavail	' command not available.	dead	The pinned unix build defines SHELL and SUSPEND (unixconf.h:291,322) and tty can suspend, so #suspend and #shell run their OS paths; the two remaining uses sit in #if 0 blocks (cmd.c:2644-2653, 2713-2720).
