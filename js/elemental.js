@@ -15,7 +15,7 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { clearMonsterWormFromMap } from './monster_worm.js';
 import { mnearto } from './shop_damage.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero } from './teleport.js';
-import { vision_recalc, vision_reset } from './vision.js';
+import { block_point, recalc_block_point, unblock_point, vision_recalc, } from './vision.js';
 import { heroIsPunished, reserveBallAndChainPlacement, restoreBallAndChainPlacement } from './ball.js';
 const BUBBLE_MASKS = [
     { width: 2, height: 1, rows: [0x3] },
@@ -142,6 +142,9 @@ function collectWaterBubbleContents(bubble) {
         if (trap)
             bubble.contents.unshift({ kind: 'trap', x, y, trap });
         setElementalCell(level.at(x, y), WATER, false);
+        // C movebubbles() blocks the filled square outright; plain WATER is
+        // not an obstruction for does_block(), so the direct call matters.
+        block_point(x, y);
     }
 }
 function drawBubble(bubble) {
@@ -150,20 +153,25 @@ function drawBubble(bubble) {
         for (let dy = 0; dy < bubble.height; dy++) {
             if (!((bubble.rows[dy] ?? 0) & (1 << dx)))
                 continue;
-            const loc = game.level?.at?.(bubble.x + dx, bubble.y + dy);
+            const x = bubble.x + dx, y = bubble.y + dy;
+            const loc = game.level?.at?.(x, y);
             if (isAir) {
                 if (loc) {
                     loc.typ = CLOUD;
                     loc.lit = true;
                 }
+                // C mv_bubble() blocks each drawn cloud cell incrementally.
+                block_point(x, y);
             }
-            else if (Is_waterlevel(game.u?.uz) && loc) {
-                loc.typ = AIR;
-                loc.lit = true;
+            else if (Is_waterlevel(game.u?.uz)) {
+                if (loc) {
+                    loc.typ = AIR;
+                    loc.lit = true;
+                }
+                unblock_point(x, y);
             }
         }
     }
-    vision_reset();
 }
 async function moveBubble(bubble, requestedDx, requestedDy, initial) {
     const motion = moveBubblePosition(bubble, requestedDx, requestedDy);
@@ -304,12 +312,18 @@ export async function moveElementalBubbles() {
             for (let y = 0; y < ROWNO; y++) {
                 const loc = level.requireAt(x, y);
                 setElementalCell(loc, AIR, true);
+                // C assigns air_pos then recalc_block_point(): the cell
+                // joins or leaves the blocker table incrementally rather
+                // than through a full vision_reset() rebuild.
+                recalc_block_point(x, y);
                 const xedge = x < BOUNDS.bubbleXMin
                     || x > BOUNDS.bubbleXMax;
                 const yedge = y < BOUNDS.bubbleYMin
                     || y > BOUNDS.bubbleYMax;
-                if ((xedge || yedge) && rn2(xedge ? 3 : 5) === 0)
+                if ((xedge || yedge) && rn2(xedge ? 3 : 5) === 0) {
                     loc.typ = CLOUD;
+                    block_point(x, y);
+                }
             }
         }
     }

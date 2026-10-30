@@ -444,6 +444,36 @@ export function vision_note_blocker_change(x, y) {
     if (wasInVisibilityMap)
         game.vision_full_recalc = 1;
 }
+// C vision.c block_point()/unblock_point(): drive the incremental blocker
+// table directly, without consulting the terrain classifier.  mkmaze.c's
+// bubble paths call these after assigning levl[x][y] themselves, and the
+// resulting left/right pointers need not equal a full vision_reset()
+// rebuild of the same terrain — Plane of Air clouds rely on that.
+export function block_point(x, y) {
+    if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
+        return;
+    fill_point(y, x);
+    if (game.viz_array?.[y]?.[x])
+        game.vision_full_recalc = 1;
+}
+export function unblock_point(x, y) {
+    if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
+        return;
+    dig_point(y, x);
+    if (game.viz_array?.[y]?.[x])
+        game.vision_full_recalc = 1;
+}
+// C vision.c recalc_block_point(): pick the blocker-table direction from the
+// cell's current terrain.
+export function recalc_block_point(x, y) {
+    const level = game.level;
+    if (!level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
+        return;
+    if (visionCellBlocksLight(level, x, y))
+        block_point(x, y);
+    else
+        unblock_point(x, y);
+}
 // C vision.c:vision_reset(). A new level starts without inherited sight and
 // requests a refresh before the next vision-dependent operation or message.
 export function vision_reset_new_level() {
