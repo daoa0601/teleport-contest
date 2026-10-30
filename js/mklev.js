@@ -6075,12 +6075,14 @@ function noncoalignedSpecialAlignmentDraw() {
     return choice ? -original : A_NEUTRAL;
 }
 // C sp_lev.c sp_amask_to_amask(): the Align2amask() argument is a ternary
-// macro that re-evaluates noncoalignment() for every comparison, so a
-// nonco-aligned special level feature consumes two or three rn2(2) draws
-// and can fall through to the shifted (alignment + 2) final branch.
+// macro that re-evaluates noncoalignment() for every comparison. Its first
+// comparison tests against A_NONE (-128), which noncoalignment() never
+// returns, so resolution always continues: a lawful second draw stops after
+// two rn2(2) draws, anything else forces a third and can store the shifted
+// (alignment + 2) mask.
 function noncoalignedSpecialAmask() {
     const first = noncoalignedSpecialAlignmentDraw();
-    if (first === A_NEUTRAL)
+    if (first === A_NONE)
         return AM_NONE;
     const second = noncoalignedSpecialAlignmentDraw();
     if (second === A_LAWFUL)
