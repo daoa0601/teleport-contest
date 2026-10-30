@@ -3972,12 +3972,13 @@ async function getbones() {
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
+    // Failed loads still reference the level being left; sanitize loaded bones only.
+    sanitizeEngravings(payload.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
     return game._restoredBones;
 }
 async function finishBonesRestore(displayLevel = null) {
-    sanitizeEngravings(requireGameLevel());
     const roleplay = game.u.uroleplay;
     if (!roleplay)
         throw new Error('Bones restoration requires initialized roleplay counters');
