@@ -43,9 +43,11 @@ function priestInOwnTemple(priest, roomno, state = game) {
         return false;
     return roomsAt(state.level, priest.mx, priest.my, TEMPLE)[0] === roomno;
 }
+// C priest.c:inhistemple().
 export function priestIsInOwnTemple(priest, state = game) {
     const roomno = roomsAt(state.level, priest?.mx, priest?.my, TEMPLE)[0];
-    return roomno != null && priestInOwnTemple(priest, roomno, state);
+    return roomno != null && priestInOwnTemple(priest, roomno, state)
+        && priestHasShrine(priest, state);
 }
 function findPriest(roomno, state = game) {
     // makemon prepends to Native fmon; JS appends to the level array.
@@ -96,6 +98,7 @@ export async function clearNonlocalPriestsOnExit() {
             await removeMonsterFromGame(priest);
     }
 }
+// C priest.c:has_shrine().
 export function priestHasShrine(priest, state = game) {
     const epri = priestData(priest);
     if (!priest.ispriest || !epri)

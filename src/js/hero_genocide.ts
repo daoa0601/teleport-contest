@@ -22,6 +22,7 @@ export function takePolymorphGenocide(state: GameState = game): HeroGenocideCaus
     return cause;
 }
 
+// C polyself.c:ugenocided().
 export function heroHasBeenGenocided(state: GameState = game): boolean {
     const { u, urace } = requireInitializedGame(state);
     // This port's role.mnum is a role-table index; u.umonster stores its
@@ -33,6 +34,7 @@ export function heroHasBeenGenocided(state: GameState = game): boolean {
     return !!((roleVital.mvflags | raceVital.mvflags) & G_GENOD);
 }
 
+// C polyself.c:udeadinside().
 export function feelingAfterSelfGenocide(state: GameState = game): 'dead' | 'condemned' | 'empty' {
     const species = heroSpecies(state);
     if (!monsterIsNonliving(species)) return 'dead';

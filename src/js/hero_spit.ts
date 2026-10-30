@@ -214,6 +214,7 @@ interface HeroSpitOptions {
     finishMonsterKill?: typeof finishHeroMonsterKillOutcome;
 }
 
+// C polyself.c:dospit().
 export async function useHeroSpit({
     state = game,
     attack = heroSpitAttack(state),

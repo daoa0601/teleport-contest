@@ -7,6 +7,7 @@ import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import { breatheInDirection } from './breath_ray.js';
 import { d, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
+// C polyself.c:dobreathe().
 export async function useHeroBreath({ state = game, attack = heroBreathAttack(state), publish = plineWithContinuation, readDirection = promptDirection, finishMonsterKill = finishHeroMonsterKill, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
     if (!attack)
         return { used: false, spentTime: false, reason: 'no-breath' };

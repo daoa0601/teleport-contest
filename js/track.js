@@ -5,6 +5,7 @@ import { distmin } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 const HERO_TRACK_SIZE = 100;
+// C track.c:initrack().
 export function initTrack(state = game) {
     state._heroTrack = [];
 }

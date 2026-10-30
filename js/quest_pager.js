@@ -136,9 +136,11 @@ export function questGuardianName(g = game) {
         return '';
     return MONSTER_NAME[mnum] ?? '';
 }
+// C questpgr.c:homebase().
 export function questHomebase(g = game) {
     return g.urole?.homebase ?? '';
 }
+// C questpgr.c:intermed().
 export function questIntermed(g = game) {
     return g.urole?.intermediate ?? '';
 }

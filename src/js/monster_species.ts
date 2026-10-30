@@ -17,6 +17,7 @@ const COUNTER_WERE_SPECIES = new Map(WERE_SPECIES_PAIRS.flatMap(
     ([beast, human]): [number, number][] => [[beast, human], [human, beast]],
 ));
 
+// C were.c:counter_were().
 export function counterWereSpecies(mnum: number): number | null {
     return COUNTER_WERE_SPECIES.get(mnum) ?? null;
 }

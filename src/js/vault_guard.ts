@@ -49,6 +49,7 @@ function corridorLocation(level: GameMap, x: number, y: number) {
     return location;
 }
 
+// C vault.c:in_fcorridor().
 export function inVaultCorridor(guard: Monster, x: number, y: number) {
     requireVaultGuard(guard);
     const corridor = guard._egd;
@@ -59,6 +60,7 @@ export function inVaultCorridor(guard: Monster, x: number, y: number) {
     return false;
 }
 
+// C vault.c:clear_fcorr().
 export async function clearVaultCorridor(guard: Monster, force = false, state: GameState = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);
@@ -126,6 +128,7 @@ function blackout(x: number, y: number, state: GameState) {
     }
 }
 
+// C vault.c:parkguard().
 export async function parkVaultGuard(guard: Monster, state: GameState = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);

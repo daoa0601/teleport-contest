@@ -120,6 +120,7 @@ export async function doforce(state = game) {
         await pline('You decide not to force the issue.');
     state.context.move = 1;
 }
+// C lock.c:forcelock().
 export async function continueForceLock(occupation, state = game) {
     const box = occupation.container;
     if (!box) {
@@ -172,6 +173,7 @@ export async function continueForceLock(occupation, state = game) {
     state.context.move = 1;
     return true;
 }
+// C lock.c:u_have_forceable_weapon().
 export function isForceableWeapon(weapon) {
     if (!weapon)
         return false;

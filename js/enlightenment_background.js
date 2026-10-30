@@ -85,6 +85,7 @@ export function backgroundEnlightenmentLines(final = 0) {
     }
     return lines;
 }
+// C insight.c:basics_enlightenment().
 export function basicsEnlightenmentLines(final = 0) {
     const { u } = requireInitializedGame();
     const hp = Math.max(0, Upolyd(u) ? u.mh : u.uhp);
@@ -102,10 +103,12 @@ export function basicsEnlightenmentLines(final = 0) {
     lines.push(`  Your armor class ${final ? 'was' : 'is'} ${u.uac}${Math.abs(u.uac) === AC_MAX ? `, the ${u.uac < 0 ? 'best' : 'worst'} possible` : ''}.`, ...goldInsightLines(!!final), `  Autopickup ${final ? 'was' : 'is'} ${autopickupDescription()}.`);
     return lines;
 }
+// C insight.c:characteristics_enlightenment().
 export function characteristicEnlightenmentLines(magic, final = 0) {
     return ['', ` ${final ? 'Final ' : ''}Characteristics:`,
         ...ATTRIBUTE_DISPLAY_ORDER.map(attribute => characteristicLine(attribute, magic, final))];
 }
+// C insight.c:one_characteristic().
 function characteristicLine(attribute, magic, final) {
     const { u } = requireInitializedGame();
     const names = { [A_STR]: 'strength', [A_DEX]: 'dexterity', [A_CON]: 'constitution',
@@ -140,6 +143,7 @@ function hideInnateCharacteristic(attribute, magic) {
         return true;
     return (attribute === A_INT || attribute === A_WIS) && game.uarmh?.otyp === DUNCE_CAP && game.uarmh.cursed === true;
 }
+// C insight.c:attrval().
 function characteristicValue(attribute, value) {
     if (attribute !== A_STR || value <= 18)
         return String(value);

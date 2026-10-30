@@ -92,6 +92,7 @@ export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata
     return glyph.terrainName;
 }
 
+// C pager.c:trap_description().
 export function displayedTrapDescription(type: number, x: number, y: number): string {
     return detectedTrapDisguise(type, x, y) ?? trapName(type);
 }

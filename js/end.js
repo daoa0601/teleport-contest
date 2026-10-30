@@ -677,6 +677,7 @@ function deathSummaryLines(killer, { gold, score, moves }, endtime, { deathVerb 
 function plur(count) {
     return count === 1 ? '' : 's';
 }
+// C role.c:Goodbye().
 function roleGoodbye() {
     return game.urole?.goodbye || 'Goodbye';
 }

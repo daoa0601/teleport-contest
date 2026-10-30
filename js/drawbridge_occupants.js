@@ -32,6 +32,9 @@ const S_LIGHT = 25;
 const S_GHOST = 54;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
+// C dbridge.c:set_entity().
+// C dbridge.c:m_to_e().
+// C dbridge.c:u_to_e().
 function entityAt(x, y, state) {
     if (state.u.ux === x && state.u.uy === y)
         return { hero: true, actor: state.u, x, y, species: heroSpecies(state), active: true };
@@ -48,6 +51,7 @@ function entityFlags(entity) {
 function entitySymbol(entity) {
     return MONSTER_SYMBOL[entity.species] ?? null;
 }
+// C dbridge.c:e_nam().
 function entityName(entity, state, capitalized = false) {
     if (entity.hero)
         return capitalized ? 'You' : 'you';
@@ -104,6 +108,7 @@ function speciesSurvivesPool(entity) {
     return !!(entityFlags(entity) & (M1_SWIM | M1_FLY))
         || entityIsFloating(entity);
 }
+// C dbridge.c:e_survives_at().
 function entitySurvivesAt(entity, state) {
     if (entityIsNoncorporeal(entity))
         return true;
@@ -123,6 +128,7 @@ function entityAutomaticallyMissed(entity, state) {
     return entityPassesWalls(entity, state)
         || entityIsNoncorporeal(entity);
 }
+// C dbridge.c:e_missed().
 function entityMissed(entity, state, chunks = false) {
     if (entityAutomaticallyMissed(entity, state))
         return true;
@@ -140,6 +146,7 @@ function entityMissed(entity, state, chunks = false) {
         misses -= 3;
     return misses >= rnd(8);
 }
+// C dbridge.c:e_jumps().
 function entityJumps(entity, state) {
     const fumbling = entity.hero && !!(state.u?.fumbling
         || (state.u?.fumblingTurns ?? 0) > 0);
@@ -225,6 +232,7 @@ async function crushEntity(entity, bridge, state, options, killer, death) {
         await plineWithContinuation(`Unfortunately for ${entityName(entity, state)}, ${monsterSubjectPronoun(monster, { state })} is still crushed.`);
     }
 }
+// C dbridge.c:e_at().
 function occupantAt(occupants, x, y) {
     return occupants.find(entity => entity?.active && entity.x === x && entity.y === y) ?? null;
 }
@@ -236,6 +244,7 @@ async function heroSpotEffects(state) {
         oldx: state.u.ux0, oldy: state.u.uy0, newx: state.u.ux, newy: state.u.uy, pick: false,
     });
 }
+// C dbridge.c:e_died().
 async function dieMovingEntity(entity, bridge, state, options, occupants, killer, death) {
     if (entity.hero && killer === 'fell from a drawbridge'
         && isPoolOrLavaAt(entity.x, entity.y, state)) {
@@ -258,6 +267,7 @@ async function dieMovingEntity(entity, bridge, state, options, occupants, killer
             if (occupant?.actor === entity.actor)
                 occupant.active = false;
 }
+// C dbridge.c:do_entity().
 async function handleEntity(entity, bridge, state, options, occupants) {
     if (!entity?.active)
         return;

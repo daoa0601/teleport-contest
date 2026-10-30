@@ -24,6 +24,15 @@ export interface CaveMapOptions {
     icedPools?: boolean;
 }
 
+// C mkmap.c:init_map().
+// C mkmap.c:init_fill().
+// C mkmap.c:get_map().
+// C mkmap.c:pass_one().
+// C mkmap.c:pass_two().
+// C mkmap.c:pass_three().
+// C mkmap.c:join_map().
+// C mkmap.c:join_map_cleanup().
+// C mkmap.c:finish_map().
 export async function mkmap({
     lit: lighting,
     foreground = ROOM,

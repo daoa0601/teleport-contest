@@ -115,6 +115,7 @@ export function realRayName(damageType, kind) {
         throw new RangeError(`Invalid ${kind} damage type ${damageType}`);
     return name;
 }
+// C mthrowu.c:rnd_hallublast().
 export function displayRayName(damageType, kind, { state = game, random = rn2 } = {}) {
     if (!heroIsHallucinating(state))
         return realRayName(damageType, kind);

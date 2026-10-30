@@ -47,6 +47,7 @@ export async function amuletTurn(state: PlayingGameState): Promise<void> {
 
 // Removal counts even when the Wizard leaves alive. The first removal starts
 // demigod intervention; later deaths must not restart an existing countdown.
+// C wizard.c:wizdeadorgone().
 export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
     state.context.no_of_wizards = (state.context.no_of_wizards ?? 0) - 1;
     const events = state.u.uevent ??= {};
@@ -104,6 +105,7 @@ async function recallMigratingWizard(): Promise<Monster | null> {
     return null;
 }
 
+// C wizard.c:resurrect().
 export async function resurrectWizard(): Promise<Monster | null> {
     let wizard: Monster | null = null;
     let verb = 'kill';

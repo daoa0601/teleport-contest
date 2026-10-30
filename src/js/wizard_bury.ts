@@ -5,6 +5,7 @@ import { isok } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 
+// C dig.c:wiz_debug_cmd_bury().
 export async function wizBury(): Promise<void> {
     requirePlayingGame(game);
     const level = game.level;

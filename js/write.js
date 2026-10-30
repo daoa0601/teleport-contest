@@ -27,6 +27,8 @@ import { carriedObjectOwner, chargeUnpaidUsage, objectTypeKnown } from './shk.js
 import { knownSpell } from './spell.js';
 const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
+// C write.c:new_book_description().
+// C write.c:write_ok().
 export async function useMagicMarker(pen) {
     requirePlayingGame(game);
     if (heroHasNoHands(game)) {
@@ -201,6 +203,7 @@ function findWritingType(name, oclass) {
 function writingDescription(otyp) {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? '';
 }
+// C write.c:cost().
 async function writingCost(object) {
     if (object.oclass === SPBOOK_CLASS) {
         const level = OBJECT_SPELL_LEVEL[object.otyp];

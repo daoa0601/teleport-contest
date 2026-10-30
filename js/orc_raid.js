@@ -66,6 +66,7 @@ export async function createOrcRaid() {
         await sendRaiderToLowerMines(monster, false, state);
     }
 }
+// C do_name.c:rndorcname().
 function randomOrcName() {
     const vowels = ['a', 'ai', 'og', 'u'];
     const consonants = ['gor', 'gris', 'un', 'bane', 'ruk', 'oth', 'ul', 'z', 'thos', 'akh', 'hai'];
@@ -91,6 +92,7 @@ function nameOrc(monster, gang, suffix = '') {
     const name = capitalized(randomOrcName());
     setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${capitalized(gang)}`);
 }
+// C mkmaze.c:migr_booty_item().
 async function createStolenItem(type, gang, state) {
     const object = await mksobj(type, true, false);
     object.where = 'migrating';
@@ -108,6 +110,7 @@ async function createStolenItem(type, gang, state) {
         object.owt = objectWeight(object);
     }
 }
+// C mkmaze.c:shiny_orc_stuff().
 async function giveShinyLoot(monster, state) {
     const captain = monster.mnum === PM_ORC_CAPTAIN;
     const goldChance = captain ? 600 : 300;
@@ -130,6 +133,7 @@ async function giveShinyLoot(monster, state) {
             await addObjectToMonsterInventory(monster, await mksobj(type, true, false), state);
     }
 }
+// C mkmaze.c:migrate_orc().
 async function sendRaiderToLowerMines(monster, leader, state) {
     const current = state.u.uz;
     const bottom = state.dungeons[current.dnum]?.num_dunlevs;

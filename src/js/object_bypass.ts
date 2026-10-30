@@ -13,6 +13,7 @@ export function bypassObject(object: GameObject, state: GameState = game): void 
     state.context.bypasses = true;
 }
 
+// C worn.c:bypass_objlist().
 export function bypassObjectList(
     objects: readonly GameObject[], on: boolean, state: GameState = game,
 ): void {
@@ -22,6 +23,7 @@ export function bypassObjectList(
 
 // Pass the current chain each time: an action may remove or add objects.
 // A sorted traversal also supplies its original order; stale entries are skipped.
+// C worn.c:nxt_unbypassed_obj().
 export function nextUnbypassedObject(
     objects: readonly GameObject[], state: GameState = game,
     order: readonly GameObject[] = objects,
@@ -56,6 +58,7 @@ export function clearBypasses(state: GameState = game): void {
     state.context.bypasses = false;
 }
 
+// C worn.c:clear_bypass().
 function clearChain(objects: readonly GameObject[] | null | undefined): void {
     for (const object of objects ?? []) {
         object.bypass = false;

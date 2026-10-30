@@ -1392,6 +1392,7 @@ function nearbyFloorObjects(monster, state) {
     })
         .map((entry) => entry.object);
 }
+// C dogmove.c:can_reach_location().
 function petCanReachLocation(monster, mx, my, fx, fy, state) {
     if (mx === fx && my === fy)
         return true;
@@ -6279,6 +6280,7 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
         addShopDamage(monster.mx, monster.my, 0, state);
     return { roll, probability, created: true, trap };
 }
+// C monmove.c:holds_up_web().
 function holdsUpMonsterWeb(x, y, state) {
     const location = state.level.at(x, y);
     if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
@@ -7364,6 +7366,7 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
 }
 // C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
 // Direct callers such as shop entry do not spend a scheduled movement ration.
+// C monmove.c:m_arrival().
 export async function beginMonsterDochug(monster, state, random = rn2, rollDice = d, rollOne = rnd) {
     const calls = DISCARDED_CALL_LOG;
     const nextToHero = distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1;

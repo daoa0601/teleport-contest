@@ -51,6 +51,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
+// C detect.c:skip_premap_detect().
 export async function premap_detect() {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {

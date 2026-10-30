@@ -1225,6 +1225,7 @@ function finishCorpstat(otmp, mtmp, pm, flags, zombify, noRevive) {
     }
     return otmp;
 }
+// C makemon.c:cmp_init_mongen_order().
 function monsterGenerationOrder() {
     // C makemon.c:init_mongen_order() sorts once, on first use. Alignment
     // abuse may have changed Erinys difficulty before this first selection.
@@ -1237,6 +1238,7 @@ function monsterGenerationOrder() {
     });
     return game._monsterGenerationOrder;
 }
+// C makemon.c:mk_gen_ok().
 export function mkclassAligned(monsterClass, spc = 0, atyp = A_NONE) {
     const G_FREQ = 0x0007;
     const G_HELL = 0x0400;
@@ -1324,6 +1326,8 @@ function rndmonstAlignment() {
         ? game._rndmonstAlignment.alignment
         : game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.alignment ?? null;
 }
+// C makemon.c:uncommon().
+// C makemon.c:temperature_shift().
 function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0) {
     const zlevel = level_difficulty();
     const heroLevel = game.u?.ulevel || 1;
@@ -1525,6 +1529,7 @@ export function initialMonsterSleepState(mndx, forceAsleep = false) {
     }
     return sleeping;
 }
+// C makemon.c:m_initgrp().
 async function initMonsterGroup(mndx, x, y, countRange, mmflags) {
     let count = Math.trunc(rnd(countRange) / ((game.u?.ulevel ?? 1) < 3 ? 4
         : (game.u?.ulevel ?? 1) < 5 ? 2 : 1));
@@ -5018,6 +5023,7 @@ export function courtMonsterType() {
         return mkclass(33, 0); // S_GNOME
     return mkclass(11, 0); // S_KOBOLD
 }
+// C mkroom.c:mk_zoo_thronemon().
 async function fillCourtRoom(room) {
     const level = requireGameLevel();
     // C mkroom.c:fill_zoo(COURT).  Maze courts use the throne already drawn
@@ -5849,6 +5855,7 @@ async function specialShrinePriest(temple, altarX, altarY, altarAlignment, { san
     }
     return priest;
 }
+// C mkroom.c:morguemon().
 export function morgueMonsterType() {
     const roll = rn2(100);
     const hitDice = rn2(level_difficulty());
@@ -7702,6 +7709,7 @@ export async function generateFakeWizardLevel(active) {
     active.file = `${active.prototype}.lua`;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
+// C dbridge.c:create_drawbridge().
 async function makeSpecialDrawbridge(x, y, direction, open) {
     const level = requireGameLevel();
     const bridge = level.at(x, y);
@@ -9112,6 +9120,7 @@ export async function fillSpecialRoom(croom) {
     else if (croom.rtype === SWAMP)
         level.flags.has_swamp = true;
 }
+// C mkroom.c:squadmon().
 function barracksMonsterType() {
     const probabilities = [
         [PM_SOLDIER, 80], [PM_SERGEANT, 15],
@@ -9942,6 +9951,7 @@ function do_room_or_subroom(croom, lowx, lowy, hix, hiy, lit, rtype, special, is
     }
 }
 // C ref: mklev.c sort_rooms()
+// C mklev.c:mkroom_cmp().
 function sort_rooms() {
     const level = requireGameLevel();
     const n = level.nroom;
@@ -11027,6 +11037,7 @@ function trapVictimObjectBreaks(object) {
 }
 // C mktrap(): the room and maze callers share type selection, collision
 // checks, web residents, and shallow-level victims.
+// C mklev.c:traptype_roguelvl().
 async function mktrap(num, options, croom, coordinate) {
     const level = requireGameLevel();
     // Explicit locations are screened before type selection. Room and maze
@@ -11141,6 +11152,7 @@ async function fillRandomRoomObjects(croom, pos) {
         }
     }
 }
+// C mklev.c:mksink().
 export async function fill_ordinary_room(croom, bonus_items) {
     const g = game;
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM))

@@ -62,6 +62,7 @@ function monsterResistsInstrument(monster) {
 function instrumentCanScare(monster) {
     return monsterIsScaredAt(monster, game, 0, 0);
 }
+// C music.c:awaken_scare().
 async function awakenMonster(monster, scary) {
     monster.msleeping = 0;
     monster.mcanmove = 1;
@@ -375,6 +376,7 @@ async function playLeatherDrum(familiar, mundane = false) {
     game.context.botl = true;
     return result;
 }
+// C music.c:generic_lvl_desc().
 function levelDescription() {
     const here = game.u?.uz;
     if (Is_astralevel(here))

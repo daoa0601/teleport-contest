@@ -40,6 +40,7 @@ export function discardFlashes(state: GameState = game): void {
     state.vision_full_recalc = 1;
 }
 
+// C light.c:transient_light_cleanup().
 export async function cleanupTransientLight(state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     discardFlashes(state);

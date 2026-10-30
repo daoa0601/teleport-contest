@@ -2979,6 +2979,9 @@ export function restoreCannedCommandTail(canned) {
         contextMenuResponses(canned.selection);
     }
 }
+// C do_name.c:docallcmd().
+// C do_name.c:name_ok().
+// C do_name.c:call_ok().
 async function doname() {
     // do_name.c:docallcmd() uses a queued key as the naming category.
     // Any other queued entry selects nothing and clears the canned queue.

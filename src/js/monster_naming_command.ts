@@ -16,6 +16,7 @@ import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
 import { takeCommandPosition } from './input.js';
 
+// C do_name.c:do_mgivenname().
 export async function nameChosenMonster(): Promise<void> {
     requirePlayingGame(game);
     if (heroIsHallucinating(game)) {
@@ -84,6 +85,7 @@ export async function nameChosenMonster(): Promise<void> {
     }
 }
 
+// C do_name.c:alreadynamed().
 async function rejectExistingName(monster: Monster, oldName: string, proposed: string): Promise<boolean> {
     const subject = oldName.charAt(0).toUpperCase() + oldName.slice(1);
     const rider = monsterIsRider(monster);

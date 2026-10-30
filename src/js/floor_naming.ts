@@ -14,6 +14,7 @@ import { rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import type { GameObject } from './object_types.js';
 
+// C do_name.c:namefloorobj().
 export async function nameFloorObject(): Promise<void> {
     requirePlayingGame(game);
     const goal = `object on map (or '.' for one ${game.u.uundetected && heroFormHidesUnderObjects(game) ? 'over' : 'under'} you)`;

@@ -13,6 +13,7 @@ import { propertyIsActive } from './properties.js';
 import { rn2, rnd } from './rng.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { cansee } from './vision.js';
+// C monmove.c:mind_blast().
 export async function useMonsterMindBlast(monster, state, { resistsConflict, random = rn2, rollOne = rnd, publish = plineWithContinuation, }) {
     if (canSeeMonster(monster))
         await publish(`${monsterName(monster, { state, capitalized: true })} concentrates.`);

@@ -91,6 +91,7 @@ export function backgroundEnlightenmentLines(final: EnlightenmentFinal = 0): str
     return lines;
 }
 
+// C insight.c:basics_enlightenment().
 export function basicsEnlightenmentLines(final: EnlightenmentFinal = 0): string[] {
     const { u } = requireInitializedGame();
     const hp = Math.max(0, Upolyd(u) ? u.mh : u.uhp);
@@ -110,11 +111,13 @@ export function basicsEnlightenmentLines(final: EnlightenmentFinal = 0): string[
     return lines;
 }
 
+// C insight.c:characteristics_enlightenment().
 export function characteristicEnlightenmentLines(magic: boolean, final: EnlightenmentFinal = 0): string[] {
     return ['', ` ${final ? 'Final ' : ''}Characteristics:`,
         ...ATTRIBUTE_DISPLAY_ORDER.map(attribute => characteristicLine(attribute, magic, final))];
 }
 
+// C insight.c:one_characteristic().
 function characteristicLine(attribute: AttributeIndex, magic: boolean, final: EnlightenmentFinal): string {
     const { u } = requireInitializedGame();
     const names = { [A_STR]: 'strength', [A_DEX]: 'dexterity', [A_CON]: 'constitution',
@@ -145,6 +148,7 @@ function hideInnateCharacteristic(attribute: AttributeIndex, magic: boolean): bo
     return (attribute === A_INT || attribute === A_WIS) && game.uarmh?.otyp === DUNCE_CAP && game.uarmh.cursed === true;
 }
 
+// C insight.c:attrval().
 function characteristicValue(attribute: AttributeIndex, value: number): string {
     if (attribute !== A_STR || value <= 18) return String(value);
     return value > 118 ? String(value - 100) : `18/${String(value - 18).padStart(2, '0')}`;

@@ -32,6 +32,8 @@ interface TipRecipient {
     y: number;
 }
 
+// C sounds.c:tiphat().
+// C sounds.c:responsive_mon_at().
 export async function tipWornHelmet(helmet: GameObject): Promise<boolean> {
     const discovery = !helmet.bknown;
     if (helmet.cursed) {

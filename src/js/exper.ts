@@ -52,6 +52,7 @@ export interface ExperienceMonster {
 const NORMAL_SPEED = 12;
 const LARGEST_INT = 32767;
 
+// C exper.c:newuexp().
 export function newExperienceThreshold(level: number) {
     if (level < 1) return 0;
     if (level < 10) return 10 * (2 ** level);
@@ -123,6 +124,7 @@ function levelHpIncrease(state: PlayingGameState) {
     return Math.max(1, hp + constitutionHpBonus(constitution));
 }
 
+// C exper.c:enermod().
 function energyModifier(energy: number, role: RoleKey) {
     if (['priest', 'wizard'].includes(role)) return 2 * energy;
     if (['healer', 'knight'].includes(role))

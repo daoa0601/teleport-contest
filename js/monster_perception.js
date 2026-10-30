@@ -100,6 +100,7 @@ const M_SEEN_BY_PROPERTY = {
     acidResistance: M_SEEN_ACID,
     reflection: M_SEEN_REFL,
 };
+// C mondata.c:cvt_prop_to_mseenres().
 export function seenResistanceForProperty(property) {
     return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
 }

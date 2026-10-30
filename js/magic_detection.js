@@ -373,6 +373,7 @@ function floorObjects(state) {
     return state.level.objects.flatMap(column => column?.flatMap(pile => pile || []) || [])
         .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));
 }
+// C detect.c:o_in().
 function objectOfClass(object, objectClass) {
     if (!objectClass)
         return null;
@@ -387,6 +388,7 @@ function objectOfClass(object, objectClass) {
     }
     return null;
 }
+// C detect.c:o_material().
 function objectOfMaterial(object, material, state) {
     if (objectMaterial(object, state) === material)
         return object;

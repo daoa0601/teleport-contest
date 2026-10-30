@@ -351,6 +351,7 @@ async function finishHumanFormChange(restored, state, publish) {
     await see_monsters();
     return false;
 }
+// C polyself.c:dropp().
 async function dropCarriedObject(object, options = {}) {
     if (!object)
         return;
@@ -832,6 +833,7 @@ async function changeArmorForHeroForm(mnum) {
             return;
     }
 }
+// C polyself.c:drop_weapon().
 async function dropPolymorphWeapons(alone) {
     requirePlayingGame(game);
     const primary = game.uwep || game.u.uwep;
@@ -902,6 +904,7 @@ function humanAttributeArrays() {
     // restores macurr/mamax and discards those temporary changes.
     return { base: u.acurr.a, max: u.amax.a };
 }
+// C attrib.c:redist_attr().
 function redistributeActiveAttributes() {
     requirePlayingGame(game);
     const { base, max } = humanAttributeArrays();

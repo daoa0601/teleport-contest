@@ -10,6 +10,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 const WATCH = new Set(['watchman', 'watch captain']);
+// C dig.c:watch_dig().
+// C dig.c:watchman_canseeu().
 export async function watchDigging(x, y, { state = game, monster = null, magic = true, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);

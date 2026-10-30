@@ -51,6 +51,7 @@ const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_SALAMANDER = 329;
 
+// C teleport.c:m_blocks_teleporting().
 function monsterIsDemonRuler(monster: Pick<Monster, 'mnum'>) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
@@ -212,6 +213,7 @@ export function findNearbyMonsterPosition(mnum: number | null | undefined, x: nu
     return null;
 }
 
+// C teleport.c:goodpos_onscary().
 function monsterTypeScaredFromPosition(mndx: number, x: number, y: number, state: GameState) {
     const symbol = MONSTER_SYMBOL[mndx] ?? 0;
     if (symbol === S_HUMAN || symbol === S_ANGEL

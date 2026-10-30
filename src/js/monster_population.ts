@@ -53,6 +53,7 @@ function speciesAfterBirth(
     return { admitted, born, mvflags };
 }
 
+// C makemon.c:mbirth_limit().
 export function monsterBirthLimit(species: number): number {
     return species === PM_NAZGUL ? 9 : species === PM_ERINYS ? 3 : MAXMONNO;
 }

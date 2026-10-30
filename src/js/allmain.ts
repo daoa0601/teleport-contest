@@ -1197,6 +1197,7 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
     return finishInitialTurnMaintenanceAfterMonsterDistress(capacity, true);
 }
 
+// C allmain.c:maybe_generate_rnd_mon().
 async function finishInitialTurnMaintenanceAfterMonsterDistress(
     capacity: number,
     deferAmbientMessage: boolean,

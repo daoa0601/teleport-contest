@@ -86,6 +86,7 @@ export function floorReachProblem(
     return null;
 }
 
+// C engrave.c:can_reach_floor().
 export function heroCanReachFloor(
     state: GameState = game,
     options: FloorReachOptions = {},

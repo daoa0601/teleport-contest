@@ -88,6 +88,7 @@ export function isQuestLeader(monster, g = game) {
     return !!status.leader_m_id
         && monster.m_id === status.leader_m_id;
 }
+// C quest.c:leaddead().
 export function markQuestLeaderDead(monster, g = game) {
     if (!monster)
         return false;
@@ -106,6 +107,9 @@ export function markQuestLeaderAlive(monster, g = game) {
     ensureQuestStatus(g).leader_is_dead = false;
     return true;
 }
+// C quest.c:nemdead().
+// C quest.c:nemesis_stinks().
+// C questpgr.c:stinky_nemesis().
 export async function markQuestNemesisDead(monster, g = game, x = monster?.mx ?? 0, y = monster?.my ?? 0) {
     if (!monster || questMonsterSound(monster.mnum, g) !== MS_NEMESIS)
         return false;
@@ -310,6 +314,7 @@ function originalAlignment(g = game) {
 function currentBaseAlignment(g = game) {
     return g.u?.ualignbase?.[0] ?? g.u?.ualign?.type ?? 0;
 }
+// C quest.c:is_pure().
 async function questPurity(talk, g = game) {
     const original = originalAlignment(g);
     const alignment = g.u.ualign;
@@ -454,6 +459,8 @@ export async function chatWithQuestLeader(monster, g = game) {
 }
 // C quest_chat(): chat uses a random threat; spontaneous nemesis speech has
 // its own encounter progression and battle gate.
+// C quest.c:chat_with_guardian().
+// C quest.c:chat_with_nemesis().
 export async function chatWithQuestCharacter(monster, state = game) {
     const status = ensureQuestStatus(state);
     if (isQuestLeader(monster, state)) {
@@ -472,6 +479,8 @@ export async function chatWithQuestCharacter(monster, state = game) {
     else
         await impossible(`quest_chat: Unknown quest character ${monsterName(monster, { state })}.`, { state });
 }
+// C quest.c:nemesis_speaks().
+// C quest.c:prisoner_speaks().
 export async function talkQuestCharacter(monster, state = game) {
     const status = ensureQuestStatus(state);
     if (isQuestLeader(monster, state)) {

@@ -61,9 +61,11 @@ function priestInOwnTemple(
     return roomsAt(state.level, priest.mx, priest.my, TEMPLE)[0] === roomno;
 }
 
+// C priest.c:inhistemple().
 export function priestIsInOwnTemple(priest: Monster, state: GameState = game): boolean {
     const roomno = roomsAt(state.level, priest?.mx, priest?.my, TEMPLE)[0];
-    return roomno != null && priestInOwnTemple(priest, roomno, state);
+    return roomno != null && priestInOwnTemple(priest, roomno, state)
+        && priestHasShrine(priest, state);
 }
 
 function findPriest(roomno: number, state: GameState = game): Monster | null {
@@ -111,6 +113,7 @@ export async function clearNonlocalPriestsOnExit(): Promise<void> {
     }
 }
 
+// C priest.c:has_shrine().
 export function priestHasShrine(priest: Monster, state: GameState = game): boolean {
     const epri = priestData(priest);
     if (!priest.ispriest || !epri) return false;

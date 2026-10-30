@@ -1119,6 +1119,7 @@ export function billedPickupQuote(transaction, state = game) {
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
+// C role.c:Hello().
 export function shopGreeting(monster, state = game) {
     switch (state.urole?.key) {
         case 'knight': return 'Salutations';

@@ -69,6 +69,7 @@ const RUBOUTS = new Map([
     ['8', '3o'],
 ]);
 
+// C engrave.c:engr_at().
 export function engravingAt(
     x: number,
     y: number,
@@ -92,6 +93,7 @@ export function hasCompletedEngraving(
     );
 }
 
+// C engrave.c:del_engr_at().
 export function deleteEngravingAt(
     x: number,
     y: number,
@@ -187,6 +189,7 @@ export function wipeoutText(text: string, count: number, seed = 0): string {
     return chars.join('').replace(/ +$/, '');
 }
 
+// C engrave.c:wipe_engr_at().
 export function wipeEngravingAt(
     x: number,
     y: number,

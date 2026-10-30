@@ -33,6 +33,7 @@ export function monsterDisplacementFlags(aggressor, defender) {
 }
 // Movement callers admit candidates through monsterDisplacementFlags().
 // This excludes live worm tails; a head-only worm keeps its wormno unchanged.
+// C mhitm.c:mdisplacem().
 export async function displaceMonster(aggressor, defender, state = game, { quietly = false, random = rn2, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     if (!aggressor || !defender || aggressor === defender)

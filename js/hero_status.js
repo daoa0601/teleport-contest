@@ -14,6 +14,7 @@ import { makePlural } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';
 import { blindfolded, heroIsBlind } from './senses.js';
 import { heroIsPetrifying } from './stoning.js';
+// C insight.c:ustatusline().
 export function heroStatusLine(state = game) {
     requirePlayingGame(state);
     const hero = state.u;

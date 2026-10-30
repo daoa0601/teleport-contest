@@ -1957,6 +1957,7 @@ function nearbyFloorObjects(monster: Monster, state: PlayingGameState) {
         .map((entry) => entry.object);
 }
 
+// C dogmove.c:can_reach_location().
 function petCanReachLocation(
     monster: Monster,
     mx: number,
@@ -7498,6 +7499,7 @@ async function maybeSpinMonsterWeb(
     return { roll, probability, created: true, trap };
 }
 
+// C monmove.c:holds_up_web().
 function holdsUpMonsterWeb(x: number, y: number, state: PlayingGameState): boolean {
     const location = state.level.at(x, y);
     if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
@@ -8945,6 +8947,7 @@ export async function runMonsterAction(
 
 // C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
 // Direct callers such as shop entry do not spend a scheduled movement ration.
+// C monmove.c:m_arrival().
 export async function beginMonsterDochug(
     monster: Monster,
     state: PlayingGameState,

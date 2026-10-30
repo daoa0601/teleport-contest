@@ -277,6 +277,7 @@ function monsterClassVolleyBonus(monster: Monster, missile: GameObject, launcher
     return bonus;
 }
 
+// C mthrowu.c:monmulti().
 export function monsterVolleyCount(
     monster: Monster, missile: GameObject, launcher: GameObject | null | undefined, rollOne = rnd,
 ) {

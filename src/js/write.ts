@@ -33,6 +33,8 @@ import { knownSpell } from './spell.js';
 const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
+// C write.c:new_book_description().
+// C write.c:write_ok().
 export async function useMagicMarker(pen: GameObject): Promise<boolean> {
     requirePlayingGame(game);
     if (heroHasNoHands(game)) {
@@ -204,6 +206,7 @@ function writingDescription(otyp: number): string {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? '';
 }
 
+// C write.c:cost().
 async function writingCost(object: GameObject): Promise<number> {
     if (object.oclass === SPBOOK_CLASS) {
         const level = OBJECT_SPELL_LEVEL[object.otyp];

@@ -76,6 +76,7 @@ export function holdingMonsterSubject(monster: Monster, state: GameState = game)
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
+// C polyself.c:uunstick().
 export async function releaseHeroGrip(state: GameState = game, publish: MessagePublisher = plineWithContinuation): Promise<void> {
     const holder = state.u.ustuck;
     if (!holder) throw new Error('Releasing the hero grip requires a held monster.');

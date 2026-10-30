@@ -95,6 +95,7 @@ function eggTypeFromParent(parent: number): number {
     return parent;
 }
 
+// C sit.c:lay_an_egg().
 async function layEgg(): Promise<boolean> {
     const form = heroMonsterForm(game);
     if (form === null) throw new Error('Laying an egg requires an egg-laying monster form.');

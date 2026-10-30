@@ -56,6 +56,7 @@ export async function dryFountainAt(x, y, { causedByHero = true, random = rn2, s
         await angerWatchGuards(false, { publish });
     return true;
 }
+// C fountain.c:watchman_warn_fountain().
 async function warnAboutFountain(state, publish) {
     const watch = [...requireGameLevel(state).monsters].reverse().find(monster => !monster.dead && monster.mhp > 0 && monster.mpeaceful
         && (monster.mstate ?? MON_FLOOR) === MON_FLOOR

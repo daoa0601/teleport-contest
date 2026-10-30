@@ -121,6 +121,7 @@ async function spitHorizontally({ venom, direction, state, publish, random, roll
     const broken = await breakVenomAtEndpoint(venom, flight.x, flight.y, state, publish, random);
     return { ...flight, destroyed: broken.destroyed };
 }
+// C polyself.c:dospit().
 export async function useHeroSpit({ state = game, attack = heroSpitAttack(state), readDirection = promptDirection, publish = plineWithContinuation, random = rn2, rollOne = rnd, captureFlight = captureThrownObjectFlight, recoilHero = hurtleHero, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
     if (!attack)
         return { used: false, spentTime: false, reason: 'no-spit' };

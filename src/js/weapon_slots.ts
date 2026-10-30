@@ -36,6 +36,7 @@ export function isWeldedPrimary(
     return true;
 }
 
+// C wield.c:set_twoweap().
 export function setTwoWeaponCombat(enabled: boolean, state: GameState = game): void {
     if (state.u.twoweap === enabled) return;
     state.u.twoweap = enabled;

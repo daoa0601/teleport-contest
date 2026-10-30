@@ -45,6 +45,7 @@ export async function toggleTwoWeaponCombat(state = game) {
     setTwoWeaponCombat(true, state);
     return rnd(20) > currentAttribute(A_DEX, state);
 }
+// C wield.c:can_twoweapon().
 export async function canBeginTwoWeaponCombat(state) {
     const primary = state.uwep || state.u.uwep;
     const secondary = state.uswapwep || state.u.uswapwep;
@@ -122,6 +123,7 @@ export async function dropSecondaryWeapon(state = game) {
     }
     await dropInventoryObjectAtHero(object, { state });
 }
+// C wield.c:untwoweapon().
 export async function stopTwoWeaponCombat(state = game) {
     if (!state.u.twoweap)
         return;

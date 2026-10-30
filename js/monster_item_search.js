@@ -17,6 +17,7 @@ import { monsterKnowsTrap } from './trap_knowledge.js';
 import { cansee, clearPath } from './vision.js';
 const SEARCH_RADIUS = 5;
 const M1_CONCEAL = 0x80, M2_MERC = 0x200;
+// C monmove.c:m_search_items().
 export function searchMonsterItems(monster, state, { goal: initialGoal, approach: initialApproach, random, calls = [], }) {
     requireLiveGame(state);
     const { mx, my, mux, muy } = monster;

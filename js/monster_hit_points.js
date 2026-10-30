@@ -20,6 +20,7 @@ const GOLEM_HIT_POINTS = new Map([
     ['glass golem', 80],
     ['iron golem', 120],
 ]);
+// C makemon.c:golemhp().
 export function golemHitPoints(mnum) {
     if (MONSTER_SYMBOL[mnum] !== 55)
         return null;

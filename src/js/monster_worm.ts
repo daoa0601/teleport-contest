@@ -214,6 +214,7 @@ export async function removeMonsterWormBody(monster: Monster) {
 
 // C get_wormno() + initworm(): reserve the body before arrival can restore a
 // shapechanger. Tail segments have no map occupancy until rloc places them.
+// C worm.c:create_worm_tail().
 export function initializeUnplacedMonsterWormBody(
     monster: Monster, segmentCount: number,
     { state = game }: Pick<WormPlacementOptions, 'state'> = {},
@@ -288,6 +289,7 @@ export async function placeMonsterWormTailRandomly(monster: Monster, requestedSe
 }
 
 // Native redraw_worm includes the head's dummy segment after the tail.
+// C worm.c:redraw_worm().
 export async function redrawMonsterWorm(monster: Monster, state: GameState = game) {
     requireLiveGame(state);
     requireWormBody(monster);

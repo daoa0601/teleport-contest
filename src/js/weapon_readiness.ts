@@ -22,6 +22,7 @@ import { willWeld } from './weapon_type.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
+// C wield.c:empty_handed().
 export function emptyHandedDescription(state: GameState = game): string {
     if (state.uarmg || state.u.uarmg) return 'empty handed';
     const humanoid = requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & 0x00020000;

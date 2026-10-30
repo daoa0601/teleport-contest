@@ -29,6 +29,7 @@ export type HeroBreathResult =
     | { used: false; spentTime: false; reason: 'no-breath' | 'strangled' | 'energy' | 'cancelled' }
     | ((HeroRayResult | NativeRayResult) & { spentTime: true });
 
+// C polyself.c:dobreathe().
 export async function useHeroBreath({
     state = game,
     attack = heroBreathAttack(state),

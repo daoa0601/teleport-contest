@@ -218,6 +218,8 @@ function trapAllowedAtDestination(state: GameState, trap: Trap | undefined, allo
     return floating && (is_pit(trap.ttyp) || is_hole(trap.ttyp));
 }
 
+// C teleport.c:teleok().
+// C teleport.c:tele_jump_ok().
 export function heroTeleportDestinationOk(
     x: number, y: number, { state = game, allowTrap = false }: { state?: GameState; allowTrap?: boolean } = {},
 ) {
@@ -368,6 +370,7 @@ export async function teleportHero({
     return { moved: true, died, movement, arrival };
 }
 
+// C teleport.c:safe_teleds().
 export async function teleportHeroSafely() {
     const destination = safeTeleportDestination();
     if (!destination) return false;
@@ -553,6 +556,7 @@ export async function controlMonsterTeleport(monster: Monster, defaultPoint: Pos
     return null;
 }
 
+// C teleport.c:stairway_find_forwiz().
 function wizardStairway(state: GameState, ladder: boolean, up: boolean) {
     for (let stair = state.stairs; stair; stair = stair.next) {
         if (!!stair.isladder === ladder && !!stair.up === up
@@ -561,6 +565,7 @@ function wizardStairway(state: GameState, ladder: boolean, up: boolean) {
     return null;
 }
 
+// C teleport.c:rloc_pos_ok().
 function monsterTeleportDestinationOk(monster: Monster, state: LevelGameState, x: number, y: number, random: RandomBelow) {
     if (!goodPosition(x, y, { kind: 'monster', monster }, {
         state, random, gpflags: GP_CHECKSCARY,
