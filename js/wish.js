@@ -13,7 +13,7 @@ import { corpseName, definiteName, objectName, observeObjectForNaming, pluralize
 import { getLine } from './query.js';
 import { rn2 } from './rng.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { showTextPages } from './windows.js';
+import { showTextWindow } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 async function showWishHelp(triesLeft) {
     const countNames = ['zero', 'one', 'two', 'three', 'four', 'five'];
@@ -42,7 +42,7 @@ async function showWishHelp(triesLeft) {
     if (game.flags?.cmdassist !== false) {
         lines.push('(Suppress this assistance with !cmdassist in your config file.)');
     }
-    await showTextPages([{ lines, cursor: [0, lines.length - 1] }]);
+    await showTextWindow(lines);
 }
 export async function makeWish() {
     requirePlayingGame(game);

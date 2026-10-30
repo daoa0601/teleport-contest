@@ -1,6 +1,7 @@
 // Hero species, form properties, and species-based senses.
 // C refs: polyself.c set_uasmon()/polysense(), mondata.c mon_hates_silver().
 import { Upolyd } from './const.js';
+import { reassessStatusFields } from './display.js';
 import { game } from './gstate.js';
 import { dragonFormForArmor } from './armor.js';
 import { MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterHasHead, monsterIsBat, monsterIsVampire, monsterSpeciesHatesSilver, monsterSpeciesSticks, validVampireShiftForm, } from './monster_data.js';
@@ -107,6 +108,8 @@ export function setHeroSpecies(mnum, state = game) {
     syncHeroInvisibility(state);
     refreshMovementProperties(state);
     setFormSenses(mnum, state);
+    // set_uasmon() reassesses status fields when the hero's body changes.
+    reassessStatusFields(state);
     state.were_changes = 0;
 }
 export function heroWarnsOfMonster(monster, state = game) {

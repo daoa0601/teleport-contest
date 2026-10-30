@@ -122,6 +122,11 @@ export function propertyIsActive(property, state = game) {
     // Wearing the amulet does not strangle an immune body.
     if (property === 'strangled')
         return timedSourceIsActive(property, hero);
+    // C Free_action reads the extrinsic mask even when a wizard sets its timer.
+    if (property === 'freeAction') {
+        const sources = existingPropertyRecord(property, state);
+        return !!(sources?.worn.length || sources?.invoked || sources?.carried.length);
+    }
     const steedFlags = hero.usteed ? (MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) : 0;
     const fromSteed = property === 'flying' ? steedFlags & 0x01
         : property === 'swimming' ? steedFlags & 0x02 : false;

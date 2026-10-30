@@ -37,7 +37,7 @@ import { heroIsBlind } from './senses.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
 import { isAxe, isPick, willWeld } from './weapon_type.js';
-import { vision_note_blocker_change } from './vision.js';
+import { unblock_point, vision_note_blocker_change } from './vision.js';
 // Peer dig modules; see docs/porting-status.md handoff for the split.
 import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';
 import { addShopDamage, payForShopDamage, shopDig, } from './shop_damage.js';
@@ -239,7 +239,7 @@ async function mkcavepos(x, y, dist, waslit, rockit, state) {
     else if (location.typ === ROOM) {
         return;
     }
-    vision_note_blocker_change(x, y);
+    unblock_point(x, y);
     location.seenv = 0;
     location.doormask = 0;
     if (dist < 3)
