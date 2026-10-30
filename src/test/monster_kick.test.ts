@@ -8,6 +8,7 @@ import {
     BEAR_TRAP, COULD_SEE, DOOR, D_ISOPEN, IN_SIGHT, STATUE_TRAP, STONE, W_AMUL, WEB,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { pushKey } from '../js/input.js';
 import { createCorpstatAt } from '../js/mklev.js';
@@ -100,6 +101,28 @@ void test('a heavy load can leave a clumsy kick harmless', async () => {
 
     assert.equal(lichen.mhp, 20);
     assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
+});
+
+void test('a harmless clumsy kick preserves the next hallucinated monster appearance', async () => {
+    const lichen = await installKickArena('lichen');
+    await addInventoryObject(OBJECT_NAMES.indexOf('plate mail'));
+    await addInventoryObject(OBJECT_NAMES.indexOf('food ration'), { quan: 2 });
+    game.u.hallucinationTurns = 20;
+    initRng(2n);
+    await newsym(lichen.mx, lichen.my);
+    const expected = glyphAt(lichen.mx, lichen.my);
+    assert.ok(expected?.kind === 'monster');
+    initRng(2n);
+
+    await kickDirection('l');
+
+    assert.equal(lichen.mhp, 20);
+    assert.equal(game._pending_message, 'Your clumsy kick does no damage.');
+    // Native returns before mon_nam(): no target name changes the next illusion.
+    await newsym(lichen.mx, lichen.my);
+    const actual = glyphAt(lichen.mx, lichen.my);
+    assert.ok(actual?.kind === 'monster');
+    assert.equal(actual.mnum, expected.mnum);
 });
 
 void test('a levitating hero can miss a tiny monster and recoil',

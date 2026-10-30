@@ -2446,7 +2446,6 @@ async function kickLiveMonster(monster, x, y) {
         game.context.move = 1;
         return true;
     }
-    const target = monsterName(monster);
     const martial = heroHasMartialKick();
     const kick = await prepareKick({
         martial,
@@ -2457,7 +2456,7 @@ async function kickLiveMonster(monster, x, y) {
         game.context.move = 1;
         return true;
     }
-    await plineWithContinuation(`You kick ${target}.`);
+    await plineWithContinuation(`You kick ${monsterName(monster)}.`);
     const evaded = await tryKickEvasion(monster, {
         clumsy: kick.clumsy,
         martial,
