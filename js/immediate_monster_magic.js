@@ -356,8 +356,8 @@ async function fleshMonster(monster, state) {
     const stoneObject = M_AP_TYPE(monster) === M_AP_OBJECT
         && [BOULDER, STATUE, FIGURINE].includes(monster.mappearance ?? -1);
     const stoneFurniture = M_AP_TYPE(monster) === M_AP_FURNITURE
-        && ['wall', 'up stairs', 'down stairs', 'branch staircase up',
-            'branch staircase down', 'altar', 'throne', 'sink']
+        && ['wall', 'staircase up', 'staircase down', 'branch staircase up',
+            'branch staircase down', 'altar', 'opulent throne', 'sink']
             .includes(MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? '');
     if (stoneObject || stoneFurniture) {
         if (cansee(monster.mx, monster.my))
