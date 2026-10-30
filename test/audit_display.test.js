@@ -52,16 +52,26 @@ void test('a peaceful monster never raises a warning glyph', async () => {
     assert.equal(glyphAt(OFFSCREEN.x, OFFSCREEN.y)?.glyph, GlyphOffset.unexplored);
     assert.equal(requireScreenCell(2, 4).ch, ' ');
 });
-void test('a hallucinating hero sees a random nonzero warning numeral', async () => {
+void test('a hallucinating hero sees redrawn warning numerals beyond warning_of()', async () => {
     freshObjectRoom({ hero: { warning: true, hallucinationTurns: 100 } });
     const monster = await createMonsterAt('soldier ant', OFFSCREEN.x, OFFSCREEN.y);
-    monster.m_lev = 4; // a non-hallucinated hero would always see '1'
+    monster.m_lev = 4; // warning_of() would draw '1' on every redraw
+    // initRng() seeds the core and display streams together (rng.js), so
+    // the rn2_on_display_rng(WARNCOUNT - 1) + 1 draws are deterministic.
     initRng(7n);
-    newsym(OFFSCREEN.x, OFFSCREEN.y);
-    await flush_screen(1);
-    const level = (glyphAt(OFFSCREEN.x, OFFSCREEN.y)?.glyph ?? -1) - GlyphOffset.warning;
-    assert.ok(level >= 1 && level <= def_warnsyms.length - 1, `hallucinated warning level ${level} outside 1..${def_warnsyms.length - 1}`);
-    assert.equal(requireScreenCell(2, 4).ch, String(level));
+    const numerals = new Set();
+    for (let redraw = 0; redraw < 8; redraw++) {
+        newsym(OFFSCREEN.x, OFFSCREEN.y);
+        await flush_screen(1);
+        const level = (glyphAt(OFFSCREEN.x, OFFSCREEN.y)?.glyph ?? -1) - GlyphOffset.warning;
+        assert.ok(level >= 1 && level <= def_warnsyms.length - 1, `hallucinated warning level ${level} outside 1..${def_warnsyms.length - 1}`);
+        assert.equal(requireScreenCell(2, 4).ch, String(level));
+        numerals.add(String(level));
+    }
+    // display.c:640 draws rn2_on_display_rng(WARNCOUNT - 1) + 1 while
+    // hallucinating; without that branch every redraw would repeat '1'.
+    assert.ok(numerals.size > 1, `warning numeral never varied: ${[...numerals].join(',')}`);
+    assert.ok(!numerals.has('0'), 'a hallucinated warning never shows level 0');
 });
 // display.c:under_water(): while swimming, the map collapses to a 3x3 window
 // around the hero showing only pool, lava and ice squares; every other cell
@@ -74,7 +84,8 @@ async function swimmingHero({ blind = false } = {}) {
         loc.typ = POOL;
     }
     game.u.uinwater = true;
-    game.blind = blind;
+    // Blindness reaches under_water() through heroIsBlind(), which reads
+    // u.blindTurns; the state-level legacy flag is not consulted.
     return map;
 }
 void test('a swimmer sees only adjacent water squares', async () => {
@@ -84,8 +95,8 @@ void test('a swimmer sees only adjacent water squares', async () => {
     assert.equal(requireScreenCell(9, 11).ch, '@', 'the hero remains visible');
     assert.equal(requireScreenCell(10, 11).ch, '}', 'east pool square');
     assert.equal(requireScreenCell(9, 12).ch, '}', 'south pool square');
-    assert.equal(requireScreenCell(8, 11).ch, ' ', 'stone square stays unexplored');
-    assert.equal(requireScreenCell(9, 10).ch, ' ', 'stone square stays unexplored');
+    assert.equal(requireScreenCell(8, 11).ch, ' ', 'dry room floor stays unexplored');
+    assert.equal(requireScreenCell(9, 10).ch, ' ', 'dry room floor stays unexplored');
 });
 void test('a deferred underwater redraw keeps magic mapping visible until the next update', async () => {
     const map = await swimmingHero();
