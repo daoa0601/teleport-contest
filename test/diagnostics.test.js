@@ -297,7 +297,7 @@ for (const [initialName, finalName] of [['Other', 'Diagnostic'], ['Diagnostic', 
         await previous.lua.destroy();
         const engine = new Engine({
             seed: 2, storage, display: new GameDisplay(null),
-            nethackrc: `OPTIONS=name:${initialName},role:valkyrie,race:human,gender:female,!legacy,!tutorial,!tips`,
+            nethackrc: 'OPTIONS=role:valkyrie,race:human,gender:female,!legacy,!tutorial,!tips',
         });
         const seen = new Set();
         let renaming = false;
@@ -310,6 +310,7 @@ for (const [initialName, finalName] of [['Other', 'Diagnostic'], ['Diagnostic', 
             else if (screen.includes('Shall I pick '))
                 return 'y';
             else if (screen.includes('Is this ok?')) {
+                assert.match(screen, /Not yet; choose another name/);
                 const key = renaming ? 'y' : 'a';
                 renaming = true;
                 return key;
@@ -318,7 +319,8 @@ for (const [initialName, finalName] of [['Other', 'Diagnostic'], ['Diagnostic', 
                 const prompt = screen.match(/Who are you\? ([^\n]*)/);
                 assert.ok(prompt?.[1] !== undefined);
                 const entered = prompt[1].trimEnd();
-                return finalName[entered.length] || '\n';
+                const name = renaming ? finalName : initialName;
+                return name[entered.length] || '\n';
             }
             else
                 return ' ';
