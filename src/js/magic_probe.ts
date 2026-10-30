@@ -4,7 +4,7 @@ import type { Monster } from './monster_types.js';
 // Probing reveals object descriptions and immediate container contents.
 // C refs: zap.c probe_objchain(), probe_monster(), and bhito(WAN_PROBING).
 import { game } from './gstate.js';
-import { plineWithContinuation as pline, randomDisplayMonsterName } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline, randomDisplayMonsterName } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { isContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
@@ -48,25 +48,7 @@ export async function probeMonster(monster: Monster, {
     // the selector letters, and only a leading gold stack keeps its own
     // '$' selector (pickup.c:1129-1139).
     const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
-    const sorted = sortObjects(inventory, { mode: lootSortMode({ state }), state });
-    const sections: InventorySection<GameObject>[] = [];
-    let leading = true;
-    for (const oclass of inventoryClassOrder(state)) {
-        const objects = sorted.filter(object => (object.oclass || objectClassForType(object.otyp)) === oclass);
-        if (!objects.length) continue;
-        sections.push({
-            heading: objectClassHeading(oclass),
-            items: await Promise.all(objects.map(async object => ({
-                ...(leading && oclass === 12 ? { key: '$' } : {}),
-                text: await inventoryItemDescription(object),
-                value: object,
-            }))),
-        });
-        leading = false;
-    }
-    await showInventoryWindow(sections, {
-        title: `${possessiveName(name)} possessions:`,
-    });
+    await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`, { state });
 }
 
 export function probeObjectChain(inventory: readonly GameObject[], { state = game }: { state?: GameState } = {}) {
@@ -96,10 +78,7 @@ export async function probeObject(object: GameObject, { state = game }: { state?
             object.cknown = false;
         } else {
             for (const content of object.contents) observeObject(content, state);
-            const items = [];
-            for (const content of object.contents) items.push({ text: await inventoryItemDescription(content) });
-            await showInventoryWindow([{ heading: '', items }],
-                { title: `Contents of ${await probedContentsTitle(object, state)}:` });
+            await showProbedObjectInventory(object.contents, `Contents of ${await probedContentsTitle(object, state)}:`, { state });
         }
         learned = true;
     } else if (object.otyp === TIN) {
@@ -110,6 +89,33 @@ export async function probeObject(object: GameObject, { state = game }: { state?
         object.known = true;
     }
     return learned;
+}
+
+// C query_objlist(): PICK_NONE still gives each object a menu identifier,
+// so tty assigns letters. INVORDER_SORT adds headings even for one item.
+export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
+    state = game, groupByClass = true,
+}: { state?: GameState; groupByClass?: boolean } = {}): Promise<void> {
+    const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
+    const sections: InventorySection<GameObject>[] = [];
+    const classes = groupByClass ? inventoryClassOrder(state) : [null];
+    let first = true;
+    for (const oclass of classes) {
+        const members = oclass === null ? sorted
+            : sorted.filter(object => (object.oclass || objectClassForType(object.otyp)) === oclass);
+        if (!members.length) continue;
+        const items = [];
+        for (const object of members) {
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({
+                ...(first && objectClassForType(object.otyp) === 12 ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object), value: object,
+            });
+            first = false;
+        }
+        sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
+    }
+    await showInventoryWindow(sections, { title });
 }
 
 // C invent.c:cinv_doname(): the probing contents menu names the box with

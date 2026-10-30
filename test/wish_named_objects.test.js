@@ -13,6 +13,16 @@ void test('an object wish keeps the individual name supplied after named', async
     assert.equal(result.object.otyp, DAGGER);
     assert.equal(result.object.oextra?.oname, 'Needle');
 });
+for (const weapon of ['polearm', 'hammer']) {
+    void test(`a random ${weapon} wish loses its personal name during artifact lookup`, async () => {
+        freshObjectRoom();
+        const result = await readObjectName(`uncursed +2 ${weapon} named Keepsake`, { wizardWish: true });
+        assert.ok(result && !result.noWish);
+        assert.equal(result.object.oextra?.oname, undefined);
+        assert.equal(result.object.spe, 2);
+        assert.equal(result.object.cursed, false);
+    });
+}
 void test('a matching artifact name can turn a wished base object into that artifact', async () => {
     freshObjectRoom();
     const artifact = artifactByName('Excalibur');

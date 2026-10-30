@@ -10,7 +10,7 @@ import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } 
 import { findit } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { zapDigWithObject } from './digging_magic.js';
-import { consumeHallucinatedMenuObjectGlyph, displayLiquidName, newsym, plineWithContinuation as pline, unmap_invisible, } from './display.js';
+import { displayLiquidName, newsym, plineWithContinuation as pline, unmap_invisible, } from './display.js';
 import { changeDoorByMagic } from './door_magic.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { recordMappedOverviewState } from './dungeon.js';
@@ -26,7 +26,7 @@ import { doEnlightenmentEffect } from './insight.js';
 import { inventoryItemDescription } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { lightDamage, lightRoom } from './light.js';
-import { probeMonster } from './magic_probe.js';
+import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
 import { createCritters, mksobj } from './mklev.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -34,7 +34,6 @@ import { OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, objectDirectio
 import { armorUsesPairGrammar, makePlural } from './object_grammar.js';
 import { observeObject } from './object_knowledge.js';
 import { objectNameIsPlural, observeObjectForNaming } from './objnam.js';
-import { orderedPickupObjects, pickupObjectClass, pickupClassOrder } from './pickup.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { roomsAt } from './room.js';
@@ -49,7 +48,6 @@ import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic
 import { cansee, couldsee } from './vision.js';
 import { learnWand } from './wand_charge.js';
 import { zapMapAt } from './wand_terrain_magic.js';
-import { showInventoryWindow } from './windows.js';
 import { makeWish } from './wish.js';
 import { zapRayWithObject } from './zap.js';
 const NODIR = 1, IMMEDIATE = 2;
@@ -406,7 +404,7 @@ async function displayBuriedInventory(x, y, state) {
             underwhat = plural || armorUsesPairGrammar(OBJECT_NAMES[object.otyp] ?? '') ? 'under them' : 'beneath it';
         }
         else {
-            await showProbeObjects(pile, `Things that are under the ${liquid} here:`);
+            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
             underwhat = 'beneath them';
         }
     }
@@ -414,20 +412,7 @@ async function displayBuriedInventory(x, y, state) {
     for (const object of buried)
         observeObject(object, state);
     if (buried.length)
-        await showProbeObjects(orderedPickupObjects(buried), `Things that are buried ${underwhat}:`, true);
+        await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
     return count + buried.length;
-}
-async function showProbeObjects(objects, title, groupByClass = false) {
-    const sections = [];
-    for (const heading of groupByClass ? pickupClassOrder() : ['']) {
-        const members = groupByClass ? objects.filter(object => pickupObjectClass(object) === heading) : objects;
-        const items = [];
-        for (const object of members) {
-            consumeHallucinatedMenuObjectGlyph(object);
-            items.push({ text: await inventoryItemDescription(object) });
-        }
-        sections.push({ heading, items });
-    }
-    await showInventoryWindow(sections, { title });
 }
 //# sourceMappingURL=wand_effects.js.map
