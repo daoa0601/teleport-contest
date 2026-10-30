@@ -1689,7 +1689,6 @@ moveloop_core	settrack
 moveloop_core	swallowed
 moveloop_core	tele
 moveloop_core	timebot
-moveloop_core	u_wipe_engr
 moveloop_core	under_ground
 moveloop_core	under_water
 moveloop_core	vision_recalc
