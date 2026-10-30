@@ -25,7 +25,8 @@ import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
 import { selectCharacter } from './character_selection.js';
-import { MAX_MSG_HISTORY } from './const.js';
+import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,
+    COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 
 export interface EngineOptions {
     seed?: number;
@@ -308,6 +309,7 @@ export class Engine {
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
         this.applyStartupConfiguration(opts);
+        this.showStartupNotice();
         await displayConfigurationErrors(opts.configErrors);
         if (this._nethackOptions !== null) {
             // C rcfile() waits for file errors before parsing NETHACKOPTIONS.
@@ -413,6 +415,15 @@ export class Engine {
         return display;
     }
 
+    // wintty.c:tty_init_nhwindows() leaves this base-window notice visible
+    // until name entry or character selection opens a full-screen menu.
+    private showStartupNotice(): void {
+        const display = this.requireDisplay();
+        for (const [index, line] of [COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B,
+            COPYRIGHT_BANNER_C, COPYRIGHT_BANNER_D].entries())
+            display.putstr(0, 4 + index, line, NO_COLOR);
+    }
+
     // wintty.c tty_askname(). An empty answer or Escape re-asks: the hint
     // lands one row above the prompt, the prompt row itself is cleared and
     // redrawn in place, and ten failures give up. No fabricated default
@@ -420,14 +431,7 @@ export class Engine {
     async _readPlayerName(row = 12, showCopyright = true): Promise<ParsedCharacterName | null> {
         const display = this.requireDisplay();
         display.clearScreen();
-        if (showCopyright) {
-            display.putstr(0, 4, 'NetHack, Copyright 1985-2026', NO_COLOR);
-            display.putstr(9, 5,
-                'By Stichting Mathematisch Centrum and M. Stephenson.', NO_COLOR);
-            display.putstr(9, 6,
-                'Version 5.0.0 MacOS, built May  2 2026 12:00:00.', NO_COLOR);
-            display.putstr(9, 7, 'See license for details.', NO_COLOR);
-        }
+        if (showCopyright) this.showStartupNotice();
         const prompt = 'Who are you? ';
         for (let tryct = 1; ; tryct++) {
             if (tryct > 1) {
@@ -473,6 +477,7 @@ export class Engine {
             if (!cancelled && name) {
                 // tty_curs() steps past the line to echo the accepted return.
                 display.setCursor(0, row + 1);
+                game.iflags.renameallowed = true;
                 return parseCharacterName(name);
             }
         }
