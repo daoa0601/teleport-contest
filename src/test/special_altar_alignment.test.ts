@@ -13,19 +13,35 @@ import { capturedScreen, screenText } from './support/screen.js';
 // C sp_lev.c:sp_amask_to_amask() passes noncoalignment() through the
 // Align2amask() ternary macro (include/align.h). The macro's first
 // comparison tests against A_NONE (-128), which noncoalignment() never
-// returns, so a nonco-aligned altar always resolves through at least two
-// rn2(2) draws and never becomes an unaligned AM_NONE altar. The Barbarian
-// quest goal carries the level's only plain altar marked noncoaligned, so
-// teleporting straight there shows the stored mask for every legal barbarian
-// alignment. For a chaotic hero the possible masks are AM_LAWFUL (lawful
-// second draw), or the third-draw values 3 and AM_NEUTRAL; for a neutral
-// hero AM_LAWFUL, 3, or AM_CHAOTIC. AM_NONE is impossible under both.
+// returns, so a nonco-aligned altar always resolves through two or three
+// rn2(2) draws. The third-draw branch stores the shifted mask 3 for a
+// lawful final draw — a value a single-draw resolution can never produce,
+// and one these pinned seeds really draw (verified against the native
+// recorder, whose full-session replay matches this engine for the same
+// seeds). The Barbarian quest goal carries the level's only plain altar
+// marked noncoaligned, so teleporting straight there shows the stored mask
+// for every legal barbarian alignment.
 const CHAOTIC_MASKS = new Set([AM_LAWFUL, 3, AM_NEUTRAL]);
 const NEUTRAL_MASKS = new Set([AM_LAWFUL, 3, AM_CHAOTIC]);
-const SEEDS = [13, 47, 103, 7, 29, 59];
+const PINNED_THIRD_DRAW: Record<string, [number, number][]> = {
+    // align -> [seed, expected mask] pairs that only the re-evaluated ternary
+    // can produce.
+    chaotic: [[47, 3], [101, 3]],
+    neutral: [[29, 3]],
+};
+const BREADTH_SEEDS = [13, 103, 7, 59];
 
 for (const align of ['chaotic', 'neutral'] as const) {
-    for (const seed of SEEDS) {
+    for (const [seed, expected] of PINNED_THIRD_DRAW[align] ?? []) {
+        void test(`noncoaligned Bar-goal altar stores the third-draw mask for a ${align} hero (seed ${seed})`, async () => {
+            const level = await reachBarbarianGoal(seed, align);
+            const altar = findGoalAltar(level);
+            assert.ok(altar, 'the Bar-goal altar must exist');
+            assert.equal((altar.flags ?? 0) & 0x7, expected,
+                'only the re-evaluated Align2amask ternary stores this mask');
+        });
+    }
+    for (const seed of BREADTH_SEEDS) {
         void test(`noncoaligned Bar-goal altar stays aligned for a ${align} hero (seed ${seed})`, async () => {
             const level = await reachBarbarianGoal(seed, align);
             const altar = findGoalAltar(level);
