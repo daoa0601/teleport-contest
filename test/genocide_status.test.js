@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a doomed polymorphed hero leaves covered status rows blank after inspecting a floor pile', async () => {
-    freshObjectRoom({ flags: { menu_overlay: false } });
+    await freshObjectRoom({ flags: { menu_overlay: false } });
     installPolymorphedHero('red dragon');
     await floorObject(DAGGER, game.u.ux, game.u.uy);
     await floorObject(APPLE, game.u.ux, game.u.uy);

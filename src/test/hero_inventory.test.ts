@@ -123,7 +123,7 @@ for (const { type, message } of [
     { type: SPE_BOOK_OF_THE_DEAD, message: 'already have the book?' },
 ]) {
     void test(`acquiring a second invocation item reports: ${message}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await addInventoryObject(type);
         const pages: string[] = [];
         installPagerInput(resetInputState(), {

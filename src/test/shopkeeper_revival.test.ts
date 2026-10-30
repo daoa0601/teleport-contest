@@ -22,7 +22,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const petrified of [false, true]) {
     void test(`a shopkeeper restored from ${petrified ? 'a statue' : 'a corpse'} owns stock and bills purchases again`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const { shopkeeper, roomno } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
         shopkeeper.eshk.shknam = 'Anja';
@@ -58,7 +58,7 @@ for (const petrified of [false, true]) {
 }
 
 void test('a carried shopkeeper corpse can revive on a level with no shop', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
     await finishEnvironmentalMonsterDeath(shopkeeper, game);
@@ -68,7 +68,7 @@ void test('a carried shopkeeper corpse can revive on a level with no shop', asyn
     game.level = createRoomLevel({ left: 7, right: 16, top: 6, bottom: 14 });
     game.u.uz = { dnum: 0, dlevel: 9 };
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     await addInventoryItem(corpse);
     installPagerInput(resetInputState(), { expected: /glows iridescently/, limit: 2 });
 
