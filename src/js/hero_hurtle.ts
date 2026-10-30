@@ -74,7 +74,7 @@ export interface HeroTeleportMovement {
 export interface HeroHurtleOptions {
     verbose?: boolean;
     jumping?: boolean;
-    finishTeleport?: ((movement: HeroTeleportMovement) => Promise<unknown>) | null;
+    finishTeleport?: ((movement: HeroTeleportMovement) => Promise<{ died: boolean }>) | null;
     gotoLevel?: ((destination: Partial<DungeonLocation>, options?: LevelChangeOptions) => Promise<boolean>) | null;
     chooseTeleportDestination?: ((options?: { onPrompt?: () => Promise<void> }) => Promise<Position | null>) | null;
     finishMonsterDeath?: HurtleDeathHandler | null;

@@ -41,6 +41,7 @@ void test('teleport unearths a chained ball and carries the restored punishment'
     freshObjectRoom();
     requireFixtureGame(game);
     const ball = await installHeroChainedToBuriedBall();
+    pushKeys(' '.repeat(20));
     await moveHeroByTeleport(14, 10);
     assert.equal(game.uball, ball);
     assert.ok(game.uchain);

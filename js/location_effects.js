@@ -1,7 +1,6 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
 import { bot, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
 import { applyHeroLiquidEffects } from './cmd.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
@@ -12,44 +11,36 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { announceInvocationSquare } from './invocation.js';
 import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
 import { isIceAt } from './terrain_properties.js';
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
 import { roomsAt } from './room.js';
 import { findVaultGuard } from './vault_guard.js';
 import { noticeVaultEscape } from './vault_escort.js';
+// Landing effects for ordinary teleportation. moveHeroByTeleport() owns
+// the surrounding notice block and the invocation message that follows.
 export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
     requirePlayingGame(game);
-    const result = await withMonsterNoticesBlocked(game, async () => {
-        requirePlayingGame(game);
-        await bot();
-        if (announceTeleport && game.flags.verbose !== false) {
-            const place = movement.oldx === movement.x && movement.oldy === movement.y
-                ? 'the same' : 'a different';
-            await plineWithContinuation(`You materialize in ${place} location!`);
-        }
-        if (game.level.requireAt(game.u.ux, game.u.uy).typ
-            !== game.level.requireAt(movement.oldx, movement.oldy).typ)
-            await switchHeroTerrain(game);
-        if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
-            && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
-            const guard = await findVaultGuard(game);
-            if (guard)
-                await noticeVaultEscape(guard, game);
-        }
-        const landing = await finishDestinationSpotEffects({
-            ...movement, newx: movement.x, newy: movement.y,
-        });
-        if (!landing.died && !game.program_state.gameover)
-            await announceInvocationSquare();
-        return landing;
+    await bot();
+    if (announceTeleport && game.flags.verbose !== false) {
+        const place = movement.oldx === movement.x && movement.oldy === movement.y
+            ? 'the same' : 'a different';
+        await plineWithContinuation(`You materialize in ${place} location!`);
+    }
+    if (game.level.requireAt(game.u.ux, game.u.uy).typ
+        !== game.level.requireAt(movement.oldx, movement.oldy).typ)
+        await switchHeroTerrain(game);
+    if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
+        && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
+        const guard = await findVaultGuard(game);
+        if (guard)
+            await noticeVaultEscape(guard, game);
+    }
+    const result = await finishDestinationSpotEffects({
+        ...movement, newx: movement.x, newy: movement.y,
     });
     if (result.died || game.program_state.gameover)
         return { ...result, died: true };
-    // C teleport.c:teleds() ends with notice_all_mons() after the landing
-    // effects and the invocation message.
-    await noticeAllMonsters(game);
     return result;
 }
 // C spoteffects() suppresses same-location recursion, but permits a changed

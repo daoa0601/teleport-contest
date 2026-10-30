@@ -22,6 +22,7 @@ import { RIN_CONFLICT } from '../js/object_data.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { runSegment } from '../js/jsmain.js';
 import { gotoLevel } from '../js/level_change.js';
+import { jumpHero } from '../js/jumping.js';
 import { vision_recalc } from '../js/vision.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -172,9 +173,8 @@ void test('a nested teleport waits for the outer invocation message before notic
     addTrap(level, VIBRATING_SQUARE, 14, 10);
     const jackal = await createMonsterAt('jackal', 13, 11, MM_NOGRP | NO_MINVENT);
     jackal.mpeaceful = 0;
-    const movement = await moveHeroByTeleport(12, 10);
     const input = resetInputState();
-    const teleport = finishTeleportArrival(movement);
+    const teleport = moveHeroByTeleport(12, 10, game, { finishArrival: finishTeleportArrival });
     await input.waitUntilBlocked();
     for (let page = 0; page < 10 && !game._pending_message.includes('Where do you want to be teleported?'); page++) {
         input.feed(' ');
@@ -190,6 +190,35 @@ void test('a nested teleport waits for the outer invocation message before notic
     assert.equal(game.u.ux, 14, 'the landing trap caused a second teleport');
     assert.ok(messages.indexOf(vibrationMessage) < vibration, `both teleport arrivals reached the invocation square: ${messages}`);
     assert.ok(vibration >= 0 && notice > vibration, `the outer invocation message must precede the notice: ${messages}`);
+});
+void test('jumping onto a teleport trap delays notices until both landings finish', async () => {
+    const level = freshObjectRoom({ flags: { debug: true, tips: false, spot_monsters: true } });
+    requirePlayingGame(game);
+    grantIntrinsicProperty('jumping', 'form');
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30, flags: { hellish: true } })];
+    game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
+    game.u.uz = { dnum: 0, dlevel: 29 };
+    addTrap(level, TELEP_TRAP, 12, 10);
+    addTrap(level, VIBRATING_SQUARE, 14, 10);
+    const jackal = await createMonsterAt('jackal', 13, 11, MM_NOGRP | NO_MINVENT);
+    jackal.mpeaceful = 0;
+    const input = resetInputState();
+    input.feed('ll.');
+    const jumping = jumpHero();
+    await input.waitUntilBlocked();
+    for (let page = 0; page < 10 && !game._pending_message.includes('Where do you want to be teleported?'); page++) {
+        input.feed(' ');
+        await input.waitUntilBlocked();
+    }
+    assert.match(game._pending_message, /Where do you want to be teleported\?/);
+    input.feed('ll.' + ' '.repeat(40));
+    const result = await jumping;
+    const messages = announcements().join(' | ');
+    const vibration = 'You feel a strange vibration under your feet.';
+    assert.equal(result.heroDied, false);
+    assert.equal(game.u.ux, 14, 'the jump landed on a trap that caused a second teleport');
+    assert.ok(messages.indexOf(vibration) < messages.lastIndexOf(vibration), `both landings reached the invocation square: ${messages}`);
+    assert.ok(messages.indexOf('You see a jackal.') > messages.lastIndexOf(vibration), `the jumping landing must finish before the notice: ${messages}`);
 });
 for (const mentionMap of [false, true]) {
     void test(`startup ${mentionMap ? 'leaves notices to mention_map' : 'welcomes the hero before noticing the pet'}`, async () => {

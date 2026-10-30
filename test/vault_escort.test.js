@@ -127,8 +127,7 @@ void test('a finished parked escort removes its corridor on a later world turn',
 void test('teleporting away with vault gold releases an angry guard immediately', async () => {
     const { guard } = await escort();
     setHeroGoldAmount(game, 50);
-    const movement = await moveHeroByTeleport(15, 10);
-    await finishTeleportArrival(movement);
+    await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
     assert.equal(guard.mpeaceful, 0);
 });
 for (const whistle of [false, true]) {
@@ -149,8 +148,7 @@ for (const whistle of [false, true]) {
                 .map(row => row.map(cell => cell.ch).join('')).join('') ?? '');
             input.feed(' ');
         };
-        const movement = await moveHeroByTeleport(15, 10);
-        await finishTeleportArrival(movement);
+        await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
         messages.push(game._pending_message);
         assert.equal(guard.mpeaceful, 0);
         assert.equal(cansee(guard.mx, guard.my), false);

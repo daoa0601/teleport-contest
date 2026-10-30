@@ -24,7 +24,7 @@ import {
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroHasWaterWalking } from './armor.js';
-import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { verbForSubject } from './object_grammar.js';
@@ -207,8 +207,7 @@ async function moveSurvivingHeroAway(entity: DrawbridgeEntity, state: GameState)
     const destination = findNearbyMonsterPosition(entity.species, entity.x, entity.y, { state });
     if (!destination) return;
     await plineWithContinuation(`A ${heroIsHallucinating(state) ? 'normal' : 'strange'} force teleports you away...`);
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
-    await finishTeleportArrival(movement, { announceTeleport: false });
+    await moveHeroByTeleport(destination.x, destination.y, state);
     entity.x = state.u.ux;
     entity.y = state.u.uy;
 }

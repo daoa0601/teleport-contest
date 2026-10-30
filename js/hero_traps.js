@@ -746,8 +746,7 @@ async function triggerTeleportTrap(trap, finishTeleport) {
             await teleportHero({ chooseDestination: askTeleportDestination });
             return true;
         }
-        const movement = await moveHeroByTeleport(destination.x, destination.y);
-        await finishTeleport(movement);
+        await moveHeroByTeleport(destination.x, destination.y, game, { finishArrival: finishTeleport });
         return true;
     }
     finally {

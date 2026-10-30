@@ -32,7 +32,6 @@ import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { announceInvocationSquare } from './invocation.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -52,7 +51,6 @@ import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { noticeAllMonsters } from './monster_notices.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -293,18 +291,19 @@ function pitEscapeDestination(targetX: number, targetY: number, monster: Monster
 
 async function moveHeroOutOfPit(destination: Position, state: GameState) {
     await resetHeroTrap(true, state);
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    const landing = await finishDestinationSpotEffects({
-        oldx: movement.oldx, oldy: movement.oldy,
-        newx: movement.x, newy: movement.y,
+    const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
+        allowDrag: true,
+        finishArrival: async movement => {
+            newsym(movement.oldx, movement.oldy);
+            vision_reset();
+            vision_recalc(0);
+            return finishDestinationSpotEffects({
+                oldx: movement.oldx, oldy: movement.oldy,
+                newx: movement.x, newy: movement.y,
+            });
+        },
     });
-    if (landing.died) return;
-    await announceInvocationSquare();
-    // C apply.c:3116 teleds() ends by noticing the new surroundings.
-    await noticeAllMonsters(state);
+    if (arrival.died) return;
     state.vision_full_recalc = 1;
 }
 

@@ -28,7 +28,6 @@ import { ceilingName } from './terrain_name.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { advanceMonsterWormBody } from './monster_worm.js';
-import { finishTeleportArrival } from './location_effects.js';
 const M1_HIDE = 0x00000100;
 const S_EEL = 57;
 const S_MIMIC = 13;
@@ -100,8 +99,7 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
             }
             // C teleds() ends with spoteffects(), so the landing square's
             // trap and autopickup take effect before the piercer strikes.
-            const movement = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
-            const arrival = await finishTeleportArrival(movement, { announceTeleport: false });
+            const { arrival } = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
             if (arrival.died || state.program_state?.gameover)
                 return true;
             setMonsterApparentHeroPosition(monster, state, random, calls);
