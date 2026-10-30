@@ -45,4 +45,15 @@ for (const read of [false, true]) {
         assert.equal(engraving.eread, read);
     });
 }
+void test('quick look decodes a backslash in remembered text without changing the inscription', async () => {
+    await freshObjectRoom({ flags: { tips: false } });
+    const engraving = makeEngravingAt(11, 10, '\\north', null, 0, ENGRAVE);
+    assert.ok(engraving);
+    engraving.erevealed = true;
+    engraving.eread = true;
+    await newsym(11, 10);
+    assert.match(await lookEast(), /remembered text: "north"/);
+    assert.equal(engraving.text, '\\north');
+    assert.equal(engraving.rememberedText, '\\north');
+});
 //# sourceMappingURL=pager_screen_description.test.js.map

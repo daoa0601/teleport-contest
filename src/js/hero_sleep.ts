@@ -10,7 +10,6 @@ import { stopHeroOccupation } from './occupation.js';
 
 export async function putHeroToSleep(turns: number, {
     state = game,
-    reason = 'sleeping',
     doneMessage = 'You wake up.',
     publish = plineWithContinuation as MessagePublisher,
 } = {}) {
@@ -22,7 +21,7 @@ export async function putHeroToSleep(turns: number, {
     // nomul() refuses to shorten an existing involuntary delay. fall_asleep()
     // still installs its sleep marker and recovery message afterward.
     nomul(-duration, state);
-    state._helplessReason = reason;
+    state._helplessReason = 'sleeping';
     state._helplessDoneMessage = doneMessage;
     hero.usleep = state.moves || 1;
     return state._helplessTurns;

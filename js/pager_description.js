@@ -12,6 +12,7 @@ import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.j
 import { withIndefiniteArticle } from './object_grammar.js';
 import { quotedEngraving, lookGlyphAt, unseenCreatureDescription } from './pager_features.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { decodeMixedLiteral } from './windows.js';
 // encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
 const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
 export function screenDescription(x, y, description) {
@@ -160,6 +161,7 @@ export function screenDescription(x, y, description) {
             count = 1;
         }
     }
-    return { text: prefix + text.slice(0, BUFSZ - 1 - ENCODED_LOOK_PREFIX_LENGTH), count, firstMatch, needsDetail };
+    const literal = text.slice(0, BUFSZ - 1 - ENCODED_LOOK_PREFIX_LENGTH);
+    return { text: prefix + decodeMixedLiteral(literal), count, firstMatch, needsDetail };
 }
 //# sourceMappingURL=pager_description.js.map

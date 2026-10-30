@@ -39,7 +39,6 @@ export async function overexertHeroHp(state = game) {
         await exerciseAttribute(A_CON, false, state);
         await putHeroToSleep(10, {
             state,
-            reason: 'passed out from exertion',
             doneMessage: 'You can move again.',
         });
     }

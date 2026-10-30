@@ -11,6 +11,7 @@ import { DEC_TO_UNICODE } from './terminal.js';
 import { trapName } from './trap_name.js';
 import { couldsee } from './vision.js';
 import { displayPagerText } from './pager_help.js';
+import { decodeMixedLiteral } from './windows.js';
 export async function showLookList(kind, nearby, describeHero) {
     if (!game.level)
         return;
@@ -77,7 +78,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                 else {
                     const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
                     if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
-                        description = `${trapName(trap.ttyp)}, obscured by ${covering}`;
+                        description = trapName(trap.ttyp);
                         obscured = true;
                         symbol = transientTrapGlyph(trap).ch;
                     }
@@ -94,7 +95,6 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                     : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`);
                 const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
                 if (!shown) {
-                    description += `, obscured by ${covering}`;
                     obscured = true;
                     symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
                 }
@@ -107,7 +107,13 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
             const prefix = mode === 's' ? coordinates : coordinates.padStart(mode === 'm' ? 8 : 12);
             // Each encoded native glyph uses nine more bytes than its visible character.
             const limit = BUFSZ - 1 - 9 * (obscured ? 2 : 1);
-            yield `${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}${description}`.slice(0, limit);
+            const rowPrefix = `${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}`;
+            const literal = description + (obscured ? ', obscured by ' : '');
+            const remaining = limit - rowPrefix.length;
+            // Truncate the native buffer before decoding, and keep rendered
+            // glyph symbols out of the literal backslash handling.
+            yield rowPrefix + decodeMixedLiteral(literal.slice(0, remaining))
+                + (obscured ? covering.slice(0, Math.max(0, remaining - literal.length)) : '');
         }
     }
 }
