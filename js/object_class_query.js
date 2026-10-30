@@ -3,11 +3,13 @@ import { PARANOID_AUTOALL } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { selectInventoryObject } from './invent.js';
+import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { objectDescription } from './object_description.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { observeObjectForNaming } from './objnam.js';
 import { getLine } from './query.js';
 import { showDisclosureOverlay } from './windows.js';
+// C pickup.c:query_classes().
 export async function queryObjectClasses(action, objects) {
     const classes = [...new Set(objects.map(object => object.oclass))];
     if (!classes.length)
@@ -45,8 +47,10 @@ export async function queryObjectClasses(action, objects) {
             else if (character === 'a')
                 everything = true;
             else if (character === ':' || character === 'i') {
-                if (character === 'i')
-                    await selectInventoryObject();
+                if (character === 'i') {
+                    if (takeQueuedInventoryChoice() === undefined)
+                        await selectInventoryObject();
+                }
                 else {
                     await lookAtObjects(objects);
                     const container = objects[0]?.container;
@@ -116,6 +120,7 @@ function bucCategory(object) {
         return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
+// C pickup.c:simple_look().
 async function lookAtObjects(objects) {
     const first = objects[0];
     if (!first)

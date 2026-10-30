@@ -242,6 +242,7 @@ function petrificationMessage(turns: number, state: GameState): string | null {
     return turns === 1 ? 'You are a statue.' : null;
 }
 
+// C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({
     state = game,
     publish = plineWithContinuation,

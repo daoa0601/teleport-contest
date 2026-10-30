@@ -4001,10 +4001,12 @@ async function doinvoke() {
     await pline('Nothing happens.');
     game.context.move = 1;
 }
+// C apply.c:rub_ok().
 function rubEligibleObject(object) {
     return object?.otyp === OIL_LAMP || object?.otyp === MAGIC_LAMP
         || object?.otyp === BRASS_LANTERN || isGrayStone(object) || isRoyalJelly(object);
 }
+// C apply.c:jelly_ok().
 async function rubRoyalJelly(jelly) {
     const used = await useRoyalJelly(jelly, async () => {
         const egg = await chooseInventoryObject('rub the royal jelly on', object => object.otyp === EGG ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });

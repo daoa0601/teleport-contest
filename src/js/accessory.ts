@@ -343,6 +343,7 @@ export function clearHeroAccessory(
     return property || null;
 }
 
+// C do_wear.c:adjust_attrib().
 function changeRingBonus(ring: GameObject, direction: 1 | -1, state: GameState, deferArmorClass = false): void {
     const attribute = RING_ATTRIBUTES.get(ring.otyp);
     if (attribute !== undefined) {

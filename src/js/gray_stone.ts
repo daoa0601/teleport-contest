@@ -36,6 +36,7 @@ const OBJECT_COLOR_NAMES = [
     'bright magenta', 'bright cyan', 'white',
 ];
 
+// C apply.c:use_stone().
 export async function useGrayStone(stone: GameObject, { state = game }: { state?: GameState } = {}): Promise<{ spentTime: boolean }> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -91,6 +92,7 @@ export async function useGrayStone(stone: GameObject, { state = game }: { state?
     return { spentTime: true };
 }
 
+// C apply.c:touchstone_ok().
 function touchstoneSuggestion(object: GameObject | null, state: GameState): InventoryClassification {
     if (!object) return GETOBJ_EXCLUDE;
     if (object.oclass === COIN_CLASS || object.oclass === GEM_CLASS

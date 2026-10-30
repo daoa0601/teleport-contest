@@ -2,6 +2,7 @@
 import { exerciseWisdom } from './attrib.js';
 import { game } from './gstate.js';
 import { rn2, rnd, rnl } from './rng.js';
+// C spell.c:losespells().
 export function loseHeroSpellMemory({ state = game } = {}) {
     if (state.context.spbook) {
         state.context.spbook.book = null;

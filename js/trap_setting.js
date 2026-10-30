@@ -25,9 +25,11 @@ import { addShopDamage } from './shop_damage.js';
 import { findObjectOwner, shopkeeperIsMuted } from './shop_loss.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap_name.js';
+// C apply.c:reset_trapset().
 export function resetTrapSetting(state = game) {
     state._trapSetting = null;
 }
+// C apply.c:use_trap().
 export async function useSettableTrap(object) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -78,6 +80,7 @@ export async function useSettableTrap(object) {
     game._occupation = { key: 'set-trap', text: 'setting the trap' };
     return null;
 }
+// C apply.c:set_trap().
 export async function continueTrapSetting(state = game) {
     requirePlayingGame(state);
     const progress = state._trapSetting;

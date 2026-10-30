@@ -63,6 +63,7 @@ export async function applyAreaScrollEffect(source: GameObject, {
     }
 }
 
+// C read.c:seffect_fire().
 async function fireEffect(
     source: GameObject, { state, finishHeroDeath }: AreaEffectOptions,
 ): Promise<ScrollEffectResult> {
@@ -113,6 +114,7 @@ async function fireEffect(
     return result;
 }
 
+// C read.c:seffect_earth().
 async function earthEffect(source: GameObject, options: AreaEffectOptions): Promise<ScrollEffectResult> {
     const { state } = options;
     const result = { known: false, consumed: false, heroDied: false };
@@ -152,6 +154,8 @@ async function earthEffect(source: GameObject, options: AreaEffectOptions): Prom
     return result;
 }
 
+// C read.c:seffect_stinking_cloud().
+// C read.c:do_stinking_cloud().
 async function cloudEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectResult> {
     const alreadyKnown = sourceTypeKnown(source, state);
     if (!alreadyKnown) await pline('You have found a scroll of stinking cloud!');
@@ -167,6 +171,8 @@ async function cloudEffect(source: GameObject, state: PlayingGameState): Promise
     return { known: true, consumed: false, heroDied: false };
 }
 
+// C read.c:seffect_amnesia().
+// C read.c:forget().
 async function amnesiaEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectResult> {
     if (heroIsPunished(state)) state.u.bc_felt = 0;
     if (!source.blessed) loseHeroSpellMemory({ state });

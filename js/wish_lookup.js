@@ -287,6 +287,7 @@ export function randomUnqualifiedWishType(name) {
         return randomWeaponBySkill(P_HAMMER);
     return null;
 }
+// C objnam.c:rnd_otyp_by_namedesc().
 export function randomTypeByDescription(name, oclass = 0, extraProbability = 1, state = game) {
     if (!name)
         return null;
@@ -334,6 +335,7 @@ function invertedName(name) {
     const index = name.toLowerCase().indexOf(' of ');
     return index < 0 ? null : `${name.slice(index + 4)} ${name.slice(0, index)}`;
 }
+// C objnam.c:wishymatch().
 function wishMatches(request, canonical, invert) {
     if (fuzzyEqual(request, canonical))
         return true;

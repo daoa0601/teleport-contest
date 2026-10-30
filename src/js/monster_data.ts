@@ -551,6 +551,7 @@ Object.defineProperty(MONSTER_DIFFICULTY, PM_ERINYS, { get: () => erinys.difficu
 Object.defineProperty(MONSTER_ATTACKS, PM_ERINYS, { get: () => erinys.attacks });
 Object.defineProperty(MONSTER_EXPERIENCE_META, PM_ERINYS, { get: () => erinys.experience });
 
+// C mon.c:adj_erinys().
 export function adjustErinys(abuse: number): void {
     erinys.flags1 |= (abuse > 5 ? M1_SEE_INVIS : 0)
         | (abuse > 10 ? M1_AMPHIBIOUS : 0)

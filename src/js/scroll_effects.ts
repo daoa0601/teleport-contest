@@ -141,6 +141,10 @@ async function exerciseScrollWisdom(otyp: number, state: PlayingGameState): Prom
     if (OBJECT_MAGIC[otyp]) await exerciseAttribute(A_WIS, true, state);
 }
 
+// C read.c:seffect_blank_paper().
+// C read.c:seffect_create_monster().
+// C read.c:seffect_genocide().
+// C read.c:seffect_punishment().
 async function scrollEffect(
     source: GameObject, state: PlayingGameState, hooks: ScrollEffectHooks,
 ): Promise<ScrollEffectChange | undefined> {
@@ -228,6 +232,8 @@ async function scrollEffect(
     }
 }
 
+// C read.c:seffect_food_detection().
+// C read.c:seffect_gold_detection().
 async function detectionEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     const detect = source.otyp === SCR_GOLD_DETECTION
         ? (source.cursed || (state.u.confusionTurns ?? 0) > 0 ? detectTraps : detectGold)
@@ -237,6 +243,7 @@ async function detectionEffect(source: GameObject, state: PlayingGameState): Pro
     return { known: !!result.known, consumed: !!result.result };
 }
 
+// C read.c:seffect_charging().
 async function chargingEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     const blessing = source.cursed ? -1 : source.blessed ? 1 : 0;
     if ((state.u.confusionTurns ?? 0) > 0) {
@@ -272,6 +279,7 @@ async function mailEffect(source: GameObject, state: PlayingGameState): Promise<
         await plineWithContinuation('This game cannot open the system mail reader.');
 }
 
+// C read.c:seffect_confuse_monster().
 async function confuseMonsterEffect(source: GameObject, state: PlayingGameState): Promise<void> {
     const hero = state.u;
     const confused = (hero.confusionTurns ?? 0) > 0;
@@ -316,6 +324,7 @@ async function confuseMonsterEffect(source: GameObject, state: PlayingGameState)
     hero.umconf = (hero.umconf ?? 0) + ((hero.umconf ?? 0) >= 40 ? 1 : increase);
 }
 
+// C read.c:seffect_scare_monster().
 async function causeFearEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     const reverse = source.cursed || (state.u.confusionTurns ?? 0) > 0;
     let nonPets = 0;
@@ -349,6 +358,7 @@ async function maybeTame(monster: Monster, source: GameObject, state: PlayingGam
     return (!wasPeaceful && monster.mpeaceful) || wasTame !== (monster.mtame ?? 0) ? 1 : 0;
 }
 
+// C read.c:seffect_taming().
 async function charmMonsterEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     let candidates = 0, results = 0, visibleResults = 0;
     if (state.u.uswallow) {
@@ -380,6 +390,7 @@ async function charmMonsterEffect(source: GameObject, state: PlayingGameState): 
     return { known: visibleResults > 0 };
 }
 
+// C read.c:seffect_magic_mapping().
 async function magicMappingEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     const isScroll = source.oclass === SCROLL_CLASS;
     if (state.level.flags.nommap) {

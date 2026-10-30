@@ -26,6 +26,7 @@ import { deallocateObject } from './object_delete.js';
 import { impossible } from './diagnostics.js';
 import { monsterHasNoLimbs } from './monster_data.js';
 
+// C shk.c:cheapest_item().
 export async function minimumShopPurchase(resident: Monster, state: GameState = game): Promise<{
     price: number; multipleItems: boolean;
 } | null> {
@@ -40,6 +41,8 @@ export async function minimumShopPurchase(resident: Monster, state: GameState = 
 
 // Contents share one entry for their outermost container. Used portions stay
 // separate, so they can be paid before buying the remaining contained goods.
+// C shk.c:sortbill_cmp().
+// C shk.c:bp_to_obj().
 export async function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): Promise<ShopBillItem[]> {
     if (!hasShopBill(resident)) return [];
     const objects = objectsInTimerGraph(state);
@@ -239,6 +242,7 @@ async function paymentQuestion(object: GameObject, price: number, state: GameSta
     }
 }
 
+// C shk.c:insufficient_funds().
 async function checkPurchaseFunds(resident: BilledShopkeeper, item: ShopBillItem,
     state: GameState, cost = item.price): Promise<boolean> {
     const funds = heroGoldAmount(state) + (resident.eshk.credit ?? 0);
@@ -286,6 +290,7 @@ function containedPurchases(resident: BilledShopkeeper, container: GameObject, s
     return purchases;
 }
 
+// C shk.c:reject_purchase().
 async function rejectPartlyUsedPurchase(resident: BilledShopkeeper, object: GameObject,
     entry: ShopBillEntry, state: GameState): Promise<void> {
     const intactQuantity = object.quan;

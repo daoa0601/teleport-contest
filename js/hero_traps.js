@@ -1193,6 +1193,7 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
     return { destination, arrival: flying ? 'random' : 'falling' };
 }
 // shortCircuited stops remaining spot effects; died stops the whole action.
+// C trap.c:adj_nonconjoined_pit().
 export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     if (!trap)
         return { died: false, shortCircuited: false };

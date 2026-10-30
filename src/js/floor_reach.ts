@@ -46,6 +46,7 @@ function trapAtHero(state: GameState): Trap | null {
         trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 
+// C trap.c:uteetering_at_seen_pit().
 export function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
     return !!trap && is_pit(trap.ttyp) && !!trap.tseen
         && trap.tx === state.u.ux && trap.ty === state.u.uy
@@ -56,6 +57,7 @@ export function heroEscapedShaft(trap: Trap | null): boolean {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
 
+// C trap.c:uescaped_shaft().
 export function floorReachProblem(
     state: GameState = game,
     { checkPit = false }: FloorReachOptions = {},

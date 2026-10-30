@@ -7,6 +7,7 @@ import { heroIsSurroundedByRock } from './prayer_trouble.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from './properties.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { heroIsPolymorphed } from './polyself.js';
+// C timeout.c:phaze_dialogue().
 export async function wallPassageDialogue(state = game) {
     const turns = propertyTimeout('passesWalls', state);
     if (hasIntrinsicProperty('passesWalls', null, state)
@@ -19,6 +20,7 @@ export async function wallPassageDialogue(state = game) {
     else if (turns === 3)
         await plineWithContinuation('You are feeling rather flabby.');
 }
+// C timeout.c:region_dialogue().
 export async function breathingDialogue(state = game) {
     const turns = propertyTimeout('magicalBreathing', state);
     if (turns !== 5 && turns !== 3)

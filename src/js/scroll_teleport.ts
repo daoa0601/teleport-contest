@@ -7,6 +7,7 @@ import { teleportHero } from './teleport.js';
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './scroll_effects.js';
 
+// C read.c:seffect_teleportation().
 export async function teleportScrollEffect(source: GameObject, {
     state = game, gotoLevel,
 }: Pick<ScrollEffectOptions, 'state' | 'gotoLevel'> = {}): Promise<ScrollEffectResult> {

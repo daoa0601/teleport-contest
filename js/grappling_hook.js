@@ -1,7 +1,8 @@
 // Applying a grappling hook.
 // C ref: apply.c use_grapple().
-import { IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, isok, } from './const.js';
+import { IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, isok, } from './const.js';
 import { newsym, pline } from './display.js';
+import { commandResultCancelled } from './command_state.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
@@ -24,9 +25,11 @@ import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
 const M2_STRONG = 0x04000000;
 function hookSkill(hook, state) {
-    const skillType = Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
+    const skillType = state.u.twoweap
+        ? P_TWO_WEAPON_COMBAT : Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
     return ensureHeroSkills(state)?.[skillType]?.skill ?? 0;
 }
+// C apply.c:grapple_range().
 function hookRange(skill) {
     if (skill <= P_BASIC)
         return 4;
@@ -45,6 +48,7 @@ function monsterAt(x, y, state) {
 function monsterObject(monster) {
     return monster.name || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
+// C apply.c:can_grapple_location().
 async function chooseTarget(hook, state) {
     await pline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
@@ -115,6 +119,7 @@ async function damageHero(state) {
         damage = Math.trunc((damage + 1) / 2);
     return loseHeroHp(damage, 'a grappling hook', { state, publish: pline, killerFormat: KILLED_BY });
 }
+// C apply.c:use_grapple().
 export async function useGrapplingHook(hook, { state = game, ensureWielded, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
     if (state.u?.uswallow) {
         await pline("There's not enough room here to use that.");
@@ -126,8 +131,10 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, atta
     if (wielded.newlyWielded)
         return { spentTime: true, resume: true };
     const target = await chooseTarget(hook, state);
-    if (!target)
+    if (!target) {
+        commandResultCancelled(state);
         return { spentTime: false };
+    }
     const range = hookRange(hookSkill(hook, state));
     if (squaredDistanceFromHero(target.x, target.y, state) > range) {
         await pline('Too far!');

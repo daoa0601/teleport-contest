@@ -7,6 +7,8 @@ import { OBJECT_NAMES, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_DIG } from './ob
 import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, } from './spell_casting_rules.js';
 import { spellCategory, spellSkillType } from './spell_school.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { restoreCannedCommandTail } from './cmd.js';
+import { takeCommandResponse } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { showInventoryWindow } from './windows.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './tty_menu.js';
@@ -48,6 +50,8 @@ export async function selectWizardSpell() {
         await tty_destroy_nhwindow(window);
     }
 }
+// C spell.c:getspell().
+// C spell.c:num_spells().
 export async function selectSpellToCast(state = game) {
     requireLiveGame(state);
     const spells = state.spells || [];
@@ -57,12 +61,22 @@ export async function selectSpellToCast(state = game) {
     }
     if (await rejectCasting(state))
         return null;
-    const queued = takeRepeatCommand();
-    if (queued) {
-        if (queued.kind !== 'key')
+    const queued = state._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
+    if (queued !== undefined) {
+        const key = typeof queued === 'number' ? queued
+            : typeof queued === 'object' && 'kind' in queued && queued.kind === 'key'
+                ? queued.key : null;
+        if (key === null)
             return null;
-        const index = spellIndex(queued.key);
+        const index = spellIndex(key);
         return index >= 0 ? spells[index] ?? null : null;
+    }
+    if (!state._inDoAgain) {
+        const command = state._cannedCommands?.shift();
+        if (command) {
+            restoreCannedCommandTail(command);
+            return null;
+        }
     }
     if (state.flags.menu_style === MENU_TRADITIONAL) {
         const selection = await selectTraditionalSpell(spells);
@@ -72,6 +86,7 @@ export async function selectSpellToCast(state = game) {
     const selection = await showSpellMenu('Choose which spell to cast', { state });
     return typeof selection === 'number' ? spells[selection] ?? null : null;
 }
+// C spell.c:sortspells().
 export async function viewKnownSpells(state = game) {
     requireLiveGame(state);
     if (!state.spells?.length) {
@@ -181,6 +196,7 @@ async function showSpellMenu(title, { state, order = null, view = false, presele
     // place and returns to the viewing menu; accepting the preset exits it.
     return preselected;
 }
+// C spell.c:spellsortmenu().
 async function selectSpellSort(sortMode) {
     const items = SORT_CHOICES.flatMap((text, index) => {
         const key = index === RETAIN_ORDER ? 'z' : spellLetter(index);
@@ -196,6 +212,7 @@ async function selectSpellSort(sortMode) {
     const index = spellIndex(selection.key);
     return index >= SORT_LETTER && index <= SORT_CURRENT ? index : null;
 }
+// C spell.c:spell_cmp().
 function compareSpells(first, second, mode, state) {
     if (mode === SORT_LETTER)
         return first - second;
@@ -239,6 +256,7 @@ function spellRetention(spell, state) {
 function spellLetter(index) {
     return String.fromCharCode(index < 26 ? 97 + index : 65 + index - 26);
 }
+// C spell.c:spell_let_to_idx().
 function spellIndex(key) {
     if (key == null)
         return -1;

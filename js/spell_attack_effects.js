@@ -59,6 +59,9 @@ export async function castSkilledElementalSpell(pseudo, { state = game } = {}) {
     }
     return { targeted: true, heroDied: false };
 }
+// C spell.c:throwspell().
+// C spell.c:spell_aim_step().
+// C spell.c:can_center_spell_location().
 async function chooseSpellCenter(state) {
     if (state.u.uinwater) {
         await plineWithContinuation("You're joking!  In this weather?");
@@ -201,6 +204,7 @@ export async function castChainLightning({ state = game } = {}) {
     }
     return { heroDied: false };
 }
+// C spell.c:propagate_chain_lightning().
 async function propagateLightning(queue, painted, zap, displayedBeam, state) {
     const dx = xdir[zap.direction], dy = ydir[zap.direction];
     if (dx === undefined || dy === undefined)

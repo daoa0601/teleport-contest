@@ -453,6 +453,7 @@ export interface BilledObject {
     entry: ShopBillEntry;
 }
 
+// C shk.c:onbill().
 export function billForObject(
     object: Pick<GameObject, 'o_id'> | null | undefined,
     state: GameState = game, resident: Monster | null = null,
@@ -470,6 +471,7 @@ export function billForObject(
     return null;
 }
 
+// C shk.c:sub_one_frombill().
 export function removeOneObjectFromBill(object: GameObject, state: GameState = game,
     resident: Monster | null = null,
 ) {
@@ -515,6 +517,7 @@ export function removeOneObjectFromBill(object: GameObject, state: GameState = g
     return { resident: billed.resident, entry: removedEntry, removedQuantity };
 }
 
+// C shk.c:subfrombill().
 export function removeObjectAndContentsFromBill(
     object: GameObject, state: GameState = game,
     { resident = null }: { resident?: Monster | null } = {},
@@ -1124,6 +1127,7 @@ function countUnpaidContents(container: GameObject): number {
     return count;
 }
 
+// C shk.c:append_honorific().
 function heroHonorific(state: GameState = game): string {
     const titles = [
         'good', 'honored', 'most gracious', 'esteemed',

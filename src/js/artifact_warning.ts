@@ -15,6 +15,7 @@ function glowStrength(count: number): 0 | 1 | 2 | 3 {
     return count > 12 ? 3 : count > 4 ? 2 : count > 0 ? 1 : 0;
 }
 
+// C artifact.c:glow_verb().
 export function artifactGlowVerb(count: number, continuous = false): string {
     const verbs = ['quiver', 'flicker', 'glimmer', 'gleam'] as const;
     const verb = verbs[glowStrength(count)];
@@ -51,6 +52,7 @@ export async function setArtifactWarningWielded(
 }
 
 // The census owns count commits. -1 announces a sight change without recounting.
+// C artifact.c:Sting_effects().
 export async function artifactWarningFeedback(
     count: number,
     { beforeGlow = null }: { beforeGlow?: (() => void | Promise<void>) | null } = {},
@@ -86,6 +88,7 @@ export async function artifactWarningFeedback(
 
 // C mkot_trap_warn(): warmth counts locations whose trap is not displayed,
 // including trapped doors and containers beneath other floor objects.
+// C artifact.c:count_surround_traps().
 export async function warnWithMasterKey(state: GameState = game): Promise<void> {
     const weapon = state.uwep;
     if (state.uarmg || artifactById(weapon?.oartifact, state)?.enumName !== 'MASTER_KEY_OF_THIEVERY') {

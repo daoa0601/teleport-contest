@@ -3146,6 +3146,8 @@ async function unmakeNastySubstitute(monster) {
     await discardMonsterInventory(monster, true);
     await removeMonsterFromGame(monster);
 }
+// C trap.c:hole_destination().
+// C trap.c:choose_trapnote().
 export async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than

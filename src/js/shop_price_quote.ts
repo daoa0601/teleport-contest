@@ -51,6 +51,7 @@ function capitalize(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+// C shk.c:shk_embellish().
 function embellish(object: GameObject, cost: number): string {
     if (!rn2(3)) {
         let choice = rn2(5);

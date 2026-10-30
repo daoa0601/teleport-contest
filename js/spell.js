@@ -33,6 +33,7 @@ export function knownSpell(otyp, state = game) {
     return remaining > 2000 ? 'fresh' : remaining > 0 ? 'stale' : 'forgotten';
 }
 // C spell.c:force_learn_spell(). Divine teaching skips book study and conduct.
+// C spell.c:spell_idx().
 export function forceLearnSpell(otyp, state = game) {
     if ([SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD].includes(otyp)
         || knownSpell(otyp, state) === 'fresh')

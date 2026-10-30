@@ -230,6 +230,7 @@ export async function slimeDialogue({ state = game, publish = plineWithContinuat
     }
     await exerciseAttribute(A_DEX, false, state);
 }
+// C timeout.c:slimed_to_death().
 export async function advanceHeroSliming({ state = game, publish = plineWithContinuation, transform, die, } = {}) {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;

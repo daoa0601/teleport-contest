@@ -9,6 +9,7 @@ import {
     selectInventoryObject,
 } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
+import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { clearMessageWindow, consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
@@ -36,6 +37,14 @@ type InventoryReport = 'gold' | 'weapon' | 'armor' | 'rings' | 'amulet' | 'tools
 type Buc = 'B' | 'U' | 'C' | 'X';
 const BUC_CHOICES: readonly Buc[] = ['B', 'C', 'U', 'X'];
 
+// C invent.c:doprwep().
+// C invent.c:doprgold().
+// C invent.c:doprarm().
+// C invent.c:doprring().
+// C invent.c:dopramulet().
+// C invent.c:doprtool().
+// C invent.c:doprinuse().
+// C invent.c:noarmor().
 export async function inventoryReport(report: InventoryReport): Promise<InventoryAction | null> {
     game.context.move = 0;
     if (report === 'type') return typeInventory();
@@ -117,10 +126,17 @@ function isInUse(object: GameObject): boolean {
         || toolBeingUsed(object);
 }
 
+// C invent.c:dispinv_with_action().
 async function reportSubset(items: readonly GameObject[] | null, inuse = true, accessoryLabel = 'Accessories')
 : Promise<InventoryAction | null> {
     if (game.flags.fixinv === false) reassignInventoryLetters();
     const candidates = items ?? game.inventory.filter(isInUse);
+    const queued = takeQueuedInventoryChoice(items ? items.map(object => object.invlet).join('') : null);
+    if (queued !== undefined) {
+        if (queued === 0 || queued === 27) return null;
+        const selected = game.inventory.find(object => object.invlet === String.fromCharCode(queued));
+        return selected ? inventoryActionForObject(selected) : null;
+    }
     let key: number;
     if (items?.length === 1 && !game.iflags.menu_requested) {
         const first = items[0];
@@ -189,6 +205,8 @@ function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
     return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
 }
 
+// C pickup.c:count_justpicked().
+// C pickup.c:find_justpicked().
 async function typeInventory(): Promise<InventoryAction | null> {
     const bill = usedUpBill();
     if (!game.inventory.length && !bill.length) {

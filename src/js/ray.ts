@@ -84,6 +84,8 @@ export function rayMonsterAt(x: number, y: number, state: GameState = game) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 
+// C zap.c:spell_hit_bonus().
+// C zap.c:zap_hit().
 export function rayHitsMonster(monster: Monster, random: typeof rn2 = rn2, rollOne: typeof rnd = rnd, {
     state = game, spellType = 0,
 }: { state?: GameState; spellType?: number } = {}) {
@@ -102,6 +104,7 @@ export function rayHitsMonster(monster: Monster, random: typeof rn2 = rn2, rollO
     return 3 - chance < effectiveArmorClass + bonus;
 }
 
+// C zap.c:zap_hit().
 export function rayHitsHero(
     state: GameState = game, random: typeof rn2 = rn2, rollOne: typeof rnd = rnd,
 ) {
@@ -187,6 +190,7 @@ export function discoverReflectingShield(state: GameState = game) {
     discoverHeroReflectionSource({ object: shield, noun: 'shield' }, state);
 }
 
+// C zap.c:bounce_dir().
 export function rayBounceDirection(
     x: number, y: number, dx: number, dy: number, bounceback: number, state: GameState = game, random: typeof rn2 = rn2,
 ) {

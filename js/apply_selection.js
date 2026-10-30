@@ -10,6 +10,7 @@ import { objectTypeKnown } from './shk.js';
 import { heroIsHallucinating } from './senses.js';
 const WEAPON_CLASS = 2, TOOL_CLASS = 6, POTION_CLASS = 8;
 const SPBOOK_CLASS = 10, WAND_CLASS = 11, COIN_CLASS = 12, GEM_CLASS = 13;
+// C apply.c:apply_ok().
 export function applySuggestion(object, state = game) {
     if (!object)
         return GETOBJ_EXCLUDE;

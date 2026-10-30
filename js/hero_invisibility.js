@@ -28,6 +28,7 @@ export function heroIsInvisible(state = game) {
 export function syncHeroInvisibility(state = game) {
     return refreshProperty('invisible', state);
 }
+// C potion.c:self_invis_message().
 export async function showInvisibilityMessage(state = game) {
     const hallucinating = heroIsHallucinating(state);
     const seesInvisible = !!(state.u?.seeInvisible

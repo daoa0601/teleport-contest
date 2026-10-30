@@ -84,6 +84,10 @@ async function exerciseScrollWisdom(otyp, state) {
     if (OBJECT_MAGIC[otyp])
         await exerciseAttribute(A_WIS, true, state);
 }
+// C read.c:seffect_blank_paper().
+// C read.c:seffect_create_monster().
+// C read.c:seffect_genocide().
+// C read.c:seffect_punishment().
 async function scrollEffect(source, state, hooks) {
     switch (source.otyp) {
         case SCR_ENCHANT_ARMOR:
@@ -170,6 +174,8 @@ async function scrollEffect(source, state, hooks) {
             return;
     }
 }
+// C read.c:seffect_food_detection().
+// C read.c:seffect_gold_detection().
 async function detectionEffect(source, state) {
     const detect = source.otyp === SCR_GOLD_DETECTION
         ? (source.cursed || (state.u.confusionTurns ?? 0) > 0 ? detectTraps : detectGold)
@@ -179,6 +185,7 @@ async function detectionEffect(source, state) {
         await finishStrangeFeeling(source, { state });
     return { known: !!result.known, consumed: !!result.result };
 }
+// C read.c:seffect_charging().
 async function chargingEffect(source, state) {
     const blessing = source.cursed ? -1 : source.blessed ? 1 : 0;
     if ((state.u.confusionTurns ?? 0) > 0) {
@@ -213,6 +220,7 @@ async function mailEffect(source, state) {
     else if (!state.iflags?.debug_fuzzer)
         await plineWithContinuation('This game cannot open the system mail reader.');
 }
+// C read.c:seffect_confuse_monster().
 async function confuseMonsterEffect(source, state) {
     const hero = state.u;
     const confused = (hero.confusionTurns ?? 0) > 0;
@@ -262,6 +270,7 @@ async function confuseMonsterEffect(source, state) {
     }
     hero.umconf = (hero.umconf ?? 0) + ((hero.umconf ?? 0) >= 40 ? 1 : increase);
 }
+// C read.c:seffect_scare_monster().
 async function causeFearEffect(source, state) {
     const reverse = source.cursed || (state.u.confusionTurns ?? 0) > 0;
     let nonPets = 0;
@@ -298,6 +307,7 @@ async function maybeTame(monster, source, state) {
         await tameMonster(monster, source, { state });
     return (!wasPeaceful && monster.mpeaceful) || wasTame !== (monster.mtame ?? 0) ? 1 : 0;
 }
+// C read.c:seffect_taming().
 async function charmMonsterEffect(source, state) {
     let candidates = 0, results = 0, visibleResults = 0;
     if (state.u.uswallow) {
@@ -335,6 +345,7 @@ async function charmMonsterEffect(source, state) {
         : `The neighborhood ${visibleResults ? 'is' : 'seems'} ${results < 0 ? 'un' : ''}friendlier.`);
     return { known: visibleResults > 0 };
 }
+// C read.c:seffect_magic_mapping().
 async function magicMappingEffect(source, state) {
     const isScroll = source.oclass === SCROLL_CLASS;
     if (state.level.flags.nommap) {

@@ -1308,6 +1308,7 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
 }
 
 // shortCircuited stops remaining spot effects; died stops the whole action.
+// C trap.c:adj_nonconjoined_pit().
 export async function triggerHeroTrap(trap: Trap | null | undefined, {
     finishTeleport = null,
     gotoLevel = null,

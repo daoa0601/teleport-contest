@@ -62,6 +62,7 @@ export async function applyArmorScrollEffect(
         heroDied: !!state.program_state?.gameover };
 }
 
+// C read.c:seffect_enchant_armor().
 async function enchantArmor(source: GameObject, state: PlayingGameState): Promise<Partial<ScrollEffectResult>> {
     const armor = someHeroArmor(state);
     if (!armor) {
@@ -171,6 +172,10 @@ async function hardenDragonScales(armor: GameObject, source: GameObject, state: 
     await adjustArmorLight(armor, oldLight, state);
 }
 
+// C read.c:seffect_destroy_armor().
+// C read.c:disintegrate_cursed_armor().
+// C do_wear.c:count_worn_armor().
+// C do_wear.c:any_worn_armor_ok().
 async function destroyArmor(source: GameObject, state: PlayingGameState): Promise<Partial<ScrollEffectResult>> {
     let armor = someHeroArmor(state);
     if (isConfused(state)) {

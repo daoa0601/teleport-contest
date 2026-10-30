@@ -214,6 +214,7 @@ function selectSlimeCure(monster: Monster, state: PlayingGameState, random: type
     return null;
 }
 
+// C muse.c:cures_sliming().
 function itemCuresSliming(monster: Monster, object: GameObject): boolean {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     if (object.otyp === SCR_FIRE) return !(flags & (M1_NOEYES | M1_NOHANDS)) && !!monster.mcansee;

@@ -24,6 +24,7 @@ function trapAtHero(state) {
     const hero = state.u;
     return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
+// C trap.c:uteetering_at_seen_pit().
 export function heroTeetersAtPit(state, trap) {
     return !!trap && is_pit(trap.ttyp) && !!trap.tseen
         && trap.tx === state.u.ux && trap.ty === state.u.uy
@@ -32,6 +33,7 @@ export function heroTeetersAtPit(state, trap) {
 export function heroEscapedShaft(trap) {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
+// C trap.c:uescaped_shaft().
 export function floorReachProblem(state = game, { checkPit = false } = {}) {
     const hero = state.u;
     if (hero.uswallow)

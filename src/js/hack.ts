@@ -626,6 +626,7 @@ async function finishLavaEffects({
     return { entered: true, moved: false, died: false, sank };
 }
 
+// C trap.c:sink_into_lava().
 export async function sinkHeroIntoLava({
     state = game,
     publish = plineWithContinuation,

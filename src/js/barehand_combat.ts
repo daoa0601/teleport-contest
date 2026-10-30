@@ -56,6 +56,7 @@ export function doublePunch(state: GameState = game): boolean {
 
 // twoHits is native hmd.twohits: 0 for a single attempt, otherwise its
 // one-based position. Only the first two attempts can use exposed rings.
+// C uhitm.c:hmon_hitmon_barehands().
 export function prepareHeroBarehandContact(
     monster: Monster, { state = game, twoHits = 0 }: BarehandContactOptions = {},
 ): BarehandContact {

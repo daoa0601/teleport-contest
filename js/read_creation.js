@@ -15,6 +15,7 @@ import { monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { isPoolAt } from './terrain_properties.js';
 import { couldsee } from './vision.js';
 const PM_STALKER = MONSTER_NAME.indexOf('stalker');
+// C read.c:create_particular().
 export async function createParticularMonster() {
     requirePlayingGame(game);
     let prompt = 'Create what kind of monster?';
@@ -38,6 +39,7 @@ export async function createParticularMonster() {
     await plineWithContinuation("That's enough tries!");
     return false;
 }
+// C read.c:create_particular_parse().
 function parseCreationRequest(text) {
     const explicitQuantity = /^(\d+) */u.exec(text);
     let quantity = explicitQuantity ? Number.parseInt(explicitQuantity[1] ?? '', 10)
@@ -94,6 +96,7 @@ function monsterChoice(name) {
         return { kind: 'species', species: 114, gender: 2 };
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;
 }
+// C read.c:create_particular_creation().
 async function createRequestedMonsters(request) {
     requirePlayingGame(game);
     const firstChoice = request.choice.kind === 'species' ? request.choice.species

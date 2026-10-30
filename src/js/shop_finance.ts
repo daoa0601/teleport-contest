@@ -10,6 +10,7 @@ import type { Shopkeeper } from './shop_types.js';
 import { SHOPBASE } from './const.js';
 import { SHOP_TYPES } from './shop_data.js';
 
+// C shk.c:shopper_financial_report().
 export async function reportShopFinances(): Promise<void> {
     const room = insideShopRoomAt(game, game.u.ux, game.u.uy);
     let current = room ? shopResident(room.roomno) : null;

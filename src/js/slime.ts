@@ -270,6 +270,7 @@ export async function slimeDialogue({
     await exerciseAttribute(A_DEX, false, state);
 }
 
+// C timeout.c:slimed_to_death().
 export async function advanceHeroSliming({
     state = game, publish = plineWithContinuation, transform, die,
 }: SlimeAdvanceOptions = {}): Promise<SlimeAdvanceResult> {

@@ -25,6 +25,7 @@ const WEB_TEARERS = new Set([
 const M1_ACID = 0x08000000;
 const M2_NASTY = 0x02000000;
 const S_GIANT = 34, S_DRAGON = 30;
+// C trap.c:mu_maybe_destroy_web().
 export async function maybeDestroyWeb(target, trap, { state = game, message = true, publish = plineWithContinuation } = {}) {
     const hero = target === state.u;
     const monster = !hero && 'mnum' in target ? target : null;

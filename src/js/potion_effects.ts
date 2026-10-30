@@ -38,6 +38,13 @@ import { heroIsPetrifying } from './stoning.js';
 import { applyPotionBodyEffect } from './potion_body_effects.js';
 import { applyPotionMentalEffect } from './potion_mental_effects.js';
 
+// C potion.c:peffect_speed().
+// C potion.c:peffect_invisibility().
+// C potion.c:peffect_object_detection().
+// C potion.c:peffect_healing().
+// C potion.c:peffect_extra_healing().
+// C potion.c:peffect_full_healing().
+// C potion.c:peffect_gain_energy().
 export async function applyPotionEffect(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<PotionEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -163,6 +170,7 @@ async function restoreAbility(source: GameObject, state: PlayingGameState) {
     }
 }
 
+// C potion.c:peffect_see_invisible().
 async function seeInvisible(source: GameObject, state: PlayingGameState) {
     const wasInvisible = heroIsInvisible(state) && !heroIsBlind(state);
     const permanenceChance = 10 - (hasInternalInvisibility(state) ? 3 : 0)
@@ -187,6 +195,7 @@ async function seeInvisible(source: GameObject, state: PlayingGameState) {
     return 1;
 }
 
+// C potion.c:peffect_monster_detection().
 async function monsterDetection(source: GameObject, state: PlayingGameState) {
     let unknown = 0, nothing = false;
     if (source.blessed) {

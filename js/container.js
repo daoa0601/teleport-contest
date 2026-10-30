@@ -257,6 +257,7 @@ async function chooseObjects(title, objects, useInventoryLetters) {
         returnCounts: true,
     });
 }
+// C mkobj.c:container_weight().
 function updateContainerWeights(container) {
     let current = container;
     const visited = new Set();
@@ -515,6 +516,7 @@ export async function putIntoContainer(container, object, state = game, count = 
         message,
     };
 }
+// C pickup.c:out_container().
 export async function takeFromContainer(container, object, state = game, count = -1, { resetJustPicked = false } = {}) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };

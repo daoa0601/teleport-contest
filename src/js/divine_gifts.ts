@@ -200,6 +200,7 @@ async function grantDivineProperty(): Promise<void> {
     await pline('"Use it wisely in my name!"');
 }
 
+// C pray.c:at_your_feet().
 export async function announceDivineGift(description: string): Promise<void> {
     requirePlayingGame(game);
     if (heroIsBlind(game)) description = 'Something';
@@ -263,6 +264,7 @@ async function giveSpell(): Promise<void> {
     }
 }
 
+// C pray.c:gcrownu().
 async function crownHero(): Promise<void> {
     requirePlayingGame(game);
     const hero = game.u;

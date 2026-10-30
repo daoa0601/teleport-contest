@@ -21,6 +21,7 @@ import type { InventoryClassification } from './inventory_prompt.js';
 const WEAPON_CLASS = 2, TOOL_CLASS = 6, POTION_CLASS = 8;
 const SPBOOK_CLASS = 10, WAND_CLASS = 11, COIN_CLASS = 12, GEM_CLASS = 13;
 
+// C apply.c:apply_ok().
 export function applySuggestion(
     object: GameObject | null | undefined, state: GameState = game,
 ): InventoryClassification {

@@ -81,6 +81,7 @@ export async function lootCommand(input: LootCommandInput): Promise<void> {
     } else await pline(`You don't find anything ${result.asked ? 'else ' : ''}${underfoot ? 'here' : 'there'} to loot.`);
 }
 
+// C pickup.c:container_at().
 async function lootFloorContainers(x: number, y: number,
     unlock: LootCommandInput['unlockContainer']): Promise<boolean> {
     const pile = requireGameLevel().objects[x]?.[y] ?? [];
@@ -144,6 +145,7 @@ async function lootFloorContainers(x: number, y: number,
     return true;
 }
 
+// C pickup.c:loot_mon().
 async function lootMonster(monster: Monster): Promise<{ asked: boolean; spentTime: boolean }> {
     let asked = false;
     let spentTime = false;

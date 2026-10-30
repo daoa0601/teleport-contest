@@ -458,6 +458,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
+// C zap.c:skiprange().
 function rockSkipRange(range) {
     const quarter = Math.trunc(range / 4);
     const start = range - (quarter > 0 ? rnd(quarter) : 0);

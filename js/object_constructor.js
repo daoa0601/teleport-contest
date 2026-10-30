@@ -13,6 +13,7 @@ const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     13, // gems
     17, // venom
 ]);
+// C mkobj.c:clear_dknown().
 export function createObjectBase(otyp, objectId, currentTurn) {
     const definition = getObjectDefinition(otyp);
     const oclass = definition.oclass;

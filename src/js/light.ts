@@ -700,6 +700,8 @@ async function finishBurnedObject(object: GameObject, state: GameState, { overdu
     return true;
 }
 
+// C timeout.c:see_lamp_flicker().
+// C timeout.c:lantern_message().
 async function announceLampBurn(
     object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
     state: GameState, owner: string,

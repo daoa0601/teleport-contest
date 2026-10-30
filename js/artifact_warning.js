@@ -10,6 +10,7 @@ import { heroIsBlind } from './senses.js';
 function glowStrength(count) {
     return count > 12 ? 3 : count > 4 ? 2 : count > 0 ? 1 : 0;
 }
+// C artifact.c:glow_verb().
 export function artifactGlowVerb(count, continuous = false) {
     const verbs = ['quiver', 'flicker', 'glimmer', 'gleam'];
     const verb = verbs[glowStrength(count)];
@@ -39,6 +40,7 @@ export async function setArtifactWarningWielded(object, active, state = game) {
     await see_monsters();
 }
 // The census owns count commits. -1 announces a sight change without recounting.
+// C artifact.c:Sting_effects().
 export async function artifactWarningFeedback(count, { beforeGlow = null } = {}) {
     const object = game.uwep;
     if (!object || !artifactWarningMask(object))
@@ -72,6 +74,7 @@ export async function artifactWarningFeedback(count, { beforeGlow = null } = {})
 }
 // C mkot_trap_warn(): warmth counts locations whose trap is not displayed,
 // including trapped doors and containers beneath other floor objects.
+// C artifact.c:count_surround_traps().
 export async function warnWithMasterKey(state = game) {
     const weapon = state.uwep;
     if (state.uarmg || artifactById(weapon?.oartifact, state)?.enumName !== 'MASTER_KEY_OF_THIEVERY') {

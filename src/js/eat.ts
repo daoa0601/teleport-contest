@@ -155,6 +155,7 @@ async function startFoodMeal(food: PreparedFoodObject, partlyEaten: boolean, sta
     state._occupation = { key: 'eat-food', text: meal.text };
 }
 
+// C eat.c:eatfood().
 export async function continueFoodMeal(_occupation: FoodOccupation, state: GameState = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -180,6 +181,8 @@ export async function continueFoodMeal(_occupation: FoodOccupation, state: GameS
     return !choked && !state.program_state.gameover;
 }
 
+// C eat.c:bite().
+// C eat.c:recalc_wt().
 async function takeFoodBite(state: PlayingGameState) {
     const meal = currentFoodMeal(state);
     if (meal.canchoke && state.u.uhunger >= 2000) {
@@ -209,6 +212,7 @@ async function takeFoodBite(state: PlayingGameState) {
     return false;
 }
 
+// C eat.c:done_eating().
 async function finishFoodMeal(state: PlayingGameState, showMessage: boolean) {
     const food = currentMealFood(currentFoodMeal(state));
     food.in_use = true;
@@ -258,6 +262,7 @@ function roundNutritionTime(value: number, divisor: number) {
     return quotient + Number(2 * (value % divisor) >= divisor);
 }
 
+// C eat.c:adj_victual_nutrition().
 function adjustedBiteNutrition(meal: FoodMeal, state: PlayingGameState) {
     let nutrition = -meal.nmod;
     const race = requireMonsterData(MONSTER_FLAGS2, heroSpecies(state));

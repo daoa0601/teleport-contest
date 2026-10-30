@@ -176,6 +176,7 @@ function heroBehindChokepoint(monster: Monster, state: PlayingGameState): boolea
         && (!isok(rightX, rightY) || !isAccessibleAt(rightX, rightY, state));
 }
 
+// C muse.c:mon_has_friends().
 function monsterHasFriends(monster: Monster, state: PlayingGameState): boolean {
     if (monster.mtame || monster.mpeaceful) return false;
     for (let dx = -1; dx <= 1; dx++) {
@@ -189,6 +190,7 @@ function monsterHasFriends(monster: Monster, state: PlayingGameState): boolean {
     return false;
 }
 
+// C muse.c:mon_likes_objpile_at().
 function monsterLikesObjectPileAt(
     monster: Monster, x: number, y: number, state: PlayingGameState,
 ): boolean {

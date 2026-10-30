@@ -397,6 +397,7 @@ function resistanceAttackApplies(artifact, defender, { hero, random, state }) {
     }
     return false;
 }
+// C artifact.c:spec_applies().
 function artifactAttackApplies(artifact, defender, { hero = false, random = rn2, state = game } = {}) {
     if (!defender || !artifact)
         return false;
@@ -462,6 +463,7 @@ export function artifactDoublesWeaponDamage(object, defender, { hero = false, ra
         artifactAttackApplies(artifact, defender, { hero, random, state }) &&
         artifact.attack.damageDie === 0);
 }
+// C artifact.c:artifact_light().
 export function artifactEmitsLight(object) {
     if (!object)
         return false;

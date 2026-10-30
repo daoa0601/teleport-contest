@@ -15,6 +15,7 @@ import { monsterPolymorphsWhenStoned, petrifyMonsterAttacker, } from './monster_
 import { rn2 } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
+// C mon.c:mm_displacement().
 export function monsterDisplacementFlags(aggressor, defender) {
     if (!monsterIsDisplacer(aggressor.mnum)
         || monsterIsDisplacer(defender.mnum)

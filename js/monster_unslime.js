@@ -192,6 +192,7 @@ function selectSlimeCure(monster, state, random) {
     }
     return null;
 }
+// C muse.c:cures_sliming().
 function itemCuresSliming(monster, object) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     if (object.otyp === SCR_FIRE)

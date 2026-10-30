@@ -72,6 +72,9 @@ export async function castSkilledElementalSpell(pseudo: GameObject, { state = ga
     return { targeted: true, heroDied: false };
 }
 
+// C spell.c:throwspell().
+// C spell.c:spell_aim_step().
+// C spell.c:can_center_spell_location().
 async function chooseSpellCenter(state: PlayingGameState) {
     if (state.u.uinwater) {
         await plineWithContinuation("You're joking!  In this weather?");
@@ -201,6 +204,7 @@ export async function castChainLightning({ state = game }: { state?: GameState }
     return { heroDied: false };
 }
 
+// C spell.c:propagate_chain_lightning().
 async function propagateLightning(queue: LightningStep[], painted: TemporaryMapEffect, zap: LightningStep, displayedBeam: number, state: PlayingGameState) {
     const dx = xdir[zap.direction], dy = ydir[zap.direction];
     if (dx === undefined || dy === undefined) throw new RangeError(`Invalid lightning direction ${zap.direction}`);

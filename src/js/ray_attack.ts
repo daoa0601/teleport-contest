@@ -249,6 +249,7 @@ export async function castNativeRay(nativeType: number, dice: number, direction:
     }
 }
 
+// C zap.c:zaptype().
 function normalizedRayType(type: number) {
     return type <= -30 ? -type - 30 : Math.abs(type);
 }

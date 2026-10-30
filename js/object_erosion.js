@@ -14,7 +14,7 @@ import { DWARVISH_CLOAK, OBJECT_PROPERTY, OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLO
 import { delobj } from './object_delete.js';
 import { verbForSubject } from './object_grammar.js';
 import { objectCombatName, ownedObjectAction } from './objnam.js';
-import { hasWornProperty } from './properties.js';
+import { hasCarriedProperty, hasWornProperty } from './properties.js';
 import { rn2, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
@@ -102,6 +102,7 @@ export async function damageObjectWithAcid(object, { state = game, publish = pli
         });
     }
 }
+// C trap.c:erode_obj().
 export async function erodeObject(object, kind, { state = game, publish = plineWithContinuation, random = rn2, luckRandom = rnl, verbose = false, grease = true, destroy = false, pay = false, displayName = null, position, } = {}) {
     if (!object)
         return 'nothing';
@@ -204,7 +205,7 @@ function inventoryResists(kind, state, random) {
     if (kind !== 'burn' && kind !== 'corrosion')
         return false;
     const property = kind === 'burn' ? 'fireResistance' : 'acidResistance';
-    if (hasWornProperty(property, state))
+    if (hasWornProperty(property, state) || hasCarriedProperty(property, null, state))
         return random(100) < 99;
     return kind === 'burn' && state.uarmc?.otyp === DWARVISH_CLOAK
         && random(100) < 90;

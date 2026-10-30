@@ -55,6 +55,7 @@ export async function punishHero(source = null, state = game) {
         await newsym(state.u.ux, state.u.uy);
     }
 }
+// C read.c:unpunish().
 export async function unpunishHero(state = game) {
     const chain = state.uchain || state.u.uchain;
     const ball = state.uball || state.u.uball;

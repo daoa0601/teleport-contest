@@ -29,6 +29,7 @@ const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     13, // GEM_CLASS
     17, // VENOM_CLASS
 ]);
+// C mkobj.c:clear_dknown().
 export function clearDescriptionKnowledge(object) {
     const isGlob = object.otyp >= GLOB_OF_GRAY_OOZE
         && object.otyp <= GLOB_OF_BLACK_PUDDING;
@@ -38,6 +39,7 @@ export function clearDescriptionKnowledge(object) {
         || !!OBJECT_MERGE[object.otyp];
     object.dknown = isGlob || !descriptionNeedsObservation;
 }
+// C mkobj.c:unknow_object().
 export function forgetObjectKnowledge(object) {
     clearDescriptionKnowledge(object);
     object.bknown = false;

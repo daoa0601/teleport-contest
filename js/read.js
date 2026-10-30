@@ -81,6 +81,7 @@ export async function doread(options = {}) {
         await gotoLevel(...deferred.destination);
     return finishRead(true);
 }
+// C read.c:read_ok().
 function classifyReadableObject(object) {
     if (!object)
         return GETOBJ_EXCLUDE;

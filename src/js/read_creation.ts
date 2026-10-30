@@ -37,6 +37,7 @@ interface CreationRequest {
 
 const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 
+// C read.c:create_particular().
 export async function createParticularMonster(): Promise<boolean> {
     requirePlayingGame(game);
     let prompt = 'Create what kind of monster?';
@@ -59,6 +60,7 @@ export async function createParticularMonster(): Promise<boolean> {
     return false;
 }
 
+// C read.c:create_particular_parse().
 function parseCreationRequest(text: string): CreationRequest | null {
     const explicitQuantity = /^(\d+) */u.exec(text);
     let quantity = explicitQuantity ? Number.parseInt(explicitQuantity[1] ?? '', 10)
@@ -110,6 +112,7 @@ function monsterChoice(name: string): MonsterChoice | null {
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;
 }
 
+// C read.c:create_particular_creation().
 async function createRequestedMonsters(request: CreationRequest): Promise<boolean> {
     requirePlayingGame(game);
     const firstChoice = request.choice.kind === 'species' ? request.choice.species

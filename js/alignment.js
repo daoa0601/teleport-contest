@@ -25,6 +25,7 @@ const HALLUCINATED_GODS = [
     'Yawgmoth', 'Morgoth', 'Cthulhu', 'the Ori', 'destiny',
     'your Friend the Computer',
 ];
+// C pray.c:halu_gname().
 export function hallucinatedDeityName(alignment, state = game, hallucinating = heroIsHallucinating(state)) {
     requireLiveGame(state);
     if (!hallucinating)

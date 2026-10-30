@@ -14,6 +14,7 @@ function heroIsHelpless(state) {
 function activeHitPointField(hero) {
     return Upolyd(hero) ? 'mh' : 'uhp';
 }
+// C hack.c:overexertion().
 export async function checkHeroAttackOverexertion(state = game) {
     requirePlayingGame(state);
     await getHungry();

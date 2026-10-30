@@ -54,6 +54,7 @@ async function chooseTeleportMode(): Promise<TeleportMode | null> {
     }
 }
 
+// C spell.c:tport_spell().
 async function withTeleportMode(mode: Exclude<TeleportMode, 'w'>, action: () => Promise<void>): Promise<void> {
     const hero = game.u;
     const teleporting = hero.teleporting;

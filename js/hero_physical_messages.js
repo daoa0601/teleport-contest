@@ -45,6 +45,7 @@ export async function reportHeroThrownMiss(monster, object, { state = game, publ
     else
         await publish(rayMissMessage(name, monster, { ...target, state }));
 }
+// C uhitm.c:hmon_hitmon_msg_hit().
 export async function showHeroPhysicalHit(monster, object, { state = game, publish = plineWithContinuation, mode, damage, destroyed, hitTextShown, target = { x: monster.mx, y: monster.my }, volley, }) {
     if (hitTextShown)
         return false;
@@ -74,6 +75,7 @@ export async function showHeroHarmlessStoneHit(monster, object, { state = game, 
     const name = captureHeroProjectileName(object, state, volley);
     await publish(rayHitMessage(name, monster, { ...target, state, ending: ' but does no harm.' }));
 }
+// C uhitm.c:hmon_hitmon_msg_silver().
 export async function showHeroPhysicalSilver(monster, { state = game, publish = plineWithContinuation, originalSpecies, savedObjectName, silverObject, silverRings, }) {
     const whom = searedTarget(monster, originalSpecies, state);
     if (!canSpotMonster(monster)) {
@@ -92,6 +94,7 @@ export async function showHeroPhysicalSilver(monster, { state = game, publish = 
     else
         await publish(`The silver sears ${whom}!`);
 }
+// C uhitm.c:hmon_hitmon_msg_lightobj().
 export async function showHeroPhysicalLight(monster, { state = game, publish = plineWithContinuation, originalSpecies, savedObjectName, }) {
     const whom = searedTarget(monster, originalSpecies, state);
     if (!canSpotMonster(monster))

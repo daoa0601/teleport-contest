@@ -105,6 +105,7 @@ function wornInSlot(monster, mask) {
 // C trap.c:wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
 const IRON = 11;
+// C trap.c:wearing_iron_shoes().
 export function monsterWearsIronShoes(monster) {
     const boots = wornInSlot(monster, W_ARMF);
     return !!boots && objectMaterial(boots) === IRON;

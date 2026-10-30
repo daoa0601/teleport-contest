@@ -3946,11 +3946,13 @@ async function doinvoke() {
     game.context.move = 1;
 }
 
+// C apply.c:rub_ok().
 function rubEligibleObject(object: GameObject | null | undefined) {
     return object?.otyp === OIL_LAMP || object?.otyp === MAGIC_LAMP
         || object?.otyp === BRASS_LANTERN || isGrayStone(object) || isRoyalJelly(object);
 }
 
+// C apply.c:jelly_ok().
 async function rubRoyalJelly(jelly: GameObject) {
     const used = await useRoyalJelly(jelly, async () => {
         const egg = await chooseInventoryObject(

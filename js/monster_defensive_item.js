@@ -545,6 +545,7 @@ function stairAt(state, x, y) {
             return stair;
     return null;
 }
+// C muse.c:m_use_healing().
 function healingChoice(monster) {
     const inventory = monster.minvent || monster.inventory || [];
     for (const [type, kind] of healingTypes) {

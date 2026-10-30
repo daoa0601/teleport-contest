@@ -15,6 +15,7 @@ export function heroHasRemovableSpeed(state = game) {
         || hasPermanentIntrinsicProperty('fast', state);
 }
 
+// C potion.c:speed_up().
 export async function speedUpHero(duration: number, state = game) {
     requireLiveGame(state);
     const hero = state.u;

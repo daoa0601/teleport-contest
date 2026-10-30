@@ -6,6 +6,7 @@ import { TOWEL } from './object_data.js';
 import { objectDescription } from './object_description.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectHasPersonalName, objectName, observeObjectForNaming } from './objnam.js';
+// C do_wear.c:on_msg().
 export async function objectWearMessage(object, state = game) {
     const mask = object.owornmask ?? 0;
     const verbose = state.flags.verbose !== false;

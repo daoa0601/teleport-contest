@@ -369,6 +369,8 @@ async function billDestroyedMaterial(object: GameObject, state: GameState): Prom
     else await stolenValue(object, object.ox, object.oy, false, { silent: false, state });
 }
 
+// C zap.c:polyuse().
+// C zap.c:create_polymon().
 export async function createPolymorphMonsterFromPile(
     x: number, y: number, { state = game }: { state?: GameState } = {},
 ): Promise<Monster | null> {

@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { stopHeroOccupation } from './occupation.js';
+// C timeout.c:fall_asleep().
 export async function putHeroToSleep(turns, { state = game, doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     // fall_asleep() begins with stop_occupation(), which reports the

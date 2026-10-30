@@ -111,6 +111,7 @@ function seesInvisible(state: GameState) {
     return !!state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
 }
 
+// C apply.c:beautiful().
 export function heroBeautyDescription(state: GameState = game) {
     const charisma = currentAttribute(A_CHA, state);
     if (charisma >= 25) return 'sublime';

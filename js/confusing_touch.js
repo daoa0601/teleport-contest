@@ -9,6 +9,7 @@ import { monsterResistsEffect } from './monster_resistance.js';
 import { makePlural } from './object_grammar.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
+// C uhitm.c:nohandglow().
 export async function confuseTouchedMonster(monster, { state = game } = {}) {
     requirePlayingGame(state);
     if (!state.u.umconf || monster.mconf)

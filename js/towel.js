@@ -91,6 +91,7 @@ export async function useTowel(object, { state = game } = {}) {
         await dryTowel(object, -1, { state, verbose: object === state.uwep });
     return result;
 }
+// C potion.c:make_glib().
 export function setSlipperyHands(turns, state = game) {
     // Native make_glib() redraws when the old and requested states agree.
     // Timeout expiry calls it after clearing the old timer.

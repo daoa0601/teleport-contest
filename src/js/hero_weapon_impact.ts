@@ -66,6 +66,8 @@ export interface HeroJoustImpact {
     weapon: GameObject | null;
 }
 
+// C uhitm.c:hmon_hitmon_jousting().
+// C uhitm.c:mhurtle_to_doom().
 export async function resolveHeroJoust(
     monster: Monster, weapon: GameObject,
     { damage, joust, state = game, publish = plineWithContinuation }: JoustImpactOptions,
@@ -109,6 +111,7 @@ interface PuddingImpactOptions {
     publish?: MessagePublisher;
 }
 
+// C uhitm.c:hmon_hitmon_splitmon().
 export async function tryHeroPuddingSplit(
     monster: Monster, weapon: GameObject | null,
     { handToHand, material, offMap, state = game, publish = plineWithContinuation }: PuddingImpactOptions,

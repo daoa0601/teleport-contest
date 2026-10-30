@@ -137,6 +137,7 @@ function prayerOutcome(alignment, trouble) {
         outcome = 'undead';
     return outcome;
 }
+// C pray.c:prayer_done().
 export async function finishPrayerOccupation(state = game) {
     requirePlayingGame(state);
     const alignment = state._prayerAlignment;
@@ -206,6 +207,7 @@ async function punishEarlyPrayer() {
     game.u.uluck = Math.max(LUCKMIN, (game.u.uluck || 0) - 3);
     await godsUpset(game.u.ualign.type);
 }
+// C pray.c:pleased().
 async function pleaseGod(alignment) {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -264,6 +266,7 @@ async function pleaseGod(alignment) {
     if (game.moves > 100000)
         hero.ublesscnt += Math.min(Math.trunc((game.moves - 100000) / 100), 32767 - hero.ublesscnt);
 }
+// C pray.c:water_prayer().
 async function changeAltarWater(bless) {
     const game = requireInitializedGame();
     const hero = game.u;
@@ -288,6 +291,7 @@ async function changeAltarWater(bless) {
     }
     return changed > 0;
 }
+// C pray.c:pray_revive().
 async function reviveAltarPet() {
     const game = requireInitializedGame();
     const hero = game.u;

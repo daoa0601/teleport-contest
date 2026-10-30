@@ -66,6 +66,7 @@ export async function revealAggravatingMonster(monster, state) {
 }
 // Return null when the selected item can still be used. An exploded wand
 // spends no action if its owner survives, but cancels the selected choice.
+// C muse.c:precheck().
 export async function prepareMonsterItemUse(monster, object, options) {
     const { state, random = rn2, publish = plineWithContinuation } = options;
     if (object.oclass === 8) {
@@ -116,6 +117,7 @@ export async function prepareMonsterItemUse(monster, object, options) {
     const backfire = await checkMonsterWandBackfire(monster, object, options);
     return backfire.exploded ? { nativeResult: backfire.nativeResult, heroDied: backfire.heroDied } : null;
 }
+// C muse.c:mzapwand().
 export async function presentMonsterWandUse(monster, object, { state, self = false, publish = plineWithContinuation, }) {
     if (object.spe < 1) {
         await impossible(`Mon zapping wand with ${object.spe} charges?`, { state });
@@ -140,6 +142,7 @@ export async function presentMonsterWandUse(monster, object, { state, self = fal
     }
     object.spe--;
 }
+// C muse.c:mplayhorn().
 export async function presentMonsterHornUse(monster, object, { state, self = false, publish = plineWithContinuation, }) {
     if (!canSeeMonster(monster)) {
         const message = formatHeardMessage(`a horn being played ${itemUseIsNearby(monster, state) ? 'nearby' : 'in the distance'}.`, state);
@@ -165,6 +168,7 @@ export async function presentMonsterHornUse(monster, object, { state, self = fal
     }
     object.spe--;
 }
+// C muse.c:mreadmsg().
 export async function presentMonsterScrollRead(monster, object, { state, publish = plineWithContinuation, }) {
     const visible = canSeeMonster(monster);
     if (!visible && heroIsDeaf(state))

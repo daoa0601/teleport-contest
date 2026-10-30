@@ -19,6 +19,7 @@ const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     17, // venom
 ]);
 
+// C mkobj.c:clear_dknown().
 export function createObjectBase(
     otyp: number, objectId: number, currentTurn: number,
 ): GameObject {

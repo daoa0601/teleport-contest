@@ -126,6 +126,7 @@ export async function castNativeRay(nativeType, dice, direction, { state = game,
         state.bhitpos = savedHitPosition;
     }
 }
+// C zap.c:zaptype().
 function normalizedRayType(type) {
     return type <= -30 ? -type - 30 : Math.abs(type);
 }

@@ -150,6 +150,7 @@ async function pushBoulders(sx: number, sy: number, dx: number, dy: number): Pro
     return true;
 }
 
+// C hack.c:could_move_onto_boulder().
 export function heroCouldMoveOntoBoulder(sx: number, sy: number, state: GameState = game): boolean {
     if (heroPassesWalls(state)) return true;
     if (state.u.usteed) return false;

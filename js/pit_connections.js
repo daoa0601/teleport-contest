@@ -25,6 +25,7 @@ export function connectPits(first, second) {
     second.conjoined = (second.conjoined || 0) | (1 << opposite);
     return changed;
 }
+// C trap.c:clear_conjoined_pits().
 export function clearPitConnections(trap, state = game) {
     if (!trap || !is_pit(trap.ttyp))
         return;

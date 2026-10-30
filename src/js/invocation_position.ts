@@ -4,6 +4,7 @@ import { Invocation_lev, VIBRATING_SQUARE } from './const.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 
+// C hack.c:invocation_pos().
 export function isInvocationPosition(x: number, y: number, state: GameState = game): boolean {
     return Invocation_lev(state.u?.uz, state)
         && !!state.level?.traps?.some(trap =>

@@ -1360,6 +1360,7 @@ function speciesIsUnique(mnum: number) {
     return !!((MONSTER_GENO[mnum] ?? 0) & 0x1000);
 }
 
+// C mon.c:mm_2way_aggression().
 function zombiePairIsAggressive(attacker: Monster, defender: Monster, state: PlayingGameState) {
     const heroInTower = insideWizardTower(state.u.ux, state.u.uy, state);
     if (
@@ -1374,6 +1375,7 @@ function zombiePairIsAggressive(attacker: Monster, defender: Monster, state: Pla
     return !speciesIsUnique(attacker.mnum) && !speciesIsUnique(defender.mnum);
 }
 
+// C mon.c:mm_aggression().
 function monsterAggressionFlags(attacker: Monster, defender: Monster, state: PlayingGameState) {
     if (attacker.mtame && defender.mtame) return 0;
     if (

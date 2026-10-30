@@ -8,6 +8,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { CORPSE } from './object_data.js';
 import { relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
+// C hack.c:revive_nasty().
 export async function reviveNastyAt(x, y, message = null, state = game) {
     requirePlayingGame(state);
     let revived = false;

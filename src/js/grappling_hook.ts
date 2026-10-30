@@ -2,9 +2,10 @@
 // C ref: apply.c use_grapple().
 
 import {
-    IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, isok,
+    IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, isok,
 } from './const.js';
 import { newsym, pline } from './display.js';
+import { commandResultCancelled } from './command_state.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
@@ -50,10 +51,12 @@ export interface GrapplingHookResult {
 const M2_STRONG = 0x04000000;
 
 function hookSkill(hook: GameObject, state: GameState) {
-    const skillType = Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
+    const skillType = state.u.twoweap
+        ? P_TWO_WEAPON_COMBAT : Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
     return ensureHeroSkills(state)?.[skillType]?.skill ?? 0;
 }
 
+// C apply.c:grapple_range().
 function hookRange(skill: number) {
     if (skill <= P_BASIC) return 4;
     if (skill === P_SKILLED) return 5;
@@ -76,6 +79,7 @@ function monsterObject(monster: Monster) {
     )}`;
 }
 
+// C apply.c:can_grapple_location().
 async function chooseTarget(hook: GameObject, state: GameState) {
     await pline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
@@ -148,6 +152,7 @@ async function damageHero(state: GameState) {
     return loseHeroHp(damage, 'a grappling hook', { state, publish: pline, killerFormat: KILLED_BY });
 }
 
+// C apply.c:use_grapple().
 export async function useGrapplingHook(hook: GameObject, {
     state = game,
     ensureWielded,
@@ -165,7 +170,10 @@ export async function useGrapplingHook(hook: GameObject, {
         return { spentTime: true, resume: true };
 
     const target = await chooseTarget(hook, state);
-    if (!target) return { spentTime: false };
+    if (!target) {
+        commandResultCancelled(state);
+        return { spentTime: false };
+    }
 
     const range = hookRange(hookSkill(hook, state));
     if (squaredDistanceFromHero(target.x, target.y, state) > range) {

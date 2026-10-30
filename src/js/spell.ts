@@ -52,6 +52,7 @@ export function knownSpell(otyp: number, state: GameState = game): 'unknown' | '
 }
 
 // C spell.c:force_learn_spell(). Divine teaching skips book study and conduct.
+// C spell.c:spell_idx().
 export function forceLearnSpell(otyp: number, state: GameState = game): string | null {
     if ([SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD].includes(otyp)
         || knownSpell(otyp, state) === 'fresh') return null;

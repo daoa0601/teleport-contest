@@ -117,6 +117,7 @@ function isImprovisedContact(weapon: GameObject, mode: HeroPhysicalAttackMode, s
             || !ammunitionMatchesLauncher(weapon, state.uwep || state.u.uwep)));
 }
 
+// C uhitm.c:hmon_hitmon_weapon_ranged().
 async function improvisedWeaponContact(
     monster: Monster, weapon: GameObject, mode: HeroPhysicalAttackMode,
     state: PlayingGameState, publish: MessagePublisher,
@@ -141,6 +142,7 @@ async function improvisedWeaponContact(
     };
 }
 
+// C uhitm.c:backstabbable().
 function canBackstab(monster: Monster): boolean {
     return !monsterIsAmorphous(monster) && !monsterIsWhirly(monster)
         && !monsterIsNoncorporeal(monster)

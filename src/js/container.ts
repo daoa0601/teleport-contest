@@ -322,6 +322,7 @@ async function chooseObjects(title: string, objects: readonly GameObject[], useI
     });
 }
 
+// C mkobj.c:container_weight().
 function updateContainerWeights(container: GameObject): void {
     let current: GameObject | null | undefined = container;
     const visited = new Set<GameObject>();
@@ -584,6 +585,7 @@ export async function putIntoContainer(
     };
 }
 
+// C pickup.c:out_container().
 export async function takeFromContainer(
     container: GameObject, object: GameObject, state: GameState = game, count = -1,
     { resetJustPicked = false }: { resetJustPicked?: boolean } = {},

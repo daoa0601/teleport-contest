@@ -4,6 +4,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levelTeleport } from './level_teleport.js';
 import { learnScroll } from './scroll_discovery.js';
 import { teleportHero } from './teleport.js';
+// C read.c:seffect_teleportation().
 export async function teleportScrollEffect(source, { state = game, gotoLevel, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

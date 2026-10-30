@@ -14,6 +14,7 @@ export function heroHasHalfSpellDamage(state: GameState = game) {
         || heroHasCarriedArtifactFlag('SPFX_HSPDAM', state));
 }
 
+// C zap.c:spell_damage_bonus().
 export function adjustSpellDamage(damage: number, state: GameState = game): number {
     const intelligence = currentAttribute(A_INT, state) ?? 10;
     const level = state.u?.ulevel ?? 1;

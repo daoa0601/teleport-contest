@@ -484,6 +484,7 @@ function stairAt(state: PlayingGameState, x: number, y: number): Stairway | null
     return null;
 }
 
+// C muse.c:m_use_healing().
 function healingChoice(monster: Monster): MonsterDefensiveChoice | null {
     const inventory = monster.minvent || monster.inventory || [];
     for (const [type, kind] of healingTypes) {

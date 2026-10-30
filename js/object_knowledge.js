@@ -132,6 +132,7 @@ export function recordObjectCall(otyp, name, state = game) {
         state._objectCallNames = {};
     state._objectCallNames[otyp] = name;
 }
+// C shk.c:record_price_quote().
 export function recordObjectPriceQuote(otyp, price, kind = 'buy', state = game) {
     if (!Number.isInteger(otyp) || otyp < 1 || !Number.isInteger(price) || price < 0)
         return;

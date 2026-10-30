@@ -297,6 +297,7 @@ export function randomUnqualifiedWishType(name: string): number | null {
     return null;
 }
 
+// C objnam.c:rnd_otyp_by_namedesc().
 export function randomTypeByDescription(name: string | null, oclass = 0, extraProbability = 1,
     state: GameState = game): number | null {
     if (!name) return null;
@@ -345,6 +346,7 @@ function invertedName(name: string): string | null {
     return index < 0 ? null : `${name.slice(index + 4)} ${name.slice(0, index)}`;
 }
 
+// C objnam.c:wishymatch().
 function wishMatches(request: string, canonical: string, invert: boolean): boolean {
     if (fuzzyEqual(request, canonical)) return true;
     if (invert) {

@@ -42,6 +42,7 @@ export async function probeMonster(monster, { state = game, onHead = true, x = m
     const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
     await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`, { state });
 }
+// C zap.c:probe_objchain().
 export function probeObjectChain(inventory, { state = game } = {}) {
     for (const object of inventory) {
         observeObject(object, state);

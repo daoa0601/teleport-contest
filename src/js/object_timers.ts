@@ -90,6 +90,7 @@ export function scheduleLevelTimer(
     return timer;
 }
 
+// C timeout.c:spot_stop_timers().
 export function stopLevelTimer(
     x: number, y: number, kind: LevelTimer['kind'], state: GameState = game,
 ): LevelTimer[] {

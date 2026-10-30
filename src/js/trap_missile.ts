@@ -7,6 +7,7 @@ import type { Trap } from './map_types.js';
 import { mksobj } from './mklev.js';
 import { objectWeight } from './weight.js';
 
+// C trap.c:t_missile().
 export async function makeTrapMissile(objectType: number, trap: Pick<Trap, 'tx' | 'ty'>): Promise<GameObject> {
     const missile = await mksobj(objectType, true, false);
     missile.quan = missile.quantity = 1;

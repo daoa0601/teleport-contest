@@ -60,6 +60,7 @@ const M2_NASTY = 0x02000000;
 const S_GIANT = 34,
     S_DRAGON = 30;
 
+// C trap.c:mu_maybe_destroy_web().
 export async function maybeDestroyWeb(
     target: Hero | Monster,
     trap: Trap,

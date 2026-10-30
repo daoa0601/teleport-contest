@@ -251,6 +251,7 @@ function floorBurnMessage(object: GameObject, destroyed: number, state: GameStat
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} burns.`;
 }
 
+// C zap.c:burn_floor_objects().
 export async function burnFloorObjectsAt(
     x: number,
     y: number,
@@ -293,6 +294,7 @@ export async function burnFloorObjectsAt(
     return burned;
 }
 
+// C zap.c:start_melt_ice_timeout().
 export function startMeltIceTimer(
     x: number, y: number, minimumTime = 0, state: GameState = game, random: typeof rn2 = rn2,
 ) {

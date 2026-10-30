@@ -30,6 +30,10 @@ import { blindnessBlocked, heroIsBlind, heroIsHallucinating } from './senses.js'
 import { makeBlinded } from './sight_change.js';
 import { surfaceName } from './terrain_name.js';
 
+// C potion.c:peffect_enlightenment().
+// C potion.c:peffect_confusion().
+// C potion.c:peffect_gain_ability().
+// C potion.c:peffect_blindness().
 export async function applyPotionMentalEffect(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<PartialPotionEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -109,6 +113,7 @@ function blessing(source: GameObject) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }
 
+// C potion.c:peffect_hallucination().
 async function hallucinationEffect(source: GameObject, state: PlayingGameState) {
     if (state.u.hallucinationResistance
         || propertyIsActive('hallucinationResistance', state)) return true;
@@ -125,6 +130,7 @@ async function hallucinationEffect(source: GameObject, state: PlayingGameState) 
     return nothing;
 }
 
+// C potion.c:peffect_booze().
 async function boozeEffect(source: GameObject, state: PlayingGameState) {
     const dilution = source.odiluted ? 'watered down ' : '';
     const taste = heroIsHallucinating(state) ? 'dandelion wine' : 'liquid fire';
@@ -146,6 +152,7 @@ async function boozeEffect(source: GameObject, state: PlayingGameState) {
     }
 }
 
+// C potion.c:peffect_paralysis().
 async function paralysisEffect(source: GameObject, state: PlayingGameState) {
     if (heroHasFreeAction(state)) {
         await pline('You stiffen momentarily.');
@@ -167,6 +174,7 @@ async function paralysisEffect(source: GameObject, state: PlayingGameState) {
     await exerciseAttribute(A_DEX, false, state);
 }
 
+// C potion.c:peffect_sleeping().
 async function sleepingEffect(source: GameObject, state: PlayingGameState) {
     if (state.u.sleepResistance
         || propertyIsActive('sleepResistance', state) || heroHasFreeAction(state)) {

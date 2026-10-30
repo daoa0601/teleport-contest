@@ -142,6 +142,7 @@ export async function applyOrdinaryFoodFirstBite(food: GameObject, { state = gam
     return mealResult(state);
 }
 
+// C eat.c:fpostfx().
 export async function applyOrdinaryFoodPostEffects(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<FoodEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);

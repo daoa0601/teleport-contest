@@ -38,6 +38,7 @@ function upStairwayAt(x: number, y: number, state: GameState): Stairway | null {
     return stairs?.up ? stairs : null;
 }
 
+// C potion.c:peffect_levitation().
 export async function applyLevitationPotion(
     potion: GameObject,
     { state = game, publish = plineWithContinuation }: {

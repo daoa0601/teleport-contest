@@ -2,6 +2,7 @@
 // persisted position; checking coordinates alone could match another level.
 import { Invocation_lev, VIBRATING_SQUARE } from './const.js';
 import { game } from './gstate.js';
+// C hack.c:invocation_pos().
 export function isInvocationPosition(x, y, state = game) {
     return Invocation_lev(state.u?.uz, state)
         && !!state.level?.traps?.some(trap => trap.ttyp === VIBRATING_SQUARE && trap.tx === x && trap.ty === y);

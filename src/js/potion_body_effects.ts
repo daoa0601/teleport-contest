@@ -32,6 +32,9 @@ import { fixHeroPetrification } from './stoning.js';
 import { ceilingName } from './terrain_name.js';
 import { applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy } from './were.js';
 
+// C potion.c:peffect_water().
+// C potion.c:peffect_acid().
+// C potion.c:peffect_gain_level().
 export async function applyPotionBodyEffect(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<PartialPotionEffectResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -125,6 +128,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// C potion.c:peffect_sickness().
 async function drinkSickness(source: GameObject, state: PlayingGameState) {
     const hero = state.u;
     await plineWithContinuation('Yecch!  This stuff tastes like poison.');
@@ -162,6 +166,7 @@ async function drinkSickness(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// C potion.c:peffect_oil().
 async function drinkOil(source: GameObject, state: PlayingGameState) {
     let good = false;
     if (source.lamplit) {
@@ -196,6 +201,7 @@ async function drinkAcid(source: GameObject, state: PlayingGameState) {
     return !!state.program_state.gameover;
 }
 
+// C potion.c:peffect_polymorph().
 async function drinkPolymorph(source: GameObject, state: PlayingGameState) {
     await plineWithContinuation(formatFeltMessage(`a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`, state));
     if (heroIsUnchanging(state)) return false;

@@ -27,6 +27,7 @@ const SPELL_CATEGORIES: Readonly<Partial<Record<number, SpellCategory>>> = {
     [P_MATTER_SPELL]: 'matter',
 };
 
+// C spell.c:spelltypemnemonic().
 export function spellCategory(otyp: number, state: GameState = game): SpellCategory | undefined {
     return SPELL_CATEGORIES[spellSkillType(otyp, state)];
 }

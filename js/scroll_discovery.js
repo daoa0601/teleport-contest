@@ -5,6 +5,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { OBJECT_INITIAL_KNOWN } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 const SPBOOK_CLASS = 10;
+// C read.c:learnscrolltyp().
 export function learnScrollType(otyp, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

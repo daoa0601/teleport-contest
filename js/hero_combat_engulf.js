@@ -261,6 +261,7 @@ async function engulfDamage(defender, type, damage, state, { publish, random, ro
     }
     return damage;
 }
+// C uhitm.c:start_engulf().
 async function startHeroEngulfDisplay(defender, state, publish) {
     const heroBody = { mnum: heroSpecies(state) };
     const digest = monsterDigests(heroBody);
@@ -275,6 +276,7 @@ async function startHeroEngulfDisplay(defender, state, publish) {
     await state.animationFrame?.();
     return { x: defender.mx, y: defender.my };
 }
+// C uhitm.c:end_engulf().
 async function endHeroEngulfDisplay(display, state) {
     if (heroIsInvisible(state))
         return;

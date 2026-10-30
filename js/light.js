@@ -615,6 +615,8 @@ async function finishBurnedObject(object, state, { overdue = false } = {}) {
         await maybeUnhideAt(floor.x, floor.y, state);
     return true;
 }
+// C timeout.c:see_lamp_flicker().
+// C timeout.c:lantern_message().
 async function announceLampBurn(object, threshold, visible, byTouch, state, owner) {
     const floor = object.where === 'floor';
     const lantern = object.otyp === BRASS_LANTERN;

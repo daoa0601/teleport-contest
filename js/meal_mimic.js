@@ -47,6 +47,7 @@ export async function beginMealMimicry(turns, { state = game } = {}) {
     await flush_screen(1);
     await flushPendingTopline();
 }
+// C eat.c:eatmdone().
 export async function finishMealMimicry(state = game) {
     if (state._helplessDoneMessage === state._mimicMealMessage)
         state._helplessDoneMessage = null;
@@ -56,6 +57,7 @@ export async function finishMealMimicry(state = game) {
         await newsym(state.u.ux, state.u.uy);
     }
 }
+// C eat.c:eatmupdate().
 export async function updateMealMimicry(state = game) {
     if (!state._mimicMealMessage || state._helplessDoneMessage !== state._mimicMealMessage
         || state.u.m_ap_type !== M_AP_OBJECT)

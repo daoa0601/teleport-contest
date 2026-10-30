@@ -135,6 +135,7 @@ function intrinsicMessage(property: CorpseIntrinsic, state: GameState): string {
     }
 }
 
+// C eat.c:eye_of_newt_buzz().
 export async function corpseEnergyBuzz({ state = game }: CorpseIntrinsicOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

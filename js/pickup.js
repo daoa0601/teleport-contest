@@ -470,6 +470,7 @@ function pickupSourceAtHero() {
         objects: game.level?.objects?.[x]?.[y] || [],
     };
 }
+// C pickup.c:all_but_uchain().
 function pickupObjects(source) {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }

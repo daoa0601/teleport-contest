@@ -164,6 +164,7 @@ function monsterAt(state: GameState, x: number, y: number): Monster | null {
         && monster.mx === x && monster.my === y) || null;
 }
 
+// C trap.c:t_at().
 function trapAt(state: GameState, x: number, y: number): Trap | null {
     return state.level?.traps?.find(trap =>
         trap.tx === x && trap.ty === y) || null;
