@@ -410,8 +410,8 @@ export const TUTORIAL = 8;
 // These values come from the pinned source tree's generated date.h.
 export const BUILD_DATE = "Sun May  3 01:27:17 2026";
 export const BUILD_TIME = (1777786037);
-// nomakedefs.copyright_banner_c — build-specific version string
-export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built Sun May  3 01:27:17 2026.";
+// date.c:populate_nomakedefs() pins the recorder's runtime build banner.
+export const COPYRIGHT_BANNER_C = "         Version 5.0.0 MacOS, built May  2 2026 12:00:00.";
 // AUTO-IMPORT-BEGIN: CONST_ALL_HEADERS
 // Auto-imported header constants (pre-symbol pass)
 // Source dir: nethack-c/upstream/include
