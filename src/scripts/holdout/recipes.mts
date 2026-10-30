@@ -46,6 +46,8 @@ export interface Recipe {
     roles: string[] | null;
     /** Restricts the hero's gender when a mechanic depends on it. */
     genders?: string[];
+    /** Startup selection leaves the character facets unset or random. */
+    characterSelection?: 'preset' | 'startup';
     options: string[];
     description: string;
     success: string[];
