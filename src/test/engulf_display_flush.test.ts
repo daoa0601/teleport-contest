@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { performMonsterTurn } from '../js/allmain.js';
+import { IRONBARS, MM_ANGRY, NO_MINVENT } from '../js/const.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { placeMonsterOnMap } from '../js/monster_location.js';
+import { initRng } from '../js/rng.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
+
+void test('an engulf attempt draws pending monster movement and warnings even when iron bars prevent swallowing', async () => {
+    const level = await freshObjectRoom({ hero: { warning: true } });
+    requirePlayingGame(game);
+    const vortex = await createMonsterAt('fire vortex', 11, 10, MM_ANGRY | NO_MINVENT);
+    vortex.msleeping = 0;
+    vortex.m_lev = 12;
+    level.requireAt(vortex.mx, vortex.my).typ = IRONBARS;
+    const warned = await createMonsterAt('minotaur', 13, 10, MM_ANGRY | NO_MINVENT);
+    warned.m_lev = 8;
+    warned.minvis = true;
+    await newsym(13, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(12, 11).ch, '2');
+
+    await placeMonsterOnMap(warned, 14, 10);
+    await newsym(13, 10);
+    await newsym(14, 10);
+    initRng(1n);
+
+    await performMonsterTurn(vortex, game);
+
+    assert.equal(game.u.uswallow ?? 0, 0, 'the vortex cannot engulf the hero from iron bars');
+    assert.equal(requireScreenCell(12, 11).ch, '.', 'the departed monster leaves floor behind');
+    assert.equal(requireScreenCell(13, 11).ch, '2', 'the warning follows the unseen monster');
+});

@@ -3,7 +3,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
-import { bot } from './display.js';
+import { bot, flush_screen } from './display.js';
 import { noticeMonster } from './monster_notices.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
@@ -5581,6 +5581,9 @@ async function beginHeroAttackSlot(
     // once, including harmless touches and unsupported special effects.
     let damage = 0;
     if (hit) {
+        // C mattacku() displays pending movement before gulpmu(), even
+        // when admission later fails silently (for example, at iron bars).
+        if (attackType === AT_ENGL && state === game) await flush_screen(1);
         damage = rollDice(dice, sides);
         calls.push(`d(${dice},${sides})`);
         if (attackType !== AT_ENGL
