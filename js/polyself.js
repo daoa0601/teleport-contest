@@ -1116,8 +1116,10 @@ function recordRenewedHumanGender(oldGender) {
     const rank = role.title[experienceRankIndex(game.u.ulevel)];
     if (!rank)
         throw new Error('Renewed hero has no experience rank.');
-    const oldSex = oldGender === 1 ? 'f' : 'm';
-    const newSex = newGender === 1 ? 'f' : 'm';
+    // C livelog_newform() tests the gender for truth, so a neuter form's
+    // poly_gender() of 2 selects the female role and rank names.
+    const oldSex = oldGender !== 0 ? 'f' : 'm';
+    const newSex = newGender !== 0 ? 'f' : 'm';
     const oldRole = role.name[oldSex] || role.name.m;
     const newRole = role.name[newSex] || role.name.m;
     const oldRank = rank[oldSex] || rank.m;
