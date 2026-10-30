@@ -1143,9 +1143,9 @@ export async function setVanqOrder(forVanquished) {
 }
 // C yn_function(): the answer set is shown as "[ynq]"; answers hidden
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
-async function ynQuestion(question, visible, defquery, { hiddenAll = false } = {}) {
+async function ynQuestion(question, visible, defquery, { hiddenAll = false, menuable = false } = {}) {
     const choices = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
-    return await promptChoice(question, choices, defquery, { visibleChoices: visible });
+    return await promptChoice(question, choices, defquery, { visibleChoices: visible, menuable });
 }
 // C end.c:disclose().  Shared by death, quitting, escape, and ascension.
 // Each category consults the end_disclose option first: it either fixes
@@ -1175,7 +1175,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
                 ? `Do you want to see what you had when you ${deathVerb === 'quit' ? 'quit' : 'died'}?`
                 : 'Do you want your possessions identified?';
             const { ask, defquery } = shouldQueryDiscloseOption('i');
-            possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
+            possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery, { menuable: true })
                 : defquery;
         }
         if (possessionAnswer === 'y') {
@@ -1189,7 +1189,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     if (!game.program_state.stopprint) {
         const { ask, defquery } = shouldQueryDiscloseOption('a');
         const attributes = ask
-            ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery)
+            ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery, { menuable: true })
             : defquery;
         if (attributes === 'y')
             await showFinalAttributes({ final: survived ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD, killer });
@@ -1229,7 +1229,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
         const question = 'Do you want to see your conduct'
             + (achievements > 0 ? ' and achievements' : '') + '?';
         const conduct = ask
-            ? await ynQuestion(question, 'ynq', defquery) : defquery;
+            ? await ynQuestion(question, 'ynq', defquery, { menuable: true }) : defquery;
         if (conduct === 'y')
             await showDisclosureOverlay(finalConductLines());
         if (conduct === 'q')
@@ -1238,7 +1238,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     if (!game.program_state.stopprint) {
         const { ask, defquery } = shouldQueryDiscloseOption('o');
         const overview = ask
-            ? await ynQuestion('Do you want to see the dungeon overview?', 'ynq', defquery)
+            ? await ynQuestion('Do you want to see the dungeon overview?', 'ynq', defquery, { menuable: true })
             : defquery;
         if (overview === 'y') {
             // C end.c passes show_overview((how >= PANICKED) ? 1 : 2, how):
@@ -1379,7 +1379,7 @@ function fixupDeath(how) {
 }
 export async function doquit() {
     const abandonTutorial = !!game._tutorialActive
-        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n') === 'y';
+        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n', { menuable: true }) === 'y';
     const answer = !abandonTutorial && await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?');
     if (!answer) {
         // C end.c:done2() clears the answered question without a docrt,
@@ -1403,7 +1403,7 @@ export async function doquit() {
         return;
     }
     if (game.flags.debug) {
-        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q');
+        const dump = await promptChoice('Dump core?', ['y', 'n', 'q'], 'q', { menuable: true });
         if (dump === 'y') {
             game.program_state.windows_exited = true;
             game.program_state.gameover = true;

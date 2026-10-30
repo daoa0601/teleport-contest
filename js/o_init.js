@@ -350,7 +350,7 @@ export async function doclassdisco() {
     }
     if (symbol === 'a') {
         if (game.flags.debug
-            && (await yn_function('Dump information about all artifacts?', 'yn', 'n')).answer === 'y')
+            && (await yn_function('Dump information about all artifacts?', 'yn', 'n', true, { menuable: true })).answer === 'y')
             await showDiscoveries([discoveryHeading('Artifacts'), ...artifactInfoLines()]);
         else if (artifacts.length)
             await showDiscoveries([discoveryHeading('Artifacts'), ...artifacts]);

@@ -52,7 +52,7 @@ void test('query menus include all and quit for a repeated item decision', async
 void test('a hand query offers right and left without changing the last numeric answer', async () => {
     const input = enableQueryMenu();
     game._ynNumber = 7n;
-    const answer = yn_function('Which ring-finger, Right or Left?', 'rl');
+    const answer = yn_function('Which ring-finger, Right or Left?', 'rl', '', true, { menuable: true });
     try {
         await input.waitUntilBlocked();
         assert.match(screen(), /r - Right/);

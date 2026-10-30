@@ -31,7 +31,7 @@ export function heroCanSpinWeb(state = game) {
     return webMaker(heroMonsterForm(state));
 }
 export async function chooseSpiderAbility() {
-    const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q');
+    const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q', true, { menuable: true });
     return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
 }
 function trapAtHero(state) {

@@ -250,7 +250,8 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
                 prefix: 'Pick up ', suffix: '?', fallback: 'something',
                 format: async (item, state) => (await objectDescription(item, { state })), shortFormat: simpleObjectNameWithArticle,
             });
-            const response = await yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
+            const response = await yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y', true,
+                { menuable: amount < 2 });
             if (response.answer === 'q') break;
             if (response.answer === 'n' || response.answer === '#' && !response.count) continue;
             if (response.answer === 'a') {

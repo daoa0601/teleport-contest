@@ -5811,7 +5811,7 @@ async function putOnAccessoryObject(object) {
         // replaced by the NUL default; a live question keeps asking until
         // 'r', 'l', or a quit key answers it, and only that final answer
         // is recorded into CQ_REPEAT for the next do-again.
-        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`, 'rl', '', true);
+        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`, 'rl', '', true, { menuable: true });
         if (answer !== 'r' && answer !== 'l') {
             game.context.move = 0;
             return;
