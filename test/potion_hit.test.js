@@ -1,9 +1,10 @@
 import { roles } from '../js/roles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL, LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED, POT_INVISIBILITY, POT_WATER, SPEED_BOOTS, } from '../js/object_data.js';
+import { POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL, LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED, POT_INVISIBILITY, POT_WATER, RIN_FREE_ACTION, SPEED_BOOTS, } from '../js/object_data.js';
 import { applySupportedPotionVapor, hitMonsterWithSupportedPotion, } from '../js/potion_hit.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
@@ -972,8 +973,9 @@ void test('paralysis vapor identifies an unknown type instead of asking to call 
     assert.equal(game._objectCallNames?.[POT_PARALYSIS], undefined);
 });
 void test('free action converts paralysis vapor into a momentary stiffen', async () => {
-    freshPotionState({ freeAction: true });
+    freshPotionState();
     requirePlayingGame(game);
+    await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
     const messages = [];
     const potion = await potionObject(POT_PARALYSIS);
     initRng(3002n);

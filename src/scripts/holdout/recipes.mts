@@ -25,6 +25,7 @@ import { ROUND22_RECIPES, validateRound22Recipe } from './round22-recipes.mjs';
 import { ROUND24_RECIPES, validateRound24Recipe } from './round24-recipes.mjs';
 import { ROUND25_RECIPES, validateRound25Recipe } from './round25-recipes.mjs';
 import { ROUND26_RECIPES, validateRound26Recipe } from './round26-recipes.mjs';
+import { ROUND27_RECIPES, validateRound27Recipe } from './round27-recipes.mjs';
 import { ROUND23_RECIPES, validateRound23Recipe } from './round23-recipes.mjs';
 export interface Character {
     role: string;
@@ -54,8 +55,10 @@ export interface Recipe {
     genders?: string[];
     /** Fixed native date ('YYYYMMDDHHMMSS') when a mechanic depends on it. */
     datetime?: string;
-    /** Startup selection leaves the character facets unset or random. */
-    characterSelection?: 'preset' | 'startup';
+    /** Ask whether to enter the tutorial instead of skipping that prompt. */
+    tutorial?: 'prompt';
+    /** Facets chosen at startup; the other facets use the requested character. */
+    characterSelection?: readonly (keyof Character)[];
     options: string[];
     description: string;
     success: string[];
@@ -193,16 +196,22 @@ export function isLegalCharacter(character: unknown): character is Character {
 
 const BASELINE_OPTIONS = ['!legacy', '!tutorial', '!news', 'time', 'symset:DECgraphics'];
 
-function buildNethackrc({ character, playerName, extraOptions }: { character: Character; playerName: string; extraOptions: string[] }) {
+function buildNethackrc({ character, playerName, extraOptions, tutorialPrompt, startupFacets }: {
+    character: Character;
+    playerName: string;
+    extraOptions: string[];
+    tutorialPrompt: boolean;
+    startupFacets: readonly (keyof Character)[];
+}) {
+    const facets = ['role', 'race', 'gender', 'align'] satisfies (keyof Character)[];
     const head = [
         `name:${playerName}`,
-        `role:${character.role}`,
-        `race:${character.race}`,
-        `gender:${character.gender}`,
-        `align:${character.align}`,
+        ...facets.filter(facet => !startupFacets.includes(facet))
+            .map(facet => `${facet}:${character[facet]}`),
     ];
     const lines = [`OPTIONS=${head.join(',')}`];
-    lines.push(`OPTIONS=${BASELINE_OPTIONS.join(',')}`);
+    const baseline = BASELINE_OPTIONS.filter(option => option !== '!tutorial' || !tutorialPrompt);
+    lines.push(`OPTIONS=${baseline.join(',')}`);
     for (const opt of extraOptions) lines.push(`OPTIONS=${opt}`);
     return `${lines.join('\n')}\n`;
 }
@@ -252,6 +261,8 @@ export function makeRecipe(recipeName: string, {
     const rc = (overrides: string[] = []) => buildNethackrc({
         character,
         playerName: name,
+        tutorialPrompt: recipe.tutorial === 'prompt',
+        startupFacets: recipe.characterSelection ?? [],
         extraOptions: [...userOptions, ...(recipe.options ?? []), ...overrides],
     });
 
@@ -543,6 +554,7 @@ addRecipes(ROUND23_RECIPES);
 addRecipes(ROUND24_RECIPES);
 addRecipes(ROUND25_RECIPES);
 addRecipes(ROUND26_RECIPES);
+addRecipes(ROUND27_RECIPES);
 export { RECIPES };
 
 export const RECIPE_NAMES = Object.keys(RECIPES);
@@ -901,4 +913,8 @@ for (const name of Object.keys(ROUND25_RECIPES)) {
 
 for (const name of Object.keys(ROUND26_RECIPES)) {
     VALIDATORS[name] = recording => validateRound26Recipe(name, recording);
+}
+
+for (const name of Object.keys(ROUND27_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound27Recipe(name, recording);
 }

@@ -20,7 +20,7 @@ import {
 import { getLine } from './query.js';
 import { rn2 } from './rng.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { showTextPages } from './windows.js';
+import { showTextWindow } from './windows.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,
@@ -61,7 +61,7 @@ async function showWishHelp(triesLeft: number): Promise<void> {
             '(Suppress this assistance with !cmdassist in your config file.)',
         );
     }
-    await showTextPages([{ lines, cursor: [0, lines.length - 1] }]);
+    await showTextWindow(lines);
 }
 
 export async function makeWish(): Promise<void> {

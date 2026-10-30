@@ -2,6 +2,7 @@
 // C refs: polyself.c set_uasmon()/polysense(), mondata.c mon_hates_silver().
 
 import { Upolyd } from './const.js';
+import { reassessStatusFields } from './display.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -119,6 +120,8 @@ export function setHeroSpecies(mnum: number, state: GameState = game) {
     syncHeroInvisibility(state);
     refreshMovementProperties(state);
     setFormSenses(mnum, state);
+    // set_uasmon() reassesses status fields when the hero's body changes.
+    reassessStatusFields(state);
     state.were_changes = 0;
 }
 

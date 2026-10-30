@@ -4,6 +4,7 @@ import { floorObjects } from './support/level-state.js';
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { A_WIS, MONSEEN_INFRAVIS, MONSEEN_NORMAL, NO_MINVENT, W_AMUL, W_ARMS } from '../js/const.js';
 import { speakArtifact } from '../js/artifact_speech.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
@@ -11,8 +12,8 @@ import { howMonsterSeen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { useMirror } from '../js/mirror.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, MIRROR, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
-import { grantIntrinsicProperty } from '../js/properties.js';
+import { AMULET_OF_LIFE_SAVING, MIRROR, RIN_FREE_ACTION, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
+import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -55,14 +56,28 @@ void test('a floating-eye form freezes itself, while free action prevents paraly
         await freshObjectRoom();
         requirePlayingGame(game);
         const mirror = await addInventoryObject(MIRROR);
-        installPolymorphedHero('floating eye');
         if (freeAction)
-            grantIntrinsicProperty('freeAction', 'outside', game);
+            await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
+        installPolymorphedHero('floating eye');
         await reflect(mirror);
         assert.equal((game._helplessTurns || 0) > 0, !freeAction);
         assert.match(game._pending_message, freeAction ? /stiffen momentarily/ : /frozen yourself/);
         if (!freeAction)
             assert.equal(game._helplessDoneMessage, null);
+    }
+});
+void test('intrinsic free action and wizard timeouts do not protect a floating eye from its reflection', async () => {
+    for (const source of ['intrinsic', 'timeout']) {
+        await freshObjectRoom();
+        const mirror = await addInventoryObject(MIRROR);
+        installPolymorphedHero('floating eye');
+        if (source === 'intrinsic')
+            grantIntrinsicProperty('freeAction', 'outside', game);
+        else
+            setPropertyTimeout('freeAction', 20, game);
+        await reflect(mirror);
+        assert.ok((game._helplessTurns ?? 0) > 0, `${source} must not prevent self-paralysis`);
+        assert.match(game._pending_message, /frozen yourself/);
     }
 });
 void test('an umber-hulk form confuses itself and a vampire has no reflection', async () => {

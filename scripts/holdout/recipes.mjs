@@ -24,6 +24,7 @@ import { ROUND22_RECIPES, validateRound22Recipe } from './round22-recipes.mjs';
 import { ROUND24_RECIPES, validateRound24Recipe } from './round24-recipes.mjs';
 import { ROUND25_RECIPES, validateRound25Recipe } from './round25-recipes.mjs';
 import { ROUND26_RECIPES, validateRound26Recipe } from './round26-recipes.mjs';
+import { ROUND27_RECIPES, validateRound27Recipe } from './round27-recipes.mjs';
 import { ROUND23_RECIPES, validateRound23Recipe } from './round23-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
@@ -137,16 +138,16 @@ export function isLegalCharacter(character) {
 // Skeleton construction helpers
 // ---------------------------------------------------------------------------
 const BASELINE_OPTIONS = ['!legacy', '!tutorial', '!news', 'time', 'symset:DECgraphics'];
-function buildNethackrc({ character, playerName, extraOptions }) {
+function buildNethackrc({ character, playerName, extraOptions, tutorialPrompt, startupFacets }) {
+    const facets = ['role', 'race', 'gender', 'align'];
     const head = [
         `name:${playerName}`,
-        `role:${character.role}`,
-        `race:${character.race}`,
-        `gender:${character.gender}`,
-        `align:${character.align}`,
+        ...facets.filter(facet => !startupFacets.includes(facet))
+            .map(facet => `${facet}:${character[facet]}`),
     ];
     const lines = [`OPTIONS=${head.join(',')}`];
-    lines.push(`OPTIONS=${BASELINE_OPTIONS.join(',')}`);
+    const baseline = BASELINE_OPTIONS.filter(option => option !== '!tutorial' || !tutorialPrompt);
+    lines.push(`OPTIONS=${baseline.join(',')}`);
     for (const opt of extraOptions)
         lines.push(`OPTIONS=${opt}`);
     return `${lines.join('\n')}\n`;
@@ -190,6 +191,8 @@ export function makeRecipe(recipeName, { seed, datetime, character, options = []
     const rc = (overrides = []) => buildNethackrc({
         character,
         playerName: name,
+        tutorialPrompt: recipe.tutorial === 'prompt',
+        startupFacets: recipe.characterSelection ?? [],
         extraOptions: [...userOptions, ...(recipe.options ?? []), ...overrides],
     });
     const segments = recipe.build({ seed, datetime: recipe.datetime ?? datetime, rc, character }, recipeName === 'depth-tour' ? normalizeTargets(targets) : undefined);
@@ -458,6 +461,7 @@ addRecipes(ROUND23_RECIPES);
 addRecipes(ROUND24_RECIPES);
 addRecipes(ROUND25_RECIPES);
 addRecipes(ROUND26_RECIPES);
+addRecipes(ROUND27_RECIPES);
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -761,5 +765,8 @@ for (const name of Object.keys(ROUND25_RECIPES)) {
 }
 for (const name of Object.keys(ROUND26_RECIPES)) {
     VALIDATORS[name] = recording => validateRound26Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND27_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound27Recipe(name, recording);
 }
 //# sourceMappingURL=recipes.mjs.map

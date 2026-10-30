@@ -4,6 +4,7 @@ import type { Monster } from '../js/monster_types.js';
 import type { InitializedHero } from '../js/hero_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { wearHeroAccessory } from '../js/accessory.js';
 
 import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -11,7 +12,7 @@ import {
     POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL,
     LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED,
-    POT_INVISIBILITY, POT_WATER, SPEED_BOOTS,
+    POT_INVISIBILITY, POT_WATER, RIN_FREE_ACTION, SPEED_BOOTS,
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithSupportedPotion,
@@ -1101,8 +1102,9 @@ void test('paralysis vapor identifies an unknown type instead of asking to call 
 
 void test('free action converts paralysis vapor into a momentary stiffen',
     async () => {
-        freshPotionState({ freeAction: true });
+        freshPotionState();
         requirePlayingGame(game);
+        await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
         const messages: string[] = [];
 
         const potion = await potionObject(POT_PARALYSIS);

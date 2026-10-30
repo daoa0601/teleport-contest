@@ -243,7 +243,7 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
             const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
                 && monster.mappearance === CmapSymbol.altar
                 ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
-                : location.typ === ALTAR ? location.altarmask ?? location.flags : 0;
+                : location.typ === ALTAR ? location.flags : 0;
             const alignment = Is_astralevel(state.u.uz) && location.seenv !== 255
                 || !(mask & AM_MASK) ? null : Amask2align(mask & AM_MASK);
             if (!naltar)

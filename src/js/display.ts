@@ -3249,15 +3249,15 @@ export async function bot() {
 
 // C botl.c:status_initialize(REASSESS_ONLY) resends every enabled field,
 // replacing tty's shortened level label and empty capacity separator.
-export function reassessStatusFields(): void {
-    const display = game.nhDisplay;
+export function reassessStatusFields(state: GameState = game): void {
+    const display = state.nhDisplay;
     if (display) {
         display.statusLine2Fields = null;
         display.statusCapacityBlank = false;
         display.statusLevelPrefixChanged = false;
         display.statusHighlights.reset();
     }
-    game.context.botl = true;
+    state.context.botl = true;
 }
 
 function refreshStatusLines(): void {

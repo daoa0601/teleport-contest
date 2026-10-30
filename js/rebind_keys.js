@@ -1,7 +1,7 @@
 // cmd.c handler_rebind_keys()/handler_rebind_keys_add(): the interactive
 // key-binding menus behind the full options menu's "bind keys" row.
 import { game } from './gstate.js';
-import { flush_screen, pline } from './display.js';
+import { flush_screen, pline, renderKeyPrompt } from './display.js';
 import { pgetchar } from './input.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
@@ -43,7 +43,7 @@ async function handlerRebindKeysAdd(keyfirst) {
     let key = 0;
     if (keyfirst) {
         await pline('Bind which key? ');
-        await flush_screen(1);
+        renderKeyPrompt('Bind which key? ');
         key = (await pgetchar()) & 255;
         if (!key || key === 27)
             return;
@@ -99,7 +99,7 @@ async function handlerRebindKeysAdd(keyfirst) {
     }
     if (!key) {
         await pline('Bind which key? ');
-        await flush_screen(1);
+        renderKeyPrompt('Bind which key? ');
         key = (await pgetchar()) & 255;
         if (!key || key === 27)
             return;

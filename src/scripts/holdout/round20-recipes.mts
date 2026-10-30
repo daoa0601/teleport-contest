@@ -131,9 +131,9 @@ function recipe(name: string, description: string, actions: SessionAction[], opt
 function startup(name: string, actions: SessionAction[], config = ''): Recipe {
     const entry = recipe(name, 'Choose a legal character through native startup selection.', actions);
     entry.roles = null;
-    entry.characterSelection = 'startup';
+    entry.characterSelection = ['role', 'race', 'gender', 'align'];
     entry.build = ({ seed, datetime, rc }) => [{ seed, datetime,
-        nethackrc: rc().replace(/,(?:role|race|gender|align):[^,\n]+/g, '') + config,
+        nethackrc: rc() + config,
         driver: [...actions, keys(':')],
     }];
     return entry;

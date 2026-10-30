@@ -109,24 +109,27 @@ for (const name of RECIPE_NAMES) {
                 }
             }
         }
-        // Baseline options keep chargen prompts away and turn display on.
-        assert.ok(segmentAt(doc, 0).nethackrc.includes('!legacy'));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes('!tutorial'));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes('!news'));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes('time'));
-        assert.ok(segmentAt(doc, 0).nethackrc.includes('symset:DECgraphics'));
         const recipe = RECIPES[name];
         assert.ok(recipe);
         const rc = segmentAt(doc, 0).nethackrc;
-        if (recipe.characterSelection === 'startup') {
-            assert.doesNotMatch(rc, /(?:^OPTIONS=|,)(?:role|race|gender|align):(?!random(?:,|\n|$))[^,\n]+/m, 'startup selection leaves facets unset or random');
+        // Each recipe retains baseline options except its declared tutorial prompt.
+        assert.ok(segmentAt(doc, 0).nethackrc.includes('!legacy'));
+        if (recipe.tutorial === 'prompt') {
+            assert.doesNotMatch(rc, /(?:^OPTIONS=|,)!?tutorial(?:,|\n|$)/m, 'an unset tutorial option lets the player choose at startup');
         }
         else {
-            // Other recipes preset the requested legal character.
-            assert.ok(rc.includes(`role:${character.role}`));
-            assert.ok(rc.includes(`race:${character.race}`));
-            assert.ok(rc.includes(`gender:${character.gender}`));
-            assert.ok(rc.includes(`align:${character.align}`));
+            assert.ok(rc.includes('!tutorial'));
+        }
+        assert.ok(segmentAt(doc, 0).nethackrc.includes('!news'));
+        assert.ok(segmentAt(doc, 0).nethackrc.includes('time'));
+        assert.ok(segmentAt(doc, 0).nethackrc.includes('symset:DECgraphics'));
+        for (const facet of ['role', 'race', 'gender', 'align']) {
+            if (recipe.characterSelection?.includes(facet)) {
+                assert.doesNotMatch(rc, new RegExp(`(?:^OPTIONS=|,)${facet}:(?!random(?:,|\\n|$))[^,\\n]+`, 'm'), `startup selection leaves ${facet} unset or random`);
+            }
+            else {
+                assert.ok(rc.includes(`${facet}:${character[facet]}`), `${facet} must use the requested character`);
+            }
         }
     });
 }

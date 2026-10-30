@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { RIN_FREE_ACTION } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -16,7 +19,8 @@ for (const protection of ['none', 'free action', 'cancelled attacker', 'already 
         cube.mux = game.u.ux;
         cube.muy = game.u.uy;
         cube.mcan = protection === 'cancelled attacker' ? 1 : 0;
-        game.u.freeAction = protection === 'free action';
+        if (protection === 'free action')
+            await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
         if (protection === 'already helpless')
             game._helplessTurns = 7;
         const input = resetInputState();

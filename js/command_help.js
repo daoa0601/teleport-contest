@@ -123,16 +123,22 @@ export async function showKeyBindings() {
     if (!bindings.numberPad)
         lines.push('Ctrl+<direction> will run in specified direction until something very', '        interesting is seen.');
     lines.push(`${bindings.numberPad ? 'Meta' : 'Shift'}+<direction> will run in specified direction until you encounter`, '        an obstacle.', '', 'Miscellaneous keys:');
+    const keyless = [];
     for (const special of miscellaneousKeys) {
         if (special.numberPadOnly && !bindings.numberPad)
             continue;
         const code = special.name === 'escape' ? 27 : bindings.specialKey(special.name);
-        if (!code || used.has(code))
+        if (!code || used.has(code)) {
+            keyless.push(special);
             continue;
+        }
         used.add(code);
         lines.push(`${keyText(code).padEnd(7)} ${special.description}`);
     }
-    lines.push('^C      interrupt: break out of NetHack (SIGINT)', '', 'Menu control keys:');
+    lines.push('^C      interrupt: break out of NetHack (SIGINT)');
+    for (const special of keyless)
+        lines.push(`${`[${special.name}]`.padEnd(21)} ${special.description}`);
+    lines.push('', 'Menu control keys:');
     for (const [control, description] of [
         ['>', 'Go to next page'], ['<', 'Go to previous page'], ['^', 'Go to first page'],
         ['|', 'Go to last page'], ['.', 'Select all items in entire menu'],

@@ -299,7 +299,7 @@ function objectView(object: GameObject, state: GameState,
         && canSeeMonster(carrier);
     const { x, y } = position;
     const floorVisible = !hero && !carrier && cansee(x, y)
-        && (!isPoolAt(x, y, state) || (!!state.u.underwater
+        && (!isPoolAt(x, y, state) || (!!state.u.uinwater
             && Math.max(Math.abs(state.u.ux - x), Math.abs(state.u.uy - y)) <= 1));
     let name = displayName ?? objectCombatName(object, { state });
     if (!hero && !monsterVisible) name = name.replace(/^the /iu, '');

@@ -35,6 +35,7 @@ import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizTimeoutQueue } from './timeout_queue.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
+import { showSeenVectors, showVisionFlags, showWallModes } from './wizard_map_inspection.js';
 import { wizRumorCheck } from './wizard_rumor_check.js';
 import { wizCustom } from './wizard_custom.js';
 import { wizBury } from './wizard_bury.js';
@@ -3884,6 +3885,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell()],
+    ['wizseenv', showSeenVectors],
+    ['vision', showVisionFlags],
+    ['wmode', showWallModes],
     ['wizrumorcheck', wizRumorCheck],
     ['wizcustom', wizCustom],
     ['wizbury', wizBury],
