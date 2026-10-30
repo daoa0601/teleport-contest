@@ -5,7 +5,7 @@ import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
-import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
+import { bot, newsym, redrawMap, plineWithContinuation, displayLiquidName } from './display.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -158,7 +158,7 @@ async function escapeJumpTrap(target, state) {
             break;
         }
         case TT_LAVA:
-            await plineWithContinuation('You pull yourself above the lava!');
+            await plineWithContinuation(`You pull yourself above the ${displayLiquidName('lava', state)}!`);
             target.x = hero.ux;
             target.y = hero.uy;
             break;

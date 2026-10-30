@@ -1,7 +1,7 @@
 // C hack.c:avoid_moving_on_trap()/avoid_moving_on_liquid().
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { IS_WATERWALL, LAVAWALL, VIBRATING_SQUARE } from './const.js';
-import { displayLiquidName, plineWithContinuation } from './display.js';
+import { displayLiquidName, plineWithContinuation, set_msg_xy } from './display.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap_name.js';
@@ -24,11 +24,17 @@ export function runLiquidIsDangerous(x, y, state) {
     return !!((pool || lava) && location.seenv);
 }
 export async function announceRunTrap(trap, state) {
-    if (state.flags.mention_walls)
+    if (state.flags.mention_walls) {
+        // C avoid_moving_on_trap() marks the trap square before the message.
+        set_msg_xy(trap.tx, trap.ty);
         await plineWithContinuation(`You stop in front of ${withIndefiniteArticle(trapName(trap.ttyp, { state }))}.`);
+    }
 }
 export async function announceRunLiquid(x, y, state) {
-    if (state.flags.mention_walls)
+    if (state.flags.mention_walls) {
+        // C avoid_moving_on_liquid() marks the liquid square before the message.
+        set_msg_xy(x, y);
         await plineWithContinuation(`You stop at the edge of the ${displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state)}.`);
+    }
 }
 //# sourceMappingURL=run_hazards.js.map

@@ -1,6 +1,6 @@
 import { selectContextMenu } from './context_menu.js';
 import type { ContextMenuSelection } from './context_menu.js';
-import { CLICK_1, CLICK_2 } from './const.js';
+import { CLICK_1, CLICK_2, xdir, ydir } from './const.js';
 import { queueCommandResponses } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
@@ -202,7 +202,7 @@ import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     setTopline, putMessageHistory, rememberToplines,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, monsterVisible,
-    unblindTelepathyRange,
+    unblindTelepathyRange, pline_dir, set_msg_xy,
     monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, map_invisible, unmap_invisible, map_object, unmapObject,
@@ -744,6 +744,14 @@ const TRAVEL_DIRECTIONS: readonly (readonly [number, number])[] = [
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
 
+// C hacklib.c xytodir() via cmd.c: returns -1 (DIR_ERR) when the offsets
+// match no direction, e.g. a zero offset; set_msg_dir then keeps the
+// previous message location, matching dirtocoord().
+function xyToDirection(dx: number, dy: number): number {
+    const direction = xdir.findIndex((x, index) => x === dx && ydir[index] === dy);
+    return direction < 8 ? direction : -1;
+}
+
 function closedTravelDoor(x: number, y: number, g: GameState): boolean {
     const location = g.level?.at(x, y);
     return location?.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED));
@@ -971,8 +979,11 @@ async function travelLookaroundStops(g: GameState = game): Promise<boolean> {
             if (monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
                 && M_AP_TYPE(monster) !== M_AP_OBJECT
                 && monsterVisible(monster, g) && !safeMonster) {
-                if (g.flags.mention_walls)
+                if (g.flags.mention_walls) {
+                    // C lookaround() reports the blocking monster via pline_xy().
+                    set_msg_xy(x, y);
                     await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
+                }
                 return true;
             }
             const location = level.at(x, y);
@@ -1056,8 +1067,11 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
             const visibleHostile = visibleMonster && !safeMonster;
             if (visibleMonster && (infront
                 || (run !== 1 && visibleHostile))) {
-                if (g.flags.mention_walls)
+                if (g.flags.mention_walls) {
+                    // C lookaround() reports the blocking monster via pline_xy().
+                    set_msg_xy(x, y);
                     await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
+                }
                 return false;
             }
 
@@ -1083,8 +1097,11 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                 if (closed) {
                     if (x !== u.ux && y !== u.uy) continue;
                     if (run !== 1) {
-                        if (g.flags.mention_walls)
+                        if (g.flags.mention_walls) {
+                            // C lookaround() marks the door square via set_msg_xy().
+                            set_msg_xy(x, y);
                             await plineWithContinuation('You stop in front of the door.');
+                        }
                         return false;
                     }
                     corridorLike = true;
@@ -8067,12 +8084,16 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             // level.flags.sokoban_rules has been cleared.
             await pline('The Sokoban walls resist your ability.');
         } else if (game.flags?.mention_walls) {
-            const obstruction = loc?.typ === STONE
-                ? 'solid stone'
-                : loc?.typ === TREE ? 'a tree'
-                    : loc && IS_WALL(loc.typ) ? 'a wall' : '';
-            const message = obstruction ? `It's ${obstruction}.` : '';
-            if (message) await pline(message);
+            // C test_move() names the obstruction from back_to_glyph(), so
+            // an undetected secret door reads as a wall, a secret corridor
+            // and an unseen square as solid stone, and arboreal stone as a
+            // tree; pline_dir() marks the message's direction.
+            let obstruction = '';
+            if (loc) {
+                const name = terrain_glyph(loc, newx, newy).terrainName;
+                obstruction = name === 'stone' ? 'solid stone' : withIndefiniteArticle(name);
+            }
+            if (obstruction) await pline_dir(xyToDirection(dx, dy), `It's ${obstruction}.`);
         }
         return rejectHeroMove();
     }
@@ -8098,7 +8119,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         && !game.blind && !hallucinating
         && !heroCouldMoveOntoBoulder(newx, newy)) {
         if (game.flags?.mention_walls)
-            await pline('A boulder blocks your path.');
+            // C test_move() reports the boulder through pline_dir().
+            await pline_dir(xyToDirection(dx, dy), 'A boulder blocks your path.');
         return rejectHeroMove();
     }
     if (boulder) {
