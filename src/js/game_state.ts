@@ -400,8 +400,6 @@ export interface GameState {
     _lastDemigodNasty?: number[];
     _questExpulsionPending?: { seal: boolean; portal?: boolean } | null;
     _vaultGuardArrivalPending?: { vault: Room } | null;
-    _vaultMaintenanceContinuation?: { sourceTurn: number } | null;
-    _vaultHeroTookTimePending?: number | null;
     _bubbleTraversalUp?: boolean;
     _heroBubble?: ElementalBubble | null;
     _ballChainRestriction?: number;

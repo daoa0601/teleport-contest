@@ -52,6 +52,7 @@ moveloop_core	regen_pw	inlined	energy regeneration in the turn loop (allmain.ts)
 moveloop_core	reset_eat	n/a	only sets victual.doreset, which start_eating clears before bite() reads it
 moveloop_core	sanity_check	n/a	debug option
 moveloop_core	u_calc_moveamt	inlined	movement allowance in the turn loop (allmain.ts)
+moveloop_core	u_wipe_engr	inlined	wipeHeroEngraving in the turn-maintenance helpers below the reach depth (allmain.ts)
 u_calc_moveamt	rn2	inlined	the roll is in the turn loop; allmain.ts u_calc_moveamt is only the adder
 dosounds	g_at	inlined	gold scan (ambient_sounds.ts)
 dosounds	gd_sound	inlined	!occupied && !findVaultGuard (ambient_sounds.ts)

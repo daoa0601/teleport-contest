@@ -164,8 +164,6 @@ const transientFields = {
     _travelTarget: true,
     _tutorialState: true,
     _vaultGuardArrivalPending: true,
-    _vaultHeroTookTimePending: true,
-    _vaultMaintenanceContinuation: true,
     _viz_rmax: true,
     _viz_rmin: true,
     active_buf: true,
