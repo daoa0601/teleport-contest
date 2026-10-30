@@ -13,6 +13,7 @@ import { spendHeroNutrition } from '../js/hunger.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
+import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from '../js/object_data.js';
@@ -133,6 +134,29 @@ for (const [trapType, form] of [
         assert.equal(game.u.ux, x + 1);
     });
 }
+// C polyself.c:1008 polymon(): an amorphous body slipping out of a web
+// releases the trap through reset_utrap(TRUE), so a levitation source the
+// web had blocked comes back with float_up()'s message.
+void test('a slipping body escaping a web resumes blocked levitation', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    requireFixtureGame(game);
+    const trap = addTrap(level, WEB, game.u.ux, game.u.uy);
+    await triggerHeroTrap(trap);
+    assert.ok((game.u.utrap ?? 0) > 0);
+    grantIntrinsicProperty('levitation', 'outside');
+    assert.equal(propertyIsActive('levitation', game), false, 'the web must block the levitation source while it holds the hero');
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    pushKeys('polyself\nfog cloud\n                ');
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.u.utrap, 0);
+    assert.ok(propertyIsActive('levitation', game), 'escaping the web must unblock the levitation source');
+    const spoken = [...messages, game._pending_message ?? ''].join('\n');
+    assert.ok(spoken.includes('You are no longer stuck in the web.'));
+    assert.ok(spoken.includes('You start to float in the air!'), 'reset_utrap(TRUE) must announce the returning levitation');
+    resetInputState();
+});
 void test('a cloud slips out of punishment and leaves the iron ball behind', async () => {
     const level = freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
