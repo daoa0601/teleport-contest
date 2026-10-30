@@ -10,7 +10,7 @@ import { bot, flush_screen } from '../js/display.js';
 import { statusHiliteMenu } from '../js/status_hilites.js';
 import { cansee } from '../js/vision.js';
 import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
-import { CLR_RED, ATR_BOLD, NO_COLOR } from '../js/terminal.js';
+import { CLR_RED, CLR_GREEN, ATR_BOLD, NO_COLOR } from '../js/terminal.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -731,4 +731,68 @@ void test('typed leading blanks survive into the threshold value rows', async ()
     assert.ok(views.some(view => /Select field hitpoints value:/.test(view)
         && /Exactly {3}50/.test(view) && /Less than {3}50/.test(view)),
         'The value rows keep the typed leading blanks');
+});
+
+async function setFullMenuTextOption(name: string, value: string): Promise<void> {
+    const [input, command] = openFullMenu();
+    await input.waitUntilBlocked();
+    input.feed('O');
+    await runScript(input, command, [
+        { at: / - /, pick: new RegExp(`^${name}\\s+\\[`) },
+        { at: / - /, keys: '\n' },
+        { at: new RegExp(`Set ${name} to what\\?`), keys: `${value}\n` },
+    ]);
+}
+
+function hitpointCell() {
+    const row = game.nhDisplay?.grid[23];
+    assert.ok(row, 'The status line must be visible after leaving options');
+    const text = row.map(cell => cell.ch).join('');
+    const column = text.indexOf('HP:');
+    assert.ok(column >= 0, `The status line must display HP: ${text}`);
+    const cell = row[column];
+    assert.ok(cell);
+    return { color: cell.color, text: text.match(/HP:\d+\(\d+\)/)?.[0] };
+}
+
+void test('live status duration reassessment applies a new rule to unchanged HP', async () => {
+    freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
+    await bot();
+    const original = hitpointCell();
+    assert.equal(original.color, NO_COLOR);
+
+    await setFullMenuTextOption('hilite_status', 'hp/red');
+
+    assert.equal(hitpointCell().text, original.text);
+    assert.equal(hitpointCell().color, NO_COLOR,
+        'C menu dismissal repaints cached status without re-evaluating the new rule');
+
+    await setFullMenuTextOption('statushilites', '3');
+
+    assert.equal(hitpointCell().text, original.text);
+    assert.equal(hitpointCell().color, CLR_RED,
+        'C statushilites requests update_all even when its duration does not change');
+});
+
+void test('full-screen options preserve a temporary HP highlight until duration reassessment', async () => {
+    freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
+    requirePlayingGame(game);
+    applyNethackrc('OPTIONS=hilite_status:hp/always/blue/down/red');
+    await bot();
+    game.u.uhp--;
+    await bot();
+    const original = hitpointCell();
+    assert.equal(original.color, CLR_RED);
+
+    await setFullMenuTextOption('hilite_status', 'hp/green');
+
+    assert.equal(hitpointCell().text, original.text);
+    assert.equal(hitpointCell().color, CLR_RED,
+        'botlx repaints the cached temporary color rather than treating HP as unchanged');
+
+    await setFullMenuTextOption('statushilites', '3');
+
+    assert.equal(hitpointCell().text, original.text);
+    assert.equal(hitpointCell().color, CLR_GREEN,
+        'update_all clears the temporary rule and selects the persistent rule');
 });

@@ -7,6 +7,7 @@ import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { decodeOptionEscapes } from './option_escapes.js';
 import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './status_hilite_parse.js';
+import { resetStatusHilites } from './status_hilites.js';
 
 export function textOptionValue(name: string): string | null {
     switch (name) {
@@ -73,10 +74,11 @@ export async function setTextOption(name: string, value: string): Promise<void> 
         break;
     case 'statushilites': {
         // optfn_statushilites(): a missing value means the 3-turn default,
-        // atol() of junk is 0 (off), and negative durations clamp to 1. The
-        // status refresh happens with the next bot().
+        // atol() of junk is 0 (off), and negative durations clamp to 1.
+        // In-game changes request update_all even when the value is unchanged.
         const delta = value ? cInteger(value) : 3;
         game.iflags.hiliteDelta = delta < 0 ? 1 : delta;
+        resetStatusHilites();
         break;
     }
     case 'hilite_status': {

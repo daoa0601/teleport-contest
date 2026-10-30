@@ -64,6 +64,8 @@ export class StatusHighlights {
     barCritical = false;
     spans: readonly [readonly StatusFieldSpan[], readonly StatusFieldSpan[]] = [[], []];
 
+    // botl.c gu.update_all re-evaluates every field as unchanged. A tty
+    // botlx repaint alone keeps the cached rules and temporary highlights.
     reset(): void {
         this.resetPending = true;
     }
