@@ -21,6 +21,7 @@ const TERRAIN_NAMES = [
     'altar', 'ice', 'drawbridge down', 'air', 'cloud', 'unreachable/undiggable',
 ] as const;
 
+// C wizcmds.c:wiz_map_levltyp().
 export async function showTerrainCodes(): Promise<void> {
     const level = requireGameLevel();
     // tty leaves row zero blank so map rows line up with the normal display.
@@ -38,6 +39,7 @@ export async function showTerrainCodes(): Promise<void> {
     await showTerrainText(lines);
 }
 
+// C wizcmds.c:wiz_levltyp_legend().
 export async function showTerrainCodeLegend(): Promise<void> {
     const lines = ['#terrain encodings:', ''];
     const half = TERRAIN_NAMES.length / 2;

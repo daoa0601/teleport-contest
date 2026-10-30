@@ -217,17 +217,20 @@ interface HiliteLineStr { id: number; fld: number; rule: StatusHiliteRule | null
 let hiliteStrs: HiliteLineStr[] = [];
 let hiliteStrId = 0;
 
+// C botl.c:status_hilite_linestr_add().
 function linestrAdd(fld: number, rule: StatusHiliteRule | null, mask: number, str: string): void {
     // status_hilite_linestr_add() strips every space except for title rows.
     hiliteStrs.push({ id: ++hiliteStrId, fld, rule, mask,
         str: fld === BL_TITLE ? str : str.replace(/ /g, '') });
 }
 
+// C botl.c:status_hilite_linestr_done().
 function linestrDone(): void {
     hiliteStrs = [];
     hiliteStrId = 0;
 }
 
+// C botl.c:status_hilite_linestr_countfield().
 function linestrCountField(fld: number): number {
     return hiliteStrs.reduce((count, line) => count + (fld === BL_FLUSH || line.fld === fld ? 1 : 0), 0);
 }
@@ -269,6 +272,7 @@ function linestrGatherConditions(): void {
     }
 }
 
+// C botl.c:status_hilite_linestr_gather().
 function linestrGather(): void {
     linestrDone();
     const thresholds = fieldThresholds();

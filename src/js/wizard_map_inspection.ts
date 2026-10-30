@@ -5,6 +5,7 @@ import { displayMessageWindow } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { showTextWindow } from './windows.js';
 
+// C wizcmds.c:wiz_show_seenv().
 export async function showSeenVectors(): Promise<void> {
     const level = requireGameLevel();
     const hero = game.u;
@@ -24,6 +25,7 @@ export async function showSeenVectors(): Promise<void> {
     await showInspection(lines);
 }
 
+// C wizcmds.c:wiz_show_vision().
 export async function showVisionFlags(): Promise<void> {
     const hero = game.u;
     const lines = [`Flags: 0x${COULD_SEE.toString(16)} could see, 0x${IN_SIGHT.toString(16)} in sight, 0x${TEMP_LIT.toString(16)} temp lit`, ''];
@@ -38,6 +40,7 @@ export async function showVisionFlags(): Promise<void> {
     await showInspection(lines);
 }
 
+// C wizcmds.c:wiz_show_wmodes().
 export async function showWallModes(): Promise<void> {
     const level = requireGameLevel();
     const hero = game.u;

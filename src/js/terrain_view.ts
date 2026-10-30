@@ -26,6 +26,7 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 
+// C cmd.c:doterrain().
 export async function terrainCommand(): Promise<void> {
     recordMappedOverviewState();
     const window = tty_create_nhwindow<number>(NHW_MENU);

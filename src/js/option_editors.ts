@@ -102,6 +102,7 @@ export async function editCompoundMenu(name: string, giveMessage: boolean): Prom
     return true;
 }
 
+// C botl.c:menualpha_cmp().
 async function editStatusConditions(): Promise<void> {
     for (;;) {
         const byRank = game.iflags.conditionMenuByRank ?? false;

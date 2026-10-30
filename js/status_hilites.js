@@ -202,15 +202,18 @@ function statusHiliteToString(rule) {
 // for every gather. Rules live on the per-game flags, this list does not.
 let hiliteStrs = [];
 let hiliteStrId = 0;
+// C botl.c:status_hilite_linestr_add().
 function linestrAdd(fld, rule, mask, str) {
     // status_hilite_linestr_add() strips every space except for title rows.
     hiliteStrs.push({ id: ++hiliteStrId, fld, rule, mask,
         str: fld === BL_TITLE ? str : str.replace(/ /g, '') });
 }
+// C botl.c:status_hilite_linestr_done().
 function linestrDone() {
     hiliteStrs = [];
     hiliteStrId = 0;
 }
+// C botl.c:status_hilite_linestr_countfield().
 function linestrCountField(fld) {
     return hiliteStrs.reduce((count, line) => count + (fld === BL_FLUSH || line.fld === fld ? 1 : 0), 0);
 }
@@ -267,6 +270,7 @@ function linestrGatherConditions() {
         linestrAdd(BL_CONDITION, null, mask, `condition/${conditionBitmaskToString(mask)}/${clrbuf}`);
     }
 }
+// C botl.c:status_hilite_linestr_gather().
 function linestrGather() {
     linestrDone();
     const thresholds = fieldThresholds();

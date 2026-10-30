@@ -17,6 +17,7 @@ export function keyText(key) {
     return key === 32 ? '<space>' : key === 27 ? '<esc>'
         : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);
 }
+// C cmd.c:key2extcmddesc().
 export function describeCommandKey(key) {
     const bindings = game.commandBindings;
     // key2extcmddesc() probes movecmd() in walk, rush, then run mode.
@@ -113,6 +114,9 @@ export async function whatDoesCommand() {
     }
     game.context.move = 0;
 }
+// C cmd.c:dokeylist().
+// C cmd.c:keylist_func_has_key().
+// C cmd.c:keylist_putcmds().
 export async function showKeyBindings() {
     const bindings = game.commandBindings;
     const used = new Set([3]); // SIGINT is reserved even if a key is rebound.
@@ -148,8 +152,13 @@ export async function showKeyBindings() {
         ['Return', 'Accept current choice(s) and dismiss menu'], ['Enter', 'Same as Return'],
         ['Space', 'If not on last page, advance one page;'], ['     ', 'when on last page, treat like Return'],
         ['Escape', 'Cancel menu without making any choice(s)'],
-    ])
-        lines.push(`${(control ?? '').padEnd(7)} ${description ?? ''}`);
+    ]) {
+        // C options.c:show_menu_controls() uses the configured alias for
+        // each menu command; Return, Space and Escape stay hardcoded.
+        const key = control?.length === 1
+            ? visibleCommandKey(bindings.menuKey(control)) : control ?? '';
+        lines.push(`${key.padEnd(7)} ${description ?? ''}`);
+    }
     const ignored = flags.INTERNALCMD | flags.MOVEMENTCMD | flags.WIZMODECMD;
     const categories = [
         ['General commands:', command => !!(command.flags & flags.GENERALCMD) && !(command.flags & ignored)],

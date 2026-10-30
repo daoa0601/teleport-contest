@@ -37,6 +37,8 @@ interface ContextMenuEntry { action: ContextMenuAction; text: string }
 export interface ContextMenuSelection extends Position { action: ContextMenuAction }
 const FOOD_CLASS = 7;
 
+// C cmd.c:there_cmd_menu_common().
+// C cmd.c:there_cmd_menu_far().
 export async function selectContextMenu(x: number, y: number, click: number): Promise<ContextMenuSelection | null> {
     const entries: ContextMenuEntry[] = [];
     const add = (action: ContextMenuAction, text: string) => entries.push({ action, text });
@@ -91,6 +93,7 @@ function canThrowToward(x: number, y: number): boolean {
 
 type AddEntry = (action: ContextMenuAction, text: string) => void;
 
+// C cmd.c:there_cmd_menu_self().
 async function selfEntries(add: AddEntry, x: number, y: number): Promise<void> {
     const level = requireGameLevel();
     const terrain = level.requireAt(x, y).typ;
@@ -133,6 +136,7 @@ async function menuObjectName(object: GameObject): Promise<string> {
     return floorObjectDescription(object);
 }
 
+// C cmd.c:there_cmd_menu_next2u().
 function adjacentEntries(add: AddEntry, x: number, y: number, click: number): void {
     const level = requireGameLevel();
     const location = level.requireAt(x, y);

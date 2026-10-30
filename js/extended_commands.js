@@ -32,6 +32,7 @@ export function countCommandAutocompletions() {
     return autocompleteOverrides.size;
 }
 // This editor includes wizard commands even during ordinary play, as C does.
+// C cmd.c:handler_change_autocompletions().
 export async function changeCommandAutocompletions() {
     const commands = NATIVE_COMMANDS.filter(command => command.name !== null
         && command.name.length >= 2
@@ -59,6 +60,7 @@ export function availableExtendedCommands() {
         && !(command.flags & (flags.CMD_NOT_AVAILABLE | flags.INTERNALCMD))
         && (game.flags.debug || !(command.flags & flags.WIZMODECMD)));
 }
+// C getline.c:ext_cmd_getlin_hook().
 export function completeExtendedCommand(prefix) {
     const matches = availableExtendedCommands().filter(command => commandAutocompletes(command)
         && command.name?.toLowerCase().startsWith(prefix.toLowerCase()));
@@ -70,6 +72,7 @@ export function commandDescription(command) {
         return "rest one move via 'rest_on_space' option";
     return COMMAND_DESCRIPTIONS.get(command.name ?? '') ?? '';
 }
+// C cmd.c:extcmd_via_menu().
 export async function extendedCommandMenu() {
     let prefix = '';
     let biggest = 0;
@@ -124,6 +127,8 @@ export async function extendedCommandMenu() {
     }
 }
 // A list entry is informational. Only the list controls are selectable.
+// C cmd.c:doc_extcmd_flagstr().
+// C cmd.c:accept_menu_prefix().
 export async function showExtendedCommandList() {
     let autocompleteOnly = false, oneList = false, search = '';
     for (;;) {

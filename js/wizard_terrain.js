@@ -16,6 +16,7 @@ const TERRAIN_NAMES = [
     'corridor', 'room', 'stairs', 'ladder', 'fountain', 'throne', 'sink', 'grave',
     'altar', 'ice', 'drawbridge down', 'air', 'cloud', 'unreachable/undiggable',
 ];
+// C wizcmds.c:wiz_map_levltyp().
 export async function showTerrainCodes() {
     const level = requireGameLevel();
     // tty leaves row zero blank so map rows line up with the normal display.
@@ -33,6 +34,7 @@ export async function showTerrainCodes() {
     lines.push(terrainLevelDescription().slice(0, COLNO - 1));
     await showTerrainText(lines);
 }
+// C wizcmds.c:wiz_levltyp_legend().
 export async function showTerrainCodeLegend() {
     const lines = ['#terrain encodings:', ''];
     const half = TERRAIN_NAMES.length / 2;

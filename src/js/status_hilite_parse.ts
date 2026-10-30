@@ -92,6 +92,7 @@ function splitSubfields(text: string): string[] {
     return pieces;
 }
 
+// C botl.c:is_fld_arrayvalues().
 function isFieldArrayValue(text: string, values: readonly (string | null)[],
     minimum: number, maximum: number): number | null {
     for (let index = minimum; index < maximum; index++) {

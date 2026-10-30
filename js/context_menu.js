@@ -17,6 +17,8 @@ import { blockingTerrain } from './monster_ranged_alignment.js';
 import { heroTestMove } from './cmd.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 const FOOD_CLASS = 7;
+// C cmd.c:there_cmd_menu_common().
+// C cmd.c:there_cmd_menu_far().
 export async function selectContextMenu(x, y, click) {
     const entries = [];
     const add = (action, text) => entries.push({ action, text });
@@ -71,6 +73,7 @@ function canThrowToward(x, y) {
     } while (x !== game.u.ux || y !== game.u.uy);
     return true;
 }
+// C cmd.c:there_cmd_menu_self().
 async function selfEntries(add, x, y) {
     const level = requireGameLevel();
     const terrain = level.requireAt(x, y).typ;
@@ -118,6 +121,7 @@ async function menuObjectName(object) {
     observeObjectForNaming(object);
     return floorObjectDescription(object);
 }
+// C cmd.c:there_cmd_menu_next2u().
 function adjacentEntries(add, x, y, click) {
     const level = requireGameLevel();
     const location = level.requireAt(x, y);

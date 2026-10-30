@@ -372,6 +372,7 @@ function textWindowRows(text, columns) {
 }
 // tty_putstr() compresses long lines before buffering them. It leaves
 // indentation alone on short lines and reserves BUFSZ's terminator slot.
+// C wintty.c:compress_str().
 function compressTextWindowLine(text, columns) {
     if (text.length < columns && !text.includes('\n'))
         return text;

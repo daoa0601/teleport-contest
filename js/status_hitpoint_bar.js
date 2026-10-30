@@ -3,6 +3,7 @@
 // (StatusHighlights.barStyle), so this builds only the bracketed text;
 // wintty.c:5212-5213 repads a critical title's trailing space pairs with
 // dashes.
+// C botl.c:repad_with_dashes().
 export function hitpointBar(title, critical) {
     let text = title.slice(0, 30).padEnd(30);
     if (critical) {

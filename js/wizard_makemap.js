@@ -43,6 +43,7 @@ export async function wizMakeMap() {
     game._restoredBones = false;
     await returnToReplacementLevel(pets, wasInsideTower);
 }
+// C wizcmds.c:makemap_remove_mons().
 async function removeOldLevelMonsters() {
     const pets = await collectLevelFollowers(game, true);
     // C fmon is newest first, whereas level.monsters appends births.

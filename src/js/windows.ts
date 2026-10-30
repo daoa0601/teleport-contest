@@ -489,6 +489,7 @@ function textWindowRows(text: string, columns: number): string[] {
 
 // tty_putstr() compresses long lines before buffering them. It leaves
 // indentation alone on short lines and reserves BUFSZ's terminator slot.
+// C wintty.c:compress_str().
 function compressTextWindowLine(text: string, columns: number): string {
     if (text.length < columns && !text.includes('\n')) return text;
     const compressed = text.replace(/[ \n]+/g, ' ').replace(/^ /, '').slice(0, BUFSZ - 1);
