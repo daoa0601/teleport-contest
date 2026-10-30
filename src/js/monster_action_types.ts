@@ -599,6 +599,8 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     postMoveWasVisible?: boolean;
     postMoveDestinationPainted?: boolean;
     postMoveOldSquarePainted?: boolean;
+    // notice_mon() ran for this action's single postmov() pass.
+    postMoveNoticed?: boolean;
     hideUnder?: MonsterHideUnder;
     deferredAfterHideUnder?: boolean;
     deferredAfterMonsterTrap?: boolean;

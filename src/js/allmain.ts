@@ -3348,8 +3348,16 @@ async function presentMonsterAttackEffects(
 async function presentMonsterPostMove(
     action: MonsterMovementAction, game: PlayingGameState,
 ): Promise<boolean> {
-    // C monmove.c:postmov() opens with notice_mon().
-    await noticeMonster(action.monster, game, plineWithContinuation);
+    // C monmove.c:1470 opens postmov() with notice_mon(), and only passes
+    // that ran postmov() present here: the dochug-stage exits (trap-held,
+    // displacement, the rloc fallback, eating, deferred spells) never reach
+    // postmov(). Deferred resumes re-enter this presenter, so each action
+    // notices once, like native's single postmov() call.
+    if (action.movement.movementStage === 'postmov'
+        && !action.movement.postMoveNoticed) {
+        action.movement.postMoveNoticed = true;
+        await noticeMonster(action.monster, game, plineWithContinuation);
+    }
     let movement = action.movement;
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.
@@ -3938,8 +3946,10 @@ export async function newgame() {
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await welcome(true);
-    // C newgame(): welcome() finishes before the monsters are noticed.
-    await noticeAllMonsters(g);
+    // C newgame(): welcome() finishes before the monsters are noticed, and
+    // the mention_map option (a11y.glyph_updates) runs dolookaround()
+    // instead, which is not ported (allmain.c:845-848).
+    if (!g.flags.mention_map) await noticeAllMonsters(g);
     if (g.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }

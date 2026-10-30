@@ -220,8 +220,9 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         mavenge: optional(flag),
         meverseen: optional(flag),
         mtemplit: optional(flag),
-        // C never saves mspotted; restored monsters start unspotted.
-        mspotted: (entry): entry is undefined => entry === undefined,
+        // save.c:savemon() writes the raw struct monst (Sfo_monst), so the
+        // spot_monsters latch survives save, restore, and bones.
+        mspotted: optional(flag),
         mundetected: optional(flag),
         minvis: optional(flag),
         perminvis: optional(flag),

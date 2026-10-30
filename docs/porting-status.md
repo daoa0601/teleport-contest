@@ -645,9 +645,12 @@ padding of 60 bytes including the newline).
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
 
-Known open gaps: host-system mail; dumplog file writing. One public session
-differs only on screens: the recorder host's configuration path in seed2200's
-option help.
+Known open gaps: `spot_monsters` notices wait for the next ported anchor
+where C announces inside `vision_recalc()` (message output, light sources,
+eyewear, digging, zaps, pet movement), and `mention_map`'s glyph notices
+(`newsym()`, `dolookaround()`) are unported; host-system mail; dumplog file
+writing. One public session differs only on screens: the recorder host's
+configuration path in seed2200's option help.
 
 Runtime limits: some native screens print facts about the C process itself,
 which a JavaScript runtime cannot reproduce. Treat their differences as

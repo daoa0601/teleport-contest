@@ -52,9 +52,12 @@ export async function noticeMonster(monster, state = game, publish = plineWithCo
         const article = monster.mtame ? 'your'
             : !named && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME) ? 'a'
                 : 'none';
+        // C hack.c:1727 suppresses the saddle only for a named monster, so
+        // an unnamed steed is announced as "your saddled pony".
         const name = monsterName(monster, {
             state,
             article,
+            suppressSaddle: named,
             ...(monster.mpeaceful && !monster.mtame ? { adjective: 'peaceful' } : {}),
         });
         await publish(`You ${canSeeMonster(monster) ? 'see' : 'notice'} ${name}.`);
