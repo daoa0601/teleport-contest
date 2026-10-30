@@ -18,6 +18,8 @@ import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { DAGGER } from '../js/object_data.js';
 const M2_PNAME = 0x00080000;
 const G_UNIQ = 0x1000;
 function visibleRow() {
@@ -91,6 +93,30 @@ async function declineRemainingPrompts(input, ending) {
     }
     await ending;
 }
+void test('an inventory letter closes possessions disclosure and is consumed before the attributes question', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    const dagger = await addInventoryObject(DAGGER);
+    const input = resetInputState();
+    const ending = deathWithPrompts();
+    try {
+        await advanceToQuestion(input, /possessions identified/);
+        input.feed('y');
+        await input.waitUntilBlocked();
+        assert.match(screenText(), /Weapons[\s\S]*dagger/);
+        input.feed('z');
+        await input.waitUntilBlocked();
+        assert.match(screenText(), /Weapons[\s\S]*dagger/, 'A key without an inventory entry keeps the menu open');
+        input.feed(dagger.invlet);
+        await input.waitUntilBlocked();
+        assert.equal(visibleRow(), 'Do you want to see your attributes? [ynq] (n)');
+        assert.equal(game.inventory.includes(dagger), true, 'Disclosure does not act on the selected object');
+    }
+    finally {
+        input.feed('\x1b');
+        await declineRemainingPrompts(input, ending);
+    }
+});
 void test('one vanquished species asks [ynq] while several offer [ynaq]', async () => {
     for (const [label, expected] of [
         ['a single species', 'Do you want an account of creatures vanquished? [ynq] (n)'],
