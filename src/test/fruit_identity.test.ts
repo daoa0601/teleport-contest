@@ -175,6 +175,7 @@ void test('bones carry only existing fruit identities and remap floor, contained
     requireFixtureGame(game);
     game.storage = storage;
     game.u.uz = { dnum: 0, dlevel: 8 };
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     changePreferredFruit('Papaya');
     const old = await floorObject(SLIME_MOLD, 12, 10);
     const box = await floorObject(LARGE_BOX, 13, 10, { initialize: false });

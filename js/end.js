@@ -734,9 +734,9 @@ function deathCauseRecord(killer, deathVerb = 'died', deathType = null, killerFo
 function sanitizeDeathCause(cause) {
     return cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
 }
-// C topten.c:formatkiller(TRUE). Score records include involuntary delay;
-// the tombstone, bones epitaph, and overview use the cause without it.
-function scoreDeathCause(cause, deathType) {
+// C topten.c:formatkiller(..., DTHSZ + 1, TRUE). Scores and bones use this
+// bounded, sanitized cause, including involuntary delay when it fits.
+export function scoreDeathCause(cause, deathType) {
     const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
     const cleanCause = sanitizeDeathCause(cause).slice(0, scoreDeathSize);
     if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0)
@@ -1354,7 +1354,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         await plineWithContinuation(`Your ${revenant} as ${withIndefiniteArticle(monsterTypeName(arise, !!game.flags.female))}...`);
         await displayMessageWindow();
     }
-    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo);
+    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo, endtime);
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
         await showTextWindow(deathSummaryLines(killer, summary, endtime, { deathVerb, deathCause, deathType }));

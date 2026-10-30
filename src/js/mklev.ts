@@ -1,4 +1,5 @@
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
+import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
@@ -51,6 +52,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
+import { finishHeroDeath, scoreDeathCause } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import {
     createDesBindings, mapOrigin, objectTypeForName, tablePoint,
@@ -130,7 +132,7 @@ import {
     ICED_POOL, ICED_MOAT,
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
-    TREE, AIR, CLOUD,
+    TREE, AIR, CLOUD, TRICKED,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
@@ -214,7 +216,7 @@ import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
 import {
-    deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings,
+    deleteEngravingAt, makeEngravingAt, restoreEngravings,
     sanitizeEngravings, wipeEngravingAt, wipeoutText,
 } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
@@ -3574,10 +3576,22 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 17;
+const BONES_VERSION = 20;
+
+// C files.c:set_bonesfile_name(): special levels keep their identity when
+// dungeon generation changes their depth; quest bones also belong to a role.
+function bonesLevelId(location: DungeonLocation | undefined = game.u.uz): string {
+    if (!location) throw new Error('Bones require an initialized dungeon location');
+    const tag = game.dungeons[location.dnum]?.bonetag;
+    if (!tag) return '';
+    const role = In_quest(location) ? game.urole?.filecode : '0';
+    if (role === undefined) throw new Error('Quest bones require an initialized role');
+    const special = specialLevelAt(location);
+    return `${tag}${role}.${special ? special.bonetag ?? '' : location.dlevel}`;
+}
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
-    return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
+    return `teleport-bones:${bonesLevelId(level)}`;
 }
 
 export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {
@@ -3669,9 +3683,12 @@ function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
 // the level graph only. The saved-graph codec retains entity aliases and
 // container back-pointers; getbones() restores the GameMap prototype.
-export function saveBonesLevel(): boolean {
+export function saveBonesLevel(
+    deathCause = '', when = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000,
+): boolean {
     const storage = game.storage;
-    if (!storage || !game.level || !game.urole || !game.urace
+    const location = game.u.uz;
+    if (!storage || !game.level || !location || !game.urole || !game.urace
         || !game.u.ualign) return false;
 
     purgeDeadMonsters(game.level);
@@ -3679,6 +3696,7 @@ export function saveBonesLevel(): boolean {
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
             version: BONES_VERSION,
+            bonesId: bonesLevelId(),
             savedAt: game.moves,
             level: game.level,
             stairs: game.stairs || null,
@@ -3691,7 +3709,6 @@ export function saveBonesLevel(): boolean {
         return false;
     }
 
-    forgetEngravings(payload.level);
     // savebones() records the final role, race, gender, and alignment in
     // cemetery.who. These suffixes also participate in bones_include_name().
     const alignment = game.u.ualign.type === 1 ? 'Law'
@@ -3700,8 +3717,10 @@ export function saveBonesLevel(): boolean {
         game.plname || 'player', game.urole.filecode.slice(0, 3),
         game.urace.filecode.slice(0, 3), game.flags.female ? 'Fem' : 'Mal', alignment,
     ].join('-');
-    payload.level.bonesNames = [
-        who, ...(payload.level.bonesNames ?? []),
+    payload.level.bonesInfo = [
+        { who, how: scoreDeathCause(deathCause, null), when: recorderTimestamp(when),
+            frpx: game.u.ux, frpy: game.u.uy, bonesknown: false },
+        ...(payload.level.bonesInfo ?? []),
     ];
     if (game.flags.debug) payload.level.flags.wizard_bones = true;
 
@@ -3748,10 +3767,26 @@ export function saveBonesLevel(): boolean {
     }
 
     try {
+        shiftBonesDestinations(payload, location, -location.dlevel);
         storage.setItem(bonesStorageKey(), encodeSavedGraph(payload));
         return true;
     } catch (_error) {
         return false;
+    }
+}
+
+// C save_stairs()/savetrapchn() store same-dungeon destinations relative
+// to the saved level. rest_stairs()/getlev() add the receiving level's depth.
+// Only the bones copy is shifted; live and cached maps retain absolute depths.
+function shiftBonesDestinations(payload: BonesPayload, location: DungeonLocation, adjustment: number): void {
+    for (let stair = payload.stairs; stair; stair = stair.next) {
+        if (stair.tolev.dnum === location.dnum)
+            stair.tolev = { ...stair.tolev, dlevel: stair.tolev.dlevel + adjustment };
+    }
+    for (const trap of payload.level.traps) {
+        const destination = trap.dst;
+        if (destination?.dnum === location.dnum)
+            trap.dst = { ...destination, dlevel: destination.dlevel + adjustment };
     }
 }
 
@@ -3957,10 +3992,24 @@ async function getbones(): Promise<boolean> {
     if (game.flags.debug
         && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
+    if (payload.bonesId.length >= 40) return false;
+    const expectedId = bonesLevelId();
+    if (payload.bonesId !== expectedId) {
+        if (game.flags.debug)
+            await pline(`This is bones level '${payload.bonesId}', not '${expectedId}'!`);
+        await pline('Strange, this map is not as I remember it.');
+        await pline('Somebody is trying some trickery here...');
+        await pline('This game is void.');
+        if (await finishHeroDeath({ killer: '', deathType: TRICKED })) return false;
+        await finishBonesRestore();
+        return false;
+    }
+
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
+    shiftBonesDestinations(payload, location, location.dlevel);
     game.stairs = restoreLevelChains(game.level, payload.stairs || null);
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
@@ -3974,7 +4023,8 @@ async function getbones(): Promise<boolean> {
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
-    sanitizeEngravings(game.level);
+    // Failed loads still reference the level being left; sanitize loaded bones only.
+    sanitizeEngravings(payload.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
     return game._restoredBones;
@@ -4002,6 +4052,7 @@ export async function l_nhcore_init(): Promise<void> {
 export async function mklev(): Promise<void> {
     const g = game;
     if (await getbones()) return;
+    if (g.program_state.gameover) return;
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');

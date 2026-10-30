@@ -80,10 +80,8 @@ export function recorderLocalEpochSeconds(datetime: string | null | undefined): 
 }
 
 
-// C save.c writes yyyymmddhhmmss(t), using the New York offset in effect at
-// t; restore.c reads that text back through time_from_yyyymmddhhmmss(), which
-// applies the current offset.  A time saved across a DST boundary shifts.
-export function recorderRestoredTime(epoch: number): number {
+// C calendar.c:yyyymmddhhmmss() uses the local offset in effect at the time.
+export function recorderTimestamp(epoch: number): string {
     const instant = new Date(epoch * 1000);
     if (Number.isNaN(instant.getTime())) throw new RangeError(`Unrepresentable time ${epoch}`);
     const parts = new Map<string, number>(new Intl.DateTimeFormat('en-US', {
@@ -101,8 +99,13 @@ export function recorderRestoredTime(epoch: number): number {
     // yyyymmddhhmmss() reads a tm_year below 70 as a two-digit year.
     const tmYear = field('year') - 1900;
     const year = tmYear < 70 ? tmYear + 2000 : tmYear + 1900;
-    const text = [String(year).padStart(4, '0'),
+    return [String(year).padStart(4, '0'),
         ...['month', 'day', 'hour', 'minute', 'second'].map(name => String(field(name)).padStart(2, '0'))]
         .join('');
-    return recorderLocalEpochSeconds(text);
+}
+
+// C save.c writes the local timestamp; restore.c reads it using the current
+// offset. A time saved across a DST boundary therefore shifts on restore.
+export function recorderRestoredTime(epoch: number): number {
+    return recorderLocalEpochSeconds(recorderTimestamp(epoch));
 }

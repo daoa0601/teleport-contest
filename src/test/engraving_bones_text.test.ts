@@ -14,6 +14,7 @@ for (const eightBit of [false, true]) {
         freshObjectRoom();
         const storage = memoryStorage();
         game.storage = storage;
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         makeEngravingAt(12, 10, 'A\x01B\u0081C\u00e9D\x7f', null, 0, BURN);
         assert.equal(saveBonesLevel(), true);
 
@@ -24,6 +25,7 @@ for (const eightBit of [false, true]) {
         game.iflags.wc_eight_bit_input = eightBit;
         resetInputState().feed('yn');
         await mklev();
+        assert.equal(game._restoredBones, true);
 
         assert.equal(engravingAt(12, 10)?.text, `A.B.C${eightBit ? '\u00e9' : '_'}D.`);
     });

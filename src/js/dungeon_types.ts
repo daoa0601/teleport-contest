@@ -44,6 +44,16 @@ export interface SpecialLevelDescriptor extends DungeonLocation {
     bonetag?: string;
 }
 
+// C rm.h:cemetery records one ancestor's death on a bones level.
+export interface CemeteryEntry {
+    who: string;
+    how: string;
+    when: string;
+    frpx: number;
+    frpy: number;
+    bonesknown: boolean;
+}
+
 export interface OverviewRecord {
     flags: OverviewFlags;
     features: {
@@ -61,6 +71,7 @@ export interface OverviewRecord {
     branch: (DungeonLocation & { up: boolean; type: DungeonBranchType }) | null;
     seenRooms: number[];
     untendedRooms: number[];
+    finalRestingPlaces?: CemeteryEntry[];
 }
 
 export interface OverviewFlags {

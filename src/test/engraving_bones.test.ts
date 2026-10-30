@@ -24,6 +24,7 @@ void test('an ancestor Elbereth is already complete when the next hero attacks f
     requireFixtureGame(game);
     const storage = memoryStorage();
     game.storage = storage;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     const wand = await addInventoryObject(WAN_FIRE, { spe: 3, typeKnown: true });
     input.feed('E');
     await answerPrompts(moveloop_core(), input, [
@@ -35,7 +36,7 @@ void test('an ancestor Elbereth is already complete when the next hero attacks f
     assert.equal(engravingAt(10, 10)?.text, 'Elbereth');
     assert.equal(saveBonesLevel(), true);
 
-    freshObjectRoom({ hero: { uhitinc: 30, ualign: { type: 0, record: 10 } } });
+    freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 8 }, uhitinc: 30, ualign: { type: 0, record: 10 } } });
     requireFixtureGame(game);
     game.storage = storage;
     game.flags.debug = true;
@@ -43,6 +44,7 @@ void test('an ancestor Elbereth is already complete when the next hero attacks f
     const nextInput = resetInputState();
     nextInput.feed('yn');
     await mklev();
+    assert.equal(game._restoredBones, true);
     const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     target.mpeaceful = false;
     target.mhp = target.mhpmax = 100;

@@ -256,6 +256,12 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
     if (!state._overviewRecords)
         state._overviewRecords = new Map();
     updateSanctumOverview(flags, naltar, state);
+    // C recalc_mapseen() owns a copy so ancestor knowledge survives leaving
+    // the level. A grave or ghost is not required; mapping the square suffices.
+    const finalRestingPlaces = (prior?.finalRestingPlaces ?? level.bonesInfo ?? [])
+        .map(entry => ({ ...entry,
+        bonesknown: entry.bonesknown || !!level.at(entry.frpx, entry.frpy)?.lastseentyp,
+    }));
     state._overviewRecords.set(`${dnum}:${dlevel}`, {
         flags,
         features: {
@@ -269,6 +275,7 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
         branch: prior?.branch || null,
         seenRooms: [...seenRooms],
         untendedRooms: [...untendedRooms],
+        finalRestingPlaces,
     });
 }
 export function sameDungeonLevel(left, right) {

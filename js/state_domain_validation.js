@@ -1,6 +1,6 @@
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string, } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
-import { validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
+import { validSavedCemeteryEntry, validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
 import { TAKEOFF_ORDER } from './takeoff_state.js';
 export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
@@ -98,6 +98,7 @@ export function validSavedOverviewRecord(value) {
         })),
         seenRooms: arrayOf(integer),
         untendedRooms: arrayOf(integer),
+        finalRestingPlaces: optional(arrayOf(validSavedCemeteryEntry)),
     });
 }
 export function validSavedActiveSpecialLevel(value, entities) {

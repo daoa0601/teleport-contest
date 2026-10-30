@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { game, requireGameLevel } from '../js/gstate.js';
-import { DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
+import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
+import { BURN, DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
+import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { resetInputState } from '../js/input.js';
+import { gotoLevel } from '../js/level_change.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
 import { addShopDamage } from '../js/shop_damage.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -80,6 +83,48 @@ for (const wizard of [false, true]) {
             assert.equal(prompts.length, 0);
             assert.match(game._pending_message, /Discarding unusable bones; no need to panic/);
         }
+    });
+}
+for (const rejection of ['unusable', 'mismatched']) {
+    void test(`rejecting ${rejection} bones preserves engravings on the level left behind`, async () => {
+        const storage = memoryStorage();
+        bonesRoom(storage);
+        if (rejection === 'mismatched')
+            game.u.uz = { dnum: 0, dlevel: 6 };
+        assert.equal(saveBonesLevel(), true);
+        const key = storage.key(0);
+        assert.ok(key);
+        const encoded = storage.getItem(key);
+        assert.ok(encoded);
+        storage.removeItem(key);
+        storage.setItem('teleport-bones:D0.7', rejection === 'unusable' ? 'unusable bones' : encoded);
+        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        const dungeon = game.dungeons[0];
+        assert.ok(dungeon);
+        dungeon.bonetag = 'D';
+        dungeon.num_dunlevs = 10;
+        game.storage = storage;
+        game.flags.debug = true;
+        game.iflags.wc_eight_bit_input = false;
+        init_objects();
+        const text = 'caf\u00e9 \x01';
+        makeEngravingAt(11, 10, text, null, 0, BURN);
+        const input = resetInputState();
+        let reads = 0;
+        input.display = { async readKey() {
+                const prompt = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+                assert.ok(++reads < 20, `Unexpected bones prompt: ${prompt}`);
+                return (/(?:Get|Unlink) bones\?/.test(prompt) ? 'y' : ' ').charCodeAt(0);
+            } };
+        await gotoLevel({ dlevel: 7 });
+        assert.equal(!!game._restoredBones, false);
+        assert.equal(game.u.uroleplay?.numbones, 1);
+        assert.equal(storage.length, 0);
+        if (rejection === 'mismatched')
+            assert.match(game._messageHistory.join('\n'), /This is bones level 'D0\.6', not 'D0\.7'!/);
+        await gotoLevel({ dlevel: 1 });
+        assert.equal(game.u.uz?.dlevel, 1);
+        assert.equal(engravingAt(11, 10)?.text, text, `rejecting ${rejection} bones must leave the previous level's engraving intact`);
     });
 }
 void test('loading bones repairs an old shop wall breach before play resumes', async () => {

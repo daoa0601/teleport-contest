@@ -124,6 +124,7 @@ for (const newMoves of [1, 1000]) {
         const worm = await growingWorm();
         requirePlayingGame(game);
         game.u.uz = { dnum: 0, dlevel: 7 };
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         game.storage = storage;
         game.flags.debug = true;
         const deadline = worm.wormGrowTime;

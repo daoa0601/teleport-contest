@@ -12,12 +12,12 @@ import {
     completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave,
 } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
-import { plineWithContinuation } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
-import { makeEngravingAt } from './engrave.js';
+import { forgetEngravings, makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
 import {
@@ -30,6 +30,7 @@ import {
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
@@ -133,7 +134,9 @@ async function addMummyWrapping(monster: Monster): Promise<void> {
     );
 }
 
-export async function createBonesFromDeath(deathCause: string, promptDeathQuestion: (question: string) => Promise<string>): Promise<boolean> {
+export async function createBonesFromDeath(
+    deathCause: string, promptDeathQuestion: (question: string) => Promise<string>, when?: number,
+): Promise<boolean> {
     if (!game._canMakeBones) return false;
     const level = requireGameLevel();
     const x = game.u?.ux ?? 0;
@@ -185,6 +188,7 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
     if (game.u.punished) await unpunishHero();
     if (game.u.usteed) await dismountHero(DISMOUNT_BONES);
     await prepareBonesMonstersForSave();
+    forgetEngravings(level);
     for (const object of game.inventory) object.ghostly = true;
 
     if (arise === LEAVESTATUE) {
@@ -192,7 +196,7 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
         const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
         statue.oname = game.plname || 'player';
         await dropHeroInventoryForBones(x, y, { container: statue });
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
 
@@ -205,11 +209,13 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
             return false;
         }
         giveHeroResistancesToMonster(monster, game);
+        setMonsterGivenName(monster, game.plname || 'player');
+        newsym(x, y);
         await dropHeroInventoryForBones(x, y, { carrier: monster });
         await addMummyWrapping(monster);
         await initializeMonsterArmor(monster);
         completeBonesMonster(monster, game);
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
 
@@ -220,10 +226,11 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
         game._bonesSaved = false;
         return false;
     }
+    setMonsterGivenName(ghost, game.plname || 'player');
     completeBonesMonster(ghost, game);
     if (corpse) {
         corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
-    game._bonesSaved = saveBonesLevel();
+    game._bonesSaved = saveBonesLevel(deathCause, when);
     return game._bonesSaved;
 }

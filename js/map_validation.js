@@ -4,6 +4,15 @@ import { validSavedGlyph, validSavedGlyphMetadata } from './display_validation.j
 import { isSavedRecord } from './saved_graph.js';
 import { arrayOf, boolean, closedFieldsMatch as fieldsMatch, integer, nullable, optional, string, validateSavedEntity } from './saved_validation.js';
 const mapBit = (value) => typeof value === 'boolean' || value === 0 || value === 1;
+export function validSavedCemeteryEntry(value) {
+    return fieldsMatch(value, {
+        who: string, how: string,
+        when: (entry) => string(entry) && /^\d{14}$/.test(entry),
+        frpx: (entry) => integer(entry) && entry > 0 && entry < COLNO,
+        frpy: (entry) => integer(entry) && entry >= 0 && entry < ROWNO,
+        bonesknown: boolean,
+    });
+}
 export function validSavedPosition(value) {
     return fieldsMatch(value, { x: integer, y: integer });
 }
@@ -188,7 +197,7 @@ export function restoreSavedMap(value, entities) {
         monsters: arrayOf(entities.monster), traps: arrayOf(validSavedTrap),
         regions: arrayOf(validGasCloud), levelTimers: arrayOf(validTimer),
         exclusionZones: arrayOf(validExclusion), flags: validFlags,
-        bonesNames: optional(arrayOf(string)),
+        bonesInfo: optional(arrayOf(validSavedCemeteryEntry)),
         upstair: optional(validSavedPosition), dnstair: optional(validSavedPosition),
         invocationPosition: optional(validSavedPosition),
         upTeleportRegion: optional(nullable(validArrivalRegion)),

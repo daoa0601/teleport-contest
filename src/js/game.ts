@@ -5,6 +5,7 @@ import { COLNO, ROWNO, STONE } from './const.js';
 import { NO_COLOR } from './terminal.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import type { CemeteryEntry } from './dungeon_types.js';
 import type {
     ArrivalRegion, ElementalBounds, ElementalBubble, Engraving, ExclusionZone,
     FloorObjects, GasCloud, LevelFlags, LevelTimer, MapLocation, Position,
@@ -53,7 +54,7 @@ export class GameMap {
     declare levelTimers: LevelTimer[];
     declare exclusionZones: ExclusionZone[];
     declare flags: LevelFlags;
-    declare bonesNames?: string[];
+    declare bonesInfo?: CemeteryEntry[];
     declare upstair?: Position;
     declare dnstair?: Position;
     // C svi.inv_pos survives removal of the vibrating-square trap.

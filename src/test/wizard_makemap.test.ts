@@ -55,6 +55,7 @@ void test('#wizmakemap loading bones does not make a cached bones level familiar
     const storage = memoryStorage();
     for (const dlevel of [1, 2]) {
         freshObjectRoom({ hero: { uz: { dnum: 0, dlevel } }, flags: { debug: true } });
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         game.storage = storage;
         game.plname = 'Ada';
         assert.ok(saveBonesLevel(), `Could not save bones on level ${dlevel}`);
