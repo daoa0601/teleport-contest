@@ -29,7 +29,8 @@ import { hitpointBar, hitpointBarFill } from './status_hitpoint_bar.js';
 import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { noticeAllMonsters } from './monster_notices.js';
+import { describeMapLocation } from './lookaround.js';
+import { glyphToCmapSymbol } from './getpos.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, MAX_MSG_HISTORY, BL_WEAPON, BL_ARMOR, BL_TERRAIN, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
@@ -1951,6 +1952,7 @@ export async function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false
     if (!loc)
         return;
     const nextGlyph = glyph || { kind: 'effect' };
+    const mentionChange = shouldMentionGlyphChange(x, y, loc, nextGlyph);
     // display.c:reset_glyphmap() clears every color on the Rogue level
     // (GMAP_ROGUELEVEL) unless the loaded rogue set declares IBM handling
     // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
@@ -2001,6 +2003,50 @@ export async function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false
     loc.disp_color = color;
     loc.disp_decgfx = !!decgfx;
     loc.disp_attr = attr | 0;
+    if (mentionChange) {
+        const accessible = game.flags.accessiblemsg;
+        game.flags.accessiblemsg = true;
+        try {
+            const description = await describeMapLocation(x, y);
+            await pline_xy(x, y, `${description}.`);
+        }
+        finally {
+            if (accessible === undefined)
+                delete game.flags.accessiblemsg;
+            else
+                game.flags.accessiblemsg = accessible;
+        }
+    }
+}
+// C display.c:show_glyph(). Announce discoveries and furniture changes,
+// excluding floor, walls, the hero, and disappearing monsters. Monster
+// sightings belong to spot_monsters when that option is also enabled.
+function shouldMentionGlyphChange(x, y, location, next) {
+    if (!game.flags.mention_map || game._monsterNoticesBlocked
+        || game.program_state.in_docrt || game.program_state.gameover
+        || game.program_state.in_getlev || game.program_state.stopprint)
+        return false;
+    const old = location.disp_glyph?.glyph ?? GlyphOffset.unexplored;
+    if (next.glyph === undefined || old === next.glyph && !location.gnew)
+        return false;
+    const symbol = glyphToCmapSymbol(next.glyph);
+    const furniture = symbol !== null
+        && symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain;
+    const discovered = old === GlyphOffset.nothing || old === GlyphOffset.unexplored;
+    if (!(discovered || furniture))
+        return false;
+    if (symbol !== null && (symbol >= CmapSymbol.stone && symbol <= CmapSymbol.trwall
+        || symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom))
+        return false;
+    if (glyphIsMonster(old) || game.flags.spot_monsters && glyphIsMonster(next.glyph))
+        return false;
+    return x !== game.u.ux || y !== game.u.uy;
+}
+// display.h: glyph_is_monster() excludes bodies and statues.
+function glyphIsMonster(glyph) {
+    return glyph >= GlyphOffset.monMale && glyph < GlyphOffset.invisible
+        || glyph >= GlyphOffset.detectMale && glyph < GlyphOffset.body
+        || glyph >= GlyphOffset.riddenMale && glyph < GlyphOffset.object;
 }
 // flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves
 // the cursor one column after the last printed cell, even when it was restored
@@ -2612,7 +2658,6 @@ export async function docrt({ beforeGlow = null } = {}) {
             return;
         }
         await vision_recalc(2);
-        await noticeAllMonsters(game);
         await cls();
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++) {
@@ -2628,7 +2673,6 @@ export async function docrt({ beforeGlow = null } = {}) {
                 }
             }
         await vision_recalc(0);
-        await noticeAllMonsters(game);
         await see_monsters({ beforeGlow });
     }
     finally {
@@ -3109,10 +3153,21 @@ export async function cls() {
     game._pending_message = '';
     game._retained_message = '';
     game._toplineGlyphPainted = false;
-    // clear_glyph_buffer() forgets the display, preserving remembered terrain.
-    for (let y = 0; y < ROWNO; y++)
-        for (let x = 1; x < COLNO; x++)
-            await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
+    // clear_glyph_buffer() resets the buffer directly. This is not a
+    // discovered glyph change, and default unexplored spaces are not dirty.
+    for (let y = 0; y < ROWNO; y++) {
+        for (let x = 1; x < COLNO; x++) {
+            const location = game.level?.at(x, y);
+            if (!location)
+                continue;
+            location.disp_glyph = { kind: 'unexplored', glyph: GlyphOffset.unexplored };
+            location.disp_ch = ' ';
+            location.disp_color = NO_COLOR;
+            location.disp_decgfx = false;
+            location.disp_attr = 0;
+            location.gnew = 0;
+        }
+    }
     game.context.botl = true;
 }
 // C tty_clear_nhwindow(WIN_MESSAGE). A seen prompt still occupies the

@@ -12,6 +12,7 @@ import {
     TEMP_LIT,
 } from './const.js';
 import { newsym } from './display.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
@@ -991,9 +992,10 @@ export async function vision_recalc(control = 0): Promise<void> {
             }
         }
     }
-    if (ux > 0) await newsym(ux, uy);
+    if (ux > 0 && !game.program_state.panicking) await newsym(ux, uy);
     game._viz_rmin = next_rmin;
     game._viz_rmax = next_rmax;
+    await noticeAllMonsters(game);
 }
 
 export function cansee(x: number, y: number): boolean {

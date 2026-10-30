@@ -5,7 +5,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
+import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -5049,7 +5049,6 @@ async function wizIdentify() {
             'Debug Identify',
             '(all items are permanently identified already)',
         ]);
-        game._pending_message = '';
         game.context.move = 0;
         return;
     }
@@ -5091,7 +5090,6 @@ async function wizIdentify() {
     finally {
         await tty_destroy_nhwindow(window);
     }
-    game._pending_message = '';
     if (selected.includes('all')) {
         await identifyPack(0);
         game.context.move = 0;
@@ -7594,9 +7592,6 @@ async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     if (u.umoved) {
         await newsym(oldx, oldy);
         await vision_recalc(1);
-        // C vision_recalc() ends with notice_all_mons(), before the
-        // invocation message.
-        await noticeAllMonsters(game);
         await announceInvocationSquare();
     }
     if (ballChainMove)

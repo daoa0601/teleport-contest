@@ -567,7 +567,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     // C do.c:1971-1972: goto_level() has closed its notice window by here,
     // after every arrival message and the Tourist experience bonus, and
     // announces the new level's monsters just before the annotation.
-    unblockMonsterNotices(game);
+    await unblockMonsterNotices(game);
     await noticeAllMonsters(game);
     const levelAnnotation = game._levelAnnotations?.get?.(
         `${newDepth.dnum}:${newDepth.dlevel}`,

@@ -2,6 +2,7 @@ import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
+import { dolookaround } from './lookaround.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -1185,8 +1186,6 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) {
                 await vision_recalc(0);
-                // C vision_recalc() ends with notice_all_mons().
-                await noticeAllMonsters(game);
             }
             await resolveMonsterLiquid(event.monster, game, {
                 announce: plineWithContinuation,
@@ -3796,8 +3795,6 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // actor's liquid checks, equipment changes, and movement decisions.
         if (game.vision_full_recalc) {
             await vision_recalc(0);
-            // C vision_recalc() ends with notice_all_mons().
-            await noticeAllMonsters(game);
         }
         if (game.context.bypasses) clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
@@ -3865,9 +3862,9 @@ async function moveMonsters() {
 // C ref: allmain.c newgame()
 export async function newgame() {
     await withMonsterNoticesBlocked(game, () => initializeNewGame());
-    // C allmain.c:844-848 enables notices only after welcome(). The
-    // mention_map option runs dolookaround() instead, which is unported.
-    if (!game.flags.mention_map) await noticeAllMonsters(game);
+    // C allmain.c:844-848 enables notices only after welcome().
+    if (game.flags.mention_map) await dolookaround();
+    else await noticeAllMonsters(game);
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
@@ -4094,7 +4091,6 @@ export async function runMoveloopCore() {
         if (g.vision_full_recalc) {
             await vision_recalc(0);
             g.vision_full_recalc = 0;
-            await noticeAllMonsters(g);
         }
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose

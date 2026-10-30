@@ -2,21 +2,9 @@
 // behind the spot_monsters option (C a11y.mon_notices). C latches each
 // monster's mspotted and prints "You see <mon>." once per sighting; a
 // monster that can no longer be spotted drops its latch silently.
-// C calls notice_mon() at postmov() entry; every other announcement comes
-// from notice_all_mons() at the end of vision_recalc(). The port runs that
-// catch-up at the async ends of the recalculation sites: the hero's step
-// (hack.c:2972), the monster-phase and post-command drains that gate on
-// vision_full_recalc (allmain.c:471, 542, 580; mon.c:1186, 1258), docrt()
-// redraws (display.c:1740, 1758), teleds() landings (teleport.c:571,
-// including jump, mount, dismount, pit escape, and liquid rescues), level
-// arrival after the arrival messages
-// (do.c:1971), and newgame after welcome() (allmain.c:848). C's other
-// vision_recalc() callers -- message output (pline.c:270), light sources
-// (light.c), eyewear (worn.c), digging, zaps, and pet movement -- are
-// drained synchronously by this port, so a monster that becomes spottable
-// in one of those flows is announced at the next ported anchor rather than
-// immediately. Startup, level arrival, and teleport landing effects block
-// notices until their messages finish, including nested teleports.
+// vision_recalc() owns the catch-up, including recalculations triggered by
+// message output. Startup, level arrival, mapping, and teleport landings
+// block both monster and glyph notices until their own messages finish.
 
 import {
     canSeeMonster, canSpotMonster, plineWithContinuation,
@@ -28,6 +16,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import { impossible } from './diagnostics.js';
 
 // C include/monflag.h: M1_HIDE (is_hider) and M2_PNAME (type_is_pname).
 const M1_HIDE = 0x100;
@@ -39,8 +28,12 @@ export function blockMonsterNotices(state: GameState): void {
     state._monsterNoticesBlocked = (state._monsterNoticesBlocked ?? 0) + 1;
 }
 
-export function unblockMonsterNotices(state: GameState): void {
-    state._monsterNoticesBlocked = Math.max(0, (state._monsterNoticesBlocked ?? 0) - 1);
+export async function unblockMonsterNotices(state: GameState): Promise<void> {
+    state._monsterNoticesBlocked = (state._monsterNoticesBlocked ?? 0) - 1;
+    if (state._monsterNoticesBlocked < 0) {
+        await impossible('mon_notices_blocked<0', { state });
+        state._monsterNoticesBlocked = 0;
+    }
 }
 
 export async function withMonsterNoticesBlocked<T>(
@@ -50,7 +43,7 @@ export async function withMonsterNoticesBlocked<T>(
     try {
         return await action();
     } finally {
-        unblockMonsterNotices(state);
+        await unblockMonsterNotices(state);
     }
 }
 
@@ -90,7 +83,9 @@ export async function noticeMonster(
             suppressSaddle: named,
             ...(monster.mpeaceful && !monster.mtame ? { adjective: 'peaceful' } : {}),
         });
-        await publish(`You ${canSeeMonster(monster) ? 'see' : 'notice'} ${name}.`);
+        await publish(`You ${canSeeMonster(monster) ? 'see' : 'notice'} ${name}.`, {
+            position: { x: monster.mx, y: monster.my },
+        });
     } else if (!spottable) {
         monster.mspotted = 0;
     }

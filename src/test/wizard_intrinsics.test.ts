@@ -39,6 +39,21 @@ void test('wizard intrinsic counts default to thirty and explicit counts extend 
     assert.equal(game.context.move, 0);
 });
 
+void test('wizard intrinsic feedback preserves the sighting produced by dismissing its menu', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    const jackal = await createMonsterAt('jackal', 12, 10);
+    jackal.mpeaceful = 0;
+    game.flags.spot_monsters = true;
+    const input = resetInputState();
+
+    await selectIntrinsic(input, 'pass thru walls', 5, [
+        /You see a jackal\..*Timeout for pass thru walls set to 5\./,
+    ]);
+
+    assert.match(game._pending_message, /You see a jackal\./,
+        'the final redraw announces the new sighting after the timeout feedback');
+});
+
 void test('wizard resistance timeouts saturate without removing permanent resistance', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();

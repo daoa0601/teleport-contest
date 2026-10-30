@@ -9,8 +9,8 @@ import assert from 'node:assert/strict';
 
 import { moveMonsterForHeroAttack, performMonsterTurn, restoregamePreamble } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
-import { docrt } from '../js/display.js';
+import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, HWALL, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
+import { canSeeMonster, docrt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -283,8 +283,17 @@ void test('jumping onto a teleport trap delays notices until both landings finis
     game.u.uz = { dnum: 0, dlevel: 29 };
     addTrap(level, TELEP_TRAP, 12, 10);
     addTrap(level, VIBRATING_SQUARE, 14, 10);
-    const jackal = await createMonsterAt('jackal', 13, 11, MM_NOGRP | NO_MINVENT);
+    // Keep the jackal out of sight during the jump itself. Native
+    // hurtle_step() recalculates vision before teleds() starts blocking.
+    for (let x = 7; x <= 16; x++) {
+        if (x === 14) continue;
+        level.requireAt(x, 12).typ = HWALL;
+        vision_note_blocker_change(x, 12);
+    }
+    const jackal = await createMonsterAt('jackal', 14, 13, MM_NOGRP | NO_MINVENT);
     jackal.mpeaceful = 0;
+    await vision_recalc(0);
+    assert.equal(canSeeMonster(jackal), false, 'the jackal is first visible at the second landing');
     const input = resetInputState();
     input.feed('ll.');
 

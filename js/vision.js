@@ -4,6 +4,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { game } from './gstate.js';
 import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
 import { newsym } from './display.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
@@ -1027,10 +1028,11 @@ export async function vision_recalc(control = 0) {
             }
         }
     }
-    if (ux > 0)
+    if (ux > 0 && !game.program_state.panicking)
         await newsym(ux, uy);
     game._viz_rmin = next_rmin;
     game._viz_rmax = next_rmax;
+    await noticeAllMonsters(game);
 }
 export function cansee(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
