@@ -1,7 +1,7 @@
 import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
-import { noticeAllMonsters, noticeMonster, withMonsterNoticesBlocked } from './monster_notices.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -3350,16 +3350,6 @@ async function presentMonsterPostMove(
 ): Promise<boolean> {
     // dog_move() finishes mattacku() before m_move() enters postmov().
     if (action.movement.deferredAfterPetAttack) return false;
-    // C monmove.c:1470 opens postmov() with notice_mon(), and only passes
-    // that ran postmov() present here: the dochug-stage exits (trap-held,
-    // displacement, the rloc fallback, eating, deferred spells) never reach
-    // postmov(). Deferred resumes re-enter this presenter, so each action
-    // notices once, like native's single postmov() call.
-    if (action.movement.movementStage === 'postmov'
-        && !action.movement.postMoveNoticed) {
-        action.movement.postMoveNoticed = true;
-        await noticeMonster(action.monster, game, plineWithContinuation);
-    }
     let movement = action.movement;
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.

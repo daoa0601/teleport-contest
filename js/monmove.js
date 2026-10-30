@@ -6412,9 +6412,16 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
         await finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext);
         return movement;
     }
+    // C postmov() notices the monster before a door shift, trap, or floor
+    // effect can change its form or kill it. Resumed traps re-enter here.
+    if (!movement.postMoveNoticed) {
+        // Cache canseeit before the notice's message can flush vision.
+        movement.postMoveWasVisible = cansee(monster.mx, monster.my);
+        movement.postMoveNoticed = true;
+        await noticeMonster(monster, state);
+    }
     if (movement.postMoveStatus === MMOVE_MOVED) {
         if (!trapAlreadyHandled) {
-            movement.postMoveWasVisible = cansee(monster.mx, monster.my);
             const capabilities = requireMovementCapabilities(movement);
             const shift = await shiftMonsterForDoor(monster, state, {
                 previousPosition: { x: movement.oldx, y: movement.oldy },
@@ -7233,12 +7240,6 @@ export async function resumeDeferredPetAttack(action, state, random = rn2, rollD
     if (!movement.deferredAfterPetAttack)
         return action;
     delete movement.deferredAfterPetAttack;
-    // dog_move() has finished mattacku(); postmov() notices the pet before
-    // handling anything it might eat, pick up, or hide beneath here.
-    if (!movement.postMoveNoticed) {
-        movement.postMoveNoticed = true;
-        await noticeMonster(action.monster, state);
-    }
     if (action.monster.dead || action.monster.mhp <= 0) {
         movement.postMoveStatus = MMOVE_DIED;
         return action;

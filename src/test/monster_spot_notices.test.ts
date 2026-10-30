@@ -7,29 +7,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { performMonsterTurn, restoregamePreamble } from '../js/allmain.js';
+import { moveMonsterForHeroAttack, performMonsterTurn, restoregamePreamble } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
+import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
 import { docrt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { noticeAllMonsters } from '../js/monster_notices.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { finishTeleportArrival } from '../js/location_effects.js';
-import { RIN_CONFLICT } from '../js/object_data.js';
+import { RIN_CONFLICT, SKELETON_KEY } from '../js/object_data.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { runSegment } from '../js/jsmain.js';
 import { gotoLevel } from '../js/level_change.js';
 import { jumpHero } from '../js/jumping.js';
-import { vision_recalc } from '../js/vision.js';
+import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
@@ -57,6 +58,41 @@ void test('spot_monsters announces a moving monster once per sighting', async ()
     assert.ok(!announcements().slice(seen).includes('You see a jackal.'),
         'the mspotted latch keeps the second turn quiet');
 });
+
+for (const trapped of [false, true]) {
+    void test(`a first sighting precedes ${trapped ? 'a fatal door explosion' : 'opening a door'}`, async () => {
+        const level = freshObjectRoom({
+            left: 10, right: 13, top: 10, bottom: 10,
+            flags: { spot_monsters: true, verbose: true },
+        });
+        requirePlayingGame(game);
+        const orc = await createMonsterAt('orc', 11, 10, MM_NOGRP | NO_MINVENT);
+        orc.mpeaceful = 0;
+        orc.mflee = 1;
+        orc.mfleetim = 20;
+        orc.mhp = 1;
+        await addObjectToMonsterInventory(orc, await knownObject(SKELETON_KEY));
+        const door = level.requireAt(12, 10);
+        door.typ = DOOR;
+        door.doormask = D_LOCKED | (trapped ? D_TRAPPED : 0);
+        vision_note_blocker_change(12, 10);
+        vision_recalc(0);
+        initRng(1n);
+        pushKeys(' '.repeat(30));
+
+        await moveMonsterForHeroAttack(orc);
+
+        const messages = announcements().join(' | ');
+        const notice = messages.indexOf('You see an orc.');
+        const doorMessage = trapped ? messages.indexOf('KABOOM!!')
+            : messages.indexOf('orc unlocks and opens a door.');
+        assert.equal(door.doormask, trapped ? D_NODOOR : D_ISOPEN,
+            `the monster reached and opened the door: ${messages}`);
+        assert.equal(!!orc.dead, trapped, `the door trap kills its opener: ${messages}`);
+        assert.ok(notice >= 0 && doorMessage > notice,
+            `postmov announces the monster before the door effect: ${messages}`);
+    });
+}
 
 void test('the vision catch-up announces nearest first and describes peaceful monsters', async () => {
     freshObjectRoom();
