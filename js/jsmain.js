@@ -262,7 +262,6 @@ export class Engine {
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
         this.applyStartupConfiguration(opts);
-        this.showStartupNotice();
         await displayConfigurationErrors(opts.configErrors);
         if (this._nethackOptions !== null) {
             // C rcfile() waits for file errors before parsing NETHACKOPTIONS.
@@ -272,6 +271,7 @@ export class Engine {
         }
         if (opts.configErrors.some(report => report.errors.length > 0))
             this.display.clearScreen();
+        this.showStartupNotice();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
         let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
