@@ -48,6 +48,7 @@ const transientFields = {
     _bubbleTraversalUp: true,
     _characterPickerUsed: true,
     _digestedMonsterSpecies: true,
+    _deferSeeMonsters: true,
     _encumbranceLevel: true,
     _farMonsterNoise: true,
     _helplessDoneMessage: true,

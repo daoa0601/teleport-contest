@@ -526,6 +526,8 @@ async function applyCalendarMessages() {
 // shuffle, presents the saved map, and applies real-world calendar effects.
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
+    // restgamestate() defers sensed monster overlays until moveloop starts.
+    game._deferSeeMonsters = true;
     delete game._pendingHeroShapeChange;
     // C restgamestate() runs role_init() before anything else the preamble
     // does; restoreGame() has already spent its quest gender rolls and then
@@ -747,6 +749,10 @@ async function finishMoveloopPreamble() {
     // moveloop_preamble() sets botlx after assigning the gold encoding.
     game.context.botl = true;
     await reportHeroEncumbrance();
+    if (game._deferSeeMonsters) {
+        game._deferSeeMonsters = false;
+        await see_monsters();
+    }
     game.u.uz0 ||= { ...game.u.uz };
     game.u.uz0.dlevel = game.u.uz.dlevel;
     game.context.move = 0;

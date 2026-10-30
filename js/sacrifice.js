@@ -85,6 +85,8 @@ export async function dosacrifice() {
     else {
         await pline('Nothing happens.');
     }
+    // dosacrifice() returns ECMD_TIME even after savelife() clears move.
+    game.context.move = 1;
 }
 async function chooseOffering() {
     const game = requireInitializedGame();

@@ -103,6 +103,8 @@ export async function dosacrifice(): Promise<void> {
     } else {
         await pline('Nothing happens.');
     }
+    // dosacrifice() returns ECMD_TIME even after savelife() clears move.
+    game.context.move = 1;
 }
 
 async function chooseOffering(): Promise<GameObject | null> {

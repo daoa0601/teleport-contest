@@ -1,8 +1,9 @@
+import { STONE } from '../js/const.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { restoregamePreamble } from '../js/allmain.js';
 import { GameDisplay } from '../js/game_display.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline, flush_screen } from '../js/display.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -10,7 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { cansee } from '../js/vision.js';
+import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { requireScreenRow } from './support/screen.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -140,5 +141,45 @@ void test('a light-emitting revert during the restore shape pass does not restor
     await flushPendingTopline();
     assert.deepEqual(sightAtRevert, [false, false], 'Both reverts are announced with sight still unbuilt.');
     assert.equal(cansee(11, 10), true, 'Sight is rebuilt after the pass.');
+});
+void test('restoring detection paints distant monsters after the welcome pager', async () => {
+    freshObjectRoom({ right: 30, role: 'wizard', flags: { female: false, initgend: 0 }, hero: { ualignbase: [0, 0] } });
+    const level = game.level;
+    assert.ok(level);
+    for (let y = 6; y <= 14; y++)
+        level.requireAt(15, y).typ = STONE;
+    vision_reset_new_level();
+    vision_recalc(0);
+    game.plname = 'Watcher';
+    game.detectMonsters = true;
+    await createMonsterAt('ogre', 20, 10);
+    assert.equal(cansee(20, 10), false);
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    resetGame();
+    game.nhDisplay = new GameDisplay(null);
+    initRng(17n);
+    assert.equal(restoreGame('Watcher', storage), true);
+    const input = resetInputState();
+    let welcomed = false;
+    input.display = {
+        async readKey() {
+            const message = requireScreenRow(0).map(cell => cell.ch).join('');
+            assert.match(message, /welcome back to NetHack/);
+            assert.notEqual(requireScreenRow(11)[19]?.ch, 'O', 'detection is deferred during the welcome');
+            welcomed = true;
+            return 32;
+        },
+    };
+    try {
+        await restoregamePreamble();
+        await flushPendingTopline();
+    }
+    finally {
+        input.display = null;
+    }
+    assert.equal(welcomed, true);
+    await flush_screen(1);
+    assert.equal(requireScreenRow(11)[19]?.ch, 'O', 'detection resumes before command input');
 });
 //# sourceMappingURL=save_restore_shape.test.js.map

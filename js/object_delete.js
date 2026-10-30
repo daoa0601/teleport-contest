@@ -6,6 +6,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { OBJECT_TIMER_KIND, stopAllObjectTimers } from './object_timers.js';
 import { cleanupObjectBurn, objectShedsLight } from './light.js';
 import { unlinkObject } from './object_location.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { objectResistsDestruction } from './object_state.js';
 import { reconcileObjectDeletionBill, objectPriceAdjustment } from './shk.js';
 import { releaseObjectLeash } from './monster_leash.js';
@@ -118,7 +119,10 @@ export async function delobjCore(object, force, state = game, random = rn2) {
         return;
     }
     const updateMap = object.where === 'floor';
-    unlinkObject(object, state);
+    if (object.where === 'inventory')
+        await freeInventoryObject(object, state);
+    else
+        unlinkObject(object, state);
     if (updateMap) {
         /* floor object's coordinates are always up to date */
         maybeUnhideAt(object.ox, object.oy, state);

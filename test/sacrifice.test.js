@@ -1,3 +1,5 @@
+import { initRng } from '../js/rng.js';
+import { requireScreenRow } from './support/screen.js';
 import { saveMonsterTraits } from '../js/monster_traits.js';
 import { initializePet } from '../js/dog.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -309,4 +311,32 @@ for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']]) {
         assert.equal(records[0]?.points, outcome === 'ascended' ? 200 : 100);
     });
 }
+void test('declining divine death after a fake offering still spends the offering turn', async () => {
+    freshAltar({ flags: { debug: true }, hero: { ugangr: 10 } });
+    requirePlayingGame(game);
+    const amulet = await addInventoryObject(FAKE_AMULET_OF_YENDOR, { known: true });
+    initRng(2n);
+    const input = resetInputState();
+    let declined = false;
+    input.display = {
+        async readKey() {
+            const message = requireScreenRow(0).map(cell => cell.ch).join('');
+            if (message.startsWith('Die?')) {
+                declined = true;
+                return 'n'.charCodeAt(0);
+            }
+            assert.match(message, /--More--/);
+            return 32;
+        },
+    };
+    try {
+        await runExtendedCommand('offer', amulet.invlet);
+    }
+    finally {
+        input.display = null;
+    }
+    assert.equal(declined, true, 'the deity must have inflicted a fatal punishment');
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(game.context.move, 1, 'finishing the offering must consume a turn after survival');
+});
 //# sourceMappingURL=sacrifice.test.js.map

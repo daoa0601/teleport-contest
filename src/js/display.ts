@@ -2410,6 +2410,7 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
 // can change how a stationary monster is projected when only the hero moves;
 // repainting solely on actor movement leaves stale warning numerals behind.
 export async function see_monsters({ beforeGlow = null }: RedrawOptions = {}) {
+    if (game._deferSeeMonsters) return;
     if (game.u?.usteed) game.u.usteed.meverseen = 1;
     if (game.u?.ustuck) game.u.ustuck.meverseen = 1;
     let count = 0;
