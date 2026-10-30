@@ -277,7 +277,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     game.u.uz = destinationDepth;
     game.u.utolev = { ...destinationDepth };
     game.u.utotype = 0;
-    checkGoldSymbol();
     const dungeon = game.dungeons[destinationDepth.dnum];
     if (!dungeon)
         throw new Error(`Destination dungeon ${destinationDepth.dnum} is not in the dungeon graph`);
@@ -328,6 +327,9 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     // elsewhere.  Freshly generated levels carry no stale memory, and the
     // pass is idempotent there.
     reglyphSymbolSet();
+    // A newly generated Rogue level has now installed its symbol identity.
+    // Check the coin label before any arrival message can show the status.
+    checkGoldSymbol();
     const beforeGlow = async () => {
         if (postMessage.slice(0, 15).toLowerCase() !== 'you materialize')
             return;

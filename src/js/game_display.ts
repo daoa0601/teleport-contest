@@ -13,10 +13,14 @@ import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './status_layout.js';
 import { StatusHighlights } from './status_highlighting.js';
 import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
+import type { TerminalCell } from './terminal.js';
 
 export class GameDisplay {
     readonly terminal: Terminal;
     private readonly mapFrameCells = new Set<HTMLSpanElement>();
+    // wintty.c:g_putch() records byte glyphs with their high bit cleared.
+    // termcap.c:nomux_putch() leaves a cell alone for control characters.
+    private readonly capturedMapCells = new Map<number, TerminalCell>();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline: string | null = null;
     // Displaying an empty WIN_MESSAGE can leave its answered question painted.
@@ -49,6 +53,11 @@ export class GameDisplay {
     get rows() { return this.terminal.rows; }
     get cols() { return this.terminal.cols; }
     get grid() { return this.terminal.grid; }
+    get captureGrid() {
+        if (this.capturedMapCells.size === 0) return this.grid;
+        return this.grid.map((cells, row) => cells.map((cell, col) =>
+            this.capturedMapCells.get(row * this.cols + col) ?? cell));
+    }
     get cursorCol() { return this.terminal.cursorCol; }
     set cursorCol(v: number) { this.terminal.cursorCol = v; }
     get cursorRow() { return this.terminal.cursorRow; }
@@ -62,14 +71,23 @@ export class GameDisplay {
 
     // Display methods
     setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number) {
+        this.capturedMapCells.delete(row * this.cols + col);
         this.clearMapFrames(col, row, 1);
         this.terminal.setCell(col, row, ch, color, attr);
     }
     // The terminal adapter stores foregrounds and text attributes. Map frame
     // colors belong to the map window and take precedence over pet/inverse
     // highlighting, as tty_print_glyph() does.
-    setMapCell(col: number, row: number, ch: string, color: TerminalColor, attr: number, frameColor: number | null) {
+    setMapCell(col: number, row: number, ch: string, color: TerminalColor, attr: number, frameColor: number | null, byteGlyph = false) {
+        const index = row * this.cols + col;
+        const current = this.capturedMapCells.get(index) ?? this.grid[row]?.[col];
+        const previous = current ? { ...current } : undefined;
+        const code = byteGlyph ? ch.charCodeAt(0) & 0x7f : ch.charCodeAt(0);
         this.setCell(col, row, ch, color, frameColor === null ? attr : 0);
+        if (code < 32 && previous) this.capturedMapCells.set(index, previous);
+        else if (byteGlyph) this.capturedMapCells.set(index, {
+            ch: String.fromCharCode(code), color, attr: frameColor === null ? attr : 0,
+        });
         const span = this.spans?.[row]?.[col];
         if (!span) return;
         if (frameColor !== null) {
@@ -78,17 +96,28 @@ export class GameDisplay {
         } else span.style.backgroundColor = attr & ATR_INVERSE ? this.colorToCss(color) : '';
     }
     putstr(col: number, row: number, str: string, color?: TerminalColor, attr?: number) {
+        this.clearCapturedMapCells(col, row, str.length);
         this.clearMapFrames(col, row, str.length);
         this.terminal.putstr(col, row, str, color, attr);
     }
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.capturedMapCells.clear();
+        this.repaintScreen();
+    }
+    // The browser rebuilds its grid on each flush; the tty recorder only
+    // changes cells that g_putch() actually writes during that repaint.
+    repaintScreen() {
         this.preserveEmptyMessageRow = false;
         for (const span of this.mapFrameCells) span.style.backgroundColor = '';
         this.mapFrameCells.clear();
         this.terminal.clearScreen();
     }
     clearRow(row: number) {
+        this.clearCapturedMapCells(0, row, this.cols);
+        this.repaintRow(row);
+    }
+    repaintRow(row: number) {
         if (row === 0) this.preserveEmptyMessageRow = false;
         this.clearMapFrames(0, row, this.cols);
         this.terminal.clearRow(row);
@@ -96,6 +125,11 @@ export class GameDisplay {
     scrollUp() {
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
+        const moved = [...this.capturedMapCells];
+        this.capturedMapCells.clear();
+        for (const [index, cell] of moved) {
+            if (index >= this.cols) this.capturedMapCells.set(index - this.cols, cell);
+        }
     }
     moveCursor(x: number, y: number) { return this.terminal.moveCursor(x, y); }
     putChar(x: number, y: number, ch: string, attr?: number) {
@@ -106,10 +140,12 @@ export class GameDisplay {
         for (let i = 0; i < str.length; i++) this.putCharAtCursor(str.charAt(i));
     }
     putCharAtCursor(ch: string) {
+        this.clearCapturedMapCells(this.cursorCol, this.cursorRow, 1);
         this.clearMapFrames(this.cursorCol, this.cursorRow, 1);
         this.terminal.putCharAtCursor(ch);
     }
     clearToEol() {
+        this.clearCapturedMapCells(this.cursorCol, this.cursorRow, this.cols - this.cursorCol);
         this.clearMapFrames(this.cursorCol, this.cursorRow, this.cols - this.cursorCol);
         this.terminal.clearToEol();
     }
@@ -119,6 +155,11 @@ export class GameDisplay {
     getCanvas() { return this.terminal.getCanvas?.(); }
     colorToCss(color: TerminalColor) { return this.terminal.colorToCss(color); }
     captureForShell() { return this.terminal.captureForShell(); }
+
+    private clearCapturedMapCells(col: number, row: number, length: number): void {
+        for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++)
+            this.capturedMapCells.delete(row * this.cols + c);
+    }
 
     private clearMapFrames(col: number, row: number, length: number): void {
         // Frame colors are outside the frozen terminal's cell cache. Erase

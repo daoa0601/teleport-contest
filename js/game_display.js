@@ -13,6 +13,9 @@ import { StatusHighlights } from './status_highlighting.js';
 export class GameDisplay {
     terminal;
     mapFrameCells = new Set();
+    // wintty.c:g_putch() records byte glyphs with their high bit cleared.
+    // termcap.c:nomux_putch() leaves a cell alone for control characters.
+    capturedMapCells = new Map();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline = null;
     // Displaying an empty WIN_MESSAGE can leave its answered question painted.
@@ -41,6 +44,11 @@ export class GameDisplay {
     get rows() { return this.terminal.rows; }
     get cols() { return this.terminal.cols; }
     get grid() { return this.terminal.grid; }
+    get captureGrid() {
+        if (this.capturedMapCells.size === 0)
+            return this.grid;
+        return this.grid.map((cells, row) => cells.map((cell, col) => this.capturedMapCells.get(row * this.cols + col) ?? cell));
+    }
     get cursorCol() { return this.terminal.cursorCol; }
     set cursorCol(v) { this.terminal.cursorCol = v; }
     get cursorRow() { return this.terminal.cursorRow; }
@@ -53,14 +61,25 @@ export class GameDisplay {
     set flags(v) { this.terminal.flags = v; }
     // Display methods
     setCell(col, row, ch, color, attr) {
+        this.capturedMapCells.delete(row * this.cols + col);
         this.clearMapFrames(col, row, 1);
         this.terminal.setCell(col, row, ch, color, attr);
     }
     // The terminal adapter stores foregrounds and text attributes. Map frame
     // colors belong to the map window and take precedence over pet/inverse
     // highlighting, as tty_print_glyph() does.
-    setMapCell(col, row, ch, color, attr, frameColor) {
+    setMapCell(col, row, ch, color, attr, frameColor, byteGlyph = false) {
+        const index = row * this.cols + col;
+        const current = this.capturedMapCells.get(index) ?? this.grid[row]?.[col];
+        const previous = current ? { ...current } : undefined;
+        const code = byteGlyph ? ch.charCodeAt(0) & 0x7f : ch.charCodeAt(0);
         this.setCell(col, row, ch, color, frameColor === null ? attr : 0);
+        if (code < 32 && previous)
+            this.capturedMapCells.set(index, previous);
+        else if (byteGlyph)
+            this.capturedMapCells.set(index, {
+                ch: String.fromCharCode(code), color, attr: frameColor === null ? attr : 0,
+            });
         const span = this.spans?.[row]?.[col];
         if (!span)
             return;
@@ -72,11 +91,18 @@ export class GameDisplay {
             span.style.backgroundColor = attr & ATR_INVERSE ? this.colorToCss(color) : '';
     }
     putstr(col, row, str, color, attr) {
+        this.clearCapturedMapCells(col, row, str.length);
         this.clearMapFrames(col, row, str.length);
         this.terminal.putstr(col, row, str, color, attr);
     }
     setCursor(col, row) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.capturedMapCells.clear();
+        this.repaintScreen();
+    }
+    // The browser rebuilds its grid on each flush; the tty recorder only
+    // changes cells that g_putch() actually writes during that repaint.
+    repaintScreen() {
         this.preserveEmptyMessageRow = false;
         for (const span of this.mapFrameCells)
             span.style.backgroundColor = '';
@@ -84,6 +110,10 @@ export class GameDisplay {
         this.terminal.clearScreen();
     }
     clearRow(row) {
+        this.clearCapturedMapCells(0, row, this.cols);
+        this.repaintRow(row);
+    }
+    repaintRow(row) {
         if (row === 0)
             this.preserveEmptyMessageRow = false;
         this.clearMapFrames(0, row, this.cols);
@@ -92,6 +122,12 @@ export class GameDisplay {
     scrollUp() {
         this.terminal.scrollUp();
         this.mapFrameCells.clear();
+        const moved = [...this.capturedMapCells];
+        this.capturedMapCells.clear();
+        for (const [index, cell] of moved) {
+            if (index >= this.cols)
+                this.capturedMapCells.set(index - this.cols, cell);
+        }
     }
     moveCursor(x, y) { return this.terminal.moveCursor(x, y); }
     putChar(x, y, ch, attr) {
@@ -103,10 +139,12 @@ export class GameDisplay {
             this.putCharAtCursor(str.charAt(i));
     }
     putCharAtCursor(ch) {
+        this.clearCapturedMapCells(this.cursorCol, this.cursorRow, 1);
         this.clearMapFrames(this.cursorCol, this.cursorRow, 1);
         this.terminal.putCharAtCursor(ch);
     }
     clearToEol() {
+        this.clearCapturedMapCells(this.cursorCol, this.cursorRow, this.cols - this.cursorCol);
         this.clearMapFrames(this.cursorCol, this.cursorRow, this.cols - this.cursorCol);
         this.terminal.clearToEol();
     }
@@ -116,6 +154,10 @@ export class GameDisplay {
     getCanvas() { return this.terminal.getCanvas?.(); }
     colorToCss(color) { return this.terminal.colorToCss(color); }
     captureForShell() { return this.terminal.captureForShell(); }
+    clearCapturedMapCells(col, row, length) {
+        for (let c = Math.max(0, col); c < Math.min(this.cols, col + length); c++)
+            this.capturedMapCells.delete(row * this.cols + c);
+    }
     clearMapFrames(col, row, length) {
         // Frame colors are outside the frozen terminal's cell cache. Erase
         // them even when it skips writing unchanged text, such as help blanks.
