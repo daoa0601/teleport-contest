@@ -774,7 +774,9 @@ export async function selectUsedInventoryLetter(avoidLetter) {
 export async function showIdentifiedInventory() {
     for (const item of game.inventory)
         identifyObjectForDisclosure(item, true);
-    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
+    // disclose() requests a reply so an inventory letter closes the menu;
+    // it ignores the selected object and continues with the next question.
+    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_ONE });
 }
 export function identifyObjectForDisclosure(item, identifyTinContents = false) {
     recordObjectEncounter(item.otyp);

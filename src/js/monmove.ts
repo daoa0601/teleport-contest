@@ -1129,10 +1129,12 @@ export async function finishDeferredMonsterMiscItem(
             await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? trapName(misc.trap.ttyp, { state }) : 'hidden trap'}!`);
         }
         const oldx = monster.mx, oldy = monster.my;
-        await placeMonsterOnMap(monster, misc.trap.tx, misc.trap.ty);
+        // use_misc() removes even a monster already standing on the trap.
+        removeMonsterFromMapAt(oldx, oldy, state);
         newsym(oldx, oldy);
-        if (monster.wormno) advanceMonsterWormBody(monster, { state });
+        await placeMonsterOnMap(monster, misc.trap.tx, misc.trap.ty, state);
         maybeUnhideAt(monster.mx, monster.my, state);
+        if (monster.wormno) advanceMonsterWormBody(monster, { state });
         newsym(monster.mx, monster.my);
         await changeMonsterForm(monster, null, state, { showMessage: true });
         misc.effectApplied = true;

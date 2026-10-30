@@ -772,7 +772,9 @@ export async function selectUsedInventoryLetter(avoidLetter: string | null): Pro
 // descriptions are still constrained by what the hero learned in play.
 export async function showIdentifiedInventory() {
     for (const item of game.inventory) identifyObjectForDisclosure(item, true);
-    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
+    // disclose() requests a reply so an inventory letter closes the menu;
+    // it ignores the selected object and continues with the next question.
+    return selectInventoryObject({ headingAttr: 0, pickMode: PICK_ONE });
 }
 
 export function identifyObjectForDisclosure(item: GameObject, identifyTinContents = false): void {
