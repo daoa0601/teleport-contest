@@ -3522,7 +3522,7 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 19;
+const BONES_VERSION = 20;
 // C files.c:set_bonesfile_name(): special levels keep their identity when
 // dungeon generation changes their depth; quest bones also belong to a role.
 function bonesLevelId(location = game.u.uz) {
@@ -3632,7 +3632,8 @@ function resetBonesObjects(level, mode) {
 // container back-pointers; getbones() restores the GameMap prototype.
 export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000) {
     const storage = game.storage;
-    if (!storage || !game.level || !game.urole || !game.urace
+    const location = game.u.uz;
+    if (!storage || !game.level || !location || !game.urole || !game.urace
         || !game.u.ualign)
         return false;
     purgeDeadMonsters(game.level);
@@ -3713,11 +3714,26 @@ export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds
         }
     }
     try {
+        shiftBonesDestinations(payload, location, -location.dlevel);
         storage.setItem(bonesStorageKey(), encodeSavedGraph(payload));
         return true;
     }
     catch (_error) {
         return false;
+    }
+}
+// C save_stairs()/savetrapchn() store same-dungeon destinations relative
+// to the saved level. rest_stairs()/getlev() add the receiving level's depth.
+// Only the bones copy is shifted; live and cached maps retain absolute depths.
+function shiftBonesDestinations(payload, location, adjustment) {
+    for (let stair = payload.stairs; stair; stair = stair.next) {
+        if (stair.tolev.dnum === location.dnum)
+            stair.tolev = { ...stair.tolev, dlevel: stair.tolev.dlevel + adjustment };
+    }
+    for (const trap of payload.level.traps) {
+        const destination = trap.dst;
+        if (destination?.dnum === location.dnum)
+            trap.dst = { ...destination, dlevel: destination.dlevel + adjustment };
     }
 }
 function remappedMonsterId(oldId, monsterIds) {
@@ -3959,6 +3975,7 @@ async function getbones() {
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
+    shiftBonesDestinations(payload, location, location.dlevel);
     game.stairs = restoreLevelChains(game.level, payload.stairs || null);
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
