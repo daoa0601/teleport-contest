@@ -58,6 +58,7 @@ import { isBeingTakenOff } from './takeoff_state.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { hideHeroUnder } from './monster_hiding.js';
 import { learnEggType } from './invent.js';
@@ -666,7 +667,7 @@ async function escapeTrapsAfterFormChange() {
     }
     else if (heroLikesLava() && hero.utrap && hero.utraptype === TT_LAVA) {
         await plineWithContinuation('The lava now feels soothing.');
-        clearHeroTrap();
+        await resetHeroTrap(true);
     }
     const body = { mnum: hero.umonnum };
     const slipsFree = monsterIsAmorphous(body) || monsterIsWhirly(body)
@@ -688,11 +689,11 @@ async function escapeTrapsAfterFormChange() {
                 && hero.utraptype === TT_BEARTRAP))) {
         const trapName = hero.utraptype === TT_WEB ? 'web' : 'bear trap';
         await plineWithContinuation(`You are no longer stuck in the ${trapName}.`);
-        clearHeroTrap();
+        await resetHeroTrap(true);
     }
     if (heroCanSpinWeb() && hero.utrap && hero.utraptype === TT_WEB) {
         await plineWithContinuation('You orient yourself on the web.');
-        clearHeroTrap();
+        await resetHeroTrap(true);
     }
 }
 // C break_armor(): garments react in body-slot order. Read each slot when

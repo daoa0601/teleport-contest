@@ -37,7 +37,7 @@ import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { heroLegName } from './body_parts.js';
 import { woundHeroLegs } from './hero_legs.js';
-import { clearHeroTrap } from './hero_traps.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
@@ -357,7 +357,7 @@ export async function dropBall(x: number, y: number, { state = game, publish = p
                         return;
                 }
             }
-            clearHeroTrap(state);
+            await resetHeroTrap(true, state);
             await fillPitWithBoulderAt(hero.ux, hero.uy, state, { publish });
         }
 

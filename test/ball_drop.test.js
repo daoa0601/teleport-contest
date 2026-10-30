@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BC_CHAIN, PIT, TT_BEARTRAP, TT_LAVA } from '../js/const.js';
+import { BC_CHAIN, PIT, TT_BEARTRAP, TT_LAVA, TT_WEB, WEB } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
@@ -8,8 +8,9 @@ import { punishHero } from '../js/punishment.js';
 import { moveObject, placeObjectSynchronously, remove_object } from '../js/floor_object.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { feel_location } from '../js/display.js';
-import { HEAVY_IRON_BALL, ROCK } from '../js/object_data.js';
+import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { floorObject } from './support/game-objects.js';
+import { HEAVY_IRON_BALL, ROCK } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { initRng } from '../js/rng.js';
@@ -136,6 +137,31 @@ void test('a dropped ball pulls the hero out of a bear trap', async () => {
     await dropBall(11, 10);
     assert.equal(game.u.utrap, 0);
     assert.ok(game.u.uhp < hp + 1); // wounded legs damage possible
+});
+// C ball.c:925 drop_ball(): the pull releases the holding trap through
+// reset_utrap(TRUE), so levitation blocked by the web comes back with
+// float_up()'s message before the hero is moved.
+void test('a ball pulling the hero out of a web resumes blocked levitation', async () => {
+    const messages = [];
+    await punishedHero({ ballAt: [11, 10], chainAt: [10, 10], seed: 71 });
+    grantIntrinsicProperty('levitation', 'outside');
+    const web = addTrap(requireGameLevel(), WEB, 10, 10, { tseen: true });
+    game.u.utrap = 4;
+    game.u.utraptype = TT_WEB;
+    game.u.dx = 1;
+    game.u.dy = 0;
+    requirePlayingGame(game);
+    assert.equal(propertyIsActive('levitation', game), false, 'the web must block the levitation source while it holds the hero');
+    await dropBall(11, 10, { publish: async (message) => { messages.push(message); } });
+    assert.equal(game.u.utrap, 0);
+    assert.ok(propertyIsActive('levitation', game), 'releasing the web must unblock the levitation source');
+    // float_up() speaks through the global pline, so the deferred topline
+    // carries it alongside the pull lines this publisher intercepted.
+    const spoken = [...messages, game._pending_message ?? ''].join('\n');
+    assert.ok(spoken.includes('You start to float in the air!'), 'reset_utrap(TRUE) must announce the returning levitation');
+    assert.ok(spoken.includes('The ball pulls you out of the web!'));
+    assert.ok(spoken.includes('The web is destroyed!'));
+    assert.ok(!requireGameLevel().traps.includes(web));
 });
 void test('dropping a blind ball restores the known floor beneath the felt chain', async () => {
     const { chain } = await punishedHero({
