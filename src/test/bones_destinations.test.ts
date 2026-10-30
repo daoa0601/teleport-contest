@@ -63,7 +63,14 @@ for (const stair of [
         specialRoom(storage, 6);
         await mkstairs(10, 10, true, null);
         await mkstairs(12, 10, false, null);
+        const liveDestinations = () => {
+            const depths: number[] = [];
+            for (let live = game.stairs; live; live = live.next) depths.push(live.tolev.dlevel);
+            return depths;
+        };
+        const absoluteDestinations = liveDestinations();
         assert.equal(saveBonesLevel(), true);
+        assert.deepEqual(liveDestinations(), absoluteDestinations, 'saving must leave live stairs absolute');
         await restoreSpecialBones(storage);
         game.u.ux = stair.x;
         game.u.uy = 10;
