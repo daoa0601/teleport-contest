@@ -72,15 +72,21 @@ export async function levelTeleport({ state = game, gotoLevel = (...args) => { s
         await plineWithContinuation(shudder);
         return;
     }
-    if (In_endgame(hero.uz) && !forced) {
-        if (newDepth === undefined)
-            throw new Error('Endgame teleport has no requested depth');
+    if (In_endgame(hero.uz)) {
+        // teleport.c: the In_endgame() branch runs for the wizard menu too;
+        // it never passes the "You materialize on a different level!"
+        // deferred message, so traveling between the planes stays silent.
         const levels = dungeonAt(state, hero.uz.dnum).num_dunlevs;
-        if (newDepth >= 0 || newDepth <= -levels) {
+        let depthRequest = newDepth;
+        if (forced && depthRequest === undefined)
+            depthRequest = forced.dlevel - levels;
+        if (depthRequest === undefined)
+            throw new Error('Endgame teleport has no requested depth');
+        if (depthRequest >= 0 || depthRequest <= -levels) {
             await plineWithContinuation("You can't get there from here.");
             return;
         }
-        await gotoLevel({ dnum: hero.uz.dnum, dlevel: levels + newDepth });
+        await gotoLevel({ dnum: hero.uz.dnum, dlevel: levels + depthRequest });
         return;
     }
     if (newDepth !== undefined && newDepth < 0 && !forced) {

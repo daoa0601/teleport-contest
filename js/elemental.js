@@ -8,7 +8,8 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { AIR, CLOUD, COLNO, MON_BUBBLEMOVE, RLOC_NOMSG, ROWNO, STONE, WATER, Is_airlevel, Is_waterlevel, } from './const.js';
 import { rn2 } from './rng.js';
 import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
-import { newsym } from './display.js';
+import { cmapSymbolAppearance, newsym } from './display.js';
+import { CmapSymbol } from './glyph_numbers.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearMonsterWormFromMap } from './monster_worm.js';
@@ -57,10 +58,15 @@ function setElementalCell(loc, typ, lit) {
     // movebubbles() resets old air clouds to an Air cell remembered as Cloud,
     // and old water bubbles to a Water cell remembered as Water.
     const water = typ === WATER;
+    // C stores the glyph number (cmap_to_glyph(S_water / S_cloud)) and the
+    // tty resolves it through showsyms[], so DECgraphics renders water as
+    // its alternate-font diamond.  Derive the character the same way
+    // instead of hardcoding the default-set appearance.
+    const appearance = cmapSymbolAppearance(water ? CmapSymbol.water : CmapSymbol.cloud);
     loc.remembered_glyph = {
-        ch: water ? '}' : '#',
+        ch: appearance.ch,
         color: water ? CLR_BRIGHT_BLUE : CLR_GRAY,
-        decgfx: false, kind: 'terrain', terrainName: water ? 'water' : 'cloud',
+        decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'cloud',
     };
 }
 function bubbleCells(bubble) {
@@ -260,9 +266,11 @@ export async function setupElementalBubbles() {
             if (loc.typ === STONE)
                 loc.typ = baseTerrain;
             const water = baseTerrain === WATER;
+            const appearance = cmapSymbolAppearance(water ? CmapSymbol.water : CmapSymbol.air);
             loc.remembered_glyph = {
-                ch: water ? '}' : ' ', color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
-                decgfx: false, kind: 'terrain', terrainName: water ? 'water' : 'air',
+                ch: appearance.ch,
+                color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
+                decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'air',
             };
         }
     }
