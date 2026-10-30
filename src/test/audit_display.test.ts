@@ -19,10 +19,10 @@ import { requireScreenCell } from './support/screen.js';
 const OFFSCREEN = { x: 3, y: 3 } as const;
 
 async function unseenWarnedMonster(mlev: number) {
-    freshObjectRoom({ hero: { warning: true } });
+    await freshObjectRoom({ hero: { warning: true } });
     const monster = await createMonsterAt('soldier ant', OFFSCREEN.x, OFFSCREEN.y);
     monster.m_lev = mlev;
-    newsym(OFFSCREEN.x, OFFSCREEN.y);
+    await newsym(OFFSCREEN.x, OFFSCREEN.y);
     await flush_screen(1);
     return monster;
 }
@@ -51,18 +51,18 @@ void test('the strongest monsters clamp at the top warning numeral', async () =>
 });
 
 void test('a peaceful monster never raises a warning glyph', async () => {
-    freshObjectRoom({ hero: { warning: true } });
+    await freshObjectRoom({ hero: { warning: true } });
     const pet = await createMonsterAt('kitten', OFFSCREEN.x, OFFSCREEN.y);
     pet.mpeaceful = 1;
     pet.m_lev = 30;
-    newsym(OFFSCREEN.x, OFFSCREEN.y);
+    await newsym(OFFSCREEN.x, OFFSCREEN.y);
     await flush_screen(1);
     assert.equal(glyphAt(OFFSCREEN.x, OFFSCREEN.y)?.glyph, GlyphOffset.unexplored);
     assert.equal(requireScreenCell(2, 4).ch, ' ');
 });
 
 void test('a hallucinating hero sees redrawn warning numerals beyond warning_of()', async () => {
-    freshObjectRoom({ hero: { warning: true, hallucinationTurns: 100 } });
+    await freshObjectRoom({ hero: { warning: true, hallucinationTurns: 100 } });
     const monster = await createMonsterAt('soldier ant', OFFSCREEN.x, OFFSCREEN.y);
     monster.m_lev = 4; // warning_of() would draw '1' on every redraw
     // initRng() seeds the core and display streams together (rng.js), so
@@ -70,7 +70,7 @@ void test('a hallucinating hero sees redrawn warning numerals beyond warning_of(
     initRng(7n);
     const numerals = new Set<string>();
     for (let redraw = 0; redraw < 8; redraw++) {
-        newsym(OFFSCREEN.x, OFFSCREEN.y);
+        await newsym(OFFSCREEN.x, OFFSCREEN.y);
         await flush_screen(1);
         const level = (glyphAt(OFFSCREEN.x, OFFSCREEN.y)?.glyph ?? -1) - GlyphOffset.warning;
         assert.ok(level >= 1 && level <= def_warnsyms.length - 1,
@@ -90,7 +90,7 @@ void test('a hallucinating hero sees redrawn warning numerals beyond warning_of(
 // updates their own square.
 
 async function swimmingHero({ blind = false } = {}) {
-    const map = freshObjectRoom({ hero: blind ? { blindTurns: 50 } : {} });
+    const map = await freshObjectRoom({ hero: blind ? { blindTurns: 50 } : {} });
     for (const [x, y] of [[10, 10], [11, 10], [10, 11]] as const) {
         const loc = map.requireAt(x, y);
         loc.typ = POOL;
@@ -120,7 +120,7 @@ void test('a deferred underwater redraw keeps magic mapping visible until the ne
     const far = map.requireAt(13, 10);
     far.lit = false;
     far.waslit = false;
-    map_background(13, 10);
+    await map_background(13, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(12, 11).ch, '.', 'mapped floor beyond the window');
     // ...and under_water(2) defers the restore instead of clearing it.
