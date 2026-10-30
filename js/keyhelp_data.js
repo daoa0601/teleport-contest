@@ -1,5 +1,5 @@
 // Pinned dat/keyhelp, displayed by pager.c:whatdoes_help().
-export const KEY_HELP = [
+const RAW_KEY_HELP = [
     "Depending upon hardware or operating system or NetHack's interface,",
     "some keystrokes may be off-limits.",
     "",
@@ -59,4 +59,9 @@ export const KEY_HELP = [
     "to use shift as well as <meta> or <alt> to generate an uppercase",
     "letter meta-character.",
 ];
+// pager.c:whatdoes_help() putstr()s each dlb_fgets() line with its trailing
+// newline still attached, so wintty.c compress_str() collapses consecutive
+// spaces and drops the newline-turned-trailing-space.  Tab stripping is
+// already reflected in the raw lines above.
+export const KEY_HELP = RAW_KEY_HELP.map(line => line.replace(/ +/g, ' '));
 //# sourceMappingURL=keyhelp_data.js.map
