@@ -4717,7 +4717,20 @@ function overviewLevelIsInteresting(dnum, dlevel) {
     if (In_endgame(game.u.uz))
         return In_endgame(location);
     return !!annotation || !!record?.branch || !!overviewFeatureLine(record?.features)
+        || !!record?.finalRestingPlaces?.some(entry => entry.bonesknown || game.flags.debug)
         || dlevel === game.dungeons[dnum]?.dunlev_ureached;
+}
+// C dungeon.c:print_mapseen(): the current hero precedes ancestors, and only
+// the last entry ends in a period. Final disclosure reveals every ancestor.
+function overviewRestingPlaceLines(record, final, currentDeath = null) {
+    const entries = (record?.finalRestingPlaces ?? [])
+        .filter(entry => final || game.flags.debug || entry.bonesknown)
+        .map(entry => `${entry.who}, ${entry.how}`);
+    if (currentDeath !== null)
+        entries.unshift(`you, ${overviewYouCause(currentDeath)}`);
+    if (!entries.length)
+        return [];
+    return ['      Final resting place for', ...entries.map((entry, index) => `         ${entry}${index === entries.length - 1 ? '.' : ','}`)];
 }
 function overviewCountPhrase(count, noun) {
     if (count === 1)
@@ -4875,10 +4888,7 @@ function overviewDisclosureLevel(dnum, dlevel, ending, hereVerb, cause) {
         lines.push(branchLine);
     // died_here: the current hero's own resting place is disclosed before
     // bones are created, so it never reveals whether bones are produced.
-    if (!ending && current) {
-        lines.push('      Final resting place for');
-        lines.push(`         you, ${overviewYouCause(cause)}.`);
-    }
+    lines.push(...overviewRestingPlaceLines(record, true, !ending && current ? cause : null));
     return lines;
 }
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
@@ -4930,6 +4940,8 @@ async function doDungeonOverview() {
                 const branchLine = overviewBranchLine(record?.branch ?? null);
                 if (branchLine)
                     addLine(branchLine);
+                for (const line of overviewRestingPlaceLines(record, false))
+                    addLine(line);
             }
         }
         tty_end_menu(window);

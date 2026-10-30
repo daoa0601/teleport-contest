@@ -442,7 +442,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         // through the hero name's trailing hyphen, and its deja-vu choice
         // is the first random call of the arrival.
         let familiarMessage = '';
-        if (game.level.bonesNames?.some(name => name.startsWith(`${game.plname}-`))) {
+        if (game.level.bonesInfo?.some(entry => entry.who.startsWith(`${game.plname}-`))) {
             const perception = heroIsBlind(game) ? 'seems' : 'looks';
             const familiarMessages = heroIsHallucinating(game) ? [
                 `Whoa!  Everything ${perception} different.`,

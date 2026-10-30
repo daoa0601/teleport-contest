@@ -2,7 +2,7 @@ import { GameMap } from './game.js';
 import { COLNO, ROWNO } from './const.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { DungeonLocation } from './dungeon_types.js';
+import type { CemeteryEntry, DungeonLocation } from './dungeon_types.js';
 import type {
     ArrivalRegion, BubbleContents, ElementalBounds, ElementalBubble, Engraving,
     ExclusionZone, GasCloud, LevelFlags, LevelTimer, MapBit, MapLocation,
@@ -25,6 +25,16 @@ export interface MapEntityChecks {
 
 const mapBit = (value: unknown): value is MapBit =>
     typeof value === 'boolean' || value === 0 || value === 1;
+
+export function validSavedCemeteryEntry(value: unknown): value is CemeteryEntry {
+    return fieldsMatch<CemeteryEntry>(value, {
+        who: string, how: string,
+        when: (entry): entry is string => string(entry) && /^\d{14}$/.test(entry),
+        frpx: (entry): entry is number => integer(entry) && entry > 0 && entry < COLNO,
+        frpy: (entry): entry is number => integer(entry) && entry >= 0 && entry < ROWNO,
+        bonesknown: boolean,
+    });
+}
 
 export function validSavedPosition(value: unknown): value is Position {
     return fieldsMatch<Position>(value, { x: integer, y: integer });
@@ -223,7 +233,7 @@ export function restoreSavedMap(value: unknown, entities: MapEntityChecks): Game
         monsters: arrayOf(entities.monster), traps: arrayOf(validSavedTrap),
         regions: arrayOf(validGasCloud), levelTimers: arrayOf(validTimer),
         exclusionZones: arrayOf(validExclusion), flags: validFlags,
-        bonesNames: optional(arrayOf(string)),
+        bonesInfo: optional(arrayOf(validSavedCemeteryEntry)),
         upstair: optional(validSavedPosition), dnstair: optional(validSavedPosition),
         invocationPosition: optional(validSavedPosition),
         upTeleportRegion: optional(nullable(validArrivalRegion)),

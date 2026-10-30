@@ -113,7 +113,7 @@ async function addMummyWrapping(monster) {
     }
     await linkObjectToMonsterInventory(monster, await mksobj(MUMMY_WRAPPING, true, false));
 }
-export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
+export async function createBonesFromDeath(deathCause, promptDeathQuestion, when) {
     if (!game._canMakeBones)
         return false;
     const level = requireGameLevel();
@@ -172,7 +172,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
         statue.oname = game.plname || 'player';
         await dropHeroInventoryForBones(x, y, { container: statue });
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
     if (arise >= 0) {
@@ -188,7 +188,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         await addMummyWrapping(monster);
         await initializeMonsterArmor(monster);
         completeBonesMonster(monster, game);
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
     await dropHeroInventoryForBones(x, y);
@@ -201,7 +201,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
     if (corpse) {
         corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
-    game._bonesSaved = saveBonesLevel();
+    game._bonesSaved = saveBonesLevel(deathCause, when);
     return game._bonesSaved;
 }
 //# sourceMappingURL=bones_death.js.map

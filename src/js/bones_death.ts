@@ -133,7 +133,9 @@ async function addMummyWrapping(monster: Monster): Promise<void> {
     );
 }
 
-export async function createBonesFromDeath(deathCause: string, promptDeathQuestion: (question: string) => Promise<string>): Promise<boolean> {
+export async function createBonesFromDeath(
+    deathCause: string, promptDeathQuestion: (question: string) => Promise<string>, when?: number,
+): Promise<boolean> {
     if (!game._canMakeBones) return false;
     const level = requireGameLevel();
     const x = game.u?.ux ?? 0;
@@ -192,7 +194,7 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
         const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
         statue.oname = game.plname || 'player';
         await dropHeroInventoryForBones(x, y, { container: statue });
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
 
@@ -209,7 +211,7 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
         await addMummyWrapping(monster);
         await initializeMonsterArmor(monster);
         completeBonesMonster(monster, game);
-        game._bonesSaved = saveBonesLevel();
+        game._bonesSaved = saveBonesLevel(deathCause, when);
         return game._bonesSaved;
     }
 
@@ -224,6 +226,6 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
     if (corpse) {
         corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
-    game._bonesSaved = saveBonesLevel();
+    game._bonesSaved = saveBonesLevel(deathCause, when);
     return game._bonesSaved;
 }

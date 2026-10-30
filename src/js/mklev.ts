@@ -1,4 +1,5 @@
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
+import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
@@ -51,7 +52,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
-import { finishHeroDeath } from './end.js';
+import { finishHeroDeath, scoreDeathCause } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import {
     createDesBindings, mapOrigin, objectTypeForName, tablePoint,
@@ -3575,7 +3576,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 18;
+const BONES_VERSION = 19;
 
 // C files.c:set_bonesfile_name(): special levels keep their identity when
 // dungeon generation changes their depth; quest bones also belong to a role.
@@ -3683,7 +3684,9 @@ function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
 // the level graph only. The saved-graph codec retains entity aliases and
 // container back-pointers; getbones() restores the GameMap prototype.
-export function saveBonesLevel(): boolean {
+export function saveBonesLevel(
+    deathCause = '', when = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000,
+): boolean {
     const storage = game.storage;
     if (!storage || !game.level || !game.urole || !game.urace
         || !game.u.ualign) return false;
@@ -3715,8 +3718,10 @@ export function saveBonesLevel(): boolean {
         game.plname || 'player', game.urole.filecode.slice(0, 3),
         game.urace.filecode.slice(0, 3), game.flags.female ? 'Fem' : 'Mal', alignment,
     ].join('-');
-    payload.level.bonesNames = [
-        who, ...(payload.level.bonesNames ?? []),
+    payload.level.bonesInfo = [
+        { who, how: scoreDeathCause(deathCause, null), when: recorderTimestamp(when),
+            frpx: game.u.ux, frpy: game.u.uy, bonesknown: false },
+        ...(payload.level.bonesInfo ?? []),
     ];
     if (game.flags.debug) payload.level.flags.wizard_bones = true;
 
