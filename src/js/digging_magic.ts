@@ -16,6 +16,7 @@ import {
 } from './display.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import type { GameState } from './game_state.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
@@ -77,7 +78,8 @@ export async function zapDigWithObject(
             const location = level.requireAt(x, y);
             if (cansee(x, y)) {
                 visibleCells.push({ x, y });
-                await show_glyph_cell(x, y, '*', CLR_WHITE, false);
+                await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0,
+                    { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
 

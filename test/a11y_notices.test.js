@@ -1,19 +1,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FOUNTAIN, GETOBJ_SUGGEST, NO_MINVENT } from '../js/const.js';
+import { CORR, DOOR, D_NODOOR, FOUNTAIN, GETOBJ_SUGGEST, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
+import { zapDigWithObject } from '../js/digging_magic.js';
 import { flush_screen, newsym, newsym_force, pline } from '../js/display.js';
+import { doBlindingRay } from '../js/flash.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { chooseInventoryObject } from '../js/inventory_prompt.js';
 import { clearDetectionMap } from '../js/magic_map_display.js';
 import { blockMonsterNotices, unblockMonsterNotices } from '../js/monster_notices.js';
-import { FOOD_RATION } from '../js/object_data.js';
+import { EXPENSIVE_CAMERA, FOOD_RATION, WAN_DIGGING } from '../js/object_data.js';
 import { runSegment } from '../js/jsmain.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { cleanupTransientLight, showTransientLight } from '../js/transient_light.js';
 import { vision_recalc } from '../js/vision.js';
-import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -76,6 +78,33 @@ void test('mention_map describes a newly displayed fountain with its position', 
     assert.equal(game._pending_message, '(2east): fountain.');
     assert.equal(game.flags.accessiblemsg, undefined, 'the forced location prefix is temporary');
 });
+for (const camera of [true, false]) {
+    void test(`mention_map only announces furniture restored after a ${camera ? 'camera flash' : 'digging beam'}`, async () => {
+        const level = await freshObjectRoom({ left: 10, right: 16, top: 10, bottom: 10 });
+        for (let x = 11; x <= 16; x++)
+            level.requireAt(x, 10).typ = CORR;
+        const doorway = level.requireAt(13, 10);
+        doorway.typ = DOOR;
+        doorway.doormask = D_NODOOR;
+        level.requireAt(14, 10).typ = FOUNTAIN;
+        level.requireAt(17, 10).wall_info = W_NONDIGGABLE;
+        await floorObject(FOOD_RATION, 12, 10);
+        for (let x = 11; x <= 16; x++)
+            await newsym(x, 10);
+        await flush_screen(1);
+        const source = await knownObject(camera ? EXPENSIVE_CAMERA : WAN_DIGGING);
+        game.flags.mention_map = true;
+        pushKeys(' '.repeat(20));
+        if (camera)
+            await doBlindingRay(source, { dx: 1, dy: 0 });
+        else {
+            game.u.dx = 1;
+            game.u.dy = game.u.dz = 0;
+            await zapDigWithObject(source);
+        }
+        assert.equal(messages(), '(4east): fountain.', 'restoring the beam announces furniture, keeping known corridors, doorways, and objects quiet');
+    });
+}
 void test('mention_map describes an object on previously unexplored ground', async () => {
     const level = await freshObjectRoom();
     await floorObject(FOOD_RATION, 12, 10);

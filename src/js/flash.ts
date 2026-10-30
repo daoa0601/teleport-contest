@@ -15,6 +15,7 @@ import {
     show_glyph_cell, unmap_invisible,
 } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { lightHitsGremlin } from './light.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
@@ -68,7 +69,8 @@ export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number
             if (cansee(x, y)) {
                 if (!monster) await unmap_invisible(x, y);
                 cells.push({ x, y });
-                await show_glyph_cell(x, y, '!', CLR_WHITE);
+                await show_glyph_cell(x, y, '!', CLR_WHITE, false, 0,
+                    { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.flashbeam) });
                 await flush_screen(0);
                 await state.animationFrame?.();
             }

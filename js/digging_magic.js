@@ -8,6 +8,7 @@ import { watchDigging } from './digging_watch.js';
 import { flush_screen, newsym, plineWithContinuation, show_glyph_cell, } from './display.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { loseHeroHp } from './hero_damage.js';
 import { mayDig } from './hero_digging.js';
 import { expelHero } from './hero_expulsion.js';
@@ -61,7 +62,7 @@ export async function zapDigWithObject(_object, { state = game } = {}) {
             const location = level.requireAt(x, y);
             if (cansee(x, y)) {
                 visibleCells.push({ x, y });
-                await show_glyph_cell(x, y, '*', CLR_WHITE, false);
+                await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0, { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
             if (ownPit) {
