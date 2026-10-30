@@ -1,9 +1,9 @@
 // C wizcmds.c:wiz_custom()/wizcustom_callback(), glyphs.c:wizcustom_glyphids().
 import { Is_rogue_level, NHW_MENU, PICK_NONE } from './const.js';
-import { customizedBranchWalls, docrt, rogueColorsActive } from './display.js';
+import { cmapSymbolByte, docrt, objectClassSymbol, rogueColorsActive } from './display.js';
+import { customizedGlyphs } from './glyph_customizations.js';
 import { game } from './gstate.js';
 import { symsetMenuValue } from './options.js';
-import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
@@ -12,18 +12,23 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
 export async function wizCustom(): Promise<void> {
     const window = tty_create_nhwindow<number>(NHW_MENU);
     addMenuHeading(window, '    glyph  glyph identifier                             sym   clr customcolor unicode utf8');
+    const rogue = Is_rogue_level(game.u.uz);
     // reset_glyphmap() also clears Rogue colors unless its active set enables IBM color.
     const colorEnabled = game.flags.color !== false
-        && (!Is_rogue_level(game.u.uz) || rogueColorsActive());
-    for (const wall of customizedBranchWalls()) {
-        const baseColor = MAP_SYMBOLS[wall.symbol]?.color;
-        if (baseColor === undefined) throw new Error(`Customized wall ${wall.id} has no base color`);
+        && (!rogue || rogueColorsActive());
+    for (const glyph of customizedGlyphs()) {
+        const byte = glyph.symbol.kind === 'cmap' ? cmapSymbolByte(glyph.symbol.index)
+            : objectClassSymbol(glyph.symbol.oclass).charCodeAt(0);
+        const baseColor = rogue ? glyph.rogueColor : glyph.baseColor;
         const color = colorEnabled ? baseColor : NO_COLOR;
-        // color.h:NH_BASIC_COLOR tags palette indices in customcolor.
-        const customColor = (0x1000000 | wall.color).toString(16).padStart(11, '0');
-        const text = `[${String(wall.glyph).padStart(4, '0')}] ${wall.id.padEnd(44)} `
-            + `'\\${String(wall.symbolByte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} `;
-        tty_add_menu(window, { identifier: wall.glyph + 1, text });
+        const customColor = glyph.customColor.toString(16).padStart(11, '0');
+        const unicode = glyph.unicode === null ? ''
+            : `U+${glyph.unicode.toString(16).padStart(4, '0')}`
+                + [...new TextEncoder().encode(String.fromCodePoint(glyph.unicode))]
+                    .map(byte => ` <${byte}>`).join('');
+        const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
+            + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
+        tty_add_menu(window, { identifier: glyph.glyph + 1, text });
     }
     // The xterm-256color terminal profile advertises 256 available colors.
     tty_end_menu(window, `#wizcustom: colorcount=256 ${symsetMenuValue()}`);

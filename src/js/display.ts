@@ -12,6 +12,7 @@ import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js'
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
+import { cmapToRogueColor } from './glyph_customizations.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -1411,7 +1412,7 @@ const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)
 
 // wizcmds.c:wizcustom_callback() prints the loaded showsyms byte before
 // wintty.c:g_putch() converts high-bit characters to an alternate font.
-function wallSymbolByte(symbol: number): number {
+export function cmapSymbolByte(symbol: number): number {
     const shown = shownSymbolSet();
     const name = shown.name?.toLowerCase();
     if (!shown.rogue && (name === 'decgraphics' || name === 'curses')) {
@@ -1420,32 +1421,15 @@ function wallSymbolByte(symbol: number): number {
     }
     // Named S_ overrides are identical in the primary and Rogue sets.
     const set = name ? ROGUE_SYMSETS[name] : undefined;
+    const trap = symbol >= CmapSymbol.arrowTrap && symbol < CmapSymbol.vbeam;
+    const vibrating = symbol === CmapSymbol.arrowTrap + VIBRATING_SQUARE - 1;
+    const trapSymbol = vibrating ? '~' : symbol === CmapSymbol.web ? '"' : '^';
     const ch = rogueCmapSymbol(set ?? null, symbol)
+        ?? (shown.rogue && trap && !vibrating ? set?.trapSymbol : undefined)
         ?? (shown.rogue ? rogueFurnitureSymbols.get(symbol) : undefined)
-        ?? MAP_SYMBOLS[symbol]?.ch;
-    if (ch === undefined) throw new RangeError(`Unknown wall symbol ${symbol}`);
+        ?? MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol) ?? (trap ? trapSymbol : undefined);
+    if (ch === undefined) throw new RangeError(`Unknown dungeon symbol ${symbol}`);
     return ch.charCodeAt(0);
-}
-
-// The branch palettes are glyph customizations from dat/symbols, shared
-// with the wizard's glyph listing even while a different branch is shown.
-export function customizedBranchWalls(): {
-    glyph: number; symbol: number; symbolByte: number; id: string; color: number;
-}[] {
-    if (!BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '')) return [];
-    const names = ['vwall', 'hwall', 'tlcorn', 'trcorn', 'blcorn', 'brcorn',
-        'crwall', 'tuwall', 'tdwall', 'tlwall', 'trwall'];
-    const branches: readonly [GlyphOffset, string][] = [
-        [GlyphOffset.cmapMines, 'mines'], [GlyphOffset.cmapGehennom, 'gehennom'],
-        [GlyphOffset.cmapKnox, 'knox'], [GlyphOffset.cmapSokoban, 'sokoban'],
-    ];
-    return branches.flatMap(([offset, branch]) => {
-        const color = decWallColors.get(offset);
-        if (color === undefined) throw new Error(`Branch ${branch} has no wall palette`);
-        return names.map((name, index) => ({ glyph: offset + index,
-            symbol: CmapSymbol.vwall + index, symbolByte: wallSymbolByte(CmapSymbol.vwall + index),
-            id: `G_${name}_${branch}`, color }));
-    });
 }
 
 function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
@@ -1994,16 +1978,6 @@ export function rogueColorsActive(): boolean {
     const set = activeRogueSymset();
     return Is_rogue_level(game.u?.uz) && game.flags.color !== false
         && set?.ibm === true && set.color === true;
-}
-
-// display.c:cmap_to_roguecolor().
-function cmapToRogueColor(index: number): number {
-    if (index >= CmapSymbol.vwall && index <= CmapSymbol.hcdoor) return CLR_BROWN;
-    if (index >= CmapSymbol.arrowTrap && index <= CmapSymbol.arrowTrap + 21) return CLR_MAGENTA;
-    if (index === CmapSymbol.corr || index === CmapSymbol.litcorr) return CLR_GRAY;
-    if (index >= CmapSymbol.room && index <= CmapSymbol.water
-        && index !== CmapSymbol.darkroom) return CLR_GREEN;
-    return NO_COLOR;
 }
 
 // The Rogue color tables of reset_glyphmap(); null keeps the glyph's own

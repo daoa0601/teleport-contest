@@ -54,6 +54,7 @@ export var CmapSymbol;
     CmapSymbol[CmapSymbol["cloud"] = 47] = "cloud";
     CmapSymbol[CmapSymbol["water"] = 48] = "water";
     CmapSymbol[CmapSymbol["arrowTrap"] = 49] = "arrowTrap";
+    CmapSymbol[CmapSymbol["web"] = 66] = "web";
     CmapSymbol[CmapSymbol["vbeam"] = 74] = "vbeam";
     CmapSymbol[CmapSymbol["hbeam"] = 75] = "hbeam";
     CmapSymbol[CmapSymbol["lslant"] = 76] = "lslant";
