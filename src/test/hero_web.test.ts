@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT, POOL, STONE, WEB } from '../js/const.js';
+import { LADDER, PIT, POOL, ROOM, STAIRS, STONE, WEB } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { useHeroWeb } from '../js/hero_web.js';
 import { pushKeys } from '../js/input.js';
@@ -52,6 +52,52 @@ void test('a spider cannot anchor a web in water', async () => {
     assert.equal(webAtHero(), undefined);
     assert.equal(game.context.move, 0);
 });
+
+for (const { terrain, name, description } of [
+    { terrain: ROOM, name: 'ladder', description: 'room terrain covering stairs' },
+    { terrain: STAIRS, name: 'stairs', description: 'stairs' },
+    { terrain: LADDER, name: 'ladder', description: 'ladder terrain covering stairs' },
+]) {
+    void test(`a spider cannot hide a stairway with a web on ${description}`, async () => {
+        const level = freshMonsterAbilityRoom('giant spider');
+        requireFixtureGame(game);
+        const x = game.u.ux;
+        const y = game.u.uy;
+        game.stairs = {
+            sx: x + 1, sy: y, up: true, isladder: false, u_traversed: false,
+            tolev: { dnum: 0, dlevel: 7 },
+            next: {
+                sx: x, sy: y, up: false, isladder: false, u_traversed: false,
+                tolev: { dnum: 0, dlevel: 9 }, next: null,
+            },
+        };
+        level.requireAt(x, y).typ = terrain;
+
+        await runMonsterAbilityCommand();
+
+        assert.equal(webAtHero(), undefined);
+        assert.equal(game._pending_message,
+            `Your web fails to impede access to the ${name}.`);
+        assert.equal(game.context.move, 1);
+    });
+}
+
+for (const { terrain, name } of [
+    { terrain: STAIRS, name: 'stairs' }, { terrain: LADDER, name: 'ladder' },
+]) {
+    void test(`webbing bare ${name} terrain fails silently without a stairway`, async () => {
+        const level = freshMonsterAbilityRoom('giant spider');
+        requireFixtureGame(game);
+        level.requireAt(game.u.ux, game.u.uy).typ = terrain;
+        game.stairs = null;
+
+        await runMonsterAbilityCommand();
+
+        assert.equal(webAtHero(), undefined);
+        assert.equal(game._pending_message, '');
+        assert.equal(game.context.move, 1);
+    });
+}
 
 void test('webbing over a pit removes it and buries its contents', async () => {
     const level = freshMonsterAbilityRoom('giant spider');
