@@ -817,15 +817,6 @@ async function finishHeroTookTime(sourceTurn: number): Promise<void> {
     }
 }
 
-async function finishOrDeferHeroTookTime(sourceTurn: number): Promise<void> {
-    const game = requireInitializedGame();
-    if (game._vaultMaintenanceContinuation) {
-        game._vaultHeroTookTimePending = sourceTurn;
-        return;
-    }
-    await finishHeroTookTime(sourceTurn);
-}
-
 async function finishInitialTurnMaintenanceAfterIntervention(
     sourceTurn: number,
 ): Promise<void> {
@@ -984,11 +975,10 @@ async function finishInitialTurnMaintenanceAfterAmbient({
     await periodicTurnExercise(sourceTurn);
     await checkAttributeExercise(sourceTurn);
     if (await maintainVaultResidence(game)) {
-        // invault() owns an interactive getlin()/pager transaction.  Preserve
-        // the remaining same-turn maintenance so it resumes only after that
-        // transaction completes, just as the synchronous C stack does.
-        game._vaultMaintenanceContinuation = { sourceTurn };
-        return { kind: 'complete', moveAmount };
+        // C invault() finishes its dialogue before this turn decrements
+        // negative multi. A busy hero's armor removal can finish below,
+        // paging the guard's departure before the recovery message.
+        await continueVaultGuardArrival(game);
     }
     await finishInitialTurnMaintenanceRng(sourceTurn);
     return { kind: 'complete', moveAmount };
@@ -4023,7 +4013,7 @@ export async function runMoveloopCore() {
         // C moveloop_core() checks again after nh_timeout() can remove weight.
         await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
-            await finishOrDeferHeroTookTime(g.moves || 1);
+            await finishHeroTookTime(g.moves || 1);
     }
 
     if (movementRationActionPending && !g.program_state?.gameover) {
@@ -4044,19 +4034,10 @@ export async function runMoveloopCore() {
 
     if (g._vaultGuardArrivalPending) {
         await continueVaultGuardArrival(g);
-        const continuation = g._vaultMaintenanceContinuation;
-        if (continuation) {
-            await finishInitialTurnMaintenanceRng(continuation.sourceTurn);
-            g._vaultMaintenanceContinuation = null;
-            if (g._vaultHeroTookTimePending != null) {
-                await finishHeroTookTime(g._vaultHeroTookTimePending);
-                g._vaultHeroTookTimePending = null;
-            }
-        }
     }
 
     // C allmain.c:find_ac() is a once-per-player-input operation after all
-    // monster/global time caused by the command.  The deferred vault-guard
+    // monster/global time caused by the command.  The vault-guard
     // arrival (C invault(), inside the once-per-turn block) still precedes
     // it, so its arrival message pages while a just-removed armor piece is
     // still counted.  Armor is already present in the worn slot.  A spare
