@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { stopHeroOccupation } from './occupation.js';
-export async function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {
+export async function putHeroToSleep(turns, { state = game, doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     // fall_asleep() begins with stop_occupation(), which reports the
     // interrupted activity.
@@ -14,7 +14,7 @@ export async function putHeroToSleep(turns, { state = game, reason = 'sleeping',
     // nomul() refuses to shorten an existing involuntary delay. fall_asleep()
     // still installs its sleep marker and recovery message afterward.
     nomul(-duration, state);
-    state._helplessReason = reason;
+    state._helplessReason = 'sleeping';
     state._helplessDoneMessage = doneMessage;
     hero.usleep = state.moves || 1;
     return state._helplessTurns;

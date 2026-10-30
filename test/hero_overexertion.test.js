@@ -3,6 +3,8 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { nomul } from '../js/command_state.js';
+import { scoreDeathCause } from '../js/end.js';
 import { checkHeroAttackOverexertion } from '../js/hero_overexertion.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
@@ -50,6 +52,20 @@ void test('heavy exertion at one hit point makes the hero pass out', async () =>
     assert.equal(game._helplessDoneMessage, 'You can move again.');
     assert.match(game._pending_message, /pass out from exertion/);
 });
+for (const previousDelay of [0, 20]) {
+    void test(`exhaustion records sleeping in the death cause after a ${previousDelay}-turn delay`, async () => {
+        await burdenHero({ uhunger: 900, uhp: 1 });
+        if (previousDelay) {
+            nomul(-previousDelay);
+            game._helplessReason = 'paralyzed by a monster';
+        }
+        await checkHeroAttackOverexertion();
+        assert.equal(scoreDeathCause('killed by a newt', null), 'killed by a newt, while sleeping');
+        assert.equal(game._helplessTurns, Math.max(10, previousDelay));
+        assert.equal(game.u.usleep, game.moves);
+        assert.equal(game._helplessDoneMessage, 'You can move again.');
+    });
+}
 void test('heavy-load damage still occurs when the hero is already helpless', async () => {
     await burdenHero({ uhunger: 900, uhp: 5 });
     requireFixtureGame(game);
