@@ -453,11 +453,11 @@ export async function findit() {
                     || MONSTER_SYMBOL[monster.mnum] === 57)) {
                 await flashGlyphAt(x, y, transientMonsterGlyph(monster), 6);
                 monster.mundetected = 0;
+                await newsym(x, y);
                 revealedMonster = true;
             }
             if (revealedMonster)
                 found.monsters++;
-            await newsym(x, y);
             if (loc.remembered_glyph?.kind === 'invisible') {
                 found.keptUnseen++;
             }

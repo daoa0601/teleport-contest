@@ -185,7 +185,7 @@ import {
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
-    MONSTER_ALIGNMENT, MONSTER_LEVEL,
+    MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_CLASS_SYMBOLS,
     MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
@@ -1357,15 +1357,20 @@ function finishCorpstat(
     return otmp;
 }
 
-const monsterGenerationOrder = Array.from(
-    { length: SPECIAL_PM }, (_, mndx) => mndx,
-).sort((left, right) => {
-    const leftKey = (requireMonsterData(MONSTER_SYMBOL, left) << 8)
-        | requireMonsterData(MONSTER_DIFFICULTY, left);
-    const rightKey = (requireMonsterData(MONSTER_SYMBOL, right) << 8)
-        | requireMonsterData(MONSTER_DIFFICULTY, right);
-    return leftKey - rightKey || left - right;
-});
+function monsterGenerationOrder(): readonly number[] {
+    // C makemon.c:init_mongen_order() sorts once, on first use. Alignment
+    // abuse may have changed Erinys difficulty before this first selection.
+    game._monsterGenerationOrder ??= Array.from(
+        { length: SPECIAL_PM }, (_, mndx) => mndx,
+    ).sort((left, right) => {
+        const leftKey = (requireMonsterData(MONSTER_SYMBOL, left) << 8)
+            | requireMonsterData(MONSTER_DIFFICULTY, left);
+        const rightKey = (requireMonsterData(MONSTER_SYMBOL, right) << 8)
+            | requireMonsterData(MONSTER_DIFFICULTY, right);
+        return leftKey - rightKey || left - right;
+    });
+    return game._monsterGenerationOrder;
+}
 
 export function mkclassAligned(monsterClass: number, spc = 0, atyp = A_NONE): number | null {
     const G_FREQ = 0x0007;
@@ -1377,7 +1382,8 @@ export function mkclassAligned(monsterClass: number, spc = 0, atyp = A_NONE): nu
     const inHell = !!currentDungeon?.flags?.hellish;
     const maxMonsterLevel = level_difficulty() >> 1;
     const heroLevel = game.u?.ulevel || 1;
-    const classMembers = monsterGenerationOrder.filter(
+    if (monsterClass < 1 || monsterClass >= MONSTER_CLASS_SYMBOLS.length) return null;
+    const classMembers = monsterGenerationOrder().filter(
         mndx => MONSTER_SYMBOL[mndx] === monsterClass,
     );
     if (!classMembers.length) return null;
