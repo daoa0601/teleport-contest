@@ -1503,7 +1503,8 @@ async function dispatchMovement(binding, prefixes) {
     const moved = outcome === 'time';
     if (game.program_state.gameover)
         return;
-    if ((rushDispatch || mode) && !prefixes.walk && moved && game._domoveReachedTail)
+    // C domove_core() also delays counted walks after arrival effects.
+    if (moved && game._domoveReachedTail)
         await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     game.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door')
