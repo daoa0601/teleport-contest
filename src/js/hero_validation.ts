@@ -84,6 +84,7 @@ export function validSavedHero(
         veryFastTurns: optional(integer),
         monsterDetection: optional(boolean),
         monsterDetectionTurns: optional(integer),
+        clairvoyanceDetection: optional(boolean),
         teleporting: optional(boolean),
         teleportingTurns: optional(integer),
         polymorphingTurns: optional(integer),

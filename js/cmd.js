@@ -5676,6 +5676,7 @@ async function dowhatis() {
                 waterLevel: Is_waterlevel(game.u.uz),
                 inHell: In_hell(game.u.uz),
                 blind: heroIsBlind(game),
+                clairvoyance: !!game.u.clairvoyanceDetection,
                 // pager.c resolves the override by level, independently of
                 // the symbols currently displayed by do_symset().
                 boulderSymbol: (Is_rogue_level(game.u.uz)

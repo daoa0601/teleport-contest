@@ -35,7 +35,8 @@ export function typedSymbolDescription(symbol, context) {
             append(withIndefiniteArticle(name), name);
     }
     if (symbol === 'I') {
-        const name = context.blind ? 'unseen creature' : 'remembered, unseen, creature';
+        const name = context.blind || context.clairvoyance
+            ? 'unseen creature' : 'remembered, unseen, creature';
         append(withIndefiniteArticle(name), name);
     }
     for (let index = 0; index < MAP_SYMBOLS.length; index++) {

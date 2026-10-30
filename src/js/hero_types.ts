@@ -150,6 +150,8 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     veryFastTurns?: number;
     monsterDetection?: boolean;
     monsterDetectionTurns?: number;
+    // C EDetect_monsters & I_SPECIAL, active only during clairvoyance.
+    clairvoyanceDetection?: boolean;
     teleporting?: boolean;
     teleportingTurns?: number;
     polymorphingTurns?: number;

@@ -55,9 +55,9 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
     const visionRow = state.viz_array?.[hero.uy];
     const savedVision = visionRow?.[hero.ux];
     if (!visionRow || savedVision === undefined) throw new Error('Mapping requires current hero vision.');
-    const savedDetection = hero.detectMonsters;
+    const savedDetection = hero.clairvoyanceDetection;
     if (hero.uswallow) visionRow[hero.ux] = savedVision | IN_SIGHT;
-    hero.detectMonsters = true;
+    hero.clairvoyanceDetection = true;
     const constraints = unconstrainMap(state);
     let detectedMonster = false, detectedObject = false, refresh = false;
     try {
@@ -97,8 +97,8 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
         }
     } finally {
         reconstrainMap(constraints, state);
-        if (savedDetection === undefined) delete hero.detectMonsters;
-        else hero.detectMonsters = savedDetection;
+        if (savedDetection === undefined) delete hero.clairvoyanceDetection;
+        else hero.clairvoyanceDetection = savedDetection;
         visionRow[hero.ux] = savedVision;
     }
     for (let x = bounds.left; x <= bounds.right; x++) {
