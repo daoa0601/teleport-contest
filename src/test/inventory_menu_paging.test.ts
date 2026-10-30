@@ -5,11 +5,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { GETOBJ_SUGGEST } from '../js/const.js';
+import { GETOBJ_SUGGEST, PICK_NONE } from '../js/const.js';
 import { bot, pline } from '../js/display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { selectInventoryObject, showIdentifiedInventory } from '../js/invent.js';
+import { selectInventoryObject } from '../js/invent.js';
 import { chooseInventoryObject } from '../js/inventory_prompt.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -170,11 +170,11 @@ void test('an unselected inventory-menu dismissal returns to the getobj prompt',
     assert.equal(await choice, pack.first);
 });
 
-void test('a read-only inventory window ignores selectors and bulk commands until a real dismissal', async () => {
+void test('a PICK_NONE inventory window ignores selectors and bulk commands until a real dismissal', async () => {
     const pack = await fullPack();
     requireFixtureGame(game);
     const input = resetInputState();
-    const inventory = showIdentifiedInventory();
+    const inventory = selectInventoryObject({ pickMode: PICK_NONE });
     await input.waitUntilBlocked();
     await answerMenu(input, pack.firstLetter);
     await answerMenu(input, '@');
