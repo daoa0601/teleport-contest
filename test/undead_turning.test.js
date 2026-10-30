@@ -7,6 +7,9 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { saveMonsterTraits } from '../js/monster_traits.js';
 import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
 import { castSpell } from '../js/spell.js';
 import { learnSpell } from './support/spells.js';
@@ -32,6 +35,25 @@ async function freshState() {
 async function trollCorpse() {
     return await untimedCorpse(PM_TROLL);
 }
+void test('an unseen revival names the floor corpse that disappears', async () => {
+    await freshState();
+    requirePlayingGame(game);
+    const lichen = await createMonsterAt('lichen', 14, 10);
+    lichen.minvis = 1;
+    lichen.perminvis = 1;
+    const traits = saveMonsterTraits(lichen);
+    await removeMonsterFromGame(lichen);
+    const corpse = await untimedCorpse(MONSTER_NAME.indexOf('lichen'));
+    corpse.oextra = { omonst: traits };
+    placeCreatedObject(corpse, 11, 10);
+    const wand = await chargedWand(WAN_UNDEAD_TURNING, { charges: 2 });
+    game.inventory.push(wand);
+    installPagerInput(resetInputState(), { expected: /corpse|disappears/, limit: 3 });
+    pushKeys('al');
+    await dozap();
+    assert.equal(corpse.where, 'gone');
+    assert.match(game._pending_message, /The lichen corpse disappears\./);
+});
 void test('undead turning revives floor and carried corpses along its path', async () => {
     await freshState();
     requirePlayingGame(game);

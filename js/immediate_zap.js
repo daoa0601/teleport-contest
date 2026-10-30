@@ -14,9 +14,10 @@ import { probeObject } from './magic_probe.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { cancelObjectMagic } from './object_cancellation.js';
 import { BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
-import { objectName } from './objnam.js';
+import { singularObjectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { createPolymorphMonsterFromPile, polymorphFloorObject, stone_to_flesh_obj, } from './object_polymorph.js';
 import { drainObjectEnchantment } from './object_state.js';
@@ -190,7 +191,7 @@ export async function hitObjectWithWand(object, wand, { state = game } = {}) {
 }
 async function reviveFloorCorpse(object, state) {
     const x = object.ox, y = object.oy, species = object.corpsenm ?? -1;
-    const corpseName = objectName(object);
+    const corpseName = singularObjectName(object, state);
     const event = await reviveCorpseByMagic(object, state);
     if (event?.kind !== 'revived')
         return { affected: false, learned: false };
@@ -204,8 +205,11 @@ async function reviveFloorCorpse(object, state) {
             await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         }
-        else
-            await pline(`${(MONSTER_FLAGS2[species] ?? 0) & 0x80000 ? '' : 'The '}${corpseName} disappears.`);
+        else {
+            const name = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
+                ? corpseName : capitalizedDefiniteName(corpseName, state);
+            await pline(`${name} disappears.`);
+        }
     }
     else {
         if (state.urole.key === 'healer' && !heroIsDeaf(state) && !monsterIsNonliving(species)) {

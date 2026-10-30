@@ -26,6 +26,7 @@ import { ROUND25_RECIPES, validateRound25Recipe } from './round25-recipes.mjs';
 import { ROUND26_RECIPES, validateRound26Recipe } from './round26-recipes.mjs';
 import { ROUND27_RECIPES, validateRound27Recipe } from './round27-recipes.mjs';
 import { ROUND28_RECIPES, validateRound28Recipe } from './round28-recipes.mjs';
+import { ROUND29_RECIPES, validateRound29Recipe } from './round29-recipes.mjs';
 import { ROUND23_RECIPES, validateRound23Recipe } from './round23-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
@@ -464,6 +465,7 @@ addRecipes(ROUND25_RECIPES);
 addRecipes(ROUND26_RECIPES);
 addRecipes(ROUND27_RECIPES);
 addRecipes(ROUND28_RECIPES);
+addRecipes(ROUND29_RECIPES);
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -773,5 +775,8 @@ for (const name of Object.keys(ROUND27_RECIPES)) {
 }
 for (const name of Object.keys(ROUND28_RECIPES)) {
     VALIDATORS[name] = recording => validateRound28Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND29_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound29Recipe(name, recording);
 }
 //# sourceMappingURL=recipes.mjs.map
