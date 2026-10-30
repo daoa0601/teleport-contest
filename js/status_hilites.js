@@ -770,6 +770,8 @@ function statusHiliteRemove(id) {
     if (index < 0)
         return false;
     rules.splice(index, 1);
+    if (line.rule)
+        game.nhDisplay?.statusHighlights.removeRule(line.rule);
     return true;
 }
 // botl.c status_hilite_menu_fld().

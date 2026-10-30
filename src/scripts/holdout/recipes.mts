@@ -22,6 +22,7 @@ import { ROUND12_RECIPES, validateRound12Recipe } from './round12-recipes.mjs';
 import { ROUND17_RECIPES, validateRound17Recipe } from './round17-recipes.mjs';
 import { ROUND21_RECIPES, validateRound21Recipe } from './round21-recipes.mjs';
 import { ROUND22_RECIPES, validateRound22Recipe } from './round22-recipes.mjs';
+import { ROUND24_RECIPES, validateRound24Recipe } from './round24-recipes.mjs';
 import { ROUND23_RECIPES, validateRound23Recipe } from './round23-recipes.mjs';
 export interface Character {
     role: string;
@@ -534,6 +535,7 @@ addRecipes(ROUND17_RECIPES);
 addRecipes(ROUND21_RECIPES);
 addRecipes(ROUND22_RECIPES);
 addRecipes(ROUND23_RECIPES);
+addRecipes(ROUND24_RECIPES);
 export { RECIPES };
 
 export const RECIPE_NAMES = Object.keys(RECIPES);
@@ -857,6 +859,9 @@ for (const name of Object.keys(ROUND21_RECIPES)) {
 }
 for (const name of Object.keys(ROUND22_RECIPES)) {
     VALIDATORS[name] = recording => validateRound22Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND24_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound24Recipe(name, recording);
 }
 for (const name of Object.keys(ROUND23_RECIPES)) {
     VALIDATORS[name] = recording => validateRound23Recipe(name, recording);

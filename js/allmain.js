@@ -565,6 +565,8 @@ async function moveloopPreamble() {
 // pickup messages may suspend before this boundary makes command input live.
 async function finishMoveloopPreamble() {
     const game = requireInitializedGame();
+    // moveloop_preamble() sets botlx after assigning the gold encoding.
+    game.context.botl = true;
     await reportHeroEncumbrance();
     game.u.uz0 ||= { ...game.u.uz };
     game.u.uz0.dlevel = game.u.uz.dlevel;

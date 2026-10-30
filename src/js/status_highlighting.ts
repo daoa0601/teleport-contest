@@ -70,6 +70,15 @@ export class StatusHighlights {
         this.resetPending = true;
     }
 
+    // botl.c:status_hilite_remove() clears references to the deleted rule
+    // and its timer. The tty retains the last color until a field update.
+    removeRule(rule: StatusHiliteRule): void {
+        const field = this.fields.get(rule.fld);
+        if (field?.rule !== rule) return;
+        field.rule = null;
+        field.expires = 0;
+    }
+
     evaluateNextUnhilite(state: GameState): boolean {
         this.moves = state.moves;
         let update = !!state.context.botl;
