@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { applyNethackrc } from '../js/options.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('#wizcustom shows the active symbol set without taking a turn', async () => {
@@ -20,4 +21,28 @@ void test('#wizcustom shows the active symbol set without taking a turn', async 
     assert.match(text, /G_vwall_mines/);
     assert.equal(game.context.move, 0);
 });
+for (const { symset, vertical, horizontal } of [
+    { symset: 'DECgraphics', vertical: 248, horizontal: 241 },
+    { symset: 'curses', vertical: 248, horizontal: 241 },
+    { symset: 'IBMgraphics', vertical: 179, horizontal: 196 },
+    { symset: 'IBMGraphics_1', vertical: 179, horizontal: 196 },
+    { symset: 'IBMGraphics_2', vertical: 179, horizontal: 196 },
+]) {
+    void test(`#wizcustom reports the loaded ${symset} wall bytes`, async () => {
+        freshObjectRoom({ flags: { debug: true } });
+        applyNethackrc(`OPTIONS=symset:${symset}`);
+        const rows = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            rows.push(...(game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) ?? []));
+            input.feed(' ');
+        };
+        await runExtendedCommand('wizcustom');
+        const verticalWall = rows.find(row => row.includes('G_vwall_mines')) ?? '';
+        const horizontalWall = rows.find(row => row.includes('G_hwall_mines')) ?? '';
+        assert.ok(verticalWall.includes(`'\\${vertical}'`), `${symset} vertical wall must report raw byte ${vertical}: ${verticalWall}`);
+        assert.ok(horizontalWall.includes(`'\\${horizontal}'`), `${symset} horizontal wall must report raw byte ${horizontal}: ${horizontalWall}`);
+        assert.equal(game.context.move, 0);
+    });
+}
 //# sourceMappingURL=wizard_custom.test.js.map

@@ -1409,9 +1409,29 @@ const decWallColors = new Map<GlyphOffset, number>([
 // (clear_symsetentry() → clear_all_glyphmap_colors()).
 const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
 
+// wizcmds.c:wizcustom_callback() prints the loaded showsyms byte before
+// wintty.c:g_putch() converts high-bit characters to an alternate font.
+function wallSymbolByte(symbol: number): number {
+    const shown = shownSymbolSet();
+    const name = shown.name?.toLowerCase();
+    if (!shown.rogue && (name === 'decgraphics' || name === 'curses')) {
+        const ch = decFurnitureSymbols.get(symbol);
+        if (ch !== undefined) return ch.charCodeAt(0) | 0x80;
+    }
+    // Named S_ overrides are identical in the primary and Rogue sets.
+    const set = name ? ROGUE_SYMSETS[name] : undefined;
+    const ch = rogueCmapSymbol(set ?? null, symbol)
+        ?? (shown.rogue ? rogueFurnitureSymbols.get(symbol) : undefined)
+        ?? MAP_SYMBOLS[symbol]?.ch;
+    if (ch === undefined) throw new RangeError(`Unknown wall symbol ${symbol}`);
+    return ch.charCodeAt(0);
+}
+
 // The branch palettes are glyph customizations from dat/symbols, shared
 // with the wizard's glyph listing even while a different branch is shown.
-export function customizedBranchWalls(): { glyph: number; symbol: number; id: string; color: number }[] {
+export function customizedBranchWalls(): {
+    glyph: number; symbol: number; symbolByte: number; id: string; color: number;
+}[] {
     if (!BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '')) return [];
     const names = ['vwall', 'hwall', 'tlcorn', 'trcorn', 'blcorn', 'brcorn',
         'crwall', 'tuwall', 'tdwall', 'tlwall', 'trwall'];
@@ -1423,7 +1443,8 @@ export function customizedBranchWalls(): { glyph: number; symbol: number; id: st
         const color = decWallColors.get(offset);
         if (color === undefined) throw new Error(`Branch ${branch} has no wall palette`);
         return names.map((name, index) => ({ glyph: offset + index,
-            symbol: CmapSymbol.vwall + index, id: `G_${name}_${branch}`, color }));
+            symbol: CmapSymbol.vwall + index, symbolByte: wallSymbolByte(CmapSymbol.vwall + index),
+            id: `G_${name}_${branch}`, color }));
     });
 }
 
