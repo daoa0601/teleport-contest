@@ -647,9 +647,7 @@ and `bones.c`.
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
 
-Known open gaps: standalone `remove_worm()`/`wormgone()` leaves the worm head
-mapped; worm flipping clips segments instead of transforming the chain (no
-`#wizfliplevel`); `postmov()`'s accessibility `notice_mon()` hook; returning
+Known open gaps: `postmov()`'s accessibility `notice_mon()` hook; returning
 artifacts with an absent attacker; `validvamp()`'s `monpolycontrol` prompt;
 experience-percentage status highlighting; host-system mail; dumplog file
 writing. One public session differs only on screens: the recorder host's
