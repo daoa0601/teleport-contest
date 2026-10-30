@@ -31,6 +31,7 @@ import {
     monsterIsDisplacer, monsterTypeName,
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
@@ -379,8 +380,11 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
         monster.permspeed = MFAST;
         monster.mspeed = MFAST;
     }
-    monster.mundetected = 0;
-    monster.m_ap_type = 0;
+    if (monster.mundetected) {
+        monster.mundetected = 0;
+        newsym(monster.mx, monster.my);
+    }
+    revealMonsterAppearance(monster);
     return { monster, twitchMessage: null };
 }
 
@@ -485,14 +489,13 @@ async function reviveCorpse(
     await mergeGhostIntoBody(monster, body, state);
     restoreCorpseNameAndHealth(monster, body);
     monster.mrevived = 1;
+    await consumeRevivedCorpse(body, location, state);
     if (announce) {
         const message = revivalMessage(
             body, monster, location, originalWhere, wasWielded, state,
         );
         if (message) messages.push(message);
     }
-    await consumeRevivedCorpse(body, location, state);
-    newsym(monster.mx, monster.my);
 
     let trap: Trap | null = null;
     if (digsOut) trap = await maketrap(monster.mx, monster.my, PIT);
