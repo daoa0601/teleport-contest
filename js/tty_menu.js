@@ -269,16 +269,11 @@ export async function tty_dismiss_nhwindow(window, roleSelection = false) {
         if (roleSelection)
             display()?.clearScreen();
         else {
+            const d = display();
+            if (d)
+                d.statusVisible = false;
             await docrt();
             await flush_screen(1);
-            // docrt()'s cls wiped the status window and bot_disabled
-            // suppresses its redraw through the rest of the windowport
-            // call: the status stays blank until the next real bot().
-            if (game._statusUpdatesDisabled) {
-                const d = display();
-                if (d)
-                    d.statusVisible = false;
-            }
         }
     }
     else
@@ -311,13 +306,11 @@ async function eraseMenuCorner(window, roleSelection = false) {
             row_refresh(left + 1, COLNO - 1, row - 1);
     }
     if (bottom >= Math.min(d.rows - 2, ROWNO + 1)) {
-        // The erasure wrecked the status window: botlx forces the next
-        // bot() to redraw it in full. bot() itself is a no-op while status
-        // updates are disabled (select_menu() keeps them disabled through
-        // the dismissal), so the damaged rows stay visible until then.
+        // docorner() requests a full status repaint. Until bot() succeeds,
+        // retain the erased cells; menu selection and self-genocide can
+        // both suppress that repaint.
         game.context.botl = true;
-        if (game._statusUpdatesDisabled)
-            d.statusVisible = false;
+        d.statusVisible = false;
         await bot();
     }
 }

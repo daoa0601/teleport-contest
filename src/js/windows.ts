@@ -259,6 +259,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
     // erase_menu_or_text() redraws the whole screen for a zero offset.
     if (cornerOffset === 0) {
+        d.statusVisible = false;
         await docrt();
         await flush_screen(1);
     } else if (underlay && underlayCursor) {
@@ -296,6 +297,7 @@ async function pageDisclosureWindow(
         }
         return 27;
     } finally {
+        d.statusVisible = false;
         await docrt();
         await flush_screen(1);
     }
@@ -453,6 +455,7 @@ export async function showTextWindow(lines: Iterable<TextMenuEntry> | AsyncItera
         if (key !== 27) await displayPage();
         return key;
     } finally {
+        d.statusVisible = false;
         await docrt();
         await flush_screen(1);
     }
@@ -507,6 +510,8 @@ export async function showTextPages(
         // erase_menu_or_text() dismisses the text window with docrt() plus
         // flush_screen(1): docrt() queues the botlx repaint, so the flush
         // paints the status fresh and puts the cursor back on the hero.
+        const d = display();
+        if (d) d.statusVisible = false;
         await docrt();
         await flush_screen(1);
     }
