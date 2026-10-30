@@ -411,6 +411,7 @@ function resetRestoredInstanceState(): void {
     delete game._bubbleTraversalUp;
     delete game._rndmonstAlignment;
     delete game._rndmonstAlignmentMove;
+    delete game._monsterGenerationOrder;
     delete game._runtimeVersionInfoInitialized;
     delete game.shownSymbols;
 

@@ -292,6 +292,7 @@ export interface GameState {
     _restoredBones?: boolean;
     _rndmonstAlignment?: SpecialLevelDescriptor | null;
     _rndmonstAlignmentMove?: number;
+    _monsterGenerationOrder?: readonly number[];
     _prevDecorType?: number;
     _fobjSerial?: number;
     // C light.c keeps light_base newest-first; object light creation order

@@ -48,6 +48,7 @@ const transientFields = {
     _lastInvNr: true,
     _lastPushedBoulder: true,
     _mimicMealMessage: true,
+    _monsterGenerationOrder: true,
     _monsterNoiseTime: true,
     _monsterNoticesBlocked: true,
     _moveloopStarted: true,
