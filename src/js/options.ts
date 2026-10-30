@@ -25,6 +25,7 @@ import { clearStatusHilites, countStatusHilites, statusHiliteMenu } from './stat
 import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './status_hilite_parse.js';
 import { countBindKeys, handlerRebindKeys } from './rebind_keys.js';
 import { CommandBindings } from './command_bindings.js';
+import { reassignInventoryLetters } from './inventory_prompt.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, checkGoldSymbol, clearMessageWindow, currentBoulderSymbol, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
@@ -1835,7 +1836,6 @@ function parseConfiguration(
                 else if (canonical === 'deaf') result.flags.deaf = value;
                 else if (canonical === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
                 else if (canonical === 'splash_screen') result.iflags.wc_splash_screen = value;
-                else if (canonical === 'wizmgender' || canonical === 'wizweight') result.iflags[canonical] = value;
                 else if (canonical === 'montelecontrol') result.monTelecontrol = value;
                 else if (canonical === 'monpolycontrol') result.monPolycontrol = value;
                 else if (canonical === 'pushweapon') result.flags.pushweapon = value;
@@ -2204,6 +2204,18 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['whatis_moveskip', 'getloc_moveskip', false],
 ] as const;
 
+// optlist.h: these booleans are selectable only in the full wizard menu.
+// The debug_* entries also reject config-file settings and fuzzer input.
+const WIZARD_MENU_BOOLEAN_OPTIONS = [
+    ['debug_hunger', 'debug_hunger', false],
+    ['debug_mongen', 'debug_mongen', false],
+    ['debug_overwrite_stairs', 'debug_overwrite_stairs', false],
+    ['sanity_check', 'sanity_check', false],
+    ['travel_debug', 'trav_debug', false],
+    ['wizmgender', 'wizmgender', false],
+    ['wizweight', 'wizweight', false],
+] as const;
+
 // C options.c:option_help(), next_opt(); descriptions from include/optlist.h.
 export async function option_help(): Promise<void> {
     const lines = [
@@ -2330,11 +2342,13 @@ const OPTION_HELP_COMPOUNDS: readonly (readonly [string, string])[] = [
     ["font", "prefix for font options"],
 ];
 
-type BooleanOption = typeof REQUEST_MENU_BOOLEAN_OPTIONS[number];
+type BooleanOption = typeof REQUEST_MENU_BOOLEAN_OPTIONS[number]
+    | typeof WIZARD_MENU_BOOLEAN_OPTIONS[number];
 type BooleanOptionName = BooleanOption[0];
 
 const requestBooleanByName = new Map<string, BooleanOption>(
-    REQUEST_MENU_BOOLEAN_OPTIONS.map(option => [option[0].toLowerCase(), option]),
+    [...REQUEST_MENU_BOOLEAN_OPTIONS, ...WIZARD_MENU_BOOLEAN_OPTIONS]
+        .map(option => [option[0].toLowerCase(), option]),
 );
 
 function requestBooleanValue(name: BooleanOptionName): boolean {
@@ -2345,6 +2359,8 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
     if (property === '_monPolycontrol') return game._monPolycontrol ?? fallback;
     if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'debug_hunger' || property === 'debug_mongen' || property === 'debug_overwrite_stairs'
+        || property === 'sanity_check' || property === 'trav_debug' || property === 'wizmgender' || property === 'wizweight'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         return game.iflags[property] ?? fallback;
     return game.flags[property] ?? fallback;
@@ -2356,6 +2372,8 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
     else if (property === '_monPolycontrol') settings.monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'debug_hunger' || property === 'debug_mongen' || property === 'debug_overwrite_stairs'
+        || property === 'sanity_check' || property === 'trav_debug' || property === 'wizmgender' || property === 'wizweight'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
     else settings.flags[property] = value;
@@ -2369,6 +2387,8 @@ function setRequestBoolean(option: BooleanOption, value: boolean): void {
     else if (property === '_monPolycontrol') game._monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'debug_hunger' || property === 'debug_mongen' || property === 'debug_overwrite_stairs'
+        || property === 'sanity_check' || property === 'trav_debug' || property === 'wizmgender' || property === 'wizweight'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;
     else game.flags[property] = value;
@@ -2528,6 +2548,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('customcolors'),
             boolean('customsymbols'),
             boolean('dark_room'),
+            ...(game.flags.debug && !game.iflags.debug_fuzzer ? [
+                boolean('debug_hunger'), boolean('debug_mongen'), boolean('debug_overwrite_stairs'),
+            ] : []),
             boolean('dropped_nopick'),
             boolean('eight_bit_tty'),
             boolean('extmenu'),
@@ -2564,6 +2587,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('rest_on_space'),
             boolean('safe_pet'),
             boolean('safe_wait'),
+            ...(game.flags.debug ? [boolean('sanity_check')] : []),
             boolean('showdamage'),
             boolean('showexp'),
             boolean('showrace'),
@@ -2580,11 +2604,13 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('tombstone'),
             boolean('toptenwin'),
             boolean('travel'),
+            ...(game.flags.debug ? [boolean('travel_debug')] : []),
             boolean('use_inverse'),
             boolean('verbose'),
             boolean('weaponstatus'),
             boolean('whatis_menu'),
             boolean('whatis_moveskip'),
+            ...(game.flags.debug ? [boolean('wizmgender'), boolean('wizweight')] : []),
             label(''),
         ] },
         { heading: 'Compounds (selecting will prompt for new value):', items: [
@@ -2955,6 +2981,7 @@ const NO_VISUAL_CHANGE: PendingVisuals = { redraw: false, customReset: false };
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name: BooleanOptionName): PendingVisuals {
+    if (name === 'wizweight' && game.flags.fixinv === false) reassignInventoryLetters();
     if (name === 'terrainstatus') classifyStatusTerrain(game);
     if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus', 'hitpointbar'].includes(name))
         reassessStatusFields();
@@ -2972,7 +2999,7 @@ function applyBooleanVisualChange(name: BooleanOptionName): PendingVisuals {
     // reset; reset_needed_visuals() serves those with docrt() alone and runs
     // check_gold_symbol()/reglyph_darkroom() only for opt_need_redraw.
     return {
-        redraw: ['color', 'hilite_pet', 'hilite_pile', 'hitpointbar', 'showrace', 'use_inverse']
+        redraw: ['color', 'hilite_pet', 'hilite_pile', 'hitpointbar', 'showrace', 'use_inverse', 'wizmgender']
             .includes(name),
         customReset: name === 'customcolors' || name === 'customsymbols',
     };

@@ -5006,15 +5006,9 @@ interface ExtendedCommandInput {
 async function readExtendedCommand(): Promise<ExtendedCommandInput> {
     let lastExecuted: NativeCommand | null = null;
     for (;;) {
-        const statusDisabled = game._statusUpdatesDisabled;
-        game._statusUpdatesDisabled = true;
-        let selected: NativeCommand | null;
-        try {
-            selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
-        } finally {
-            if (statusDisabled === undefined) delete game._statusUpdatesDisabled;
-            else game._statusUpdatesDisabled = statusDisabled;
-        }
+        // tty_get_ext_cmd() calls its line editor directly, bypassing core
+        // getlin()'s status suppression. Its prompt restores status after #?.
+        const selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
         if (selected?.handler !== 'doextlist') return { selected, lastExecuted };
         if (!await commandAllowed(selected)) return { selected: null, lastExecuted };
         await showExtendedCommandList();

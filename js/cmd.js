@@ -5061,18 +5061,9 @@ async function wizIdentify() {
 async function readExtendedCommand() {
     let lastExecuted = null;
     for (;;) {
-        const statusDisabled = game._statusUpdatesDisabled;
-        game._statusUpdatesDisabled = true;
-        let selected;
-        try {
-            selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
-        }
-        finally {
-            if (statusDisabled === undefined)
-                delete game._statusUpdatesDisabled;
-            else
-                game._statusUpdatesDisabled = statusDisabled;
-        }
+        // tty_get_ext_cmd() calls its line editor directly, bypassing core
+        // getlin()'s status suppression. Its prompt restores status after #?.
+        const selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
         if (selected?.handler !== 'doextlist')
             return { selected, lastExecuted };
         if (!await commandAllowed(selected))
