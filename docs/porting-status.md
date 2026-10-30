@@ -650,6 +650,21 @@ experience-percentage status highlighting; host-system mail; dumplog file
 writing. One public session differs only on screens: the recorder host's
 configuration path in seed2200's option help.
 
+Runtime limits: some native screens print facts about the C process itself,
+which a JavaScript runtime cannot reproduce. Treat their differences as
+expected, not as mechanic gaps:
+- native heap addresses (`fmt_ptr()`), as in `#timeout`'s queue and
+  `#lightsources`;
+- C allocation accounting in `#stats` (`size_obj()`, `size_monst()`,
+  `misc_stats()`, `region_stats()` capacity history, `engr_alloc`);
+- the recorder host's paths, as in option help and host-system mail.
+
+`#lightsources` also lists the native light-source chain in creation order
+with cached coordinates and flags. The port derives lights from objects and
+monsters, so even the non-pointer columns need a persistent light list first.
+Round 20's live tests mark `#stats` and `#lightsources` as todo for these
+reasons (`.cache/coverage-r20/final.md` has the detail).
+
 Run one full suite or corpus at a time. Keep ownership of yielded sessions until
 exit, and terminate owned children if a check is abandoned. Prefer focused
 behavior checks while editing. Frozen adapters can be loaded through
