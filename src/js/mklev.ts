@@ -216,7 +216,7 @@ import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
 import {
-    deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings,
+    deleteEngravingAt, makeEngravingAt, restoreEngravings,
     sanitizeEngravings, wipeEngravingAt, wipeoutText,
 } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
@@ -3709,7 +3709,6 @@ export function saveBonesLevel(
         return false;
     }
 
-    forgetEngravings(payload.level);
     // savebones() records the final role, race, gender, and alignment in
     // cemetery.who. These suffixes also participate in bones_include_name().
     const alignment = game.u.ualign.type === 1 ? 'Law'

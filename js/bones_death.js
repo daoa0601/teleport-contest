@@ -6,10 +6,10 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd, } from './const.js';
 import { completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave, } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
-import { plineWithContinuation } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
-import { makeEngravingAt } from './engrave.js';
+import { forgetEngravings, makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
 import { bonesLevelExists, createCorpstatAt, deleteBonesLevel, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
@@ -17,6 +17,7 @@ import { monsterCanCarryObject, monsterLikesObjects, } from './monster_carry.js'
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
@@ -165,6 +166,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
     if (game.u.usteed)
         await dismountHero(DISMOUNT_BONES);
     await prepareBonesMonstersForSave();
+    forgetEngravings(level);
     for (const object of game.inventory)
         object.ghostly = true;
     if (arise === LEAVESTATUE) {
@@ -184,6 +186,8 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
             return false;
         }
         giveHeroResistancesToMonster(monster, game);
+        setMonsterGivenName(monster, game.plname || 'player');
+        newsym(x, y);
         await dropHeroInventoryForBones(x, y, { carrier: monster });
         await addMummyWrapping(monster);
         await initializeMonsterArmor(monster);
@@ -197,6 +201,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
         game._bonesSaved = false;
         return false;
     }
+    setMonsterGivenName(ghost, game.plname || 'player');
     completeBonesMonster(ghost, game);
     if (corpse) {
         corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };

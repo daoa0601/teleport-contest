@@ -2,20 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createBonesFromDeath } from '../js/bones_death.js';
-import { G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
+import { BURN, G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
+import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { saveBonesLevel } from '../js/mklev.js';
+import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { LEASH } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { init_objects } from '../js/o_init.js';
+import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createDungeon } from './support/topology.js';
 
 function dyingHero(): void {
     freshPlayableRoom({ hero: { uz: { dnum: 0, dlevel: 7 } } });
@@ -23,6 +26,31 @@ function dyingHero(): void {
     game._canMakeBones = true;
     init_objects();
 }
+
+void test('an arising hero redraws their resting square after forgetting old engravings', async () => {
+    dyingHero();
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+    game.u.ugrave_arise = MONSTER_NAME.indexOf('human mummy');
+    const engraving = makeEngravingAt(10, 10, 'A warning', null, 0, BURN);
+    assert.ok(engraving);
+    engraving.eread = true;
+    assert.equal(await createBonesFromDeath('killed by a mummy', async () => 'y'), true);
+    const storage = game.storage;
+    freshPlayableRoom({ hero: { uz: { dnum: 0, dlevel: 7 } } });
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+    game.storage = storage;
+    game.blind = true;
+    init_objects();
+    initRng(1n);
+
+    await mklev();
+
+    assert.equal(game._restoredBones, true);
+    const restored = engravingAt(10, 10);
+    assert.ok(restored);
+    assert.equal(restored.eread, false, 'the ancestor reading is forgotten');
+    assert.equal(restored.erevealed, true, 'native newsym reveals the engraving again before saving');
+});
 
 void test('saving bones releases the dead hero leashes before dropping them', async () => {
     dyingHero();

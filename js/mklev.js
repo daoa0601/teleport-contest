@@ -91,7 +91,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, terrain_glyph, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { armorBonus } from './armor.js';
@@ -3654,7 +3654,6 @@ export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds
     catch (_error) {
         return false;
     }
-    forgetEngravings(payload.level);
     // savebones() records the final role, race, gender, and alignment in
     // cemetery.who. These suffixes also participate in bones_include_name().
     const alignment = game.u.ualign.type === 1 ? 'Law'

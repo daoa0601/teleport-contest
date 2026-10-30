@@ -107,7 +107,6 @@ export function giveHeroResistancesToMonster(monster: Monster, state: GameState 
 
 export function completeBonesMonster<T extends Monster>(monster: T, state: GameState = game): T {
     requirePlayingGame(state);
-    const name = state.plname || 'player';
     const finalRole = roleIndex(state);
     const finalRace = raceIndex(state);
     const ebones = {
@@ -127,7 +126,6 @@ export function completeBonesMonster<T extends Monster>(monster: T, state: GameS
         crowned: !!state.u?.uevent?.uhand_of_elbereth,
     };
 
-    setMonsterGivenName(monster, name);
     monster.m_lev = state.u?.ulevel || 1;
     monster.mhp = monster.mhpmax = state.u?.uhpmax || 1;
     monster.female = !!state.flags?.female;
