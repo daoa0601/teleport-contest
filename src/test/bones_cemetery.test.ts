@@ -3,9 +3,12 @@ import test from 'node:test';
 
 import { createBonesFromDeath } from '../js/bones_death.js';
 import { dungeonOverviewDisclosure } from '../js/cmd.js';
-import { CORR } from '../js/const.js';
+import { setMulti } from '../js/command_state.js';
+import { CORR, STARVING, STONING } from '../js/const.js';
 import { map_location } from '../js/display.js';
+import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay, requireGameLevel, resetGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
@@ -13,6 +16,7 @@ import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { readDungeonOverview } from './support/dungeon-overview.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { installPagerInput } from './support/pager-input.js';
 import { createRoomLevel, freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
 
@@ -73,6 +77,46 @@ void test('the ancestor death reason includes the involuntary delay at death', a
 
     assert.match(text, /Ada-Cav-Hum-Mal-Law, killed by a kobold, while sleeping\./);
 });
+
+for (const death of [
+    { name: 'petrification', type: STONING, killer: 'cockatrice', reason: 'getting stoned',
+        cause: 'petrified by a cockatrice' },
+    { name: 'starvation', type: STARVING, killer: '', reason: 'fainted from lack of food',
+        cause: 'died of starvation, while fainted' },
+]) {
+    void test(`${death.name} bones retain the fixed death reason in later overview and disclosure`, async () => {
+        const storage = memoryStorage();
+        bonesRoom(storage, 'Ada', 30);
+        game.moves = 30;
+        game.flags.debug = true;
+        game.flags.disclose = 'none';
+        game.flags.tombstone = false;
+        game.iflags.toptenwin = false;
+        game.u.uhp = 0;
+        setMulti(-3);
+        game._helplessReason = death.reason;
+        const input = resetInputState();
+        installPagerInput(input, { expected: /Goodbye|points|You were/i, limit: 8 });
+        const pager = input.display;
+        assert.ok(pager);
+        input.display = { async readKey() {
+            const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (text.includes('Save bones?')) return 'y'.charCodeAt(0);
+            return pager.readKey();
+        } };
+
+        await finishOrdinaryDeath({ killer: death.killer, deathType: death.type });
+
+        await restoreBones(storage);
+        map_location(30, 10, false);
+        const ancestor = `Ada-Cav-Hum-Mal-Law, ${death.cause}.`;
+        const overview = await readDungeonOverview();
+        assert.ok(overview.includes(ancestor), overview);
+        const disclosure = dungeonOverviewDisclosure('quit', 'quit')
+            .map(line => typeof line === 'string' ? line : line.text).join('\n');
+        assert.ok(disclosure.includes(ancestor), disclosure);
+    });
+}
 
 void test('ancestor death reasons sanitize named foes as the native score formatter does', async () => {
     const storage = memoryStorage();
