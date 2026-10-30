@@ -1693,7 +1693,7 @@ function collectFinalPossessions(): FinalPossessions {
     const groups = [...valuables].sort(([a, countA], [b, countB]) => {
         const aIsGem = objectClassForType(a) === GEM_CLASS;
         const bIsGem = objectClassForType(b) === GEM_CLASS;
-        return Number(aIsGem) - Number(bIsGem) || countB - countA || a - b;
+        return Number(bIsGem) - Number(aIsGem) || countB - countA || a - b;
     });
     for (const [type, count] of groups) points += count * objectBaseValue(type);
     return { points, artifacts, valuables: groups, quantumCat };
