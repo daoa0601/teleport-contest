@@ -154,7 +154,7 @@ import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, setTopline, putMessageHistory, rememberToplines, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, monsterVisible, unblindTelepathyRange, pline_dir, set_msg_xy, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, setTopline, putMessageHistory, rememberToplines, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, monsterVisible, unblindTelepathyRange, pline_dir, set_msg_xy, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, consumeHallucinatedMenuObjectGlyph, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { transformMagicLampToOilLamp } from './light.js';
@@ -5017,6 +5017,10 @@ async function wizIdentify() {
                 addMenuHeading(window, objectClassHeading(item.oclass));
             previousClass = item.oclass;
             observeObjectForNaming(item);
+            // C invent.c:display_pickinv() derives each row's obj_to_glyph()
+            // menu metadata from the display RNG before doname(), which
+            // shifts the hallucination stream one draw per listed row.
+            consumeHallucinatedMenuObjectGlyph(item);
             tty_add_menu(window, {
                 identifier: item, selector: inventoryCommandLetter(item),
                 group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
