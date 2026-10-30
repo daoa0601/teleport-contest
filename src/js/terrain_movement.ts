@@ -227,7 +227,7 @@ export async function floatHeroDown(
                         holdingMonsterName(hero.ustuck, state)}.`);
             } else {
                 await plineWithContinuation(
-                    `Startled, ${holdingMonsterSubject(hero.ustuck, state)} can no longer hold you!`);
+                    `Startled, ${holdingMonsterName(hero.ustuck, state)} can no longer hold you!`);
             }
             setHeroGrip(null, state);
         }

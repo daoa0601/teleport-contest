@@ -191,7 +191,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
                 await plineWithContinuation(`You aren't able to maintain your hold on ${holdingMonsterName(hero.ustuck, state)}.`);
             }
             else {
-                await plineWithContinuation(`Startled, ${holdingMonsterSubject(hero.ustuck, state)} can no longer hold you!`);
+                await plineWithContinuation(`Startled, ${holdingMonsterName(hero.ustuck, state)} can no longer hold you!`);
             }
             setHeroGrip(null, state);
         }
