@@ -138,16 +138,16 @@ export function isLegalCharacter(character) {
 // Skeleton construction helpers
 // ---------------------------------------------------------------------------
 const BASELINE_OPTIONS = ['!legacy', '!tutorial', '!news', 'time', 'symset:DECgraphics'];
-function buildNethackrc({ character, playerName, extraOptions }) {
+function buildNethackrc({ character, playerName, extraOptions, tutorialPrompt, startupFacets }) {
+    const facets = ['role', 'race', 'gender', 'align'];
     const head = [
         `name:${playerName}`,
-        `role:${character.role}`,
-        `race:${character.race}`,
-        `gender:${character.gender}`,
-        `align:${character.align}`,
+        ...facets.filter(facet => !startupFacets.includes(facet))
+            .map(facet => `${facet}:${character[facet]}`),
     ];
     const lines = [`OPTIONS=${head.join(',')}`];
-    lines.push(`OPTIONS=${BASELINE_OPTIONS.join(',')}`);
+    const baseline = BASELINE_OPTIONS.filter(option => option !== '!tutorial' || !tutorialPrompt);
+    lines.push(`OPTIONS=${baseline.join(',')}`);
     for (const opt of extraOptions)
         lines.push(`OPTIONS=${opt}`);
     return `${lines.join('\n')}\n`;
@@ -191,6 +191,8 @@ export function makeRecipe(recipeName, { seed, datetime, character, options = []
     const rc = (overrides = []) => buildNethackrc({
         character,
         playerName: name,
+        tutorialPrompt: recipe.tutorial === 'prompt',
+        startupFacets: recipe.characterSelection ?? [],
         extraOptions: [...userOptions, ...(recipe.options ?? []), ...overrides],
     });
     const segments = recipe.build({ seed, datetime: recipe.datetime ?? datetime, rc, character }, recipeName === 'depth-tour' ? normalizeTargets(targets) : undefined);

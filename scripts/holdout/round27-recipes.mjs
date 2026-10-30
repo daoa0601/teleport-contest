@@ -259,8 +259,9 @@ const tutorialEntry = recipe('r27-tutorial-entry', 'Enter the tutorial and read 
     ['tutorial entered', /Entering the tutorial/], ['tutorial level displayed', /Tutorial/],
     ['tutorial engraving read', /engraved here|Welcome to the tutorial|Welcome to NetHack/],
 ], []);
+tutorialEntry.tutorial = 'prompt';
 tutorialEntry.build = ({ seed, datetime, rc }) => [{ seed, datetime,
-        nethackrc: rc().replace(',!tutorial', ''),
+        nethackrc: rc(),
         driver: [choose('Yes, do a tutorial', ''), keys(':')],
     }];
 ROUND27_RECIPES['r27-tutorial-entry'] = tutorialEntry;
@@ -297,9 +298,9 @@ const partialCharacter = recipe('r27-partial-character', 'Choose the missing gen
     ['partial choice offered', /Shall I pick.*gender/], ['gender chosen', /Pick a gender or sex/],
     ['game started', /welcome to NetHack/i],
 ], []);
-partialCharacter.characterSelection = 'startup';
+partialCharacter.characterSelection = ['gender'];
 partialCharacter.build = ({ seed, datetime, rc }) => [{ seed, datetime,
-        nethackrc: rc().replace(/,gender:[^,\n]+/g, '') + 'OPTIONS=role:!monk\n',
+        nethackrc: rc(['role:!monk']),
         driver: [answer('Shall I pick', 'n'), answer('Pick a gender or sex', 'm'), answer('Is this ok?', 'y'), keys(':')],
     }];
 ROUND27_RECIPES['r27-partial-character'] = partialCharacter;

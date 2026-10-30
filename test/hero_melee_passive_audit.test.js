@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { finishHeroHelplessness } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
@@ -7,7 +8,7 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
+import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES, RIN_FREE_ACTION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
@@ -56,7 +57,7 @@ async function attackEast(expected, force = false) {
 void test('hallucination lets an attacker see a floating eye look numb or stupefied', async () => {
     await meleeRoom('newt', 'floating eye');
     game.u.hallucinationTurns = 100;
-    game.u.freeAction = true;
+    await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
     initRng(41n);
     const reactions = [];
     for (let attempt = 0; attempt < 24; attempt++) {
@@ -74,7 +75,7 @@ void test('hallucination lets an attacker see a floating eye look numb or stupef
 void test('free action resists a hallucinated floating eye gaze without freezing the attacker', async () => {
     await meleeRoom('newt', 'floating eye');
     game.u.hallucinationTurns = 100;
-    game.u.freeAction = true;
+    await wearHeroAccessory(await addInventoryObject(RIN_FREE_ACTION), 'uleft');
     initRng(41n);
     let messages = '';
     for (let attempt = 0; attempt < 24; attempt++) {
