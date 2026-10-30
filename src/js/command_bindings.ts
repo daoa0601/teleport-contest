@@ -33,6 +33,7 @@ const MOVEMENT_DELTAS: readonly (readonly [number, number, number])[] = [
 ];
 
 const commandNamed = (name: string) => NATIVE_COMMANDS.find(command => command.name === name);
+// C cmd.c:ext_func_tab_from_func().
 const commandForHandler = (handler: string) => NATIVE_COMMANDS.find(command => command.handler === handler);
 const control = (key: number) => key & 0x1f;
 const meta = (key: number) => key | 0x80;
@@ -87,6 +88,7 @@ export class CommandBindings {
         this.installMovement();
     }
 
+    // C cmd.c:cmdbind_get().
     lookup(key: number): KeyBinding | null {
         return this.bindings.find(binding => binding.key === key) ?? null;
     }
@@ -108,6 +110,7 @@ export class CommandBindings {
         }
     }
 
+    // C cmd.c:bind_mousebtn().
     bindMouseButton(button: 1 | 2, name: string): boolean {
         if (name.toLowerCase() === 'nothing') {
             this.mouseButtons.set(button, null);
@@ -240,6 +243,7 @@ export class CommandBindings {
         return null;
     }
 
+    // C cmd.c:cmd_from_dir().
     keyForDirection(direction: number, mode = 0): number {
         const handler = DIRECTION_HANDLERS[direction]?.[mode];
         return handler ? this.keyForHandler(handler) : 0;
@@ -250,6 +254,7 @@ export class CommandBindings {
         return command ? this.keyForHandler(command.handler) : 0;
     }
 
+    // C cmd.c:cmd_from_func().
     keyForHandler(handler: string): number {
         let result = 0;
         for (const binding of this.bindings) {
@@ -264,6 +269,7 @@ export class CommandBindings {
         return this.lookup(32)?.command?.handler === handler ? 32 : result;
     }
 
+    // C cmd.c:cmdbind_add().
     add(key: number, command: NativeCommand | null | undefined, user = false): void {
         command ??= null;
         if (!key) return;
@@ -279,11 +285,13 @@ export class CommandBindings {
         }
     }
 
+    // C cmd.c:cmdbind_remove().
     remove(key: number): void {
         const index = this.bindings.findIndex(binding => binding.key === key);
         if (index >= 0) this.bindings.splice(index, 1);
     }
 
+    // C cmd.c:cmdbind_swapkeys().
     swapKeys(first: number, second: number): void {
         const firstBinding = this.lookup(first), secondBinding = this.lookup(second);
         if (!firstBinding || !secondBinding) return;

@@ -426,6 +426,7 @@ const CAPITALIZED_MONSTER_TITLES = [
         return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
     }),
 ].filter(name => /^[A-Z]/u.test(name));
+// C rumors.c:CapitalMon().
 function capitalizedMonsterTitle(name) {
     return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
         && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));

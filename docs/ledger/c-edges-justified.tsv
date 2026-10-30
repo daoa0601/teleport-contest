@@ -1842,3 +1842,30 @@ update_mlstmv	iter_mons	inlined	updateMonsterLastMove visits only positive-HP mo
 ustatusline	align_str	inlined	heroStatusLine formats lawful, neutral, chaotic or unaligned from the hero alignment (hero_status.ts)
 ustatusline	fingers_or_gloves	inlined	heroStatusLine chooses the equipped gloves simple name or plural current-form fingers (hero_status.ts)
 watch_dig	get_iter_mons	inlined	watchDigging finds the newest living on-map watch member that sees the hero and is peaceful (digging_watch.ts)
+CapitalMon	init_CapMons	inlined	CAPITALIZED_MONSTER_TITLES builds the real and bogus capitalized type-name table in objnam.ts; native allocation and the DEBUGFILES-only name dump have no runtime counterpart
+cmdbind_add	alloc	n/a	CommandBindings.add constructs managed binding records instead of allocating a native list node
+get_hilite	critically_low_hp	inlined	StatusHighlights.updateField computes criticallyLowHp(false) for HP rules and passes its result to chooseHilite
+getpos_getvalids_selection	selection_setpoint	inlined	validMapSquares appends every predicate-true map coordinate to the highlight selection array
+handler_change_autocompletions	parseautocomplete	inlined	changeCommandAutocompletions applies each selected command through setCommandAutocomplete, retaining changes from the compiled defaults
+key2extcmddesc	digit	inlined	describeCommandKey tests ASCII key codes 48 through 57 before ordinary command descriptions
+keylist_putcmds	key2txt	inlined	showKeyBindings formats each assigned key with keyText, including Space, Escape, Enter and Delete labels
+list_migrating_mons	alloc	n/a	listMigratingMonsters builds a managed filtered monster array for sorting and display
+list_migrating_mons	minimal_monnam	inlined	migratingMonsterLine emits tame or peaceful, gendered species, shapechanger form and given name; native off-map coordinates are omitted before the destination is added
+makemap_remove_mons	makemap_unmakemon	inlined	removeOldLevelMonsters registers returning migrants off-map, then unmakeMonster resets birth and uniqueness counts, handles guards and shop accounts, and removes the actor
+status_hilite_linestr_add	alloc	n/a	linestrAdd appends a managed highlight display record instead of allocating a native list node
+truncate_to_map	sgn	inlined	moveGetposCursor uses Math.sign to shorten both axes when diagonal motion reaches a map edge
+dokeylist	key2txt	inlined	showKeyBindings uses keyText for the assigned-key labels
+dokeylist	show_direction_keys	inlined	showKeyBindings emits the complete diagonal direction grid with the configured walk keys; this caller always passes nodiag false and center period
+dokeylist	spkey_name	inlined	showKeyBindings carries the native escape and count special-key names in miscellaneousKeys for unbound labels
+ext_cmd_getlin_hook	extcmds_getentry	inlined	completeExtendedCommand returns the sole matching NativeCommand.name directly from the immutable command table
+ext_cmd_getlin_hook	extcmds_match	inlined	completeExtendedCommand filters unavailable, internal and non-wizard commands, checks the autocomplete overlay and compares the typed prefix without case
+there_cmd_menu_common	mcmd_addmenu	inlined	selectContextMenu appends the look-at entry and passes each collected entry to tty_add_menu
+there_cmd_menu_far	dist2	inlined	selectContextMenu tests dx squared plus dy squared against 18 squared for distant throw entries
+there_cmd_menu_far	mcmd_addmenu	inlined	selectContextMenu appends distant throw and travel entries and passes each collected entry to tty_add_menu
+there_cmd_menu_next2u	carrying	inlined	adjacentEntries searches hero inventory for the key, lock pick, credit card and saddle types
+there_cmd_menu_next2u	dist2	inlined	selectContextMenu calls adjacentEntries only for non-self squares at Chebyshev distance at most one, the complete next2u domain
+there_cmd_menu_next2u	mcmd_addmenu	inlined	adjacentEntries supplies each action and label through the add callback; selectContextMenu passes the collected entries to tty_add_menu
+there_cmd_menu_next2u	t_at	inlined	adjacentEntries finds a trap by its map coordinates in level.traps
+there_cmd_menu_self	mcmd_addmenu	inlined	selfEntries supplies each action and label through the add callback; selectContextMenu passes the collected entries to tty_add_menu
+there_cmd_menu_self	num_spells	inlined	selfEntries adds Cast a spell only when the contiguous known-spell array has entries
+there_cmd_menu_self	stairway_at	inlined	selfEntries traverses game.stairs and stops at the first stairway on the selected square

@@ -7,6 +7,9 @@ const capacityText = [
 ];
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
+// C wintty.c:shrink_enc().
+// C wintty.c:shrink_dlvl().
+// C wintty.c:set_condition_length().
 export function renderStatusLine2(fields, columns, capacityBlank = false, levelPrefixChanged = false) {
     const attempts = [
         [0, 0, false], [1, 0, false], [2, 0, false],

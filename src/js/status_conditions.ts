@@ -79,6 +79,7 @@ export function setConditionOption(option: string, enabled: boolean, mask = defa
     return enabled ? mask | bit : mask & ~bit;
 }
 
+// C botl.c:cond_cmp().
 export function statusConditions(state: GameState): readonly ConditionText[] {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     const enabled = (name: ConditionName) => statusConditionEnabled(name, state);

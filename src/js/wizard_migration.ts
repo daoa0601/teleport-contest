@@ -13,6 +13,7 @@ import type { Monster } from './monster_types.js';
 import { getLine, promptChoice } from './query.js';
 import { showTextWindow } from './windows.js';
 
+// C wizcmds.c:wiz_migrate_mons().
 export async function wizMigrateMonsters(): Promise<void> {
     requirePlayingGame(game);
     const destination = nextMigrationLevel();
@@ -53,6 +54,8 @@ function migrationGroup(monster: Monster, next: DungeonLocation): MigrationGroup
     return 'o';
 }
 
+// C wizcmds.c:list_migrating_mons().
+// C wizcmds.c:migrsort_cmp().
 async function listMigratingMonsters(next: DungeonLocation): Promise<void> {
     const monsters = game._migratingMonsters ?? [];
     if (!monsters.length) {

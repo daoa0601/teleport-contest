@@ -479,6 +479,7 @@ function toggleItem(row, count) {
 function set_item_state(d, boundary, row, item) {
     d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-', item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
 }
+// C windows.c:menuitem_invert_test().
 function allowsBulkChange(row) {
     if (!(row.itemflags & MENU_ITEMFLAGS_SKIPINVERT))
         return true;

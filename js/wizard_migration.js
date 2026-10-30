@@ -10,6 +10,7 @@ import { monsterTypeName } from './monster_data.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { getLine, promptChoice } from './query.js';
 import { showTextWindow } from './windows.js';
+// C wizcmds.c:wiz_migrate_mons().
 export async function wizMigrateMonsters() {
     requirePlayingGame(game);
     const destination = nextMigrationLevel();
@@ -50,6 +51,8 @@ function migrationGroup(monster, next) {
         return 'n';
     return 'o';
 }
+// C wizcmds.c:list_migrating_mons().
+// C wizcmds.c:migrsort_cmp().
 async function listMigratingMonsters(next) {
     const monsters = game._migratingMonsters ?? [];
     if (!monsters.length) {

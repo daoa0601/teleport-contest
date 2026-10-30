@@ -845,6 +845,7 @@ dotele	spelleffects
 dotele	tele
 dotele	yn_function
 dotelecmd	dotele
+doterrain	reveal_terrain
 dotherecmdmenu	getdir
 dotherecmdmenu	isok
 dothrow	getobj
@@ -1529,6 +1530,7 @@ liquid_flow	pooleffects
 liquid_flow	water_damage_chain
 list_genocided	set_vanq_order
 list_genocided	yn_function
+list_migrating_mons	yn_function
 list_vanquished	set_vanq_order
 litstate_rnd	rn2
 litstate_rnd	rnd
@@ -2861,6 +2863,9 @@ test_move	doorless_door
 test_move	isok
 test_move	nomul
 theft_petrifies	instapetrify
+there_cmd_menu_common	glyph_at
+there_cmd_menu_next2u	can_saddle
+there_cmd_menu_next2u	glyph_at
 thitm	newsym
 thitm	rnd
 throne_sit_effect	adjattrib
@@ -3180,6 +3185,9 @@ wiz_kill	paranoid_query
 wiz_kill	unmap_invisible
 wiz_makemap	mklev
 wiz_map	map_engraving
+wiz_map_levltyp	may_dig
+wiz_migrate_mons	makemon
+wiz_migrate_mons	rndmonst
 wiz_panic	paranoid_query
 wiz_polyself	polyself
 wiz_smell	glyph_at

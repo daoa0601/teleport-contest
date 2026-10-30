@@ -70,6 +70,7 @@ function splitSubfields(text) {
         pieces.pop();
     return pieces;
 }
+// C botl.c:is_fld_arrayvalues().
 function isFieldArrayValue(text, values, minimum, maximum) {
     for (let index = minimum; index < maximum; index++) {
         const entry = values[index];

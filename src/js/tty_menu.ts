@@ -520,6 +520,7 @@ function set_item_state<T>(d: GameDisplay, boundary: number, row: number, item: 
         item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
 }
 
+// C windows.c:menuitem_invert_test().
 function allowsBulkChange<T>(row: TtyMenuRow<T>): boolean {
     if (!(row.itemflags & MENU_ITEMFLAGS_SKIPINVERT)) return true;
     const mode = game.iflags.menuinvertmode ?? 1;

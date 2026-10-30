@@ -77,6 +77,7 @@ export function visibleCommandKey(code: number): string {
     return String.fromCharCode(code);
 }
 
+// C cmd.c:cmd_from_ecname().
 export function commandKeyDescription(command: string, bindings: CommandBindings): string {
     const name = String(command);
     if (!NATIVE_COMMANDS.some(entry => entry.name === name)) return '';

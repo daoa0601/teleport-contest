@@ -451,6 +451,7 @@ const CAPITALIZED_MONSTER_TITLES = [
     }),
 ].filter(name => /^[A-Z]/u.test(name));
 
+// C rumors.c:CapitalMon().
 function capitalizedMonsterTitle(name: string): boolean {
     return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
         && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));

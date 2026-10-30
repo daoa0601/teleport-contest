@@ -197,6 +197,7 @@ export class StatusHighlights {
 // C best-fit precedence is shared between absolute and percentage rules:
 // exact matches win; otherwise prefer the closest lower/upper bound. Change
 // rules override persistent rules, and a qualifying critical-HP rule wins.
+// C botl.c:get_hilite().
 function chooseHilite(rules: readonly StatusHiliteRule[], current: FieldValue, change: number,
     critical: boolean, polymorphed: boolean): StatusHiliteRule | null {
     let selected: StatusHiliteRule | null = null;
@@ -243,7 +244,7 @@ function chooseHilite(rules: readonly StatusHiliteRule[], current: FieldValue, c
         } else if (rule.behavior === BL_TH_TEXTMATCH && rule.rel === TXT_VALUE && rule.textmatch) {
             const pattern = fuzzyText(rule.textmatch);
             if (pattern === fuzzyText(current.text)) { selected = rule; exact = true; }
-            else if (!exact && polymorphed && ['noneoftheabove', '(polymorphed)', 'noneoftheabove(polymorphed)'].includes(pattern))
+            else if (!exact && polymorphed && isPolymorphedTitleFallback(rule.textmatch))
                 selected = rule;
         } else if (rule.behavior === BL_TH_ALWAYS_HILITE) selected = rule;
         else if (rule.behavior === BL_TH_CRITICALHP && critical) {
@@ -253,6 +254,13 @@ function chooseHilite(rules: readonly StatusHiliteRule[], current: FieldValue, c
         }
     }
     return selected;
+}
+
+// C botl.c:noneoftheabove(). Each spelling has its own ignored punctuation.
+function isPolymorphedTitleFallback(text: string): boolean {
+    return fuzzyText(text) === 'noneoftheabove'
+        || text.replace(/["()]/g, '').toLowerCase() === 'polymorphed'
+        || text.replace(/[" _()\-]/g, '').toLowerCase() === 'noneoftheabovepolymorphed';
 }
 
 function compare(previous: number | string, current: number | string): number {
@@ -349,6 +357,8 @@ export function firstStatusLineSpans(text: string, hitpointBar: boolean,
     return spans;
 }
 
+// C wintty.c:condattr().
+// C wintty.c:condcolor().
 function conditionStyle(mask: number, masks: readonly number[]): StatusStyle {
     let color = NO_COLOR, attr = 0;
     for (let index = 0; index < CLR_MAX; index++) {

@@ -13,6 +13,7 @@ import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { showTerrainCodeLegend, showTerrainCodes } from './wizard_terrain.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+// C cmd.c:doterrain().
 export async function terrainCommand() {
     recordMappedOverviewState();
     const window = tty_create_nhwindow(NHW_MENU);

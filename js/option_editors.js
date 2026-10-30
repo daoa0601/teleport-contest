@@ -108,6 +108,7 @@ export async function editCompoundMenu(name, giveMessage) {
     }
     return true;
 }
+// C botl.c:menualpha_cmp().
 async function editStatusConditions() {
     for (;;) {
         const byRank = game.iflags.conditionMenuByRank ?? false;

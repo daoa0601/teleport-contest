@@ -164,6 +164,7 @@ export class StatusHighlights {
 // C best-fit precedence is shared between absolute and percentage rules:
 // exact matches win; otherwise prefer the closest lower/upper bound. Change
 // rules override persistent rules, and a qualifying critical-HP rule wins.
+// C botl.c:get_hilite().
 function chooseHilite(rules, current, change, critical, polymorphed) {
     let selected = null;
     let exact = false, updown = false, changed = false, numeric = false, criticalHp = false;
@@ -230,7 +231,7 @@ function chooseHilite(rules, current, change, critical, polymorphed) {
                 selected = rule;
                 exact = true;
             }
-            else if (!exact && polymorphed && ['noneoftheabove', '(polymorphed)', 'noneoftheabove(polymorphed)'].includes(pattern))
+            else if (!exact && polymorphed && isPolymorphedTitleFallback(rule.textmatch))
                 selected = rule;
         }
         else if (rule.behavior === BL_TH_ALWAYS_HILITE)
@@ -242,6 +243,12 @@ function chooseHilite(rules, current, change, critical, polymorphed) {
         }
     }
     return selected;
+}
+// C botl.c:noneoftheabove(). Each spelling has its own ignored punctuation.
+function isPolymorphedTitleFallback(text) {
+    return fuzzyText(text) === 'noneoftheabove'
+        || text.replace(/["()]/g, '').toLowerCase() === 'polymorphed'
+        || text.replace(/[" _()\-]/g, '').toLowerCase() === 'noneoftheabovepolymorphed';
 }
 function compare(previous, current) {
     if (typeof previous === 'string' && typeof current === 'string')
@@ -336,6 +343,8 @@ export function firstStatusLineSpans(text, hitpointBar, hitpointBarFill = 0) {
         spans.push({ field: BL_ALIGN, start: alignment.index, end: plain.trimEnd().length });
     return spans;
 }
+// C wintty.c:condattr().
+// C wintty.c:condcolor().
 function conditionStyle(mask, masks) {
     let color = NO_COLOR, attr = 0;
     for (let index = 0; index < CLR_MAX; index++) {

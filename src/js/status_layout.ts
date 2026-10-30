@@ -34,6 +34,9 @@ const capacityText: readonly (readonly string[])[] = [
 
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
+// C wintty.c:shrink_enc().
+// C wintty.c:shrink_dlvl().
+// C wintty.c:set_condition_length().
 export function renderStatusLine2(
     fields: StatusLine2Fields,
     columns: number,

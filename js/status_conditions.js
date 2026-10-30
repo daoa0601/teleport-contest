@@ -58,6 +58,7 @@ export function setConditionOption(option, enabled, mask = defaultMask) {
     const bit = 1 << index;
     return enabled ? mask | bit : mask & ~bit;
 }
+// C botl.c:cond_cmp().
 export function statusConditions(state) {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     const enabled = (name) => statusConditionEnabled(name, state);

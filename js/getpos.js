@@ -54,6 +54,7 @@ export function isGetposFeatureSymbol(ch, symset = '') {
 }
 // A diagonal which crosses a map edge loses the same amount of movement on
 // its other axis.  Clamping each axis separately would slide along the edge.
+// C getpos.c:truncate_to_map().
 export function moveGetposCursor(cursor, dx, dy) {
     if (cursor.x + dx < 1) {
         dy -= Math.sign(dy) * (1 - (cursor.x + dx));
@@ -265,6 +266,7 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
         "Or enter a background symbol (ex. '<').",
         `Use '${key('self')}' to move the cursor on yourself.`,
     ];
+    // C getpos.c:getpos_help_keyxhelp().
     const targets = (kind, movement, listing) => {
         const unexplored = kind === 'unexplored';
         const action = menu ? 'get a menu of ' : unexplored
@@ -372,6 +374,7 @@ export async function autoDescribePosition(x, y) {
 }
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
+// C getpos.c:getpos_getvalids_selection().
 function validMapSquares(isValidLocation) {
     const spots = [];
     for (let x = 1; x < COLNO; x++) {
@@ -417,6 +420,7 @@ function getposArea(state) {
         x += state.u.dx ?? 0;
         y += state.u.dy ?? 0;
     }
+    // C getpos.c:gloc_filter_classify_glyph().
     const classify = (tx, ty) => {
         const location = state.level?.at(tx, ty);
         if (!location || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
