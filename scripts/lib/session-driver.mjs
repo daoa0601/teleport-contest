@@ -92,12 +92,12 @@ export function createSessionDriver(actions) {
                 menuPages = 0;
                 return selector;
             }
-            const page = rendered.join('\n').match(/\((\d+)\s+of\s+(\d+)\)/i);
-            if (!page)
-                throw new Error('dungeon destination menu did not open');
-            if (Number(page[1]) >= Number(page[2])) {
+            const joined = rendered.join('\n');
+            if (/\(end\)/i.test(joined))
                 throw new Error('named dungeon destination is absent from the menu');
-            }
+            const page = joined.match(/\((\d+)\s+of\s+(\d+)\)/i);
+            if (!page || Number(page[1]) >= Number(page[2]))
+                throw new Error('named dungeon destination is absent from the menu');
             if (++menuPages > 8)
                 throw new Error('dungeon destination menu pagination loop');
             return ' ';

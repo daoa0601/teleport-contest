@@ -46,6 +46,10 @@ const STATUS_FIELDS = [
 ];
 if (STATUS_FIELDS.length !== MAXBLSTATS)
     throw new Error('initblstats must list every status field');
+/** botl.c initblstats[] table for the config rule parser. */
+export function statusFieldTable() {
+    return STATUS_FIELDS;
+}
 // botl.c conditions[]: the picker order and canonical display names.
 const HILITE_CONDITIONS = [
     [BL_MASK_BAREH, 'Bare'], [BL_MASK_BLIND, 'Blind'], [BL_MASK_BUSY, 'Busy'],
@@ -59,6 +63,10 @@ const HILITE_CONDITIONS = [
     [BL_MASK_TERMILL, 'TermIll'], [BL_MASK_TETHERED, 'Teth'], [BL_MASK_TRAPPED, 'Trap'],
     [BL_MASK_UNCONSC, 'Out'], [BL_MASK_WOUNDEDL, 'WLegs'], [BL_MASK_HOLDING, 'UHold'],
 ];
+/** botl.c conditions[] for the config rule parser. */
+export function conditionEntries() {
+    return HILITE_CONDITIONS;
+}
 // botl.c condition_aliases[]; conditionbitmask2str() starts comparing at
 // index 1, so the "strangled" spelling never names a rendered mask.
 const CONDITION_ALIASES = [
@@ -80,11 +88,27 @@ const CONDITION_ALIASES = [
             | BL_MASK_TETHERED | BL_MASK_TRAPPED | BL_MASK_UNCONSC | BL_MASK_WOUNDEDL
             | BL_MASK_HOLDING],
 ];
+/** botl.c condition_aliases[] for the config rule parser. */
+export function conditionAliasEntries() {
+    return CONDITION_ALIASES;
+}
 // botl.c enc_stat[] (index SLT_ENCUMBER..OVERLOADED), the alignment texts,
 // and the hunger names hu_stat[] carries between Satiated and Hungry.
 const ENC_STAT = ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'];
 const ALIGN_TEXTS = ['chaotic', 'neutral', 'lawful'];
 const HUNGER_TEXTS = ['Satiated', null, 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'];
+/** botl.c enc_stat[] indices SLT_ENCUMBER..OVERLOADED. */
+export function encStatNames() {
+    return ENC_STAT;
+}
+/** botl.c aligntxt[]. */
+export function alignTexts() {
+    return ALIGN_TEXTS;
+}
+/** botl.c hutxt[]: hu_stat[] names between Satiated and Starved. */
+export function hungerTexts() {
+    return HUNGER_TEXTS;
+}
 // threshold_value / is_out_of_range fragments of the out-of-range plines.
 const THRESHOLD_VALUE = 'hilite_status threshold ';
 const IS_OUT_OF_RANGE = ' is out of range';
@@ -258,9 +282,8 @@ export function countStatusHilites() {
     linestrDone();
     return count;
 }
-export function clearStatusHilites() {
-    game.iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
-    game.iflags.condHilites = new Array(BL_ATTCLR_MAX).fill(0);
+export function clearStatusHilites(iflags = game.iflags) {
+    iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
 }
 // botl.c reset_status_hilites(): repaint even when highlighting is off,
 // but only re-evaluate unchanged fields when it is already on.

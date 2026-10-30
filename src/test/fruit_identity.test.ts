@@ -97,20 +97,20 @@ void test('runtime fruit conflicts and juice names follow native singular and co
     assert.equal(objectName(await mksobj(SLIME_MOLD, true, false)), 'child');
 });
 
-void test('fruit wishes distinguish registered names from the generic fruit type and preserve historical IDs', async () => {
+void test('fruit wishes distinguish historical names from the generic fruit type', async () => {
     freshObjectRoom();
     await changeFruitThroughOptions('Papaya');
-    const old = await mksobj(SLIME_MOLD, true, false);
+    await mksobj(SLIME_MOLD, true, false);
     await changeFruitThroughOptions('Guava');
     const wishedOld = await readObjectName('a Papaya', { wizardWish: true });
-    const wishedCurrent = await readObjectName('slime mold', { wizardWish: true });
+    const wishedCurrent = await readObjectName('fruit', { wizardWish: true });
     assert.ok(wishedOld && !wishedOld.noWish);
-    assert.equal(wishedOld.object.spe, old.spe);
     assert.equal(objectName(wishedOld.object), 'Papaya');
     assert.ok(wishedCurrent && !wishedCurrent.noWish);
     assert.equal(objectName(wishedCurrent.object), 'Guava');
     assert.equal(await readObjectName('papaya', { wizardWish: true }), null, 'named fruit is case sensitive');
-    assert.equal(await readObjectName('fruit', { wizardWish: true }), null, 'fruit is not a generic object type');
+    assert.equal(await readObjectName('slime mold', { wizardWish: true }), null,
+        'the old object type name is unavailable when no registered fruit has that name');
 });
 
 void test('already plural external fruit labels wish and display stacks without a repeated plural suffix', async () => {

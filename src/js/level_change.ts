@@ -71,7 +71,7 @@ import {
     onQuestStart, okToQuest,
 } from './quest.js';
 import { fumaroles } from './monmove.js';
-import { moveElementalBubbles } from './elemental.js';
+import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,
     MAGIC_PORTAL, In_endgame, In_quest, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR,
@@ -352,6 +352,8 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             restoreLevelTimers(game);
             await restoreCachedMonsterState(cached);
             restoreLevelRegions(game, game.moves - cached.savedAt);
+            // getlev() redraws saved bubbles before goto_level() moves them.
+            restoreElementalBubbles();
             // C getlev() reloads the level's saved light sources onto the
             // front of light_base (restore.c:1145), reversed from the
             // newest-first save order and ahead of the hero's carried

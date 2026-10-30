@@ -300,7 +300,10 @@ export function randomTypeByDescription(name: string | null, oclass = 0, extraPr
     const checkOf = !/ of /i.test(name);
     const matches: { type: number; probability: number }[] = [];
     for (let type = objects.ARROW; type < objects.OBJECT_NAMES.length; type++) {
-        const actual = objects.OBJECT_NAMES[type];
+        // options.c:initoptions_finish() renames the slime mold object to
+        // "fruit" once the preferred fruit is registered, so its original
+        // name never matches a wish (rnd_otyp_by_namedesc sees "fruit").
+        const actual = type === objects.SLIME_MOLD ? 'fruit' : objects.OBJECT_NAMES[type];
         if (!actual || oclass && objectClassForType(type) !== oclass) continue;
         const description = state.objectDescriptions?.[type] ?? objects.OBJECT_DESCRIPTIONS[type];
         const callName = state._objectCallNames?.[type];

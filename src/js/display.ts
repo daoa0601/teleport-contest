@@ -2947,7 +2947,7 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
             display.putstr(column, row, visible, NO_COLOR, attr);
             column += visible.length;
         }
-        if (!game._statusUpdatesDisabled && display.statusVisible) {
+        if (display.statusVisible) {
             for (const span of display.statusHighlights.spans[index] ?? []) {
                 if (span.hitpointBar) {
                     // wintty.c:5231-5253: the lit cells take the title

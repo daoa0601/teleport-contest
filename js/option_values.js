@@ -6,6 +6,8 @@ import { planInventoryOrder } from './object_sort.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { decodeOptionEscapes } from './option_escapes.js';
+import { parseStatusHl1, replayStatusHiliteOperations } from './status_hilite_parse.js';
+import { resetStatusHilites } from './status_hilites.js';
 export function textOptionValue(name) {
     switch (name) {
         case 'pile_limit': return String(game.flags.pile_limit ?? 5);
@@ -78,17 +80,26 @@ export async function setTextOption(name, value) {
             break;
         case 'statushilites': {
             // optfn_statushilites(): a missing value means the 3-turn default,
-            // atol() of junk is 0 (off), and negative durations clamp to 1. The
-            // highlight rules themselves are not part of this port, so only the
-            // duration is kept; the status refresh that reset_status_hilites()
-            // forces happens with the next bot().
+            // atol() of junk is 0 (off), and negative durations clamp to 1.
+            // In-game changes request update_all even when the value is unchanged.
             const delta = value ? cInteger(value) : 3;
             game.iflags.hiliteDelta = delta < 0 ? 1 : delta;
+            resetStatusHilites();
             break;
         }
-        case 'hilite_status':
-            await rejectInvalidStatusField(value);
+        case 'hilite_status': {
+            if (!value) {
+                await optionError('Value is mandatory for hilite_status');
+                break;
+            }
+            const errors = [];
+            const operations = [];
+            parseStatusHl1(value, message => errors.push(message), false, operations);
+            replayStatusHiliteOperations(operations, game.iflags);
+            for (const error of errors)
+                await optionError(error);
             break;
+        }
         case 'suppress_alert': {
             const parsed = featureAlertVersion(value);
             if (!parsed)
@@ -106,31 +117,6 @@ export async function setTextOption(name, value) {
 export function cInteger(value) {
     const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
-}
-// Rules with known fields require the unported status-highlight engine.
-// Field resolution still owns the rejection before that engine is entered.
-async function rejectInvalidStatusField(value) {
-    if (!value) {
-        await optionError('Value is mandatory for hilite_status');
-        return;
-    }
-    const rule = value.toLowerCase().split(/ +/).find(part => part.includes('/'));
-    if (!rule)
-        return;
-    const field = rule.split('/')[0] ?? '';
-    const normalized = field.replace(/[ _-]/g, '');
-    const canonical = [
-        'title', 'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma',
-        'alignment', 'score', 'carrying-capacity', 'gold', 'power', 'power-max',
-        'experience-level', 'armor-class', 'HD', 'time', 'hunger', 'hitpoints',
-        'hitpoints-max', 'dungeon-level', 'experience', 'condition', 'version', 'weapon', 'armor', 'terrain',
-    ];
-    const aliases = ['characteristics', 'encumbrance', 'experiencepoints', 'dx', 'co', 'con',
-        'points', 'cap', 'pw', 'pwmax', 'xl', 'xplvl', 'ac', 'hitdice', 'turns', 'hp', 'hpmax',
-        'dgn', 'xp', 'exp', 'flags'];
-    const exact = canonical.some(name => name.replace(/-/g, '').toLowerCase() === normalized) || aliases.includes(normalized);
-    if (!exact && canonical.filter(name => name.toLowerCase().startsWith(field)).length !== 1)
-        await optionError(`Unknown status field '${field}'`);
 }
 // cfgfiles.c:config_erradd() adds punctuation at the interactive boundary.
 export async function optionError(message) {
