@@ -4,7 +4,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
 import { definiteName, objectCombatName, observeObjectForNaming, ownedObjectName, singularObjectName, } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
-import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
+import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok, } from './const.js';
 import { canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
 import { stumbleOntoMimic } from './mimic.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
@@ -132,7 +132,7 @@ async function damageHeroWithWhip(whip, state) {
     const female = !!state.flags.female;
     const reflexive = female ? 'herself' : 'himself';
     const possessivePronoun = female ? 'her' : 'his';
-    return loseHeroHp(damage, `killed ${reflexive} with ${possessivePronoun} bullwhip`, { state, publish: pline });
+    return loseHeroHp(damage, `killed ${reflexive} with ${possessivePronoun} bullwhip`, { state, publish: pline, killerFormat: NO_KILLER_PREFIX });
 }
 async function snatchPetrifyingCorpse(weapon, state) {
     const petrification = await snatchCorpseBareHanded(weapon, {

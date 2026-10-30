@@ -1,6 +1,6 @@
 // C apply.c:jump(), is_valid_jump_pos(), and check_jump().
 import { setHeroGrip } from './hero_grip.js';
-import { ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL, Is_airlevel, Is_waterlevel, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, isok, } from './const.js';
+import { ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, nomul } from './command_state.js';
@@ -140,7 +140,7 @@ async function escapeJumpTrap(target, state) {
             let damage = rnd(10);
             if (hero.halfPhysicalDamage)
                 damage = Math.trunc((damage + 1) / 2);
-            await loseHeroHp(damage, 'jumping out of a bear trap', { state });
+            await loseHeroHp(damage, 'jumping out of a bear trap', { state, killerFormat: KILLED_BY });
             if (state.program_state.gameover)
                 return false;
             await woundHeroLegs(side, rn1(1000, 500), state);

@@ -11,7 +11,7 @@ import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import {
     A_STR, DIGCHECK_FAILED, DIGCHECK_FAIL_BOULDER, EXPL_FIERY, EXPL_FROSTY,
-    EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, PARANOID_BREAKWAND, PIT,
+    EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, NO_KILLER_PREFIX, PARANOID_BREAKWAND, PIT,
     ROOM, SHOPBASE, isok, xdir, ydir,
 } from './const.js';
 import { digActualHole, digCheck, liquidFlow } from './digging_terrain.js';
@@ -171,7 +171,7 @@ export async function breakWand(wand: GameObject, { state = game }: { state?: Ga
             if (effect.damage) {
                 const injury = state.u.halfPhysicalDamage ? Math.ceil(effect.damage / 2) : effect.damage;
                 const killer = `killed ${state.flags.female ? 'herself' : 'himself'} by breaking a wand`;
-                if (await loseHeroHp(injury, killer, { state, deathCause: killer }))
+                if (await loseHeroHp(injury, killer, { state, killerFormat: NO_KILLER_PREFIX }))
                     return { spentTime: true, heroDied: true };
             }
             await bot();
