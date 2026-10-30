@@ -220,6 +220,7 @@ async function applyNaturalEffect(monster, context) {
     }
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: !!state.program_state.gameover };
 }
+// C uhitm.c:demonpet().
 async function summonDemonPet(context) {
     const { state, random, publish } = context;
     const species = heroSpecies(state);

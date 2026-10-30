@@ -501,6 +501,7 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
     await igniteItems(state.inventory, { state, publish, random });
     return { entered: true, moved: false, died: false, sank };
 }
+// C trap.c:sink_into_lava().
 export async function sinkHeroIntoLava({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, repaint = newsym, resetVision = vision_reset, recalculateVision = vision_recalc, applyLandingEffects = async () => { }, die = finishLiquidDeath, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;

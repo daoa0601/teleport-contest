@@ -19,6 +19,7 @@ import { setSlipperyHands } from './towel.js';
 import type { GameObject } from './object_types.js';
 import type { InventoryClassification } from './inventory_prompt.js';
 
+// C apply.c:grease_ok().
 export async function useGrease(can: GameObject): Promise<boolean> {
     if (game.u.glib || (game.u.glibTurns ?? 0) > 0) {
         await dropGrease(can);

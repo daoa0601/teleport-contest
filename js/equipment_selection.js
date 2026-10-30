@@ -4,6 +4,11 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGES
 import { isEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import { MEAT_RING } from './object_data.js';
+// C do_wear.c:equip_ok().
+// C do_wear.c:puton_ok().
+// C do_wear.c:remove_ok().
+// C do_wear.c:wear_ok().
+// C do_wear.c:takeoff_ok().
 export function equipmentClassification(object, action, itemAction = false, state = game) {
     const removing = action === 'take off' || action === 'remove';
     const accessory = action === 'put on' || action === 'remove';

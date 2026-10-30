@@ -2,6 +2,7 @@
 // C ref: trap.c t_missile().
 import { mksobj } from './mklev.js';
 import { objectWeight } from './weight.js';
+// C trap.c:t_missile().
 export async function makeTrapMissile(objectType, trap) {
     const missile = await mksobj(objectType, true, false);
     missile.quan = missile.quantity = 1;

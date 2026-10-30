@@ -31,6 +31,7 @@ export async function releasePotionOccupant(source, { state = game } = {}) {
         await releaseDjinni(source, state);
     return { released: true, heroDied: !!state.program_state?.gameover };
 }
+// C potion.c:ghost_from_bottle().
 async function releaseGhost(state) {
     const monster = await makemonNear(PM_GHOST, state.u.ux, state.u.uy, MM_NOMSG);
     if (!monster) {

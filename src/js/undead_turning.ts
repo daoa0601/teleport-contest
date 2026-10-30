@@ -55,6 +55,7 @@ async function announceRevival(event: CorpseRevived, state: GameState) {
     await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
 }
 
+// C zap.c:revive_egg().
 export async function turnObjectWithUndeadMagic(object: GameObject, state: GameState = game) {
     if (object.otyp === EGG) {
         if (eggCanHatch(object, state)) restartEggHatchTimer(object);
@@ -147,6 +148,7 @@ export async function turnMonsterWithUndeadMagic(monster: Monster, source: 'wand
     return false;
 }
 
+// C zap.c:unturn_you().
 export async function turnHeroWithUndeadMagic(state: GameState = game, { roll = rnd }: { roll?: typeof rnd } = {}) {
     requirePlayingGame(state);
     await turnCarriedObjects(state.inventory, state);

@@ -87,6 +87,7 @@ function isImprovisedContact(weapon, mode, state) {
         || (isAmmunition(weapon) && (mode !== 'thrown'
             || !ammunitionMatchesLauncher(weapon, state.uwep || state.u.uwep)));
 }
+// C uhitm.c:hmon_hitmon_weapon_ranged().
 async function improvisedWeaponContact(monster, weapon, mode, state, publish) {
     let damage = shadeBlocksWeaponBaseDamage(weapon, monster, state) ? 0 : rnd(2);
     if (objectMaterial(weapon, state) === SILVER && monsterHatesSilver(monster))
@@ -108,6 +109,7 @@ async function improvisedWeaponContact(monster, weapon, mode, state, publish) {
         heroDied: !!state.program_state.gameover,
     };
 }
+// C uhitm.c:backstabbable().
 function canBackstab(monster) {
     return !monsterIsAmorphous(monster) && !monsterIsWhirly(monster)
         && !monsterIsNoncorporeal(monster)

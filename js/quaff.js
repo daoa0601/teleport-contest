@@ -19,6 +19,8 @@ import { promptYesNo } from './query.js';
 import { heroIsHallucinating } from './senses.js';
 import { drinkFountain } from './cmd.js';
 import { drinkSink } from './sink_drinking.js';
+// C potion.c:drink_ok().
+// C potion.c:dodrink().
 export async function quaff({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

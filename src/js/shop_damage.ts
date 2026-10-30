@@ -320,6 +320,7 @@ export async function makeShoppersHappy(
     }
 }
 
+// C shk.c:clear_no_charge_obj().
 function clearNoChargeObject(
     keeper: Shopkeeper | null, object: GameObject, state: GameState,
 ): void {

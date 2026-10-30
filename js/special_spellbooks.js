@@ -27,6 +27,7 @@ import { heroIsBlind } from './senses.js';
 import { chargeUnpaidUsage } from './shk.js';
 import { turnCarriedObjects } from './undead_turning.js';
 import { cansee } from './vision.js';
+// C spell.c:deadbook().
 export async function readBookOfDead(book, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -141,6 +142,7 @@ export async function makeUndeadNear(x, y, { state = game, reviveCorpses = false
     }
     state.level.flags.graveyard = true;
 }
+// C spell.c:deadbook_pacify_undead().
 async function pacifyUndead(monster, state) {
     if (!(monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
         || !cansee(monster.mx, monster.my))

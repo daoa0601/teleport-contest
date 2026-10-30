@@ -30,6 +30,7 @@ import type { MonsterDeathOptions } from './monster_death.js';
 
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 
+// C mon.c:mm_displacement().
 export function monsterDisplacementFlags(aggressor: Monster, defender: Monster): number {
     if (!monsterIsDisplacer(aggressor.mnum)
         || monsterIsDisplacer(defender.mnum)

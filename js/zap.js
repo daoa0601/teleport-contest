@@ -200,6 +200,7 @@ function floorBurnMessage(object, destroyed, state) {
     const subject = withIndefiniteArticle(name);
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} burns.`;
 }
+// C zap.c:burn_floor_objects().
 export async function burnFloorObjectsAt(x, y, { state = game, giveFeedback = false, heroCaused = false, publish = plineWithContinuation, random = rn2, visible = cansee(x, y), repaint = newsym, } = {}) {
     const pile = state.level?.objects?.[x]?.[y] || [];
     let burned = 0;
@@ -233,6 +234,7 @@ export async function burnFloorObjectsAt(x, y, { state = game, giveFeedback = fa
         await repaint(x, y);
     return burned;
 }
+// C zap.c:start_melt_ice_timeout().
 export function startMeltIceTimer(x, y, minimumTime = 0, state = game, random = rn2) {
     let delay = Math.max(minimumTime, 49);
     while (++delay <= 2000) {

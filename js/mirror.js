@@ -93,6 +93,7 @@ export async function useMirror(object, { state = game } = {}) {
 function seesInvisible(state) {
     return !!state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
 }
+// C apply.c:beautiful().
 export function heroBeautyDescription(state = game) {
     const charisma = currentAttribute(A_CHA, state);
     if (charisma >= 25)

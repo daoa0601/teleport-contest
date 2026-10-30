@@ -228,6 +228,7 @@ export function wipeHeroEngraving(count, state = game) {
 // C's function-call argument is evaluated before wipeEngravingAt() discovers
 // nowipeout.  Lua tutorial engravings therefore still own rnd(5) when an
 // explicit movement leaves or enters one, despite degrade=false.
+// C hack.c:maybe_smudge_engr().
 export function maybeSmudgeEngravings(x1, y1, x2, y2) {
     if (!heroCanReachFloor(game, { checkPit: true }))
         return;

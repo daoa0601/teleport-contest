@@ -14,6 +14,7 @@ export function statusTerrain(state) {
         classifyStatusTerrain(state);
     return descriptions[state.iflags.terrain_typ ?? MAX_TYPE] ?? '';
 }
+// C hack.c:classify_terrain().
 export function classifyStatusTerrain(state) {
     const typ = terrainType(state);
     if (typ === state.iflags.terrain_typ)

@@ -156,6 +156,7 @@ function uniqueObject(object, state) {
     return !!OBJECT_UNIQUE[object.otyp]
         && (object.known || !!override || object.otyp === AMULET_OF_YENDOR);
 }
+// C objnam.c:add_erosion_words().
 function erosionDescription(object, state) {
     if (!erosionMatters(object))
         return [];

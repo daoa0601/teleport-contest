@@ -2,6 +2,7 @@
 // point beyond the current dungeon or a progression barrier.
 import { In_hell, In_quest } from './const.js';
 import { game } from './gstate.js';
+// C trap.c:dng_bottom().
 export function clampHoleDestination(destination, state = game) {
     const dungeon = state.dungeons[destination.dnum];
     if (!dungeon)

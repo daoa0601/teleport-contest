@@ -1,6 +1,7 @@
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
+// C pickup.c:reset_justpicked().
 export function clearJustPicked(state: GameState | null | undefined): void {
     for (const object of state?.inventory || [])
         object.pickup_prev = false;

@@ -7,6 +7,7 @@ import { makeDeaf } from './hero_hearing.js';
 import { cureHeroSicknessWithMessages, cureHeroVomiting } from './hero_illness.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeBlinded } from './sight_change.js';
+// C potion.c:healup().
 export async function healHero(amount, extraMaximum, { state = game, cureSickness = false, cureBlindness = false, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

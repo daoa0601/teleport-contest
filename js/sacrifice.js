@@ -496,6 +496,7 @@ async function bestowArtifact(value) {
     }
     return true;
 }
+// C pray.c:offer_too_soon().
 async function offerAmuletTooSoon(alignment) {
     const game = requireInitializedGame();
     if (alignment === A_NONE && inHell())

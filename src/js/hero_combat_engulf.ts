@@ -282,6 +282,7 @@ async function engulfDamage(defender: Monster, type: AttackTuple[1], damage: num
 
 interface EngulfDisplay { x: number; y: number; }
 
+// C uhitm.c:start_engulf().
 async function startHeroEngulfDisplay(defender: Monster, state: PlayingGameState, publish: MessagePublisher): Promise<EngulfDisplay> {
     const heroBody = { mnum: heroSpecies(state) };
     const digest = monsterDigests(heroBody);
@@ -297,6 +298,7 @@ async function startHeroEngulfDisplay(defender: Monster, state: PlayingGameState
     return { x: defender.mx, y: defender.my };
 }
 
+// C uhitm.c:end_engulf().
 async function endHeroEngulfDisplay(display: EngulfDisplay, state: PlayingGameState): Promise<void> {
     if (heroIsInvisible(state)) return;
     await newsym(display.x, display.y);

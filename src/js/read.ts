@@ -86,6 +86,7 @@ export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
     return finishRead(true);
 }
 
+// C read.c:read_ok().
 function classifyReadableObject(object: GameObject | null | undefined) {
     if (!object) return GETOBJ_EXCLUDE;
     return [SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;

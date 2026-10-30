@@ -159,6 +159,7 @@ function uniqueObject(object: GameObject, state: GameState): boolean {
         && (object.known || !!override || object.otyp === AMULET_OF_YENDOR);
 }
 
+// C objnam.c:add_erosion_words().
 function erosionDescription(object: GameObject, state: GameState): string[] {
     if (!erosionMatters(object)) return [];
     const fixedKnife = object.otyp === CRYSKNIFE;

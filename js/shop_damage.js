@@ -268,6 +268,7 @@ export async function makeShoppersHappy({ state = game, silentKops = false } = {
             monster.mpeaceful = 1;
     }
 }
+// C shk.c:clear_no_charge_obj().
 function clearNoChargeObject(keeper, object, state) {
     for (const content of object.contents || [])
         clearNoChargeObject(keeper, content, state);

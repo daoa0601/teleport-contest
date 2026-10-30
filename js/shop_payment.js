@@ -21,6 +21,7 @@ import { unlinkObject } from './object_location.js';
 import { deallocateObject } from './object_delete.js';
 import { impossible } from './diagnostics.js';
 import { monsterHasNoLimbs } from './monster_data.js';
+// C shk.c:cheapest_item().
 export async function minimumShopPurchase(resident, state = game) {
     const bill = await itemizedShopBill(resident, state);
     if (!bill.length || !hasShopBill(resident))
@@ -33,6 +34,8 @@ export async function minimumShopPurchase(resident, state = game) {
 }
 // Contents share one entry for their outermost container. Used portions stay
 // separate, so they can be paid before buying the remaining contained goods.
+// C shk.c:sortbill_cmp().
+// C shk.c:bp_to_obj().
 export async function itemizedShopBill(resident, state = game) {
     if (!hasShopBill(resident))
         return [];
@@ -259,6 +262,7 @@ async function paymentQuestion(object, price, state) {
             object.oeroded2 = oeroded2;
     }
 }
+// C shk.c:insufficient_funds().
 async function checkPurchaseFunds(resident, item, state, cost = item.price) {
     const funds = heroGoldAmount(state) + (resident.eshk.credit ?? 0);
     // C insufficient_funds(): zero cost checks for exhausted cash and credit.
@@ -305,6 +309,7 @@ function containedPurchases(resident, container, state) {
         purchases.push(container);
     return purchases;
 }
+// C shk.c:reject_purchase().
 async function rejectPartlyUsedPurchase(resident, object, entry, state) {
     const intactQuantity = object.quan;
     // reject_purchase() restores the intact count after feedback returns.

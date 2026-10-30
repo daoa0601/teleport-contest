@@ -8,6 +8,7 @@ import { heroCanSwim } from './hack.js';
 import { rn2 } from './rng.js';
 import { isPoolAt } from './terrain_properties.js';
 import { MOD_ENCUMBER, SLT_ENCUMBER, nearCapacity } from './weight.js';
+// C hack.c:air_turbulence().
 export async function airTurbulenceStopsHero() {
     requirePlayingGame(game);
     const hero = game.u;

@@ -40,6 +40,7 @@ export async function applyAreaScrollEffect(source, { state = game, finishHeroDe
         default: throw new Error(`Unsupported area scroll ${source.otyp}`);
     }
 }
+// C read.c:seffect_fire().
 async function fireEffect(source, { state, finishHeroDeath }) {
     const blessed = !!source.blessed;
     const confused = (state.u.confusionTurns ?? 0) > 0;
@@ -93,6 +94,7 @@ async function fireEffect(source, { state, finishHeroDeath }) {
     result.heroDied = explosion.heroDied;
     return result;
 }
+// C read.c:seffect_earth().
 async function earthEffect(source, options) {
     const { state } = options;
     const result = { known: false, consumed: false, heroDied: false };
@@ -141,6 +143,8 @@ async function earthEffect(source, options) {
         await pline('But nothing else happens.');
     return result;
 }
+// C read.c:seffect_stinking_cloud().
+// C read.c:do_stinking_cloud().
 async function cloudEffect(source, state) {
     const alreadyKnown = sourceTypeKnown(source, state);
     if (!alreadyKnown)
@@ -157,6 +161,8 @@ async function cloudEffect(source, state) {
     }
     return { known: true, consumed: false, heroDied: false };
 }
+// C read.c:seffect_amnesia().
+// C read.c:forget().
 async function amnesiaEffect(source, state) {
     if (heroIsPunished(state))
         state.u.bc_felt = 0;

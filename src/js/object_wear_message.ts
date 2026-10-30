@@ -9,6 +9,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import type { GameObject } from './object_types.js';
 import { objectHasPersonalName, objectName, observeObjectForNaming } from './objnam.js';
 
+// C do_wear.c:on_msg().
 export async function objectWearMessage(object: GameObject, state: GameState = game): Promise<string | null> {
     const mask = object.owornmask ?? 0;
     const verbose = state.flags.verbose !== false;

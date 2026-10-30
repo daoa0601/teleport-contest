@@ -476,6 +476,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
     return true;
 }
 
+// C pray.c:offer_too_soon().
 async function offerAmuletTooSoon(alignment: number): Promise<void> {
     const game = requireInitializedGame();
     if (alignment === A_NONE && inHell()) await godsUpset(A_NONE);

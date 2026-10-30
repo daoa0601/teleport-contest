@@ -1,3 +1,4 @@
+// C pickup.c:reset_justpicked().
 export function clearJustPicked(state) {
     for (const object of state?.inventory || [])
         object.pickup_prev = false;

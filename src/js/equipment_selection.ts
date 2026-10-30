@@ -13,6 +13,11 @@ import type { GameObject } from './object_types.js';
 
 type EquipmentAction = 'wear' | 'put on' | 'take off' | 'remove';
 
+// C do_wear.c:equip_ok().
+// C do_wear.c:puton_ok().
+// C do_wear.c:remove_ok().
+// C do_wear.c:wear_ok().
+// C do_wear.c:takeoff_ok().
 export function equipmentClassification(
     object: GameObject, action: EquipmentAction, itemAction = false, state: GameState = game,
 ): InventoryClassification {

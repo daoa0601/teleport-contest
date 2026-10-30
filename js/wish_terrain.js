@@ -284,11 +284,13 @@ function setBridgeSurface(location, surface) {
     location.drawbridgemask = ((location.drawbridgemask ?? location.flags) & ~DB_UNDER) | surface;
     setMapFlags(location, location.drawbridgemask);
 }
+// C objnam.c:set_wallprop_from_str().
 function setWallProperties(location, parsed) {
     location.wall_info |= (parsed.undiggable ? W_NONDIGGABLE : 0)
         | (parsed.unphaseable ? W_NONPASSWALL : 0);
     setMapFlags(location, location.flags | location.wall_info);
 }
+// C objnam.c:dbterrainmesg().
 async function bridgeMessage(surface, type) {
     await say(`${surface} ${type === DRAWBRIDGE_UP ? 'in front of' : 'under'} the drawbridge.`);
 }

@@ -53,6 +53,7 @@ export async function beginMealMimicry(turns: number, { state = game }: { state?
     await flushPendingTopline();
 }
 
+// C eat.c:eatmdone().
 export async function finishMealMimicry(state: GameState = game): Promise<void> {
     if (state._helplessDoneMessage === state._mimicMealMessage)
         state._helplessDoneMessage = null;
@@ -63,6 +64,7 @@ export async function finishMealMimicry(state: GameState = game): Promise<void> 
     }
 }
 
+// C eat.c:eatmupdate().
 export async function updateMealMimicry(state: GameState = game): Promise<void> {
     if (!state._mimicMealMessage || state._helplessDoneMessage !== state._mimicMealMessage
         || state.u.m_ap_type !== M_AP_OBJECT) return;

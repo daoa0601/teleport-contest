@@ -182,6 +182,7 @@ async function warnAboutFadingKnowledge(knowledge) {
     else if (knowledge <= 2000)
         await plineWithContinuation('Your recall of this spell is gradually fading.');
 }
+// C spell.c:spell_backfire().
 async function backfireForgottenSpell(spell, state) {
     const duration = (nativeSpellLevel(spell.otyp) + 1) * 3;
     const confused = state.u.confusionTurns || 0;

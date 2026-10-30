@@ -39,8 +39,9 @@ import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { d, rnd } from './rng.js';
 import {
     blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
-    permanentBlind, setHeroBlindnessTurns, syncDeafness,
+    permanentBlind, syncDeafness,
 } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { teleportHeroSafely } from './teleport.js';
@@ -68,6 +69,7 @@ const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const RIN_SUSTAIN_ABILITY = OBJECT_NAMES.indexOf('sustain ability');
 const M2_ROCKTHROW = 0x08000000;
 
+// C pray.c:in_trouble().
 export function worstPrayerTrouble(state: GameState = game): PrayerTrouble {
     requirePlayingGame(state);
     const hero = state.u;
@@ -149,6 +151,7 @@ export function worstCursedItem(state: GameState = game): GameObject | null {
         && (object.otyp === LOADSTONE || confersLuck(object, state))) || null;
 }
 
+// C pray.c:stuck_in_wall().
 export function heroIsSurroundedByRock(state: GameState = game) {
     requirePlayingGame(state);
     if (state.u.passesWalls) return false;
@@ -167,6 +170,7 @@ export function heroIsSurroundedByRock(state: GameState = game) {
     return true;
 }
 
+// C pray.c:blocked_boulder().
 function blockedByBoulders(dx: number, dy: number, state: PlayingGameState) {
     const hero = state.u;
     const bouldersAt = (x: number, y: number) => (state.level.objects[x]?.[y] || [])
@@ -189,6 +193,7 @@ function saddle(state: GameState) {
     return state.u.usteed?.minvent?.find(object => (object.owornmask ?? 0) & W_SADDLE);
 }
 
+// C pray.c:fix_curse_trouble().
 export async function uncursePrayerObject(object: GameObject, label: string | null = null, state: GameState = game) {
     requirePlayingGame(state);
     if (object === state.uarmg && (state.u.glibTurns ?? 0) > 0) {
@@ -210,6 +215,7 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
     await adjustObjectLightAfterBlessing(object, oldLight, state);
 }
 
+// C pray.c:fix_worst_trouble().
 export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -328,7 +334,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
             const eyes = singleEye ? heroEyeName(state) : makePlural(heroEyeName(state));
             message = `Your ${eyes} feel${singleEye ? 's' : ''} better`;
             hero.ucreamed = 0;
-            setHeroBlindnessTurns(0, state);
+            await makeBlinded(0, { state, talk: false });
         }
         if ((hero.deafTurns ?? 0) > 0) {
             state.context.botl = true;

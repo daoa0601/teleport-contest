@@ -42,6 +42,7 @@ function containerWeightAfterRemoval(container, object, count) {
     });
     return objectWeight({ ...container, contents });
 }
+// C pickup.c:delta_cwt().
 function weightAddedByLift(object, count, container, state) {
     const added = topLevelWeight(object, count, state);
     if (!container || !(state.inventory || []).includes(container))

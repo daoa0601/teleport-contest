@@ -128,6 +128,7 @@ function intrinsicMessage(property, state) {
             return formatFeltMessage(hallucinating ? 'unusually limber.' : 'less concerned about becoming petrified.', state);
     }
 }
+// C eat.c:eye_of_newt_buzz().
 export async function corpseEnergyBuzz({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

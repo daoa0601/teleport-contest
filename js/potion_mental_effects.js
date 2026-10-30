@@ -21,6 +21,10 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { blindnessBlocked, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { surfaceName } from './terrain_name.js';
+// C potion.c:peffect_enlightenment().
+// C potion.c:peffect_confusion().
+// C potion.c:peffect_gain_ability().
+// C potion.c:peffect_blindness().
 export async function applyPotionMentalEffect(source, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -103,6 +107,7 @@ export async function applyPotionMentalEffect(source, { state = game } = {}) {
 function blessing(source) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }
+// C potion.c:peffect_hallucination().
 async function hallucinationEffect(source, state) {
     if (state.u.hallucinationResistance
         || propertyIsActive('hallucinationResistance', state))
@@ -119,6 +124,7 @@ async function hallucinationEffect(source, state) {
     }
     return nothing;
 }
+// C potion.c:peffect_booze().
 async function boozeEffect(source, state) {
     const dilution = source.odiluted ? 'watered down ' : '';
     const taste = heroIsHallucinating(state) ? 'dandelion wine' : 'liquid fire';
@@ -140,6 +146,7 @@ async function boozeEffect(source, state) {
         state._helplessDoneMessage = 'You awake with a headache.';
     }
 }
+// C potion.c:peffect_paralysis().
 async function paralysisEffect(source, state) {
     if (heroHasFreeAction(state)) {
         await pline('You stiffen momentarily.');
@@ -161,6 +168,7 @@ async function paralysisEffect(source, state) {
     state._helplessDoneMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);
 }
+// C potion.c:peffect_sleeping().
 async function sleepingEffect(source, state) {
     if (state.u.sleepResistance
         || propertyIsActive('sleepResistance', state) || heroHasFreeAction(state)) {

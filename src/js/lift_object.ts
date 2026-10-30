@@ -68,6 +68,7 @@ function containerWeightAfterRemoval(container: GameObject, object: GameObject, 
     return objectWeight({ ...container, contents });
 }
 
+// C pickup.c:delta_cwt().
 function weightAddedByLift(object: GameObject, count: number, container: GameObject | null, state: GameState): number {
     const added = topLevelWeight(object, count, state);
     if (!container || !(state.inventory || []).includes(container))

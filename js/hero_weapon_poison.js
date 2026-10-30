@@ -15,6 +15,7 @@ function hitUsesPoison(weapon, mode, dieRoll) {
         && dieRoll <= 5;
     return poisonedMissile || permanentPoison;
 }
+// C uhitm.c:hmon_hitmon_poison().
 export async function resolveHeroWeaponPoison(monster, weapon, { state = game, mode, dieRoll, publish, random = rn2, rollOne = rnd, }) {
     if (!hitUsesPoison(weapon, mode, dieRoll))
         return null;

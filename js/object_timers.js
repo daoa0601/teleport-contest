@@ -65,6 +65,7 @@ export function scheduleLevelTimer(x, y, kind, deadline, state = game) {
     timers.push(timer);
     return timer;
 }
+// C timeout.c:spot_stop_timers().
 export function stopLevelTimer(x, y, kind, state = game) {
     const timers = levelTimersFor(state);
     const removed = [];

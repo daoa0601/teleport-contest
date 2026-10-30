@@ -82,6 +82,7 @@ export function addFruit(name: string, { preferred = false, initial = false, rep
     return fruit.fid;
 }
 
+// C objnam.c:fruit_from_indx().
 export function fruitFromIndex(id: number, state: GameState = game) {
     return fruitRegistry(state).find(fruit => fruit.fid === id) || null;
 }

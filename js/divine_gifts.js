@@ -211,6 +211,7 @@ async function grantDivineProperty() {
     await pline(`"and thus I grant thee the gift of ${name}!"`);
     await pline('"Use it wisely in my name!"');
 }
+// C pray.c:at_your_feet().
 export async function announceDivineGift(description) {
     requirePlayingGame(game);
     if (heroIsBlind(game))
@@ -283,6 +284,7 @@ async function giveSpell() {
         await newsym(game.u.ux, game.u.uy);
     }
 }
+// C pray.c:gcrownu().
 async function crownHero() {
     requirePlayingGame(game);
     const hero = game.u;

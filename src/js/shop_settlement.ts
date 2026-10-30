@@ -56,6 +56,7 @@ export async function settleShopkeepersOnExit(
     return taken;
 }
 
+// C shk.c:finish_paybill().
 export async function finishShopkeeperRepossession(): Promise<void> {
     const repository = game._shopRepossession;
     const keeper = repository?.shopkeeper ?? null;

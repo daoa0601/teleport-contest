@@ -8,6 +8,7 @@ import { plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { stopHeroOccupation } from './occupation.js';
 
+// C timeout.c:fall_asleep().
 export async function putHeroToSleep(turns: number, {
     state = game,
     doneMessage = 'You wake up.',

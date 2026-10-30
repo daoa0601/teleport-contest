@@ -11,6 +11,7 @@ import { finishBuriedZombieTimer, runClaimedObjectRotTimer, } from './mklev.js';
 import { monsterName } from './monster_name.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND } from './object_timers.js';
 import { cansee } from './vision.js';
+// C timeout.c:run_timers().
 export async function runDueTimers() {
     while (!game.program_state?.gameover) {
         const timer = claimNextDueObjectTimer(game, game.moves);

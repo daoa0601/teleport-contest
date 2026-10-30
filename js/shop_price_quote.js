@@ -52,6 +52,7 @@ export async function quoteShopGoods() {
 function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
+// C shk.c:shk_embellish().
 function embellish(object, cost) {
     if (!rn2(3)) {
         let choice = rn2(5);

@@ -547,6 +547,7 @@ function resistanceAttackApplies(
     return false;
 }
 
+// C artifact.c:spec_applies().
 function artifactAttackApplies(
     artifact: Artifact | null | undefined,
     defender: ArtifactDefender | null | undefined,
@@ -642,6 +643,7 @@ export function artifactDoublesWeaponDamage(
     );
 }
 
+// C artifact.c:artifact_light().
 export function artifactEmitsLight(
     object: Pick<GameObject, 'otyp' | 'oartifact' | 'owornmask'> | null | undefined,
 ): boolean {

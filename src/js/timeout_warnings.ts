@@ -12,6 +12,7 @@ import {
 import { heroIsInDangerousRegion } from './regions.js';
 import { heroIsPolymorphed } from './polyself.js';
 
+// C timeout.c:phaze_dialogue().
 export async function wallPassageDialogue(state = game): Promise<void> {
     const turns = propertyTimeout('passesWalls', state);
     if (hasIntrinsicProperty('passesWalls', null, state)
@@ -22,6 +23,7 @@ export async function wallPassageDialogue(state = game): Promise<void> {
     else if (turns === 3) await plineWithContinuation('You are feeling rather flabby.');
 }
 
+// C timeout.c:region_dialogue().
 export async function breathingDialogue(state = game): Promise<void> {
     const turns = propertyTimeout('magicalBreathing', state);
     if (turns !== 5 && turns !== 3) return;

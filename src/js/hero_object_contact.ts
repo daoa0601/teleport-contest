@@ -223,6 +223,7 @@ export async function resolveHeroObjectContact(
     return contact;
 }
 
+// C uhitm.c:shade_aware().
 export function objectCanTouchShade(object: GameObject | null | undefined, state: GameState = game): boolean {
     return !!object && (SHADE_AWARE_OBJECTS.has(object.otyp) || objectMaterial(object, state) === SILVER);
 }

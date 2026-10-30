@@ -12,6 +12,7 @@ import { makePlural } from './object_grammar.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 
+// C uhitm.c:nohandglow().
 export async function confuseTouchedMonster(monster: Monster, { state = game }: { state?: GameState } = {}) {
     requirePlayingGame(state);
     if (!state.u.umconf || monster.mconf) return;

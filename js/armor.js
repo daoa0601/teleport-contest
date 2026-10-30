@@ -360,6 +360,8 @@ async function losePetrificationProtection(armor, state, voluntary) {
     }
 }
 // Slot/source removal without the Boots_off() transition.
+// C do_wear.c:Shield_off().
+// C do_wear.c:Shirt_off().
 export async function clearHeroArmor(object, state = game, { cancelledDon = pendingArmorAction(state)?.kind === 'wear'
     && pendingArmorAction(state)?.object === object, deferArmorClass = false, embeddedSkin = false, } = {}) {
     const slot = armorSlotFor(object?.otyp);
@@ -408,6 +410,7 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = pend
         findArmorClass(state);
     return true;
 }
+// C do_wear.c:hard_helmet().
 export function objectIsHardHelmet(object) {
     if (!object || armorSlotFor(object.otyp) !== 'uarmh')
         return false;
@@ -975,6 +978,7 @@ export function projectedArmorClass(state = game) {
     armorClass -= hero.uspellprot || 0;
     return Math.max(-AC_MAX, Math.min(AC_MAX, armorClass));
 }
+// C do_wear.c:find_ac().
 export function findArmorClass(state = game) {
     const hero = state.u;
     const armorClass = projectedArmorClass(state);

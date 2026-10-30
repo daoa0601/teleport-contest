@@ -150,6 +150,7 @@ function globIceState(glob, state) {
         return 'none';
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
+// C mkobj.c:container_weight().
 function updateContainerWeights(container, state) {
     let current = container;
     const seen = new Set();

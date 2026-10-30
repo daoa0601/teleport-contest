@@ -10,6 +10,7 @@ export function heroHasHalfSpellDamage(state = game) {
         || (state.u?.halfSpellDamageTurns ?? 0) > 0
         || heroHasCarriedArtifactFlag('SPFX_HSPDAM', state));
 }
+// C zap.c:spell_damage_bonus().
 export function adjustSpellDamage(damage, state = game) {
     const intelligence = currentAttribute(A_INT, state) ?? 10;
     const level = state.u?.ulevel ?? 1;

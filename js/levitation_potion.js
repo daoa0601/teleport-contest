@@ -24,6 +24,7 @@ function upStairwayAt(x, y, state) {
         stairs = stairs.next;
     return stairs?.up ? stairs : null;
 }
+// C potion.c:peffect_levitation().
 export async function applyLevitationPotion(potion, { state = game, publish = plineWithContinuation } = {}) {
     // The quaff lifecycle owns the live world: stair climbs, float_up, and
     // spot effects all run through singleton owners.

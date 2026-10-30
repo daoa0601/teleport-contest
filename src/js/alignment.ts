@@ -30,6 +30,7 @@ const HALLUCINATED_GODS = [
     'your Friend the Computer',
 ];
 
+// C pray.c:halu_gname().
 export function hallucinatedDeityName(
     alignment: number, state: GameState = game, hallucinating = heroIsHallucinating(state),
 ) {

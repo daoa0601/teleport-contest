@@ -412,6 +412,7 @@ export function repriceDiscoveredGems(otyp, state = game) {
         }
     }
 }
+// C shk.c:onbill().
 export function billForObject(object, state = game, resident = null) {
     // C onbill(): with a keeper given, only that keeper's bill answers;
     // other shops' bills stay untouched.
@@ -427,6 +428,7 @@ export function billForObject(object, state = game, resident = null) {
     }
     return null;
 }
+// C shk.c:sub_one_frombill().
 export function removeOneObjectFromBill(object, state = game, resident = null) {
     const billed = billForObject(object, state, resident);
     if (!billed) {
@@ -470,6 +472,7 @@ export function removeOneObjectFromBill(object, state = game, resident = null) {
     object.unpaid = false;
     return { resident: billed.resident, entry: removedEntry, removedQuantity };
 }
+// C shk.c:subfrombill().
 export function removeObjectAndContentsFromBill(object, state = game, { resident = null } = {}) {
     // C subfrombill(): recursion over non-coin contents, keeper-scoped.
     const billed = removeOneObjectFromBill(object, state, resident);
@@ -1067,6 +1070,7 @@ function countUnpaidContents(container) {
     }
     return count;
 }
+// C shk.c:append_honorific().
 function heroHonorific(state = game) {
     const titles = [
         'good', 'honored', 'most gracious', 'esteemed',

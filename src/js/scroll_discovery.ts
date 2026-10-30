@@ -10,6 +10,7 @@ import type { GameObject } from './object_types.js';
 
 const SPBOOK_CLASS = 10;
 
+// C read.c:learnscrolltyp().
 export function learnScrollType(otyp: number, { state = game }: { state?: GameState | undefined } = {}): boolean {
     requireLiveGame(state);
     requirePlayingGame(state);

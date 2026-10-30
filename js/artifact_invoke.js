@@ -421,6 +421,8 @@ async function invokeFlingPoison(object, state, publish) {
     }
     return true;
 }
+// C artifact.c:invoke_charge_obj().
+// C artifact.c:invoke_untrap().
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };

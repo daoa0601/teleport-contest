@@ -5,6 +5,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
 
+// C trap.c:dng_bottom().
 export function clampHoleDestination(destination: DungeonLocation, state: GameState = game): DungeonLocation {
     const dungeon = state.dungeons[destination.dnum];
     if (!dungeon) throw new Error(`Hole leads to absent dungeon ${destination.dnum}`);

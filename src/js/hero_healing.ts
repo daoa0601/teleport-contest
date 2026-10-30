@@ -10,6 +10,7 @@ import { cureHeroSicknessWithMessages, cureHeroVomiting } from './hero_illness.j
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeBlinded } from './sight_change.js';
 
+// C potion.c:healup().
 export async function healHero(amount: number, extraMaximum: number, {
     state = game, cureSickness = false, cureBlindness = false,
 }: { state?: GameState; cureSickness?: boolean; cureBlindness?: boolean } = {}) {

@@ -135,6 +135,7 @@ export async function studyBook(book: GameObject, { state = game }: SpellbookOpt
     return outcome(true, state);
 }
 
+// C spell.c:learn().
 export async function continueSpellbookStudy({ state = game }: SpellbookOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

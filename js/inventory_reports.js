@@ -3,6 +3,7 @@
 import { game, requireGameLevel } from './gstate.js';
 import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
+import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { clearMessageWindow, consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
@@ -23,6 +24,14 @@ import { LEASH } from './object_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterIsHumanoid } from './monster_data.js';
 const BUC_CHOICES = ['B', 'C', 'U', 'X'];
+// C invent.c:doprwep().
+// C invent.c:doprgold().
+// C invent.c:doprarm().
+// C invent.c:doprring().
+// C invent.c:dopramulet().
+// C invent.c:doprtool().
+// C invent.c:doprinuse().
+// C invent.c:noarmor().
 export async function inventoryReport(report) {
     game.context.move = 0;
     if (report === 'type')
@@ -109,10 +118,18 @@ function isInUse(object) {
     return !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE | W_WEAPONS))
         || toolBeingUsed(object);
 }
+// C invent.c:dispinv_with_action().
 async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories') {
     if (game.flags.fixinv === false)
         reassignInventoryLetters();
     const candidates = items ?? game.inventory.filter(isInUse);
+    const queued = takeQueuedInventoryChoice(items ? items.map(object => object.invlet).join('') : null);
+    if (queued !== undefined) {
+        if (queued === 0 || queued === 27)
+            return null;
+        const selected = game.inventory.find(object => object.invlet === String.fromCharCode(queued));
+        return selected ? inventoryActionForObject(selected) : null;
+    }
     let key;
     if (items?.length === 1 && !game.iflags.menu_requested) {
         const first = items[0];
@@ -188,6 +205,8 @@ function beatitude(object) {
 function unpaidObjects(objects) {
     return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
 }
+// C pickup.c:count_justpicked().
+// C pickup.c:find_justpicked().
 async function typeInventory() {
     const bill = usedUpBill();
     if (!game.inventory.length && !bill.length) {

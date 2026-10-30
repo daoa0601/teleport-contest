@@ -20,6 +20,7 @@ const SPELL_CATEGORIES = {
     [P_ESCAPE_SPELL]: 'escape',
     [P_MATTER_SPELL]: 'matter',
 };
+// C spell.c:spelltypemnemonic().
 export function spellCategory(otyp, state = game) {
     return SPELL_CATEGORIES[spellSkillType(otyp, state)];
 }

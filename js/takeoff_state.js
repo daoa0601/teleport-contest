@@ -7,6 +7,7 @@ export const TAKEOFF_ORDER = [
 export function takeoffSlotObject(slot, state = game) {
     return state[slot] || state.u[slot] || null;
 }
+// C do_wear.c:reset_remarm().
 export function resetBulkTakeoff(state = game) {
     delete state.context.takeoff;
 }

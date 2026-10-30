@@ -5,6 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import { rnd } from './rng.js';
 
+// C trap.c:drain_en().
 export function drainHeroEnergy(
     state: GameState,
     amount: number,

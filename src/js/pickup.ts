@@ -485,6 +485,7 @@ function pickupSourceAtHero(): PickupSource {
     };
 }
 
+// C pickup.c:all_but_uchain().
 function pickupObjects(source: PickupSource): GameObject[] {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }

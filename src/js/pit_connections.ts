@@ -28,6 +28,7 @@ export function connectPits(first: Trap, second: Trap) {
     return changed;
 }
 
+// C trap.c:clear_conjoined_pits().
 export function clearPitConnections(trap: Trap | null | undefined, state = game) {
     if (!trap || !is_pit(trap.ttyp)) return;
     for (let direction = 0; direction < 8; direction++) {

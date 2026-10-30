@@ -44,6 +44,7 @@ function hitUsesPoison(
     return poisonedMissile || permanentPoison;
 }
 
+// C uhitm.c:hmon_hitmon_poison().
 export async function resolveHeroWeaponPoison(monster: Monster, weapon: GameObject, {
     state = game,
     mode,

@@ -173,6 +173,7 @@ function heroBehindChokepoint(monster, state) {
     return (!isok(leftX, leftY) || !isAccessibleAt(leftX, leftY, state))
         && (!isok(rightX, rightY) || !isAccessibleAt(rightX, rightY, state));
 }
+// C muse.c:mon_has_friends().
 function monsterHasFriends(monster, state) {
     if (monster.mtame || monster.mpeaceful)
         return false;
@@ -188,6 +189,7 @@ function monsterHasFriends(monster, state) {
     }
     return false;
 }
+// C muse.c:mon_likes_objpile_at().
 function monsterLikesObjectPileAt(monster, x, y, state) {
     if (!isok(x, y))
         return false;

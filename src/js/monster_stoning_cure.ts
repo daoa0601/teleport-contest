@@ -62,6 +62,7 @@ const SLIMEPROOF_FIRE_MONSTERS = new Set([
     'fire vortex', 'flaming sphere', 'fire elemental', 'salamander',
 ].map(name => MONSTER_NAME.indexOf(name)));
 
+// C muse.c:mcould_eat_tin().
 export function monsterCanOpenTin(monster: Monster): boolean {
     if (monsterIsAnimal(monster)) return false;
     const inventory = monster.minvent || monster.inventory || [];

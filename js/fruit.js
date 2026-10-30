@@ -64,6 +64,7 @@ export function addFruit(name, { preferred = false, initial = false, replacement
         state.context.current_fruit = fruit.fid;
     return fruit.fid;
 }
+// C objnam.c:fruit_from_indx().
 export function fruitFromIndex(id, state = game) {
     return fruitRegistry(state).find(fruit => fruit.fid === id) || null;
 }

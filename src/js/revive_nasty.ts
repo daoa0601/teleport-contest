@@ -11,6 +11,7 @@ import { CORPSE } from './object_data.js';
 import { relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 
+// C hack.c:revive_nasty().
 export async function reviveNastyAt(
     x: number, y: number, message: string | null = null, state: GameState = game,
 ): Promise<boolean> {

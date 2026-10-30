@@ -2,6 +2,7 @@
 // C ref: trap.c drain_en().
 import { formatFeltMessage } from './hero_speech.js';
 import { rnd } from './rng.js';
+// C trap.c:drain_en().
 export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, rollOne = rnd } = {}) {
     const hero = state.u;
     let punctuation = maximumAlreadyDrained ? '!' : '.';

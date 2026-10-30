@@ -244,6 +244,7 @@ async function rechargeTool(tool, blessing, state) {
             await pline('You have a feeling of loss.');
     }
 }
+// C read.c:stripspe().
 async function stripCharges(object, state) {
     if (object.blessed || object.spe <= 0) {
         await pline('Nothing happens.');
@@ -255,6 +256,9 @@ async function stripCharges(object, state) {
     if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN)
         object.age = 0;
 }
+// C read.c:p_glow1().
+// C read.c:p_glow2().
+// C read.c:p_glow3().
 async function glow(object, state, color = null, feeble = false) {
     const blind = heroIsBlind(state);
     const verb = blind ? 'vibrates' : 'glows';

@@ -27,6 +27,7 @@ const OBJECT_COLOR_NAMES = [
     'transparent', 'orange', 'bright green', 'yellow', 'bright blue',
     'bright magenta', 'bright cyan', 'white',
 ];
+// C apply.c:use_stone().
 export async function useGrayStone(stone, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -82,6 +83,7 @@ export async function useGrayStone(stone, { state = game } = {}) {
     }
     return { spentTime: true };
 }
+// C apply.c:touchstone_ok().
 function touchstoneSuggestion(object, state) {
     if (!object)
         return GETOBJ_EXCLUDE;

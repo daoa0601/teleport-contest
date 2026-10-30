@@ -18,6 +18,7 @@ const PM_HIGH_CLERIC = 276;
 const PM_LONG_WORM = 114;
 const PM_LONG_WORM_TAIL = 330;
 
+// C read.c:cant_revive().
 export function revivalReplacement(mnum: number, body: GameObject | null, revival = true): number | null {
     if ([PM_GUARD, PM_HIGH_CLERIC, PM_ALIGNED_CLERIC, PM_ANGEL]
         .includes(mnum) || mnum === PM_SHOPKEEPER && !revival) return PM_HUMAN_ZOMBIE;

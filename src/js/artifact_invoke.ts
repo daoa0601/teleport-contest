@@ -508,6 +508,8 @@ async function invokeFlingPoison(object: GameObject, state: GameState, publish: 
     return true;
 }
 
+// C artifact.c:invoke_charge_obj().
+// C artifact.c:invoke_untrap().
 export async function invokeArtifactPower(
     object: GameObject,
     artifact: Artifact | null | undefined,

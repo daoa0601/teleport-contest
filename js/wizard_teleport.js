@@ -44,6 +44,7 @@ async function chooseTeleportMode() {
         await tty_destroy_nhwindow(window);
     }
 }
+// C spell.c:tport_spell().
 async function withTeleportMode(mode, action) {
     const hero = game.u;
     const teleporting = hero.teleporting;

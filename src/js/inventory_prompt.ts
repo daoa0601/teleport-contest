@@ -392,13 +392,16 @@ export function inventoryLetterOrder(letter: string | null | undefined): number 
     return 53;
 }
 
+// C invent.c:compactify().
 export function compactInventoryLetters(letters: string): string {
     if (letters.length <= 5) return letters;
     let compact = '';
     for (let start = 0; start < letters.length;) {
         let end = start;
+        const overflow = letters[start] === '#';
         while (end + 1 < letters.length
-            && letters.charCodeAt(end + 1) === letters.charCodeAt(end) + 1) {
+            && (overflow ? letters[end + 1] === '#'
+                : letters.charCodeAt(end + 1) === letters.charCodeAt(end) + 1)) {
             end++;
         }
         const length = end - start + 1;

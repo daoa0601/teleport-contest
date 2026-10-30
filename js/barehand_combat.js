@@ -29,6 +29,7 @@ export function doublePunch(state = game) {
 }
 // twoHits is native hmd.twohits: 0 for a single attempt, otherwise its
 // one-based position. Only the first two attempts can use exposed rings.
+// C uhitm.c:hmon_hitmon_barehands().
 export function prepareHeroBarehandContact(monster, { state = game, twoHits = 0 } = {}) {
     const usesSkill = !monsterIsShade(monster);
     let damage = usesSkill ? rnd(heroUsesMartialArts(state) ? 4 : 2) : 0;

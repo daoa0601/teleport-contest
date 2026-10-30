@@ -38,6 +38,7 @@ interface SpecialBookOptions { state?: GameState; }
 interface UndeadCreationOptions extends SpecialBookOptions { reviveCorpses?: boolean; flags?: number; }
 
 
+// C spell.c:deadbook().
 export async function readBookOfDead(book: GameObject, { state = game }: SpecialBookOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -141,6 +142,7 @@ export async function makeUndeadNear(x: number, y: number, { state = game, reviv
     state.level.flags.graveyard = true;
 }
 
+// C spell.c:deadbook_pacify_undead().
 async function pacifyUndead(monster: Monster, state: PlayingGameState) {
     if (!(monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
         || !cansee(monster.mx, monster.my)) return;

@@ -37,6 +37,8 @@ export function rayPositionIsOpen(x, y, state = game) {
 export function rayMonsterAt(x, y, state = game) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
+// C zap.c:spell_hit_bonus().
+// C zap.c:zap_hit().
 export function rayHitsMonster(monster, random = rn2, rollOne = rnd, { state = game, spellType = 0, } = {}) {
     const armorClass = findMonsterArmorClass(monster);
     const chance = random(20);
@@ -53,6 +55,7 @@ export function rayHitsMonster(monster, random = rn2, rollOne = rnd, { state = g
     const effectiveArmorClass = armorClass >= 0 ? armorClass : -rollOne(-armorClass);
     return 3 - chance < effectiveArmorClass + bonus;
 }
+// C zap.c:zap_hit().
 export function rayHitsHero(state = game, random = rn2, rollOne = rnd) {
     const armorClass = typeof state.u.uac === 'number' && Number.isFinite(state.u.uac) ? state.u.uac : 10;
     const chance = random(20);
@@ -127,6 +130,7 @@ export function discoverReflectingShield(state = game) {
         return;
     discoverHeroReflectionSource({ object: shield, noun: 'shield' }, state);
 }
+// C zap.c:bounce_dir().
 export function rayBounceDirection(x, y, dx, dy, bounceback, state = game, random = rn2) {
     if (!dx || !dy || (bounceback > 0 && random(bounceback) === 0))
         return { dx: -dx, dy: -dy };

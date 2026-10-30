@@ -20,6 +20,7 @@ export function takeoffSlotObject(slot: TakeoffSlot, state: GameState = game): G
     return state[slot] || state.u[slot] || null;
 }
 
+// C do_wear.c:reset_remarm().
 export function resetBulkTakeoff(state: GameState = game): void {
     delete state.context.takeoff;
 }

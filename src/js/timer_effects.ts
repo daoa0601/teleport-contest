@@ -17,6 +17,7 @@ import type { DueObjectTimer } from './object_timers.js';
 import type { CorpseRevivalTimerEvent } from './corpse_revival.js';
 import { cansee } from './vision.js';
 
+// C timeout.c:run_timers().
 export async function runDueTimers(): Promise<void> {
     while (!game.program_state?.gameover) {
         const timer = claimNextDueObjectTimer(game, game.moves);

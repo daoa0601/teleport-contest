@@ -83,6 +83,7 @@ function monsterAt(state, x, y) {
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
+// C trap.c:t_at().
 function trapAt(state, x, y) {
     return state.level?.traps?.find(trap => trap.tx === x && trap.ty === y) || null;
 }

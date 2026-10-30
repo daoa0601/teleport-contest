@@ -47,6 +47,8 @@ export function rollHeroJoust(monster, weapon, { state = game } = {}) {
         return -1;
     return 1;
 }
+// C uhitm.c:hmon_hitmon_jousting().
+// C uhitm.c:mhurtle_to_doom().
 export async function resolveHeroJoust(monster, weapon, { damage, joust, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
     damage += d(2, weapon === (state.uwep || state.u.uwep) ? 10 : 2);
@@ -78,6 +80,7 @@ export async function resolveHeroJoust(monster, weapon, { damage, joust, state =
     }
     return { damage, alreadyKilled, heroDied, specialMessage: true, weapon: survivingWeapon };
 }
+// C uhitm.c:hmon_hitmon_splitmon().
 export async function tryHeroPuddingSplit(monster, weapon, { handToHand, material, offMap, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
     if ((monster.mnum !== PM_BLACK_PUDDING && monster.mnum !== PM_BROWN_PUDDING)

@@ -89,6 +89,7 @@ export async function revealAggravatingMonster(monster: Monster, state: PlayingG
 
 // Return null when the selected item can still be used. An exploded wand
 // spends no action if its owner survives, but cancels the selected choice.
+// C muse.c:precheck().
 export async function prepareMonsterItemUse(monster: Monster, object: GameObject,
     options: MonsterOffensiveOptions): Promise<MonsterOffensiveResult | null> {
     const { state, random = rn2, publish = plineWithContinuation } = options;
@@ -134,6 +135,7 @@ export async function prepareMonsterItemUse(monster: Monster, object: GameObject
     return backfire.exploded ? { nativeResult: backfire.nativeResult, heroDied: backfire.heroDied } : null;
 }
 
+// C muse.c:mzapwand().
 export async function presentMonsterWandUse(monster: Monster, object: GameObject, {
     state, self = false, publish = plineWithContinuation,
 }: MonsterDeviceUseOptions): Promise<void> {
@@ -158,6 +160,7 @@ export async function presentMonsterWandUse(monster: Monster, object: GameObject
     object.spe--;
 }
 
+// C muse.c:mplayhorn().
 export async function presentMonsterHornUse(monster: Monster, object: GameObject, {
     state, self = false, publish = plineWithContinuation,
 }: MonsterDeviceUseOptions): Promise<void> {
@@ -181,6 +184,7 @@ export async function presentMonsterHornUse(monster: Monster, object: GameObject
     object.spe--;
 }
 
+// C muse.c:mreadmsg().
 export async function presentMonsterScrollRead(monster: Monster, object: GameObject, {
     state, publish = plineWithContinuation,
 }: MonsterOffensiveOptions): Promise<void> {

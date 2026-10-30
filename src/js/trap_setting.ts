@@ -28,10 +28,12 @@ import { trapName } from './trap_name.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 
+// C apply.c:reset_trapset().
 export function resetTrapSetting(state: GameState = game): void {
     state._trapSetting = null;
 }
 
+// C apply.c:use_trap().
 export async function useSettableTrap(object: GameObject): Promise<GameObject | null> {
     requirePlayingGame(game);
     const hero = game.u;
@@ -79,6 +81,7 @@ export async function useSettableTrap(object: GameObject): Promise<GameObject | 
     return null;
 }
 
+// C apply.c:set_trap().
 export async function continueTrapSetting(state: GameState = game): Promise<boolean> {
     requirePlayingGame(state);
     const progress = state._trapSetting;

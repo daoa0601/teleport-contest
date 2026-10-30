@@ -79,6 +79,7 @@ function badManPlural(text) {
         return start === 0 || lower[start - 1] === ' ';
     });
 }
+// C objnam.c:singplur_compound().
 function pluralCompoundIndex(text) {
     let result = -1;
     const lower = text.toLowerCase();
@@ -89,6 +90,7 @@ function pluralCompoundIndex(text) {
     }
     return result;
 }
+// C objnam.c:ch_ksound().
 export function makePlural(value) {
     const text = (value ?? '').replace(/^ +/, '');
     if (!text)

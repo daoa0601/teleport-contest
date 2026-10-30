@@ -16,6 +16,7 @@ import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { carriedObjectOwner } from './shk.js';
 import { setSlipperyHands } from './towel.js';
+// C apply.c:grease_ok().
 export async function useGrease(can) {
     if (game.u.glib || (game.u.glibTurns ?? 0) > 0) {
         await dropGrease(can);

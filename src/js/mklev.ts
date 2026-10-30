@@ -3193,6 +3193,8 @@ async function unmakeNastySubstitute(monster: Monster): Promise<void> {
     await removeMonsterFromGame(monster);
 }
 
+// C trap.c:hole_destination().
+// C trap.c:choose_trapnote().
 export async function maketrap(x: number, y: number, typ: number): Promise<Trap | null> {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than

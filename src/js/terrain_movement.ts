@@ -350,6 +350,7 @@ export async function setHeroInWater(inWater: boolean, state: GameState = game):
     await switchHeroTerrain(state);
 }
 
+// C hack.c:switch_terrain().
 export async function switchHeroTerrain(state: GameState = game): Promise<void> {
     const wasLevitating = propertyIsActive('levitation', state);
     const wasFlying = propertyIsActive('flying', state);

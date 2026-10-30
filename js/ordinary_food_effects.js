@@ -132,6 +132,7 @@ export async function applyOrdinaryFoodFirstBite(food, { state = game } = {}) {
     await ordinaryFoodFeedback(food, state);
     return mealResult(state);
 }
+// C eat.c:fpostfx().
 export async function applyOrdinaryFoodPostEffects(food, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

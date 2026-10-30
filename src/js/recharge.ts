@@ -246,6 +246,7 @@ async function rechargeTool(tool: GameObject, blessing: number, state: GameState
     }
 }
 
+// C read.c:stripspe().
 async function stripCharges(object: GameObject, state: GameState) {
     if (object.blessed || object.spe <= 0) {
         await pline('Nothing happens.');
@@ -257,6 +258,9 @@ async function stripCharges(object: GameObject, state: GameState) {
     if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN) object.age = 0;
 }
 
+// C read.c:p_glow1().
+// C read.c:p_glow2().
+// C read.c:p_glow3().
 async function glow(object: GameObject, state: GameState, color: string | null = null, feeble = false) {
     const blind = heroIsBlind(state);
     const verb = blind ? 'vibrates' : 'glows';

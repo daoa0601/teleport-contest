@@ -601,6 +601,7 @@ async function flyPhysicalObject({
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 
+// C zap.c:skiprange().
 function rockSkipRange(range: number): { start: number; end: number } {
     const quarter = Math.trunc(range / 4);
     const start = range - (quarter > 0 ? rnd(quarter) : 0);

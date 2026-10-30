@@ -267,12 +267,14 @@ function setBridgeSurface(location: MapLocation, surface: number): void {
     setMapFlags(location, location.drawbridgemask);
 }
 
+// C objnam.c:set_wallprop_from_str().
 function setWallProperties(location: MapLocation, parsed: ParsedWish): void {
     location.wall_info |= (parsed.undiggable ? W_NONDIGGABLE : 0)
         | (parsed.unphaseable ? W_NONPASSWALL : 0);
     setMapFlags(location, location.flags | location.wall_info);
 }
 
+// C objnam.c:dbterrainmesg().
 async function bridgeMessage(surface: string, type: number): Promise<void> {
     await say(`${surface} ${type === DRAWBRIDGE_UP ? 'in front of' : 'under'} the drawbridge.`);
 }
