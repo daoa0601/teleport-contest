@@ -1328,6 +1328,25 @@ const decWallColors = new Map([
 // of character handling; every other set leaves branch walls gray
 // (clear_symsetentry() → clear_all_glyphmap_colors()).
 const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
+// The branch palettes are glyph customizations from dat/symbols, shared
+// with the wizard's glyph listing even while a different branch is shown.
+export function customizedBranchWalls() {
+    if (!BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? ''))
+        return [];
+    const names = ['vwall', 'hwall', 'tlcorn', 'trcorn', 'blcorn', 'brcorn',
+        'crwall', 'tuwall', 'tdwall', 'tlwall', 'trwall'];
+    const branches = [
+        [GlyphOffset.cmapMines, 'mines'], [GlyphOffset.cmapGehennom, 'gehennom'],
+        [GlyphOffset.cmapKnox, 'knox'], [GlyphOffset.cmapSokoban, 'sokoban'],
+    ];
+    return branches.flatMap(([offset, branch]) => {
+        const color = decWallColors.get(offset);
+        if (color === undefined)
+            throw new Error(`Branch ${branch} has no wall palette`);
+        return names.map((name, index) => ({ glyph: offset + index,
+            symbol: CmapSymbol.vwall + index, id: `G_${name}_${branch}`, color }));
+    });
+}
 function furnitureDisplayGlyph(appearance) {
     const symbol = MAP_SYMBOLS[appearance];
     if (!symbol)
