@@ -184,6 +184,8 @@ export interface Monster extends MonsterPosition {
     mcloned?: MonsterFlag;
     mavenge?: MonsterFlag;
     meverseen?: MonsterFlag;
+    // C struct monst.mspotted: saved with the raw struct copy in savemon().
+    mspotted?: MonsterFlag;
     mtemplit?: MonsterFlag;
     mundetected?: MonsterFlag;
     minvis?: MonsterFlag;

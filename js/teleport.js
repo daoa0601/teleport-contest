@@ -16,6 +16,8 @@ import { clampHoleDestination } from './hole_destination.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
+import { announceInvocationSquare } from './invocation.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation, see_monsters } from './display.js';
 import { vision_recalc } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
@@ -259,8 +261,7 @@ export async function teleportHero({ chooseDestination, source = null, discover 
     destination ||= safeTeleportDestination(state, random, rollOne);
     if (!destination)
         return { moved: false, died: false };
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
-    const arrival = await finishArrival(movement);
+    const { movement, arrival } = await moveHeroByTeleport(destination.x, destination.y, state, { finishArrival });
     const died = !!arrival?.died || !!state.program_state.gameover;
     if (!died && acceptedChoice
         && state.u.ux === state._travelTarget?.x
@@ -272,8 +273,7 @@ export async function teleportHeroSafely() {
     const destination = safeTeleportDestination();
     if (!destination)
         return false;
-    const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement, { announceTeleport: false });
+    await moveHeroByTeleport(destination.x, destination.y);
     return true;
 }
 function heroIsStunned(state) {
@@ -336,8 +336,7 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
     }
     let result;
     if (destination) {
-        const movement = await moveHeroByTeleport(destination.x, destination.y, state);
-        const arrival = await finishArrival(movement);
+        const { movement, arrival } = await moveHeroByTeleport(destination.x, destination.y, state, { finishArrival });
         result = { moved: true, movement, arrival,
             died: !!arrival?.died || !!state.program_state.gameover };
     }
@@ -726,8 +725,7 @@ export async function teleportHeroToRandomPet(state = game) {
     const y = selected.my + rn2(3) - 1;
     if (!heroTeleportDestinationOk(x, y, { state }))
         return false;
-    const movement = await moveHeroByTeleport(x, y, state);
-    await finishTeleportArrival(movement);
+    await moveHeroByTeleport(x, y, state, { finishArrival: finishTeleportArrival });
     return true;
 }
 export async function clearFixedTeleportDestination(x, y, state = game, random = rn2) {
@@ -856,7 +854,9 @@ export async function teleportMonsterFromTrap(monster, trap, { state = game, cal
     }
     return event;
 }
-export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false } = {}) {
+// C teleport.c:teleds(). Keep vision, landing effects, and the invocation
+// message inside one notice block, including any teleport during landing.
+export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false, finishArrival = movement => finishTeleportArrival(movement, { announceTeleport: false }), } = {}) {
     requirePlayingGame(state);
     requireLiveGame(state);
     requireLevel(state);
@@ -919,9 +919,18 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
     newsym(oldx, oldy);
     await see_monsters();
     state.vision_full_recalc = 1;
-    vision_recalc(0);
     endVoluntaryMultiTurn(state);
-    return { oldx, oldy, x, y };
+    const movement = { oldx, oldy, x, y };
+    const arrival = await withMonsterNoticesBlocked(state, async () => {
+        vision_recalc(0);
+        const landing = await finishArrival(movement);
+        if (!landing?.died && !state.program_state.gameover)
+            await announceInvocationSquare();
+        return landing;
+    });
+    if (!arrival?.died && !state.program_state.gameover)
+        await noticeAllMonsters(state);
+    return { movement, arrival };
 }
 // C teleport.c:mlevel_tele_trap(), the MAGIC_PORTAL branch.
 export async function teleportMonsterThroughPortal(monster, trap, { state = game, random = rn2, force = false, publish = plineWithContinuation, } = {}) {

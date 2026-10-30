@@ -14,7 +14,7 @@ import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from '../js/monster_throw.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
-import { knownObject } from './support/game-objects.js';
+import { artifactObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -223,6 +223,28 @@ void test('a confused monster can be hit by its own returning club', async () =>
     assert.ok(floorObjectsAt(game.level, soldier.mx, soldier.my).includes(aklys));
 });
 
+// C return_from_mtoss() accepts an artifact object even though its current
+// callers return only aklyses, which have no stock artifact. Exercise that
+// public return boundary with a real artifact and no attacking creature.
+void test('an uncaught returning artifact adds its elemental damage against its thrower', async () => {
+    const level = freshObjectRoom();
+    const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
+    ogre.mconf = true;
+    ogre.mhp = ogre.mhpmax = 40;
+    const blade = await artifactObject('Fire Brand');
+    const messages: string[] = [];
+
+    await returnMonsterWeapon(ogre, blade, 12, 10, {
+        random: () => 1,
+        rollOne: sides => sides,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('The fiery blade burns the ogre!'), messages.join(' | '));
+    assert.equal(ogre.mhp, 32, 'Fire Brand doubles the four-point impact');
+    assert.ok(floorObjectsAt(level, ogre.mx, ogre.my).includes(blade));
+});
+
 void test('life saving revives a monster killed by its returning club without catching it', async () => {
     const soldier = await armedSoldier();
     requirePlayingGame(game);
@@ -248,3 +270,4 @@ void test('life saving revives a monster killed by its returning club without ca
     assert.equal(soldier.mw, null);
     assert.ok(floorObjectsAt(game.level, soldier.mx, soldier.my).includes(aklys));
 });
+

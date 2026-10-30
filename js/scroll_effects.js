@@ -18,6 +18,7 @@ import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';
 import { createCritters } from './mklev.js';
+import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { angerMonster } from './monster_anger.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { makeMonsterFlee } from './monster_flee.js';
@@ -360,7 +361,9 @@ async function magicMappingEffect(source, state) {
     const temporarilyConfused = source.cursed && !((state.u.confusionTurns ?? 0) > 0);
     if (temporarilyConfused)
         state.u.confusionTurns = 1;
-    await mapMagicLevel({ state });
+    // C seffect_magic_mapping() suppresses notices through do_mapping(),
+    // including its temporary map's redraw, without a catch-up afterward.
+    await withMonsterNoticesBlocked(state, () => mapMagicLevel({ state }));
     if (temporarilyConfused) {
         state.u.confusionTurns = 0;
         await plineWithContinuation("Unfortunately, you can't grasp the details.");

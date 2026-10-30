@@ -5,7 +5,7 @@ import { CORR, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 import { startRun } from '../js/runmode.js';
@@ -53,6 +53,7 @@ for (const relocation of ['teleport', 'hurtle'] as const) {
         level.requireAt(10, 10).typ = level.requireAt(14, 10).typ = POOL;
         // The move is east, but the retained direction points north. Its
         // square behind the landing is dry, unlike the old pool at ux0/uy0.
+        pushKeys(' '.repeat(20));
         if (relocation === 'teleport') await moveHeroByTeleport(14, 10);
         else await hurtleHero(1, 0, 4);
         initRng(31n);
@@ -98,6 +99,7 @@ void test('a direction prompt can make a different pool count as continuous afte
     level.requireAt(14, 10).typ = level.requireAt(14, 11).typ = POOL;
     resetInputState().feed('k');
     assert.ok(await promptDirection());
+    pushKeys(' '.repeat(20));
     await moveHeroByTeleport(14, 10);
     initRng(31n);
     rn2(5);

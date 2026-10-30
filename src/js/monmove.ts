@@ -4,6 +4,7 @@ import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
+import { noticeMonster } from './monster_notices.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
@@ -7712,9 +7713,17 @@ async function completeMovedMonsterAction(
         return movement;
     }
 
+    // C postmov() notices the monster before a door shift, trap, or floor
+    // effect can change its form or kill it. Resumed traps re-enter here.
+    if (!movement.postMoveNoticed) {
+        // Cache canseeit before the notice's message can flush vision.
+        movement.postMoveWasVisible = cansee(monster.mx, monster.my);
+        movement.postMoveNoticed = true;
+        await noticeMonster(monster, state);
+    }
+
     if (movement.postMoveStatus === MMOVE_MOVED) {
         if (!trapAlreadyHandled) {
-            movement.postMoveWasVisible = cansee(monster.mx, monster.my);
             const capabilities = requireMovementCapabilities(movement);
             const shift = await shiftMonsterForDoor(monster, state, {
                 previousPosition: { x: movement.oldx, y: movement.oldy },

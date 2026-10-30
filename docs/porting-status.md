@@ -651,9 +651,10 @@ unreachable `oinit()` in `lspo_reset_level()`).
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
 
-Known open gaps: `postmov()`'s accessibility `notice_mon()` hook; returning
-artifacts with an absent attacker; `validvamp()`'s `monpolycontrol` prompt;
-experience-percentage status highlighting; host-system mail; dumplog file
+Known open gaps: `spot_monsters` notices wait for the next ported anchor
+where C announces inside `vision_recalc()` (message output, light sources,
+eyewear, digging, zaps, pet movement), and `mention_map`'s glyph notices
+(`newsym()`, `dolookaround()`) are unported; host-system mail; dumplog file
 writing. One public session differs only on screens: the recorder host's
 configuration path in seed2200's option help.
 

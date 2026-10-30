@@ -16,7 +16,6 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { announceInvocationSquare } from './invocation.js';
 import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
 import { isIceAt } from './terrain_properties.js';
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
@@ -50,6 +49,8 @@ interface ActiveSpot extends Position {
     trapType: number | undefined;
 }
 
+// Landing effects for ordinary teleportation. moveHeroByTeleport() owns
+// the surrounding notice block and the invocation message that follows.
 export async function finishTeleportArrival(
     movement: HeroTeleportMovement, { announceTeleport = true } = {},
 ): Promise<SpotEffectResult> {
@@ -72,7 +73,6 @@ export async function finishTeleportArrival(
         ...movement, newx: movement.x, newy: movement.y,
     });
     if (result.died || game.program_state.gameover) return { ...result, died: true };
-    await announceInvocationSquare();
     return result;
 }
 

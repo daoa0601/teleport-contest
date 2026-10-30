@@ -6,6 +6,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -4100,16 +4101,20 @@ async function wizMap() {
 
     const savedConfusion = game.u?.confusionTurns ?? 0;
     const savedHallucination = game.u?.hallucinationTurns ?? 0;
-    game.u.confusionTurns = 0;
-    game.u.hallucinationTurns = 0;
     try {
-        for (const trap of requireGameLevel().traps) {
-            trap.tseen = true;
-            map_trap(trap, true);
-        }
-        for (const engraving of requireGameLevel().engravings ?? [])
-            map_engraving(engraving, true);
-        await mapMagicLevel({ confused: false });
+        // C wiz_map() blocks notices before clearing the senses and
+        // mapping traps, and re-enables them after do_mapping() returns.
+        await withMonsterNoticesBlocked(game, async () => {
+            game.u.confusionTurns = 0;
+            game.u.hallucinationTurns = 0;
+            for (const trap of requireGameLevel().traps) {
+                trap.tseen = true;
+                map_trap(trap, true);
+            }
+            for (const engraving of requireGameLevel().engravings ?? [])
+                map_engraving(engraving, true);
+            await mapMagicLevel({ confused: false });
+        });
     } finally {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
@@ -7571,6 +7576,9 @@ async function finishHeroMovement({
     if (u.umoved) {
         newsym(oldx, oldy);
         vision_recalc(1);
+        // C vision_recalc() ends with notice_all_mons(), before the
+        // invocation message.
+        await noticeAllMonsters(game);
         await announceInvocationSquare();
     }
     if (ballChainMove) await finishBallAndChainMove(ballChainMove);

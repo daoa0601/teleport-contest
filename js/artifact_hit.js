@@ -26,10 +26,14 @@ const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
 // Native fatal blows leave enough damage for the caller's AC reduction.
 const FATAL_DAMAGE_MODIFIER = 200;
-export async function applyArtifactHit(object, defender, baseDamage, { state = game, attacker, visible = defender !== 'hero' && cansee(defender.mx, defender.my)
-    || !!attacker && cansee(attacker.mx, attacker.my)
-    || !attacker && defender !== 'hero' && !!state.u.uswallow
-        && state.u.ustuck === defender && !heroIsBlind(state), realizesDamage = defender === 'hero' || visible || !attacker && state.u.ustuck === defender, describeTarget = () => defender === 'hero' ? 'you' : monsterName(defender, { state }), publish = async () => { }, random = rn2, rollOne = rnd, dieRoll = 0, hitOnHead = true, } = {}) {
+export async function applyArtifactHit(object, defender, baseDamage, { state = game, attacker, 
+// C artifact.c:1456-1466: vis is seeing the attacker, seeing the
+// defender, or a hero attacker engulfing its defender; realizes_damage
+// is defending as the hero or vis. A Null attacker has neither an
+// attacker square nor youattack, so an engulfed thrower that cannot
+// be seen realizes nothing here.
+visible = defender !== 'hero' && cansee(defender.mx, defender.my)
+    || !!attacker && cansee(attacker.mx, attacker.my), realizesDamage = defender === 'hero' || visible, describeTarget = () => defender === 'hero' ? 'you' : monsterName(defender, { state }), publish = async () => { }, random = rn2, rollOne = rnd, dieRoll = 0, hitOnHead = true, } = {}) {
     const artifact = artifactById(object?.oartifact, state);
     if (!object || !artifact?.attack) {
         return { damage: baseDamage, specialMessage: false };

@@ -25,6 +25,7 @@ import {
     checkGoldSymbol, reglyphSymbolSet,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
+import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices } from './monster_notices.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
@@ -563,6 +564,11 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     // exactly as in C where they precede this reset).
     game.u.uz0 = { ...game.u.uz };
     if (game.flags.checkpoint ?? true) rewindEngravingsForSave(game.level);
+    // C do.c:1971-1972: goto_level() has closed its notice window by here,
+    // after every arrival message and the Tourist experience bonus, and
+    // announces the new level's monsters just before the annotation.
+    unblockMonsterNotices(game);
+    await noticeAllMonsters(game);
     const levelAnnotation = game._levelAnnotations?.get?.(
         `${newDepth.dnum}:${newDepth.dlevel}`,
     );
@@ -692,6 +698,9 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz)) await moveElementalBubbles();
         else if (game.level.flags.fumaroles) await fumaroles(game);
         vision_reset_new_level();
+        // C do.c:1839 keeps notices blocked from this redraw until
+        // gotoLevel() has delivered all the level's arrival messages.
+        blockMonsterNotices(game);
         await docrt({ beforeGlow });
         return false;
     } finally {

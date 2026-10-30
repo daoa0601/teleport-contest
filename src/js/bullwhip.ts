@@ -32,7 +32,6 @@ import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { announceInvocationSquare } from './invocation.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -292,16 +291,19 @@ function pitEscapeDestination(targetX: number, targetY: number, monster: Monster
 
 async function moveHeroOutOfPit(destination: Position, state: GameState) {
     await resetHeroTrap(true, state);
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    const landing = await finishDestinationSpotEffects({
-        oldx: movement.oldx, oldy: movement.oldy,
-        newx: movement.x, newy: movement.y,
+    const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
+        allowDrag: true,
+        finishArrival: async movement => {
+            newsym(movement.oldx, movement.oldy);
+            vision_reset();
+            vision_recalc(0);
+            return finishDestinationSpotEffects({
+                oldx: movement.oldx, oldy: movement.oldy,
+                newx: movement.x, newy: movement.y,
+            });
+        },
     });
-    if (landing.died) return;
-    await announceInvocationSquare();
+    if (arrival.died) return;
     state.vision_full_recalc = 1;
 }
 

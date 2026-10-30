@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { COLNO, LAVAPOOL, ROWNO } from '../js/const.js';
+import { COLNO, LAVAPOOL, ROOM, ROWNO } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { fumaroles } from '../js/monmove.js';
@@ -37,7 +37,10 @@ void test('a fumarole leaves damaging gas which hurts a breathing occupant on th
     assert.ok(cloud, 'the hot lava level must produce a fumarole');
     const cell = cloud.cells[0];
     assert.ok(cell);
+    // Test the gas damage on safe ground, rather than landing in lava.
+    level.requireAt(cell.x, cell.y).typ = ROOM;
     await moveHeroByTeleport(cell.x, cell.y);
+    assert.ok(game.u.uhp > 0, 'the hero must reach the gas cloud alive');
     const hp = game.u.uhp;
     await runLevelRegions(game, { publish: async () => {} });
 

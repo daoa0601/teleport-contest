@@ -140,8 +140,7 @@ void test('teleporting away with vault gold releases an angry guard immediately'
     const { guard } = await escort();
     setHeroGoldAmount(game, 50);
 
-    const movement = await moveHeroByTeleport(15, 10);
-    await finishTeleportArrival(movement);
+    await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
 
     assert.equal(guard.mpeaceful, 0);
 });
@@ -163,8 +162,7 @@ for (const whistle of [false, true]) {
             input.feed(' ');
         };
 
-        const movement = await moveHeroByTeleport(15, 10);
-        await finishTeleportArrival(movement);
+        await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
         messages.push(game._pending_message);
 
         assert.equal(guard.mpeaceful, 0);

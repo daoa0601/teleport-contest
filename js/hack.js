@@ -327,18 +327,19 @@ async function teleportHeroOutOfLiquid({ state, random, rollOne, publish, repain
     // C trap.c:6936/7021 call safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT):
     // a light hero may drag an adjacent ball, and the verbose materialize
     // line precedes the landing effects (teleport.c:545-547).
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
-    if (state.flags?.verbose !== false) {
-        await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
-            ? 'the same' : 'a different'} location!`);
-    }
-    return finishLiquidTeleport(movement, {
-        state,
-        repaint,
-        resetVision,
-        recalculateVision,
-        applyLandingEffects,
+    const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
+        allowDrag: true,
+        finishArrival: async (movement) => {
+            if (state.flags?.verbose !== false) {
+                await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
+                    ? 'the same' : 'a different'} location!`);
+            }
+            return finishLiquidTeleport(movement, {
+                state, repaint, resetVision, recalculateVision, applyLandingEffects,
+            });
+        },
     });
+    return arrival;
 }
 async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, die, }) {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -658,11 +659,11 @@ async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
 }
 async function finishLiquidTeleport(movement, { state, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     // spoteffects() announces surfacing before it clears the submerged view.
+    const from = { x: movement.oldx, y: movement.oldy };
+    const to = { x: movement.x, y: movement.y };
     repaint(movement.oldx, movement.oldy);
     resetVision();
     recalculateVision(0);
-    const from = { x: movement.oldx, y: movement.oldy };
-    const to = { x: movement.x, y: movement.y };
     const landing = await applyLandingEffects({ from, to });
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
@@ -899,10 +900,12 @@ export async function heroLiquidEffects(options = {}) {
             // C trap.c:5164 relocates through teleds(TELEDS_ALLOW_DRAG),
             // which resets the trap/hold state and drags the ball and chain
             // along, then runs the full destination effects below.
-            await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
-            const landing = await applyLandingEffects({
-                from: { x, y },
-                to: { x: u.ux, y: u.uy },
+            const { arrival: landing } = await moveHeroByTeleport(destination.x, destination.y, state, {
+                allowDrag: true,
+                finishArrival: () => applyLandingEffects({
+                    from: { x, y },
+                    to: { x: u.ux, y: u.uy },
+                }),
             });
             return {
                 entered: true, moved: true, died: !!landing?.died,
@@ -931,21 +934,21 @@ export async function heroLiquidEffects(options = {}) {
             return { entered: true, moved: false, died: true };
         const destination = safeTeleportDestination(state, random, rollOne);
         if (destination) {
-            const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
             // C trap.c:5189 -> safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT)
             // -> teleds(): a light hero may drag an adjacent ball, and the
             // rescue relocation still prints the verbose materialize line
             // (teleport.c:545-547).
-            if (state.flags?.verbose !== false) {
-                await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
-                    ? 'the same' : 'a different'} location!`);
-            }
-            const escape = await finishLiquidTeleport(movement, {
-                state,
-                repaint,
-                resetVision,
-                recalculateVision,
-                applyLandingEffects,
+            const { arrival: escape } = await moveHeroByTeleport(destination.x, destination.y, state, {
+                allowDrag: true,
+                finishArrival: async (movement) => {
+                    if (state.flags?.verbose !== false) {
+                        await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
+                            ? 'the same' : 'a different'} location!`);
+                    }
+                    return finishLiquidTeleport(movement, {
+                        state, repaint, resetVision, recalculateVision, applyLandingEffects,
+                    });
+                },
             });
             if (!escape.died) {
                 await setHeroInWater(false, state);

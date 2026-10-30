@@ -33,6 +33,7 @@ import { hitpointBar, hitpointBarFill } from './status_hitpoint_bar.js';
 import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
+import { noticeAllMonsters } from './monster_notices.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
     BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok,
@@ -2686,6 +2687,7 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
             return;
         }
         vision_recalc(2);
+        await noticeAllMonsters(game);
         await cls();
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++) {
@@ -2702,6 +2704,7 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
                 }
             }
         vision_recalc(0);
+        await noticeAllMonsters(game);
         await see_monsters({ beforeGlow });
     } finally {
         game.program_state.in_docrt = false;

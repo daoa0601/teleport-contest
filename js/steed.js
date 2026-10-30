@@ -44,7 +44,6 @@ import { promptYesNo } from './query.js';
 import { heroLegName } from './body_parts.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
-import { announceInvocationSquare } from './invocation.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -402,11 +401,9 @@ async function mountSteed(steed, force, [dx, dy]) {
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
     steed.headOnMap = false;
-    await moveHeroByTeleport(steed.mx, steed.my, game);
-    await applyHeroLocationEffects();
-    // Mounting uses teleds(), whose invocation message follows spot effects.
-    if (!game.program_state.gameover)
-        await announceInvocationSquare();
+    await moveHeroByTeleport(steed.mx, steed.my, game, {
+        finishArrival: () => applyHeroLocationEffects(),
+    });
     game.context.botl = true;
     return true;
 }
@@ -762,22 +759,23 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 // and the tail display are never reached.
                 state._steedDismounting = true;
                 try {
-                    movement = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
-                    // C teleport.c:536-568: the moved hero renders, then
-                    // spoteffects runs with the move's real old/new
-                    // coordinates (liquids/terrain/rooms/sink live,
-                    // trap/timeout-1/pickup deferred while dismounting).
-                    location = await finishDestinationSpotEffects({
-                        oldx: movement.oldx, oldy: movement.oldy,
-                        newx: movement.x, newy: movement.y,
-                        publish: announce,
+                    // The shared teleds port renders the moved hero, then
+                    // runs terrain and liquid effects while dismounting.
+                    const relocation = await moveHeroByTeleport(landing.x, landing.y, state, {
+                        allowDrag: true,
+                        finishArrival: destination => finishDestinationSpotEffects({
+                            oldx: destination.oldx, oldy: destination.oldy,
+                            newx: destination.x, newy: destination.y,
+                            publish: announce,
+                        }),
                     });
+                    movement = relocation.movement;
+                    location = relocation.arrival;
                     if (location?.died || state.program_state?.gameover)
                         return {
                             dismounted: true, steed, movement, liquid,
                             location, died: true,
                         };
-                    await announceInvocationSquare();
                     if (state.level.flags.sokoban_rules
                         && (state.level.objects[landing.x]?.[landing.y] || [])
                             .some(object => object.otyp === BOULDER)) {

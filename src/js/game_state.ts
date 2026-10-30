@@ -473,6 +473,7 @@ export interface GameState {
     _suppressMessagesUntilInput?: boolean;
     _silentPrefixRetainedTopline?: boolean;
     _transientLights?: Array<Position & { range: number }>;
+    _monsterNoticesBlocked?: number;
     viz_array?: Uint8Array[];
     vision_full_recalc?: number;
     active_buf?: number;

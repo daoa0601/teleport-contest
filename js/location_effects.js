@@ -11,13 +11,14 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { announceInvocationSquare } from './invocation.js';
 import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
 import { isIceAt } from './terrain_properties.js';
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
 import { roomsAt } from './room.js';
 import { findVaultGuard } from './vault_guard.js';
 import { noticeVaultEscape } from './vault_escort.js';
+// Landing effects for ordinary teleportation. moveHeroByTeleport() owns
+// the surrounding notice block and the invocation message that follows.
 export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
     requirePlayingGame(game);
     await bot();
@@ -40,7 +41,6 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
     });
     if (result.died || game.program_state.gameover)
         return { ...result, died: true };
-    await announceInvocationSquare();
     return result;
 }
 // C spoteffects() suppresses same-location recursion, but permits a changed

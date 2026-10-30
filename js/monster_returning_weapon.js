@@ -6,6 +6,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { objectShedsLight } from './light.js';
+import { applyArtifactHit } from './artifact_hit.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
@@ -71,6 +72,16 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
             }
             else if (!heroIsDeaf(state)) {
                 await publishHeardMessage(`something hit ${name()} with a thud!`, publish, state);
+            }
+            if (weapon.oartifact) {
+                // C mthrowu.c:934-936: the weapon itself struck its thrower,
+                // so artifact_hit() runs with no attacker and may add its
+                // own damage and messages before mhp loses the total.
+                const artifact = await applyArtifactHit(weapon, monster, damage, {
+                    state, publish, random, rollOne,
+                });
+                if ('damage' in artifact)
+                    damage = artifact.damage;
             }
             monster.mhp -= damage;
             if (monster.mhp <= 0) {
