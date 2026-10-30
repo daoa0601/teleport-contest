@@ -2,7 +2,6 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { removeHeroAccessory } from './accessory.js';
-import { findArmorClass } from './armor.js';
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { A_CHA, A_CON, A_STR, TIMEOUT } from './const.js';
@@ -77,7 +76,9 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
         grantIntrinsicProperty('protection', 'outside', state);
         state.u.ublessed = boundedIncrease(state.u.ublessed || 0,
             object.otyp === PROTECTION ? object.spe : 2, object.otyp, state);
-        findArmorClass(state);
+        // Native eataccessory() leaves find_ac() to the next input boundary,
+        // after monsters have used the armor class from before this meal.
+        state._armorClassDirty = true;
         state.context.botl = true;
     } else if (object.otyp === FREE_ACTION) {
         if (!hasIntrinsicProperty('sleepResistance', 'outside', state)) await accessoryEffectMessage(object);

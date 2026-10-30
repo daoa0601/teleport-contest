@@ -20,6 +20,7 @@ import { ROUND9_RECIPES, validateRound9Recipe } from './round9-recipes.mjs';
 import { ROUND12_RECIPES, validateRound12Recipe } from './round12-recipes.mjs';
 import { ROUND17_RECIPES, validateRound17Recipe } from './round17-recipes.mjs';
 import { ROUND21_RECIPES, validateRound21Recipe } from './round21-recipes.mjs';
+import { ROUND22_RECIPES, validateRound22Recipe } from './round22-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
 // Exports:
@@ -447,6 +448,7 @@ addRecipes(ROUND12_RECIPES);
 addRecipes(ROUND14_RECIPES);
 addRecipes(ROUND17_RECIPES);
 addRecipes(ROUND21_RECIPES);
+addRecipes(ROUND22_RECIPES);
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -713,6 +715,9 @@ for (const name of Object.keys(ROUND17_RECIPES)) {
 }
 for (const name of Object.keys(ROUND21_RECIPES)) {
     VALIDATORS[name] = recording => validateRound21Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND22_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound22Recipe(name, recording);
 }
 /**
  * Check a recorded session against its recipe's documented requirements.
