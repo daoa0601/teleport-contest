@@ -1,7 +1,7 @@
 import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
-import { noticeAllMonsters, noticeMonster } from './monster_notices.js';
+import { noticeAllMonsters, noticeMonster, withMonsterNoticesBlocked } from './monster_notices.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -3348,6 +3348,8 @@ async function presentMonsterAttackEffects(
 async function presentMonsterPostMove(
     action: MonsterMovementAction, game: PlayingGameState,
 ): Promise<boolean> {
+    // dog_move() finishes mattacku() before m_move() enters postmov().
+    if (action.movement.deferredAfterPetAttack) return false;
     // C monmove.c:1470 opens postmov() with notice_mon(), and only passes
     // that ran postmov() present here: the dochug-stage exits (trap-held,
     // displacement, the rloc fallback, eating, deferred spells) never reach
@@ -3621,6 +3623,10 @@ async function presentMonsterAction(
     movement = action.movement;
     const attackEffects = await presentMonsterAttackEffects(action, game);
     if (attackEffects.heroDied) return 'stop';
+    if (action.movement.deferredAfterPetAttack) {
+        await resumeDeferredPetAttack(action, game);
+        if (await presentMonsterPostMove(action, game)) return 'stop';
+    }
     movement = action.movement;
     // monmove.c:dochug() performs the vile-monster emotional attack only
     // after the complete standard attack set. Item use returns earlier,
@@ -3652,11 +3658,6 @@ async function presentMonsterAction(
         await presentMonsterCuss(action);
     }
 
-    if (movement?.deferredAfterPetAttack) {
-        if (game.program_state?.gameover) return 'stop';
-        await resumeDeferredPetAttack(action, game);
-        await presentMonsterHiding(action);
-    }
     await presentMonsterPickups(action, game);
     movement = action.movement;
     if (movement?.usedMisc?.kind === 'polymorph-trap'
@@ -3867,6 +3868,15 @@ async function moveMonsters() {
 
 // C ref: allmain.c newgame()
 export async function newgame() {
+    await withMonsterNoticesBlocked(game, () => initializeNewGame());
+    // C allmain.c:844-848 enables notices only after welcome(). The
+    // mention_map option runs dolookaround() instead, which is unported.
+    if (!game.flags.mention_map) await noticeAllMonsters(game);
+    if (game.flags?.explore)
+        await plineWithContinuation('You are in non-scoring explore/discovery mode.');
+}
+
+async function initializeNewGame() {
     delete game._pendingHeroShapeChange;
     const g = game;
     const handednessRoll = await initializeSourceStartup();
@@ -3946,12 +3956,6 @@ export async function newgame() {
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
     await welcome(true);
-    // C newgame(): welcome() finishes before the monsters are noticed, and
-    // the mention_map option (a11y.glyph_updates) runs dolookaround()
-    // instead, which is not ported (allmain.c:845-848).
-    if (!g.flags.mention_map) await noticeAllMonsters(g);
-    if (g.flags?.explore)
-        await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
 
 // The contest play page calls moveloop_core() once per keystroke. While a

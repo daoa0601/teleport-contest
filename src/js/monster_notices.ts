@@ -6,17 +6,17 @@
 // from notice_all_mons() at the end of vision_recalc(). The port runs that
 // catch-up at the async ends of the recalculation sites: the hero's step
 // (hack.c:2972), the monster-phase and post-command drains that gate on
-// vision_full_recalc (allmain.c:471, 542, 580; mon.c:1186, 1258), every
-// teleds() landing (teleport.c:571, including jump, mount, dismount, pit
-// escape, and liquid rescues), level arrival after the arrival messages
+// vision_full_recalc (allmain.c:471, 542, 580; mon.c:1186, 1258), docrt()
+// redraws (display.c:1740, 1758), teleds() landings (teleport.c:571,
+// including jump, mount, dismount, pit escape, and liquid rescues), level
+// arrival after the arrival messages
 // (do.c:1971), and newgame after welcome() (allmain.c:848). C's other
 // vision_recalc() callers -- message output (pline.c:270), light sources
 // (light.c), eyewear (worn.c), digging, zaps, and pet movement -- are
 // drained synchronously by this port, so a monster that becomes spottable
 // in one of those flows is announced at the next ported anchor rather than
-// immediately. The notice_mon_off() windows (magic mapping, save, level
-// transition, newgame preamble) suppress notices in C and contain no ported
-// anchor, so the port needs no blocked counter.
+// immediately. Startup, level arrival, and teleport landing effects block
+// notices until their messages finish, including nested teleports.
 
 import {
     canSeeMonster, canSpotMonster, plineWithContinuation,
@@ -32,6 +32,27 @@ import type { Monster } from './monster_types.js';
 // C include/monflag.h: M1_HIDE (is_hider) and M2_PNAME (type_is_pname).
 const M1_HIDE = 0x100;
 const M2_PNAME = 0x80000;
+
+// C flag.h:notice_mon_off()/notice_mon_on(). A nested landing must leave
+// its caller's notices blocked until that caller has finished its messages.
+export function blockMonsterNotices(state: GameState): void {
+    state._monsterNoticesBlocked = (state._monsterNoticesBlocked ?? 0) + 1;
+}
+
+export function unblockMonsterNotices(state: GameState): void {
+    state._monsterNoticesBlocked = Math.max(0, (state._monsterNoticesBlocked ?? 0) - 1);
+}
+
+export async function withMonsterNoticesBlocked<T>(
+    state: GameState, action: () => Promise<T>,
+): Promise<T> {
+    blockMonsterNotices(state);
+    try {
+        return await action();
+    } finally {
+        unblockMonsterNotices(state);
+    }
+}
 
 function monsterIsSpottable(monster: Monster): boolean {
     if (!canSpotMonster(monster)) return false;
@@ -53,7 +74,7 @@ function monsterIsSpottable(monster: Monster): boolean {
 export async function noticeMonster(
     monster: Monster, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
-    if (!state.flags.spot_monsters) return;
+    if (!state.flags.spot_monsters || state._monsterNoticesBlocked) return;
     const spottable = monsterIsSpottable(monster);
     if (spottable && !monster.mspotted && !monster.dead && monster.mhp > 0) {
         monster.mspotted = 1;
@@ -82,7 +103,7 @@ export async function noticeMonster(
 export async function noticeAllMonsters(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
-    if (!state.flags.spot_monsters) return;
+    if (!state.flags.spot_monsters || state._monsterNoticesBlocked) return;
     const spottable: Monster[] = [];
     for (const monster of state.level?.monsters ?? []) {
         if (monster.dead || monster.mhp <= 0) continue;

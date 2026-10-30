@@ -48,6 +48,7 @@ const transientFields = {
     _lastPushedBoulder: true,
     _mimicMealMessage: true,
     _monsterNoiseTime: true,
+    _monsterNoticesBlocked: true,
     _moveloopStarted: true,
     _prayerAlignment: true,
     _prayerOutcome: true,

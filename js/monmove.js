@@ -4,6 +4,7 @@ import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
+import { noticeMonster } from './monster_notices.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 import { impossible, panic } from './diagnostics.js';
@@ -7232,6 +7233,12 @@ export async function resumeDeferredPetAttack(action, state, random = rn2, rollD
     if (!movement.deferredAfterPetAttack)
         return action;
     delete movement.deferredAfterPetAttack;
+    // dog_move() has finished mattacku(); postmov() notices the pet before
+    // handling anything it might eat, pick up, or hide beneath here.
+    if (!movement.postMoveNoticed) {
+        movement.postMoveNoticed = true;
+        await noticeMonster(action.monster, state);
+    }
     if (action.monster.dead || action.monster.mhp <= 0) {
         movement.postMoveStatus = MMOVE_DIED;
         return action;

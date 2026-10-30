@@ -2,7 +2,7 @@
 
 import { bot, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { noticeAllMonsters } from './monster_notices.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import type { HeroTeleportMovement } from './teleport.js';
 import type { MessagePublisher } from './display.js';
 import type { HeroTrapOptions } from './hero_traps.js';
@@ -55,25 +55,29 @@ export async function finishTeleportArrival(
     movement: HeroTeleportMovement, { announceTeleport = true } = {},
 ): Promise<SpotEffectResult> {
     requirePlayingGame(game);
-    await bot();
-    if (announceTeleport && game.flags.verbose !== false) {
-        const place = movement.oldx === movement.x && movement.oldy === movement.y
-            ? 'the same' : 'a different';
-        await plineWithContinuation(`You materialize in ${place} location!`);
-    }
-    if (game.level.requireAt(game.u.ux, game.u.uy).typ
-        !== game.level.requireAt(movement.oldx, movement.oldy).typ)
-        await switchHeroTerrain(game);
-    if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
-        && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
-        const guard = await findVaultGuard(game);
-        if (guard) await noticeVaultEscape(guard, game);
-    }
-    const result = await finishDestinationSpotEffects({
-        ...movement, newx: movement.x, newy: movement.y,
+    const result = await withMonsterNoticesBlocked(game, async () => {
+        requirePlayingGame(game);
+        await bot();
+        if (announceTeleport && game.flags.verbose !== false) {
+            const place = movement.oldx === movement.x && movement.oldy === movement.y
+                ? 'the same' : 'a different';
+            await plineWithContinuation(`You materialize in ${place} location!`);
+        }
+        if (game.level.requireAt(game.u.ux, game.u.uy).typ
+            !== game.level.requireAt(movement.oldx, movement.oldy).typ)
+            await switchHeroTerrain(game);
+        if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
+            && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
+            const guard = await findVaultGuard(game);
+            if (guard) await noticeVaultEscape(guard, game);
+        }
+        const landing = await finishDestinationSpotEffects({
+            ...movement, newx: movement.x, newy: movement.y,
+        });
+        if (!landing.died && !game.program_state.gameover) await announceInvocationSquare();
+        return landing;
     });
     if (result.died || game.program_state.gameover) return { ...result, died: true };
-    await announceInvocationSquare();
     // C teleport.c:teleds() ends with notice_all_mons() after the landing
     // effects and the invocation message.
     await noticeAllMonsters(game);
