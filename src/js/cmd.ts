@@ -1652,7 +1652,8 @@ async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttem
     const outcome = await domove(hero.dx, hero.dy);
     const moved = outcome === 'time';
     if (game.program_state.gameover) return;
-    if ((rushDispatch || mode) && !prefixes.walk && moved && game._domoveReachedTail)
+    // C domove_core() also delays counted walks after arrival effects.
+    if (moved && game._domoveReachedTail)
         await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     game.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door') stopRun();
@@ -5610,6 +5611,7 @@ async function dowhatis(): Promise<void> {
                 waterLevel: Is_waterlevel(game.u.uz),
                 inHell: In_hell(game.u.uz),
                 blind: heroIsBlind(game),
+                clairvoyance: !!game.u.clairvoyanceDetection,
                 // pager.c resolves the override by level, independently of
                 // the symbols currently displayed by do_symset().
                 boulderSymbol: (Is_rogue_level(game.u.uz)

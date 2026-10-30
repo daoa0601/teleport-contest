@@ -7,7 +7,7 @@ import { artifactById } from './artifacts.js';
 import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 const EYES_OF_THE_OVERWORLD = 'The Eyes of the Overworld';
 export function heroDetectsMonsters(state = game) {
-    return !!(state.u?.detectMonsters || state.detectMonsters
+    return !!(state.u?.detectMonsters || state.u.clairvoyanceDetection || state.detectMonsters
         || state.u?.monsterDetection || (state.u.monsterDetectionTurns ?? 0) > 0);
 }
 export function isEyesOfTheOverworld(object, state = game) {

@@ -33,10 +33,11 @@ export function lookGlyphAt(x, y) {
     const location = game.level?.at(x, y);
     return location ? terrain_glyph(location, x, y) : null;
 }
-// pager.c do_screen_description(): a blind hero's remembered-unseen marker
-// uses the clairvoyance wording.
+// C do_screen_description() uses alternate wording while clairvoyance's
+// temporary monster detection is active, and whenever the hero is blind.
 export function unseenCreatureDescription() {
-    return heroIsBlind(game) ? 'unseen creature' : 'remembered, unseen, creature';
+    return heroIsBlind(game) || game.u.clairvoyanceDetection
+        ? 'unseen creature' : 'remembered, unseen, creature';
 }
 export function mapFeatureDescription(x, y, glyph) {
     if (glyph.kind === 'trap')

@@ -10,6 +10,7 @@ interface TypedLookContext {
     waterLevel: boolean;
     inHell: boolean;
     blind: boolean;
+    clairvoyance: boolean;
     // pager.c resolves ROCK_CLASS against this level's boulder override.
     boulderSymbol: string;
 }
@@ -48,7 +49,8 @@ export function typedSymbolDescription(symbol: string, context: TypedLookContext
             append(withIndefiniteArticle(name), name);
     }
     if (symbol === 'I') {
-        const name = context.blind ? 'unseen creature' : 'remembered, unseen, creature';
+        const name = context.blind || context.clairvoyance
+            ? 'unseen creature' : 'remembered, unseen, creature';
         append(withIndefiniteArticle(name), name);
     }
 
