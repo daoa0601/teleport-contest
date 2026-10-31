@@ -556,12 +556,15 @@ async function struggleInWeb(steedName) {
     requirePlayingGame(game);
     const hero = game.u;
     if (heroWieldsSting()) {
-        clearHeroTrap();
+        // C hack.c:trapmove() zeroes u.utrap with a bare field write and
+        // lets domove()'s reset_utrap() finish the release, so flight is
+        // still blocked while the message prints; trap.c:reset_utrap()
+        // then reports "You can fly." from its own was-flying snapshot.
+        hero.utrap = 0;
         await pline('Sting cuts through the web!');
         return;
     }
     if (reduceHeroTrapDuration() <= 0) {
-        clearHeroTrap();
         await pline(steedName
             ? `${upstart(steedName)} breaks out of the web.`
             : 'You disentangle yourself.');
@@ -624,10 +627,11 @@ async function struggleInFloor(targetX, targetY, anchored, steedName) {
             ? 'You finally wrench the ball free.'
             : 'You finally wriggle free.');
     }
-    if (ball)
+    // wriggle_free: only the buried-ball case resets here (silently);
+    // otherwise trapmove() leaves the bare u.utrap zeroed and domove()'s
+    // reset_utrap() finishes the release, possibly reporting flight.
+    if (anchored)
         await buriedBallToPunishment();
-    else
-        clearHeroTrap();
     return false;
 }
 export async function heroCanMoveFromTrap(targetX, targetY) {
@@ -652,7 +656,8 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
                 hero.utrap--;
             if (hero.utrap <= 0) {
                 await plineWithContinuation(`${subject} finally ${steedName ? 'lurches' : 'wriggle'} free.`);
-                clearHeroTrap();
+                // trapmove() leaves the bare u.utrap zeroed here; domove()'s
+                // reset_utrap() finishes the release and may report flight.
             }
             return false;
         }

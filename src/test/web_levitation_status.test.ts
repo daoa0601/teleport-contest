@@ -26,6 +26,7 @@ void test('a levitating hero shows Lev as soon as it disentangles itself from a 
     await rhack('l'.charCodeAt(0));
     await flush_screen(1);
 
-    assert.equal(game._pending_message, 'You disentangle yourself.');
+    assert.equal(game._pending_message,
+        'You disentangle yourself.  You start to float in the air!');
     assert.match(statusLine(), /\bLev\b/);
 });

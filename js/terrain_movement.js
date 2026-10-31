@@ -300,8 +300,13 @@ function floorTrapHoldName(hero) {
     return 'ground'; // TT_INFLOOR
 }
 export async function resetHeroTrap(message = true, state = game) {
-    const wasLevitating = propertyIsActive('levitation', state);
-    const wasFlying = propertyIsActive('flying', state);
+    // C trap.c:reset_utrap() snapshots the Levitation/Flying macros, which
+    // read the blocked masks that only float_vs_flight() updates; after a
+    // bare u.utrap zeroing (hack.c:trapmove()) those masks are still set.
+    // The projected hero flags carry exactly that stale state, while a live
+    // propertyIsActive() query would already see the trap gone.
+    const wasLevitating = !!state.u.levitating;
+    const wasFlying = !!state.u.flying;
     clearHeroTrap(state);
     if (message) {
         if (!wasLevitating && propertyIsActive('levitation', state))

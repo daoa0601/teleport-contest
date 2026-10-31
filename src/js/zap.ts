@@ -13,12 +13,11 @@ import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const
 import { objectDirection } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { backfireWand, zappable } from './wand_charge.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING } from './const.js';
+import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING } from './const.js';
 import { displayColorName, displayLiquidName, docrt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
@@ -43,7 +42,7 @@ import { consumeInventoryItem } from './invent.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { igniteItems } from './light.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { maketrap } from './mklev.js';
+import { deleteFloorTrap, maketrap } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { monsterResistanceBits } from './monster_resistance.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
@@ -204,25 +203,6 @@ export async function dozap(): Promise<void> {
     game.context.move = 1;
 }
 
-function removeWebAt(x: number, y: number, state: GameState = game) {
-    const trap = state.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y && candidate.ttyp === WEB,
-    );
-    if (!trap) return false;
-    if (state.u?.ux === x && state.u?.uy === y) {
-        if (state.u.utraptype !== TT_BURIEDBALL) {
-            state.u.utrap = 0;
-            state.u.utraptype = 0;
-        }
-    } else {
-        const monster = state.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, state) &&
-            candidate.mx === x && candidate.my === y,
-        );
-        if (monster) monster.mtrapped = 0;
-    }
-    deleteTrap(trap, state);
-    return true;
-}
 
 function floorObjectBurns(object: GameObject) {
     return object?.otyp === GLOB_OF_GREEN_SLIME
@@ -483,10 +463,19 @@ export async function applyRayFloorFeatures(
     const yourRay = heroCaused && !explodingWand;
     const wandType = [POT_OIL, SCR_FIRE].includes(explodingWand) ? 0 : explodingWand;
 
-    if (kind === RAY_FIRE && removeWebAt(x, y, state)) {
-        if (visible)
-            await publish('A web bursts into flames!');
-        await newsym(x, y);
+    if (kind === RAY_FIRE) {
+        const web = state.level?.traps?.find(candidate =>
+            candidate.tx === x && candidate.ty === y && candidate.ttyp === WEB);
+        if (web) {
+            // zap_over_floor(): a burning web is too flimsy to notice
+            // unseen, and the burst message precedes delfloortrap().
+            if (visible)
+                await publish('A web bursts into flames!');
+            // delfloortrap() releases a trapped hero through
+            // reset_utrap(TRUE), which may report flight.
+            await deleteFloorTrap(web, state);
+            await newsym(x, y);
+        }
     }
 
     if (kind === RAY_FIRE && isIceAt(x, y, state)) {
