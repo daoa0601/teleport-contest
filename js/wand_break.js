@@ -8,7 +8,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { A_STR, DIGCHECK_FAILED, DIGCHECK_FAIL_BOULDER, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, NO_KILLER_PREFIX, PARANOID_BREAKWAND, PIT, ROOM, SHOPBASE, isok, xdir, ydir, } from './const.js';
 import { digActualHole, digCheck, liquidFlow } from './digging_terrain.js';
 import { watchDigging } from './digging_watch.js';
-import { bot } from './display.js';
+import { bot } from './botl.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { explode } from './explosion.js';
 import { game, requireLiveGame } from './gstate.js';

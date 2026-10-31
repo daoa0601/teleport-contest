@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SICK_NONVOMITABLE } from '../js/const.js';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { startHeroSickness } from '../js/hero_illness.js';
 import { pushKeys } from '../js/input.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';

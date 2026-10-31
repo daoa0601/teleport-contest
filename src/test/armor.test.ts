@@ -13,7 +13,7 @@ import {
 } from '../js/armor.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_STR } from '../js/const.js';
-import { formatStrength } from '../js/display.js';
+import { formatStrength } from '../js/botl.js';
 import { weightCapacity } from '../js/weight.js';
 import {
     AMULET_OF_GUARDING,

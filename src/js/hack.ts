@@ -19,10 +19,11 @@ import {
     finishBallAndChainMove,
 } from './ball.js';
 import {
-    bot, displayLiquidName, docrt, feel_newsym, newsym, under_water,
+    displayLiquidName, docrt, feel_newsym, newsym, under_water,
     updateLastSeenTerrain, feel_location, terrain_glyph, glyphAt, canSpotMonster,
     canSenseMonster, monsterVisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
+import { bot } from './botl.js';
 import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';

@@ -11,7 +11,7 @@ import { currentAttribute } from '../js/attrib.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { _statusLine2 } from '../js/display.js';
+import { _statusLine2 } from '../js/botl.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';

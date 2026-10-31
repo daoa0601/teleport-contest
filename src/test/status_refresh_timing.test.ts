@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { NOT_HUNGRY, SATIATED } from '../js/const.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { LEMBAS_WAFER } from '../js/object_data.js';
 import { races } from '../js/roles.js';

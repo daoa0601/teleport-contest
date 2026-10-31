@@ -128,9 +128,10 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
+import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import {
-    canSpotMonster, docrt, redrawMap, bot, flush_screen, updateStatusLines,
-    statusEvalNextUnhilite, newsym, map_invisible, randomDisplayMonsterName, see_monsters,
+    canSpotMonster, docrt, redrawMap, flush_screen,
+    newsym, map_invisible, randomDisplayMonsterName, see_monsters,
     see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster,
     monsterVisible, shieldeff,
 } from './display.js';

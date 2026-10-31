@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MOAT } from '../js/const.js';
-import { bot, flush_screen, map_location } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen, map_location } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { pushKeys } from '../js/input.js';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot, flush_screen, timebot } from '../js/display.js';
+import { bot, timebot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';

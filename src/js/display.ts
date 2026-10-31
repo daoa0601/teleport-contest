@@ -2,7 +2,9 @@
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
 import { pline_xy } from './pline.js';
-import { clipToplineToColumn, decodeMixedTopline, flushPendingTopline } from './tty_topline.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { updateStatusLines } from './botl.js';
+import { _buildScreenOutput, writeMapCell } from './wintty.js';
 import { game, requireGameLevel } from './gstate.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
@@ -16,24 +18,11 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { isIceAt, isPoolAt, isPoolOrLavaAt, terrainCoversObjectsAt } from './terrain_properties.js';
 import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
-import { currentAttribute } from './attrib.js';
-import { currentHungerState } from './hunger.js';
-import { statusTitle } from './status_title.js';
-import { statusConditions } from './status_conditions.js';
-import { renderStatusLine2 } from './status_layout.js';
-import type { StatusLine2Fields } from './status_layout.js';
-import { armorStatus, weaponStatus } from './status_equipment.js';
-import { statusVersion } from './status_version.js';
-import { statusTerrain } from './status_terrain.js';
-import { hitpointBar, hitpointBarFill } from './status_hitpoint_bar.js';
-import { firstStatusLineSpans } from './status_highlighting.js';
-import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { describeMapLocation } from './lookaround.js';
 import { glyphToCmapSymbol } from './getpos.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
-    COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
+    ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
@@ -46,17 +35,15 @@ import {
     EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY,
     is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
-    In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban,
+    Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
     MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum,
-    BL_WEAPON, BL_ARMOR, BL_TERRAIN,
 } from './const.js';
 import {
     NO_COLOR, ATR_INVERSE, CLR_BLACK,
     CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW,
     CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE,
     CLR_BRIGHT_MAGENTA,
-    DEC_TO_UNICODE,
 } from './terminal.js';
 import {
     LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE,
@@ -65,25 +52,20 @@ import {
 } from './object_data.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
-    MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
+    MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
     monsterTypeName,
 } from './monster_data.js';
 import { rn2, rn2Display } from './rng.js';
 import {
     BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE,
 } from './random_text_data.js';
-import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
-import { heroGoldAmount } from './hero_gold.js';
-import { nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation, Trap, Engraving } from './map_types.js';
-import type { GameDisplay } from './game_display.js';
-import { ATR_BLINK } from './terminal_attributes.js';
 
 export interface GlyphAppearance {
     ch: string;
@@ -162,7 +144,7 @@ const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 
-function shownSymbolSet(state: GameState = game) {
+export function shownSymbolSet(state: GameState = game) {
     const rogue = Is_rogue_level(state.u?.uz, state);
     return state.shownSymbols ?? {
         rogue, name: (rogue ? state.rogueSymset : state.symset) ?? null,
@@ -174,7 +156,7 @@ function usesDecSymbols(): boolean {
     return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
 }
 
-function activeObjectSymbols() {
+export function activeObjectSymbols() {
     const shown = shownSymbolSet();
     if (!shown.rogue) return OBJECT_CLASS_SYMBOLS;
     if (shown.name) {
@@ -442,30 +424,6 @@ export function objectColor(object: ObjectGlyphSource): number {
     return typeof metadataColor === 'number' && Number.isInteger(metadataColor)
         ? metadataColor : CLR_GRAY;
 }
-
-// ── ANSI color codes ──
-// Maps CLR_* constants (0-15) to ANSI SGR color codes.
-// C ref: wintty.c term_start_color
-const ANSI_DEFAULT = 39;
-const ANSI_COLOR = [
-    90,  // CLR_BLACK     0 → tty dark gray when wc2_darkgray is enabled
-    31,  // CLR_RED       1
-    32,  // CLR_GREEN     2
-    33,  // CLR_BROWN     3
-    34,  // CLR_BLUE      4
-    35,  // CLR_MAGENTA   5
-    36,  // CLR_CYAN      6
-    39,  // CLR_GRAY      7 → tty's ordinary foreground
-    39,  // NO_COLOR      8 → default
-    91,  // CLR_ORANGE    9
-    92,  // CLR_BRIGHT_GREEN  10
-    93,  // CLR_YELLOW    11
-    94,  // CLR_BRIGHT_BLUE   12
-    95,  // CLR_BRIGHT_MAGENTA 13
-    96,  // CLR_BRIGHT_CYAN   14
-    97,  // CLR_WHITE     15
-    90,  // remembered room/corridor while blind (tty dark gray)
-];
 
 // C display.c:newsym(): only remembered room and corridor terrain changes
 // when it leaves sight. Objects, traps, and engravings retain their glyphs.
@@ -1212,7 +1170,7 @@ const IBM_COMMON_SYMBOLS: ReadonlyMap<number, string> = new Map([
     [CmapSymbol.explosionTopLeft + 3, '\xb3'], [CmapSymbol.explosionTopLeft + 5, '\xb3'],
 ]);
 
-const ROGUE_SYMSETS: Readonly<Record<string, RogueSymsetSymbols>> = {
+export const ROGUE_SYMSETS: Readonly<Record<string, RogueSymsetSymbols>> = {
     plain: { cmap: new Map([
         [CmapSymbol.tlcorn, '+'], [CmapSymbol.trcorn, '+'],
         [CmapSymbol.blcorn, '+'], [CmapSymbol.brcorn, '+'],
@@ -1446,7 +1404,7 @@ export function canSpotHeroSelf() {
     return canSeeSelf || sensesSelf;
 }
 
-function objectClassForType(otyp: number) {
+export function objectClassForType(otyp: number) {
     // objects.h slots 1..17 have matching classes; slot 0 is a strange object.
     const firstRealObject = OBJECT_BASES[2];
     if (firstRealObject !== undefined && otyp > 0 && otyp < firstRealObject)
@@ -2781,343 +2739,6 @@ export async function redrawMap() {
     await see_monsters();
 }
 
-// ── Serialize a map row with DEC line-drawing and ANSI colors ──
-function render_map_row(y: number) {
-    if (!game.level) return '';
-    let firstCol = -1, lastCol = -1;
-    for (let x = 1; x < COLNO; x++) {
-        const loc = game.level.at(x, y);
-        if (loc?.disp_ch && loc.disp_ch !== ' ') {
-            if (firstCol < 0) firstCol = x;
-            lastCol = x;
-        }
-    }
-    if (firstCol < 0) return '';
-
-    let output = '';
-    let activeColor = ANSI_DEFAULT;  // default
-    let activeDec = false;
-
-    // Leading gap
-    const gap = firstCol - 1;
-    if (gap > 4) output += `\x1b[${gap}C`;
-    else if (gap > 0) output += ' '.repeat(gap);
-
-    for (let x = firstCol; x <= lastCol; x++) {
-        const loc = game.level.at(x, y);
-        const ch = loc?.disp_ch ?? ' ';
-        const color = loc?.disp_color ?? NO_COLOR;
-        const dec = !!loc?.disp_decgfx;
-
-        if (ch === ' ') {
-            // Space runs
-            let run = 1;
-            while (x + run <= lastCol && (game.level.at(x + run, y)?.disp_ch ?? ' ') === ' ') run++;
-            if (activeDec) { output += '\x0f'; activeDec = false; }
-            if (run > 4) output += `\x1b[${run}C`;
-            else output += ' '.repeat(run);
-            x += run - 1;
-            continue;
-        }
-
-        let wantAnsi = ANSI_COLOR[color] ?? ANSI_DEFAULT;
-        if (wantAnsi !== activeColor) {
-            output += `\x1b[${wantAnsi}m`;
-            activeColor = wantAnsi;
-        }
-
-        // DEC mode switching
-        if (dec && !activeDec) { output += '\x0e'; activeDec = true; }
-        else if (!dec && activeDec) { output += '\x0f'; activeDec = false; }
-
-        output += ch;
-    }
-
-    // Reset state at end of row (C does per-row SO/SI)
-    if (activeColor !== ANSI_DEFAULT) output += `\x1b[${ANSI_DEFAULT}m`;
-    if (activeDec) output += '\x0f';
-
-    return output;
-}
-
-// ── Status lines ──
-export function _statusLine1() {
-    const u = game.u;
-    if (!u) return '';
-    const title = statusTitle(game);
-    const stats = `St:${formatStrength(currentAttribute(A_STR))} `
-        + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
-        + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
-        + `Ch:${currentAttribute(A_CHA)}`;
-    const align = u.ualign?.type === -1 ? 'Chaotic' : u.ualign?.type === 0 ? 'Neutral' : 'Lawful';
-    if (game.flags.hitpointbar) {
-        // wintty.c:4612 refreshes hpbar_crit_hp only when the HP field is
-        // updated, so the dashes follow the sticky state; without a display
-        // there is no sticky state yet.
-        const highlights = game.nhDisplay?.statusHighlights;
-        const critical = highlights
-            ? highlights.barCritical
-            : !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
-        return `${hitpointBar(title, critical)} ${stats} ${align}`;
-    }
-    // C uses cursor-forward for gap between title and stats
-    // C pads to align stats starting at a fixed column
-    const gap = Math.max(1, 31 - title.length);
-    if (gap > 4) return `${title}\x1b[${gap}C${stats} ${align}`;
-    return `${title}${' '.repeat(gap)}${stats} ${align}`;
-}
-
-// C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
-// 18/xx range; 118 is the traditional 18/** maximum.
-export function formatStrength(value: number | null | undefined) {
-    if (value == null) return '?';
-    if (value <= 18) return String(value);
-    if (value >= 119) return String(value - 100);
-    if (value === 118) return '18/**';
-    return `18/${String(value - 18).padStart(2, '0')}`;
-}
-
-export function _statusLine2() {
-    const fields = statusLine2Fields(nearCapacity(game));
-    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
-}
-
-// botl.c:check_gold_symbol(). This process flag changes at explicit
-// option and level-change boundaries; dorecover() leaves it alone.
-export function checkGoldSymbol(): void {
-    game.iflags.invis_goldsym = objectClassSymbol(objectClassForType(GOLD_PIECE)) <= ' ';
-}
-
-function statusLine2Fields(capacity: number): StatusLine2Fields | null {
-    const u = game.u;
-    if (!u) return null;
-    const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
-    const endgameLocation = endgameLevelName(u.uz)
-        .replace(/^Plane of /, '');
-    const location = Is_knox_level(u.uz) ? dungeonName ?? ''
-        : In_quest(u.uz) ? `Home ${u.uz?.dlevel ?? 1}`
-            : In_endgame(u.uz) ? endgameLocation
-            : `${game._tutorialActive ? 'Tutorial' : 'Dlvl'}:${dungeonDepth(u.uz)}`;
-    const polymorphed = Upolyd(u);
-    // botl.c bounds the printed numbers without changing combat state.
-    const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
-    const displayedHp = Math.max(0, Math.min(currentHp, 9999));
-    const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
-    const displayedPower = Math.min(u.uen ?? 0, 9999);
-    const maximumPower = Math.min(u.uenmax ?? 0, 9999);
-    const goldSymbol = activeObjectSymbols()[objectClassForType(GOLD_PIECE)] ?? '$';
-    const goldLabel = game.iflags.invis_goldsym ? '$' : goldSymbol;
-    const displayedAc = u.uac ?? 10;
-    const displayedGold = Math.max(0, Math.min(999999,
-        game._statusGoldOverride ?? heroGoldAmount(game)));
-    const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`
-        : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
-    const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
-    return {
-        location, gold: `${goldLabel}:${displayedGold}`,
-        health: { hitpoints: displayedHp, maximumHitpoints: maximumHp,
-            power: displayedPower, maximumPower, armorClass: displayedAc },
-        experience, moves: game.flags.time ? game.moves : null,
-        hunger: hungerLabel ?? '',
-        capacity,
-        conditions: statusConditions(game),
-        equipment: [
-            { field: BL_WEAPON, text: game.flags.weaponstatus ? weaponStatus(game) : '' },
-            { field: BL_ARMOR, text: game.flags.armorstatus ? armorStatus(game) : '' },
-            { field: BL_TERRAIN, text: game.flags.terrainstatus ? statusTerrain(game) : '' },
-        ].filter(entry => entry.text.length > 0),
-        version: game.flags.showvers ? statusVersion(game.flags.versinfo) : '',
-    };
-}
-
-// ── Serialize terminal grid for screen comparison ──
-export function serialize_terminal_grid(display: Pick<GameDisplay, 'rows' | 'cols' | 'grid'>) {
-    function characterAt(row: number, column: number): string {
-        const cell = display.grid[row]?.[column];
-        if (!cell) throw new RangeError(`Missing terminal cell (${column}, ${row})`);
-        return cell.ch;
-    }
-    let output = '';
-    let lastRow = 0;
-    for (let r = 0; r < display.rows; r++) {
-        for (let c = 0; c < display.cols; c++) {
-            if (characterAt(r, c) !== ' ') { lastRow = r; break; }
-        }
-    }
-    for (let r = 0; r <= lastRow; r++) {
-        let lastCol = -1;
-        for (let c = display.cols - 1; c >= 0; c--) {
-            if (characterAt(r, c) !== ' ') { lastCol = c; break; }
-        }
-        if (lastCol < 0) { if (r < lastRow) output += '\n'; continue; }
-        let firstCol = 0;
-        for (let c = 0; c <= lastCol; c++) {
-            if (characterAt(r, c) !== ' ') { firstCol = c; break; }
-        }
-        if (firstCol > 4) output += `\x1b[${firstCol}C`;
-        else if (firstCol > 0) output += ' '.repeat(firstCol);
-        for (let c = firstCol; c <= lastCol; c++) output += characterAt(r, c);
-        if (r < lastRow) output += '\n';
-    }
-    return output;
-}
-
-function displayedStatusLines(): readonly [string, string] {
-    const display = game.nhDisplay;
-    if (display?.statusVisible && !game._statusUpdatesDisabled)
-        return display.statusLines ?? ['', ''];
-    const row = (index: number) => game.nhDisplay?.grid[index]
-        ?.map(cell => cell.ch).join('').trimEnd() ?? '';
-    return [row(22), row(23)];
-}
-
-export function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {
-    for (const [index, text] of lines.entries()) {
-        const row = 22 + index;
-        const plain = text.replace(/\x1b\[(\d+)C/g,
-            (_match, count) => ' '.repeat(Number(count)));
-        display.clearRow(row);
-        let column = 0, attr = 0;
-        for (const part of plain.split(/(\x1b\[[0-9;]+m)/)) {
-            if (part.startsWith('\x1b[')) {
-                if (part === '\x1b[7m') attr |= ATR_INVERSE;
-                else if (part === '\x1b[5m') attr |= ATR_BLINK;
-                else if (part === '\x1b[0m') attr = 0;
-                continue;
-            }
-            const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
-            display.putstr(column, row, visible, NO_COLOR, attr);
-            column += visible.length;
-        }
-        if (display.statusVisible) {
-            for (const span of display.statusHighlights.spans[index] ?? []) {
-                if (span.hitpointBar) {
-                    // wintty.c:5231-5253: the lit cells take the title
-                    // cell's colour and attribute; the unlit tail keeps only
-                    // the blink bit, and an empty bar (0 HP) keeps none.
-                    const bar = display.statusHighlights.barSpanStyle();
-                    const fill = span.fill ?? 0;
-                    const blink = fill > 0 && bar.attr & ATR_BLINK ? ATR_BLINK : 0;
-                    for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
-                        const cell = display.grid[row]?.[col];
-                        if (!cell) continue;
-                        const lit = col < span.start + fill;
-                        display.setCell(col, row, cell.ch,
-                            lit ? bar.color : NO_COLOR, lit ? bar.attr : blink);
-                    }
-                    continue;
-                }
-                const style = display.statusHighlights.style(span);
-                for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
-                    const cell = display.grid[row]?.[col];
-                    if (!cell) continue;
-                    display.setCell(col, row, cell.ch, style.color, style.attr);
-                }
-            }
-        }
-    }
-}
-
-// ── Build screen output ──
-export function _buildScreenOutput() {
-    const display = game?.nhDisplay;
-    if (!display) return;
-
-    let output = '';
-    const blankMainWindow = !!game._suppressMapStatusForFlush;
-    // Row 0: message
-    const preserveMessageRow = display.preserveEmptyMessageRow
-        && !game._pending_message && !game._retained_message && !game._promptOwnsTopline;
-    const visibleMessage = game._pending_message
-        || game._retained_message
-        || (preserveMessageRow ? display.grid[0]?.map(cell => cell.ch).join('').trimEnd() : '')
-        || '';
-    // A corner window's docorner() erased the physical top line past its
-    // left edge; the full-screen repaint must not restore it while the
-    // clipped message still owns the row. Every topline writer resets the
-    // clip when it repaints; the preserve cache holds the row otherwise.
-    const messageText = preserveMessageRow || display.toplineClipColumn === null
-        ? visibleMessage : clipToplineToColumn(visibleMessage, display.toplineClipColumn);
-    if (game.program_state?.saving) {
-        if (!preserveMessageRow) {
-            display.clearRow(0);
-            display.putstr(0, 0, messageText.slice(0, display.cols), NO_COLOR);
-        }
-        return;
-    }
-    output += messageText + '\n';
-
-    // Rows 1-21: map (rendered with DEC + ANSI, per-row SO/SI)
-    for (let y = 0; y < ROWNO; y++) {
-        output += (blankMainWindow ? '' : render_map_row(y)) + '\n';
-    }
-
-    // Row 22-23: status
-    const status = displayedStatusLines();
-    output += (blankMainWindow ? '' : status[0]) + '\n';
-    output += blankMainWindow ? '' : status[1];
-
-    game._screen_output = output;
-
-    // Also write to grid for serialize_terminal_grid
-    if (display.grid) {
-        if (preserveMessageRow) {
-            for (let row = 1; row < display.rows; row++) display.repaintRow(row);
-        } else {
-            display.repaintScreen();
-            // tty_putmixed() folds DEC markers before update_topl() paints.
-            // Only the graphics kludge paints the leading glyph cell.
-            const msg = messageText;
-            if (msg.includes('\x0e')) {
-                const cells = decodeMixedTopline(msg);
-                for (const [c, cell] of cells.entries()) {
-                    if (c >= display.cols) break;
-                    display.setCell(
-                        c, 0,
-                        cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch,
-                        NO_COLOR, 0,
-                    );
-                }
-            } else {
-                for (let c = 0; c < Math.min(msg.length, display.cols); c++)
-                    display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
-            }
-        }
-        if (!blankMainWindow) {
-            // Map — write characters to grid (DEC → Unicode for browser display)
-            for (let y = 0; y < ROWNO; y++) writeMapRow(display, y);
-            // Status lines
-            writeStatusLines(display, status);
-            const cursorOverride = game._cursorOverride;
-            if (Array.isArray(cursorOverride)) {
-                display.setCursor(cursorOverride[0], cursorOverride[1]);
-            } else if (game.u?.ux > 0) {
-                display.setCursor(game.u.ux - 1, game.u.uy + 1);
-            }
-        }
-    }
-}
-
-export function writeMapRow(display: GameDisplay, y: number): void {
-    for (let x = 1; x < COLNO; x++) {
-        const loc = game.level?.at(x, y);
-        if (!loc?.disp_ch) continue;
-        const color = loc.disp_color ?? NO_COLOR;
-        const attr = loc.disp_attr ?? 0;
-        const highlight = game._mapPositionHighlight;
-        const frameColor = highlight?.background && game.flags.color !== false
-            && highlight.isValidLocation(x, y) ? HI_ZAP : null;
-        // Plain blanks erase retained tty glyphs. Colored AIR spaces still
-        // use map painting so their foreground color survives.
-        if (loc.disp_ch === ' ' && frameColor === null && !(attr & 5)
-            && (color === NO_COLOR || color === CLR_GRAY)) {
-            display.setCell(x - 1, y + 1, ' ', color, attr);
-            continue;
-        }
-        writeMapCell(display, x, y, loc, frameColor);
-    }
-}
-
 // C display.c:row_refresh(). Repaint the current glyph buffer without
 // recomputing vision or choosing new hallucinated appearances.
 export function row_refresh(start: number, stop: number, y: number): void {
@@ -3133,16 +2754,6 @@ export function row_refresh(start: number, stop: number, y: number): void {
         writeMapCell(display, x, y, loc, frameColor);
         display.setCursor(x, y + 1);
     }
-}
-
-function writeMapCell(display: GameDisplay, x: number, y: number,
-    loc: MapLocation, frameColor: number | null,
-): void {
-    const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-    const name = shownSymbolSet().name?.toLowerCase() ?? '';
-    const byteGlyph = !loc.disp_decgfx && ROGUE_SYMSETS[name]?.ibm === true;
-    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR,
-        loc.disp_attr ?? 0, frameColor, byteGlyph);
 }
 
 // ── flush_screen ──
@@ -3170,10 +2781,6 @@ export async function flush_screen(mode?: number) {
     if (mapCursor) display?.setCursor(...mapCursor);
 }
 
-export function clearMapDisplay() {
-    for (let row = 1; row <= ROWNO; row++) game.nhDisplay?.clearRow(row);
-}
-
 // ── cls ──
 export async function cls() {
     await flushPendingTopline();
@@ -3198,99 +2805,4 @@ export async function cls() {
         }
     }
     game.context.botl = true;
-}
-
-// ── bot ──
-export async function bot() {
-    refreshStatusLines();
-}
-
-// C botl.c:status_initialize(REASSESS_ONLY) resends every enabled field,
-// replacing tty's shortened level label and empty capacity separator.
-export function reassessStatusFields(state: GameState = game): void {
-    const display = state.nhDisplay;
-    if (display) {
-        display.statusLine2Fields = null;
-        display.statusCapacityBlank = false;
-        display.statusLevelPrefixChanged = false;
-        display.statusHighlights.reset();
-    }
-    state.context.botl = true;
-}
-
-export function refreshStatusLines(): void {
-    const display = game.nhDisplay;
-    if (!display || game._statusUpdatesDisabled || game.program_state.saving
-        || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
-    // Native bot() needs youmonst.data, installed with the hero's species.
-    if (game.u.uhp === -1 || game.u.umonnum === undefined) {
-        game.context.botl = false;
-        game.context.time_botl = false;
-        return;
-    }
-    const capacity = nearCapacity(game);
-    // botl.c notifies BL_CAP when its value changes; tty_status_update()
-    // then clears any blank left by earlier encumbrance shortening.
-    const capacityBlank = display.statusLine2Fields?.capacity === capacity
-        && display.statusCapacityBlank;
-    const fields = statusLine2Fields(capacity);
-    const levelPrefixChanged = display.statusLine2Fields?.location === fields?.location
-        && display.statusLevelPrefixChanged;
-    display.statusLine2Fields = fields;
-    const layout = display.statusLine2Fields
-        ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
-    display.statusCapacityBlank = layout?.capacityBlank ?? false;
-    display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
-    // The tty stores the hitpoint bar style while processing status updates
-    // (wintty.c tty_status_update), so the title line is built afterwards.
-    if (fields) display.statusHighlights.update(game, fields,
-        objectClassSymbol(objectClassForType(GOLD_PIECE)));
-    const firstLine = _statusLine1();
-    const barFill = game.flags.hitpointbar
-        ? hitpointBarFill(Upolyd(game.u) ? game.u.mh ?? 0 : game.u.uhp ?? 0,
-            Upolyd(game.u) ? game.u.mhmax ?? 0 : game.u.uhpmax ?? 0)
-        : 0;
-    display.statusHighlights.spans = [firstStatusLineSpans(firstLine, !!game.flags.hitpointbar, barFill),
-        layout?.spans ?? []];
-    display.statusLines = [firstLine, layout?.text ?? ''];
-    display.statusVisible = true;
-    writeStatusLines(display, display.statusLines);
-    game.context.botl = false;
-    game.context.time_botl = false;
-}
-
-// C allmain.c once-per-input bot()/timebot(): the status window updates
-// while map changes stay in the glyph buffer until the next flush_screen().
-export function updateStatusLines(): void {
-    if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
-    else if (game.context.time_botl) timebot();
-}
-
-// C calls this once per time-taking hero action, before the next bot().
-// Zero-time menus and message flushes must not extend temporary highlights.
-export function statusEvalNextUnhilite(): void {
-    if (game.iflags.hiliteDelta && game.nhDisplay?.statusHighlights.evaluateNextUnhilite(game))
-        game.context.botl = true;
-}
-
-// C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
-// values from the last bot(), even if game state changed during an occupation.
-export function timebot(): void {
-    if (game._statusUpdatesDisabled) return;
-    game.context.time_botl = false;
-    const display = game.nhDisplay;
-    if (!display?.statusLines || !display.statusLine2Fields || !game.flags.time
-        || game.program_state.saving || game.program_state.windows_exited
-        || game._suppressMapStatusForFlush) return;
-    const [first] = display.statusLines;
-    display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
-    const layout = renderStatusLine2(display.statusLine2Fields, display.cols,
-        display.statusCapacityBlank, display.statusLevelPrefixChanged);
-    display.statusCapacityBlank = layout.capacityBlank;
-    display.statusLevelPrefixChanged = layout.levelPrefixChanged;
-    display.statusHighlights.updateTime(game);
-    display.statusHighlights.spans = [display.statusHighlights.spans[0], layout.spans];
-    display.statusLines = [first, layout.text];
-    display.statusVisible = true;
-    writeStatusLines(display, display.statusLines);
 }

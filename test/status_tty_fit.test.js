@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot, timebot } from '../js/display.js';
+import { bot, timebot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { GameDisplay } from '../js/game_display.js';

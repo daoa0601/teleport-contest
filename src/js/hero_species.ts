@@ -2,7 +2,7 @@
 // C refs: polyself.c set_uasmon()/polysense(), mondata.c mon_hates_silver().
 
 import { Upolyd } from './const.js';
-import { reassessStatusFields } from './display.js';
+import { reassessStatusFields } from './botl.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

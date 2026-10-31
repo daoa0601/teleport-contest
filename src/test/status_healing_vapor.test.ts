@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NOT_HUNGRY, SATIATED } from '../js/const.js';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { POT_FULL_HEALING } from '../js/object_data.js';
 import { applySupportedPotionVapor } from '../js/potion_hit.js';

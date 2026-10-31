@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot, flush_screen, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/display.js';
+import { bot, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { clearStatusHilites, resetStatusHilites } from '../js/status_hilites.js';
 import { addExperience } from '../js/exper.js';

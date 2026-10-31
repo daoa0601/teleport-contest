@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { ENGRAVE, SICK_VOMITABLE } from '../js/const.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';

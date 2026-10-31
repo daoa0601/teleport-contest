@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { checkHeroAttackOverexertion } from '../js/hero_overexertion.js';
 import { BOULDER } from '../js/object_data.js';

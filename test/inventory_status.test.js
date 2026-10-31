@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { ddoinv } from '../js/invent.js';

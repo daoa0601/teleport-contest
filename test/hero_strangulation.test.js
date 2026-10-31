@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
-import { _statusLine2 } from '../js/display.js';
+import { _statusLine2 } from '../js/botl.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { _statusLine2 } from '../js/display.js';
+import { _statusLine2 } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';

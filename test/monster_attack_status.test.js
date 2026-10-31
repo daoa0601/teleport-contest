@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { BOULDER } from '../js/object_data.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';

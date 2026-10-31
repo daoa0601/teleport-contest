@@ -24,9 +24,10 @@ import {
     tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import {
-    bot, canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving,
+    canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving,
     map_trap, unmap_invisible,
 } from './display.js';
+import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, paranoidQuery, promptYesNoQuit } from './query.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';

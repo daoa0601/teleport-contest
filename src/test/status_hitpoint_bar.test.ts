@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { runSegment } from '../js/jsmain.js';
 import { ATR_INVERSE } from '../js/terminal.js';
 import { ATR_BLINK } from '../js/terminal_attributes.js';

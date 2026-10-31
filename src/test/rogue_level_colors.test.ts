@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { D_CLOSED, DOOR, STAIRS } from '../js/const.js';
-import { displaySelf, flush_screen, newsym, _statusLine2 } from '../js/display.js';
+import { _statusLine2 } from '../js/botl.js';
+import { displaySelf, flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
