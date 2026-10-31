@@ -5,9 +5,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM,
@@ -33,7 +35,8 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { freshGameplayRoom } from './support/playable-room.js';
+import { freshGameplayRoom, freshTurnRoom } from './support/playable-room.js';
+import { requireScreenRow } from './support/screen.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -445,6 +448,60 @@ void test('a hallucinating rider sees one steed identity per lava struggle', asy
         stuckName.charAt(0).toLowerCase() + stuckName.slice(1),
         'both lava messages reuse the single trapmove() steed name');
 });
+
+// C hack.c:trapmove() uses hliquid() for the escape message. A longer
+// hallucinated name makes tty update_topl() page the preceding message.
+for (const hallucinating of [false, true]) {
+    void test(`escaping lava ${hallucinating ? 'pages before a longer hallucinated description' : 'joins the short ordinary messages'}`, async () => {
+        const input = freshTurnRoom({
+            seed: 2n,
+            hero: {
+                fireResistance: true,
+                hallucinationTurns: hallucinating ? 20 : 0,
+                utrap: (4 << 8) + 1,
+                utraptype: TT_LAVA,
+            },
+        });
+        requireFixtureGame(game);
+        const { ux, uy } = game.u;
+        game.level.requireAt(ux, uy).typ = LAVAPOOL;
+        const start = game.moves;
+        let pages = 0;
+        input.display = {
+            async readKey() {
+                pages++;
+                assert.equal(pages, 1, 'the escape needs only the preceding message acknowledged');
+                assert.match(requireScreenRow(0).map(cell => cell.ch).join(''),
+                    /^You are stuck in the lava\.--More--\s*$/);
+                assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\bInLava\b/,
+                    'domove resets the trap and redraws status after the escape message');
+                assert.equal(game.moves, start, 'the next turn waits for acknowledgment');
+                assert.equal(game.u.umoved, false, 'trapmove has not finished the attempt');
+                return 32;
+            },
+        };
+        input.feed('l');
+
+        await moveloop_core();
+
+        assert.equal(pages, hallucinating ? 1 : 0);
+        await flush_screen(1);
+        const message = requireScreenRow(0).map(cell => cell.ch).join('');
+        assert.match(message, /You pull yourself to the edge of the /);
+        if (hallucinating) assert.doesNotMatch(message, /edge of the lava\./);
+        else assert.match(message, /^You are stuck in the lava\.  You pull yourself to the edge of the lava\./);
+        assert.equal(game.u.utrap, 0);
+        assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
+        assert.equal(game.u.umoved, true);
+        assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /\bInLava\b/);
+
+        input.feed('\x1b');
+        await moveloop_core();
+
+        assert.equal(game.moves, start + 1, 'the escape spends its turn after acknowledgment');
+        assert.equal(game.u.utrap, 0, 'the completed escape does not sink the stationary hero again');
+    });
+}
 
 async function hallucinatedLavaStuckName(stepIntoLava: boolean): Promise<string | null> {
     const level = await freshObjectRoom({
