@@ -6,7 +6,7 @@ import { currentMulti } from '../js/command_state.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginMonsterHeroAttack } from '../js/monmove.js';
+import { beginMonsterHeroAttack } from '../js/mhitu.js';
 import { OIL_LAMP, POT_HEALING } from '../js/object_data.js';
 import { artifactObject, addInventoryObject, untimedCorpse } from './support/game-objects.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

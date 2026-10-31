@@ -4,7 +4,8 @@ import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
-import { resolveDeferredMonsterBreath, runMonsterAction } from '../js/monmove.js';
+import { runMonsterAction } from '../js/monmove.js';
+import { resolveDeferredMonsterBreath } from '../js/mthrowu.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('invalid hero-directed breath reports the bad type without launching a ray', async () => {

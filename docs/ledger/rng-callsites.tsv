@@ -1343,11 +1343,11 @@ src/js/mkmaze.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""3""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
-src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
-src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
-src/js/monmove.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
-src/js/monmove.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
-src/js/monmove.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
+src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
+src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
+src/js/mthrowu.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
+src/js/mhitu.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
+src/js/mhitu.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
 src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved

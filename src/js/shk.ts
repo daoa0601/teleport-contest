@@ -77,7 +77,7 @@ import { dist2, pointsOnline } from './hacklib.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { resistConflict } from './mon.js';
-import { beginMonsterHeroAttack } from './monmove.js';
+import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './armor.js';
 import { monsterHandName } from './body_parts.js';
 import { diggingTimeToHole } from './hero_digging.js';

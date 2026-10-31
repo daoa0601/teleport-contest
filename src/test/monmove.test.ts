@@ -3,7 +3,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { takeMonsterTurn, resolveDeferredMonsterBreath, runMonsterAction } from '../js/monmove.js';
+import { takeMonsterTurn, runMonsterAction } from '../js/monmove.js';
+import { resolveDeferredMonsterBreath } from '../js/mthrowu.js';
 import { allocateMonsterMovement, mfndpos } from '../js/mon.js';
 import { mcalcmove, naturalMonsterSpeed } from '../js/monster_speed.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';

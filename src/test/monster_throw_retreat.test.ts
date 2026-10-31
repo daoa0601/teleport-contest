@@ -4,7 +4,7 @@ import test from 'node:test';
 import { MM_ANGRY, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { beginMonsterHeroAttack } from '../js/monmove.js';
+import { beginMonsterHeroAttack } from '../js/mhitu.js';
 import { CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

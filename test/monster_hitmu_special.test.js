@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { beginMonsterHeroAttack } from '../js/monmove.js';
+import { beginMonsterHeroAttack } from '../js/mhitu.js';
 import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
 import { AD_CURS, AT_CLAW } from '../js/monster_attack_types.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from '../js/properties.js';

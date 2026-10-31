@@ -195,6 +195,10 @@ import {
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroReveal,
+    beginMonsterHeroAttack,
+} from './mhitu.js';
+import { resolveDeferredMonsterBreath } from './mthrowu.js';
+import {
     resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport,
     resumeDeferredSpecialAttack,
@@ -202,9 +206,8 @@ import {
     completeMonsterOffensiveAction,
     resumeDeferredPetAttack,
     resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance,
-    resolveDeferredMonsterBreath,
     heroEveryturnEffect, runMonsterEveryturnEffects,
-    beginMonsterMove, beginMonsterHeroAttack, beginMonsterDochug, runMonsterAction,
+    beginMonsterMove, beginMonsterDochug, runMonsterAction,
 } from './monmove.js';
 import {
     allocateMonsterMovement,

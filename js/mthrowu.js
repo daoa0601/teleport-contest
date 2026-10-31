@@ -1,17 +1,26 @@
 // mthrowu.js — Hero-facing ranged attacks a monster launches from its own
 // square: the weapon throw or polearm poke of thrwmu() and the breath setup
-// of breamu(). The monster-target twins live in monster_throw.js and
-// monster_combat_breath.js; the deferred ray completion stays with the
-// attack-slot machinery in monmove.js.
+// and deferred ray completion of breamu()/breamm(). The monster-target twins
+// live in monster_throw.js and monster_combat_breath.js.
+import { AD_MAGM, AD_RBRE, AD_SLEE, AD_SPC2, } from './monster_attack_types.js';
 import { BOLT_LIM, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_REFL } from './const.js';
 import { dist2, distmin } from './hacklib.js';
-import { AD_RBRE } from './monster_attack_types.js';
 import { requirePerceivedHero, seenResistanceForDamage } from './monster_perception.js';
 import { monsterLinedUpWithPerceivedHero } from './monster_ranged_alignment.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './monster_throw.js';
 import { selectMonsterRangedWeapon } from './monster_weapon.js';
 import { recordRandom } from './monster_action_types.js';
+import { d, rn2, rnd } from './rng.js';
+import { impossible } from './diagnostics.js';
+import { plineWithContinuation } from './pline.js';
+import { canSeeMonster } from './display.js';
+import { heroIsHallucinating } from './senses.js';
+import { displayRayName } from './ray_name.js';
+import { breathWeaponName } from './breath_ray.js';
+import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { castNativeRay } from './ray_attack.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { couldsee } from './vision.js';
 function isFiniteNumber(value) {
@@ -110,5 +119,56 @@ export function maybeBreatheAtHero(monster, attack, state, random, calls) {
         dx: Math.sign(targetX - monster.mx),
         dy: Math.sign(targetY - monster.my),
     };
+}
+// Finish breamm() in the same actor transaction across ray message input.
+export async function resolveDeferredMonsterBreath(action, breath, state, emitMessage, random = rn2, rollDice = d, rollOne = rnd) {
+    if (!breath?.launched || !breath.deferredRay)
+        return breath || null;
+    if (breath.damageType < AD_MAGM || breath.damageType > AD_SPC2) {
+        await impossible(`Breath weapon ${breath.damageType - 1} used`, { state });
+        breath.deferredRay = false;
+        breath.finished = true;
+        return breath;
+    }
+    const monster = action.monster;
+    const publish = emitMessage || plineWithContinuation;
+    if (canSeeMonster(monster)) {
+        const weapon = heroIsHallucinating(state)
+            ? displayRayName(breath.damageType, 'breath', { state, random }).replace(/^blast of /, '')
+            : breathWeaponName(breath.damageType);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} breathes ${weapon}!`);
+    }
+    const direction = [
+        ['y', 'k', 'u'],
+        ['h', null, 'l'],
+        ['b', 'j', 'n'],
+    ][breath.dy + 1]?.[breath.dx + 1];
+    if (!direction)
+        throw new Error('A launched breath needs a nonzero unit direction');
+    const result = await castNativeRay(-(20 + breath.damageType - 1), breath.dice, direction, {
+        state,
+        sourceMonster: monster,
+        originX: monster.mx,
+        originY: monster.my,
+        publish,
+        random,
+        rollDice,
+        rollOne,
+        sayHit: true,
+        sayMiss: true,
+    });
+    breath.heroDied = result.heroDied;
+    if (result.heroDied)
+        return breath;
+    endVoluntaryMultiTurn(state);
+    if (!random(3))
+        monster.mspec_used = 8 + random(18);
+    if (breath.damageType === AD_SLEE && !state.u.sleepResistance)
+        monster.mspec_used = (monster.mspec_used || 0) + rollOne(20);
+    if (monster.mtame && !monster.isminion && monster.edog && monster.edog.hungrytime >= 10)
+        monster.edog.hungrytime -= 10;
+    breath.deferredRay = false;
+    breath.finished = true;
+    return breath;
 }
 //# sourceMappingURL=mthrowu.js.map
