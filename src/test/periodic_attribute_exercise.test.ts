@@ -8,8 +8,9 @@ import { A_DEX, A_STR, A_WIS } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { makeStunned } from '../js/hero_mental_status.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { OBJECT_NAMES, SPE_FIREBALL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
+import { studyBook } from '../js/spellbook_study.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -119,4 +120,39 @@ void test('permanent clairvoyance exercises Wisdom without a timeout', async () 
 
     assert.ok(game.u._exercise);
     assert.ok(game.u._exercise[A_WIS] > 0);
+});
+
+void test('the scheduled attribute check settles during a spellbook study occupation', async () => {
+    freshExerciseTurns();
+    requirePlayingGame(game);
+    game.u.acurr.a[A_WIS] = game.u.amax.a[A_WIS] = 10;
+    // C spell.c:study_book() installs learn() with multi 0; C
+    // attrib.c:exerchk() gates its test only on moves >= next_attrib_check
+    // && !multi, so the periodic check is not deferred while studying.
+    const source = await addInventoryObject(SPE_FIREBALL, { initialize: false, blessed: true });
+    await studyBook(source);
+    assert.equal(game._occupation?.key, 'study-book');
+    assert.ok(game.u._exercise);
+    assert.equal(game.multi ?? 0, 0);
+    game.u._exercise[A_WIS] = 50;
+    game._nextAttribCheck = game.moves;
+
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const display = requireGameDisplay();
+        const text = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (text.includes('--More--')) input.feed(' ');
+    };
+    // The second scheduler call advances the studying hero's world turn,
+    // which runs exerchk() before the occupation's own learn() tick.
+    for (let call = 0; call < 3; call++) await moveloop_core();
+
+    assert.equal(game.u.acurr.a[A_WIS], 11);
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.match(said, /You must have been very observant\./);
+    assert.ok(game._nextAttribCheck !== undefined && game._nextAttribCheck > game.moves);
+    // The check settled mid-study: the book is still being read and the
+    // spell has not been learned yet.
+    assert.equal(game._occupation?.key, 'study-book');
+    assert.equal((game.spells || []).length, 0);
 });
