@@ -1,19 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MM_NOMSG } from '../js/const.js';
+import { MM_ANGRY, MM_NOMSG } from '../js/const.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DART, ORCISH_ARROW } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
-// C makemon.c:makemon() S_UNICORN switch: a unicorn sharing the sign of the
-// hero's alignment is born peaceful even when the co-aligned attitude rolls
-// peace_minded() consumed would have made it hostile, while an opposite-sign
-// unicorn keeps peace_minded()'s hostile verdict.
-void test('a co-aligned unicorn is born peaceful across differing attitude rolls', async () => {
+// C makemon.c:makemon() sets mpeaceful from MM_ANGRY before the species
+// switch, and the S_UNICORN arm then runs unconditionally: an explicitly
+// summoned-hostile unicorn sharing the hero's alignment sign is still born
+// peaceful, while the opposite-sign unicorn keeps MM_ANGRY's hostility.
+// MM_ANGRY also skips peace_minded(), so no random attitude roll is involved.
+void test('a co-aligned unicorn is born peaceful despite MM_ANGRY', async () => {
     for (const seed of [1n, 2n, 3n]) {
         await freshObjectRoom({ gameplaySeed: seed }); // neutral hero
-        const gray = await makemonAt(MONSTER_NAME.indexOf('gray unicorn'), 10, 8, MM_NOMSG);
-        const black = await makemonAt(MONSTER_NAME.indexOf('black unicorn'), 12, 8, MM_NOMSG);
+        const gray = await makemonAt(MONSTER_NAME.indexOf('gray unicorn'), 10, 8, MM_ANGRY | MM_NOMSG);
+        const black = await makemonAt(MONSTER_NAME.indexOf('black unicorn'), 12, 8, MM_ANGRY | MM_NOMSG);
         assert.ok(gray, 'a gray unicorn should be born');
         assert.ok(black, 'a black unicorn should be born');
         assert.equal(gray.mpeaceful, 1);
@@ -21,11 +22,10 @@ void test('a co-aligned unicorn is born peaceful across differing attitude rolls
     }
 });
 // C makemon.c:m_initweap() S_KOBOLD hands some kobolds a dart stack through
-// m_initthrow(DART, 12): each stack holds rn1(12,3) darts, and ordinary darts
-// are never created poisoned. The rule is checked on every stack the seed
-// sweep produces, so a wider or narrower roll breaks it without relying on
-// one particular seed's outcome.
-void test('kobold dart stacks are unpoisoned stacks of three to fourteen', async () => {
+// m_initthrow(DART, 12): every stack holds rn1(12,3) darts. The stacks'
+// poison state is mksobj's ordinary weapon rule (mkobj.c:886 rolls
+// is_poisonable && !rn2(100)), not a kobold rule, so it is not asserted here.
+void test('kobold dart stacks are stacks of three to fourteen', async () => {
     let dartStacks = 0;
     for (const seed of [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n]) {
         await freshObjectRoom({ gameplaySeed: seed });
@@ -36,13 +36,13 @@ void test('kobold dart stacks are unpoisoned stacks of three to fourteen', async
                 continue;
             dartStacks++;
             assert.ok(stack.quan >= 3 && stack.quan <= 14, `dart stack of ${stack.quan} outside rn1(12,3) (seed ${seed})`);
-            assert.notEqual(stack.opoisoned, true, `dart stack must not be poisoned (seed ${seed})`);
         }
     }
     assert.ok(dartStacks > 0, 'the seed sweep should produce at least one dart stack');
 });
-// C makemon.c:m_initthrow(): every orcish arrow stack a monster is created
-// with is poisoned, unlike the other throwing stacks.
+// C makemon.c:m_initthrow(): every orcish arrow stack is force-poisoned
+// after mksobj, on top of the ordinary weapon rule, so the flag is always
+// set regardless of mksobj's own 1-in-100 roll.
 void test('uruk-hai orcish arrow stacks are always created poisoned', async () => {
     let arrowStacks = 0;
     for (const seed of [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n]) {
