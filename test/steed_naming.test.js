@@ -27,10 +27,7 @@ void test('a sleeping-gas trap names an unnamed steed through Monnam', async () 
     assert.equal(game.u.usteed.mcanmove, 0);
     assert.match(game._pending_message ?? '', /The saddled pony suddenly falls asleep!/, `expected the Monnam(steed) message, got: ${game._pending_message}`);
 });
-// C trap.c:1508-1509 prints "A bear trap closes on s_suffix(mon_nam(u.usteed))
-// rear hoof!". These pin the C output for a plain and an s-final steed name;
-// the site is behavior-preserving (the removed inline possessive matched
-// s_suffix exactly), so they also pass on the base branch by design.
+// C trap.c:trapeffect_bear_trap() uses s_suffix(mon_nam(u.usteed)).
 void test('a bear trap closes on a named steed possessive', async () => {
     await runBearTrapForNamedSteed('Rex', "A bear trap closes on Rex's rear hoof!");
 });
