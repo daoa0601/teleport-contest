@@ -345,12 +345,11 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
 }
 
 function exerciseCheckIsDeferred(state: GameState): boolean {
-    if ((state.multi ?? 0) !== 0 || state._runState
-        || (state._helplessTurns ?? 0) > 0)
-        return true;
-    // Study uses positive multi; eating and lock picking use occupation with
-    // multi zero and therefore still allow C's exercise check.
-    return state._occupation?.key === 'study-book';
+    // C attrib.c:exerchk() runs its test whenever `moves >=
+    // next_attrib_check && !multi`.  An occupation installed with multi
+    // zero (spellbook study, eating, lock picking) does not defer it.
+    return (state.multi ?? 0) !== 0 || !!state._runState
+        || (state._helplessTurns ?? 0) > 0;
 }
 
 const EXERCISE_EXPLANATIONS: Partial<Record<AttributeIndex, readonly [string, string]>> = {
