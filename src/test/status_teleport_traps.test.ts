@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LEVEL_TELEP, MAGIC_PORTAL } from '../js/const.js';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';

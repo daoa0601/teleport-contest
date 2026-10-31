@@ -1,7 +1,8 @@
 // Message history and physical topline: C win/tty/topl.c.
 // Message-window entry points also follow win/tty/wintty.c.
 import { game } from './gstate.js';
-import { _buildScreenOutput, refreshStatusLines, writeMapRow } from './display.js';
+import { refreshStatusLines } from './botl.js';
+import { _buildScreenOutput, writeMapRow } from './wintty.js';
 import { plineWithContinuation, setTopline } from './pline.js';
 import { nhgetch } from './input.js';
 import { COLNO, ROWNO, MAX_MSG_HISTORY, PICK_NONE, PICK_ONE } from './const.js';

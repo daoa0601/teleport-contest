@@ -1,7 +1,8 @@
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bot, feel_location, flush_screen, glyphAt, newsym } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { feel_location, flush_screen, glyphAt, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { ATR_INVERSE, CLR_WHITE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

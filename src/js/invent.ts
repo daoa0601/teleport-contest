@@ -8,7 +8,8 @@ import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription } from './object_description.js';
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
-import { bot, consumeHallucinatedMenuObjectGlyph, docrt, flush_screen, formatStrength } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, docrt, flush_screen } from './display.js';
+import { bot, formatStrength } from './botl.js';
 import { clearMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu } from './tty_topline.js';
 import { pline, plineWithContinuation, setTopline } from './pline.js';
 import {

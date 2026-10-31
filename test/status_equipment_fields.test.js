@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { CLOAK_OF_PROTECTION, GAUNTLETS_OF_POWER, TWO_HANDED_SWORD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

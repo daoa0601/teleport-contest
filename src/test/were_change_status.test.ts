@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT, NOT_HUNGRY, ROOM } from '../js/const.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

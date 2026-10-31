@@ -4,7 +4,7 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { initRng } from '../js/rng.js';
 import { throneSitEffect } from '../js/throne.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';

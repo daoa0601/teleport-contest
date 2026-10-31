@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { fallWithIronBall } from '../js/ball.js';
 import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY } from '../js/const.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
 import { enchantWeapon } from '../js/enchant_weapon.js';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

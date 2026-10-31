@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HUNGRY } from '../js/const.js';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
 import { freshObjectRoom } from './support/object-room.js';

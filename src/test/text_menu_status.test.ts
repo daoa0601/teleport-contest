@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { resetInputState } from '../js/input.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { luaText } from '../js/lua/messages.js';

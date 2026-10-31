@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, TT_LAVA } from '../js/const.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { applyNethackrc } from '../js/options.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

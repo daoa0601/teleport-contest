@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP, EXPL_FIERY, FOUNTAIN, HWALL, STAIRS, TLCORNER, VIBRATING_SQUARE } from '../js/const.js';
-import { _statusLine2, displaySelf, flush_screen, newsym, show_glyph_cell, swallowed, zapdir_to_glyph } from '../js/display.js';
+import { _statusLine2 } from '../js/botl.js';
+import { displaySelf, flush_screen, newsym, show_glyph_cell, swallowed, zapdir_to_glyph } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, STATUE } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';

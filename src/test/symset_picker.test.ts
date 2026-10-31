@@ -3,7 +3,8 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { HWALL, LADDER, LA_UP, STAIRS } from '../js/const.js';
-import { bot, docrt, flush_screen, map_object, newsym } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { docrt, flush_screen, map_object, newsym } from '../js/display.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

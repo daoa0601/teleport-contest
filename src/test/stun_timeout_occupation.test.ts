@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/hero_mental_status.js';
 import { installPolymorphedHero } from './support/hero-state.js';

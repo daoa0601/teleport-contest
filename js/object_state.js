@@ -12,7 +12,7 @@ import { chargeAlteredUnpaidObject } from './shk.js';
 import { objectWeight } from './weight.js';
 import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
-import { bot } from './display.js';
+import { bot } from './botl.js';
 import { plineWithContinuation } from './pline.js';
 import { freeInventoryObject, updateCarriedLuck } from './hero_inventory.js';
 import { heroHandName } from './body_parts.js';

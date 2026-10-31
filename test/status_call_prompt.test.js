@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { makeConfused } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';

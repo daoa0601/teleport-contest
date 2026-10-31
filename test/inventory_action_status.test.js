@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, DAGGER, LEATHER_GLOVES, MAGIC_MARKER, POT_EXTRA_HEALING, POT_OIL, RIN_PROTECTION, RIN_REGENERATION, SCR_IDENTIFY, SCR_LIGHT, SPE_FORCE_BOLT, SPE_KNOCK, WAN_FIRE, WAN_MAGIC_MISSILE, } from '../js/object_data.js';

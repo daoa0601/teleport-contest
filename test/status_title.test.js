@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bot } from '../js/display.js';
+import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';

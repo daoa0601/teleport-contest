@@ -161,7 +161,7 @@ export function rollPhysicalWeaponDamageAgainstHero(object, state, options = {})
     return rollPhysicalWeaponDamage(object, { mnum: species }, { ...options, state, hero: true, hatesSilver: monsterSpeciesHatesSilver(species) });
 }
 // Strength values above 18 retain NetHack's internal encoding (19 == 18/01,
-// 93 == 18/75, 118 == 18/**), matching display.js:formatStrength().
+// 93 == 18/75, 118 == 18/**), matching botl.js:formatStrength().
 export function strengthDamageBonus(strength) {
     if (strength < 6)
         return -1;

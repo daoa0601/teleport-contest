@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NOT_HUNGRY, SATIATED } from '../js/const.js';
-import { bot, flush_screen } from '../js/display.js';
+import { bot } from '../js/botl.js';
+import { flush_screen } from '../js/display.js';
 import { doeat } from '../js/eat.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

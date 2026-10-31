@@ -27,8 +27,9 @@ import { countBindKeys, handlerRebindKeys } from './rebind_keys.js';
 import { CommandBindings } from './command_bindings.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
+import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import {
-    bot, checkGoldSymbol, currentBoulderSymbol, docrt, flush_screen, reassessStatusFields,
+    currentBoulderSymbol, docrt, flush_screen,
     reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet,
 } from './display.js';
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';

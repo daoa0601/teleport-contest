@@ -4,7 +4,8 @@ import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
 import { game } from './gstate.js';
 import { getMenuColoring } from './menu_coloring.js';
 import { nhgetch } from './input.js';
-import { bot, docrt, flush_screen, row_refresh } from './display.js';
+import { bot } from './botl.js';
+import { docrt, flush_screen, row_refresh } from './display.js';
 import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { tty_getlin } from './query.js';
 import { NO_COLOR } from './terminal.js';

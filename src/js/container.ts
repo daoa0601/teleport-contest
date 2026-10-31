@@ -4,7 +4,8 @@ import type { ChoiceMenuEntry } from './windows.js';
 
 import { makePlural } from './object_grammar.js';
 import { containerContents } from './container_contents.js';
-import { bot, consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
+import { bot } from './botl.js';
+import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { touchArtifactByHero } from './artifact_touch.js';
