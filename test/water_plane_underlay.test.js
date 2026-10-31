@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_FLOOR, DRAWBRIDGE_UP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { isSteadfast } from '../js/knockback.js';
+import { isSteadfast } from '../js/uhitm.js';
 import { descendFromLevitation } from '../js/levitation_commands.js';
 import { LOADSTONE } from '../js/object_data.js';
 import { refreshProperty } from '../js/properties.js';

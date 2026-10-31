@@ -6,7 +6,7 @@ import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { tryKnockback } from './knockback.js';
+import { tryKnockback } from './uhitm.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY,
     AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI,

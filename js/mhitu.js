@@ -33,7 +33,6 @@ import { currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
-import { tryKnockback } from './knockback.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPickups, presentMonsterPostMove, } from './monmove.js';
 import { attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, } from './mthrowu.js';
@@ -76,7 +75,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { mhitmAdCold, mhitmAdElec, mhitmAdFire } from './uhitm.js';
+import { mhitmAdCold, mhitmAdElec, mhitmAdFire, tryKnockback } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
 import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';

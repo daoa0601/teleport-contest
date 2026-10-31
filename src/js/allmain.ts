@@ -93,7 +93,7 @@ import { unlinkObject } from './object_location.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { RLOC_MSG, LOST_STOLEN } from './const.js';
 import { MMOVE_DIED, NORMAL_SPEED } from './const.js';
-import { tryKnockback } from './knockback.js';
+import { tryKnockback } from './uhitm.js';
 import { finishMonsterGrowth } from './monster_growth.js';
 import type { MonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';

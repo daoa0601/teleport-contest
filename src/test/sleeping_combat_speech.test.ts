@@ -5,7 +5,7 @@ import { A_STR, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroIsUnaware, putHeroToSleep } from '../js/hero_sleep.js';
 import { pushKeys } from '../js/input.js';
-import { tryKnockback } from '../js/knockback.js';
+import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { poisonHero } from '../js/poison.js';
 import { applyMonsterStoningAttack } from '../js/stoning.js';
