@@ -2,12 +2,12 @@
 # Read on both sides for the most-run C functions (RNG ledger call counts).
 rndmonst_adj	uncommon	inlined	rndmonstReservoir tests NOGEN/UNIQ, G_GONE, Inhell alignment and G_HELL (makemon.ts)
 mkclass_aligned	init_mongen_order	inlined	monsterGenerationOrder sorts by symbol, difficulty, index (makemon.ts)
-mkclass_aligned	mk_gen_ok	inlined	mvflags, genocide mask, placeholders and mail daemon tested in the class loop (mklev.ts)
+mkclass_aligned	mk_gen_ok	inlined	mvflags, genocide mask, placeholders and mail daemon tested in the class loop (makemon.ts)
 mkclass_aligned	sgn	inlined	Math.sign
 fill_ordinary_room	mksink	inlined	sink placement in fillOrdinaryRoom (mklev.ts)
 makemon	alloc	n/a	memory allocation
 makemon	dist2	inlined	distu computed in finishMonsterBirth (monster_birth.ts)
-makemon	quest_info	inlined	urole.ldrnum/neminum compared directly (mklev.ts)
+makemon	quest_info	inlined	urole.ldrnum/neminum compared directly (makemon.ts)
 makemon	sgn	inlined	Math.sign
 place_level	pick_level	inlined	impossible picks are removed from the candidate list (dungeon.ts)
 walkfrom	okay	inlined	carveMazeFrom tests the same up/right/down/left moves (maze_terrain.ts)
@@ -21,7 +21,7 @@ makerooms	reset_xystart_size	inlined	beginRoom and the des.map finally block res
 makelevel	init_dungeons	n/a	only on C's impossible() path
 makelevel	mklev_sanity_check	n/a	sanity_check/debug_fuzzer option only
 makelevel	themerooms_post_level_generate	inlined	post_level_generate and wallification (mklev.ts)
-set_mimic_sym	t_at	inlined	level.traps lookup (mklev.ts)
+set_mimic_sym	t_at	inlined	level.traps lookup (makemon.ts)
 init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mkobj.ts)
 getbones	compress_bonesfile	n/a	file I/O
 getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it

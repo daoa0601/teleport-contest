@@ -22,32 +22,45 @@ void test('a co-aligned unicorn is born peaceful across differing attitude rolls
     }
 });
 
-// C makemon.c:m_initweap() S_KOBOLD hands the kobold a dart stack through
-// m_initthrow(DART, 12): the stack size is rn1(12,3) and ordinary darts are
-// never created poisoned.
-void test('a kobold throws an unpoisoned dart stack of three to fourteen', async () => {
-    await freshObjectRoom({ gameplaySeed: 4n });
-    const kobold = await makemonAt(MONSTER_NAME.indexOf('kobold'), 13, 8, MM_NOMSG);
-    assert.ok(kobold, 'a kobold should be born');
-    const darts = (kobold.minvent ?? []).filter(object => object.otyp === DART);
-    assert.equal(darts.length, 1);
-    const stack = darts[0];
-    assert.ok(stack);
-    assert.equal(stack.quan, 7);
-    assert.equal(stack.quan >= 3 && stack.quan <= 14, true);
-    assert.equal(stack.opoisoned ?? false, false);
+// C makemon.c:m_initweap() S_KOBOLD hands some kobolds a dart stack through
+// m_initthrow(DART, 12): each stack holds rn1(12,3) darts, and ordinary darts
+// are never created poisoned. The rule is checked on every stack the seed
+// sweep produces, so a wider or narrower roll breaks it without relying on
+// one particular seed's outcome.
+void test('kobold dart stacks are unpoisoned stacks of three to fourteen', async () => {
+    let dartStacks = 0;
+    for (const seed of [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n]) {
+        await freshObjectRoom({ gameplaySeed: seed });
+        const kobold = await makemonAt(MONSTER_NAME.indexOf('kobold'), 13, 8, MM_NOMSG);
+        assert.ok(kobold, `a kobold should be born (seed ${seed})`);
+        for (const stack of kobold.minvent ?? []) {
+            if (stack.otyp !== DART) continue;
+            dartStacks++;
+            assert.ok(stack.quan >= 3 && stack.quan <= 14,
+                `dart stack of ${stack.quan} outside rn1(12,3) (seed ${seed})`);
+            assert.notEqual(stack.opoisoned, true,
+                `dart stack must not be poisoned (seed ${seed})`);
+        }
+    }
+    assert.ok(dartStacks > 0, 'the seed sweep should produce at least one dart stack');
 });
 
-// C makemon.c:m_initthrow(): orcish arrow stacks are always created poisoned.
-void test('an uruk-hai fires orcish arrows that are always created poisoned', async () => {
-    await freshObjectRoom({ gameplaySeed: 1n });
-    const uruk = await makemonAt(MONSTER_NAME.indexOf('Uruk-hai'), 14, 8, MM_NOMSG);
-    assert.ok(uruk, 'an uruk-hai should be born');
-    const arrows = (uruk.minvent ?? []).filter(object => object.otyp === ORCISH_ARROW);
-    assert.equal(arrows.length, 1);
-    const stack = arrows[0];
-    assert.ok(stack);
-    assert.equal(stack.quan, 6);
-    assert.equal(stack.quan >= 3 && stack.quan <= 14, true);
-    assert.equal(stack.opoisoned, true);
+// C makemon.c:m_initthrow(): every orcish arrow stack a monster is created
+// with is poisoned, unlike the other throwing stacks.
+void test('uruk-hai orcish arrow stacks are always created poisoned', async () => {
+    let arrowStacks = 0;
+    for (const seed of [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n]) {
+        await freshObjectRoom({ gameplaySeed: seed });
+        const uruk = await makemonAt(MONSTER_NAME.indexOf('Uruk-hai'), 14, 8, MM_NOMSG);
+        assert.ok(uruk, `an uruk-hai should be born (seed ${seed})`);
+        for (const stack of uruk.minvent ?? []) {
+            if (stack.otyp !== ORCISH_ARROW) continue;
+            arrowStacks++;
+            assert.ok(stack.quan >= 3 && stack.quan <= 14,
+                `arrow stack of ${stack.quan} outside rn1(12,3) (seed ${seed})`);
+            assert.equal(stack.opoisoned, true,
+                `orcish arrow stack must be poisoned (seed ${seed})`);
+        }
+    }
+    assert.ok(arrowStacks > 0, 'the seed sweep should produce at least one arrow stack');
 });
