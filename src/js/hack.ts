@@ -1528,6 +1528,10 @@ export async function isValidTravelTarget(targetX: number, targetY: number, g: G
     if (g.u.ux === targetX && g.u.uy === targetY) return true;
     if (glyphAt(targetX, targetY, g)?.glyph === cmapToGlyph(CmapSymbol.stone)
         && !g.level?.at(targetX, targetY)?.seenv) return false;
+    // C hack.c:1268-1269 creates gt.travelmap at findtravelpath() entry;
+    // the adjacent-target shortcut below may free it again (hack.c:1276
+    // end_running(FALSE)), leaving no selection for the rest of the call.
+    g._travelMap ??= new Set<number>();
     if (g.context.travel1 && travelDistance(g.u.ux, g.u.uy, targetX, targetY) === 1) {
         requirePlayingGame(g);
         if (await crawlDestinationAllowed(g, targetX, targetY, rn2, plineWithContinuation)) {
@@ -1549,10 +1553,11 @@ export async function isValidTravelTarget(targetX: number, targetY: number, g: G
 }
 
 // C hack.c findtravelpath() selection_setpoint(u.ux, u.uy, gt.travelmap, 1).
+// selvar.c:186-187: a freed (NULL) selection ignores the write, and the
+// map only comes back at the next findtravelpath() entry.
 function markTravelStep(x: number, y: number, g: GameState): void {
-    const map = g._travelMap ?? new Set<number>();
-    map.add(y * COLNO + x);
-    g._travelMap = map;
+    if (!g._travelMap) return;
+    g._travelMap.add(y * COLNO + x);
 }
 
 function travelDistance(x1: number, y1: number, x2: number, y2: number): number {
@@ -1568,6 +1573,10 @@ function travelDistanceSquared(x1: number, y1: number, x2: number, y2: number): 
 // C TRAVP_GUESS limits the forward search to couldsee() squares, then scans
 // x-major. Ties require both a shorter search radius and smaller dist2().
 async function findGuessedTravelDirection(targetX: number, targetY: number, g: GameState): Promise<TravelDirection | null> {
+    // C domove() runs findtravelpath(TRAVP_GUESS) as its own entry, which
+    // recreates the selection when the failed TRAVP_TRAVEL call left it
+    // freed (hack.c:1268-1269).
+    g._travelMap ??= new Set<number>();
     const originX = g.u.ux, originY = g.u.uy;
     const { distance } = await searchTravelPath(originX, originY, targetX, targetY, 'guess', g);
     let pickX = originX, pickY = originY;
@@ -1623,6 +1632,10 @@ async function selectTravelStep(state: TravelRunState): Promise<{ dx: number; dy
     requirePlayingGame(game);
     const { targetX, targetY } = state;
     const hero = game.u;
+    // C findtravelpath(TRAVP_TRAVEL) creates gt.travelmap at entry; the
+    // adjacent-target shortcut below may free it again (hack.c:1276), so
+    // later selection_setpoint() calls in this same invocation are no-ops.
+    game._travelMap ??= new Set<number>();
     if (game.context.travel1
         && travelDistance(hero.ux, hero.uy, targetX, targetY) === 1
         && await crawlDestinationAllowed(game, targetX, targetY, rn2, plineWithContinuation)) {
