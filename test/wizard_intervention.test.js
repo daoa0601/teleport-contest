@@ -72,4 +72,96 @@ void test('harassment acknowledges older prose before showing its nervousness or
     assert.ok(glows > 0, 'The turn samples must include visible curses');
     assert.ok(nervous > 0, 'The turn samples must include nervousness');
 });
+void test('a curse waits at its glow announcement before changing inventory or restarting the countdown', async () => {
+    let observedCurse = false;
+    for (let seed = 1; seed <= 16 && !observedCurse; seed++) {
+        await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+        requirePlayingGame(game);
+        game.level.flags.rndmongen = false;
+        const dagger = await addInventoryObject(DAGGER, { cursed: false, blessed: false });
+        game._moveloopStarted = true;
+        game.u.umovement = 12;
+        initRng(BigInt(seed));
+        const input = resetInputState();
+        input.feed('m.');
+        await moveloop_core();
+        await plineWithContinuation('You inspect the quiet stone archway at the entrance to the passage.');
+        const turn = moveloop_core();
+        let reachedCommand = false;
+        for (let page = 0; page < 80; page++) {
+            const boundary = await Promise.race([
+                turn.then(() => 'finished'),
+                input.waitUntilBlocked().then(() => 'input'),
+            ]);
+            assert.equal(boundary, 'input', 'The turn must wait for its pager or the next command');
+            const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (game._pending_message && screen.includes('--More--')) {
+                if (game._pending_message.includes('glow surrounding you.')) {
+                    assert.equal(dagger.cursed, false, 'The curse must wait for the glow acknowledgement');
+                    assert.equal(game.u.udg_cnt, 0, 'The countdown must restart after the intervention finishes');
+                    observedCurse = true;
+                }
+                input.feed(' ');
+            }
+            else {
+                input.feed(27);
+                reachedCommand = true;
+                break;
+            }
+        }
+        assert.ok(reachedCommand, 'Maintenance must return to command input within 80 pages');
+        await turn;
+        if (observedCurse) {
+            assert.equal(dagger.cursed, true, 'Acknowledging the glow lets the curse finish');
+            assert.ok(game.u.udg_cnt !== undefined && game.u.udg_cnt >= 50 && game.u.udg_cnt <= 249);
+        }
+    }
+    assert.ok(observedCurse, 'The turn samples must include a visible curse');
+});
+void test('demigod harassment summons awake hostile nasties with delayed special attacks', async () => {
+    let summoned = false;
+    for (let seed = 1; seed <= 16 && !summoned; seed++) {
+        await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+        requirePlayingGame(game);
+        game.level.flags.rndmongen = false;
+        const { text } = await interventionTurn(seed);
+        if (!game.level.monsters.length || game.level.monsters.some(monster => monster.iswiz))
+            continue;
+        const nasties = game.level.monsters.filter(monster => (monster.mspec_used ?? 0) > 0);
+        assert.ok(nasties.length > 0, 'At least one summoned nasty must delay its spell or breath');
+        for (const monster of nasties) {
+            assert.equal(monster.mpeaceful, 0);
+            assert.equal(monster.mtame, 0);
+            assert.equal(monster.msleeping, 0);
+            assert.ok(monster.mspec_used !== undefined && monster.mspec_used >= 1 && monster.mspec_used <= 4);
+        }
+        assert.match(text, /appear/);
+        assert.equal(game.u.uhp, 40, 'The new monsters must not attack before the next hero action');
+        assert.ok(game.u.udg_cnt !== undefined && game.u.udg_cnt >= 50 && game.u.udg_cnt <= 249);
+        summoned = true;
+    }
+    assert.ok(summoned, 'The turn samples must include summoning nasties');
+});
+void test('demigod harassment resurrects a hostile Wizard and finishes his threat before command input', async () => {
+    let resurrected = false;
+    for (let seed = 1; seed <= 16 && !resurrected; seed++) {
+        await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+        requirePlayingGame(game);
+        game.level.flags.rndmongen = false;
+        const { text } = await interventionTurn(seed);
+        const wizard = game.level.monsters.find(monster => monster.iswiz);
+        if (!wizard)
+            continue;
+        assert.equal(wizard.mrevived, 1);
+        assert.equal(wizard.mpeaceful, 0);
+        assert.equal(wizard.mtame, 0);
+        assert.equal(game.context.no_of_wizards, 1);
+        assert.match(text, /A voice booms out/);
+        assert.match(text, /So thou thought thou couldst kill me, fool/);
+        assert.equal(game.u.uhp, 40, 'The resurrected Wizard must not attack before the next hero action');
+        assert.ok(game.u.udg_cnt !== undefined && game.u.udg_cnt >= 50 && game.u.udg_cnt <= 249);
+        resurrected = true;
+    }
+    assert.ok(resurrected, 'The turn samples must include resurrection');
+});
 //# sourceMappingURL=wizard_intervention.test.js.map

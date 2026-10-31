@@ -395,8 +395,6 @@ export interface GameState {
     _prayerAlignment?: number;
     _prayerTrouble?: PrayerTrouble;
     _prayerOutcome?: PrayerOutcome;
-    _pendingDemigodIntervention?: { kind: 2 | 4 | 5; sourceTurn: number } | null;
-    _unresolvedDemigodIntervention?: number;
     _lastDemigodAggravation?: number[];
     _lastDemigodNasty?: number[];
     _questExpulsionPending?: { seal: boolean; portal?: boolean } | null;
