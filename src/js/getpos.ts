@@ -22,7 +22,8 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
-import { farlookLocationDescription, isValidTravelTarget } from './cmd.js';
+import { farlookLocationDescription } from './cmd.js';
+import { isValidTravelTarget } from './hack.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
     tty_select_menu, tty_start_menu,

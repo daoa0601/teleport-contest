@@ -18,7 +18,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { monsterSaddle } from './steed.js';
 import { couldsee } from './vision.js';
 import { blockingTerrain } from './monster_ranged_alignment.js';
-import { heroTestMove } from './cmd.js';
+import { heroTestMove } from './hack.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,

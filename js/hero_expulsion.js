@@ -13,7 +13,7 @@ import { MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly, monst
 import { AD_COLD, AD_ELEC, AD_STCK, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { docrt, newsym, plineWithContinuation, } from './display.js';
 import { placeBallAndChain } from './ball.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
 import { vision_reset } from './vision.js';
 // C monmove.c:release_hero(). A monster can end its own hold, but cannot

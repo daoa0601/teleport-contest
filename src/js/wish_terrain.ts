@@ -12,7 +12,7 @@ import {
     THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM,
     TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL,
 } from './const.js';
-import { applyHeroLiquidEffects } from './cmd.js';
+import { applyHeroLiquidEffects } from './hack.js';
 import { docrt, feel_newsym, plineWithContinuation } from './display.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { deleteEngravingAt } from './engrave.js';

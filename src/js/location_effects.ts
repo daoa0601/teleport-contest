@@ -7,7 +7,7 @@ import type { MessagePublisher } from './display.js';
 import type { HeroTrapOptions } from './hero_traps.js';
 import type { Trap, Position } from './map_types.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
-import { applyHeroLiquidEffects } from './cmd.js';
+import { applyHeroLiquidEffects } from './hack.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
 import { levitationIsPurelyTimed, propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';

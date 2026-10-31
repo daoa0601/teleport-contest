@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BEAR_TRAP, I_SPECIAL, LAVAPOOL, PIT, POOL, TIMEOUT, TT_BEARTRAP, TT_PIT, W_SADDLE, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroLocationEffects } from '../js/cmd.js';
+import { applyHeroLocationEffects } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NAMES, } from '../js/object_data.js';

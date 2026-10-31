@@ -4,7 +4,8 @@
 // or pline_xy()/set_msg_xy(), so the accessiblemsg option can prefix them.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack, continueRun } from '../js/cmd.js';
+import { rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
 import { moveloop_core } from '../js/allmain.js';
 import { SCORR, SDOOR, TT_LAVA, DOOR, D_CLOSED, PIT } from '../js/const.js';
 import { canSpotMonster, flush_screen } from '../js/display.js';

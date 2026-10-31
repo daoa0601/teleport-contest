@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { DUST, DOOR, ROOM } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';

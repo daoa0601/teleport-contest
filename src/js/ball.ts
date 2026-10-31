@@ -46,7 +46,7 @@ import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

@@ -71,7 +71,8 @@ import { monsterIsHelpless } from './monster_sleep.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason,
 } from './hack.js';
-import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
+import { heroCouldMoveOntoBoulder } from './boulder_push.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { commandResultCancelled } from './command_state.js';

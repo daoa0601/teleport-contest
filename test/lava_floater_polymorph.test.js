@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyHeroLocationEffects } from '../js/cmd.js';
+import { applyHeroLocationEffects } from '../js/hack.js';
 import { LAVAPOOL, TT_LAVA } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

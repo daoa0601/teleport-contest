@@ -38,9 +38,7 @@ import {
     MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, requireMonsterData,
 } from './monster_data.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
-import {
-    applyHeroLiquidEffects, applyHeroLocationEffects,
-} from './cmd.js';
+import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroCanSwim } from './hack.js';
 

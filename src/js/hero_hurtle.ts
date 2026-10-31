@@ -21,7 +21,7 @@ import {
     canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible,
     newsym, plineWithContinuation,
 } from './display.js';
-import { heroTestMove } from './cmd.js';
+import { heroTestMove } from './hack.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

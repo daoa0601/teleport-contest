@@ -64,7 +64,7 @@ import { hideHeroUnder } from './monster_hiding.js';
 import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { expelHero, releaseHeroGrip, } from './hero_expulsion.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { restartAmuletStrangulation, stopStrangulationInImmuneForm, } from './hero_strangulation.js';
 import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown, } from './slime.js';
 const M1_NOTAKE = 0x00000800;

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heroTestMove, rhack } from '../js/cmd.js';
+import { heroTestMove } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { IRONBARS, W_NONDIGGABLE } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

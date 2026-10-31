@@ -46,7 +46,7 @@ import { heroCanSwim } from './hack.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
 import { monsterName } from './monster_name.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
-import { applyHeroLiquidEffects, applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import {
     clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation,

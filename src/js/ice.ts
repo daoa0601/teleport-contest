@@ -5,7 +5,7 @@ import {
 } from './const.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { impossible } from './diagnostics.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
