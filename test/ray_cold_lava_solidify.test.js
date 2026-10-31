@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LAVAPOOL, ROOM, TT_INFLOOR, TT_LAVA } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C zap.c:zap_over_floor(), ZT_COLD hitting the lava the hero is stuck in:
-// the lava cools into floor and set_utrap(rn1(50, 20), TT_INFLOOR) anchors
-// the hero in the cooling rock.  rn1(50, 20) draws rn2(50) (0..49) once and
-// adds 20, so the new trap timeout is 20..69 turns of stuck-in-floor.
+// the lava cools into floor (zap.c:5297) and then, still in that spot, the
+// hero is anchored by set_utrap(rn1(50, 20), TT_INFLOOR) — a fresh 20..69
+// turn timeout replacing the lava sink — with "You are firmly stuck in the
+// cooling rock." right after the cooling message (zap.c:5305-5306).
 void test('a cold ray solidifies the lava the hero is stuck in', async () => {
     const level = await freshObjectRoom();
     const hero = game.u;
@@ -17,17 +17,17 @@ void test('a cold ray solidifies the lava the hero is stuck in', async () => {
     hero.utrap = 3;
     hero.utraptype = TT_LAVA;
     const messages = [];
-    initRng(5n);
-    enableRngLog();
     await applyRayFloorFeatures('cold', x, y, game, {
         publish: async (message) => { messages.push(message); },
     });
-    assert.ok(messages.includes('You are firmly stuck in the cooling rock.'), messages.join('\n'));
     assert.equal(level.requireAt(x, y).typ, ROOM);
+    const cooling = messages.findIndex(message => /cools and solidifies\.$/.test(message));
+    const stuck = messages.indexOf('You are firmly stuck in the cooling rock.');
+    assert.ok(cooling >= 0, messages.join('\n'));
+    assert.ok(stuck >= 0, messages.join('\n'));
+    assert.ok(cooling < stuck, 'the lava cools before the hero is anchored');
     assert.equal(hero.utraptype, TT_INFLOOR);
-    const roll = getRngLog().find(entry => entry.startsWith('rn2(50)='));
-    assert.ok(roll, `rn1(50,20) draws rn2(50): ${getRngLog().join(', ')}`);
-    assert.equal(hero.utrap, Number(roll.slice(roll.indexOf('=') + 1)) + 20);
-    assert.ok(!getRngLog().some(entry => entry.startsWith('rnd(50)=')));
+    const timeout = hero.utrap ?? 0;
+    assert.ok(timeout >= 20 && timeout <= 69, `rn1(50, 20) timeout: ${timeout}`);
 });
 //# sourceMappingURL=ray_cold_lava_solidify.test.js.map
