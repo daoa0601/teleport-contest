@@ -5,7 +5,7 @@ import { currentAttribute } from '../js/attrib.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
-import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -34,17 +34,13 @@ void test('bashing undead with wielded armor takes the undoubled strength penalt
     await setPrimaryWeapon(mail);
     assert.equal(currentAttribute(A_STR, game), 3);
     initRng(12n);
-    enableRngLog();
 
     await hitMonsterWithHeroObject(monster, mail, {
         mode: 'melee', dieRoll: 5, publish: async () => {},
     });
 
-    const dice = getRngLog()
-        .filter(entry => /^rnd\(4\)=/.test(entry))
-        .map(entry => Number(entry.slice('rnd(4)='.length)));
-    assert.equal(dice.length, 2);
-    const weightRoll = dice[0] ?? 0;
-    const blessedRoll = dice[1] ?? 0;
-    assert.equal(200 - monster.mhp, weightRoll + blessedRoll - 1);
+    // The seed rolls the 400-weight splint mail for 2 and the blessed bonus
+    // against undead for 4; Strength 3 adds dbon() == -1.  A doubled penalty
+    // (the old armor-counts-as-bimanual bug) would leave 196 hit points.
+    assert.equal(monster.mhp, 195);
 });
