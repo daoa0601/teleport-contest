@@ -152,6 +152,11 @@ async function categoryChoices(objects) {
     }
     const justPicked = objects.filter(object => object.pickup_prev);
     const onePicked = justPicked.length === 1 ? justPicked[0] : null;
+    if (onePicked) {
+        // pickup.c:query_category() names the single just-picked stack via
+        // doname(); xname() observes the object while the hero can see.
+        observeObjectForNaming(onePicked);
+    }
     if (justPicked.length)
         special.push({
             key: 'P', text: onePicked ? `Just picked up: ${await objectDescription(onePicked, inventoryPrimaryHandDetail(onePicked))}`

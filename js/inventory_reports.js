@@ -316,13 +316,19 @@ async function inventoryCategoryMenu(classes, unpaid, billed, statuses, picked, 
         return classes[0] ?? null;
     const entries = classes.map((oclass, index) => ({ key: String.fromCharCode(97 + index),
         groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: oclass, text: objectClassHeading(oclass) }));
+    // pickup.c:query_category() names the single just-picked stack via
+    // doname(); xname() observes the object while the hero can see.
+    let justPickedText = 'Items you just picked up';
+    if (picked.length === 1 && picked[0]) {
+        observeObjectForNaming(picked[0]);
+        justPickedText = `Just picked up: ${await inventoryItemDescription(picked[0])}`;
+    }
     const extras = [
         ...(unpaid ? [{ key: 'u', text: 'Unpaid items' }] : []),
         ...(billed ? [{ key: 'x', text: 'Unpaid items already used up' }] : []),
         ...BUC_CHOICES.filter(status => statuses.has(status)).map(key => ({ key,
             text: key === 'X' ? 'Items of unknown Bless/Curse status' : `Items known to be ${key === 'B' ? 'Blessed' : key === 'C' ? 'Cursed' : 'Uncursed'}` })),
-        ...(picked.length ? [{ key: 'P', text: picked.length === 1 && picked[0]
-                    ? `Just picked up: ${await inventoryItemDescription(picked[0])}` : 'Items you just picked up' }] : []),
+        ...(picked.length ? [{ key: 'P', text: justPickedText }] : []),
     ];
     const separator = { selectable: false, text: '' };
     const selected = await showMultiSelectWindow({ title: prompt, pickOne: true,
