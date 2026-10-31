@@ -206,7 +206,7 @@ import { ensureQuestStatus } from './quest.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
-    allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard,
+    allocateMonsterMovement,
     completeHeroAttackSlot, selectHeroItemForTheft,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
@@ -216,16 +216,10 @@ import {
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroReveal,
-    rollDeferredHeroSpellDamage,
-    resumeDeferredHeroSpell,
-    resolveDeferredHeroSummonMonsters,
-    resolveDeferredHeroHasteSelf,
-    resolveDeferredHeroAggravation,
     finishDeferredMonsterMiscItem,
-    finishDeferredHeroCloneWizard,
     resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport,
-    resumeDeferredMovementSpell, resumeDeferredSpecialAttack,
+    resumeDeferredSpecialAttack,
     resumeDeferredMonsterTrap,
     resumeDeferredMonsterHideUnder,
     completeMonsterOffensiveAction,
@@ -237,8 +231,19 @@ import {
     beginMonsterMove, beginMonsterHeroAttack, beginMonsterDochug, runMonsterAction,
     monstersInFmonOrder,
     monsterDistressEvents,
-    commitPetPickup,
 } from './monmove.js';
+import { commitPetPickup } from './dogmove.js';
+import {
+    applyHeroSpellDamage,
+    beginDeferredHeroCloneWizard,
+    finishDeferredHeroCloneWizard,
+    resolveDeferredHeroAggravation,
+    resolveDeferredHeroHasteSelf,
+    resolveDeferredHeroSummonMonsters,
+    resumeDeferredHeroSpell,
+    resumeDeferredMovementSpell,
+    rollDeferredHeroSpellDamage,
+} from './mcastu.js';
 import {
     finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath,
 } from './monster_death.js';

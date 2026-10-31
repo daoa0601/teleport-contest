@@ -1,17 +1,24 @@
 // C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { displayColorName } from './display.js';
+import { displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { Is_astralevel, MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
+import { Is_astralevel, MAGIC_PORTAL, M_AP_MONSTER, STRAT_WAITFORU, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
 import { aggravateMonsters } from './monster_anger.js';
 import { msummon } from './minion.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { rndcurse } from './throne.js';
+import { insideWizardTower } from './dungeon.js';
+import { monsterIsHelpless } from './monster_sleep.js';
+import { mksobj } from './mkobj.js';
+import { linkObjectToMonsterInventory } from './monster_inventory.js';
+import { recordRandom } from './monmove.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './monster_migration.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { FAKE_AMULET_OF_YENDOR } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { definiteObjectAction } from './objnam.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -161,5 +168,54 @@ export async function resurrectWizard() {
         }
     }
     return wizard;
+}
+// C wizard.c:has_aggravatables().  Only spell_would_be_useless() consults it
+// while checking the aggravation spell.
+export function monsterSpellHasAggravatables(caster, state) {
+    const inTower = insideWizardTower(caster.mx, caster.my, state);
+    if (inTower !== insideWizardTower(state.u.ux, state.u.uy, state))
+        return false;
+    return state.level.monsters.some((monster) => !monster.dead &&
+        (monster.mhp ?? 1) > 0 &&
+        insideWizardTower(monster.mx, monster.my, state) === inTower &&
+        ((monster.mstrategy ?? 0) & STRAT_WAITFORU ||
+            monsterIsHelpless(monster)));
+}
+// wizard.c's wizapp table.  A clone usually masquerades as one of these
+// species until it acts.
+const WIZARD_CLONE_APPEARANCE_NAMES = [
+    'human',
+    'water demon',
+    'vampire',
+    'red dragon',
+    'troll',
+    'umber hulk',
+    'xorn',
+    'xan',
+    'cockatrice',
+    'floating eye',
+    'guardian naga',
+    'trapper',
+];
+// C wizard.c:clonewiz().  makemon() for the clone happens in the mcastu
+// completion which owns the tty boundary; this finishes the cloned Wizard.
+export async function finishWizardClone(clone, state, random, calls) {
+    clone.msleeping = 0;
+    clone.mtame = 0;
+    clone.mpeaceful = 0;
+    if (!state.u?.uhave?.amulet && recordRandom(random, calls, 2) !== 0) {
+        const fake = await mksobj(FAKE_AMULET_OF_YENDOR, true, false);
+        // wizard.c:clonewiz() uses add_to_minv(), not mpickobj(): a newly
+        // minted fake Amulet links directly without carrying effects.
+        await linkObjectToMonsterInventory(clone, fake);
+    }
+    const protectedFromShapechangers = !!state.u?.protectionFromShapeChangers;
+    if (!protectedFromShapechangers) {
+        const appearanceIndex = recordRandom(random, calls, WIZARD_CLONE_APPEARANCE_NAMES.length);
+        clone.m_ap_type = M_AP_MONSTER;
+        clone.mappearance = MONSTER_NAME.indexOf(WIZARD_CLONE_APPEARANCE_NAMES[appearanceIndex] ?? '');
+    }
+    await newsym(clone.mx, clone.my);
+    return clone;
 }
 //# sourceMappingURL=wizard.js.map

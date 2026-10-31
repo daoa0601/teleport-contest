@@ -420,8 +420,9 @@ import {
 } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import {
-    finishImmediateMonsterTrap, performPetRangedAttack, triggerImmediateMonsterTrap,
+    finishImmediateMonsterTrap, triggerImmediateMonsterTrap,
 } from './monmove.js';
+import { performPetRangedAttack } from './dogmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import {
     abuseKickedPet, levitatingKickMisses,

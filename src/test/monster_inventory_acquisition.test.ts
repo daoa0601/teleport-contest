@@ -20,10 +20,10 @@ import { giveSpecialMonsterObject } from '../js/mklev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import {
-    commitPetPickup,
     finishDeferredMonsterMiscItem,
     takeMonsterTurn,
 } from '../js/monmove.js';
+import { commitPetPickup } from '../js/dogmove.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
 } from '../js/monster_inventory.js';

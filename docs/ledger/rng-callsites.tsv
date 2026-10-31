@@ -295,6 +295,7 @@ src/js/dog.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
 src/js/dog.ts	makePetWary	random	"[""2""]"	constant
 src/js/dog.ts	makePetWary	random	"[""monster.mtame + 1""]"	unproved
+src/js/dogmove.ts	performPetRangedAttack/rollOne	rollOne	"[""sides""]"	unproved
 src/js/dogmove.ts	selectPetRangedTarget	random	"[""5""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""2""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
@@ -934,6 +935,11 @@ src/js/makemon.ts	rndmonstReservoir	rn2	"[""totalWeight""]"	unproved
 src/js/makemon.ts	setMimicAppearance	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST + 1"", ""PM_ARCHAEOLOGIST""]"	constant
 src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
 src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
+src/js/mcastu.ts	resumeDeferredHeroSpell	d	"[""3"", ""6""]"	constant
+src/js/mcastu.ts	resumeDeferredHeroSpell	d	"[""dice"", ""4""]"	constant
+src/js/mcastu.ts	resumeDeferredHeroSpell	rollOne	"[""lossSides""]"	guarded
+src/js/mcastu.ts	resumeDeferredMovementSpell	rollDice	"[""3"", ""6""]"	constant
+src/js/mcastu.ts	rollDeferredHeroSpellDamage	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
 src/js/maze_terrain.ts	carveMazeFrom	rn2	"[""available.length""]"	guarded
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeXMax >> 1) - 1""]"	unproved
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
@@ -1338,18 +1344,12 @@ src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""3""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
-src/js/monmove.ts	performPetRangedAttack/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
 src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
 src/js/monmove.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
 src/js/monmove.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
-src/js/monmove.ts	resumeDeferredHeroSpell	d	"[""3"", ""6""]"	constant
-src/js/monmove.ts	resumeDeferredHeroSpell	d	"[""dice"", ""4""]"	constant
-src/js/monmove.ts	resumeDeferredHeroSpell	rollOne	"[""lossSides""]"	guarded
 src/js/monmove.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
-src/js/monmove.ts	resumeDeferredMovementSpell	rollDice	"[""3"", ""6""]"	constant
-src/js/monmove.ts	rollDeferredHeroSpellDamage	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	triggerMonsterTrap	rnl	"[""5""]"	constant

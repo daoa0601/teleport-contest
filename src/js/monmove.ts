@@ -38,15 +38,9 @@ import type {
     DochugContext,
     HeroAttack,
     HeroContactAttack,
-    HeroSpellAttack,
     HeroAttackSequence,
     HeroAttackSlot,
     HeroBreath,
-    PetMovePlan,
-    PetInventoryAction,
-    MonsterSpell,
-    MonsterSpellEffect,
-    MovementSpellCast,
     MonsterMiscItem,
     MonsterAttackInitiation,
     MonsterMoveResult,
@@ -70,26 +64,22 @@ import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { breathWeaponName } from './breath_ray.js';
 import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
-import { M_SEEN_MAGR, M_SEEN_REFL } from './const.js';
-import { monstersForgetHeroResistance, seenResistanceForDamage } from './monster_perception.js';
+import { M_SEEN_REFL } from './const.js';
+import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectDescription } from './object_description.js';
 import { ownedObjectAction, observeObjectForNaming } from './objnam.js';
 import { senseWithTelepathy } from './display.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
 import { monsterIsMindFlayer } from './monster_data.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, setMulti } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, setMulti } from './command_state.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
-import { performMonsterHeroAttack } from './allmain.js';
 import { selectMonsterOffensiveItem } from './monster_offensive_selection.js';
 import { useMonsterOffensiveItem } from './monster_offensive_item.js';
 import { searchMonsterItems } from './monster_item_search.js';
 import type { MonsterApproach } from './monster_item_search.js';
-import { monsterCouldReachItem } from './monster_item_reach.js';
-import { isLevelPrize } from './level_prize.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
 import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
@@ -98,7 +88,6 @@ import {
     monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor,
     monsterCorrodesBars,
 } from './monster_movement_traits.js';
-import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
@@ -113,17 +102,24 @@ import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_kno
 import { woundHeroLegs } from './hero_legs.js';
 import { isAccessibleAt } from './terrain_properties.js';
 import { insideWizardTower } from './dungeon.js';
-import { selectPetRangedTarget } from './dogmove.js';
-import { publishMonsterNoise } from './monster_sound.js';
+import {
+    movePet,
+    pullLeashedPetCloser,
+} from './dogmove.js';
+import {
+    chooseMonsterSpell,
+    heroCanSeeInvisible,
+    MCF_INDIRECT,
+    MONSTER_WIZARD_SPELLS,
+    monsterCurseKind,
+    monsterSpellUseless,
+    movementSpellSelections,
+} from './mcastu.js';
 import { monsterLinedUpWithHero } from './monster_ranged_alignment.js';
 import { resolveMonsterCombatBreath } from './monster_combat_breath.js';
 import { resolveMonsterCombatThrow } from './monster_combat_throw.js';
-import { petDroppableObject } from './dog.js';
 import { finishMonsterEating } from './monster_eating.js';
-import { applyPetHunger } from './pet_hunger.js';
-import { beginPetEating, finishPetEating } from './pet_eating.js';
-import { DOGFOOD, CADAVER, ACCFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
-import { releaseMonsterInventory } from './monster_drop.js';
+import { finishPetEating } from './pet_eating.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import {
     attemptMonsterRestrap, beginMonsterHideUnder, canMonsterHideUnderObjectAt,
@@ -148,7 +144,6 @@ import {
 } from './monster_weapon.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { summonMonsterAttackHelp } from './minion.js';
-import { releaseMonsterLeash } from './monster_leash.js';
 import {
     ammunitionMatchesLauncher,
     isPick,
@@ -159,11 +154,11 @@ import {
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { trapName } from './trap_name.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
-import { heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced } from './armor.js';
+import { heroHasDrainResistance, heroIsDisplaced } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { checkMonsterHeroRange } from './monster_flee.js';
@@ -172,11 +167,10 @@ import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import {
     monsterName as canonicalMonsterName,
     monsterPossessive,
-    monsterSpellDeathReason,
     possessiveName,
     shopkeeperName,
 } from './monster_name.js';
-import { heroEyeCount, heroEyeName, heroHasEyes, heroHeadName, monsterHandName } from './body_parts.js';
+import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import {
@@ -291,7 +285,6 @@ import {
     AT_GAZE,
     AT_HUGS,
     AT_MAGC,
-    AT_NONE,
     AT_SPIT,
     AT_TUCH,
     AT_WEAP,
@@ -312,7 +305,6 @@ import {
     CORPSE,
     DWARVISH_MATTOCK,
     EGG,
-    FAKE_AMULET_OF_YENDOR,
     FLINT,
     ENORMOUS_MEATBALL,
     GOLD_PIECE,
@@ -330,7 +322,6 @@ import {
     OBJECT_SUBTYPE,
     PICK_AXE,
     ROCK,
-    SCR_MAIL,
     POT_GAIN_LEVEL,
     POT_HEALING,
     POT_INVISIBILITY,
@@ -342,12 +333,11 @@ import {
 import {
     placeCreatedObject,
     placeObjectSynchronously,
-    remove_object,
     stack_object,
 } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { useMonsterBullwhip } from './monster_bullwhip.js';
-import { canFallThrough, makemonNear, maketrap, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, maketrap } from './mklev.js';
 import { mksobj } from './mkobj.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -371,14 +361,13 @@ import {
     cansee,
     clearPath,
     couldsee,
-    visibleCellsFrom,
     vision_note_blocker_change,
 } from './vision.js';
 import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { afterShopkeeperMove, checkSpecialRoom, shopGreeting, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
-import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
@@ -389,7 +378,7 @@ import {
     visibleRegionAt,
     updateMonsterRegions,
 } from './regions.js';
-import { heroIsBlinded, heroIsDeaf } from './senses.js';
+import { heroIsDeaf } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import {
     applyMonsterStoningAttack,
@@ -397,8 +386,7 @@ import {
     touchPetrifies,
 } from './stoning.js';
 import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance,
-    monsterHasShockResistance, monsterHasStoneResistance,
+    monsterHasFireResistance,
 } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
 import { burnAwayHeroSlime } from './slime.js';
@@ -438,24 +426,18 @@ import {
     finishMonsterLiquidDeath,
 } from './monster_death.js';
 import { inHeroSanctuary, priestInOwnTemple } from './priest.js';
-import {
-    addObjectToMonsterInventory,
-    linkObjectToMonsterInventory,
-} from './monster_inventory.js';
-import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
+import { currentMonsterLoad, monsterCanCarryObject } from './monster_carry.js';
 export { monsterCanCarryObject } from './monster_carry.js';
 import {
     monsterCanFog,
     monsterHasLineOfSightToHero,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { adjustMonsterSpeed } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
-import { msummon } from './minion.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
-import { questMonsterSound } from './role_monsters.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { artifactById } from './artifacts.js';
@@ -468,7 +450,6 @@ import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonst
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './makemon.js';
-import { summonMonsterInsects } from './monster_spell_insects.js';
 import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { lootMonsterContainer } from './monster_container_loot.js';
 import { isContainer } from './container.js';
@@ -479,15 +460,13 @@ import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_def
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import {
     findNearbyMonsterPosition,
-    goodPosition,
     monsterTeleportRestricted,
     reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
-import { aggravateMonsters, angerMonster, angerWatchGuards, publishMonsterWhimper } from './monster_anger.js';
-import { xdir, ydir } from './const.js';
+import { angerMonster, angerWatchGuards } from './monster_anger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
@@ -559,7 +538,6 @@ import {
     M_ATTK_MISS,
     M_ATTK_AGR_DONE,
     M_AP_FURNITURE,
-    M_AP_MONSTER,
     M_AP_NOTHING,
     M_AP_OBJECT,
     M_AP_TYPE,
@@ -582,7 +560,6 @@ import {
     NEED_PICK_OR_AXE,
     NEED_WEAPON,
     NO_WEAPON_WANTED,
-    MM_NOWAIT,
     NOGARLIC,
     NOTONL,
     SHOPBASE,
@@ -695,36 +672,6 @@ const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 
-const MCF_INDIRECT = 0x01;
-const MCF_SIGHT = 0x02;
-const MCF_HOSTILE = 0x04;
-const MONSTER_CLERIC_SPELLS: readonly [MonsterSpell, ...MonsterSpell[]] = [
-    { key: 'open-wounds', level: 0, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'cure-self', level: 1, flags: MCF_INDIRECT },
-    { key: 'confuse-you', level: 2, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'paralyze', level: 4, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'blind-you', level: 6, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'insects', level: 8, flags: MCF_HOSTILE | MCF_SIGHT | MCF_INDIRECT },
-    { key: 'curse-items', level: 10, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'lightning', level: 11, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'fire-pillar', level: 12, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'geyser', level: 13, flags: MCF_HOSTILE | MCF_SIGHT },
-];
-const MONSTER_WIZARD_SPELLS: readonly [MonsterSpell, ...MonsterSpell[]] = [
-    { key: 'psi-bolt', level: 0, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'cure-self', level: 1, flags: MCF_INDIRECT },
-    { key: 'haste-self', level: 2, flags: MCF_INDIRECT },
-    { key: 'stun-you', level: 3, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'disappear', level: 4, flags: MCF_INDIRECT },
-    { key: 'weaken-you', level: 6, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'destroy-armor', level: 8, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'curse-items', level: 10, flags: MCF_HOSTILE | MCF_SIGHT },
-    { key: 'aggravation', level: 13, flags: MCF_HOSTILE | MCF_SIGHT | MCF_INDIRECT },
-    { key: 'summon-monsters', level: 15, flags: MCF_HOSTILE | MCF_SIGHT | MCF_INDIRECT },
-    { key: 'clone-wizard', level: 18, flags: MCF_HOSTILE | MCF_SIGHT | MCF_INDIRECT },
-    { key: 'death-touch', level: 20, flags: MCF_HOSTILE | MCF_SIGHT },
-];
-
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -742,92 +689,20 @@ function requireMovementCapabilities(movement: MonsterMovement) {
     return movement.postMoveCapabilities;
 }
 
-function requireDochugContext(action: MonsterMovementAction): DochugContext {
+export function requireDochugContext(action: MonsterMovementAction): DochugContext {
     if (!action.dochugContext)
         throw new Error('A deferred monster movement needs its original turn context');
     return action.dochugContext;
 }
 
-function monsterSpellEffectPreview(
-    spell: MonsterSpell,
-    damage: number,
-    state: PlayingGameState,
-): { effectDamage: number; effectMessage: string | null } {
-    const antimagic = !!state?.u?.antimagic;
-    let effectDamage = damage;
-    if (antimagic && ['psi-bolt', 'open-wounds'].includes(spell.key))
-        effectDamage = Math.trunc((effectDamage + 1) / 2);
-    let effectMessage = null;
-    if (spell.key === 'psi-bolt') {
-        const head = heroHeadName(state);
-        effectMessage =
-            effectDamage <= 5
-                ? `You get a slight ${head}ache.`
-                : effectDamage <= 10
-                  ? 'Your brain is on fire!'
-                  : effectDamage <= 20
-                    ? `Your ${head} suddenly aches painfully!`
-                    : `Your ${head} suddenly aches very painfully!`;
-    } else if (spell.key === 'open-wounds') {
-        effectMessage =
-            effectDamage <= 5
-                ? 'Your skin itches badly for a moment.'
-                : effectDamage <= 10
-                  ? 'Wounds appear on your body!'
-                  : effectDamage <= 20
-                    ? 'Severe wounds appear on your body!'
-                    : 'Your body is covered with painful wounds!';
-    } else if (spell.key === 'blind-you') {
-        const eye = heroEyeName(state);
-        effectMessage = `Scales cover your ${heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`;
-    } else if (spell.key === 'paralyze') {
-        const resisted = !!(state?.u?.antimagic || heroHasFreeAction(state));
-        if (!heroHasInvoluntaryDelay(state))
-            effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
-    } else if (spell.key === 'confuse-you') {
-        if (antimagic) {
-            effectMessage = formatFeltMessage('momentarily dizzy.', state);
-        } else if (heroIsHallucinating(state)) {
-            effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'trippier!' : 'trippy!', state);
-        } else {
-            effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'more confused!' : 'confused!', state);
-        }
-    } else if (spell.key === 'weaken-you') {
-        effectMessage = antimagic ? formatFeltMessage('momentarily weakened.', state) : 'You suddenly feel weaker!';
-    } else if (spell.key === 'aggravation') {
-        effectMessage = formatFeltMessage('that monsters are aware of your presence.', state);
-    } else if (spell.key === 'stun-you') {
-        const resisted = antimagic || heroHasFreeAction(state);
-        const alreadyStunned = !!state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0;
-        effectMessage = resisted
-            ? alreadyStunned
-                ? null
-                : formatFeltMessage('momentarily disoriented.', state)
-            : alreadyStunned
-              ? 'You struggle to keep your balance.'
-              : 'You reel...';
-    } else if (spell.key === 'curse-items') {
-        effectMessage = formatFeltMessage('as if you need some help.', state);
-    } else if (spell.key === 'geyser') {
-        effectMessage = 'A sudden geyser slams into you from nowhere!';
-    } else if (spell.key === 'fire-pillar') {
-        effectMessage = 'A pillar of fire strikes all around you!';
-    } else if (spell.key === 'lightning') {
-        effectMessage = 'A bolt of lightning strikes down at you from above!';
-    }
-    return { effectDamage, effectMessage };
-}
-
-function speciesHasWeaponAttack(mnum: number) {
+export function speciesHasWeaponAttack(mnum: number) {
     return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === AT_WEAP);
 }
 
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
 // diggable destination while unarmed, but it must spend this action readying
 // the appropriate tool before a later turn can enter and excavate the square.
-async function readyMonsterDiggingWeapon(
+export async function readyMonsterDiggingWeapon(
     monster: Monster,
     state: PlayingGameState,
     x: number,
@@ -1389,7 +1264,7 @@ function isUnicorn(monster: Monster) {
     return monster?.mnum >= 101 && monster?.mnum <= 103;
 }
 
-function monAllowFlags(
+export function monAllowFlags(
     monster: Monster, state: PlayingGameState,
     rollOne: RollOne = rnd, calls: MonsterCallLog = DISCARDED_CALL_LOG,
 ): number {
@@ -1503,7 +1378,7 @@ export function monsterAvoidsSokobanPushLocation(
     return (state.level?.objects?.[bx]?.[by] || []).some((object) => object.otyp === BOULDER);
 }
 
-function resistConflict(
+export function resistConflict(
     monster: Monster,
     state: PlayingGameState,
     rollOne: RollOne,
@@ -1545,7 +1420,7 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
     return { rockOk, treeOk };
 }
 
-function monsterMayDigLocation(loc: MapLocation | null | undefined) {
+export function monsterMayDigLocation(loc: MapLocation | null | undefined) {
     if (!loc) return false;
     return !((IS_STWALL(loc.typ) || IS_TREE(loc.typ)) && (loc.wall_info ?? 0) & W_NONDIGGABLE);
 }
@@ -1778,7 +1653,7 @@ export async function mfndpos(
     return positions;
 }
 
-function recordRandom(random: RandomBelow, calls: MonsterCallLog, range: number) {
+export function recordRandom(random: RandomBelow, calls: MonsterCallLog, range: number) {
     calls.push(range);
     return random(range);
 }
@@ -1788,7 +1663,7 @@ function recordRandom(random: RandomBelow, calls: MonsterCallLog, range: number)
 // append-shaped dependency without allocating or retaining one array per
 // actor. The empty iterator preserves the one continuation which merges a
 // nested action log; there is deliberately nothing to merge in live mode.
-const DISCARDED_CALL_LOG: MonsterCallLog = Object.freeze({
+export const DISCARDED_CALL_LOG: MonsterCallLog = Object.freeze({
     length: 0,
     push() {
         return 0;
@@ -1921,83 +1796,7 @@ export function monsterLinedUpWithPerceivedHero(
         range => recordRandom(random, calls, range));
 }
 
-function nearbyFloorObjects(monster: Monster, state: PlayingGameState) {
-    const objects = [];
-    let scanOrder = 0;
-    const minX = Math.max(1, monster.mx - 5);
-    const maxX = Math.min(79, monster.mx + 5);
-    const minY = Math.max(0, monster.my - 5);
-    const maxY = Math.min(20, monster.my + 5);
-    for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-            for (const object of state?.level?.objects?.[x]?.[y] || []) {
-                objects.push({ object, scanOrder: scanOrder++ });
-            }
-        }
-    }
-    // C walks the global fobj chain newest-first, independently of map
-    // coordinates.  Explicitly linked runtime drops carry that order; older
-    // generated objects retain the established coordinate-order fallback
-    // until every construction path shares the same floor-chain owner.
-    return objects
-        .sort((a, b) => {
-            const ao = a.object._fobjOrder;
-            const bo = b.object._fobjOrder;
-            if (isFiniteNumber(ao) || isFiniteNumber(bo)) {
-                if (!isFiniteNumber(ao)) return 1;
-                if (!isFiniteNumber(bo)) return -1;
-                if (ao !== bo) return bo - ao;
-            }
-            return a.scanOrder - b.scanOrder;
-        })
-        .map((entry) => entry.object);
-}
-
-// C dogmove.c:can_reach_location().
-function petCanReachLocation(
-    monster: Monster,
-    mx: number,
-    my: number,
-    fx: number,
-    fy: number,
-    state: PlayingGameState,
-) {
-    if (mx === fx && my === fy) return true;
-    if (!isok(mx, my)) return false;
-
-    // dogmove.c does not run a general pathfinder here.  It recursively takes
-    // only neighbours which strictly reduce squared distance to the object.
-    // That distinction matters for niche/corner objects: a BFS can find a
-    // detour which the C anti-stuck check deliberately rejects.
-    const distance = dist2(mx, my, fx, fy);
-    for (let x = mx - 1; x <= mx + 1; x++) {
-        for (let y = my - 1; y <= my + 1; y++) {
-            if (!isok(x, y) || dist2(x, y, fx, fy) >= distance) continue;
-            const loc = state?.level?.at?.(x, y);
-            if (!loc) continue;
-            const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-            if (IS_OBSTRUCTED(loc.typ) && !(flags & M1_WALLWALK)
-                && (!monsterMayDigLocation(loc) || !(flags & M1_TUNNEL)
-                    || Is_rogue_level(state.u.uz, state))) continue;
-            if (IS_DOOR(loc.typ) && (loc.doormask ?? 0) & (D_CLOSED | D_LOCKED)) continue;
-            if (!monsterCouldReachItem(monster, x, y, state)) continue;
-            if (petCanReachLocation(monster, x, y, fx, fy, state)) return true;
-        }
-    }
-    return false;
-}
-
-function petCanReachObject(monster: Monster, object: GameObject, state: PlayingGameState) {
-    const targetX = object?.ox;
-    const targetY = object?.oy;
-    if (!Number.isInteger(targetX) || !Number.isInteger(targetY)) return false;
-    return (
-        monsterCouldReachItem(monster, targetX, targetY, state) &&
-        petCanReachLocation(monster, monster.mx, monster.my, targetX, targetY, state)
-    );
-}
-
-function couldSeeFromHero(state: PlayingGameState, x: number, y: number) {
+export function couldSeeFromHero(state: PlayingGameState, x: number, y: number) {
     // COULD_SEE is bit 0 in vision.c/js/vision.js.  Focused unit states omit
     // the vision buffer and are treated as unobstructed; live games always
     // carry the current buffer produced by domove()/vision_recalc().
@@ -2107,279 +1906,7 @@ export async function disturbSleepingMonster(
     return true;
 }
 
-function dogGoal(
-    monster: Monster,
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-) {
-    if (monster === state.u.usteed) return null;
-    // Preserve the object-screening side effects before falling back to the
-    // hero.  Preferred nearby food owns the goal outright; this is what lets
-    // a pony pursue a just-thrown carrot instead of its master's square.
-    const ux = state?.u?.ux ?? monster.mx;
-    const uy = state?.u?.uy ?? monster.my;
-    // dog_move() computes this before dog_goal() and uses it again while
-    // scoring movement candidates, including when dog_goal() finds food.
-    const whappr = !!monster.edog && state.moves - (monster.edog.whistletime ?? 0) < 5;
-    const followsMasterDirectly = !monster.edog || !!monster.mleashed;
-    let foodGoal = null;
-    let foodType = UNDEF;
-    let apportGoal = null;
-    const inMastersSight = couldSeeFromHero(state, monster.mx, monster.my);
-    const dogHasInventory = !!petDroppableObject(monster);
-    const petTile = state?.level?.at?.(monster.mx, monster.my);
-    const heroTile = state?.level?.at?.(ux, uy);
-    const lightingAllowsFetch = !petTile?.lit || !!heroTile?.lit;
-    const nearbyObjects = followsMasterDirectly ? [] : nearbyFloorObjects(monster, state);
-    for (const object of nearbyObjects) {
-        const type = dogFood(monster, object, random, calls, state);
-        const cursedAtLocation = (state?.level?.objects?.[object.ox]?.[object.oy] || []).some(
-            (item) => item.cursed,
-        );
-        const avoidsCursedPile = cursedAtLocation
-            && !(monster.edog?.mhpmax_penalty && type < MANFOOD);
-        if (avoidsCursedPile || !petCanReachObject(monster, object, state)) continue;
-        if (
-            type < MANFOOD &&
-            (type < foodType ||
-                (type === foodType &&
-                    foodGoal &&
-                    dist2(object.ox, object.oy, monster.mx, monster.my) <
-                        dist2(foodGoal.ox, foodGoal.oy, monster.mx, monster.my)))
-        ) {
-            foodGoal = object;
-            foodType = type;
-        } else if (
-            type >= MANFOOD &&
-            type < UNDEF &&
-            // C stores both food and fetch candidates in gg.gtyp.  Once a
-            // preferred food has lowered it below MANFOOD, every later
-            // APPORT object is inferior and skips the rn2(8) gate.
-            !foodGoal &&
-            !apportGoal &&
-            inMastersSight &&
-            !dogHasInventory &&
-            lightingAllowsFetch &&
-            // dogmove.c:dog_goal().  MANFOOD is worth evaluating even when
-            // the pet cannot see it directly; ordinary APPORT objects still
-            // require m_cansee(), whose source macro is clear_path().
-            (type === MANFOOD || clearPath(monster.mx, monster.my, object.ox, object.oy)) &&
-            (monster.edog?.apport ?? 0) > recordRandom(random, calls, 8) &&
-            monsterCanCarryObject(monster, object, state, random)
-        ) {
-            apportGoal = object;
-        }
-    }
-
-    let goalX = ux;
-    let goalY = uy;
-    // C keeps a tempting cadaver as a provisional goal until after the floor
-    // scan.  A content pet ignores it and falls back to following its master;
-    // only preferred dog food, or food whose hunger time has arrived, wins.
-    const hungryTime = monster?.edog?.hungrytime ?? 0;
-    let hasObjectGoal = false;
-    if (foodGoal) {
-        if (foodType === DOGFOOD || state.moves >= hungryTime) {
-            goalX = foodGoal.ox;
-            goalY = foodGoal.oy;
-            hasObjectGoal = true;
-        }
-        // A superior but currently unappetizing cadaver still overwrites an
-        // earlier APPORT candidate in C's single gtyp slot.  The content pet
-        // follows its master; it must not fall back to the inferior object.
-    } else if (apportGoal) {
-        goalX = apportGoal.ox;
-        goalY = apportGoal.oy;
-        hasObjectGoal = true;
-    }
-    const udist = dist2(monster.mx, monster.my, ux, uy);
-    // initedog() starts whistletime at zero. During the opening moves this
-    // makes dog_move() treat the pet as recently called even though the hero
-    // has not used a whistle yet; that short-lived state is observable in
-    // candidate choice and suppresses away-from-goal alternatives.
-    const selectsFollowDistance = !followsMasterDirectly && !hasObjectGoal;
-    let appr = selectsFollowDistance ? udist >= 9 ? 1 : monster.mflee ? -1 : 0 : 1;
-    if (selectsFollowDistance && udist > 1) {
-        const heroTile = state?.level?.at?.(ux, uy);
-        if (
-            !IS_ROOM(heroTile?.typ ?? 0) ||
-            recordRandom(random, calls, 4) === 0 ||
-            whappr ||
-            (dogHasInventory &&
-                recordRandom(random, calls, Math.max(1, monster.edog?.apport ?? 1)) !== 0)
-        )
-            appr = 1;
-    }
-    // C dog_goal(): when an otherwise content pet has no approach direction,
-    // preferred food in the hero's live inventory makes it follow closely.
-    // Inventory order is observable because dogfood() calls obj_resists()
-    // before classifying each item and stops at the first DOGFOOD entry.
-    if (appr === 0) {
-        let onStairs = false;
-        for (let stair = state.stairs; stair; stair = stair.next) {
-            if (stair.sx === ux && stair.sy === uy) {
-                onStairs = true;
-                break;
-            }
-        }
-        if (onStairs) {
-            appr = 1;
-        } else {
-            const carried = state.inventory;
-            for (const object of carried) {
-                if (dogFood(monster, object, random, calls, state) === DOGFOOD) {
-                    appr = 1;
-                    break;
-                }
-            }
-            if (appr === 0) {
-                const portal = state?.level?.traps?.find((trap) => trap.ttyp === MAGIC_PORTAL);
-                if (portal && dist2(ux, uy, portal.tx, portal.ty) <= 2) appr = 1;
-            }
-        }
-    }
-    if (monster.mconf) appr = 0;
-
-    // C dog_goal(): a pet which cannot currently see its master follows the
-    // newest adjacent hero track instead of targeting the hero through rock.
-    // This changes candidate scoring without adding an RNG call, making it a
-    // classic screen-equal/stream-different boundary.
-    if (goalX === ux && goalY === uy && !inMastersSight) {
-        const track = getTrack(monster.mx, monster.my, state);
-        if (track) {
-            goalX = track.x;
-            goalY = track.y;
-            if (monster.edog?.ogoal) monster.edog.ogoal.x = 0;
-        } else if (
-            monster.edog?.ogoal?.x &&
-            (monster.edog.ogoal.x !== monster.mx || monster.edog.ogoal.y !== monster.my)
-        ) {
-            goalX = monster.edog.ogoal.x;
-            goalY = monster.edog.ogoal.y;
-            monster.edog.ogoal.x = 0;
-        } else {
-            // C dog_goal(): if the master and every recent track are out of
-            // view, do_clear_area(..., wantdoor) chooses the square visible
-            // from the pet which is closest to the hero.
-            let bestDistance = (COLNO + 2) * (COLNO + 2);
-            let best = null;
-            const clearAreaCells = visibleCellsFrom(monster.mx, monster.my, 9);
-            for (const cell of clearAreaCells) {
-                const distance = dist2(cell.x, cell.y, ux, uy);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = cell;
-                }
-            }
-            if (best && (best.x !== monster.mx || best.y !== monster.my)) {
-                goalX = best.x;
-                goalY = best.y;
-                if (monster.edog?.ogoal) {
-                    monster.edog.ogoal.x = goalX;
-                    monster.edog.ogoal.y = goalY;
-                }
-            }
-        }
-    } else if (monster.edog?.ogoal) {
-        monster.edog.ogoal.x = 0;
-    }
-    return { x: goalX, y: goalY, appr, whappr };
-}
-
-async function petInventoryAction(
-    monster: Monster,
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-): Promise<PetInventoryAction | null> {
-    if (!monster.edog || monster.meating || monster.mfrozen || monster.msleeping) return null;
-    const udist =
-        monster === state.u.usteed
-            ? 1
-            : dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my);
-    if (petDroppableObject(monster)) {
-        const apport = Math.max(1, monster.edog?.apport ?? 1);
-        let release = recordRandom(random, calls, udist + 1) === 0;
-        if (!release) release = recordRandom(random, calls, apport) === 0;
-        if (release && recordRandom(random, calls, 10) < apport) {
-            const dropped = await releaseMonsterInventory(monster, state, {
-                isPet: true,
-                show: !!monster.minvis,
-                random,
-            });
-            if (monster.edog && monster.edog.apport > 1) monster.edog.apport--;
-            if (monster.edog) {
-                monster.edog.dropdist = udist;
-                monster.edog.droptime = state?.moves ?? 1;
-            }
-            return { dropped };
-        }
-        return null;
-    }
-    const object = state?.level?.objects?.[monster.mx]?.[monster.my]?.[0];
-    if (!object) return null;
-    // dog_invent() rejects the nofetch classes before dogfood().  In
-    // particular, a pet standing on a statue must not consume an
-    // obj_resists() draw here; dog_goal() will still inspect that same floor
-    // object through the global fobj scan.
-    const fetchableClass =
-        object.oclass !== BALL_CLASS &&
-        object.oclass !== CHAIN_CLASS &&
-        object.oclass !== ROCK_CLASS;
-    // C dogmove.c:dog_invent() also refuses delivery mail outright, before
-    // dogfood() can spend its obj_resists() draw on the scroll.
-    if (!fetchableClass || object.otyp === SCR_MAIL || isLevelPrize(object, state))
-        return null;
-    const edible = dogFood(monster, object, random, calls, state);
-    if ((edible <= CADAVER || monster.edog?.mhpmax_penalty && edible === ACCFOOD)
-        && monsterCouldReachItem(monster, monster.mx, monster.my, state)) {
-        return { petMeal: beginPetEating(monster, object,
-            { x: monster.mx, y: monster.my }, state) };
-    }
-    const carryAmount = fetchableClass ? monsterCarryAmount(monster, object, state, random) : 0;
-    if (carryAmount > 0 && !object.cursed
-        && monsterCouldReachItem(monster, monster.mx, monster.my, state)) {
-        // C dog_invent(): a failed pickup leaves the floor pile unchanged.
-        const apport = Math.max(1, monster.edog?.apport ?? 1);
-        if (recordRandom(random, calls, 20) < apport + 3) {
-            const approach = recordRandom(random, calls, Math.max(1, udist));
-            if (approach !== 0 || recordRandom(random, calls, apport) === 0) {
-                const quantity = object.quan ?? object.quantity ?? 1;
-                let pickedUp = object;
-                if (carryAmount !== quantity) {
-                    const split = splitObjectStack(object, carryAmount, state);
-                    if (!split)
-                        throw new Error('A positive pet pickup amount must split its stack');
-                    pickedUp = split;
-                    calls.push('rnd(2)');
-                }
-                // dogmove.c:dog_invent() splits before its pline, then
-                // extracts and carries afterwards: see commitPetPickup().
-                return { pickedUp, pickupPending: true };
-            }
-        }
-    }
-    return null;
-}
-
-// dogmove.c:dog_invent(): after the visible "picks up" line, obj_extract_self()
-// and mpickobj() move the chosen object into the pet's inventory.
-export async function commitPetPickup(monster: Monster, movement: PetInventoryAction, state: PlayingGameState) {
-    const object = movement.pickedUp;
-    if (!movement.pickupPending || !object) return;
-    movement.pickupPending = false;
-    remove_object(object, state);
-    await newsym(monster.mx, monster.my);
-    await addObjectToMonsterInventory(monster, object, state);
-    if (speciesHasWeaponAttack(monster.mnum) && monster.weaponCheck === NEED_WEAPON) {
-        monster.weaponCheck = NEED_HTH_WEAPON;
-        await wieldMonsterWeapon(monster, state);
-    }
-    checkMonsterGearNextTurn(monster);
-}
-
-function trapAt(state: PlayingGameState, x: number, y: number) {
+export function trapAt(state: PlayingGameState, x: number, y: number) {
     return state?.level?.traps?.find((trap) => trap.tx === x && trap.ty === y);
 }
 
@@ -2770,75 +2297,14 @@ function defenderCanCounterattack(
     );
 }
 
-function monsterAttackStopsAggressor(attack: MonsterCombatResult): boolean {
+export function monsterAttackStopsAggressor(attack: MonsterCombatResult): boolean {
     // Native explosion and passive results can stop an attacker which was
     // life-saved. Preserve that result independently of its current health.
     return !!(attack.aggressorDied || attack.fatalPassive
         || (attack.kind === 'monster-attack' && ((attack.nativeResult ?? 0) & M_ATTK_AGR_DIED)));
 }
 
-interface PetRangedAttackOptions {
-    forced?: boolean;
-    random?: RandomBelow;
-    rollDice?: RollDice;
-    rollOne?: RollOne;
-    calls?: MonsterCallLog;
-}
-
-export interface PetRangedAttackResult {
-    status: number;
-    heroDied: boolean;
-    attack?: MonsterCombatResult;
-    counterattack?: MonsterCombatResult;
-}
-
-// C dogmove.c:pet_ranged_attk(). Selection precedes one complete mattackm or
-// mattacku action; only the original target can answer it with a counterattack.
-export async function performPetRangedAttack(
-    pet: Monster, state: PlayingGameState, {
-        forced = false, random = rn2, rollDice = d, rollOne = rnd,
-        calls = DISCARDED_CALL_LOG,
-    }: PetRangedAttackOptions = {},
-): Promise<PetRangedAttackResult> {
-    requireLiveGame(state);
-    const selection = selectPetRangedTarget(pet, state, {
-        forced, random: range => recordRandom(random, calls, range),
-        rollOne: sides => { calls.push(`rnd(${sides})`); return rollOne(sides); },
-    });
-    const target = selection.target;
-    if (!target) {
-        if (selection.makeNoise) await publishMonsterNoise(pet, state);
-        return { status: MMOVE_NOTHING, heroDied: !!state.program_state.gameover };
-    }
-    if (!('mnum' in target)) {
-        const heroAttack = await performMonsterHeroAttack(pet, state, { random, rollDice, rollOne, calls });
-        return { status: heroAttack.nativeResult === 1 ? MMOVE_DIED : MMOVE_DONE, heroDied: heroAttack.heroDied };
-    }
-    const attack = await attackMonsterWithMonster(pet, target, {
-        state, random, rollDice, rollOne, calls,
-        target: { x: pet.mx, y: pet.my, notOnHead: false },
-    });
-    const nativeResult = attack.kind === 'monster-attack' ? attack.nativeResult ?? M_ATTK_MISS : M_ATTK_MISS;
-    const result: PetRangedAttackResult = {
-        status: nativeResult === M_ATTK_MISS ? MMOVE_NOTHING : MMOVE_DONE,
-        heroDied: !!attack.heroDied, attack,
-    };
-    if (nativeResult & M_ATTK_AGR_DIED) result.status = MMOVE_DIED;
-    if (result.heroDied || result.status === MMOVE_DIED) return result;
-    if ((nativeResult & M_ATTK_HIT) && !(nativeResult & M_ATTK_DEF_DIED)
-        && recordRandom(random, calls, 4) !== 0 && target.mcansee
-        && !((MONSTER_FLAGS1[target.mnum] ?? 0) & M1_NOEYES)) {
-        const response = await attackMonsterWithMonster(target, pet,
-            { state, random, rollDice, rollOne, calls });
-        result.counterattack = response;
-        result.heroDied = !!response.heroDied;
-        if (response.kind === 'monster-attack' && ((response.nativeResult ?? 0) & M_ATTK_DEF_DIED))
-            result.status = MMOVE_DIED;
-    }
-    return result;
-}
-
-async function beginMonsterMeleeAttack(
+export async function beginMonsterMeleeAttack(
     aggressor: Monster,
     defender: Monster,
     state: PlayingGameState,
@@ -2925,493 +2391,6 @@ async function fightNearbyMonster(
         return { attack, consumed: !swallowed && !!attack.struck };
     }
     return null;
-}
-
-async function petAttacksMonster(
-    pet: Monster,
-    target: Monster,
-    state: PlayingGameState,
-    random: RandomBelow,
-    rollDice: RollDice,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-    selected: Position,
-) {
-    return await beginMonsterMeleeAttack(
-        pet,
-        target,
-        state,
-        random,
-        rollDice,
-        rollOne,
-        calls,
-        'pet',
-        selected,
-    );
-}
-
-// C mondata.c:max_passive_dmg().  dog_move() uses the defender's maximum
-// passive retaliation, multiplied by the pet's number of contact attacks, as
-// a deterministic safety gate before any melee to-hit roll is allowed.
-export function maxPassiveMonsterDamage(defender: Monster, aggressor: Monster) {
-    const contactTypes = new Set([
-        AT_CLAW, AT_BITE, AT_KICK, AT_BUTT, AT_TUCH, AT_STNG, AT_HUGS,
-        AT_ENGL, AT_TENT, AT_WEAP,
-    ]);
-    const contactCount = (MONSTER_ATTACKS[aggressor?.mnum] || []).filter(([attackType]) =>
-        contactTypes.has(attackType),
-    ).length;
-    if (!contactCount) return 0;
-
-    const species = MONSTER_NAME[aggressor.mnum];
-    for (const [attackType, damageType, dice, sides] of MONSTER_ATTACKS[defender?.mnum] || []) {
-        if (attackType !== AT_NONE && attackType !== AT_BOOM) continue;
-        // These bodies are destroyed by contact regardless of resistance or HP.
-        if (damageType === AD_FIRE && (species === 'paper golem' || species === 'straw golem')
-            || damageType === AD_DCAY && (species === 'wood golem' || species === 'leather golem')
-            || damageType === AD_RUST && species === 'iron golem')
-            return aggressor.mhp * contactCount;
-        const resisted =
-            (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
-            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
-            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
-            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
-        if (resisted) return 0;
-        if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)) return 0;
-        const count = dice || (MONSTER_LEVEL[defender.mnum] ?? 0) + 1;
-        return count * sides * contactCount;
-    }
-    return 0;
-}
-
-async function finishPetMovePlan(
-    monster: Monster,
-    state: PlayingGameState,
-    plan: PetMovePlan,
-    random: RandomBelow,
-    rollDice: RollDice,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-): Promise<MonsterMovement> {
-    const { oldx, oldy, selectedInfo, reluctant, inventoryAction } = plan;
-    let { nix, niy } = plan;
-    if (selectedInfo & ALLOW_U) {
-        if (monster.mleashed) {
-            const pronoun =
-                (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER
-                    ? 'its'
-                    : monster.female
-                      ? 'her'
-                      : 'his';
-            const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
-            await plineWithContinuation(`${subject} breaks loose of ${pronoun} leash!`);
-            releaseMonsterLeash(monster, state);
-        }
-        const attack = await beginMonsterHeroAttack(
-            monster,
-            state,
-            random,
-            rollOne,
-            rollDice,
-            calls,
-        );
-        return {
-            oldx,
-            oldy,
-            x: oldx,
-            y: oldy,
-            moved: false,
-            ...attack,
-            actionCompleted: true,
-            postMoveStatus: MMOVE_DONE,
-            movementStage: 'postmov',
-            deferredAfterPetAttack: true,
-            ...inventoryAction,
-        };
-    }
-
-    if (nix !== oldx || niy !== oldy) {
-        updateMonsterRegions(monster, state, { x: nix, y: niy });
-        if (await readyMonsterDiggingWeapon(monster, state, nix, niy)) {
-            return {
-                oldx, oldy, x: oldx, y: oldy, moved: false,
-                postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
-                ...inventoryAction,
-            };
-        }
-    }
-    if (nix !== oldx || niy !== oldy) {
-        removeMonsterFromMapAt(oldx, oldy, state);
-        await placeMonsterOnMap(monster, nix, niy, state);
-        if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
-        monster.mtrack.unshift({ x: oldx, y: oldy });
-        monster.mtrack.length = Math.min(monster.mtrack.length, 4);
-    } else {
-        await pullLeashedPetCloser(monster, state, random, calls);
-        nix = monster.mx;
-        niy = monster.my;
-    }
-    const movement: MonsterMovement = {
-        oldx,
-        oldy,
-        x: nix,
-        y: niy,
-        moved: nix !== oldx || niy !== oldy,
-        postMoveStatus: MMOVE_MOVED,
-        movementStage: 'postmov',
-        ...inventoryAction,
-    };
-    if (movement.moved && reluctant) {
-        movement.reluctant = true;
-        movement.deferredPetReluctance = true;
-    }
-    return movement;
-}
-
-// C dog_move() keeps a leashed pet close even after an action which left it
-// in place. Its fallback probes use dirtocoord's map coordinates as written.
-async function pullLeashedPetCloser(
-    monster: Monster, state: PlayingGameState, random: RandomBelow, calls: MonsterCallLog,
-): Promise<void> {
-    if (!monster.mleashed || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 4) return;
-    const dx = Math.sign(monster.mx - state.u.ux);
-    const dy = Math.sign(monster.my - state.u.uy);
-    let destination = { x: state.u.ux + dx, y: state.u.uy + dy };
-    const reachable = (position: Position) => goodPosition(position.x, position.y,
-        { kind: 'monster', monster }, { state });
-    if (!reachable(destination)) {
-        const direction = xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
-        let found = false;
-        for (const spread of [1, 2]) {
-            for (let j = (direction + 8 - spread) % 8; j < (direction + spread) % 8; j++) {
-                const x = xdir[j], y = ydir[j];
-                if (x === undefined || y === undefined) continue;
-                const candidate = { x, y };
-                if (!reachable(candidate)) continue;
-                destination = candidate;
-                found = true;
-                break;
-            }
-            if (found) break;
-        }
-        if (!found) destination = { x: monster.mx, y: monster.my };
-    }
-    // The native region check precedes placement and uses the unchanged
-    // planned square when this is a forced leash move.
-    updateMonsterRegions(monster, state);
-    removeMonsterFromMapAt(monster.mx, monster.my, state);
-    await placeMonsterOnMap(monster, destination.x, destination.y, state);
-    await newsym(monster.mx, monster.my);
-    setMonsterApparentHeroPosition(monster, state, random, calls);
-}
-
-async function movePet(
-    monster: Monster,
-    state: PlayingGameState,
-    random: RandomBelow,
-    rollDice: RollDice,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-    resumeAfterInventory = false,
-): Promise<MonsterMovement> {
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    const masterDistance = dist2(oldx, oldy, state.u.ux, state.u.uy);
-    if (!resumeAfterInventory && monster.edog && await applyPetHunger(monster, state)) {
-        return {
-            oldx, oldy, x: monster.mx, y: monster.my, moved: false,
-            postMoveStatus: MMOVE_DIED, movementStage: 'postmov',
-        };
-    }
-    if (
-        !resumeAfterInventory && monster === state.u.usteed &&
-        heroHasConflict(state) &&
-        !resistConflict(monster, state, rollOne, calls)
-    ) {
-        await dismountHero(DISMOUNT_THROWN, { state });
-        return {
-            oldx,
-            oldy,
-            x: monster.mx,
-            y: monster.my,
-            moved: false,
-            postMoveStatus: MMOVE_MOVED,
-            movementStage: 'postmov',
-        };
-    }
-    if (!resumeAfterInventory && monster !== state.u.usteed
-        && oldx === state.u.ux && oldy === state.u.uy) {
-        return {
-            oldx, oldy, x: oldx, y: oldy, moved: false,
-            postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
-        };
-    }
-    const inventoryAction = resumeAfterInventory
-        ? null
-        : await petInventoryAction(monster, state, random, calls);
-    if (inventoryAction?.petMeal) {
-        return {
-            oldx,
-            oldy,
-            x: oldx,
-            y: oldy,
-            moved: false,
-            postMoveStatus: MMOVE_MOVED,
-            movementStage: 'postmov',
-            deferredPetEating: true,
-            ...inventoryAction,
-        };
-    }
-    // Pickup narration still resumes through the turn driver. Drops await
-    // their messages and floor effects in relobj before dog_goal runs.
-    if (inventoryAction?.pickedUp) {
-        return {
-            oldx,
-            oldy,
-            x: oldx,
-            y: oldy,
-            moved: false,
-            deferredPetMove: true,
-            ...inventoryAction,
-        };
-    }
-    const goal = dogGoal(monster, state, random, calls);
-    if (!goal)
-        return {
-            oldx,
-            oldy,
-            x: oldx,
-            y: oldy,
-            moved: false,
-            postMoveStatus: MMOVE_NOTHING,
-            movementStage: 'postmov',
-        };
-    if (heroHasConflict(state) && !resistConflict(monster, state, rollOne, calls)
-        && !monster.edog) {
-        const departure = await loseGuardianAngel(monster, state);
-        return {
-            oldx, oldy, x: monster.mx, y: monster.my, moved: false,
-            actorLeftLevel: true, heroDied: departure.heroDied,
-            actionCompleted: true, postMoveStatus: MMOVE_DIED, movementStage: 'postmov',
-        };
-    }
-    const allowFlags = monAllowFlags(monster, state, rollOne, calls);
-    const candidates = await mfndpos(monster, state, allowFlags);
-    const uncursedCount = candidates.filter(
-        ({ x, y }) => !(state?.level?.objects?.[x]?.[y] || []).some((object) => object.cursed),
-    ).length;
-    let nix = oldx;
-    let niy = oldy;
-    let nidist = dist2(nix, niy, goal.x, goal.y);
-    let chcnt = 0;
-    let reluctant = false;
-    let selectedInfo = 0;
-
-    for (const candidate of candidates) {
-        const { x: nx, y: ny } = candidate;
-        const nextMasterDistance = dist2(nx, ny, state.u.ux, state.u.uy);
-        if (monster.mleashed && nextMasterDistance > 4) continue;
-        if (!monster.edog && nextMasterDistance > 16 && nextMasterDistance >= masterDistance)
-            continue;
-        if (candidate.info & ALLOW_M) {
-            const target = monsterAtPosition(state.level, nx, ny);
-            if (!target) continue;
-            const petLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-            const balk =
-                petLevel +
-                Math.trunc(
-                    (5 * (monster.mhp ?? 1)) / Math.max(1, monster.mhpmax ?? monster.mhp ?? 1),
-                ) -
-                2;
-            if ((target.m_lev ?? MONSTER_LEVEL[target.mnum] ?? 0) >= balk) continue;
-            // C dogmove.c:dog_move().  Outside Conflict, two tame monsters
-            // are allies even when mfndpos() marks the occupied square with
-            // ALLOW_M.  Keep scanning movement candidates rather than
-            // manufacturing a zero-hit attack transaction between pets.
-            if (target.mtame && monster.mtame && !heroHasConflict(state)) continue;
-            if (maxPassiveMonsterDamage(target, monster) >= (monster.mhp ?? 1)) continue;
-            const targetSound = questMonsterSound(target.mnum, state);
-            if ((monster.mhp * 4 < monster.mhpmax
-                || targetSound === MS_GUARDIAN || targetSound === MS_LEADER)
-                && target.mpeaceful && !heroHasConflict(state)) continue;
-            // dog_move() usually avoids paralysis and petrifying contact even
-            // when the expected passive HP damage would be survivable.
-            const avoidsEye = target.mnum === MONSTER_NAME.indexOf('floating eye')
-                && recordRandom(random, calls, 10) !== 0
-                && !!monster.mcansee
-                && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
-                && !!target.mcansee
-                && (!target.minvis || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
-                && !monsterReflectsRay(monster, state);
-            const avoidsCube = target.mnum === MONSTER_NAME.indexOf('gelatinous cube')
-                && recordRandom(random, calls, 10) !== 0;
-            const avoidsPetrification = touchPetrifies(target.mnum)
-                && !monsterHasStoneResistance(monster);
-            if (avoidsEye || avoidsCube || avoidsPetrification) continue;
-            const attack = await petAttacksMonster(
-                monster,
-                target,
-                state,
-                random,
-                rollDice,
-                rollOne,
-                calls,
-                { x: nx, y: ny },
-            );
-            return {
-                oldx,
-                oldy,
-                x: oldx,
-                y: oldy,
-                moved: false,
-                attack,
-                postMoveStatus: monsterAttackStopsAggressor(attack) ? MMOVE_DIED : MMOVE_DONE,
-                movementStage: 'postmov',
-                ...inventoryAction,
-            };
-        }
-        if (monsterAvoidsKickedLocation(monster, nx, ny, state)) continue;
-        if (monsterAvoidsSokobanPushLocation(monster, nx, ny, state)) continue;
-        // dog_move() handles traps before inspecting the candidate's object
-        // pile.  A pet usually refuses a harmful trap the hero has seen, but
-        // an unseen trap remains eligible even when the pet knows its type.
-        const trap = trapAt(state, nx, ny);
-        if (candidate.info & ALLOW_TRAPS && trap) {
-            if (monster.mleashed) {
-                if (!heroIsDeaf(state)) await publishMonsterWhimper(monster);
-            } else if (trap.tseen && recordRandom(random, calls, 40) !== 0) continue;
-        }
-
-        // dogmove.c examines every reachable, uncursed object on a candidate
-        // square before applying its cursed-square avoidance roll.  Cursed
-        // objects set the reluctance flag without calling dogfood(); ordinary
-        // objects still own dogfood()'s obj_resists() draw even when the pet
-        // ultimately rejects the square because something cursed is below.
-        let cursed = false;
-        let edible = null;
-        const reachableFood = monsterCouldReachItem(monster, nx, ny, state);
-        for (const object of monster.edog ? state.level.objects[nx]?.[ny] ?? [] : []) {
-            if (object.cursed) cursed = true;
-            else if (reachableFood) {
-                const foodType = dogFood(monster, object, random, calls, state);
-                if (
-                    foodType < MANFOOD &&
-                    (foodType < ACCFOOD || (monster.edog?.hungrytime ?? 0) <= (state?.moves ?? 1))
-                ) {
-                    edible = object;
-                    break;
-                }
-            }
-        }
-        if (edible) {
-            // C dog_move()'s food goto jumps to newdogpos, where the chosen
-            // candidate is re-tested for ALLOW_U first: a conflicted pet
-            // called to its master's square attacks the hero instead of
-            // stepping onto the food beneath the hero.
-            if (candidate.info & ALLOW_U) {
-                return finishPetMovePlan(monster, state, {
-                    oldx,
-                    oldy,
-                    nix: nx,
-                    niy: ny,
-                    selectedInfo: candidate.info,
-                    reluctant: false,
-                    inventoryAction,
-                }, random, rollDice, rollOne, calls);
-            }
-            updateMonsterRegions(monster, state, { x: nx, y: ny });
-            if (await readyMonsterDiggingWeapon(monster, state, nx, ny)) {
-                return {
-                    oldx, oldy, x: oldx, y: oldy, moved: false,
-                    postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
-                    ...inventoryAction,
-                };
-            }
-            removeMonsterFromMapAt(oldx, oldy, state);
-            await placeMonsterOnMap(monster, nx, ny, state);
-            if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
-            monster.mtrack.unshift({ x: oldx, y: oldy });
-            monster.mtrack.length = Math.min(monster.mtrack.length, 4);
-            const meal = beginPetEating(monster, edible, { x: oldx, y: oldy }, state);
-            return {
-                oldx,
-                oldy,
-                x: nx,
-                y: ny,
-                moved: true,
-                petMeal: meal,
-                deferredPetEating: true,
-                postMoveStatus: MMOVE_MOVED,
-                movementStage: 'postmov',
-                ...inventoryAction,
-            };
-        }
-        if (cursed && !monster.mleashed && uncursedCount > 0
-            && recordRandom(random, calls, 13 * uncursedCount))
-            continue;
-
-        // Guardians have no food or fetching state and do not avoid curses.
-        // Their backtracking chance therefore counts every candidate square.
-        if (
-            !monster.mleashed &&
-            distmin(oldx, oldy, state?.u?.ux ?? goal.x, state?.u?.uy ?? goal.y) > 5
-        ) {
-            const trackSquares = monster.edog ? uncursedCount : candidates.length;
-            const trackCount = Math.min(4, Math.max(0, trackSquares - 1));
-            let avoid = false;
-            for (let j = 0; j < trackCount; j++) {
-                const track = monster.mtrack?.[j];
-                const trackRange = 4 * (trackSquares - j);
-                if (track?.x === nx && track?.y === ny) {
-                    if (recordRandom(random, calls, trackRange)) {
-                        avoid = true;
-                        break;
-                    }
-                }
-            }
-            if (avoid) continue;
-        }
-
-        const ndist = dist2(nx, ny, goal.x, goal.y);
-        const direction = (ndist - nidist) * goal.appr;
-        let choose = direction < 0;
-        if (direction === 0) {
-            choose = recordRandom(random, calls, ++chcnt) === 0;
-        } else if (direction > 0 && !goal.whappr) {
-            if (oldx === nix && oldy === niy) {
-                choose = recordRandom(random, calls, 3) === 0;
-            }
-            if (!choose) choose = recordRandom(random, calls, 12) === 0;
-        }
-        if (!choose) continue;
-        nix = nx;
-        niy = ny;
-        nidist = ndist;
-        selectedInfo = candidate.info;
-        reluctant = cursed;
-        if (direction < 0) chcnt = 0;
-    }
-
-    const movePlan: PetMovePlan = {
-        oldx,
-        oldy,
-        nix,
-        niy,
-        selectedInfo,
-        reluctant,
-        inventoryAction,
-    };
-    const ranged = await performPetRangedAttack(monster, state,
-        { random, rollOne, rollDice, calls });
-    if (ranged.status !== MMOVE_NOTHING || ranged.heroDied) {
-        return {
-            oldx, oldy, x: monster.mx, y: monster.my, moved: false,
-            postMoveStatus: ranged.status, movementStage: 'postmov',
-            actionCompleted: true, heroDied: ranged.heroDied,
-            ...(ranged.attack ? { attack: ranged.attack } : {}),
-        };
-    }
-    return finishPetMovePlan(monster, state, movePlan, random, rollDice, rollOne, calls);
 }
 
 // C monmove.c:m_balks_at_approaching().  A nearby monster which can still
@@ -6849,595 +5828,6 @@ export async function completeHeroAttackSlot(
     }
 }
 
-// Resume castmu() after the casting line.  Damage is pre-rolled before the
-// concrete effect line, but not before a casting line which itself pages.
-export function rollDeferredHeroSpellDamage(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    rollDice: RollDice = d,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSpellDamage) return attack;
-    if (attack.spellDice === undefined || attack.spellSides === undefined)
-        throw new Error('A deferred spell damage roll needs its selected dice');
-    // Undirected spells still produce their effects when aimed at a false
-    // position. Native castmu() passes zero damage without rolling dice.
-    let damage = 0;
-    if (attack.spellDice > 0) {
-        damage = rollDice(attack.spellDice, attack.spellSides);
-        action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
-    }
-    if (heroHasHalfSpellDamage(state)) damage = Math.trunc((damage + 1) / 2);
-    attack.damage = damage;
-    attack.deferredSpellDamage = false;
-    if (attack.damageType === AD_FIRE || attack.damageType === AD_COLD || attack.damageType === AD_MAGM) {
-        attack.spellEffectMessage = attack.damageType === AD_FIRE ? "You're enveloped in flames."
-            : attack.damageType === AD_COLD ? "You're covered in frost."
-                : 'You are hit by a shower of missiles!';
-        return attack;
-    }
-    const spell = (
-        attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS
-    ).find((candidate) => candidate.key === attack.spell);
-    if (!spell) throw new Error('A deferred spell must retain its selected native spell');
-    const preview = monsterSpellEffectPreview(spell, damage, state);
-    attack.effectDamage = preview.effectDamage;
-    attack.spellEffectMessage = preview.effectMessage;
-    return attack;
-}
-
-// mdamageu() subtracts from the active body. Keep raw HP for tty's -1
-// sentinel; the presenter owns rehumanization and fatal input afterward.
-export function applyHeroSpellDamage(
-    attack: HeroSpellAttack,
-    damage: number,
-    state: PlayingGameState,
-) {
-    const hpKey = Upolyd(state.u) ? 'mh' : 'uhp';
-    const hpBefore = state.u[hpKey];
-    state.context.botl = true;
-    const hpMax = hpKey === 'mh' ? state.u.mhmax : state.u.uhpmax;
-    state.u[hpKey] = Math.min(hpMax, hpBefore - damage);
-    attack.appliedDamage = damage;
-    attack.rehumanize = hpKey === 'mh' && state.u.mh < 1;
-    attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
-}
-
-// Resume the selected mcast_spell() effect after its visible message.
-export function resumeDeferredHeroSpell(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollOne: RollOne = rnd,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSpellEffect) return null;
-    attack.deferredSpellEffect = false;
-    if (attack.spell === 'paralyze') {
-        const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
-        const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        let duration = resisted ? 1 : 4 + monsterLevel;
-        if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-        nomul(-duration, state);
-        state._helplessReason = 'paralyzed by a monster';
-        state._helplessDoneMessage = null;
-        applyHeroSpellDamage(attack, duration, state);
-        attack.paralyzed = true;
-        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
-        return attack;
-    }
-    if (attack.spell === 'confuse-you') {
-        const antimagic = !!state.u?.antimagic;
-        if (!antimagic) {
-            const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-            let duration = monsterLevel;
-            if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-            if (!state.u.confusionTurns && duration) state.context.botl = true;
-            state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
-        }
-        attack.appliedDamage = 0;
-        attack.confusedHero = !antimagic;
-        return attack;
-    }
-    if (attack.spell === 'cure-self') {
-        const healing = d(3, 6);
-        action.calls.push('d(3,6)');
-        const monster = action.monster;
-        monster.mhp = Math.min(
-            monster.mhpmax ?? monster.mhp ?? healing,
-            (monster.mhp ?? 0) + healing,
-        );
-        attack.appliedDamage = 0;
-        attack.healedMonster = healing;
-        return attack;
-    }
-    if (attack.spell === 'disappear') {
-        const monster = action.monster;
-        setMonsterPermanentInvisibility(monster);
-        attack.monsterDisappeared = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'weaken-you') {
-        attack.appliedDamage = 0;
-        if (state.u?.antimagic) return attack;
-        const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        let lossSides = Math.max(1, monsterLevel - 6);
-        if (heroHasHalfSpellDamage(state)) lossSides = Math.trunc((lossSides + 1) / 2);
-        const amount = rollOne(lossSides);
-        action.calls.push(`rnd(${lossSides})`);
-        attack.deferredStrengthLoss = {
-            amount,
-            killer: monsterSpellDeathReason(action.monster, 'strength loss'),
-        };
-        return attack;
-    }
-    if (attack.spell === 'summon-monsters') {
-        attack.deferredSummonMonsters = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'death-touch') {
-        attack.deferredDeathTouch = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'clone-wizard') {
-        attack.deferredCloneWizard = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'haste-self') {
-        attack.deferredHasteSelf = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'aggravation') {
-        attack.deferredAggravation = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'stun-you') {
-        const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
-        let duration = 1;
-        if (!resisted) {
-            const dexterity = currentAttribute(A_DEX, state);
-            const dice = dexterity < 12 ? 6 : 4;
-            duration = d(dice, 4);
-            action.calls.push('d(' + dice + ',4)');
-            if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-            duration += state.u?.stunnedTurns ?? 0;
-        }
-        if (!!state.u.stunnedTurns !== !!duration) state.context.botl = true;
-        state.u.stunnedTurns = duration;
-        state.u.stunned = duration > 0;
-        attack.stunnedHero = true;
-        attack.stunDuration = duration;
-        attack.appliedDamage = 0;
-        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
-        return attack;
-    }
-    if (attack.spell === 'destroy-armor') {
-        attack.deferredDestroyArmor = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'fire-pillar') {
-        attack.deferredFirePillar = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'lightning') {
-        attack.deferredLightningSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'insects') {
-        attack.deferredInsectSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'curse-items') {
-        attack.deferredCurseItems = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'geyser') {
-        attack.deferredGeyserSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (!attack.spell || !['psi-bolt', 'open-wounds'].includes(attack.spell)) {
-        attack.unimplementedSpellEffect = true;
-        return attack;
-    }
-    applyHeroSpellDamage(attack, attack.effectDamage ?? attack.damage ?? 0, state);
-    return attack;
-}
-
-function heroCanSeeInvisible(state: PlayingGameState) {
-    return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
-}
-
-function monsterSpellHasAggravatables(caster: Monster, state: PlayingGameState) {
-    const inTower = insideWizardTower(caster.mx, caster.my, state);
-    if (inTower !== insideWizardTower(state.u.ux, state.u.uy, state)) return false;
-    return state.level.monsters.some(
-        (monster) =>
-            !monster.dead &&
-            (monster.mhp ?? 1) > 0 &&
-            insideWizardTower(monster.mx, monster.my, state) === inTower &&
-            ((monster.mstrategy ?? 0) & STRAT_WAITFORU ||
-                monsterIsHelpless(monster)),
-    );
-}
-
-function monsterSpellUseless(
-    monster: Monster,
-    spell: MonsterSpell,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    calls: MonsterCallLog = [],
-) {
-    if (spell.flags & MCF_HOSTILE && monster.mpeaceful) return true;
-    if (spell.flags & MCF_SIGHT && !couldsee(monster.mx, monster.my)) return true;
-    if (spell.key === 'cure-self') return (monster.mhp ?? 0) >= (monster.mhpmax ?? 0);
-    if (spell.key === 'blind-you') return heroIsBlinded(state);
-    if (spell.key === 'haste-self') return monster.permspeed === MFAST;
-    if (spell.key === 'disappear') {
-        return (
-            !!monster.minvis ||
-            !!monster.invis_blkd ||
-            // mcastu.c keeps peaceful monsters visible to a hero who lacks
-            // See_invisible.  choose_monster_spell() then continues down the
-            // same spell table without consuming another selection draw.
-            (!!monster.mpeaceful && !heroCanSeeInvisible(state))
-        );
-    }
-    if (spell.key === 'death-touch') {
-        const resisted = !!(state?.u?.antimagic || heroIsHallucinating(state));
-        return resisted && recordRandom(random, calls, 2) === 0;
-    }
-    if (spell.key === 'geyser') return recordRandom(random, calls, 5) === 0;
-    if (spell.key === 'clone-wizard') return !monster.iswiz || (state.context.no_of_wizards ?? 0) > 1;
-    if (spell.key === 'aggravation' && !monsterSpellHasAggravatables(monster, state)) {
-        return recordRandom(random, calls, 100) !== 0;
-    }
-    return false;
-}
-
-// C mcastu.c:choose_monster_spell().  Selection is observable even when a
-// peaceful caster rejects the directed/hostile result and proceeds to move.
-function chooseMonsterSpell(
-    monster: Monster,
-    damageType: typeof AD_CLRC | typeof AD_SPEL,
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-): MonsterSpell {
-    const list = damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS;
-    const lastSpell = list.at(-1);
-    if (!lastSpell) throw new Error('Native monster spell tables must contain a fallback spell');
-    const maxLevel = lastSpell.level;
-    let spellValue = recordRandom(random, calls, Math.max(1, monster.m_lev || 1));
-    if (spellValue > maxLevel && recordRandom(random, calls, Math.max(1, maxLevel)) !== 0) {
-        spellValue = recordRandom(random, calls, Math.max(1, maxLevel));
-    }
-    for (let index = list.length - 1; index >= 0; index--) {
-        const spell = list[index];
-        if (
-            spell &&
-            spell.level <= spellValue &&
-            !monsterSpellUseless(monster, spell, state, random, calls)
-        )
-            return spell;
-    }
-    return list[0];
-}
-
-function monsterCurseKind(monster: Monster, undirected: boolean, state: PlayingGameState,
-    random: RandomBelow, calls: MonsterCallLog): Exclude<HeroSpellAttack['curseKind'], undefined> {
-    if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
-        if (undirected) return 'visible-undirected';
-        const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        if (heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
-            || M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance === 0 || state.u.uundetected)
-            return 'visible-general';
-        if (heroIsDisplaced(state) && wrongTarget) return 'visible-displaced';
-        return 'visible-directed';
-    }
-    if ((!(state.moves % 4) || !recordRandom(random, calls, 4)) && !heroIsDeaf(state)) return 'audible';
-    return null;
-}
-
-async function publishMonsterSpellFailure(monster: Monster, spell: MonsterSpell,
-    state: PlayingGameState, random: RandomBelow, calls: MonsterCallLog): Promise<void> {
-    const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
-    if (kind === 'audible') await plineWithContinuation('You hear a mumbled curse.', { noRepeat: true });
-    else if (kind) {
-        const points = kind === 'visible-undirected' ? 'all around, then curses'
-            : kind === 'visible-general' ? 'and curses in your general direction'
-                : kind === 'visible-displaced' ? 'and curses at your displaced image' : 'at you, then curses';
-        await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${points}.`);
-    }
-}
-
-async function movementSpellSelections(
-    monster: Monster,
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-): Promise<MovementSpellCast | null> {
-    if (
-        monster.mspec_used ||
-        dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) > 49
-    )
-        return null;
-    for (const [attackType, damageType] of MONSTER_ATTACKS[monster.mnum] || []) {
-        if (attackType !== AT_MAGC || (damageType !== AD_CLRC && damageType !== AD_SPEL)) continue;
-        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-        if (!monsterLevel) {
-            await publishMonsterSpellFailure(monster, MONSTER_WIZARD_SPELLS[0], state, random, calls);
-            continue;
-        }
-        const spell = chooseMonsterSpell(monster, damageType, state, random, calls);
-        if (!spell) continue;
-        // castmu(FALSE,FALSE) selects once.  Directed or currently-useless
-        // spells miss without spending the action; a successful indirect
-        // spell bypasses m_move() and owns the whole actor transaction.
-        if (
-            !(spell.flags & MCF_INDIRECT) ||
-            monsterSpellUseless(monster, spell, state, random, calls)
-        )
-            continue;
-        if (monster.mcan || monster.mspec_used) {
-            await publishMonsterSpellFailure(monster, spell, state, random, calls);
-            continue;
-        }
-        monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
-        endVoluntaryMultiTurn(state);
-        const fumble =
-            recordRandom(random, calls, Math.max(1, monsterLevel * 10)) <
-            (monster.mconf ? 100 : 20);
-        if (fumble) {
-            if (canSeeMonster(monster) && !heroIsDeaf(state))
-                await plineWithContinuation(`The air crackles around ${canonicalMonsterName(monster, { state })}.`);
-            continue;
-        }
-        return {
-            spell: spell.key,
-            cast: true,
-            damageType,
-            directed: false,
-            deferredSpellEffect: true,
-        };
-    }
-    return null;
-}
-
-async function monsterSummonSpellEffect(
-    monster: Monster,
-    state: PlayingGameState,
-): Promise<MonsterSpellEffect> {
-    let effect: MonsterSpellEffect = { count: 0, created: [], message: null };
-    const summoned = await summonNastyMonsters(monster);
-    effect = {
-        ...effect,
-        // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
-        ...(summoned.deferredDemonSummon ? await msummon() : summoned),
-    };
-    if (effect.count > 0) {
-        if (monster?.iswiz) {
-            effect.message = `"Destroy the thief, my pet${effect.count === 1 ? '' : 's'}!"`;
-        } else {
-            const one = effect.count === 1;
-            const appearance = one ? 'A monster appears' : 'Monsters appear';
-            const heroX = state?.u?.ux ?? monster?.mux;
-            const heroY = state?.u?.uy ?? monster?.muy;
-            const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
-            const cannotSeeInvisible = !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_SEE_INVIS);
-            if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
-                effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
-            } else if (heroIsDisplaced(state) && wrongTarget) {
-                effect.message = `${appearance} ${one ? 'by' : 'around'} your displaced image!`;
-            } else {
-                effect.message = `${appearance} from nowhere!`;
-            }
-        }
-    }
-    return effect;
-}
-
-export async function resolveDeferredHeroSummonMonsters(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSummonMonsters) return null;
-    const effect = await monsterSummonSpellEffect(action.monster, state);
-    attack.summonedMonsters = effect.created || [];
-    attack.deferredSummonMonsters = false;
-    return effect;
-}
-
-const WIZARD_CLONE_APPEARANCE_NAMES = [
-    'human',
-    'water demon',
-    'vampire',
-    'red dragon',
-    'troll',
-    'umber hulk',
-    'xorn',
-    'xan',
-    'cockatrice',
-    'floating eye',
-    'guardian naga',
-    'trapper',
-];
-
-export async function beginDeferredHeroCloneWizard(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard || attack.cloneWizard)
-        return null;
-    const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
-    if (clone) attack.cloneWizard = clone;
-    else attack.deferredCloneWizard = false;
-    return clone;
-}
-
-export async function finishDeferredHeroCloneWizard(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard) return null;
-    const clone = attack.cloneWizard;
-    if (!clone) return null;
-    await finishWizardClone(clone, state, random, action.calls);
-    attack.deferredCloneWizard = false;
-    return clone;
-}
-
-async function finishWizardClone(clone: Monster, state: PlayingGameState,
-    random: RandomBelow, calls: MonsterCallLog) {
-    clone.msleeping = 0;
-    clone.mtame = 0;
-    clone.mpeaceful = 0;
-    if (!state.u?.uhave?.amulet && recordRandom(random, calls, 2) !== 0) {
-        const fake = await mksobj(FAKE_AMULET_OF_YENDOR, true, false);
-        // wizard.c:clonewiz() uses add_to_minv(), not mpickobj(): a newly
-        // minted fake Amulet links directly without carrying effects.
-        await linkObjectToMonsterInventory(clone, fake);
-    }
-    const protectedFromShapechangers = !!state.u?.protectionFromShapeChangers;
-    if (!protectedFromShapechangers) {
-        const appearanceIndex = recordRandom(
-            random,
-            calls,
-            WIZARD_CLONE_APPEARANCE_NAMES.length,
-        );
-        clone.m_ap_type = M_AP_MONSTER;
-        clone.mappearance = MONSTER_NAME.indexOf(
-            WIZARD_CLONE_APPEARANCE_NAMES[appearanceIndex] ?? '',
-        );
-    }
-    await newsym(clone.mx, clone.my);
-    return clone;
-}
-
-function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
-    const speed = adjustMonsterSpeed(monster, 1);
-    const message = speed.changed && speed.canDescribe && !state.in_mklev
-        && canSeeMonster(monster)
-        ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
-        : null;
-    return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
-}
-
-export function resolveDeferredHeroHasteSelf(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredHasteSelf) return null;
-    const effect = monsterHasteSelfEffect(action.monster, state);
-    attack.hasteSelf = effect;
-    attack.deferredHasteSelf = false;
-    return effect;
-}
-
-export function resolveDeferredHeroAggravation(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredAggravation) return null;
-    const affected = aggravateMonsters(state, random);
-    attack.aggravatedMonsters = affected;
-    attack.deferredAggravation = false;
-    return affected;
-}
-
-// Resume a successful castmu(FALSE,FALSE) after its casting line has crossed
-// the tty boundary.  The source effect can create actors, so it remains async
-// and only then returns to dochug() for the second distfleeck/phase-four tail.
-export async function resumeDeferredMovementSpell(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollOne: RollOne = rnd,
-    rollDice: RollDice = d,
-    publish: PublishMonsterMessage = plineWithContinuation,
-) {
-    const movement = action?.movement;
-    const spellCast = movement?.spellCast;
-    if (!movement?.deferredAfterMovementSpell || !spellCast?.deferredSpellEffect) return null;
-
-    let effect: MonsterSpellEffect = { count: 0, created: [], message: null };
-    if (spellCast.spell === 'clone-wizard') {
-        await publish('Double Trouble...');
-        const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
-        if (clone) {
-            await finishWizardClone(clone, state, random, action.calls);
-            effect = { count: 1, created: [clone], message: null };
-        }
-    } else if (spellCast.spell === 'cure-self') {
-        if (action.monster.mhp < action.monster.mhpmax) {
-            if (canSeeMonster(action.monster))
-                await publish(`${canonicalMonsterName(action.monster, { state, capitalized: true })} looks better.`);
-            action.monster.mhp = Math.min(action.monster.mhpmax, action.monster.mhp + rollDice(3, 6));
-        }
-    } else if (spellCast.spell === 'aggravation') {
-        await publish(formatFeltMessage('that monsters are aware of your presence.', state));
-        aggravateMonsters(state, random);
-    } else if (spellCast.spell === 'insects') {
-        effect = await summonMonsterInsects(action.monster, state);
-    } else if (spellCast.spell === 'summon-monsters') {
-        effect = await monsterSummonSpellEffect(action.monster, state);
-    } else if (spellCast.spell === 'haste-self') {
-        effect = {
-            ...effect,
-            ...monsterHasteSelfEffect(action.monster, state),
-        };
-    } else if (spellCast.spell === 'disappear') {
-        const monster = action.monster;
-        if (canSeeMonster(monster)) {
-            const canSeeInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
-            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${
-                canSeeInvisible ? 'becomes transparent' : 'disappears'}!`);
-        }
-        setMonsterPermanentInvisibility(monster);
-        await newsym(monster.mx, monster.my);
-        if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
-            await map_invisible(monster.mx, monster.my);
-    } else {
-        throw new Error(`Directed spell ${spellCast.spell} reached the undirected spell effect`);
-    }
-
-    if (effect.message) await publish(effect.message);
-    spellCast.deferredSpellEffect = false;
-    movement.deferredAfterMovementSpell = false;
-    movement.spellEffect = effect;
-    movement.postMoveStatus = MMOVE_DONE;
-    movement.movementStage = 'dochug';
-    await finishDochugAfterMovement(
-        action.monster,
-        movement,
-        state,
-        random,
-        rollOne,
-        rollDice,
-        action.calls,
-        requireDochugContext(action),
-    );
-    return effect;
-}
-
 async function maybeSpinMonsterWeb(
     monster: Monster,
     movement: MonsterMovement,
@@ -7534,7 +5924,7 @@ async function postMoveHideUnder(
     await newsym(monster.mx, monster.my);
 }
 
-async function finishDochugAfterMovement(
+export async function finishDochugAfterMovement(
     monster: Monster,
     movement: MonsterMovement,
     state: PlayingGameState,
