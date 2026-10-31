@@ -20,7 +20,7 @@ makerooms	nhl_done	n/a	Lua state teardown
 makerooms	reset_xystart_size	inlined	beginRoom and the des.map finally block restore the whole-level frame (sp_lev_lua.ts)
 makelevel	init_dungeons	n/a	only on C's impossible() path
 makelevel	mklev_sanity_check	n/a	sanity_check/debug_fuzzer option only
-makelevel	themerooms_post_level_generate	inlined	post_level_generate and wallification (mklev.ts, sp_lev_lua.ts)
+makelevel	themerooms_post_level_generate	inlined	post_level_generate and wallification (mklev.ts, sp_lev_lua.ts, mkmaze.ts)
 set_mimic_sym	t_at	inlined	level.traps lookup (makemon.ts)
 init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mkobj.ts)
 getbones	compress_bonesfile	n/a	file I/O
@@ -76,7 +76,7 @@ doopen_indir	is_db_wall	inlined	loc.typ === DBWALL (cmd.ts)
 doopen_indir	set_msg_xy	n/a	accessiblemsg only
 doopen_indir	sgn	inlined	Math.sign
 doopen_indir	yn_function	inlined	ynq("Kick it?") through promptYesNoQuit (cmd.ts)
-getbones	yn_function	inlined	wizard-mode bonesPrompt (mklev.ts)
+getbones	yn_function	inlined	wizard-mode bonesPrompt (bones.ts)
 minliquid_core	is_waterwall	inlined	typ === WATER (mon.ts resolveMonsterLiquid)
 slip_or_trip	confdir	inlined	same dirs_ord table, skipped for grid bugs as in C (fumbling.ts)
 slip_or_trip	sobj_at	inlined	rock lookup in the floor pile (fumbling.ts)
@@ -84,7 +84,7 @@ kick_door	get_iter_mons	inlined	witnessDoorKick thief branch (kick_door.ts)
 kick_door	get_iter_mons_xy	inlined	witnessDoorKick door-damage branch (kick_door.ts)
 kick_door	kick_dumb	inlined	kickDumb is injected as a callback from cmd.ts
 kick_door	kick_ouch	inlined	kickOuch is injected as a callback from cmd.ts
-mkshop	isbig	inlined	area > 20 (mklev.ts)
+mkshop	isbig	inlined	area > 20 (mkroom.ts)
 mkshop	mkzoo	n/a	only through the wizard SHOPTYPE environment override
 mkshop	mktemple	n/a	only through the wizard SHOPTYPE environment override
 mkshop	mkswamp	n/a	only through the wizard SHOPTYPE environment override
@@ -140,7 +140,7 @@ role_init	randrace	n/a	character selection resolves a valid race before role_ini
 role_init	randalign	n/a	character selection resolves a valid alignment before role_init
 savebones	dismount_steed	inlined	dismountHero(DISMOUNT_BONES) (bones_death.ts)
 savebones	drop_upon_death	inlined	dropHeroInventoryForBones (bones_death.ts)
-sel_set_ter	set_levltyp_lit	inlined	setLevelTerrainLit, rn2(2) for random lighting (mklev.ts)
+sel_set_ter	set_levltyp_lit	inlined	setLevelTerrainLit, rn2(2) for random lighting (mkmaze.ts)
 set_artifact_intrinsic	arti_invoke	inlined	deactivateArtifactProperty on removal (hero_inventory.ts, artifact_invoke.ts)
 set_wear	Amulet_on	n/a	starting set_wear() never meets an amulet; polymorphed ones go through wearHeroAccessory
 set_wear	Boots_on	inlined	applyArmorOnEffects, fumbling rnd(20) included (armor.ts)
@@ -489,7 +489,7 @@ give_spell	at_your_feet	inlined	landFloorObject for the spellbook (divine_gifts.
 give_spell	carrying	inlined	inventory scan for duplicate books (divine_gifts.ts)
 give_spell	discover_object	inlined	learnObjectType/discoverArtifact (divine_gifts.ts)
 god_zaps_you	ureflects	inlined	reflection source check in the bolt message (divine_wrath.ts)
-good_shopdoor	isok	inlined	bounds checks around the door candidate (mklev.ts)
+good_shopdoor	isok	inlined	bounds checks around the door candidate (shknam.ts)
 goodpos	closed_door	inlined	DOOR with D_CLOSED|D_LOCKED refuses placement (teleport_rules.ts)
 goodpos	goodpos_onscary	inlined	monsterIsScaredAt / monsterTypeScaredFromPosition under GP_CHECKSCARY (teleport_rules.ts)
 goodpos	is_exclusion_zone	inlined	level.exclusionZones bounds test (teleport_rules.ts)
@@ -707,7 +707,7 @@ potion_dip	make_glib	inlined	setPropertyTimeout('glib', turns + d(2,10)) for cur
 potion_dip	mixtype	inlined	mixtureType table (potion_mixing.ts)
 potion_dip	update_inventory	inlined	object observation refreshes the inventory view (potion_dip.ts)
 punish	setworn	inlined	ball and chain take their worn slots (punishment.ts)
-put_lregion_here	is_exclusion_zone	inlined	exclusion zone test (mklev.ts)
+put_lregion_here	is_exclusion_zone	inlined	exclusion zone test (mkmaze.ts)
 put_monsters_to_sleep	dist2	inlined	monsterDistance per monster (music.ts)
 readobjnam	permapoisoned	inlined	nameArtifact forces opoisoned for fling-poison artifacts (artifacts.ts)
 readobjnam	readobjnam_init	inlined	parseWishText initializes the wish state (wish_parse.ts)
@@ -748,7 +748,7 @@ setworn	cvt_prop_to_mseenres	inlined	seenResistanceForProperty (monster_percepti
 setworn	monstunseesu	inlined	monstersForgetHeroResistance on unslot (armor.ts, monster_perception.ts)
 setworn	set_twoweap	inlined	setTwoWeaponCombat (weapon_slots.ts)
 setworn	update_inventory	inlined	botl refresh after slot changes (armor.ts)
-shkveg	veggy_item	inlined	vegetable type test in mkveggy_at (mklev.ts)
+shkveg	veggy_item	inlined	vegetable type test in mkveggy_at (shknam.ts)
 shop_keeper	rile_shk	inlined	rileShopkeeper on the angry branch (shop_damage.ts)
 skill_based_spellbook_id	discover_object	inlined	book type learned on first read (skills.ts)
 slime_dialogue	make_stoned	inlined	cancelHeroPetrification at the last stage (slime.ts)
@@ -761,7 +761,7 @@ spelleffects	spell_idx	inlined	known spell index from the spellbooks state (spel
 spelleffects	spelleffects_check	inlined	checkSpellCast admission (spell.ts)
 spelleffects	throwspell	inlined	applyDirectedSpell target selection (spell.ts)
 spelleffects	update_inventory	inlined	inventory refresh after inventory-changing spells (spell.ts callers)
-stock_room_goodpos	distmin	inlined	chebyshev distance to the shop door (mklev.ts)
+stock_room_goodpos	distmin	inlined	chebyshev distance to the shop door (shknam.ts)
 stone_to_flesh_obj	shop_keeper	inlined	keeper lookup for statue bills (object_polymorph.ts)
 summon_furies	mk_gen_ok	inlined	G_GONE loop over the species vital (alignment.ts)
 teleds	findgd	inlined	findVaultGuard when leaving a vault by teleport (location_effects.ts)
@@ -1359,7 +1359,7 @@ dotakeoff	count_worn_stuff	inlined	worn.length selection messages (cmd.ts remove
 dowipe	set_occupation	inlined	_occupation 'wipe-face' (do.ts)
 draft_message	sgn	inlined	Math.sign on alignment (draft_message.ts)
 dragon_armor_handling	wielding_corpse	inlined	petrifying-corpse wield exposure (armor.ts)
-drop_upon_death	goodfruit	inlined	fruit ids retained in saveBonesLevel (mklev.ts)
+drop_upon_death	goodfruit	inlined	fruit ids retained in saveBonesLevel (bones.ts)
 end_running	selection_free	n/a	travel bitmap has no persistent allocation; stopRun clears run state
 engrave	update_inventory	n/a	no persistent inventory window; perm_invent parsed only
 exp_percent_changing	get_hilite	inlined	rule evaluation on the experience field (status_highlighting.ts)
@@ -1471,7 +1471,7 @@ tty_putstr	tty_raw_print	inlined	rawPrint writes below the map (terminal.ts)
 resetobjs	artifact_exists	inlined	nameArtifact registers the bones artifact with ONAME_BONES origin (bones_object.ts)
 resetobjs	cant_revive	inlined	revivalReplacement(mnum, null, false) (bones_object.ts)
 resetobjs	get_obj_location	inlined	outermostContainer plus ox/oy of the top object (bones_object.ts)
-resetobjs	goodfruit	inlined	fruitIds scan keeps only referenced fruits in the bones payload (mklev.ts saveBonesLevel)
+resetobjs	goodfruit	inlined	fruitIds scan keeps only referenced fruits in the bones payload (bones.ts saveBonesLevel)
 resetobjs	in_rooms	inlined	isInStaffedShop reads location roomno via roomForRoomno (bones_object.ts)
 resetobjs	inside_shop	inlined	isInStaffedShop checks roomno >= ROOMOFFSET and shop type (bones_object.ts)
 resetobjs	weight	inlined	objectWeight for the candelabrum conversion (bones_object.ts)
@@ -1586,8 +1586,8 @@ make_things_fit	check_fields	inlined	width measured per abbreviation attempt (st
 make_things_fit	set_condition_length	inlined	conditionSize index picks the abbreviation table (status_layout.ts)
 minimal_monnam	fmt_ptr	n/a	diagnostic-only pointer formatting
 minimal_monnam	nextmbuf	n/a	monnam buffer pool has no port counterpart
-mkswamp	nexttodoor	inlined	swampSquareBordersDoor checks doors incl. SDOOR (mklev.ts)
-mkswamp	t_at	inlined	traps.find on the swamp square (mklev.ts)
+mkswamp	nexttodoor	inlined	swampSquareBordersDoor checks doors incl. SDOOR (mkroom.ts)
+mkswamp	t_at	inlined	traps.find on the swamp square (mkroom.ts)
 movebubbles	alloc	n/a	bubble contents are JS object literals (elemental.ts)
 movebubbles	t_at	inlined	traps.find in collectWaterBubbleContents (elemental.ts)
 obj_meld	maybe_unhide_at	inlined	maybeUnhideAt on the absorbed glob square (glob.ts)
@@ -1638,7 +1638,7 @@ pacify_guards	iter_mons	inlined	monster array loop (shop_damage.ts makeShoppersH
 parse_cond_option	condopt	inlined	mask set/clear bit in setConditionOption (status_conditions.ts)
 percentage	fmt_ptr	n/a	pointer formatting only in the impossible() diagnostic for bad istat pointers
 pick_can_reach	conjoined_pits	inlined	pitsAreConjoined (hero_digging.ts)
-pick_vibrasquare_location	distmin	inlined	Chebyshev distance > 11 acceptance (mklev.ts vibratingSquarePoint)
+pick_vibrasquare_location	distmin	inlined	Chebyshev distance > 11 acceptance (mkmaze.ts vibratingSquarePoint)
 pot_acid_damage	update_inventory	n/a	no persistent inventory window in the port
 print_queue	kind_name	inlined	TIMER_FUNC_NAMES maps kinds (timeout_queue.ts)
 randomkey	cmd_from_dir	inlined	keyForDirection(direction, mode) (input.ts randomKey)

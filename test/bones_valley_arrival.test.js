@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { gotoLevel } from '../js/level_change.js';
 import { resetInputState } from '../js/input.js';
-import { saveBonesLevel } from '../js/mklev.js';
+import { saveBonesLevel } from '../js/bones.js';
 import { InMemoryStorage } from '../js/storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';

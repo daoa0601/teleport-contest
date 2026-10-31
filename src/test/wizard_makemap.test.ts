@@ -8,7 +8,7 @@ import { pline } from '../js/pline.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { saveBonesLevel } from '../js/mklev.js';
+import { saveBonesLevel } from '../js/bones.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { init_objects } from '../js/o_init.js';

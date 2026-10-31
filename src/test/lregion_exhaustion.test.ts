@@ -5,7 +5,7 @@ import { COLNO, LR_UPTELE, PANICLOG, ROWNO, STONE } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { place_lregion } from '../js/mklev.js';
+import { place_lregion } from '../js/mkmaze.js';
 import { initRng } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';

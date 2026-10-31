@@ -228,9 +228,9 @@ import { objectWeight } from './weight.js';
 import {
     findMonsterNearPosition,
     findMonsterNearPositionCore,
-    getShopItem,
     makemonNear,
 } from './mklev.js';
+import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import type { Position } from './map_types.js';
 import type { Monster, MonsterBirthState } from './monster_types.js';

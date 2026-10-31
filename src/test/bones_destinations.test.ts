@@ -6,7 +6,12 @@ import { HOLE, LA_DOWN, LA_UP, STAIRS } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
-import { maketrap, mklev, mkstairs, saveBonesLevel } from '../js/mklev.js';
+import {
+    maketrap,
+    mklev,
+    mkstairs,
+} from '../js/mklev.js';
+import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

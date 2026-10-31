@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOLE, ROLLING_BOULDER_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { generateSokobanLevel2 } from '../js/mklev.js';
+import { generateSokobanLevel2 } from '../js/mkmaze.js';
 import { BOULDER } from '../js/object_data.js';
 import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';

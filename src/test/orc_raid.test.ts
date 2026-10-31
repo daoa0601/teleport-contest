@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateMinetown } from '../js/mklev.js';
+import { generateMinetown } from '../js/mkmaze.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
 import { MM_NOGRP, NON_PM } from '../js/const.js';
 import { getObjectClassBounds } from '../js/object_data.js';

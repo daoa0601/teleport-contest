@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MOAT, THRONE } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { generateKnoxLevel } from '../js/mklev.js';
+import { generateKnoxLevel } from '../js/mkmaze.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { countTerrain, floorObjects } from './support/level-state.js';

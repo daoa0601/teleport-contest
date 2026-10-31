@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAGIC_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { fixupSpecial, generateMedusaLevel } from '../js/mklev.js';
+import { fixupSpecial, generateMedusaLevel } from '../js/mkmaze.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, CRYSTAL_BALL, EGG, STATUE, } from '../js/object_data.js';
 import { floorObjects, levelStairs } from './support/level-state.js';

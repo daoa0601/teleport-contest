@@ -7,9 +7,10 @@ import {
     DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA,
     DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST,
     DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE,
-    ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL, MOAT,
+    ICED_MOAT, IS_DRAWBRIDGE, IS_WALL, Is_stronghold, LAVAPOOL, MOAT,
     ROOM, W_NONDIGGABLE, isok,
 } from './const.js';
+import { impossible } from './diagnostics.js';
 import { displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
@@ -281,3 +282,31 @@ export async function toggleDrawbridge(x: number, y: number, state = game, optio
         return await closeDrawbridge(x, y, state, options);
     return false;
 }
+// C dbridge.c:create_drawbridge().
+export async function makeSpecialDrawbridge(x: number, y: number, direction: number, open: boolean): Promise<boolean> {
+    const level = requireGameLevel();
+    const bridge = level.at(x, y);
+    if (!bridge) return false;
+    const offsets = new Map<number, Position>([
+        [DB_NORTH, { x: 0, y: -1 }], [DB_SOUTH, { x: 0, y: 1 }],
+        [DB_EAST, { x: 1, y: 0 }], [DB_WEST, { x: -1, y: 0 }],
+    ]);
+    const requestedOffset = offsets.get(direction);
+    if (!requestedOffset) await impossible('bad direction in create_drawbridge');
+    const offset = requestedOffset ?? { x: -1, y: 0 };
+    const wall = level.at(x + offset.x, y + offset.y);
+    if (!wall || !IS_WALL(wall.typ)) return false;
+    const under = bridge.typ === LAVAPOOL ? DB_LAVA : DB_MOAT;
+    const horizontal = offset.x === 0;
+    bridge.typ = open ? DRAWBRIDGE_DOWN : DRAWBRIDGE_UP;
+    bridge.horizontal = !horizontal;
+    // Native rm.flags is five bits, including when the default -1 direction
+    // reaches create_drawbridge()'s westward fallback.
+    bridge.flags = bridge.drawbridgemask = (direction & 31) | under;
+    wall.typ = open ? DOOR : DBWALL;
+    wall.horizontal = horizontal;
+    wall.flags = wall.wall_info = open ? D_NODOOR : W_NONDIGGABLE;
+    if (open) wall.doormask = D_NODOOR;
+    return true;
+}
+

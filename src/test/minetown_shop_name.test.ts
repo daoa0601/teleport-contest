@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { SHOPBASE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateMinetown } from '../js/mklev.js';
+import { generateMinetown } from '../js/mkmaze.js';
 import { shopkeeperName } from '../js/monster_name.js';
 import { freshSpecialLevel } from './support/special-level.js';
 

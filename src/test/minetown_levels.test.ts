@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { ALTAR, FOUNTAIN, SINK, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateMinetown } from '../js/mklev.js';
+import { generateMinetown } from '../js/mkmaze.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     CORPSE, TALLOW_CANDLE, WAX_CANDLE,

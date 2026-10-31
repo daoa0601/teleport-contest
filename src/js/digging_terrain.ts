@@ -74,8 +74,9 @@ import {
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { delobj } from './object_delete.js';
 import {
-    canDigDown, createToptenObject, deleteFloorTrap, maketrap,
+    canDigDown, deleteFloorTrap, maketrap,
     } from './mklev.js';
+import { createToptenObject } from './mkobj.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import {
     buriedBallToPunishment, unearthFloorObjectsAt,

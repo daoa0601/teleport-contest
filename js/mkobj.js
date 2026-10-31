@@ -15,7 +15,7 @@ import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
 import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, } from './object_data.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { artifactExistCount, createRandomArtifact } from './artifacts.js';
@@ -26,6 +26,7 @@ import { isMultiGeneratedWeapon, isPoisonableObject } from './object_properties.
 import { rndmonstAdj } from './makemon.js';
 import { addCreatedObjectToContainer } from './object_container.js';
 import { objectProb } from './o_init.js';
+import { nameObjectFromTopten } from './topten.js';
 import { rndClass } from './objnam.js';
 import { undeadToCorpse } from './mon.js';
 import { attachEggHatchTimer } from './egg.js';
@@ -731,5 +732,17 @@ export function rndmonnumAdj(minAdjustment = 0, maxAdjustment = 0) {
         species = rn2(SPECIAL_PM);
     } while (requireMonsterData(MONSTER_GENO, species) & excluded);
     return species;
+}
+// C mkobj.c:mk_tt_object(). Statues have no initial books; a missing score
+// entry falls back to a real player role without supplying a name or gender.
+export async function createToptenObject(type, x, y) {
+    const object = await mksobj_at(type, x, y, type !== STATUE, false);
+    if (!await nameObjectFromTopten(object)) {
+        const firstRole = MONSTER_NAME.indexOf('archeologist');
+        const lastRole = MONSTER_NAME.indexOf('wizard');
+        set_corpsenm(object, rn1(lastRole - firstRole + 1, firstRole));
+        object.owt = objectWeight(object);
+    }
+    return object;
 }
 //# sourceMappingURL=mkobj.js.map

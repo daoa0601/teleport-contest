@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { AIR, COLNO, NO_MINVENT, ROWNO, WATER } from '../js/const.js';
 import { moveElementalBubbles } from '../js/elemental.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateWaterLevel } from '../js/mklev.js';
+import { generateWaterLevel } from '../js/mkmaze.js';
 import { CRYSKNIFE, WORM_TOOTH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';

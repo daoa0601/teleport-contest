@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { CORR, CORPSTAT_HISTORIC, FOUNTAIN } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateOracleLevel } from '../js/mklev.js';
+import { generateOracleLevel } from '../js/mkmaze.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
 import { floorObjects, levelStairs } from './support/level-state.js';

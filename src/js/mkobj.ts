@@ -36,7 +36,7 @@ import {
     objectDirection, POT_OIL, BELL_OF_OPENING,
 } from './object_data.js';
 import {
-    MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, SPECIAL_PM,
+    MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM,
     requireMonsterData,
 } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
@@ -51,6 +51,7 @@ import { isMultiGeneratedWeapon, isPoisonableObject } from './object_properties.
 import { rndmonstAdj } from './makemon.js';
 import { addCreatedObjectToContainer } from './object_container.js';
 import { objectProb } from './o_init.js';
+import { nameObjectFromTopten } from './topten.js';
 import { rndClass } from './objnam.js';
 import { undeadToCorpse } from './mon.js';
 import { attachEggHatchTimer } from './egg.js';
@@ -724,3 +725,16 @@ export function rndmonnumAdj(minAdjustment = 0, maxAdjustment = 0): number {
     } while (requireMonsterData(MONSTER_GENO, species) & excluded);
     return species;
 }
+// C mkobj.c:mk_tt_object(). Statues have no initial books; a missing score
+// entry falls back to a real player role without supplying a name or gender.
+export async function createToptenObject(type: number, x: number, y: number): Promise<GameObject> {
+    const object = await mksobj_at(type, x, y, type !== STATUE, false);
+    if (!await nameObjectFromTopten(object)) {
+        const firstRole = MONSTER_NAME.indexOf('archeologist');
+        const lastRole = MONSTER_NAME.indexOf('wizard');
+        set_corpsenm(object, rn1(lastRole - firstRole + 1, firstRole));
+        object.owt = objectWeight(object);
+    }
+    return object;
+}
+

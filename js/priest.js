@@ -18,15 +18,22 @@ import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { cansee, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
-import { A_NONE, A_WIS, AM_SHRINE, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER, } from './const.js';
+import { A_NONE, A_WIS, AM_SHRINE, MM_EPRI, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, RLOC_NOMSG, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER, } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
-import { makemonAt } from './makemon.js';
+import { makemon, makemonAt } from './makemon.js';
+import { mksobj, mkobj } from './mkobj.js';
+import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { monsterAtPosition } from './monster_location.js';
+import { randomMonsterRelocation } from './teleport.js';
+import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE, } from './object_data.js';
+import { SPBOOK_no_NOVEL, xdir, ydir } from './mklev.js';
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
+const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
 function sameLevel(left, right) {
     return (left?.dnum ?? 0) === (right?.dnum ?? 0)
         && (left?.dlevel ?? 1) === (right?.dlevel ?? 1);
@@ -382,5 +389,76 @@ export async function intemple(roomno, state = game) {
 export function templeRoomAt(state, x, y) {
     const roomno = roomsAt(state.level, x, y, TEMPLE)[0];
     return roomno ? { room: roomForRoomno(state.level, roomno), roomno } : null;
+}
+export async function specialShrinePriest(temple, altarX, altarY, altarAlignment, { sanctum = false } = {}) {
+    const level = requireGameLevel();
+    const shrineLevel = game.u.uz;
+    if (!shrineLevel)
+        throw new Error('Shrine priest creation requires the dungeon location.');
+    const startDirection = rn2(8);
+    let priestX = altarX, priestY = altarY;
+    for (let offset = 0; offset < 8; offset++) {
+        const direction = (startDirection + offset) % 8;
+        const dx = xdir[direction], dy = ydir[direction];
+        if (dx === undefined || dy === undefined)
+            throw new RangeError(`Invalid priest placement direction ${direction}`);
+        const x = altarX + dx;
+        const y = altarY + dy;
+        const loc = level.at(x, y);
+        if (loc && SPACE_POS(loc.typ)
+            && !(level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER)) {
+            priestX = x;
+            priestY = y;
+            break;
+        }
+    }
+    const occupant = monsterAtPosition(level, priestX, priestY);
+    if (occupant)
+        await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
+    const priest = await makemon(sanctum ? PM_HIGH_CLERIC : PM_ALIGNED_CLERIC, priestX, priestY, MM_EPRI);
+    if (!priest)
+        return null;
+    priest.ispriest = 1;
+    priest.isminion = 0;
+    priest.mpeaceful = 1;
+    priest.msleeping = 0;
+    priest.epri = {
+        shroom: (temple?.roomnoidx ?? 0) + ROOMOFFSET,
+        shralign: altarAlignment,
+        shrpos: { x: altarX, y: altarY },
+        shrlevel: { ...shrineLevel },
+        parentmid: priest.m_id,
+        intone_time: 0,
+        enter_time: 0,
+        peaceful_time: 0,
+        hostile_time: 0,
+    };
+    priest.mtrapseen = 0x7fffffff;
+    // priest.c:priestini() replaces the birth attitude and species alignment.
+    setMonsterMalign(priest);
+    if (sanctum && altarAlignment === A_NONE) {
+        const amulet = await mksobj(AMULET_OF_YENDOR, true, false);
+        await addObjectToMonsterInventory(priest, amulet, game, { atFront: true });
+    }
+    const spellbookCount = 2 + rn2(3);
+    for (let count = 0; count < spellbookCount; count++) {
+        const spellbook = await mkobj(SPBOOK_no_NOVEL, false);
+        await addObjectToMonsterInventory(priest, spellbook, game, { atFront: true });
+    }
+    // which_armor(W_ARMC) only mutates the generated robe or cloak; the
+    // alignment-based curse/uncurse operation itself consumes no RNG.
+    if (rn2(2)) {
+        const cloak = priest.minvent.find(object => [
+            ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
+        ].includes(object.otyp));
+        if (cloak) {
+            const coaligned = altarAlignment !== A_NONE
+                && game.u?.ualign?.type === altarAlignment;
+            cloak.cursed = !coaligned;
+            if (!coaligned)
+                cloak.blessed = false;
+        }
+    }
+    return priest;
 }
 //# sourceMappingURL=priest.js.map

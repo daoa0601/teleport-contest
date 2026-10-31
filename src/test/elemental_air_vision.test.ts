@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { AIR, CLOUD } from '../js/const.js';
 import { moveElementalBubbles } from '../js/elemental.js';
 import { game, requireGameLevel } from '../js/gstate.js';
-import { generateWaterLevel } from '../js/mklev.js';
+import { generateWaterLevel } from '../js/mkmaze.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
