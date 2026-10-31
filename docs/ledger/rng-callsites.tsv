@@ -7,11 +7,11 @@ src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.lengt
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""100""]"	constant
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""80 - (sessionIsNight(game.datetime) ? 20 : 0)""]"	constant
-src/js/allmain.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
-src/js/allmain.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
-src/js/allmain.ts	advanceSleepinessTimeout	rnd	"[""20""]"	constant
+src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
+src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
+src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""20""]"	constant
 src/js/allmain.ts	advanceWorldTurn	rn2	"[""200""]"	constant
-src/js/allmain.ts	finishFumblingExpiryAfterMessage	rnd	"[""20""]"	constant
+src/js/timeout.ts	finishFumblingTimeout	rnd	"[""20""]"	constant
 src/js/allmain.ts	finishHeroTookTime	rn2	"[""31""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant

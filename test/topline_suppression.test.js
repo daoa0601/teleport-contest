@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { appendTurnMessage } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { flushPendingTopline, moreUntilDismissed } from '../js/tty_topline.js';
 import { flush_screen } from '../js/display.js';
@@ -20,7 +19,7 @@ void test('suppressed timeout prose stays off the top line', async () => {
     input.feed('\x1b');
     await moreUntilDismissed('You hear a jackal barking in the corridor.');
     assert.equal(game._suppressMessagesUntilInput, true, 'Escape must suppress output');
-    appendTurnMessage('You feel less confused now.');
+    await pline('You feel less confused now.');
     await flush_screen(1);
     assert.equal(toplText(), '', 'WIN_STOP keeps the hidden line off the screen');
     assert.ok(game._toplines.includes('You feel less confused now.'), 'the history still records the hidden prose');

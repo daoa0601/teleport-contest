@@ -1,7 +1,8 @@
 // C ref: timeout.c levitation_dialogue() and the LEVITATION/FLYING expiry
-// cases of nhTimeout().  The allmain turn hook owns the ordering: dialogue
-// runs in the pre-countdown dialogue block (timeout.c:633-634), expiry runs
-// in the property loop at C property order, levitation before flying.
+// cases of nh_timeout().  timeout.ts's nhTimeout() owns the ordering:
+// dialogue runs in the pre-countdown dialogue block (timeout.c:633-634),
+// expiry runs in the property loop at C property order, levitation before
+// flying.
 import { ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
