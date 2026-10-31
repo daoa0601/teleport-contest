@@ -673,10 +673,12 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
             if (!isLavaAt(targetX, targetY)) {
                 hero.utrap--;
                 if ((hero.utrap & 0xff) === 0) {
-                    clearHeroTrap();
+                    // domove_core() resets the trap after this message returns.
+                    // Its pager must keep the preceding InLava status visible.
+                    hero.utrap = 0;
                     await pline(steedName
                         ? `You lead ${steedName} to the edge of the ${displayLiquidName('lava', game)}.`
-                        : 'You pull yourself to the edge of the lava.');
+                        : `You pull yourself to the edge of the ${displayLiquidName('lava', game)}.`);
                 }
             }
             hero.umoved = true;
