@@ -322,6 +322,42 @@ void test('see-invisible reveals a real invisible monster and times out through 
         await turn;
     }
 });
+// C potion.c:peffect_see_invisible() computes msg from Invisible
+// (youprop.h: Invis && !See_invisible), so a hero who already sees
+// invisible gains nothing observable beyond the taste line.
+void test('see invisible already held by an invisible hero leaves only the taste line', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    grantIntrinsicProperty('invisible', 'outside');
+    await grantHeroSeeInvisible({ duration: 800 });
+    assert.equal(heroIsInvisible(), true);
+    const sight = await potion(POT_SEE_INVISIBLE);
+    recordObjectKnowledge(sight.otyp);
+    const input = resetInputState();
+    input.feed(sight.invlet);
+    const action = rhack('q'.charCodeAt(0));
+    const blocked = await Promise.race([action.then(() => false),
+        input.waitUntilBlocked().then(() => true)]);
+    if (blocked)
+        input.feed(' ');
+    await action;
+    assert.equal(blocked, false, 'the quaff must not page the taste line behind --More--');
+    assert.match(game._pending_message ?? '', /^This tastes like /);
+    assert.equal((game._pending_message ?? '').includes('see through yourself'), false);
+    assert.ok((game.u.seeInvisibleTurns ?? 0) > 800);
+});
+// The same quaff on an invisible hero without see invisible follows C's
+// msg && !Blind branch: the hero becomes visible to themselves, and the
+// potion is identified instead of left unknown.
+void test('see invisible quaffed while unseen reveals the hero and identifies the potion', async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    grantIntrinsicProperty('invisible', 'outside');
+    const sight = await potion(POT_SEE_INVISIBLE, { typeKnown: false });
+    await drink(sight, ' ');
+    assert.equal(game._pending_message, 'You can see through yourself, but you are visible!');
+    assert.equal(game._knownObjectTypes?.has(sight.otyp), true);
+});
 void test('seeing an invisible wall mimic restores its actual light blocking', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
