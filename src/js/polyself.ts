@@ -74,6 +74,7 @@ import { counterWereSpecies } from './monster_species.js';
 import { isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
 import { golemHitPoints, isHomeElemental } from './monster_hit_points.js';
+import { setSlipperyHands } from './towel.js';
 import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
@@ -542,10 +543,7 @@ async function beginMonsterForm(mnum: number, {
         }
     }
     await stopStrangulationInImmuneForm();
-    if (heroHasNoHands(game)) {
-        u.glibTurns = 0;
-        u.glib = false;
-    }
+    if (heroHasNoHands(game)) setSlipperyHands(0, game);
 
     const monsterLevel = MONSTER_LEVEL[mnum] ?? 0;
     const fixedGolemHitPoints = golemHitPoints(mnum);
