@@ -1,20 +1,12 @@
 import type { ArmorCompletion } from './command_types.js';
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { dolookaround } from './lookaround.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './pline.js';
-import { slipOrTrip } from './fumbling.js';
 import { heroLegName } from './body_parts.js';
-import { recoverTimedLuck } from './timeout_luck.js';
 import { doStorms } from './storms.js';
-import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
-import {
-    breathingDialogue, wallPassageDialogue,
-    finishBreathingTimeout, finishWallPassageTimeout,
-} from './timeout_warnings.js';
-import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
 // allmain.js — Main game loop.
@@ -23,16 +15,12 @@ import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
 import { learnWand } from './wand_charge.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
-import { advanceSpellProtection } from './spell_misc_effects.js';
-import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { finishMealMimicry } from './meal_mimic.js';
 import { finishHeroDigestion } from './hero_combat_engulf.js';
-import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { PropertyName } from './property_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
@@ -105,11 +93,7 @@ import { isWeldedPrimary } from './weapon_slots.js';
 import { unlinkObject } from './object_location.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { RLOC_MSG, LOST_STOLEN } from './const.js';
-import {
-    advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue,
-} from './levitation_timeout.js';
 import { MMOVE_DIED, NORMAL_SPEED } from './const.js';
-import { runObjectTimer } from './timer_effects.js';
 import { tryKnockback } from './knockback.js';
 import { finishMonsterGrowth } from './monster_growth.js';
 import type { MonsterGrowth } from './monster_growth.js';
@@ -165,7 +149,7 @@ import {
     GOLD_PIECE,
     OBJECT_BIMANUAL, OBJECT_NAMES,
 } from './object_data.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import {
@@ -184,10 +168,8 @@ import {
 import { uInitMisc, makedog, uInitInventoryAttrs,
     finishStartingDiscoveries,
 } from './u_init.js';
-import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
-import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { igniteItems } from './light.js';
 import {
     applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory,
@@ -196,10 +178,6 @@ import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import {
     addObjectToMonsterInventory,
 } from './monster_inventory.js';
-import {
-    claimNextDueObjectTimer,
-    peekNextDueObjectTimer,
-} from './object_timers.js';
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import { ensureQuestStatus } from './quest.js';
@@ -250,22 +228,12 @@ import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
-import { deferredDecor } from './dungeon_feature.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { heroHasOlfaction, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
-import { healHeroLegs } from './hero_legs.js';
+import { heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import {
-    advanceHeroSickness, advanceHeroVomiting, heroIsSick,
-    heroIsVomiting, sicknessDialogue, vomitingDialogue,
-} from './hero_illness.js';
-import {
-    advanceHeroSliming, clearHeroSliming,
-    finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime, slimeDialogue,
+    clearHeroSliming,
+    finishDeferredHeroSlime, resumeDeferredHeroSlime,
 } from './slime.js';
-import {
-    advanceHeroPetrification, heroIsPetrifying, petrificationDialogue,
-} from './stoning.js';
-import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
@@ -313,33 +281,19 @@ import {
     hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive,
     propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout,
 } from './properties.js';
-import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
-import { setSlipperyHands } from './towel.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
-import { restartMonsterShapechanging } from './monster_polymorph.js';
+import { nhTimeout } from './timeout.js';
 import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
 
 interface TurnMaintenance {
     sourceTurn: number;
-    moveAmount: number;
     readonly capacity: number;
-    deferAmbientMessage: boolean;
-    polymorphed: boolean;
 }
 
-interface TimeoutMaintenance extends TurnMaintenance {
-    prayerTimeoutFreeze: boolean;
-}
-
-type CompletedMaintenance = { kind: 'complete'; moveAmount: number };
+type CompletedMaintenance = { kind: 'complete' };
 type MaintenancePhase =
     | CompletedMaintenance
-    | (TurnMaintenance & { kind: 'object-timers' })
-    | (TimeoutMaintenance & {
-        kind: 'timeout-message';
-        timeoutKind: 'stun' | 'confusion';
-    })
     | (TurnMaintenance & { kind: 'regions' })
     | (TurnMaintenance & Position & { kind: 'statue-trap' });
 
@@ -746,34 +700,6 @@ async function finishMoveloopPreamble() {
     game._moveloopStarted = true;
 }
 
-export function appendTurnMessage(message: string): void {
-    const game = requireInitializedGame();
-    if (game._suppressMessagesUntilInput) {
-        // update_topl() with WIN_STOP still advances gt.toplines and the
-        // recall history, but redotoplin() never runs: the screen keeps
-        // its suppressed line instead of showing this prose.
-        appendSuppressedTopline(message);
-        game._last_message = message;
-        game._lastPlineMessage = message;
-        return;
-    }
-    // update_topl()'s new or joined line repaints the physical top row.
-    resetToplineClip();
-    const joins = !!game._pending_message;
-    game._pending_message = joins
-        ? `${game._pending_message}  ${message}` : message;
-    // update_topl()'s negotiation keeps gt.toplines in step with the
-    // deferred publisher: a joinable line extends it, otherwise the
-    // previous line is remembered first.
-    if (joins) game._toplines = `${game._toplines}  ${message}`;
-    else {
-        rememberToplines();
-        game._toplines = message;
-    }
-    game._last_message = game._pending_message;
-    game._lastPlineMessage = message;
-}
-
 // C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
 // positive `multi`; full HP or power recovery cancels that voluntary repeat,
 // but must not stop independent occupations such as eating, lock-picking, or
@@ -931,11 +857,11 @@ async function periodicTurnExercise(sourceTurn: number): Promise<void> {
 }
 
 async function finishInitialTurnMaintenanceAfterAmbient({
-    sourceTurn, moveAmount,
-}: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<CompletedMaintenance> {
+    sourceTurn,
+}: Pick<TurnMaintenance, 'sourceTurn'>): Promise<CompletedMaintenance> {
     const game = requireInitializedGame();
     await getHungry({ invulnerable: game.u.invulnerable });
-    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    if (game.program_state.gameover) return { kind: 'complete' };
     // JS has already advanced `game.moves` for the hero action which caused
     // this maintenance pass.  C increments svm.moves inside this pass, so
     // the resulting C turn number is the existing JS value, not value + 1.
@@ -948,46 +874,24 @@ async function finishInitialTurnMaintenanceAfterAmbient({
     // departure before the recovery message.
     await invault(game);
     await finishInitialTurnMaintenanceRng(sourceTurn);
-    return { kind: 'complete', moveAmount };
-}
-
-async function finishFumblingExpiryAfterMessage(fumbled: boolean, publish: MessagePublisher) {
-    const game = requireInitializedGame();
-    if (fumbled) {
-        nomul(-2);
-        game._helplessDoneMessage = '';
-        game._helplessReason = 'fumbling';
-        if (invWeight(game) > -500) {
-            if (!heroIsDeaf(game)) await publish('You make a lot of noise!');
-            await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, game.u.ulevel * 20, game, publish);
-        }
-    }
-    game.u.fumblingFromIce = false;
-    if (game.u?.fumblingFromArmor || game.u.fumblingIntrinsic || propertyIsActive('fumbling', game))
-        game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
-    game.u.fumbling = !!(game.u?.fumblingFromArmor
-        || game.u.fumblingIntrinsic
-        || propertyIsActive('fumbling', game)
-        || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
-    // C timeout.c: a decor message deferred past the trip catches up here.
-    if (game.iflags.deferDecor) await deferredDecor(false);
+    return { kind: 'complete' };
 }
 
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({
-    sourceTurn, moveAmount,
-}: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
+    sourceTurn,
+}: Pick<TurnMaintenance, 'sourceTurn'>): Promise<MaintenancePhase> {
     if (game.u.warning) await revealWarnedMonsters();
     if (game.were_changes) setHeroSpecies(heroSpecies(game), game);
     await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     await doStorms(game);
-    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-    return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
+    if (game.program_state.gameover) return { kind: 'complete' };
+    return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn });
 }
 
 async function finishInitialTurnMaintenanceAfterRegions({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
+    sourceTurn, capacity,
 }: TurnMaintenance): Promise<MaintenancePhase> {
     const game = requireInitializedGame();
     if (game.u.ublesscnt > 0) game.u.ublesscnt--;
@@ -997,7 +901,7 @@ async function finishInitialTurnMaintenanceAfterRegions({
     const recoveryCapacity = game.u.invulnerable ? UNENCUMBERED : capacity;
     if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
         await interruptCountedActivity('You are in full health.');
-    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    if (game.program_state.gameover) return { kind: 'complete' };
 
     // C moveloop_core(): moving around while Strained or worse is hard work.
     if (recoveryCapacity > MOD_ENCUMBER && game.u.umoved
@@ -1031,9 +935,9 @@ async function finishInitialTurnMaintenanceAfterRegions({
     }
 
     await rollHeroTeleportitis();
-    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    if (game.program_state.gameover) return { kind: 'complete' };
     await advanceHeroShapeChange();
-    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    if (game.program_state.gameover) return { kind: 'complete' };
 
     if (game.u?.searching && !game.level?.flags?.noautosearch
         && !heroHasInvoluntaryDelay(game)) {
@@ -1042,14 +946,13 @@ async function finishInitialTurnMaintenanceAfterRegions({
             const { x, y } = search.statueTrap;
             return {
                 kind: 'statue-trap',
-                x, y, sourceTurn, moveAmount,
-                capacity, deferAmbientMessage, polymorphed,
+                x, y, sourceTurn, capacity,
             };
         }
     }
 
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
-        sourceTurn, moveAmount,
+        sourceTurn,
     });
 }
 
@@ -1098,15 +1001,6 @@ async function advanceHeroShapeChange(): Promise<void> {
     if (game._pendingHeroShapeChange === 'polymorph') await polymorphHero();
     else await applyHeroWereChange();
     delete game._pendingHeroShapeChange;
-}
-
-function finishInitialTurnMaintenanceAfterTimeout({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-}: TurnMaintenance): MaintenancePhase {
-    return {
-        kind: 'regions',
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    };
 }
 
 async function runLevelRegionTurn() {
@@ -1161,13 +1055,12 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
                 wakeMonstersNearWithMessages(x, y, distance, game),
         });
     }
-    return finishInitialTurnMaintenanceAfterMonsterDistress(capacity, true);
+    return finishInitialTurnMaintenanceAfterMonsterDistress(capacity);
 }
 
 // C allmain.c:maybe_generate_rnd_mon().
 async function finishInitialTurnMaintenanceAfterMonsterDistress(
     capacity: number,
-    deferAmbientMessage: boolean,
 ): Promise<MaintenancePhase> {
     const game = requireInitializedGame();
     allocateMonsterMovement(game.level?.monsters || [], rn2, game);
@@ -1221,406 +1114,19 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
         await flushPendingTopline();
         await plineWithContinuation('The dungeon capitulates.', { urgent: true });
         await finishHeroDeath({ killer: '', deathType: ESCAPED });
-        return { kind: 'complete', moveAmount };
+        return { kind: 'complete' };
     }
     if (game.flags.time && !game.context.run) game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
     if (heroHasSlipperyHands(game)) await slipFromSlipperyHands(game);
 
-    // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
-    // the first timed impairment live rather than treating its setup rolls as
-    // disposable: bear-trap leg damage lowers Dexterity until this countdown
-    // expires.
-    const sourceTurn = game.moves;
-    return finishInitialTurnMaintenanceBeforeTimeouts({
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    });
-}
-
-async function finishInitialTurnMaintenanceBeforeTimeouts({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-}: TurnMaintenance): Promise<MaintenancePhase> {
-    const game = requireInitializedGame();
-    // C timeout.c:nh_timeout() expires temporary confusion before regen,
-    // sounds, hunger, and exerchk().  The final tick is observable twice:
-    // it queues the recovery message and prevents this same turn's periodic
-    // Wisdom abuse from seeing Confusion as active.
-    // Prayer's u.uinvulnerable is not the timed Invulnerable property.
-    // timeout.c:nh_timeout() returns before decrementing any property while
-    // that prayer-only flag is active.
-    recoverTimedLuck(game);
-    const prayerTimeoutFreeze = !!game.u?.invulnerable;
-    if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
-        await petrificationDialogue({
-            state: game,
-            publish: plineWithContinuation,
-        });
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-    }
-    if (!prayerTimeoutFreeze && heroIsSliming(game)) {
-        await slimeDialogue({
-            state: game,
-            publish: plineWithContinuation,
-            repaint: newsym,
-            randomMonsterName: randomDisplayMonsterName,
-        });
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-    }
-    if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
-        await vomitingDialogue({
-            state: game,
-            publish: plineWithContinuation,
-        });
-    }
-    if (!prayerTimeoutFreeze
-        && game.u.strangledTurns !== undefined && game.u.strangledTurns > 0) {
-        await strangulationDialogue({
-            state: game,
-            publish: plineWithContinuation,
-        });
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-    }
-    if (!prayerTimeoutFreeze && heroIsSick(game)) {
-        await sicknessDialogue({
-            state: game,
-            publish: plineWithContinuation,
-        });
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-    }
-    if (!prayerTimeoutFreeze) await levitationDialogue(game);
-    if (!prayerTimeoutFreeze) {
-        await wallPassageDialogue(game);
-        await breathingDialogue(game);
-    }
-    if (!prayerTimeoutFreeze) {
-        if (propertyTimeout('sleepy', game) === 4)
-            await plineWithContinuation('You yawn.');
-        await advanceBodyTimeouts(game);
-        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-    }
-    if (!prayerTimeoutFreeze) await advanceSpellProtection(game);
-    if (!prayerTimeoutFreeze) await advanceGallopingTimeout(game);
-    if (!prayerTimeoutFreeze) {
-        if (advancePropertyTimeout('fireResistance', game)
-            && !propertyIsActive('fireResistance', game))
-            await plineWithContinuation('Your temporary ability to survive burning has ended.');
-        advanceSimplePropertyTimeouts([
-            'coldResistance', 'sleepResistance', 'disintegrationResistance',
-        ], game);
-    }
-    if (!prayerTimeoutFreeze
-        && game.u.shockResistanceTurns !== undefined && game.u.shockResistanceTurns > 0
-        && --game.u.shockResistanceTurns === 0)
-        refreshProperty('shockResistance', game);
-    if (!prayerTimeoutFreeze) {
-        advancePropertyTimeout('poisonResistance', game);
-        await advanceCorpseResistanceTimeouts(game);
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-        advanceSimplePropertyTimeouts(['drainResistance', 'sicknessResistance'], game);
-    }
-    if (!prayerTimeoutFreeze
-        && game.u.invulnerableTurns !== undefined && game.u.invulnerableTurns > 0) {
-        game.u.invulnerableTurns--;
-    }
-    if (!prayerTimeoutFreeze
-        && game.u.magicResistanceTurns !== undefined && game.u.magicResistanceTurns > 0
-        && --game.u.magicResistanceTurns === 0)
-        refreshProperty('antimagic', game);
-    if (!prayerTimeoutFreeze
-        && game.u.stunnedTurns !== undefined && game.u.stunnedTurns > 0) {
-        const remaining = game.u.stunnedTurns - 1;
-        if (remaining === 0) {
-            if (deferAmbientMessage) {
-                return {
-                    kind: 'timeout-message',
-                    timeoutKind: 'stun',
-                    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-                    prayerTimeoutFreeze,
-                };
-            }
-            game.u.stunnedTurns = 0;
-            game.context.botl = true;
-            refreshProperty('stunned', game);
-            if (!heroIsUnaware(game))
-                appendTurnMessage(formatFeltMessage(heroIsHallucinating(game) ? 'less wobbly now.' : 'a bit steadier now.'));
-        } else game.u.stunnedTurns = remaining;
-    }
-
-    return finishInitialTurnMaintenanceAfterStun({
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-function finishInitialTurnMaintenanceAfterStun({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}: TimeoutMaintenance): MaintenancePhase | Promise<MaintenancePhase> {
-    const game = requireInitializedGame();
-    if (!prayerTimeoutFreeze
-        && game.u.confusionTurns !== undefined && game.u.confusionTurns > 0) {
-        const remaining = game.u.confusionTurns - 1;
-        if (remaining === 0) {
-            if (deferAmbientMessage) {
-                return {
-                    kind: 'timeout-message',
-                    timeoutKind: 'confusion',
-                    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-                    prayerTimeoutFreeze,
-                };
-            }
-            game.u.confusionTurns = 0;
-            game.context.botl = true;
-            refreshProperty('confusion', game);
-            if (!heroIsUnaware(game))
-                appendTurnMessage(formatFeltMessage(heroIsHallucinating(game) ? 'less trippy now.' : 'less confused now.'));
-        } else game.u.confusionTurns = remaining;
-    }
-
-    return finishInitialTurnMaintenanceAfterConfusion({
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-async function finishInitialTurnMaintenanceAfterConfusion({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}: TimeoutMaintenance): Promise<MaintenancePhase> {
-    const game = requireInitializedGame();
-    if (!prayerTimeoutFreeze
-        && game.u.blindTurns !== undefined && game.u.blindTurns > 0) {
-        game.u.blindTurns--;
-        if (game.u.blindTurns === 0) {
-            // C nh_timeout() samples Blind after decrementing, then restores
-            // one tick for make_blinded()'s recovery message and redraws.
-            const wasBlind = heroIsBlind(game);
-            game.u.blindTurns = 1;
-            await makeBlinded(0);
-            if (wasBlind && !heroIsBlind(game)) await stopHeroOccupation(game);
-        }
-    }
-
-    if (!prayerTimeoutFreeze
-        && game.u.deafTurns !== undefined && game.u.deafTurns > 0) {
-        if (game.u.deafTurns === 1) {
-            await makeDeaf(0);
-            if (!heroIsDeaf(game)) await stopHeroOccupation(game);
-        } else game.u.deafTurns--;
-    }
-
-    if (!prayerTimeoutFreeze) {
-        await advanceHeroSickness({ publish: plineWithContinuation });
-        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-        await advanceHeroPetrification();
-        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-        await advanceHeroStrangulation();
-        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-        await advanceHeroVomiting();
-    }
-
-    if (!prayerTimeoutFreeze && advancePropertyTimeout('glib', game))
-        setSlipperyHands(0, game);
-
-    if (!prayerTimeoutFreeze) {
-        await advanceHeroSliming({ transform: polymonHero, die: finishHeroDeath });
-        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-    }
-
-    if (!prayerTimeoutFreeze
-        && game.u.hallucinationTurns !== undefined && game.u.hallucinationTurns > 0) {
-        if (game.u.hallucinationTurns === 1) {
-            await makeHallucinated(0);
-            if (!heroIsHallucinating(game)) await stopHeroOccupation(game);
-        } else game.u.hallucinationTurns--;
-    }
-
-    if (!prayerTimeoutFreeze) advancePropertyTimeout('hallucinationResistance', game);
-
-    if (!prayerTimeoutFreeze
-        && game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0) {
-        game.u.fumblingTurns--;
-        if (game.u.fumblingTurns === 0) {
-            const levitating = !!(game.u?.levitating
-                || game.u?.levitation || game.levitating);
-            const flying = !!(game.u?.flying || game.flying);
-            if (game.u?.umoved && !levitating && !flying) {
-                const publish: MessagePublisher = deferAmbientMessage
-                    ? plineWithContinuation : async message => appendTurnMessage(message);
-                await slipOrTrip(publish);
-                if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-                await finishFumblingExpiryAfterMessage(true, publish);
-            } else {
-                await finishFumblingExpiryAfterMessage(false, plineWithContinuation);
-            }
-        }
-    }
-
-    return finishInitialTurnMaintenanceAfterFumbling({
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-        prayerTimeoutFreeze,
-    });
-}
-
-async function finishInitialTurnMaintenanceAfterFumbling({
-    sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    prayerTimeoutFreeze,
-}: TimeoutMaintenance): Promise<MaintenancePhase> {
-    const game = requireInitializedGame();
-    if (!prayerTimeoutFreeze
-        && game.u._woundedLegTurns !== undefined && game.u._woundedLegTurns > 0) {
-        game.u._woundedLegTurns--;
-        if (game.u._woundedLegTurns === 0) {
-            await healHeroLegs(game);
-            refreshProperty('woundedLegs', game);
-            await stopHeroOccupation(game);
-        }
-    }
-
-    if (!prayerTimeoutFreeze) {
-        await advanceSleepinessTimeout(game);
-        advancePropertyTimeout('hunger', game);
-    }
-
-    if (!prayerTimeoutFreeze
-        && game.u.seeInvisibleTurns !== undefined && game.u.seeInvisibleTurns > 0) {
-        game.u.seeInvisibleTurns--;
-        if (game.u.seeInvisibleTurns === 0) {
-            refreshProperty('seeInvisible', game);
-            await refreshHeroSeeing();
-            await stopHeroOccupation(game);
-        }
-    }
-
-    if (!prayerTimeoutFreeze) {
-        advanceSimplePropertyTimeouts(['telepathy', 'warning'], game);
-        if (advancePropertyTimeout('warnOfMonster', game)
-            && !propertyIsActive('warnOfMonster', game)) {
-            const species = game.context.warntype?.speciesidx;
-            if (game.context.warntype) game.context.warntype.speciesidx = -1;
-            if (species !== undefined && species >= 0) {
-                const name = MONSTER_NAME[species];
-                if (name) await plineWithContinuation(`You are no longer warned about ${makePlural(name)}.`);
-            }
-        }
-        advanceSimplePropertyTimeouts([
-            'warnUndead', 'searching', 'clairvoyant', 'infravision',
-        ], game);
-    }
-
-    if (!prayerTimeoutFreeze
-        && game.u.monsterDetectionTurns !== undefined && game.u.monsterDetectionTurns > 0) {
-        game.u.monsterDetectionTurns--;
-        if (!game.u.monsterDetectionTurns) {
-            refreshProperty('detectMonsters', game);
-            await see_monsters();
-        }
-    }
-
-    if (!prayerTimeoutFreeze)
-        advanceSimplePropertyTimeouts(['blindResistance', 'adorned'], game);
-
-    if (!prayerTimeoutFreeze
-        && game.u.invisibleTurns !== undefined && game.u.invisibleTurns > 0) {
-        game.u.invisibleTurns--;
-        if (game.u.invisibleTurns === 0) {
-            const stillInvisible = syncHeroInvisibility(game);
-            await newsym(game.u.ux, game.u.uy);
-            if (!stillInvisible && !propertyIsBlocked('invisible', game) && !heroIsBlind(game)) {
-                await plineWithContinuation(game.u.seeInvisible
-                    ? 'You can no longer see through yourself.'
-                    : 'You are no longer invisible.');
-                await stopHeroOccupation(game);
-            }
-        }
-    }
-
-    if (!prayerTimeoutFreeze) await advanceDisplacementTimeout(game);
-
-    if (!prayerTimeoutFreeze) {
-        advanceSimplePropertyTimeouts([
-            'stealth', 'aggravateMonster', 'conflict', 'jumping',
-            'teleportation', 'teleportControl',
-        ], game);
-        await advanceLevitationTimeout(game);
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-        await advanceFlyingTimeout(game);
-        if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
-    }
-
-    if (!prayerTimeoutFreeze) {
-        if (advancePropertyTimeout('waterWalking', game)
-            && !propertyIsActive('waterWalking', game))
-            await plineWithContinuation('Your temporary ability to walk on liquid has ended.');
-        advancePropertyTimeout('swimming', game);
-        if (advancePropertyTimeout('magicalBreathing', game))
-            await finishBreathingTimeout(game);
-        if (advancePropertyTimeout('passesWalls', game))
-            await finishWallPassageTimeout(game);
-        advancePropertyTimeout('slowDigestion', game);
-    }
-
-    if (!prayerTimeoutFreeze)
-        advanceSimplePropertyTimeouts(['halfSpellDamage', 'halfPhysicalDamage'], game);
-
-    if (!prayerTimeoutFreeze) {
-        advanceSimplePropertyTimeouts([
-            'regeneration', 'energyRegeneration', 'protection',
-        ], game);
-        if (advancePropertyTimeout('protectionFromShapeChangers', game)
-            && !propertyIsActive('protectionFromShapeChangers', game))
-            await restartMonsterShapechanging(game);
-        advanceSimplePropertyTimeouts([
-            'polymorph', 'polymorphControl', 'unchanging',
-        ], game);
-    }
-
-    if (!prayerTimeoutFreeze
-        && game.u.veryFastTurns !== undefined && game.u.veryFastTurns > 0) {
-        setPropertyTimeout('fast', game.u.veryFastTurns - 1, game);
-        if (game.u.veryFastTurns === 0) {
-            if (!game.u.veryFast)
-                await plineWithContinuation(formatFeltMessage(game.u.fast ? 'yourself slow down a bit.' : 'yourself slow down.'));
-        }
-    }
-
-    if (!prayerTimeoutFreeze)
-        advanceSimplePropertyTimeouts([
-            'reflection', 'freeAction', 'sustainAbility', 'lifeSaving',
-        ], game);
-
-    return {
-        kind: !prayerTimeoutFreeze && peekNextDueObjectTimer(game, sourceTurn)
-            ? 'object-timers' : 'regions',
-        sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    };
-}
-
-// C timeout.c decrements every intrinsic timeout in prop.h order. These
-// properties have no dedicated recovery action; their source projection still
-// needs refreshing when the timed source ends.
-function advanceSimplePropertyTimeouts(properties: readonly PropertyName[], state: GameState): void {
-    for (const property of properties) advancePropertyTimeout(property, state);
-}
-
-function advancePropertyTimeout(property: PropertyName, state: GameState): boolean {
-    const remaining = propertyTimeout(property, state);
-    if (remaining <= 0) return false;
-    setPropertyTimeout(property, remaining - 1, state);
-    return remaining === 1;
-}
-
-async function advanceSleepinessTimeout(state: GameState): Promise<void> {
-    if (!advancePropertyTimeout('sleepy', state)) return;
-    if (heroIsUnconscious(state) || state.u.sleepResistance) {
-        setPropertyTimeout('sleepy', rnd(100), state);
-    } else if (propertyIsActive('sleepy', state)) {
-        await plineWithContinuation('You fall asleep.');
-        const duration = rnd(20);
-        await putHeroToSleep(duration, { state });
-        setPropertyTimeout('sleepy', duration + rnd(100), state);
-    }
+    // nh_timeout() precedes regeneration and exerchk() in the C loop.
+    // C allmain.c:273 calls it between glibr() and run_regions(); the
+    // countdown and its expiry messages live in timeout.ts.
+    await nhTimeout();
+    if (game.program_state?.gameover) return { kind: 'complete' };
+    return { kind: 'regions', sourceTurn: game.moves, capacity };
 }
 
 
@@ -1629,26 +1135,6 @@ async function advanceWorldTurn(): Promise<void> {
     const initialPhase = await beginInitialTurnMaintenance();
     if (initialPhase.kind === 'hero-died') return;
     let phase: MaintenancePhase = initialPhase;
-    while (phase.kind === 'timeout-message') {
-        if (phase.timeoutKind === 'stun') {
-            await makeStunned(0);
-            if (!propertyIsActive('stunned', game)) await stopHeroOccupation(game);
-            phase = await finishInitialTurnMaintenanceAfterStun(phase);
-        } else {
-            await makeConfused(0);
-            await stopHeroOccupation(game);
-            phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
-        }
-    }
-    while (phase.kind === 'object-timers') {
-        const claimed = claimNextDueObjectTimer(
-            game, phase.sourceTurn,
-        );
-        if (claimed) await runObjectTimer(claimed, phase.sourceTurn);
-        if (game.program_state.gameover) return;
-        if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
-        phase = finishInitialTurnMaintenanceAfterTimeout(phase);
-    }
     if (game.program_state?.gameover) return;
     while (phase.kind === 'regions') {
         await runLevelRegionTurn();

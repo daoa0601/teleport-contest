@@ -124,7 +124,7 @@ minliquid_core	resolveMonsterLiquid
 eatcorpse	prepareCorpseMeal
 throw_obj	throwCommand
 # Round three: callers whose missing callee rolls dice.
-nh_timeout	finishInitialTurnMaintenanceBeforeTimeouts
+nh_timeout	nhTimeout
 choke_dialogue	strangulationDialogue
 float_down	floatHeroDown
 you_unwere	revertHeroWereForm
