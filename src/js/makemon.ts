@@ -664,8 +664,10 @@ function receivesClericEquipment(mndx: number): boolean {
 }
 
 function levelMonsterAt(x: number, y: number, ignore: Monster | null = null): Monster | undefined {
+    // C MON_AT(x, y) is purely positional: a dying monster keeps its square
+    // until m_detach, so mhp does not filter occupancy here.
     return game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) && monster !== ignore
-        && (monster?.mhp ?? 1) > 0 && monsterOccupiesPosition(monster, x, y));
+        && monsterOccupiesPosition(monster, x, y));
 }
 
 // C ref: makemon.c makemon_rnd_goodpos().  The random phase owns a complete
