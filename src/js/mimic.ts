@@ -54,15 +54,16 @@ export async function revealMimicIdentity(monster: Monster, {
         const seesInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
         if (monster.minvis && !seesInvisible) identity = 'a monster';
         else if (appearance === M_AP_MONSTER)
-            identity = monsterName(monster, { state, article: 'a', exact: true });
-        else {
-            const sleeping = MONSTER_SYMBOL[monster.mnum] === 13
-                && [M_AP_OBJECT, M_AP_FURNITURE].includes(appearance)
-                && (monster.msleeping || monster.mfrozen);
+            identity = monsterName(monster, { state, article: 'a', exact: true, called: true });
+        else if (MONSTER_SYMBOL[monster.mnum] === 13
+            && [M_AP_OBJECT, M_AP_FURNITURE].includes(appearance)
+            && (monster.msleeping || monster.mfrozen))
+            // BUG(per C): a paralyzed mimic is misclassified as sleeping.
             identity = monsterName(monster, {
-                state, article: 'a', adjective: sleeping ? 'sleeping' : '',
+                state, article: 'a', adjective: 'sleeping', suppressSaddle: false,
             });
-        }
+        else
+            identity = monsterName(monster, { state, article: 'a' });
     }
     if (identity) await publish(`${omitWait ? prefix.replace(/^Wait!  /, '') : prefix}${identity}!`);
     await revealMonsterAppearance(monster);
