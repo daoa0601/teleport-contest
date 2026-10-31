@@ -1,22 +1,24 @@
-// Native uhitm.c monster-vs-monster fire, cold, electricity, acid and erosion.
+// Native uhitm.c monster-vs-monster cold, electricity, acid and erosion;
+// mhitm_ad_fire() lives in uhitm.ts with its other actor branches.
 import { M_ATTK_MISS, STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, displayLiquidName, shieldeff } from './display.js';
-import { igniteItems } from './light.js';
 import { applyMonsterGolemEffects } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { AD_ACID, AD_COLD, AD_CORR, AD_DCAY, AD_ELEC, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { monsterCombatDefense } from './monster_combat_defense.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterFireDescription } from './monster_fire_description.js';
+import { mhitmAdFire } from './uhitm.js';
 import { monsterName } from './monster_name.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, } from './monster_resistance.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasShockResistance, } from './monster_resistance.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { destroyMonsterInventoryByElement } from './zap.js';
 export async function applyMonsterElementEffect(attacker, defender, context) {
     const type = context.attack[1];
-    if (type === AD_FIRE || type === AD_COLD || type === AD_ELEC)
+    if (type === AD_FIRE)
+        return await mhitmAdFire({ attacker, defender, context });
+    if (type === AD_COLD || type === AD_ELEC)
         return await elementalContact(attacker, defender, type, context);
     if (type === AD_RUST || type === AD_CORR || type === AD_DCAY)
         return await erosionContact(attacker, defender, type, context);
@@ -29,28 +31,18 @@ async function elementalContact(attacker, defender, type, context) {
     if (await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random }))
         return damageResult(0);
     const seen = visible && canSeeMonster(defender);
-    const fire = type === AD_FIRE;
     const cold = type === AD_COLD;
     if (seen) {
         const subject = monsterName(defender, { state, capitalized: true });
-        await publish(`${subject} ${fire ? `is ${monsterFireDescription(defender, context.attack[0])}`
-            : cold ? 'is covered in frost' : 'gets zapped'}!`);
+        await publish(`${subject} ${cold ? 'is covered in frost' : 'gets zapped'}!`);
     }
-    const species = MONSTER_NAME[defender.mnum];
-    if (fire && (species === 'paper golem' || species === 'straw golem')) {
-        if (seen)
-            await publish(`${monsterName(defender, { state, capitalized: true })} ${wornMonsterLifeSaver(defender)
-                ? 'is totally engulfed in flames' : 'burns completely'}!`);
-        return await killGolem(type, context);
-    }
-    const element = fire ? 'fire' : cold ? 'cold' : 'electric';
-    const resistance = fire ? monsterHasFireResistance(defender)
-        : cold ? monsterHasColdResistance(defender) : monsterHasShockResistance(defender);
+    const element = cold ? 'cold' : 'electric';
+    const resistance = cold ? monsterHasColdResistance(defender) : monsterHasShockResistance(defender);
     let damage = context.damage;
     if (resistance || monsterCombatDefense(defender, type, state)) {
         if (seen)
-            await publish(`The ${fire ? 'fire' : cold ? 'frost' : 'zap'} doesn't ${fire
-                ? 'seem to burn' : cold ? 'seem to chill' : 'shock'} ${monsterName(defender, { state })}!`);
+            await publish(`The ${cold ? 'frost' : 'zap'} doesn't ${cold
+                ? 'seem to chill' : 'shock'} ${monsterName(defender, { state })}!`);
         await shieldeff(defender.mx, defender.my, state);
         await applyMonsterGolemEffects(defender, type, damage, { state, publish });
         damage = 0;
@@ -58,10 +50,6 @@ async function elementalContact(attacker, defender, type, context) {
     damage += await destroyMonsterInventoryByElement(defender, element, context.damage, {
         state, publish, random, rollOne, visible: canSeeMonster(defender),
     });
-    if (fire)
-        await igniteItems(defender.minvent, {
-            state, publish, random, visible: canSeeMonster(defender),
-        });
     return damageResult(damage);
 }
 async function erosionContact(attacker, defender, type, context) {
