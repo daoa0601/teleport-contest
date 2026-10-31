@@ -532,10 +532,10 @@ uhitm.c	gulpum	is burning to a crisp!	composed	src/js/hero_combat_engulf.ts:engu
 uhitm.c	gulpum	is freezing to death!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	seems mildly chilly.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	seems mildly hot.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
-uhitm.c	mhitm_ad_cold	frost doesn't chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
-uhitm.c	mhitm_ad_cold	frost doesn't seem to chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
-uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
-uhitm.c	mhitm_ad_elec	gets zapped!	composed	src/js/monster_combat_elements.ts:elementalContact; The monster-to-monster electric branch selects gets zapped after the defender name.
+uhitm.c	mhitm_ad_cold	frost doesn't chill	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm branch composes frost does not chill; the mhitm branch composes the seem to chill variant.
+uhitm.c	mhitm_ad_cold	frost doesn't seem to chill	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm branch composes frost does not chill; the mhitm branch composes the seem to chill variant.
+uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm and mhitm branches print the covered in frost line, guarded by sight.
+uhitm.c	mhitm_ad_elec	gets zapped!	composed	src/js/uhitm.ts:mhitmAdElec; The monster-to-monster electric branch selects gets zapped after the defender name.
 uhitm.c	mhitm_ad_fire	fire doesn't heat	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
 uhitm.c	mhitm_ad_fire	fire doesn't seem to burn	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
 uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.

@@ -28,7 +28,6 @@ import { makeBlinded } from './sight_change.js';
 import { makeStunned } from './hero_mental_status.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath } from './monster_attack_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
-import { destroyColdInventory, destroyElectricInventory, } from './zap.js';
 import { loseHeroExperience } from './exper.js';
 import { currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -77,7 +76,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { mhitmAdFire } from './uhitm.js';
+import { mhitmAdCold, mhitmAdElec, mhitmAdFire } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
 import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
@@ -541,10 +540,13 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     if (!artifact.damage)
                         heroAttack.poison = null;
                 }
-                // mhitm_ad_fire() projects hitmsg() itself from
-                // uhitm.ts:mhitmAdFire(), so a fire slot composes its hit
-                // line there instead of here.
-                const message = heroAttack.effect === 'fire-natural' ? null
+                // mhitm_ad_fire/cold/elec project hitmsg() themselves from
+                // uhitm.ts, so an elemental slot composes its hit line
+                // there instead of here.
+                const message = heroAttack.effect === 'fire-natural'
+                    || heroAttack.effect === 'cold-natural'
+                    || heroAttack.effect === 'electric-natural'
+                    ? null
                     : await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
                 const contactDismissal = message
                     ? await plineWithContinuation(message) : undefined;
@@ -617,22 +619,29 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 }
                 if (heroAttack.slimeStartPending)
                     finishDeferredHeroSlime(action, game);
-                if (heroAttack.deferredColdNegation)
-                    resumeDeferredHeroColdSpecial(action, game);
-                if (heroAttack.coldEffectMessage) {
-                    const coldDismissal = await plineWithContinuation(heroAttack.coldEffectMessage);
-                    heroAttack.coldEffectMessage = null;
-                    if (coldDismissal !== null
-                        && coldDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
-                }
-                if (heroAttack.coldResistanceMessage) {
-                    const coldResistanceDismissal = await plineWithContinuation(heroAttack.coldResistanceMessage);
-                    heroAttack.coldResistanceMessage = null;
-                    if (coldResistanceDismissal !== null
-                        && coldResistanceDismissal !== undefined) {
-                        paging.pagerOwned = true;
+                if (heroAttack.effect === 'cold-natural') {
+                    // C uhitm.c:mhitm_ad_cold() mhitu branch: hitmsg(),
+                    // magic cancellation, the frost lines and the gated
+                    // inventory destruction run here with direct awaits.
+                    const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
+                    const cold = await mhitmAdCold({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            die: finishHeroDeathAfterMonsterMessage,
+                            random, rollOne, calls: action.calls,
+                        },
+                    });
+                    heroAttack.damage = cold.damage;
+                    if (cold.heroDied)
+                        return { heroDied: true };
+                    if (cold.heroAtZeroHitPoints) {
+                        heroAttack.heroDied = true;
+                        heroAttack.deferredPostHit = false;
                     }
                 }
                 if (heroAttack.effect === 'fire-natural') {
@@ -662,22 +671,29 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                         heroAttack.deferredPostHit = false;
                     }
                 }
-                if (heroAttack.deferredElectricNegation)
-                    resumeDeferredHeroElectricSpecial(action, game);
-                if (heroAttack.electricEffectMessage) {
-                    const electricDismissal = await plineWithContinuation(heroAttack.electricEffectMessage);
-                    heroAttack.electricEffectMessage = null;
-                    if (electricDismissal !== null
-                        && electricDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
-                }
-                if (heroAttack.electricResistanceMessage) {
-                    const electricResistanceDismissal = await plineWithContinuation(heroAttack.electricResistanceMessage);
-                    heroAttack.electricResistanceMessage = null;
-                    if (electricResistanceDismissal !== null
-                        && electricResistanceDismissal !== undefined) {
-                        paging.pagerOwned = true;
+                if (heroAttack.effect === 'electric-natural') {
+                    // C uhitm.c:mhitm_ad_elec() mhitu branch: hitmsg(),
+                    // magic cancellation, the zap lines and the gated
+                    // inventory destruction run here with direct awaits.
+                    const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
+                    const electric = await mhitmAdElec({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            die: finishHeroDeathAfterMonsterMessage,
+                            random, rollOne, calls: action.calls,
+                        },
+                    });
+                    heroAttack.damage = electric.damage;
+                    if (electric.heroDied)
+                        return { heroDied: true };
+                    if (electric.heroAtZeroHitPoints) {
+                        heroAttack.heroDied = true;
+                        heroAttack.deferredPostHit = false;
                     }
                 }
                 if (heroAttack.deferredLifeDrainGate)
@@ -754,29 +770,6 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                         die: finishHeroDeathAfterMonsterMessage,
                     };
                     await resumeDeferredHeroContact(action, game, contactOptions);
-                    if (game.program_state?.gameover)
-                        return { heroDied: true };
-                    if (heroAttack.deferredElementalInventory) {
-                        const inventoryDamage = heroAttack.deferredElementalInventory;
-                        const destroyInventory = {
-                            cold: destroyColdInventory,
-                            electric: destroyElectricInventory,
-                        }[inventoryDamage.damageType];
-                        const items = await destroyInventory(inventoryDamage.sourceDamage, { state: game, ...contactOptions });
-                        if (items.heroDied)
-                            return { heroDied: true };
-                        heroAttack.deferredElementalInventory = null;
-                        delete heroAttack.coldOriginalDamage;
-                        delete heroAttack.electricOriginalDamage;
-                        const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
-                        if ((game.u?.[hitPoints] ?? 1) > 0) {
-                            await resumeDeferredHeroContact(action, game, contactOptions);
-                        }
-                        else {
-                            heroAttack.heroDied = true;
-                            heroAttack.deferredPostHit = false;
-                        }
-                    }
                     if (game.program_state?.gameover)
                         return { heroDied: true };
                 }
@@ -1831,10 +1824,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
-        // hitmu() rolls base damage before mhitm_ad_cold(), but the latter
-        // projects hitmsg() before checking magic cancellation.  Leave that
-        // check deferred so an already-full tty topline can suspend between
-        // d() and rn2(10).
         return {
             kind: 'hero-attack',
             roll,
@@ -1844,7 +1833,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: 'cold-natural',
-            deferredColdNegation: true,
+            // uhitm.ts:mhitmAdCold() runs the whole mhitm_ad_cold() body
+            // with direct awaits; only hitmu()'s shared knockback and damage
+            // tail remains deferred with the other contact effects.
+            deferredPostHit: true,
         };
     }
     else if (hit &&
@@ -1862,7 +1854,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: 'electric-natural',
-            deferredElectricNegation: true,
+            // uhitm.ts:mhitmAdElec() runs the whole mhitm_ad_elec() body
+            // with direct awaits; only hitmu()'s shared knockback and damage
+            // tail remains deferred with the other contact effects.
+            deferredPostHit: true,
         };
     }
     else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
@@ -2219,69 +2214,6 @@ export async function resumeDeferredHeroEngulf(action, state, { random = rn2, ro
     delete attack.engulfDamage;
     return result;
 }
-// Continue mhitm_ad_cold() after its hit message.
-export function resumeDeferredHeroColdSpecial(action, state, random = rn2) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredColdNegation)
-        return action;
-    const armorProtection = magicNegation(state.u, state);
-    const cancelled = !!action.monster?.mcan;
-    attack.coldOriginalDamage = attack.damage ?? 0;
-    attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
-    if (cancelled) {
-        attack.damage = 0;
-        attack.coldEffectMessage = null;
-    }
-    else if (attack.negated) {
-        attack.damage = 0;
-        attack.coldEffectMessage = 'You avoid harm.';
-    }
-    else {
-        attack.coldEffectMessage = "You're covered in frost!";
-        if (state.u.coldResistance) {
-            attack.damage = 0;
-            attack.coldResistanceMessage = "The frost doesn't seem cold!";
-        }
-    }
-    attack.deferredColdInventory = !attack.negated;
-    if (attack.negated)
-        delete attack.coldOriginalDamage;
-    attack.deferredPostHit = true;
-    attack.deferredColdNegation = false;
-    return action;
-}
-// Continue mhitm_ad_elec() after its hit message.
-export function resumeDeferredHeroElectricSpecial(action, state, random = rn2) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredElectricNegation)
-        return action;
-    const armorProtection = magicNegation(state.u, state);
-    const cancelled = !!action.monster?.mcan;
-    attack.electricOriginalDamage = attack.damage ?? 0;
-    attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
-    if (cancelled) {
-        attack.damage = 0;
-        attack.electricEffectMessage = null;
-    }
-    else if (attack.negated) {
-        attack.damage = 0;
-        attack.electricEffectMessage = 'You avoid harm.';
-    }
-    else if (state.u.shockResistance) {
-        attack.damage = 0;
-        attack.electricEffectMessage = 'You get zapped!';
-        attack.electricResistanceMessage = "The zap doesn't shock you!";
-    }
-    else {
-        attack.electricEffectMessage = 'You get zapped!';
-    }
-    attack.deferredElectricInventory = !attack.negated;
-    if (attack.negated)
-        delete attack.electricOriginalDamage;
-    attack.deferredPostHit = true;
-    attack.deferredElectricNegation = false;
-    return action;
-}
 // C mhitm_ad_ench(): hitmsg() completes before armor selection and draining.
 export async function resumeDeferredHeroEnchantment(action, state, random = rn2) {
     const attack = action.movement.heroAttackSequence?.current;
@@ -2376,34 +2308,6 @@ export async function resumeDeferredHeroContact(action, state, { random = rn2, r
             attack.deferredPostHit = false;
             return action;
         }
-    }
-    if (attack.deferredColdInventory) {
-        const destructionGate = recordRandom(random, calls, 20);
-        const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate) {
-            attack.deferredElementalInventory = {
-                damageType: 'cold',
-                sourceDamage: attack.coldOriginalDamage ?? 0,
-            };
-            attack.deferredColdInventory = false;
-            return action;
-        }
-        attack.deferredColdInventory = false;
-        delete attack.coldOriginalDamage;
-    }
-    if (attack.deferredElectricInventory) {
-        const destructionGate = recordRandom(random, calls, 20);
-        const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate) {
-            attack.deferredElementalInventory = {
-                damageType: 'electric',
-                sourceDamage: attack.electricOriginalDamage ?? 0,
-            };
-            attack.deferredElectricInventory = false;
-            return action;
-        }
-        attack.deferredElectricInventory = false;
-        delete attack.electricOriginalDamage;
     }
     const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
     if (knockback.defenderLeftLevel)

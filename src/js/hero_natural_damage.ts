@@ -1,5 +1,6 @@
 // C uhitm.c:damageum() and the hero-attacker branches of mhitm_adtyping();
-// mhitm_ad_fire() itself lives in uhitm.ts with its other actor branches.
+// the mhitm_ad_fire(), mhitm_ad_cold() and mhitm_ad_elec() branches live in
+// uhitm.ts with those functions' other actor branches.
 
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
@@ -23,7 +24,7 @@ import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { specialAttackNegated } from './magic_negation.js';
 import { normalDemon } from './minion.js';
 import { makemonNear } from './mklev.js';
-import { applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
+import { paralyzeMonster } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY,
@@ -39,14 +40,14 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
     monsterIsNonliving, monsterIsShade, monsterIsUndead,
 } from './monster_data.js';
-import { mhitmAdFire } from './uhitm.js';
+import { mhitmAdCold, mhitmAdElec, mhitmAdFire } from './uhitm.js';
 import { drainMonsterEnergy } from './monster_energy.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance,
-    monsterHasPoisonResistance, monsterHasShockResistance,
+    monsterHasAcidResistance, monsterHasDrainResistance,
+    monsterHasPoisonResistance,
 } from './monster_resistance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { sessionIsNight } from './monster_sound.js';
@@ -58,7 +59,6 @@ import { erodeArmor } from './object_erosion.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
-import { destroyMonsterInventoryByElement } from './zap.js';
 import type { GameState } from './game_state.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type {
@@ -156,10 +156,18 @@ async function applyNaturalEffect(monster: Monster, context: HeroNaturalEffectCo
         damage = fire.damage;
         break;
     }
-    case AD_COLD:
-    case AD_ELEC:
-        damage = await elementalDamage(monster, context);
+    case AD_COLD: {
+        // C uhitm.c:mhitm_ad_cold() uhitm branch now owns the cold attack.
+        const cold = await mhitmAdCold({ magr: 'youmonst', defender: monster, context });
+        damage = cold.damage;
         break;
+    }
+    case AD_ELEC: {
+        // C uhitm.c:mhitm_ad_elec() uhitm branch now owns the electric attack.
+        const electric = await mhitmAdElec({ magr: 'youmonst', defender: monster, context });
+        damage = electric.damage;
+        break;
+    }
     case AD_ACID:
         if (monsterHasAcidResistance(monster) || monsterHasArtifactDefense(monster, 'acid', state)) damage = 0;
         break;
@@ -292,28 +300,6 @@ function physicalDamage(monster: Monster, { state, damage, attack, specialDamage
         if (bonus > 0) damage += bonus;
         else if (damage > 0) damage = Math.max(1, damage + bonus);
     }
-    return damage;
-}
-
-async function elementalDamage(monster: Monster, context: HeroNaturalEffectContext): Promise<number> {
-    const { state, publish, attack, random, rollOne } = context;
-    if (await negated(monster, context, true)) return 0;
-    const type = attack[1];
-    let damage = context.damage;
-    const blind = heroIsBlind(state);
-    const cold = type === AD_COLD;
-    if (!blind) await publish(`${subject(monster, context)} is ${cold ? 'covered in frost' : 'zapped'}!`);
-    const resisted = cold ? monsterHasColdResistance(monster) : monsterHasShockResistance(monster);
-    if (resisted) {
-        if (cold) await shieldeff(monster.mx, monster.my, state);
-        if (!blind) await publish(`The ${cold ? 'frost' : 'zap'} doesn't ${cold ? 'chill' : 'shock'} ${monsterName(monster, { state })}!`);
-        await applyMonsterGolemEffects(monster, type, damage, { state, publish });
-        if (!cold) await shieldeff(monster.mx, monster.my, state);
-        damage = 0;
-    }
-    damage += await destroyMonsterInventoryByElement(monster, cold ? 'cold' : 'electric', context.damage, {
-        state, publish, random, rollOne, visible: canSeeMonster(monster),
-    });
     return damage;
 }
 
