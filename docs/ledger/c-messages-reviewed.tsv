@@ -286,15 +286,15 @@ monmove.c	postmov	a door unlock and open.	composed	src/js/monster_door_passage.t
 monmove.c	postmov	opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	smashes down a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	unlocks and opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
-muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/monster_stoning_cure.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
-muse.c	use_defensive	escapes down the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	escapes downstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	escapes up the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	escapes upstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	has made a hole in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	has made a pit in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
-muse.c	use_defensive	looks completely healed.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
-muse.c	use_defensive	looks much better.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
+muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/muse.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
+muse.c	use_defensive	escapes down the ladder!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes downstairs!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes up the ladder!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes upstairs!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	has made a hole in the	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	has made a pit in the	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	looks completely healed.	composed	src/js/muse.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
+muse.c	use_defensive	looks much better.	composed	src/js/muse.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
 muse.c	use_defensive	use_defensive: no	diagnostic	impossible() format when a monster uses an unknown defensive item; developer diagnostic.
 muse.c	use_misc	use_misc: no	diagnostic	impossible() format when a monster uses an unknown miscellaneous item; developer diagnostic.
 music.c	do_earthquake	throne falls	composed	src/js/earthquake.ts:shakeTerrain; Selects throne and falls before the fixed into a chasm suffix.

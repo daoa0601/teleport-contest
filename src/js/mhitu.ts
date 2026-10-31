@@ -120,7 +120,7 @@ import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.j
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { disturbMealMimicry } from './meal_mimic.js';
 import { summonMonsterAttackHelp } from './minion.js';
-import { selectMonsterOffensiveItem } from './monster_offensive_selection.js';
+import { selectMonsterOffensiveItem } from './muse.js';
 import { isPoolAt } from './terrain_properties.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectDescription } from './object_description.js';

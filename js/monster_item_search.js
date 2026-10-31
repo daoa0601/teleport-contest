@@ -7,7 +7,7 @@ import { isLevelPrize } from './level_prize.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from './monster_carry.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE } from './monster_data.js';
 import { monsterIsScaredAt } from './monster_fear.js';
-import { monsterWantsFloorObject, monsterWouldConsumeItem } from './monster_item_interest.js';
+import { monsterWantsFloorObject, monsterWouldConsumeItem } from './monmove.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { monsterAtPosition } from './monster_location.js';
 import { ROCK } from './object_data.js';

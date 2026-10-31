@@ -5,12 +5,12 @@ import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS,
 import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
 import { AD_POLY, AD_RBRE, AD_SLIM, AD_TLPT } from './monster_attack_types.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterIsSlimeproof } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
-import { monsterIsSlimeproof, tryMonsterUnslime } from './monster_unslime.js';
+import { tryMonsterUnslime } from './muse.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { cansee } from './vision.js';

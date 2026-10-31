@@ -7,11 +7,14 @@ import { resetInputState } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import { resumeDeferredMovementSpell } from '../js/mcastu.js';
-import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
-import { lootMonsterContainer } from '../js/monster_container_loot.js';
+import {
+    findMonsterDefensiveItem,
+    lootMonsterContainer,
+    prepareMonsterItemUse,
+    useMonsterDefensiveItem,
+} from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { prepareMonsterItemUse } from '../js/monster_item_use.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_YENDOR, BUGLE, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

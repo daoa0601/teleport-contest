@@ -7,7 +7,8 @@ import { speciesCanBlow } from '../js/monster_anatomy.js';
 import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
-import { monsterSearchesForItem, monsterWantsFloorObject } from '../js/monster_item_interest.js';
+import { monsterSearchesForItem } from '../js/muse.js';
+import { monsterWantsFloorObject } from '../js/monmove.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import {

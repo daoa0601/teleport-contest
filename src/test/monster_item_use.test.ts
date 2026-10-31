@@ -9,9 +9,10 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
-    checkMonsterWandBackfire, consumeMonsterItem, presentMonsterHornUse,
+    checkMonsterWandBackfire, presentMonsterHornUse,
     presentMonsterScrollRead, presentMonsterWandUse,
-} from '../js/monster_item_use.js';
+} from '../js/muse.js';
+import { consumeMonsterItem } from '../js/mthrowu.js';
 import { AMULET_OF_LIFE_SAVING, FIRE_HORN, POT_HEALING, SCR_EARTH, WAN_FIRE } from '../js/object_data.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
 import { knownObject } from './support/game-objects.js';

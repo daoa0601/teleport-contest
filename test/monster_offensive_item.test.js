@@ -7,7 +7,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { useMonsterOffensiveItem } from '../js/monster_offensive_item.js';
+import { useMonsterOffensiveItem } from '../js/muse.js';
 import { BOULDER, EXPENSIVE_CAMERA, FROST_HORN, POT_CONFUSION, ROCK, SCR_EARTH, WAN_MAGIC_MISSILE, WAN_STRIKING, WAN_TELEPORTATION, } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind } from '../js/senses.js';

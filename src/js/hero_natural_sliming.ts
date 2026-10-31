@@ -1,10 +1,10 @@
 // C uhitm.c:mhitm_ad_slim(), hero attacking a monster.
 import { M_ATTK_DEF_DIED, M_ATTK_MISS } from './const.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME, monsterIsSlimeproof } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { monsterIsSlimeproof, tryMonsterUnslime } from './monster_unslime.js';
+import { tryMonsterUnslime } from './muse.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { Monster } from './monster_types.js';
 

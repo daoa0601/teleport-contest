@@ -135,6 +135,11 @@ const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
 const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
+const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+const FLAMING_SPECIES = new Set(['fire vortex', 'flaming sphere',
+    'fire elemental', 'salamander'].map(name => MONSTER_NAME.indexOf(name)));
+const CORPSE_EATERS = new Set(['purple worm', 'baby purple worm', 'ghoul',
+    'piranha'].map(name => MONSTER_NAME.indexOf(name)));
 const S_IMP = 9;
 const S_MIMIC = 13;
 const S_QUADRUPED = 17;
@@ -271,6 +276,18 @@ export function monsterIsAmorphous(monster) {
 }
 export function monsterIsNoncorporeal(monster) {
     return MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST;
+}
+// C mondata.h:slimeproof(). Used by muse.c munslime()/cures_stoning() and
+// the hero/monster engulf code.
+export function monsterIsSlimeproof(monster) {
+    return monster?.mnum === PM_GREEN_SLIME
+        || (monster?.mnum !== undefined && FLAMING_SPECIES.has(monster.mnum))
+        || monsterIsNoncorporeal(monster);
+}
+// C mondata.h:corpse_eater(). Used by monmove.c mon_would_consume_item()
+// and dog.c's floor-eating checks.
+export function speciesEatsCorpses(species) {
+    return CORPSE_EATERS.has(species);
 }
 export function monsterIsWhirly(monster) {
     return monster?.mnum === PM_AIR_ELEMENTAL

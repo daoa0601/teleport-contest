@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import type { Position } from '../js/map_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { monsterWouldConsumeItem } from '../js/monster_item_interest.js';
+import { monsterWouldConsumeItem } from '../js/monmove.js';
 import { monsterCouldReachItem } from '../js/monster_item_reach.js';
 import { searchMonsterItems } from '../js/monster_item_search.js';
 import type { MonsterApproach } from '../js/monster_item_search.js';

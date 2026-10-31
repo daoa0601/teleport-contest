@@ -6,7 +6,7 @@ import { canSenseMonster } from '../js/display.js';
 import { setTopline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
+import { useMonsterDefensiveItem } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';

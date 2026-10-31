@@ -18,9 +18,9 @@ import { monsterIsMindFlayer } from './monster_data.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
-import { selectMonsterOffensiveItem } from './monster_offensive_selection.js';
-import { useMonsterOffensiveItem } from './monster_offensive_item.js';
+import { monsterSearchesForItem, selectMonsterOffensiveItem, useMonsterOffensiveItem } from './muse.js';
 import { searchMonsterItems } from './monster_item_search.js';
+import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
 import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
@@ -83,12 +83,12 @@ import { splitObjectStack } from './object_stack.js';
 import { respondToImmediateMagic } from './monster_magic_response.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAnimal, monsterIsCovetous, monsterIsMindless, monsterIsNoncorporeal, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsWhirly, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, MONSTER_HAS_WEAPON_ATTACK, speciesEatsCorpses, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, stack_object, } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
-import { useMonsterBullwhip } from './monster_bullwhip.js';
+import { useMonsterBullwhip } from './muse.js';
 import { canFallThrough, maketrap } from './mklev.js';
 import { mksobj } from './mkobj.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
@@ -120,7 +120,7 @@ import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from
 import { poisonAttackAttribute, poisonHeroFromMonster, } from './monster_poison.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { movePriest } from './priest.js';
-import { currentMonsterLoad, monsterCanCarryObject } from './monster_carry.js';
+import { currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './monster_carry.js';
 export { monsterCanCarryObject } from './monster_carry.js';
 import { monsterCanFog, monsterHasLineOfSightToHero, setMonsterApparentHeroPosition, } from './monster_perception.js';
 import { adjustMonsterSpeed } from './monster_speed.js';
@@ -138,10 +138,11 @@ import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './makemon.js';
 import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
-import { lootMonsterContainer } from './monster_container_loot.js';
+import { lootMonsterContainer } from './muse.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { prepareMonsterItemUse, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, consumeMonsterItem, revealAggravatingMonster } from './monster_item_use.js';
+import { prepareMonsterItemUse, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './muse.js';
+import { consumeMonsterItem } from './mthrowu.js';
 import { ceilingName } from './terrain_name.js';
 import { commitPetPickup, reluctantPetMessage } from './dogmove.js';
 import { finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination } from './muse.js';
@@ -158,7 +159,7 @@ import { tryCallObjectType } from './object_call.js';
 import { performQuestExpulsion } from './quest.js';
 import { observeDistantObjectForNaming } from './objnam.js';
 import { dragonFormForArmor } from './armor.js';
-import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_defensive_item.js';
+import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './muse.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport_rules.js';
 import { burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap } from './trap.js';
@@ -248,12 +249,16 @@ const S_GOLEM = 55;
 const POT_SPEED = 302;
 const LOW_BOOTS = 163;
 const IRON = 11;
+const WEAPON_CLASS = 2, ARMOR_CLASS = 3, GEM_CLASS = 13, FOOD_CLASS = 7;
+const AMULET_CLASS = 5, POTION_CLASS = 8, SCROLL_CLASS = 9, SPBOOK_CLASS = 10, WAND_CLASS = 11;
 const RING_CLASS = 4;
 const TOOL_CLASS = 6;
 const COIN_CLASS = 12;
 const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
+const GEMSTONE = 20, MINERAL = 21;
+const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -502,6 +507,52 @@ export async function disturbSleepingMonster(monster, state, random = rn2, calls
 }
 function isUnicorn(monster) {
     return monster?.mnum >= 101 && monster?.mnum <= 103;
+}
+// Monster mtmp would love to take object otmp? C monmove.c:mon_would_take_item().
+export function monsterWantsFloorObject(monster, object, state) {
+    const loadPercent = Math.trunc(currentMonsterLoad(monster) * 100 / maxMonsterLoad(monster));
+    if (object === state.uball || object === state.uchain)
+        return false;
+    if (monster.mtame && object.cursed)
+        return false;
+    const material = objectMaterial(object, state);
+    if (monsterIsUnicorn(monster.mnum) && material !== GEMSTONE)
+        return false;
+    if (!monsterIsMindless(monster.mnum) && !monsterIsAnimal(monster)
+        && loadPercent < 75 && monsterSearchesForItem(monster, object, state))
+        return true;
+    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+    if ((flags & M2_GREEDY) && object.otyp === GOLD_PIECE && loadPercent < 95)
+        return true;
+    if ((flags & M2_JEWELS) && object.oclass === GEM_CLASS
+        && material !== MINERAL && loadPercent < 85)
+        return true;
+    if (((flags & M2_COLLECT) || MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum))
+        && [WEAPON_CLASS, ARMOR_CLASS, GEM_CLASS, FOOD_CLASS].includes(object.oclass)
+        && loadPercent < 75)
+        return true;
+    if ((flags & M2_MAGIC)
+        && [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, RING_CLASS, SPBOOK_CLASS].includes(object.oclass)
+        && loadPercent < 85)
+        return true;
+    if ((flags & M2_ROCKTHROW) && object.otyp === BOULDER
+        && loadPercent < 50 && !state.level.flags.sokoban_rules)
+        return true;
+    return monster.mnum === PM_GELATINOUS_CUBE && object.oclass !== ROCK_CLASS
+        && object.oclass !== BALL_CLASS
+        && !(object.otyp === CORPSE && touchPetrifies(object.corpsenm));
+}
+// Monster mtmp would love to consume object otmp, without picking it up.
+// C monmove.c:mon_would_consume_item().
+export function monsterWouldConsumeItem(monster, object, state, random, calls = []) {
+    if (object.otyp === CORPSE && !touchPetrifies(object.corpsenm)
+        && speciesEatsCorpses(monster.mnum))
+        return true;
+    const pet = monster.edog ?? monster.mextra?.edog;
+    if (!monster.mtame || !pet)
+        return false;
+    const food = dogFood(monster, object, random, calls, state);
+    return food < MANFOOD && (food < ACCFOOD || pet.hungrytime <= state.moves);
 }
 // C monmove.c:undesirable_disp(). Trap rolls precede remembered-type checks.
 function undesirableDisplacement(monster, x, y, state, random, calls) {

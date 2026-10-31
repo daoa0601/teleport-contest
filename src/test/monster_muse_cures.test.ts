@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { consumeMonsterStoningCure, useMonsterStoningCure } from '../js/monster_stoning_cure.js';
+import { consumeMonsterStoningCure, useMonsterStoningCure } from '../js/muse.js';
 import { POT_ACID } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -15,7 +15,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART, GRAPPLING_HOOK, SCR_FIRE, WAN_STRIKING } from '../js/object_data.js';
 import { killerObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { resolveMonsterImmediateWand } from '../js/monster_wand_ray.js';
+import { resolveMonsterImmediateWand } from '../js/muse.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';

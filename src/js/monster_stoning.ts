@@ -41,7 +41,7 @@ import { objectResistsDestruction } from './object_state.js';
 import { corpseName, objectName } from './objnam.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
-import { useMonsterStoningCure } from './monster_stoning_cure.js';
+import { useMonsterStoningCure } from './muse.js';
 import { rn2, rnd } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
@@ -51,7 +51,7 @@ import type { GameState } from './game_state.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MonsterStoningCureOptions, MonsterStoningCureResult } from './monster_stoning_cure.js';
+import type { MonsterStoningCureOptions, MonsterStoningCureResult } from './muse.js';
 
 // Petrification determines survival before dispatching the caller's death
 // bookkeeping. That callback's return value does not decide the stone result.

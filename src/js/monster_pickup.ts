@@ -9,7 +9,7 @@ import { isLevelPrize } from './level_prize.js';
 import { monsterCanTouchObject, monsterCarryAmount } from './monster_carry.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { monsterWantsFloorObject } from './monster_item_interest.js';
+import { monsterWantsFloorObject } from './monmove.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
