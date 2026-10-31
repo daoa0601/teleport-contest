@@ -6,7 +6,7 @@ import {
     hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
 import { flush_screen, plineWithContinuation } from './display.js';
-import { definiteObjectAction, foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
+import { definiteObjectAction } from './objnam.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -354,10 +354,10 @@ export async function resolveSwallowedFoodThrow({
             const trail = monsterDigests(engulfer) ? ' entrails'
                 : monsterIsWhirly(engulfer) ? ' currents' : '';
             const name = monsterName(engulfer, { state });
-            observeObjectForNaming(thrown, { state });
-            const foodName = foodObjectName(thrown, { state, definite: true });
-            const subject = foodName.charAt(0).toUpperCase() + foodName.slice(1);
-            await plineWithContinuation(`${subject} vanishes into ${trail ? possessive(name) : name}${trail}.`);
+            // C dothrow.c:2298 prints Tobjnam(obj, "vanish"); xname() of a
+            // corpse is just "corpse", without the species.
+            await plineWithContinuation(
+                `${definiteObjectAction(thrown, 'vanish', state)} into ${trail ? possessive(name) : name}${trail}.`);
         }
         if (state.u.uswallow) {
             const currentEngulfer = state.u.ustuck;

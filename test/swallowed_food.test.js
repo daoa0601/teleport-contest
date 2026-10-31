@@ -121,6 +121,20 @@ void test('a non-animal engulfer retains a petrifying corpse without turning to 
     assert.ok(engulfer.minvent.includes(corpse));
     assert.equal(corpse.carrierMid, engulfer.m_id);
     await flush_screen(1);
-    assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /The cockatrice corpse vanishes into the energy vortex's currents/);
+    assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /The corpse vanishes into the energy vortex's currents/);
+});
+// C dothrow.c:2298 formats the vanish message with Tobjnam(), whose xname()
+// names every corpse just "corpse", species-less (dokick.c:1913 notes the
+// same for kicked corpses).
+void test('a thrown corpse vanishes into the engulfer without its species', async () => {
+    const engulfer = await swallowedBy('fire vortex');
+    const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('kitten') });
+    await throwInventoryObject(corpse);
+    assert.equal(corpse.where, 'minvent');
+    assert.ok(engulfer.minvent.includes(corpse));
+    await flush_screen(1);
+    const row = requireScreenRow(0).map(cell => cell.ch).join('');
+    assert.match(row, /The corpse vanishes into the fire vortex's currents\./);
+    assert.doesNotMatch(row, /kitten/);
 });
 //# sourceMappingURL=swallowed_food.test.js.map
