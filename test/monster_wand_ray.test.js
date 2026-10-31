@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { resolveMonsterImmediateWand } from '../js/monster_wand_ray.js';
+import { resolveMonsterImmediateWand } from '../js/muse.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

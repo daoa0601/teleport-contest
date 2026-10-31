@@ -23,6 +23,8 @@ import { castNativeRay } from './ray_attack.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { couldsee } from './vision.js';
+import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
+import { objectWeight } from './weight.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -170,5 +172,17 @@ export async function resolveDeferredMonsterBreath(action, breath, state, emitMe
     breath.deferredRay = false;
     breath.finished = true;
     return breath;
+}
+// C mthrowu.c:m_useup(): remove one item from a monster's inventory,
+// preserving the remaining stack's identity.
+export async function consumeMonsterItem(monster, object, state) {
+    if (object.quan > 1) {
+        object.quan--;
+        object.quantity = object.quan;
+        object.owt = objectWeight(object);
+    }
+    else if (!await destroyObjectFromMonsterInventory(monster, object, state)) {
+        throw new Error('A used monster item must belong to its monster.');
+    }
 }
 //# sourceMappingURL=mthrowu.js.map

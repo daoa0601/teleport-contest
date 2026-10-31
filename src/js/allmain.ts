@@ -44,7 +44,7 @@ import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { RLOC_NOMSG, WATER } from './const.js';
-import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
+import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { seeNearbyMonsters } from './monster_observation.js';
@@ -217,6 +217,9 @@ import { finishDelayedArmorTheft } from './steal.js';
 import {
     finishDeferredMonsterMiscItem,
     monsterGainLevelRiseDestination,
+    presentMonsterQuaff as publishMonsterQuaff,
+    presentMonsterWandUse,
+    revealAggravatingMonster,
 } from './muse.js';
 import { fumaroles } from './mkmaze.js';
 import { resumeDeferredMonsterTrap } from './trap.js';

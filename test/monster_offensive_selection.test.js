@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { selectMonsterOffensiveItem } from '../js/monster_offensive_selection.js';
+import { selectMonsterOffensiveItem } from '../js/muse.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';

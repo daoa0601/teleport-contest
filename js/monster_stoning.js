@@ -28,7 +28,7 @@ import { objectResistsDestruction } from './object_state.js';
 import { corpseName, objectName } from './objnam.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
-import { useMonsterStoningCure } from './monster_stoning_cure.js';
+import { useMonsterStoningCure } from './muse.js';
 import { rn2, rnd } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';

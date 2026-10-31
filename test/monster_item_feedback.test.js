@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { MFAST, MM_ANGRY, MM_NOWAIT, NO_MINVENT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { lootMonsterContainer } from '../js/monster_container_loot.js';
+import { lootMonsterContainer } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterName } from '../js/monster_name.js';
 import { beginMonsterHeroAttack } from '../js/mhitu.js';

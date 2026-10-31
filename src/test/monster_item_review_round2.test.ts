@@ -7,12 +7,14 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterHeroAttack, completeHeroAttackSlot } from '../js/mhitu.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishDeferredMonsterMiscItem } from '../js/muse.js';
+import {
+    finishDeferredMonsterMiscItem,
+    prepareMonsterItemUse,
+    useMonsterDefensiveItem,
+} from '../js/muse.js';
 import { rollDeferredHeroSpellDamage } from '../js/mcastu.js';
 import type { MonsterCallLog } from '../js/monster_action_types.js';
-import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { prepareMonsterItemUse } from '../js/monster_item_use.js';
 import { summonMonsterInsects } from '../js/monster_spell_insects.js';
 import { IRON_SHOES, KICKING_BOOTS, SPEED_BOOTS, LEASH, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

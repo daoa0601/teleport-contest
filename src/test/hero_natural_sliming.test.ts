@@ -12,7 +12,7 @@ import { resetInputState } from '../js/input.js';
 import { AD_SLIM } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { tryMonsterUnslime } from '../js/monster_unslime.js';
+import { tryMonsterUnslime } from '../js/muse.js';
 import { CLOAK_OF_PROTECTION, FIRE_HORN, POT_OIL, SCR_FIRE, WAN_FIRE } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';

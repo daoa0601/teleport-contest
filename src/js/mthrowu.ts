@@ -26,7 +26,10 @@ import { castNativeRay } from './ray_attack.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { couldsee } from './vision.js';
-import type { PlayingGameState } from './game_state.js';
+import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
+import { objectWeight } from './weight.js';
+import type { GameObject } from './object_types.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type {
     AttackTuple, HeroBreath, MonsterCallLog, MonsterMovementAction,
@@ -216,4 +219,16 @@ export async function resolveDeferredMonsterBreath(
     breath.deferredRay = false;
     breath.finished = true;
     return breath;
+}
+
+// C mthrowu.c:m_useup(): remove one item from a monster's inventory,
+// preserving the remaining stack's identity.
+export async function consumeMonsterItem(monster: Monster, object: GameObject, state: GameState): Promise<void> {
+    if (object.quan > 1) {
+        object.quan--;
+        object.quantity = object.quan;
+        object.owt = objectWeight(object);
+    } else if (!await destroyObjectFromMonsterInventory(monster, object, state)) {
+        throw new Error('A used monster item must belong to its monster.');
+    }
 }
