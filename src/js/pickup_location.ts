@@ -10,8 +10,9 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
 import {
-    MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
+    MONSTER_SYMBOL, monsterDigests,
 } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import {
     heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm,
 } from './polyself.js';
@@ -40,13 +41,8 @@ const S_LIGHT = 25;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
 
-function monsterName(monster: Monster): string {
-    return monster?.name || `the ${MONSTER_NAME[monster?.mnum] || 'monster'}`;
-}
-
-function possessive(name: string): string {
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
+// C hack.c:3796: s_suffix(mon_nam(u.ustuck)) names the swallower whose
+// empty stomach the hero gropes; monster_name.ts owns both ports.
 
 function heroStaysAboveLiquid(state: GameState): boolean {
     const hero = state.u || {};
@@ -110,7 +106,7 @@ export function pickupLocationProblem({
         if (monsterDigests(monster)) {
             return {
                 messages: [
-                    `You pick up ${possessive(monsterName(monster))} tongue.`,
+                    `You pick up ${possessiveName(monsterName(monster, { state }))} tongue.`,
                     "But it's kind of slimy, so you drop it.",
                 ],
                 spendsTurn: true,

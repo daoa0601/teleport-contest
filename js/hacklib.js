@@ -74,6 +74,10 @@ export function ingSuffix(verb) {
     }
     return stem + 'ing' + particle;
 }
+// C hacklib.c:upstart(). Convert the first character to uppercase.
+export function upstart(text) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
 // C hack.h:online2() via the onlineu() macro. Two squares are online when
 // they share a row, a column, or a perfect diagonal.
 export function pointsOnline(x0, y0, x1, y1) {

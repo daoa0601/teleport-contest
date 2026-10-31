@@ -63,7 +63,7 @@ import {
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
     monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly,
 } from './monster_data.js';
 import {
@@ -125,7 +125,8 @@ import { woundHeroLegs } from './hero_legs.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { upstart } from './hacklib.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { askTeleportDestination } from './teleport.js';
@@ -538,18 +539,9 @@ function reduceHeroTrapDuration(): number {
     return --hero.utrap;
 }
 
-// C pline.c:upstart(), applied to the one trapmove() steed name.
-function upstart(text: string): string {
-    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
-}
-
-// C Norep() compares pline.c's previous individual message.
-async function repeatableTrapMessage(message: string): Promise<void> {
-    // Norep() suppression has no side effects: vpline() returns before
-    // touching the tty line, so any pending topline prose stays pending.
-    if (game._lastPlineMessage !== message) await pline(message);
-}
-
+// C pline.c:Norep(): trapmove() and climb_pit() suppress a repeat message
+// without side effects, which plineWithContinuation({ noRepeat: true })
+// provides (vpline returns before touching the tty line).
 function objectAtHero(type: number): GameObject | null {
     const hero = game.u;
     return (game.level?.objects?.[hero.ux]?.[hero.uy] || [])
@@ -613,16 +605,16 @@ export async function climbOutOfPit() {
     }
     if (hero.dz || game.flags?.verbose !== false) {
         if (hero.usteed) {
-            await repeatableTrapMessage(`${monsterName(hero.usteed, {
+            await plineWithContinuation(`${monsterName(hero.usteed, {
                 article: 'your', capitalized: true, suppressSaddle: true,
-            })} is still in a pit.`);
+            })} is still in a pit.`, { noRepeat: true });
             return;
         }
         const hallucinating = heroIsHallucinating(game);
         const message = hallucinating && rn2(5) === 0
             ? "You've fallen, and you can't get up."
             : 'You are still in a pit.';
-        await repeatableTrapMessage(message);
+        await plineWithContinuation(message, { noRepeat: true });
     }
 }
 
@@ -649,9 +641,9 @@ async function struggleInWeb(steedName: string | null) {
             ? `${upstart(steedName)} breaks out of the web.`
             : 'You disentangle yourself.');
     } else if (game.flags?.verbose !== false) {
-        await repeatableTrapMessage(steedName
+        await plineWithContinuation(steedName
             ? `${upstart(steedName)} is stuck to the web.`
-            : 'You are stuck to the web.');
+            : 'You are stuck to the web.', { noRepeat: true });
     }
 }
 
@@ -685,7 +677,7 @@ async function struggleInFloor(
         const dy = targetY - ball.oy;
         if (dx * dx + dy * dy <= 2) {
             if (game.flags?.verbose !== false)
-                await repeatableTrapMessage("You move within the chain's reach.");
+                await plineWithContinuation("You move within the chain's reach.", { noRepeat: true });
             return true;
         }
     }
@@ -699,7 +691,7 @@ async function struggleInFloor(
                 : (steedName
                     ? `${upstart(steedName)} is stuck in the ${surfaceName(hero.ux, hero.uy)}.`
                     : `You are stuck in the ${surfaceName(hero.ux, hero.uy)}.`);
-            await repeatableTrapMessage(message);
+            await plineWithContinuation(message, { noRepeat: true });
         }
         return false;
     }
@@ -755,9 +747,9 @@ async function heroTrapmove(targetX: number, targetY: number): Promise<boolean> 
         return false;
     case TT_LAVA: {
         if (game.flags?.verbose !== false)
-            await repeatableTrapMessage(steedName
+            await plineWithContinuation(steedName
                 ? `${upstart(steedName)} is stuck in the lava.`
-                : 'You are stuck in the lava.');
+                : 'You are stuck in the lava.', { noRepeat: true });
         if (!isLavaAt(targetX, targetY)) {
             hero.utrap--;
             if ((hero.utrap & 0xff) === 0) {
@@ -1084,9 +1076,8 @@ async function triggerSleepingGasTrap(trap: Trap) {
     steed.mx = hero.ux;
     steed.my = hero.uy;
     if (!await putMonsterToSleep(steed, rnd(25))) return;
-    const name = steed.name || `The ${monsterTypeName(
-        steed.mnum, !!steed.female,
-    )}`;
+    // C trap.c:3137: Monnam(steed); the name is not in-sight gated.
+    const name = monsterName(steed, { capitalized: true });
     await plineWithContinuation(`${name} suddenly falls asleep!`);
 }
 
@@ -1152,10 +1143,8 @@ async function triggerBearTrap(trap: Trap, {
 
     const steed = hero.usteed;
     if (steed) {
-        const name = monsterName(steed);
-        const possessive = /^it$/i.test(name) ? `${name}s`
-            : /^you$/i.test(name) ? `${name}r`
-                : name.endsWith('s') ? `${name}'` : `${name}'s`;
+        // C trap.c:1508-1509: s_suffix(mon_nam(u.usteed)).
+        const possessive = possessiveName(monsterName(steed));
         await plineWithContinuation(
             `${subject} bear trap closes on ${possessive} ${monsterFootName(steed.mnum)}!`,
         );

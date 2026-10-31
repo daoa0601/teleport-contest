@@ -10,10 +10,11 @@ import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_
 import { paranoidQuery } from './query.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { heroHandName, monsterStomachName } from './body_parts.js';
-import { MONSTER_NAME, monsterDigests } from './monster_data.js';
+import { monsterDigests } from './monster_data.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { inventoryItemDescription } from './invent.js';
-import { ownedObjectAction, observeObjectForNaming, } from './objnam.js';
+import { objectMonsterName, ownedObjectAction, observeObjectForNaming, } from './objnam.js';
+import { possessiveName } from './monster_name.js';
 import { objectIsUnpaid } from './shk.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';
@@ -22,9 +23,6 @@ import { shipObject } from './object_migration.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 const RING_CLASS = 4;
-function possessive(name) {
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
 // C do.c:946-962 better_not_try_to_drop_that(): u_safe_from_fatal_corpse()
 // with st_all (pickup.c:273-281) checks gloves and stoning resistance
 // before prompting; the caller has already established otyp == CORPSE.
@@ -35,8 +33,7 @@ async function betterNotTryToDropThat(object, state) {
         || heroResistsStoning(state);
     if (safe)
         return false;
-    const species = object.corpsenm === undefined ? 'monster'
-        : MONSTER_NAME[object.corpsenm] || 'monster';
+    const species = objectMonsterName(object);
     // C paranoid_ynq(TRUE, buf, FALSE) != 'y'; the source prompt is
     // "Drop the %s corpse without %s protection on?" with body_part(HAND)
     const confirmed = await paranoidQuery(true, `Drop the ${species} corpse without ${heroHandName(state)} protection on?`);
@@ -97,7 +94,7 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
         if (state.flags?.verbose !== false) {
             const swallowerName = holdingMonsterName(hero.ustuck, state);
             const into = monsterDigests(hero.ustuck)
-                ? `${possessive(swallowerName)} ${monsterStomachName(hero.ustuck.mnum)}`
+                ? `${possessiveName(swallowerName)} ${monsterStomachName(hero.ustuck.mnum)}`
                 : swallowerName;
             // C drop() uses yobjnam() for unpaid objects and doname() otherwise.
             observeObjectForNaming(object, { state });

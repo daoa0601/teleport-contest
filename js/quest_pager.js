@@ -8,6 +8,7 @@ import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import { experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { possessiveName } from './monster_name.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './object_grammar.js';
 import { heroIsBlind } from './senses.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -179,14 +180,8 @@ function godTitleOf(alignment, g) {
 function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
-// C hacklib.c:s_suffix().
-function possessive(text) {
-    if (text.toLowerCase() === 'it')
-        return `${text}s`;
-    if (text.toLowerCase() === 'you')
-        return `${text}r`;
-    return text.endsWith('s') ? `${text}'` : `${text}'s`;
-}
+// C hacklib.c:s_suffix(); %S/%s name formatting uses the shared port in
+// monster_name.ts.
 // The original alignment recorded at game start drives %a, %d, and %G.
 function originalAlignment(g) {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;
@@ -300,11 +295,11 @@ export function convertQuestLine(line, g = game) {
                 i++;
                 break;
             case 'S':
-                value = capitalize(possessive(value));
+                value = capitalize(possessiveName(value));
                 i++;
                 break;
             case 's':
-                value = possessive(value);
+                value = possessiveName(value);
                 i++;
                 break;
             case 't':
