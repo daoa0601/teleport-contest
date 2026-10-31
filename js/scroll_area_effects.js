@@ -3,7 +3,6 @@ import { exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { heroHandName } from './body_parts.js';
 import { ACCESSIBLE, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, PLNMSG_TOWER_OF_FLAME, isok, } from './const.js';
-import { clearMessageWindow } from './tty_topline.js';
 import { displayLiquidName, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { explode } from './explosion.js';
@@ -219,7 +218,10 @@ async function chooseCenter(question, state) {
         isValidLocation: valid,
         highlightHero: false,
     });
-    clearMessageWindow();
+    // C getpos() clears the message window itself at exit, and only when a
+    // non-autodescribe message is pending (getpos.c:exitgetpos); a pick made
+    // with autodescribe on leaves the last description visible, and
+    // do_stinking_cloud() prints nothing after a valid center.
     return selected;
 }
 //# sourceMappingURL=scroll_area_effects.js.map
