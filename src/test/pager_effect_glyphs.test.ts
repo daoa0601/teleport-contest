@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { farlookLocationDescription } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { show_glyph_cell } from '../js/display.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { NO_COLOR } from '../js/terminal.js';

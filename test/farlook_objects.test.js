@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { farlookLocationDescription } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { SCORR } from '../js/const.js';
 import { map_object, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';

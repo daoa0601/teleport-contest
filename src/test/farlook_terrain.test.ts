@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { farlookLocationDescription, rhack } from '../js/cmd.js';
+import { rhack } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { HWALL, ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen, newsym, redrawMap } from '../js/display.js';

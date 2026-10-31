@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterTurn } from '../js/allmain.js';
-import { farlookLocationDescription } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { CORR, IRONBARS, MM_ANGRY, MM_NOGRP, NO_MINVENT, TER_OBJ } from '../js/const.js';
 import {
     glyphAt, map_object, newsym, randomDisplayMonsterName,

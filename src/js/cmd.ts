@@ -5,28 +5,26 @@ import { queueCommandResponses } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetOccupations } from './occupation_reset.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
-import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
-import type { DipTarget } from './dip_water.js';
-import { dipFountainSword } from './fountain_sword.js';
-import { washHands } from './dip_water.js';
+import { DBWALL, DRAWBRIDGE_DOWN, STAIRS, THRONE } from './const.js';
 import { curseObject, uncurseObjectState } from './object_state.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { visibleRegionAt } from './regions.js';
-import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizTimeoutQueue } from './timeout_queue.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
+import {
+    wizDetect, wizGenesis, wizIdentify, wizKill, wizLevelChange, wizLevelTeleport,
+    wizMap, wizPolyself, wizShowNhuuid, wizTelekinesis, wizWhere, wizWish,
+} from './wizcmds.js';
 import { wizSmell } from './wizard_smell.js';
 import { showSeenVectors, showVisionFlags, showWallModes } from './wizard_map_inspection.js';
 import { wizRumorCheck } from './wizard_rumor_check.js';
@@ -36,22 +34,20 @@ import { wizMigrateMonsters } from './wizard_migration.js';
 import { wizFlipLevel } from './wizard_flip_level.js';
 import { wizMakeMap } from './wizard_makemap.js';
 import { wizardTeleportCommand } from './wizard_teleport.js';
-import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MapLocation, Position, Room, Trap } from './map_types.js';
-import { isRoom } from './map_types.js';
+import type { MapLocation, Position, Trap } from './map_types.js';
 import type { Hero } from './hero_types.js';
-import type { TextMenuLine, TextMenuEntry } from './windows.js';
-import type { DungeonBranch, DungeonLocation, OverviewRecord, SpecialLevelDescriptor } from './dungeon_types.js';
+import type { TextMenuLine } from './windows.js';
+import type { DungeonLocation, OverviewRecord } from './dungeon_types.js';
 import { deityName } from './alignment.js';
 import type {
     CannedCommand, CommandBinding, DirectionalRunMode, MovementAttempt, NativeCommand,
     TravelRunState,
 } from './command_types.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
-import { grantMonsterWish, releaseDjinni } from './potion_occupants.js';
+import { releaseDjinni } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { jumpHero } from './jumping.js';
 import { clearMessageWindow } from './tty_topline.js';
@@ -59,37 +55,26 @@ import { feel_location } from './display.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
 
-import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
-import { objectAtMapDescription } from './map_object_description.js';
-import { objectNeedsFullIdentification } from './invent.js';
-import { identifyPack } from './invent.js';
-import { DIED, ESCAPED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS,
-    MGIVENNAME, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE } from './const.js';
-import { AD_PHYS } from './monster_attack_types.js';
+import { ESCAPED, MENU_ITEMFLAGS_SKIPMENUCOLORS,
+    NHW_MENU, PICK_NONE, PICK_ONE } from './const.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
-import { monsterIsNonliving } from './monster_data.js';
-import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
+import { VIBRATING_SQUARE } from './const.js';
 import { map_engraving, map_trap } from './display.js';
 import { teleportHeroAtWill } from './teleport.js';
-import { mapMagicLevel } from './magic_mapping.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { surfaceName } from './terrain_name.js';
-import { def_warnsyms } from './const.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
-import { GlyphOffset } from './glyph_numbers.js';
+import { doFarlook, dohelp, dowhatis } from './pager.js';
+import { lookatDescription } from './pager_description.js';
 import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { identifyTrap } from './pager_traps.js';
-import { showLookList } from './pager_lists.js';
-import { screenDescription } from './pager_description.js';
 import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
-import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -105,44 +90,35 @@ import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
-import { TER_MON } from './const.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import {
-    distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun,
+    distantMonsterName, monsterName,
 } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { applyCaitiffPenalty } from './hero_attack_conduct.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
 import { stumbleOnDoorMimic } from './mimic.js';
-import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import {
     definiteName, objectCombatName,
     observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName,
 } from './objnam.js';
-import { woundHeroLegs } from './hero_legs.js';
-import { makeMonsterFlee } from './monster_flee.js';
-import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
+import { descendFromLevitation } from './levitation_commands.js';
 import { beginCommandResult, clearCannedCommands, commandResultCancelled, commandResultFailed,
     commandResultSpentTime, endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
-import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
+import { propertyIsActive } from './properties.js';
 import { pickupAtHero } from './pickup.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { gotoLevel } from './level_change.js';
-import { levelTeleport } from './level_teleport.js';
-import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
 import { inventoryReport } from './inventory_reports.js';
 import { quoteShopGoods } from './shop_price_quote.js';
-import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
 import { dolookaround } from './lookaround.js';
-import { adjustHeroAlignment } from './alignment.js';
-import { doOptions, option_help, toggleBooleanOptionPrefix } from './options.js';
+import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import {
     blocksDiagonalDoor, blocksMove, TRAVEL_DIRECTIONS, heroMayDisplaceMonster,
     runSafepetDisplacement, heroTestMove, applyHeroLiquidEffects, domove,
@@ -158,13 +134,12 @@ import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
 import { terrainCommand } from './terrain_view.js';
 import { autoDescribePosition, selectTravelMenuPosition } from './getpos.js';
-import { showKeyBindings, whatDoesCommand } from './command_help.js';
+import { whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import {
     chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder,
     getobj, reassignInventoryLetters,
 } from './inventory_prompt.js';
-import { AT_KICK } from './monster_attack_types.js';
 import {
     promptDirection, promptKey, readDirectionKey, restoreCommandMap, ynSingleKey,
 } from './tty_prompts.js';
@@ -181,26 +156,25 @@ import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import {
-    displayLiquidName, newsym, feel_newsym, flush_screen, docrt, bot, glyphAt,
-    canSeeMonster, canSpotMonster, canSpotHeroSelf,
-    unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed,
-    transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters,
-    see_objects, see_traps, map_invisible, unmap_invisible, consumeHallucinatedMenuObjectGlyph,
+    newsym, feel_newsym, flush_screen, docrt,
+    canSeeMonster, canSpotMonster, monsterHasWarningProjection, swallowed,
+    randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters,
+    see_objects, see_traps, map_invisible,
 } from './display.js';
 import {
-    displayMessageWindow, flushPendingTopline, moreUntilDismissed, putMessageHistory,
+    flushPendingTopline, moreUntilDismissed, putMessageHistory,
     rememberToplines,
 } from './tty_topline.js';
 import { pline, plineWithContinuation, setTopline } from './pline.js';
-import { cansee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
+import { vision_note_blocker_change, vision_recalc } from './vision.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { transformMagicLampToOilLamp } from './light.js';
 import {
     dozap,
 } from './zap.js';
 import {
-    bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject,
-    inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter,
+    bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook,
+    inventoryItemDescription, inventoryPrimaryHandDetail, selectUsedInventoryLetter,
 } from './invent.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';
@@ -208,9 +182,6 @@ import type { InventoryAction } from './invent.js';
 import {
     castSpell, docast, dovspell, dowizcast,
 } from './spell.js';
-import {
-    vomitHero,
-} from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
 import { useHeroBreath } from './hero_breath_command.js';
 import { monsterBreathAttack } from './dogmove.js';
@@ -243,33 +214,27 @@ import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { doclassdisco, dodiscovered, renameDiscoveredType } from './o_init.js';
-import { doattributes, doconduct, showEnlightenment } from './insight.js';
-import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
+import { doattributes, doconduct } from './insight.js';
+import { displayHelpFile } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
-import { dosearch, findit } from './detect.js';
-import { detectMonsters } from './magic_detection.js';
+import { dosearch } from './detect.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import {
     continueWipingFace, donull, dowipe, threateningMonsterNearby,
 } from './do.js';
 import {
-    ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow,
-    showDisclosureOverlay, showPagedPickOneMenu,
-    showTextMenuOverlay, showTextWindow,
+    ATR_NONE, addMenuHeading, showTextWindow,
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import {
-    d, rnd, rn2, rn2Display, rnl,
+    d, rn2, rn2Display, rnl,
 } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
-import { placeCreatedObject } from './floor_object.js';
-import { makemonNear } from './mklev.js';
 import { mkgold, mksobj } from './mkobj.js';
-import { rndClass } from './objnam.js';
 import {
-    level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt,
+    recordMappedOverviewState, specialPrototypeAt, specialLevelAt,
     dungeonBuildsUp, sameDungeonLevel,
 } from './dungeon.js';
 import { questLeaderName } from './quest_pager.js';
@@ -294,13 +259,13 @@ import {
 } from './artifact_invoke.js';
 import {
     BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
-    CREDIT_CARD, STETHOSCOPE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE,
+    CREDIT_CARD, STETHOSCOPE, GOLD_PIECE, BOULDER,
     TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS,
     BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE,
     MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE,
     LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE,
     WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL,
-    KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
+    MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION,
     AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_UNIQUE,
     OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_WEIGHT,
 } from './object_data.js';
@@ -312,7 +277,6 @@ import {
     MONSTER_SIZE, MONSTER_SOUND, MONSTER_ALIGNMENT, monsterTypeName, monsterClassSymbol,
     monsterDigests, monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
-import { createParticularMonster } from './read_creation.js';
 import {
     addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience,
 } from './exper.js';
@@ -324,12 +288,12 @@ import { arriveTravel, captureRunmodeDelay, startRun, startWalkRepeat, stopRun }
 import {
     findMonsterArmorClass,
 } from './monworn.js';
-import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { aggravateMonsters, angerAttackedMonster } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, stuckSteed } from './steed.js';
-import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce, isForceableWeapon } from './lock.js';
@@ -343,28 +307,22 @@ import {
     applyFountainSnakeActors,
     resolveDippedSensationFate,
 } from './fountain_effects.js';
-import { dryFountainAt, gushForthFromFountain } from './fountain.js';
-import { heroArmName } from './body_parts.js';
+import { dipFountain } from './fountain.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
-import { dist2, distmin, dungeonDepth, ledgerNo, endgameLevelName } from './hacklib.js';
+import { distmin, dungeonDepth, ledgerNo, endgameLevelName } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
-import { convertSecretDoor } from './detect.js';
-import { roomForRoomno, roomsAt } from './room.js';
+import { roomsAt } from './room.js';
 import {
-    learnObjectType, recordObjectCall, recordObjectEncounter,
-    OBJECT_CLASS_SYMBOLS,
+    learnObjectType, recordObjectCall,
 } from './object_knowledge.js';
 import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
-import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
-import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { dosacrifice } from './sacrifice.js';
+import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
-import {
-    heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating,
-} from './senses.js';
-import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import {
     doborn,
     doquit,
@@ -372,11 +330,8 @@ import {
     listGenocided, listVanquished,
 } from './end.js';
 import {
-    applyHeroContactPassive,
-} from './monster_passive.js';
-import {
     heroHasNoHands, heroIsPolymorphed, heroIsVerySmall,
-    heroCanChangeVampireShape, polymorphHero,
+    heroCanChangeVampireShape,
 } from './polyself.js';
 import { applyEyewear } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
@@ -398,58 +353,48 @@ import { usePolearm } from './polearm.js';
 import { isAxe, isPick, isPolearm } from './weapon_type.js';
 import { applyPickAxeDirection, usePickAxe } from './pick_axe.js';
 import { continueHeroDigging } from './hero_digging.js';
-import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { dowear, doputon, removeWornItem } from './do_wear.js';
 import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { dofire, dothrow } from './dothrow.js';
 import {
-    doenhance, useHeroSkill,
+    doenhance,
 } from './skills.js';
 import {
     chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, shopkeeperForHero,
 } from './shk.js';
 import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
-import { GRAVE } from './const.js';
-import { disturbGrave } from './grave.js';
-import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
+import { wipeHeroEngraving } from './engrave.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import {
     shouldShowGetposTip, showGetposTip, showGetposInstructions, selectMapPosition,
 } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import {
-    finishImmediateMonsterTrap, triggerImmediateMonsterTrap,
-} from './monmove.js';
 import { performPetRangedAttack } from './dogmove.js';
-import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
+import { hurtleHero } from './hero_hurtle.js';
 import {
     abuseKickedPet, levitatingKickMisses,
     prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
     tryKickReel,
 } from './monster_kick.js';
-import { kickFloorObject } from './object_kick.js';
-import { kickWithMonsterForm } from './hero_form_kick.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
-import { kickNonDoorTerrain } from './kick_terrain.js';
-import { kickDoor } from './kick_door.js';
-import { heroHasMartialKick } from './kick_rules.js';
+import { dokick } from './dokick.js';
 import {
     bringLeashedFollowers,
     randomMonsterRelocation,
 } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import {
-    RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR, ROOM,
-    POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN,
-    D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED,
+    RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR,
+    POOL, CLOUD, FOUNTAIN, SINK, WATER, MOAT, D_NODOOR, D_BROKEN,
+    D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL,
     IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE,
-    TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE,
-    ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK,
-    MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel,
-    Is_rogue_level, In_hell, Is_valley, W_ARMOR, W_ACCESSORY, P_BOW, P_SLING, PARANOID_HIT,
-    POLY_CONTROLLED, isok, DRAWBRIDGE_UP,
+    TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC,
+    ER_NOTHING, ER_DAMAGED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK,
+    MM_NOEXCLAM, SHOPBASE, In_endgame, Is_airlevel, Is_waterlevel,
+    Is_valley, W_ARMOR, W_ACCESSORY, P_BOW, P_SLING, PARANOID_HIT,
+    isok, DRAWBRIDGE_UP,
 } from './const.js';
 
 // Direction deltas: y u k
@@ -462,9 +407,7 @@ const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
 const SKELETON_KEY = 221;
 
-const PM_WATER_NYMPH = 68;
-const PM_WATER_DEMON = 289;
-const PM_WATER_MOCCASIN = 216;
+
 const M1_HUMANOID = 0x00020000;
 
 function isMovementKey(ch: string): ch is DirectionKey {
@@ -1186,277 +1129,6 @@ async function readCommand(): Promise<void> {
     if (result.cancelled) commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
 }
 
-type SpecialLayoutEvent = SpecialLevelDescriptor & {
-    kind: 'special'; name: string;
-};
-type DungeonLayoutEvent = SpecialLayoutEvent | {
-    kind: 'branch'; dnum: number; dlevel: number; branch: DungeonBranch;
-};
-interface WizardLevelDestination extends DungeonLocation {
-    prototype?: string;
-}
-
-function someGold(amount: number | null | undefined) {
-    const gold = Math.min(
-        0x7fffffff,
-        Math.max(0, Math.trunc(amount ?? 0)),
-    );
-    if (gold < 50) return gold;
-    const floor = gold < 100 ? 25
-        : gold < 500 ? 50
-            : gold < 1000 ? 100
-                : gold < 5000 ? 500
-                    : gold < 10000 ? 1000 : 5000;
-    return floor + rn2(gold - floor + 1);
-}
-
-async function discoverFountainGem(loc: MapLocation) {
-    return applyFountainGemDiscovery({
-        loc,
-        blind: heroIsBlind(),
-        announce: (message: string) => pline(message),
-        chooseGem: () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1),
-        createGem: (gemType: number) => mksobj(gemType, false, false),
-        placeGem: (gem: GameObject) => placeCreatedObject(gem, game.u.ux, game.u.uy),
-        repaint: async () => await newsym(game.u.ux, game.u.uy),
-        exerciseWisdom,
-    });
-}
-
-function fountainActorGone(mnum: number) {
-    return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
-}
-
-function fountainActorIndefiniteName(monster: Monster) {
-    return monsterName(monster, { article: 'a' });
-}
-
-function fountainActorVisibleSubject(monster: Monster) {
-    return monsterName(monster, { capitalized: true });
-}
-
-function fountainTrapAt(monster: Monster) {
-    return game.level?.traps?.some(trap =>
-        trap.tx === monster.mx && trap.ty === monster.my) ?? false;
-}
-
-async function triggerFountainTrap(monster: Monster) {
-    const state = requireInitializedGame();
-    const action = await triggerImmediateMonsterTrap(monster, state);
-    if (!state.program_state.gameover) {
-        await finishImmediateMonsterTrap(action, state, {
-            describeMonster: fountainActorVisibleSubject,
-            publish: plineWithContinuation,
-        });
-    }
-    return { heroDied: !!state.program_state.gameover };
-}
-
-async function summonFountainNymph() {
-    return applyFountainNymphActor({
-        gone: fountainActorGone(PM_WATER_NYMPH),
-        blind: heroIsBlind(),
-        createMonster: async () => {
-            const nymph = await makemonNear(
-                PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (nymph) await newsym(nymph.mx, nymph.my);
-            return nymph;
-        },
-        announce: plineWithContinuation,
-        nymphDescription: fountainActorIndefiniteName,
-        trapAt: fountainTrapAt,
-        triggerTrap: triggerFountainTrap,
-    });
-}
-
-async function summonFountainDemon() {
-    return applyFountainDemonActor({
-        gone: fountainActorGone(PM_WATER_DEMON),
-        blind: heroIsBlind(),
-        difficulty: level_difficulty(),
-        createMonster: async () => {
-            const demon = await makemonNear(
-                PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (demon) await newsym(demon.mx, demon.my);
-            return demon;
-        },
-        announce: plineWithContinuation,
-        demonIndefiniteName: fountainActorIndefiniteName,
-        demonPronouns: monster => ({
-            possessive: monsterPossessive(monster),
-            pronoun: monsterSubjectPronoun(monster),
-        }),
-        grantWish: (demon: Monster) => grantMonsterWish(demon),
-        trapAt: fountainTrapAt,
-        triggerTrap: triggerFountainTrap,
-    });
-}
-
-async function summonFountainSnakes() {
-    return applyFountainSnakeActors({
-        gone: fountainActorGone(PM_WATER_MOCCASIN),
-        blind: heroIsBlind(),
-        hallucinating: heroIsHallucinating(),
-        random: rn2,
-        hallucinatedPlural: () => makePlural(randomDisplayMonsterName()),
-        // dowatersnakes() owns the first ordinary pline; only a later dryup
-        // line enters the branch-scoped continuation path below.
-        announce: pline,
-        createMonster: async () => {
-            const snake = await makemonNear(
-                PM_WATER_MOCCASIN, game.u.ux, game.u.uy, MM_NOMSG,
-            );
-            if (snake) await newsym(snake.mx, snake.my);
-            return snake;
-        },
-        trapAt: fountainTrapAt,
-        triggerTrap: triggerFountainTrap,
-    });
-}
-
-export async function drinkFountain(loc: MapLocation) {
-    let fountainMessage = '';
-    const blessed = !!loc.blessedftn;
-    const fate = rnd(30);
-    if (propertyIsActive('levitation')) {
-        await floatingAbove('fountain');
-        return false;
-    }
-    if (blessed && (game.u.uluck ?? 0) >= 0 && fate >= 10) {
-        await blessedFountainDraught(loc);
-        return false;
-    }
-    if (fate < 10) {
-        // fountain.c:drinkfountain() handles the ordinary low-fate draught
-        // before its numbered switch.  Nutrition is credited before dryup()
-        // and the elapsed-turn scheduler applies its normal hunger cost.
-        await plineWithContinuation('The cool draught refreshes you.');
-        game.u.uhunger = (game.u.uhunger ?? 900) + rnd(10);
-        await updateHeroHunger(false);
-        if (game.program_state.gameover) return true;
-        if (blessed) return false;
-    } else if (fate === 19) {
-        await plineWithContinuation(formatFeltMessage('self-knowledgeable...'));
-        await flushPendingTopline();
-        await showEnlightenment({ basic: false, magic: true });
-        await exerciseAttribute(A_WIS, true);
-        await plineWithContinuation('The feeling subsides.');
-    } else if (fate === 20) {
-        await plineWithContinuation('The water is foul!  You gag and vomit.');
-        // C refs: fountain.c:drinkfountain(), eat.c:vomit(), and
-        // allmain.c:moveloop_core().  Foul water first removes 11..30 points
-        // of nutrition, then nomul(-2) makes the next two global turns happen
-        // without accepting a hero command.
-        await spendHeroNutrition(11 + rn2(20));
-        if (game.program_state.gameover) return true;
-        await vomitHero({ state: game });
-        if (game.program_state.gameover) return true;
-    } else if (fate === 21) {
-        await plineWithContinuation('The water is contaminated!');
-        if (game.u.poisonResistance) {
-            await plineWithContinuation(
-                `Perhaps it is runoff from the nearby ${fruitName(false)} farm.`,
-            );
-            if (await loseHeroHp(rnd(4), 'unrefrigerated sip of juice')) return true;
-        } else {
-            if (await poisonHeroStrengthAndHp(
-                3 + rn2(4), rnd(10), 'contaminated water',
-                { deathCause: 'killed by contaminated water' },
-            )) return true;
-            await exerciseAttribute(A_CON, false);
-        }
-    } else if (fate === 22) {
-        await summonFountainSnakes();
-    } else if (fate === 23) {
-        await summonFountainDemon();
-    } else if (fate === 24) {
-        await plineWithContinuation("This water's no good!");
-        await spendHeroNutrition(11 + rn2(20));
-        if (game.program_state.gameover) return true;
-        await exerciseAttribute(A_CON, false);
-        // A curse can drop the offhand weapon and change the inventory.
-        for (const object of [...game.inventory]) {
-            if (object.oclass !== 12 && !object.cursed && !rn2(5)) {
-                await curseObject(object);
-                if (game.program_state.gameover) return true;
-            }
-        }
-    } else if (fate === 25) {
-        if (heroIsBlind()) {
-            if (propertyIsActive('invisible') && !propertyIsActive('seeInvisible')) {
-                await plineWithContinuation('You feel transparent.');
-            } else {
-                await plineWithContinuation('You feel very self-conscious.');
-                await plineWithContinuation('Then it passes.');
-            }
-        } else {
-            await plineWithContinuation(formatSeenMessage('an image of someone stalking you.'));
-            await plineWithContinuation('But it disappears.');
-        }
-        grantIntrinsicProperty('seeInvisible', 'outside');
-        await newsym(game.u.ux, game.u.uy);
-        await exerciseAttribute(A_WIS, true);
-    } else if (fate === 26) {
-        if ((await detectMonsters(null)).result)
-            await plineWithContinuation(`The ${displayLiquidName('water')} tastes like nothing.`);
-        await exerciseAttribute(A_WIS, true);
-    } else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
-        await discoverFountainGem(loc);
-    } else if (fate === 27 || fate === 28) {
-        await summonFountainNymph();
-    } else if (fate === 29) {
-        await plineWithContinuation(`This ${displayLiquidName('water')} gives you bad breath!`);
-        for (const monster of [...requireGameLevel().monsters].reverse()) {
-            if (monster.dead || monster.mhp <= 0) continue;
-            if ((await makeMonsterFlee(monster, { announce: false })).heroDied)
-                return true;
-        }
-    } else if (fate === 30) {
-        await gushForthFromFountain({ drinking: true });
-    } else if (fate >= 10) {
-        fountainMessage =
-            `This tepid ${displayLiquidName('water')} is tasteless.`;
-    }
-    if (game.program_state.gameover) return true;
-    if (fountainMessage) await plineWithContinuation(fountainMessage);
-
-    await dryFountainAt(game.u.ux, game.u.uy);
-    return false;
-}
-
-async function blessedFountainDraught(loc: MapLocation): Promise<void> {
-    requirePlayingGame(game);
-    const state = game;
-    const hero = state.u;
-    await plineWithContinuation('Wow!  This makes you feel great!');
-    for (const attribute of ATTRIBUTE_DISPLAY_ORDER) {
-        if (hero.acurr.a[attribute] < hero.amax.a[attribute]) {
-            hero.acurr.a[attribute] = hero.amax.a[attribute];
-            state.context.botl = true;
-        }
-    }
-    const littleLuck = (hero.uluck ?? 0) < 4;
-    const start = rn2(A_MAX);
-    for (let offset = 0; offset < A_MAX; offset++) {
-        const attribute = (start + offset) % A_MAX;
-        const change = adjustAttribute(attribute, 1, state);
-        if (change.changed || !littleLuck
-            && (change.blockedByDunceCap || state.flags.verbose !== false)) {
-            const message = attributeChangeMessage(attribute, change, state);
-            if (message) await plineWithContinuation(message);
-        }
-        if (change.changed && state._moveloopStarted
-            && (attribute === A_STR || attribute === A_CON))
-            await reportHeroEncumbrance(state);
-        if (change.changed && littleLuck) break;
-    }
-    await displayMessageWindow();
-    await plineWithContinuation('A wisp of vapor escapes the fountain...');
-    await exerciseAttribute(A_WIS, true);
-    loc.blessedftn = 0;
-}
 
 // C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
 // being held or swallowed prevents even an attempt to use the floor below.
@@ -1619,379 +1291,6 @@ export async function travelStairs(up: boolean) {
 
 async function doTerrainOverview(): Promise<void> {
     await terrainCommand();
-}
-
-async function kickOuch(x: number, y: number, objectName = '') {
-    await plineWithContinuation('Ouch!  That hurts!');
-    await exerciseAttribute(A_DEX, false);
-    await exerciseAttribute(A_STR, false);
-    if (isok(x, y)) {
-        if (heroIsBlind(game)) await feel_location(x, y);
-        const location = game.level?.at(x, y);
-        const bridge = location && (location.typ === DOOR || location.typ === DBWALL)
-            ? findDrawbridgeAt(x, y) : null;
-        if (bridge) {
-            await plineWithContinuation('The drawbridge is unaffected.');
-            x = bridge.x;
-            y = bridge.y;
-        }
-        await wakeMonstersNearWithMessages(x, y, 25);
-    }
-    if (rn2(3) === 0) {
-        await woundHeroLegs('right', 5 + rnd(5));
-    }
-    let damage = rnd(currentAttribute(A_CON) > 15 ? 3 : 5);
-    if (game.u?.halfPhysicalDamage)
-        damage = Math.trunc((damage + 1) / 2);
-    const died = await damageHeroFromKick(damage, x, y, objectName);
-    if (!died && kickCausesRecoil())
-        await recoilFromKick(4 + rn2(2));
-}
-
-function kickCausesRecoil() {
-    return Is_airlevel(game.u?.uz) || game.u?.levitating
-        || game.u?.levitation || game.levitating;
-}
-
-function kickDeathReason(x: number, y: number) {
-    if (!isok(x, y)) return 'kicking nothing';
-    const location = game.level?.at?.(x, y);
-    if (!location) return 'kicking nothing';
-    if (location.typ === DOOR) return 'kicking a door';
-    if (IS_TREE(location.typ)) return 'kicking a tree';
-    if (IS_STWALL(location.typ)) return 'kicking a wall';
-    if (IS_OBSTRUCTED(location.typ)) return 'kicking a rock';
-    if (location.typ === THRONE) return 'kicking a throne';
-    if (location.typ === FOUNTAIN) return 'kicking a fountain';
-    if (location.typ === GRAVE) return 'kicking a headstone';
-    if (location.typ === SINK) return 'kicking a sink';
-    if (location.typ === ALTAR) return 'kicking an altar';
-    if (IS_DRAWBRIDGE(location.typ)) return 'kicking a drawbridge';
-    if (location.typ === STAIRS) return 'kicking the stairs';
-    if (location.typ === LADDER) return 'kicking a ladder';
-    if (location.typ === IRONBARS) return 'kicking an iron bar';
-    return 'kicking something weird';
-}
-
-async function damageHeroFromKick(amount: number, x: number, y: number, objectName: string) {
-    const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
-    return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
-}
-
-function finishHurtleMonsterDeath(monster: Monster, { noCorpse = true } = {}) {
-    return finishHeroMonsterKill(
-        monster, monster.mx, monster.my, {
-            showKillMessage: false,
-            noCorpse,
-            recordConduct: false,
-        },
-    );
-}
-
-async function recoilFromKick(range: number) {
-    const { dx, dy } = game.u;
-    if (dx === undefined || dy === undefined)
-        throw new Error('Kick recoil requires an attempted direction.');
-    return hurtleHero(-dx, -dy, range, {
-        verbose: true,
-        finishTeleport: finishTeleportArrival,
-        gotoLevel,
-        chooseTeleportDestination: askTeleportDestination,
-        finishMonsterDeath: finishHurtleMonsterDeath,
-    });
-}
-
-function applyKickPassive(monster: Monster, hit: boolean) {
-    return applyHeroContactPassive(monster, {
-        hit,
-        defenderSurvived: monster.mhp > 0,
-        attackType: AT_KICK,
-        weapon: game.uarmf || game.u?.uarmf || null,
-    });
-}
-
-// C refs: dokick.c:maybe_kick_monster(), kick_monster(), kickdmg().
-// Form-specific attacks share the command admission rules. Projection affects only the
-// target noun: dokick() still targets m_at(x,y) when the actor is invisible.
-async function kickLiveMonster(monster: Monster, x: number, y: number) {
-    const forcefight = game.context.forcefight;
-    try {
-        if (!monster.mpeaceful || !canSpotMonster(monster)) game.context.forcefight = true;
-        const permission = await prepareAppliedWeaponAttack(monster, null, { struckAt: { x, y } });
-        if (!permission.proceed) {
-            game.context.move = permission.spentTime ? 1 : 0;
-            return false;
-        }
-        if (await checkHeroAttackOverexertion()) {
-            game.context.move = 1;
-            return false;
-        }
-    } finally {
-        if (forcefight === undefined) delete game.context.forcefight;
-        else game.context.forcefight = forcefight;
-    }
-
-    await wakeMonstersNearWithMessages(
-        game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
-    );
-    wipeHeroEngraving(2);
-    await angerAttackedMonster(monster);
-
-    if (await levitatingKickMisses(monster)) {
-        await pline('Floating in the air, you miss wildly!');
-        await exerciseAttribute(A_DEX, false);
-        await applyKickPassive(monster, false);
-        game.context.move = 1;
-        return true;
-    }
-
-    if (monster.mundetected
-        || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
-        monster.mundetected = 0;
-        await revealMonsterAppearance(monster);
-        if (canSpotMonster(monster)) {
-            await newsym(x, y);
-            const name = monsterName(monster, { article: 'a' });
-            await plineWithContinuation(
-                `There is ${name} here.`,
-            );
-        } else {
-            await map_invisible(x, y);
-            await plineWithContinuation('There is something hidden here.');
-        }
-    }
-
-    if (await kickWithMonsterForm(monster, x, y)) {
-        game.context.move = 1;
-        return true;
-    }
-
-    const martial = heroHasMartialKick();
-    const kick = await prepareKick({
-        martial,
-        announce: pline,
-    });
-    if (kick.stopped) {
-        await applyKickPassive(monster, false);
-        game.context.move = 1;
-        return true;
-    }
-
-    await plineWithContinuation(`You kick ${monsterName(monster)}.`);
-    const evaded = await tryKickEvasion(monster, {
-        clumsy: kick.clumsy,
-        martial,
-        announce: plineWithContinuation,
-        nameMonster: actor => monsterName(actor, { capitalized: true }),
-    });
-    if (evaded) {
-        await applyKickPassive(monster, false);
-        if (monster.mx === x && monster.my === y
-            && !canSpotMonster(monster)) await map_invisible(x, y);
-        game.context.move = 1;
-        return true;
-    }
-
-    const preparedDamage = prepareKickDamage(monster, {
-        clumsy: kick.clumsy,
-    });
-    if (preparedDamage.passesThroughShade) {
-        await plineWithContinuation(
-            'The kick passes harmlessly through.',
-        );
-        game.context.move = 1;
-        return true;
-    }
-    await revealMonsterAppearance(monster);
-    await applyCaitiffPenalty(monster);
-    const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
-    if (petReaction.heroDied) return true;
-    const damage = await rollKickDamage(preparedDamage, { martial });
-    if (damage.damage > 0)
-        monster.mhp -= damage.damage;
-
-    const reel = await tryKickReel(
-        monster,
-        x - (game.u?.ux ?? x),
-        y - (game.u?.uy ?? y),
-        {
-            martial,
-            announce: plineWithContinuation,
-            nameMonster: actor => monsterName(actor, { capitalized: true }),
-        },
-    );
-
-    if (reel?.heroDied) return true;
-    const passive = await applyKickPassive(monster, true);
-    if (passive.heroDied) {
-        game.context.move = 1;
-        return true;
-    }
-    if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
-        await finishHeroMonsterKill(monster, monster.mx, monster.my, {
-            hallucinating: heroIsHallucinating(game),
-        });
-    } else if (monster.mx === x && monster.my === y
-        && !canSpotMonster(monster)) {
-        await map_invisible(x, y);
-    }
-    if (damage.trainSkill) await useHeroSkill(35);
-    game.context.move = 1;
-    return true;
-}
-
-async function dokick() {
-    if (!await admitHeroKick()) return;
-    const direction = await promptDirection();
-    if (!direction || (!direction.dx && !direction.dy)) {
-        commandResultCancelled(); // dokick() returns ECMD_CANCEL.
-        return;
-    }
-    game.u.dx = direction.dx;
-    game.u.dy = direction.dy;
-    const x = game.u.ux + game.u.dx;
-    const y = game.u.uy + game.u.dy;
-    // C dokick() records gk.kickedloc for every valid directed kick before
-    // dispatching the target.  Peaceful monsters and pets consult it during
-    // this same elapsed turn so they do not step into the square just kicked.
-    game._kickedLoc = { x, y };
-    if (!await kickCanReachTarget()) return;
-    const average = game.uarmf?.otyp === KICKING_BOOTS ? 99
-        : Math.trunc((currentStrength()
-            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
-    const monster = monsterAtPosition(requireGameLevel(), x, y);
-    if (monster) {
-        const cell = game.level?.at(x, y);
-        const oldGlyph = cell ? { ch: cell.disp_ch, color: cell.disp_color,
-            decgfx: cell.disp_decgfx, attr: cell.disp_attr, metadata: glyphAt(x, y) } : null;
-        const recoilRange = kickRecoilRange(monster.mnum);
-        if (!await kickLiveMonster(monster, x, y)) return;
-        const glyph = glyphAt(x, y);
-        if (monster.dead || monster.mhp <= 0) {
-            if (oldGlyph && glyph?.kind === 'invisible' && oldGlyph.metadata?.kind !== 'invisible')
-                await show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
-        } else if (!canSpotMonster(monster) && monster.mx === x && monster.my === y
-            && glyph?.kind !== 'invisible' && !(game.u.uswallow && game.u.ustuck === monster))
-            await map_invisible(x, y);
-        if (!game.program_state.gameover && kickCausesRecoil() && game.context.move)
-            await recoilFromKick(recoilRange);
-        return;
-    }
-    const location = game.level?.at(x, y);
-    // dokick() wakes the broad hero-level neighborhood before it dispatches
-    // the concrete terrain owner.  kick_ouch() then performs the smaller
-    // impact-centered wake after its attribute exercise draws.
-    await wakeMonstersNearWithMessages(
-        game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
-    );
-    wipeHeroEngraving(2);
-    if (!isok(x, y)) {
-        await kickOuch(x, y);
-        game.context.move = 1;
-        return;
-    }
-    await unmap_invisible(x, y);
-    if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
-        await plineWithContinuation(`You splash some ${displayLiquidName(
-            isPoolAt(x, y) ? 'water' : 'lava')} around.`);
-        game.context.move = 1;
-        return;
-    }
-    const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
-    const hasBoulder = game.level?.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
-    if (kickedObject && (!game.u.levitating || Is_airlevel(game.u.uz)
-        || Is_waterlevel(game.u.uz) || hasBoulder)) {
-        const kicked = await kickFloorObject(x, y, {
-            state: game,
-            dx: game.u.dx,
-            dy: game.u.dy,
-            publish: plineWithContinuation,
-            captureFlight: captureThrownObjectFlight,
-        });
-        if (game.program_state.gameover) return;
-        if (!kicked) await kickOuch(x, y, killerObjectName(kickedObject));
-        else if (Is_airlevel(game.u.uz)) await recoilFromKick(1);
-        game.context.move = 1;
-        return;
-    }
-    if (!location || (IS_STWALL(location.typ) && !IS_TREE(location.typ))) {
-        await kickOuch(x, y);
-        game.context.move = 1;
-        return;
-    }
-    if (location.typ === GRAVE) {
-        if (game.u.levitating || game.u.levitation || game.levitating) {
-            await kickDumb(x, y);
-        } else if (rn2(4) !== 0) {
-            await kickOuch(x, y);
-        } else if (!location.disturbed && rn2(2) === 0) {
-            await disturbGrave(x, y);
-        } else {
-            await exerciseAttribute(A_WIS, false);
-            const alignment = game.u.ualign;
-            if (!alignment) throw new Error('Breaking a grave requires hero alignment.');
-            if (game.urole?.key === 'archeologist' || game.urole?.key === 'samurai'
-                || (alignment.type === 1 && alignment.record > -10))
-                adjustHeroAlignment(-Math.sign(alignment.type));
-            location.typ = ROOM;
-            location.emptygrave = 0;
-            location.disturbed = 0;
-            placeCreatedObject(await mksobj(ROCK, true, false), x, y);
-            deleteEngravingAt(x, y);
-            if (heroIsBlind(game)) await pline('Crack!  Something broke!');
-            else {
-                await pline('The headstone topples over and breaks!');
-                await newsym(x, y);
-            }
-        }
-        game.context.move = 1;
-        return;
-    }
-    if (location.typ === DOOR) {
-        await kickDoor(x, y, average, { ouch: kickOuch, dumb: kickDumb });
-        return;
-    }
-    if (location.typ === SDOOR) {
-        if (!game.u.levitating && rn2(30) < average) {
-            convertSecretDoor(location);
-            const uncover = (location.doormask & (D_LOCKED | D_TRAPPED)) === D_LOCKED;
-            await pline(`Crash!  ${uncover ? 'Your kick uncovers' : 'You kick open'} a secret door!`);
-            await exerciseAttribute(A_DEX, true);
-            if (location.doormask & D_TRAPPED) {
-                location.doormask = D_NODOOR;
-                if (await triggerBoobyTrap('door', { bodypart: true })) return;
-            } else if (location.doormask !== D_NODOOR && !(location.doormask & D_LOCKED)) {
-                location.doormask = D_ISOPEN;
-            }
-            await feel_newsym(x, y);
-            vision_reset();
-            await vision_recalc(0);
-        } else {
-            await kickOuch(x, y);
-        }
-        game.context.move = 1;
-        return;
-    }
-    if (await kickNonDoorTerrain(x, y, average, { ouch: kickOuch, dumb: kickDumb })) return;
-    await kickDumb(x, y);
-    game.context.move = 1;
-}
-
-async function kickDumb(x: number, y: number): Promise<void> {
-    // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
-    // an unremarkable floor kick is merely empty or strains a muscle.
-    await exerciseAttribute(A_DEX, false);
-    const martial = heroHasMartialKick();
-    if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
-        await pline('You kick at empty space.');
-        if (heroIsBlind(game)) await feel_location(x, y);
-    } else {
-        await pline('Dumb move!  You strain a muscle.');
-        await exerciseAttribute(A_STR, false);
-        await woundHeroLegs('right', 5 + rnd(5));
-    }
-    if (kickCausesRecoil() && rn2(2) !== 0)
-        await recoilFromKick(1);
 }
 
 function putCommandLine(col: number, row: number, message: string, attr = 0) {
@@ -2495,464 +1794,6 @@ async function dochat() {
     game.context.move = Number(await publishMonsterNoise(monster, game));
 }
 
-async function wizWish() {
-    const verbose = game.flags.verbose;
-    game.flags.verbose = false;
-    try {
-        await makeWish();
-    } finally {
-        if (verbose === undefined) delete game.flags.verbose;
-        else game.flags.verbose = verbose;
-    }
-    await reportHeroEncumbrance();
-}
-
-// C wiz_polyself(): allow a chosen form without consuming a game turn.
-async function wizPolyself() {
-    await polymorphHero(POLY_CONTROLLED);
-    game.context.move = 0;
-}
-
-// wizcmds.c:wiz_genesis() allows deliberate creation while ordinary births
-// are disabled, then restores that setting even when the prompt is cancelled.
-async function wizGenesis() {
-    const mongenSaved = game.iflags.debug_mongen;
-    game.iflags.debug_mongen = false;
-    try {
-        await createParticularMonster();
-    } finally {
-        if (mongenSaved === undefined) delete game.iflags.debug_mongen;
-        else game.iflags.debug_mongen = mongenSaved;
-    }
-    game.context.move = 0;
-}
-
-async function wizDetect() {
-    await findit();
-    game.context.move = 0;
-}
-
-async function wizKill() {
-    requirePlayingGame(game);
-    const level = requireGameLevel();
-    const here = { ...game.u.uz };
-    let cursor: Position = { x: game.u.ux, y: game.u.uy };
-    let prompt = 'Pick first monster to slay';
-    for (;;) {
-        await plineWithContinuation(`${prompt}:`);
-        prompt = 'Next monster';
-        const verbose = game.flags.verbose;
-        const autodescribe = game.iflags.autodescribe;
-        game.flags.verbose = false;
-        game.iflags.autodescribe = true;
-        let target;
-        try {
-            const tipShown = await showGetposTip();
-            target = await selectMapPosition({
-                start: cursor, prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
-                goal: 'a monster',
-            });
-        } finally {
-            if (verbose === undefined) delete game.flags.verbose;
-            else game.flags.verbose = verbose;
-            if (autodescribe === undefined) delete game.iflags.autodescribe;
-            else game.iflags.autodescribe = autodescribe;
-        }
-        if (!target) break;
-        cursor = target;
-        const monster = await wizardKillTarget(cursor);
-        if (monster === 'quit') break;
-        await unmap_invisible(cursor.x, cursor.y);
-        if (!monster) {
-            await pline('There is no monster there.');
-            break;
-        }
-        const tame = !!monster.mtame;
-        const seen = canSpotMonster(monster) || !!game.u.uswallow && monster === game.u.ustuck;
-        const name = monsterName(monster, {
-            article: tame ? 'your' : seen ? 'the' : 'a',
-            ...(tame ? { adjective: seen ? 'poor' : 'poor, unseen' }
-                : seen ? {} : { adjective: 'unseen' }),
-            suppressIt: true, suppressHallucination: true,
-            suppressSaddle: tame && !!MGIVENNAME(monster),
-        });
-        const destroyed = monsterIsNonliving(monster.mnum);
-        if (game.iflags.menu_requested) {
-            game.context.mon_moving = true;
-            try {
-                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is ${destroyed ? 'destroyed' : 'killed'}.`);
-                await finishMonsterKilled(monster, game, { damageType: AD_PHYS, cause: null });
-            } finally {
-                game.context.mon_moving = false;
-            }
-        } else {
-            await plineWithContinuation(`You ${destroyed ? 'destroy' : 'kill'} ${name}!`);
-            await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
-        }
-        if (game.program_state.gameover || game.u.utotype
-            || game.u.uz.dnum !== here.dnum || game.u.uz.dlevel !== here.dlevel) break;
-    }
-    level.monsters = level.monsters.filter(monster => !monster.dead);
-    game.context.move = 0;
-}
-
-async function wizardKillTarget(cursor: Position): Promise<Monster | 'quit' | null> {
-    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
-        const steed = game.u.usteed;
-        if (steed) {
-            const answer = await promptYesNoQuit(`Kill ${monsterName(steed)}?`);
-            if (answer === 'q') return 'quit';
-            if (answer === 'y') return steed;
-        }
-        const question = game.urole?.key === 'samurai' ? 'Perform seppuku?' : 'Commit suicide?';
-        if (await paranoidQuery(true, question))
-            await finishHeroDeath({
-                killer: `${game.flags.female ? 'her' : 'his'} own player`,
-                killerFormat: KILLED_BY, deathType: DIED, deathLineShown: true,
-            });
-        return 'quit';
-    }
-    if (game.u.uswallow)
-        return Math.abs(cursor.x - game.u.ux) <= 1 && Math.abs(cursor.y - game.u.uy) <= 1
-            ? game.u.ustuck ?? null : null;
-    return requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game)
-        && (monster.mx === cursor.x && monster.my === cursor.y
-            || monster.wormSegments?.some(segment => segment.x === cursor.x && segment.y === cursor.y))
-        && !monster.dead && monster.mhp > 0) ?? null;
-}
-
-// C wizcmds.c:wiz_telekinesis(). The command keeps the cursor on a hurtled
-// actor and takes no time. rhack's reset_cmd_vars() clears hurtle's delay.
-async function wizTelekinesis(): Promise<void> {
-    requirePlayingGame(game);
-    let cursor: Position = { x: game.u.ux, y: game.u.uy };
-    await plineWithContinuation('Pick a monster to hurtle.');
-    do {
-        const tipShown = await showGetposTip();
-        if (game.flags.verbose) {
-            const helpKey = game.commandBindings.specialKey('getpos.help') ?? 63;
-            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
-        }
-        if (tipShown) await plineWithContinuation('Move cursor to a monster:');
-        const target = await selectMapPosition({
-            start: cursor, goal: 'a monster',
-            prompt: game._pending_message,
-        });
-        if (!target) break;
-        cursor = target;
-        const monster = monsterAtPosition(game.level, cursor.x, cursor.y);
-        const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
-        if (!(monster && canSpotMonster(monster)) && !atHero) continue;
-        const direction = await promptDirection((_message, retry) => readDirectionKey('which direction? ', retry));
-        if (!direction) break;
-        if (monster) {
-            await hurtleMonster(monster, direction.dx, direction.dy, 6, {
-                finishMonsterDeath: finishHurtleMonsterDeath,
-                // minliquid() credits drowning and lava burning to the hero;
-                // rust and fatal damage to a fire-resistant monster use mondied().
-                finishLiquidDeath: (target, death) =>
-                    death.cause === 'drowning' || death.cause === 'lava-burning'
-                        ? finishHeroMonsterKillOutcome(target, target.mx, target.my, { showKillMessage: false })
-                        : finishMonsterLiquidDeath(target, death),
-            });
-            if (!monster.dead && monster.mhp > 0 && canSpotMonster(monster))
-                cursor = { x: monster.mx, y: monster.my };
-        } else {
-            await hurtleHero(direction.dx, direction.dy, 6, {
-                finishTeleport: finishTeleportArrival,
-                gotoLevel, chooseTeleportDestination: askTeleportDestination,
-                finishMonsterDeath: finishHurtleMonsterDeath,
-            });
-            cursor = { x: game.u.ux, y: game.u.uy };
-        }
-        if (game.program_state.gameover) break;
-    } while (!game.u.utotype);
-    if (game._helplessReason === 'moving through the air') setMulti(0);
-    game.context.move = 0;
-}
-
-function menuLetter(index: number) {
-    return index < 26
-        ? String.fromCharCode('a'.charCodeAt(0) + index)
-        : String.fromCharCode('A'.charCodeAt(0) + index - 26);
-}
-
-function dungeonHeading(dnum: number) {
-    const dungeon = game.dungeons[dnum];
-    if (!dungeon) throw new RangeError(`Unknown dungeon ${dnum}`);
-    const first = dungeonDepth(dnum, 1);
-    const last = dungeonDepth(dnum, dungeon.num_dunlevs);
-    const incoming = game.branches?.find(branch => branch.end2.dnum === dnum);
-    const unplaced = !!incoming
-        && (incoming.end1.dnum < 0
-            || incoming.end1.dnum >= (game.dungeons?.length || 0));
-    const descriptor = unplaced ? 'depth' : 'level';
-    if (dungeon.num_dunlevs === 1)
-        return `${dungeon.dname}: ${descriptor} ${first}`;
-    let text = `${dungeon.dname}: ${descriptor}s ${first} to ${last}`;
-    if (dungeon.entry_lev !== 1) {
-        text += dungeon.entry_lev === dungeon.num_dunlevs
-            ? ', entrance from below'
-            : `, entrance on ${dungeonDepth(dnum, dungeon.entry_lev)}`;
-    }
-    return text;
-}
-
-function branchKind(branch: DungeonBranch) {
-    if (branch.type) return branch.type;
-    if (branch.portal) return 'portal';
-    const child = game.dungeons?.[branch.end2.dnum];
-    if (child?.dname === 'Gehennom') return 'no_end1';
-    if (child?.dname === 'The Elemental Planes') return 'no_end2';
-    return 'stair';
-}
-
-function branchMenuLabel(branch: DungeonBranch) {
-    const child = game.dungeons?.[branch.end2.dnum];
-    if (!child) return null;
-    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
-}
-
-function branchTypeDescription(branch: DungeonBranch) {
-    return {
-        portal: 'Portal',
-        no_end1: 'Connection',
-        no_end2: 'One way stair',
-        stair: 'Stair',
-    }[branchKind(branch)];
-}
-
-function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
-    const events: DungeonLayoutEvent[] = [];
-    for (const [name, level] of game.specialLevels || []) {
-        if (level.dnum !== dnum) continue;
-        events.push({ kind: 'special', name, ...level });
-    }
-    for (const branch of game.branches || []) {
-        if (branch.end1.dnum !== dnum) continue;
-        events.push({
-            kind: 'branch', dlevel: branch.end1.dlevel,
-            dnum, branch,
-        });
-    }
-    events.sort((a, b) => a.dlevel - b.dlevel
-        || Number(a.kind === 'special') - Number(b.kind === 'special'));
-    return events;
-}
-
-// C ref: dungeon.c unplaced_floater().  Fort Ludios is unavailable only
-// while its incoming branch still uses the synthetic n_dgns source end.
-// Once mk_knox_portal() resolves that end to a real main-dungeon level, the
-// named `knox` special level is selectable like every other wizard target.
-function specialLevelReachable(event: SpecialLayoutEvent) {
-    if (event.name === 'dummy') return false;
-    if (event.name !== 'knox') return true;
-    const incoming = (game.branches || []).find(branch =>
-        branch.end2?.dnum === event.dnum
-        && branch.end2?.dlevel === event.dlevel);
-    const sourceDnum = incoming?.end1?.dnum;
-    return sourceDnum !== undefined && Number.isInteger(sourceDnum)
-        && sourceDnum >= 0
-        && sourceDnum < (game.dungeons?.length || 0);
-}
-
-// C ref: teleport.c level_tele().  Wizard-menu entry into the Elemental
-// Planes grants the real Amulet before deferred_goto() starts.  Object
-// construction, inventory identity, and prinv() precede getbones()/mklev().
-// Destination placement finishes before tty asks for acknowledgement.
-async function endgamePrerequisite(destination: DungeonLocation) {
-    if (!In_endgame(destination) || In_endgame(game.u?.uz)
-        || game.u?.uhave?.amulet) return;
-    const amulet = await addInventoryItem(
-        await mksobj(AMULET_OF_YENDOR, true, false),
-    );
-    // teleport.c prints the grant with prinv(); its doname()->xname() path
-    // observes the visible object and appends it to the Amulet disco[] class
-    // before the destination transaction begins.
-    recordObjectEncounter(amulet.otyp);
-    if (!game.u.uhave) game.u.uhave = {};
-    game.u.uhave.amulet = 1;
-    const message = `Endgame prerequisite: ${
-        amulet.invlet
-    } - the Amulet of Yendor.`;
-    await pline(message);
-}
-
-// C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
-// the tty layer alone owns pagination and nested input capture.
-function wizardLevelMenu() {
-    const rows: TextMenuEntry[] = [];
-    const choices = new Map<string, WizardLevelDestination>();
-    let choiceIndex = 0;
-
-    for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
-        if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
-        // C print_dungeon(TRUE) emits the dungeon name via add_menu_heading(),
-        // which skips menu coloring.
-        rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE,
-            itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
-
-        for (const event of dungeonLayoutEvents(dnum)) {
-            const key = menuLetter(choiceIndex++);
-            const current = game.u?.uz?.dnum === event.dnum
-                && game.u?.uz?.dlevel === event.dlevel;
-            let label;
-            let destination: WizardLevelDestination;
-            let reachable = true;
-            if (event.kind === 'branch') {
-                label = branchMenuLabel(event.branch);
-                destination = { dnum: event.dnum, dlevel: event.dlevel };
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
-                if (event.name === 'castle')
-                    label += ` (tune ${game.castleTune || ''})`;
-                destination = {
-                    dnum: event.dnum, dlevel: event.dlevel,
-                    // dungeon.c:fixup_level_locations() retains the canonical
-                    // x-* placement identity but resolves the Lua prototype
-                    // through the selected role's file code.
-                    prototype: specialDisplayName(event.name),
-                };
-                reachable = specialLevelReachable(event);
-            }
-            if (reachable) {
-                rows.push(`${key} - ${current ? '*' : ' '} ${label}`);
-                choices.set(key, destination);
-            } else {
-                rows.push(`      ${label}`);
-            }
-        }
-    }
-    return { rows, choices };
-}
-
-function wizardWhereLines(): string[] {
-    const lines: string[] = [];
-    for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
-        lines.push(dungeonHeading(dnum));
-        for (const event of dungeonLayoutEvents(dnum)) {
-            let label;
-            if (event.kind === 'branch') {
-                label = branchMenuLabel(event.branch);
-            } else {
-                label = `${specialDisplayName(event.name)}: ${dungeonDepth(
-                    event.dnum, event.dlevel,
-                )}`;
-                if (event.name === 'castle')
-                    label += ` (tune ${game.castleTune || ''})`;
-            }
-            const current = event.kind === 'special'
-                && game.u.uz?.dnum === event.dnum && game.u.uz.dlevel === event.dlevel;
-            if (label) lines.push(`${current ? '*' : ' '} ${label}`);
-        }
-    }
-    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
-    if (floating.length) {
-        lines.push('', 'Floating branches');
-        for (const branch of floating) {
-            const child = game.dungeons[branch.end2.dnum];
-            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
-            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
-        }
-    }
-    const hero = game.u;
-    if (Invocation_lev(hero.uz)) {
-        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
-        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
-    } else {
-        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
-        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
-        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
-    }
-    return lines;
-}
-
-function wizardLevelExpectsPortal(): boolean {
-    const here = game.u.uz;
-    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
-        || Is_waterlevel(here) || Is_knox_level(here)
-        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
-            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
-                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
-}
-
-// C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
-// This is the complete live graph, unlike #overview's visited-level history
-// and unlike #levelteleport's selectable menu projection.
-async function wizWhere() {
-    game._pending_message = '';
-    game._retained_message = '';
-    await showDisclosureOverlay(wizardWhereLines(), { restoreUnderlay: true });
-    await docrt();
-    game.context.move = 0;
-}
-
-// C wizcmds.c:wiz_show_nhuuid(). The recorder build defines no NHUUID, so
-// svn.nhuuid stays empty and the native game prints an empty identifier.
-async function wizShowNhuuid() {
-    await pline('The NHUUID for this game is {  }.');
-}
-
-// C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
-export async function chooseWizardLevelDestination() {
-    const { rows, choices } = wizardLevelMenu();
-    const destination = await showPagedPickOneMenu({
-        rows, choices, prompt: 'Level teleport to where:',
-    });
-    if (!destination) return null;
-    await endgamePrerequisite(destination);
-    return { destination };
-}
-
-async function wizLevelTeleport({ menuRequested = !!game.iflags.menu_requested } = {}) {
-    game.context.move = 0;
-    await levelTeleport({ menuRequested });
-}
-
-async function wizLevelChange() {
-    const hero = game.u;
-    requireInitializedHero(hero);
-    const value = await getLine('To what experience level do you want to be set?');
-    const input = value?.trim();
-    if (!input || !/^[+-]?\d+$/.test(input)) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
-    }
-    let target = Number(input);
-    game._pending_message = '';
-    game._retained_message = '';
-    if (target === hero.ulevel) {
-        await plineWithContinuation('You are already that experienced.');
-    } else if (target < hero.ulevel) {
-        if (hero.ulevel === 1) {
-            await plineWithContinuation('You are already as inexperienced as you can get.');
-            game.context.move = 0;
-            return;
-        }
-        target = Math.max(1, target);
-        while (hero.ulevel > target) {
-            if (await loseHeroExperience('#levelchange')) return;
-        }
-    } else {
-        if (hero.ulevel >= 30) {
-            await plineWithContinuation('You are already as experienced as you can get.');
-            game.context.move = 0;
-            return;
-        }
-        target = Math.min(30, target);
-        while (hero.ulevel < target) {
-            await gainExperienceLevel();
-        }
-    }
-    hero.ulevelmax = hero.ulevel;
-    game.context.move = 0;
-}
-
 async function doloot() {
     await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
 }
@@ -3282,45 +2123,6 @@ async function moveIntoFailedUntrap(trap: Trap) {
     if (remainingTrap) remainingTrap.tseen = true;
     await exerciseAttribute(A_WIS, false);
     return { entered: true, died: false };
-}
-
-// C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
-// zero-time debug reveal: it maps traps and engravings first, then maps every
-// background square from all directions while preserving secret doors and
-// revealing secret corridors.
-async function wizMap() {
-    if (!game.flags?.debug) {
-        await pline('Unavailable command.');
-        game.context.move = 0;
-        return;
-    }
-
-    const savedConfusion = game.u?.confusionTurns ?? 0;
-    const savedHallucination = game.u?.hallucinationTurns ?? 0;
-    try {
-        // C wiz_map() blocks notices before clearing the senses and
-        // mapping traps, and re-enables them after do_mapping() returns.
-        await withMonsterNoticesBlocked(game, async () => {
-            game.u.confusionTurns = 0;
-            game.u.hallucinationTurns = 0;
-            for (const trap of requireGameLevel().traps) {
-                trap.tseen = true;
-                await map_trap(trap, true);
-            }
-            for (const engraving of requireGameLevel().engravings ?? [])
-                await map_engraving(engraving, true);
-            await mapMagicLevel({ confused: false });
-        });
-    } finally {
-        game.u.confusionTurns = savedConfusion;
-        game.u.hallucinationTurns = savedHallucination;
-    }
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearRow(0);
-    game.nhDisplay?.setCursor(game.u.ux - 1, game.u.uy + 1);
-    game.context.move = 0;
-    await bot();
 }
 
 // C ref: cmd.c:domonability().
@@ -3707,96 +2509,6 @@ async function doturn() {
     await turnUndeadByCallingOnDeity(game);
 }
 
-async function dipFountain(object: DipTarget, loc: MapLocation) {
-    if (propertyIsActive('levitation')) {
-        await floatingAbove('fountain');
-        return;
-    }
-    if (object !== 'hands' && await dipFountainSword(object, loc)) return;
-    const result = object === 'hands' || object === game.uarmg ? await washHands()
-        : await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
-    if (result === 'destroyed' || result !== 'nothing' && rn2(2) === 0) {
-        return;
-    }
-
-    const fate = rnd(30);
-    let eventMessage = '';
-    if (fate >= 16 && fate <= 20) {
-        if (fate === 16) {
-            if (object !== 'hands' && object.oclass !== 12 && !object.cursed)
-                await curseObject(object);
-        } else if (object !== 'hands' && object.cursed) {
-            if (!heroIsBlind())
-                await plineWithContinuation(`The ${displayLiquidName('water')} glows for a moment.`);
-            const oldRadius = objectLightRadius(object);
-            uncurseObjectState(object);
-            await adjustObjectLightAfterBlessing(object, oldRadius);
-        } else {
-            await plineWithContinuation('A feeling of loss comes over you.');
-        }
-        if (!game.program_state.gameover)
-            await dryFountainAt(game.u.ux, game.u.uy);
-        return;
-    }
-    const sensationEffect = resolveDippedSensationFate({
-        fate,
-        armName: () => heroArmName(game),
-    });
-    const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
-    const coinEffect = await applyDippedCoinFate({
-        fate,
-        loc,
-        dungeonLevels: currentDungeon?.num_dunlevs
-            ?? game.u?.uz?.dlevel ?? 1,
-        dungeonLevel: game.u?.uz?.dlevel ?? 1,
-        blind: heroIsBlind(),
-        random: rnd,
-        createGold: async (quantity: number) => {
-            await mkgold(quantity, game.u.ux, game.u.uy);
-        },
-        liquidName: () => displayLiquidName('water'),
-        exerciseWisdom,
-        repaint: async () => await newsym(game.u.ux, game.u.uy),
-    });
-    if (sensationEffect.handled) {
-        eventMessage = sensationEffect.message;
-    } else if (coinEffect.handled) {
-        eventMessage = coinEffect.message;
-    } else if (fate === 21) {
-        await summonFountainDemon();
-    } else if (fate === 22) {
-        await summonFountainNymph();
-    } else if (fate === 23) {
-        await summonFountainSnakes();
-    } else if (fate === 24) {
-        if ((loc.looted ?? 0) & F_LOOTED)
-            await gushForthFromFountain();
-        else
-            await discoverFountainGem(loc);
-    } else if (fate === 25) {
-        await gushForthFromFountain();
-    } else if (fate === 28) {
-        await plineWithContinuation('An urge to take a bath overwhelms you.');
-
-        const wallet = heroGoldAmount(game);
-        if (wallet > 10) {
-            const loss = Math.trunc(someGold(wallet) / 10);
-            game._statusGoldOverride = wallet;
-            setHeroGoldAmount(game, wallet - loss);
-            await plineWithContinuation('You lost some of your gold in the fountain!');
-            loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
-            await exerciseAttribute(A_WIS, false);
-        }
-
-        await dryFountainAt(game.u.ux, game.u.uy);
-        return;
-    } else if ((fate < 16 || fate === 30) && result === 'nothing') {
-        eventMessage = 'Nothing seems to happen.';
-    }
-    if (game.program_state.gameover) return;
-    if (eventMessage) await plineWithContinuation(eventMessage);
-    await dryFountainAt(game.u.ux, game.u.uy);
-}
 
 async function dodip() {
     if (await dip({ fountain: dipFountain }) === 'cancelled') commandResultCancelled();
@@ -4127,112 +2839,10 @@ async function doGenocided() {
     game.context.move = 0;
 }
 
-function inventoryCommandLetter(item: GameObject): string {
+export function inventoryCommandLetter(item: GameObject): string {
     if (item.invlet === null || item.invlet === undefined)
         throw new TypeError(`Carried object ${item.o_id} has no inventory letter`);
     return item.invlet;
-}
-
-async function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): Promise<string> {
-    const override = game.iflags.override_ID;
-    game.iflags.override_ID = true;
-    try {
-        return await inventoryItemDescription(item, { primaryHandDetail });
-    } finally {
-        if (override === undefined) delete game.iflags.override_ID;
-        else game.iflags.override_ID = override;
-    }
-}
-
-// C wizcmds.c:wiz_identify() delegates to display_inventory() with
-// iflags.override_ID set.  Fully identified inventories still open a short
-// PICK_NONE menu; the command does not collapse into a topline message.
-async function wizIdentify(): Promise<void> {
-    if (!game.inventory.length) {
-        await pline('Not carrying anything.');
-        game.context.move = 0;
-        return;
-    }
-    if (game.flags.fixinv === false) reassignInventoryLetters();
-    // display_pickinv() sorts the whole inventory before omitting fully
-    // identified objects. Wizard naming also applies during the sort, so
-    // alphabetization uses the names the menu reveals without discovering them.
-    const override = game.iflags.override_ID;
-    game.iflags.override_ID = true;
-    let ordered: GameObject[];
-    try {
-        ordered = sortObjects(game.inventory, { mode: inventorySortMode() });
-    } finally {
-        if (override === undefined) delete game.iflags.override_ID;
-        else game.iflags.override_ID = override;
-    }
-    const unidentified = ordered.filter(objectNeedsFullIdentification);
-    if (!unidentified.length) {
-        await showTextMenuOverlay([
-            'Debug Identify',
-            '(all items are permanently identified already)',
-        ]);
-        game.context.move = 0;
-        return;
-    }
-
-    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
-    const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
-    let selected: (GameObject | 'all')[];
-    try {
-        await tty_start_menu(window);
-        tty_add_menu(window, {
-            identifier: null,
-            text: `Debug Identify -- unidentified or partially identified item${
-                unidentified.length === 1 ? '' : 's'}`,
-        });
-        tty_add_menu(window, {
-            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
-            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
-            text: `select ${unidentified.length === 1
-                ? 'it' : 'any or all of them'} to permanently identify${
-                unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
-        });
-        let previousClass: number | null = null;
-        for (const item of unidentified) {
-            if (game.flags.sortpack !== false && item.oclass !== previousClass)
-                addMenuHeading(window, objectClassHeading(item.oclass));
-            previousClass = item.oclass;
-            observeObjectForNaming(item);
-            // C invent.c:display_pickinv() derives each row's obj_to_glyph()
-            // menu metadata from the display RNG before doname(), which
-            // shifts the hallucination stream one draw per listed row.
-            consumeHallucinatedMenuObjectGlyph(item);
-            tty_add_menu(window, {
-                identifier: item, selector: inventoryCommandLetter(item),
-                group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
-                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
-            });
-        }
-        tty_end_menu(window);
-        const result = await tty_select_menu(window, PICK_ANY);
-        selected = result.selections.map(selection => selection.identifier);
-    } finally {
-        await tty_destroy_nhwindow(window);
-    }
-    if (selected.includes('all')) {
-        await identifyPack(0);
-        game.context.move = 0;
-        return;
-    }
-    for (const item of selected) {
-        if (item === 'all') continue;
-        const learnedType = !objectTypeKnown(item);
-        fullyIdentifyObject(item);
-        if (learnedType) await exerciseAttribute(A_WIS, true);
-        observeObjectForNaming(item);
-        await plineWithContinuation(
-            `${item.invlet} - ${await inventoryItemDescription(item, {
-                primaryHandDetail: inventoryPrimaryHandDetail(item),
-            })}.`,
-        );
-    }
-    game.context.move = 0;
 }
 
 interface ExtendedCommandInput {
@@ -4393,63 +3003,6 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
     return selected ?? null;
 }
 
-async function wizardPositionDescription(x: number, y: number): Promise<string> {
-    if (x === game.u?.ux && y === game.u?.uy) {
-        const species = game.u.umonnum;
-        const polymorphName = heroIsPolymorphed(game) && species !== undefined
-            ? monsterTypeName(species, !!game.u.mfemale) : '';
-        const race = game.urace?.adj || game.urace?.name || 'human';
-        const role = game.urole?.name;
-        const roleName = game.flags.female && role?.f ? role.f : role?.m;
-        const form = polymorphName
-            || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
-        const punishment = heroIsPunished()
-            ? ', chained to a heavy iron ball' : '';
-        const blind = heroIsBlind(game);
-        const telepathy = unblindTelepathyRange() >= 0;
-        const detection = heroDetectsMonsters(game);
-        const invisible = propertyIsActive('invisible', game);
-        // self_lookat() includes invisibility while blind only when sensed.
-        const prefix = invisible && (!blind || telepathy || detection)
-            ? 'invisible ' : '';
-        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
-        const unseen = invisible && !game.u.seeInvisible
-            && (game.u.seeInvisibleTurns ?? 0) === 0;
-        // lookat() treats touch while blind or swallowed as normal vision.
-        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
-            return description;
-        const senses = [
-            game.u.infravision ? 'infravision' : '',
-            telepathy ? 'telepathy' : '',
-            detection ? 'monster detection' : '',
-        ].filter(sense => sense.length > 0);
-        return senses.length > 0
-            ? `${description} [seen: ${senses.join(', ')}]` : description;
-    }
-    const loc = game.level?.at(x, y);
-    if (!loc) return 'unexplored area';
-    const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing' || glyph?.kind === 'monster')
-        return farlookLocationDescription(x, y);
-    if (loc.typ === TREE && loc.remembered_glyph) return 'tree';
-    if (!loc.remembered_glyph && !cansee(x, y)) return 'unexplored area';
-    // C pager.c:do_screen_description() describes the displayed glyph, not
-    // the terrain below it.  A visible (or still remembered) pile therefore
-    // owns farlook before the room/corridor fallback.
-    return await farlookLocationDescription(x, y) || 'unexplored area';
-}
-
-function roomAtPosition(x: number, y: number): Room | null {
-    const roomno = game.level?.at(x, y)?.roomno ?? 0;
-    if (roomno >= ROOMOFFSET)
-        return roomForRoomno(game.level, roomno);
-    // Special-level flips move the room rectangle with its entities; older
-    // map cells may not yet carry the derived roomno projection.
-    return game.level?.rooms?.find((room): room is Room => isRoom(room)
-        && x >= room.lx && x <= room.hx
-        && y >= room.ly && y <= room.hy) || null;
-}
-
 // C teleport.c:control_mon_tele() and the shared getpos() input prelude.
 export async function askMonsterTeleportDestination(
     monster: Monster, start: Position,
@@ -4507,65 +3060,6 @@ async function teleportAtWillCommand(ignoreRestrictions: boolean): Promise<void>
     game.context.move = Number(result.spentTime);
 }
 
-function travelLocationDescription(x: number, y: number): string {
-    if (x === game.level?.dnstair?.x && y === game.level?.dnstair?.y) {
-        return onQuestStart(game) && !okToQuest(game)
-            ? 'blocked staircase down' : 'staircase down';
-    }
-    if (x === game.level?.upstair?.x && y === game.level?.upstair?.y)
-        return 'staircase up';
-    return '';
-}
-
-// C pager.c:lookat() gives the sensed hero priority over the map glyph.
-// Terrain-only inspection deliberately omits that self description.
-function farlookDescribesHero(x: number, y: number): boolean {
-    return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
-        && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
-}
-
-export async function farlookLocationDescription(x: number, y: number): Promise<string> {
-    // Detection temporarily removes swallowing. Native lookat() compares
-    // the engulfer's glyph before deciding that this square describes us,
-    // even when the terrain mode will subsequently omit monsters.
-    const engulfer = x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
-        && game.iflags.save_uswallow ? game.u.ustuck : null;
-    const describesEngulfer = engulfer
-        && glyphAt(x, y)?.glyph === transientMonsterGlyph(engulfer).glyph;
-    if (!describesEngulfer && farlookDescribesHero(x, y))
-        return wizardPositionDescription(x, y);
-    if (game.u.uswallow && game.u.ustuck)
-        return `interior of ${monsterName(game.u.ustuck)}`;
-    const glyph = lookGlyphAt(x, y);
-    if (!glyph || glyph.kind === 'unexplored') {
-        if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
-            return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
-        return 'unexplored area';
-    }
-    if (glyph?.kind === 'warning') {
-        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
-        const warning = def_warnsyms[index];
-        if (!warning) throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
-        return warning.desc;
-    }
-    if (glyph?.kind === 'nothing' || glyph?.kind === 'terrain'
-        && glyph.terrainName === 'dark part of a room') return 'dark part of a room';
-    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-    if (monster && glyph?.kind === 'monster') {
-        return lookAtMonster(monster, x, y);
-    }
-    if (glyph.kind === 'object') return objectAtMapDescription(x, y, glyph);
-    // Hallucinated statues project monster glyphs without a live monster.
-    if (glyph?.kind === 'monster' && heroIsHallucinating(game))
-        return randomDisplayMonsterName();
-
-    const description = mapFeatureDescription(x, y, glyph);
-    if (description === 'ice') return iceDescriptionAt(x, y);
-    if (description === 'staircase down' && onQuestStart(game) && !okToQuest(game))
-        return 'blocked staircase down';
-    return description;
-}
-
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump(): Promise<void> {
     const result = await jumpHero(0);
@@ -4584,7 +3078,7 @@ async function dotravel(): Promise<void> {
     if (!game.iflags.menu_requested) await pline('Where do you want to travel to?');
     // getpos_menu() omits auto_describe()'s travel-path warning.
     const cursor = game.iflags.menu_requested
-        ? await selectTravelMenuPosition(wizardPositionDescription)
+        ? await selectTravelMenuPosition(lookatDescription)
         : await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
@@ -4658,215 +3152,12 @@ async function dotravelTarget(): Promise<void> {
     else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
-// C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
-// Farlook spends no game time. Ordinary look retains its cursor between
-// selections; quick look returns after describing one selection.
-async function doFarlook(quick = true): Promise<void> {
-    const savedVerbose = game.flags.verbose;
-    game.flags.verbose = !!savedVerbose && !quick;
-    let verbose = !!game.flags.verbose;
-    let position = { x: game.u.ux, y: game.u.uy };
-    try {
-        for (;;) {
-            await plineWithContinuation(verbose
-                ? 'Please move the cursor to a monster, object or location.'
-                : 'Pick a monster, object or location.');
-            const firstUse = shouldShowGetposTip();
-            if (firstUse) await showGetposTip();
-            if (verbose) {
-                const helpKey = game.commandBindings.specialKey('getpos.help');
-                if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
-                await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
-            }
-            if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
-
-            const cursor = await selectMapPosition({
-                start: position, force: quick,
-                prompt: game._pending_message || game._retained_message,
-                goal: 'a monster, object or location',
-            });
-            if (!cursor || cursor.x < 0) break;
-            position = { x: cursor.x, y: cursor.y };
-            verbose = false;
-            game.flags.verbose = false;
-            // putmixed() returns the description to WIN_MESSAGE. A later
-            // checkfile() question or the next picker acknowledges that prose.
-            game._pending_message = '';
-            game._retained_message = '';
-            const basic = screenDescription(cursor.x, cursor.y, '');
-            const description = basic.needsDetail ? await farlookLocationDescription(cursor.x, cursor.y) : '';
-            const glyph = glyphAt(cursor.x, cursor.y);
-            const monster = basic.needsDetail && glyph?.kind === 'monster' && game.level
-                && !farlookDescribesHero(cursor.x, cursor.y)
-                ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
-            const seen = monster ? monsterSeenDescription(monster) : '';
-            const screen = basic.needsDetail ? screenDescription(cursor.x, cursor.y, description) : basic;
-            await plineWithContinuation(screen.count ? screen.text
-                + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
-            if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
-                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
-                await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
-                if (monster) await offerMonsterSupplement(monster,
-                    encyclopediaSupplementalName(screen.firstMatch), cursor.pickType === LOOK_VERBOSE);
-            }
-            if (quick || cursor.pickType === LOOK_ONCE) break;
-        }
-    } finally {
-        if (savedVerbose === undefined) delete game.flags.verbose;
-        else game.flags.verbose = savedVerbose;
-    }
-    game.context.move = 0;
-}
-
-async function offerFarlookInformation(description: string, withoutAsking: boolean): Promise<void> {
-    // do_look() passes firstmatch with a null monster type. The selected
-    // description retains given names for checkfile()'s alternate lookup.
-    for (const match of encyclopediaMatches(description)) {
-        if (withoutAsking || await promptYesNo(`More info about "${match.name}"?`, 'n') === 'y')
-            await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
-    }
-}
-
-// C pager.c:do_look(0).  The initial menu is a true PICK_ONE overlay; choosing
-// the map entry destroys it, restores the map, then hands input ownership to
-// the shared getpos/farlook transaction above.
-async function dowhatis(): Promise<void> {
-    const choices = [
-        { key: '/', alias: 'y', text: 'something on the map' },
-        { key: 'i', alias: '', text: "something you're carrying" },
-        { key: '?', alias: 'n', text: 'something else (by symbol or name)' },
-    ];
-    if (!game.u.uswallow && !heroIsHallucinating(game)) choices.push(
-        { key: 'm', alias: '', text: 'nearby monsters' },
-        { key: 'M', alias: '', text: 'all monsters shown on map' },
-        { key: 'o', alias: '', text: 'nearby objects' },
-        { key: 'O', alias: '', text: 'all objects shown on map' },
-        { key: 't', alias: '^', text: 'nearby traps' },
-        { key: 'T', alias: '"', text: 'all seen or remembered traps' },
-        { key: 'e', alias: '`', text: 'nearby engravings' },
-        { key: 'E', alias: '|', text: 'all seen or remembered engravings' },
-    );
-    const queuedKey = takeCommandKey();
-    let choice = queuedKey === undefined ? '' : String.fromCharCode(queuedKey);
-    if (queuedKey === undefined) {
-        const lootabc = !!game.flags.lootabc;
-        const items: PageLocalMultiSelectItem<string>[] = [];
-        for (const [index, entry] of choices.entries()) {
-            if (index === 3) items.push({ selectable: false, text: '' });
-            items.push({ text: entry.text, value: entry.key,
-                ...(lootabc ? {} : { key: entry.key }),
-                groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
-        }
-        const result = await showMultiSelectWindow({
-            title: 'What do you want to look at:', omitHeadings: true,
-            pickOne: true, pageLocalKeys: true,
-            sections: [{ items }],
-        });
-        choice = result[0] ?? '';
-    }
-    if (choice === 'y') choice = '/';
-    const listKind = 'mM'.includes(choice) && choice ? 'monsters'
-        : 'oO'.includes(choice) && choice ? 'objects'
-            : 'tT'.includes(choice) && choice ? 'traps'
-                : 'eE'.includes(choice) && choice ? 'engravings' : null;
-    if (listKind) {
-        await showLookList(listKind, choice === choice.toLowerCase(),
-            () => wizardPositionDescription(game.u.ux, game.u.uy));
-        game.context.move = 0;
-        return;
-    }
-    if (choice === '/') {
-        await doFarlook(false);
-        return;
-    }
-    if (choice === 'i') {
-        const queuedLetter = takeCommandKey();
-        const letter = queuedLetter ?? (await selectInventoryObject()).key;
-        const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
-        if (item) await showEncyclopediaInformation(singularObjectName(item));
-        else if (queuedLetter !== undefined) clearCommandKeys();
-    } else if (choice === '?') {
-        const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
-        const name = typed === ' ' ? typed : typed?.trim().replace(/\s+/g, ' ');
-        if (name && name.length > 1) await showEncyclopediaInformation(name);
-        else if (name) {
-            const result = typedSymbolDescription(name, {
-                includeHero: !game.flags.showrace && !heroIsPolymorphed(game)
-                    && !!game.urace && game.urace.name !== 'human' && game.urace.name !== 'elf',
-                waterLevel: Is_waterlevel(game.u.uz),
-                inHell: In_hell(game.u.uz),
-                blind: heroIsBlind(game),
-                clairvoyance: !!game.u.clairvoyanceDetection,
-                // pager.c resolves the override by level, independently of
-                // the symbols currently displayed by do_symset().
-                boulderSymbol: (Is_rogue_level(game.u.uz)
-                    ? game.rogueBoulderSym : game.boulderSym) || '`',
-            });
-            await plineWithContinuation(result.count
-                ? `${name}        ${result.text}` : "I've never heard of such things.");
-            if (result.count === 1 && game.flags.help !== false)
-                await offerFarlookInformation(result.firstMatch, false);
-        }
-    }
-    game.context.move = 0;
-}
-
-async function showEncyclopediaInformation(name: string): Promise<void> {
-    const entries = encyclopediaEntries(name);
-    // checkfile() fills an NHW_MENU with putstr(), so tty treats its rows
-    // as prose and accepts only the --More-- responses, even across pages.
-    for (const entry of entries)
-        await showDisclosureOverlay(entry.lines, { restoreUnderlay: true });
-    if (!entries.length) await pline("You don't have any information on those things.");
-}
-
 async function doversion(): Promise<void> {
     if (game.iflags.menu_requested) await doextversion();
     else await pline(NATIVE_VERSION);
     game.context.move = 0;
 }
 
-// C pager.c:dohelp().
-async function dohelp(): Promise<void> {
-    const entries = [
-        { key: 'a', text: 'About NetHack (version information).' },
-        { key: 'b', text: 'Long description of the game and commands.' },
-        { key: 'c', text: 'List of game commands.' },
-        { key: 'd', text: 'Concise history of NetHack.' },
-        { key: 'e', text: 'Info on a character in the game display.' },
-        { key: 'f', text: 'Info on what a given key does.' },
-        { key: 'g', text: 'List of game options.' },
-        { key: 'h', text: 'Longer explanation of game options.' },
-        { key: 'i', text: `Using the ${setOptionsCommand()} command to set options.` },
-        { key: 'j', text: 'Full list of keyboard commands.' },
-        { key: 'k', text: 'List of extended commands.' },
-        { key: 'l', text: 'List menu control keys.' },
-        { key: 'm', text: "Description of NetHack's command line." },
-        { key: 'n', text: 'The NetHack license.' },
-        { key: 'o', text: 'Support information.' },
-        ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
-    ];
-    const key = await showChoiceWindow({
-        title: 'Select one item:',
-        entries,
-    });
-    const choice = String.fromCharCode(key);
-    if (choice === 'a') await doextversion();
-    else if (choice === 'e') await dowhatis();
-    else if (choice === 'f') await whatDoesCommand();
-    else if (choice === 'g') await option_help();
-    else if (choice === 'j') await showKeyBindings();
-    else if (choice === 'k') await showExtendedCommandList();
-    else if (choice === 'l') await menuControlsHelp();
-    else if (choice === 'o') await contactHelp();
-    else {
-        const file = new Map([['b', 'help'], ['c', 'hh'], ['d', 'history'],
-            ['h', 'opthelp'], ['i', 'optmenu'], ['m', 'usagehlp'],
-            ['n', 'license'], ['p', 'wizhelp']]).get(choice);
-        if (file) await displayHelpFile(file);
-    }
-    game.context.move = 0;
-}
 
 function droppedObjectDescription(object: GameObject): string {
     const quantity = objectQuantity(object);

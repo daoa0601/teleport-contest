@@ -10,9 +10,8 @@ import { cansee } from './vision.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { farlookLocationDescription } from './cmd.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { screenDescription } from './pager_description.js';
+import { farlookLocationDescription, screenDescription } from './pager_description.js';
 import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description, } from './selvar.js';
 // C getpos.c:gather_locs_interesting().  #lookaround forces GFILTER_VIEW
 // before scanning, so the GFILTER_AREA flood-fill branch is unreachable here.

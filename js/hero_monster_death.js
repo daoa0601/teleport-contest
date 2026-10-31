@@ -119,6 +119,15 @@ export async function finishHeroMonsterKill(monster, x, y, options = {}) {
     const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
     return outcome.killed;
 }
+// A monster the hero hurtled into dies without a kill message, corpse, or
+// conduct record; kick recoil, #wiztelekinesis, and polearm pushes share it.
+export function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        showKillMessage: false,
+        noCorpse,
+        recordConduct: false,
+    });
+}
 export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, stoneRemains = null, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(game);
     const wasInside = (game.u.uswallow && game.u.ustuck === monster)
