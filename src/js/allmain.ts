@@ -123,10 +123,8 @@ import {
     u_on_upstairs,
 } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
-import {
-    applyHeroLiquidEffects, askTeleportDestination, continueCountedCommand, continueRun,
-    finishArmorRemoval, getLine, promptYesNo, rhack,
-} from './cmd.js';
+import { applyHeroLiquidEffects, continueRun } from './hack.js';
+import { askTeleportDestination, continueCountedCommand, finishArmorRemoval, getLine, promptYesNo, rhack } from './cmd.js';
 import { clearRepeatCommand } from './command_repeat.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';

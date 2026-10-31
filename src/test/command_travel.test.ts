@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { LAVAPOOL } from '../js/const.js';
 import { CORR, GFILTER_AREA, LA_DOWN, PIT, STAIRS } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';

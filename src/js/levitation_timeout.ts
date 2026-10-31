@@ -16,7 +16,7 @@ import {
 } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { surfaceName } from './terrain_name.js';
 import { isPoolOrLavaAt } from './terrain_properties.js';
 

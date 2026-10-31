@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { continueRun, heroTestMove, rhack } from '../js/cmd.js';
+import { continueRun, heroTestMove } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { D_CLOSED, DOOR, ICE, LAVAPOOL, LAVAWALL, PIT, POOL, ROOM, STONE, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';

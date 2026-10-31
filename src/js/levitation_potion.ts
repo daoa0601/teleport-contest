@@ -17,7 +17,8 @@ import {
 } from './properties.js';
 import { floatHeroUp } from './terrain_movement.js';
 import { rnd, rn1 } from './rng.js';
-import { applyHeroLocationEffects, travelStairs } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
+import { travelStairs } from './cmd.js';
 import { objectIsHardHelmet } from './armor.js';
 import { loseHeroHp } from './hero_damage.js';
 

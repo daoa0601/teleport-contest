@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { D_CLOSED, DOOR, IRONBARS, LAVAPOOL, POOL, ROOM, STONE, VIBRATING_SQUARE } from '../js/const.js';
 import { terrain_glyph } from '../js/display.js';
 import { CmapSymbol, cmapToGlyph, GlyphOffset } from '../js/glyph_numbers.js';

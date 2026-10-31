@@ -13,7 +13,7 @@ import { mksobj } from './mklev.js';
 import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { captureLevitationState, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { heroIsBlind, heroIsBlinded, heroIsHallucinating, permanentBlind } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';

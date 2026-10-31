@@ -6,7 +6,7 @@ import {
     W_SADDLE,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroLocationEffects } from '../js/cmd.js';
+import { applyHeroLocationEffects } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

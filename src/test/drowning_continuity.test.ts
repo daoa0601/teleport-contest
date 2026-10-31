@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { lookaroundRun, rhack } from '../js/cmd.js';
+import { lookaroundRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { CORR, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';

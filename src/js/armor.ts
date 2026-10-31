@@ -32,7 +32,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { cancelSlotTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import { learnObjectType } from './object_knowledge.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';

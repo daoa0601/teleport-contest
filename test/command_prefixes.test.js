@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';

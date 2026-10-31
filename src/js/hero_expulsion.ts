@@ -24,7 +24,7 @@ import {
     docrt, newsym, plineWithContinuation,
 } from './display.js';
 import { placeBallAndChain } from './ball.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
 import { vision_reset } from './vision.js';
 

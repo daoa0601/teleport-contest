@@ -2,7 +2,7 @@
 import { BEAR_TRAP, DB_ICE, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, MAGIC_PORTAL, MOAT, POOL, LANDMINE, VIBRATING_SQUARE, } from './const.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { impossible } from './diagnostics.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { remove_object, updateIceObjectTimersAt } from './floor_object.js';

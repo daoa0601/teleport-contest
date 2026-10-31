@@ -32,7 +32,7 @@ import {
 } from './const.js';
 import { monsterName } from './monster_name.js';
 import { artifactById } from './artifacts.js';
-import { heroMoveBlockedBetween } from './cmd.js';
+import { heroMoveBlockedBetween } from './hack.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';

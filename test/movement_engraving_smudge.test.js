@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { DUST, HEADSTONE, HOLE, NO_MINVENT, STONE, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';

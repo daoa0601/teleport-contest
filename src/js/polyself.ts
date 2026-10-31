@@ -101,7 +101,7 @@ import { heroCanSpinWeb } from './hero_web.js';
 import {
     expelHero, releaseHeroGrip,
 } from './hero_expulsion.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import {
     restartAmuletStrangulation, stopStrangulationInImmuneForm,
 } from './hero_strangulation.js';

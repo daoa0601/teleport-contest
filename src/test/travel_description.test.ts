@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { continueRun, rhack } from '../js/cmd.js';
+import { continueRun } from '../js/hack.js';
+import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';

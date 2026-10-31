@@ -8,7 +8,7 @@ import { plineWithContinuation } from './display.js';
 import { captureLevitationState, hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLocationEffects } from './hack.js';
 import { surfaceName } from './terrain_name.js';
 import { isPoolOrLavaAt } from './terrain_properties.js';
 const LEVITATION_TEXTS = [
