@@ -481,7 +481,7 @@ import {
     TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE,
     ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK,
     MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel,
-    Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT,
+    Is_rogue_level, In_hell, Is_valley, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT,
     POLY_CONTROLLED, STR19, isok, DRAWBRIDGE_UP,
 } from './const.js';
 
@@ -1600,9 +1600,7 @@ export async function travelStairs(up: boolean) {
         game.context.move = 0;
         return false;
     }
-    if (!up && game.valley_level?.dnum === game.u.uz.dnum
-        && game.valley_level.dlevel === game.u.uz.dlevel
-        && !game.u.uevent?.gehennom_entered) {
+    if (!up && Is_valley(game.u.uz) && !game.u.uevent?.gehennom_entered) {
         await plineWithContinuation('You are standing at the gate to Gehennom.');
         await plineWithContinuation('Unspeakable cruelty and harm lurk down there.');
         if (await promptYesNo('Are you sure you want to enter?') !== 'y') {

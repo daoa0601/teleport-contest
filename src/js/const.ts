@@ -2833,6 +2833,15 @@ export function Is_stronghold(uz?: DungeonLocation | null): boolean {
         && level?.dnum === specialLevel.dnum
         && level?.dlevel === specialLevel.dlevel;
 }
+// C ref: dungeon.h:120 — Is_valley() compares the level against the Valley
+// of the Dead, the gateway level of the Gehennom branch.
+export function Is_valley(uz?: DungeonLocation | null): boolean {
+    const level = uz ?? game?.u?.uz;
+    const specialLevel = game?.valley_level;
+    return !!specialLevel
+        && level?.dnum === specialLevel.dnum
+        && level?.dlevel === specialLevel.dlevel;
+}
 // C ref: dungeon.c:1637 — Is_botlevel checks if level is the deepest
 // in its dungeon branch. Each branch has its own num_dunlevs.
 export function Is_botlevel(uz?: DungeonLocation | null): boolean {
