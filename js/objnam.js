@@ -2,10 +2,11 @@
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
 import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
+import { objectProb } from './o_init.js';
 import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
-import { mkobj, mksobj, rndClass } from './mklev.js';
+import { mkobj, mksobj } from './mkobj.js';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, M_AP_OBJECT, M_AP_TYPE, PL_PSIZ, QBUFSZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
@@ -1221,5 +1222,23 @@ function requiredArtifact(name, state) {
     if (!artifact)
         throw new RangeError(`No native artifact named ${name}`);
     return artifact;
+}
+// C ref: objnam.c rnd_class().  Object probabilities are absolute weights
+// within the requested inclusive type range rather than a uniform index.
+export function rndClass(first, last) {
+    if (first >= last)
+        return first === last ? first : 0;
+    let total = 0;
+    for (let otyp = first; otyp <= last; otyp++)
+        total += objectProb[otyp] ?? 0;
+    if (!total)
+        return first + rn2(last - first + 1);
+    let roll = rnd(total);
+    for (let otyp = first; otyp <= last; otyp++) {
+        roll -= objectProb[otyp] ?? 0;
+        if (roll <= 0)
+            return otyp;
+    }
+    return last;
 }
 //# sourceMappingURL=objnam.js.map

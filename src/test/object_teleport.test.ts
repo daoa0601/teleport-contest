@@ -6,7 +6,7 @@ import {
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { mksobj, set_corpsenm } from '../js/mklev.js';
+import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { BOULDER, CHEST, CORPSE, DAGGER, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { relocateObjectRandomly } from '../js/object_teleport.js';

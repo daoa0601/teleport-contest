@@ -21,7 +21,7 @@ import { resetPick } from './lock_context.js';
 import { objectResistsDestruction } from './object_state.js';
 import { isWeaponTool } from './object_properties.js';
 import { CORPSE, ICE_BOX } from './object_data.js';
-import { startCorpseTimeout } from './mklev.js';
+import { startCorpseTimeout } from './mkobj.js';
 import { heroHasNoHands } from './polyself.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion_hit.js';
 import { promptYesNoQuit } from './query.js';

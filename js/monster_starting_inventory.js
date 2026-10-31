@@ -1,7 +1,7 @@
 // C makemon.c:mongets()/mkmonmoney(), also used after ordinary monster birth.
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { game } from './gstate.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsPlayerMonster } from './monster_data.js';
 import { addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory } from './monster_inventory.js';

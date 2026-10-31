@@ -34,7 +34,7 @@ import { promptYesNo } from './query.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { publishMonsterGrowl, publishMonsterYelp } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, } from './monster_data.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';

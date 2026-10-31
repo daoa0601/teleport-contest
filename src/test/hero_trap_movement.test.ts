@@ -20,7 +20,7 @@ import {
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, HEAVY_IRON_BALL, IRON_SHOES, ORCISH_HELM,
     ROCK, SCR_IDENTIFY, STATUE,

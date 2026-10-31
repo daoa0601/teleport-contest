@@ -14,7 +14,7 @@ import { heroIsStrangled } from './hero_strangulation.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import {
     BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_PROPERTY, OBJECT_UNIQUE,

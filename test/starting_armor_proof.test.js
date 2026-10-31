@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { OBJECT_NAMES, RING_MAIL, SPLINT_MAIL } from '../js/object_data.js';
 import { erodeObject } from '../js/object_erosion.js';
 import { addCreatedInventoryItem } from '../js/u_init.js';

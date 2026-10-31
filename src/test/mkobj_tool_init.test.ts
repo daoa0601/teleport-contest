@@ -8,7 +8,7 @@ import {
     OIL_LAMP, OBJECT_COST, OBJECT_NAMES, TALLOW_CANDLE, TINNING_KIT,
     WAX_CANDLE, FIGURINE,
 } from '../js/object_data.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
 import { objectWeight } from '../js/weight.js';
 import { freshObjectRoom } from './support/object-room.js';

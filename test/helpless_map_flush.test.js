@@ -5,7 +5,7 @@ import { nomul } from '../js/command_state.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { BOULDER } from '../js/object_data.js';
 import { freshTurnRoom } from './support/playable-room.js';
 function cellAt(x, y) {

@@ -7,7 +7,7 @@ import {
     WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { heroGoldObject } from '../js/hero_gold.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem, uInitInventoryAttrs } from '../js/u_init.js';
 import { completeHeroStartup, prepareHeroStartup } from './support/startup.js';
 

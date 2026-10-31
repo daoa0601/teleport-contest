@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { meltIce } from '../js/ice.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { nameToMonster } from '../js/mondata.js';
 import { angerMonster, publishMonsterYelp, publishMonsterGrowl, } from '../js/monster_anger.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';

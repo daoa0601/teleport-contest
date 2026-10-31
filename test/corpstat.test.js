@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, MM_FEMALE, MM_MALE, NO_MINVENT, isok, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mkcorpstat } from '../js/mklev.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { petrifyMonsterImmediately } from '../js/monster_stoning.js';
 import { placeMonsterAt } from '../js/monster_location.js';

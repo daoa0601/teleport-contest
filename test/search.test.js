@@ -7,7 +7,7 @@ import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { automaticSearch } from '../js/detect.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { APPLE, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';

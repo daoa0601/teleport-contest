@@ -10,7 +10,7 @@ import { requireGameLevel, requireLiveGame } from './gstate.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { isLevelPrize } from './level_prize.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { consumeMonsterObject } from './monster_consumption.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';

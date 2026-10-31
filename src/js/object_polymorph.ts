@@ -23,7 +23,9 @@ import {
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,
 } from './monster_data.js';
-import { makemonAt, mkobj, mksobj, rndClass, set_corpsenm } from './mklev.js';
+import { makemonAt } from './mklev.js';
+import { mkobj, mksobj, set_corpsenm } from './mkobj.js';
+import { rndClass } from './objnam.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
 import { getObjectLocation, replaceObject, unlinkObject } from './object_location.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';

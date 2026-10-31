@@ -7,7 +7,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishInventoryRemoval } from '../js/hero_inventory.js';
 import { unlinkObject } from '../js/object_location.js';
 import { pushKey } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addObjectToMonsterInventory, } from '../js/monster_inventory.js';
 import { dropMonsterObject } from '../js/monster_drop.js';
 import { FIGURINE } from '../js/object_data.js';

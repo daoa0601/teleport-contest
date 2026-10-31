@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializeObjectDescriptions } from '../js/o_init.js';
 import { wishedObjectPresentation } from '../js/objnam.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { initRng } from '../js/rng.js';
 import { OBJECT_COLOR } from '../js/object_data.js';

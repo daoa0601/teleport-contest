@@ -6,7 +6,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';

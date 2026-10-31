@@ -4,7 +4,7 @@ import type { Trap } from './map_types.js';
 // Arrows and darts created by floor traps.
 // C ref: trap.c t_missile().
 
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { objectWeight } from './weight.js';
 
 // C trap.c:t_missile().

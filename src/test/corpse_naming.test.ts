@@ -6,7 +6,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { mksobj, set_corpsenm } from '../js/mklev.js';
+import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { CORPSE, ICE_BOX, STATUE } from '../js/object_data.js';

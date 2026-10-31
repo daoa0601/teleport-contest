@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mkcorpstat, mksobj, set_corpsenm } from '../js/mklev.js';
+import { mkcorpstat, mksobj, set_corpsenm } from '../js/mkobj.js';
 import {
     CANDY_BAR, CORPSE, KELP_FROND, LOADSTONE, LUCKSTONE, ROCK, SPE_NOVEL,
     STATUE, TIN,

@@ -18,7 +18,8 @@ import { LL_ARTIFACT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './ga
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { mkobj, mksobj, rndClass } from './mklev.js';
+import { mkobj, mksobj } from './mkobj.js';
+import { rndClass } from './objnam.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';

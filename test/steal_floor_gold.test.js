@@ -4,7 +4,7 @@ import { placeObject } from '../js/floor_object.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { AD_SGLD, AT_CLAW } from '../js/monster_attack_types.js';
 import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
 import { GOLD_PIECE } from '../js/object_data.js';

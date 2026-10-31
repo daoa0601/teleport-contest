@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLUB, OBJECT_NAMES, POT_HEALING, SCR_IDENTIFY, SPE_DIG } from '../js/object_data.js';
 import { applyScrollEffects, identifyEffect } from '../js/scroll_effects.js';

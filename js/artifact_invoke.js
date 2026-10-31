@@ -9,7 +9,7 @@ import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility, } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { captureLevitationState, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';

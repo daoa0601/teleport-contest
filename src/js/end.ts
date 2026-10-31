@@ -37,7 +37,7 @@ import {
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { d, rn2 } from './rng.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';

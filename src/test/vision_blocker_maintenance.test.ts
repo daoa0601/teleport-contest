@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { MOAT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeObject } from '../js/floor_object.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { BOULDER } from '../js/object_data.js';
 import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { clearPath, vision_reset } from '../js/vision.js';

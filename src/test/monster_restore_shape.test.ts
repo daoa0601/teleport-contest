@@ -8,7 +8,7 @@ import { canSeeMonster, flush_screen, plineWithContinuation } from '../js/displa
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { cancelMonster } from '../js/monster_cancellation.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';

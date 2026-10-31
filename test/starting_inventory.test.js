@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LUCKSTONE, OBJECT_CHARGED, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, POT_POLYMORPH, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, RIN_POISON_RESISTANCE, SPE_CONFUSE_MONSTER, SPE_FORCE_BOLT, SPE_POLYMORPH, WAN_NOTHING, WAN_POLYMORPH, } from '../js/object_data.js';
 import { heroGoldObject } from '../js/hero_gold.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem, uInitInventoryAttrs } from '../js/u_init.js';
 import { completeHeroStartup, prepareHeroStartup } from './support/startup.js';
 void test('neutral starting arrows are unpoisoned while chaotic heroes retain their poison', async () => {

@@ -7,7 +7,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_WEP } from '../js/const.js';
 import { artifactObject, floorObject } from './support/game-objects.js';
-import { mksobj, set_corpsenm } from '../js/mklev.js';
+import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { removeMonsterFromGame, removeWishGrantingMonster } from '../js/monster_departure.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { deleteObject } from '../js/object_delete.js';

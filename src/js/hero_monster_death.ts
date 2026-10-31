@@ -24,7 +24,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { mkobj } from './mklev.js';
+import { mkobj } from './mkobj.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';

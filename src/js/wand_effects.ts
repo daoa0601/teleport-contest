@@ -41,7 +41,8 @@ import { inventoryItemDescription } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { lightDamage, lightRoom } from './light.js';
 import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
-import { createCritters, mksobj } from './mklev.js';
+import { createCritters } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { monsterAtPosition } from './monster_location.js';
 import {

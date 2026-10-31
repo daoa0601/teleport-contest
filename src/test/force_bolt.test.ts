@@ -11,7 +11,7 @@ import {
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import {
     BOULDER, CLUB, EGG, MIRROR, OBJECT_NAMES, POT_WATER, ROCK, SPE_FORCE_BOLT,
     STATUE, WAN_STRIKING,

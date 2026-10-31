@@ -8,7 +8,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { mkobj } from './mklev.js';
+import { mkobj } from './mkobj.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { tryCallObjectType } from './object_call.js';
 import { deleteObject } from './object_delete.js';

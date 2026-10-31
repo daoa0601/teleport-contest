@@ -12,7 +12,7 @@ import type { GameObject } from '../js/object_types.js';
 import { finishInventoryRemoval } from '../js/hero_inventory.js';
 import { unlinkObject } from '../js/object_location.js';
 import { pushKey } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import {
     addObjectToMonsterInventory,
 } from '../js/monster_inventory.js';

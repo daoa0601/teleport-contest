@@ -4,7 +4,7 @@ import { MM_ANGRY, MM_EMIN, MM_EPRI, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../
 import { flush_screen } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { tameMonster } from '../js/monster_taming.js';
 import { OBJECT_NAMES, TRIPE_RATION } from '../js/object_data.js';
 import { ensureQuestStatus } from '../js/quest.js';

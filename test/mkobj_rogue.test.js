@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mkobj } from '../js/mklev.js';
+import { mkobj } from '../js/mkobj.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('random Rogue-level loot uses only the seven Rogue object classes', async () => {
     await freshObjectRoom({ gameplaySeed: 140 });

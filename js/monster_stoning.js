@@ -18,7 +18,7 @@ import { clearMonsterCarriedObjectState, removeObjectFromMonsterInventory, } fro
 import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { monsterName } from './monster_name.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, } from './monster_weapon.js';
-import { mkcorpstat, mksobj } from './mklev.js';
+import { mkcorpstat, mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterIsAmorphous, monsterTypeName, } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';

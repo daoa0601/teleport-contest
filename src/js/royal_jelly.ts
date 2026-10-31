@@ -14,7 +14,7 @@ import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { healHeroLegs } from './hero_legs.js';
-import { restartEggHatchTimer } from './mklev.js';
+import { restartEggHatchTimer } from './egg.js';
 import { EGG, LUMP_OF_ROYAL_JELLY } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import {

@@ -22,7 +22,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 import { addInventoryItem, makedog } from '../js/u_init.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { GameDisplay } from '../js/game_display.js';
 async function unseenScroll(otyp = SCR_IDENTIFY, quantity = 1) {
     return await floorObject(otyp, game.u.ux, game.u.uy, {

@@ -8,7 +8,7 @@ import { fingersOrGloves, washHands } from './dip_water.js';
 import { placeCreatedObject } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
-import { mkobj } from './mklev.js';
+import { mkobj } from './mkobj.js';
 import { tryCallObjectType } from './object_call.js';
 import { POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER } from './object_data.js';
 import { definiteName, objectCombatName } from './objnam.js';

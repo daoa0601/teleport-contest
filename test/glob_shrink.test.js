@@ -11,7 +11,7 @@ import { placeCreatedObject, stack_object } from '../js/floor_object.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { shipObject } from '../js/object_migration.js';
 import { GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK, } from '../js/object_data.js';

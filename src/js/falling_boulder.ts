@@ -14,7 +14,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { wakeMonster } from './monster_anger.js';
 import { MONSTER_FLAGS1, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUnsolid, requireMonsterData } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';

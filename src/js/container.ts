@@ -32,7 +32,7 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { scatterFloorObjects } from './scatter.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { startCorpseTimeout } from './mklev.js';
+import { startCorpseTimeout } from './mkobj.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
 import {

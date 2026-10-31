@@ -6,7 +6,7 @@ import {
 import type { GlyphMetadata } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { mkobj, mksobj } from './mklev.js';
+import { mkobj, mksobj } from './mkobj.js';
 import { monsterAtPosition } from './monster_location.js';
 import {
     APPLE, BANANA, CORPSE, EUCALYPTUS_LEAF, GOLD_PIECE, LEASH,

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, MAGIC_FLUTE, MAGIC_HARP, MAGIC_MARKER, OIL_LAMP, OBJECT_COST, OBJECT_NAMES, TALLOW_CANDLE, TINNING_KIT, WAX_CANDLE, FIGURINE, } from '../js/object_data.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
 import { objectWeight } from '../js/weight.js';
 import { freshObjectRoom } from './support/object-room.js';

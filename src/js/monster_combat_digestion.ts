@@ -5,7 +5,7 @@ import { canSeeMonster, plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { requireLiveGame } from './gstate.js';
-import { mksobj, set_corpsenm } from './mklev.js';
+import { mksobj, set_corpsenm } from './mkobj.js';
 import { healMonster } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import type { MonsterCombatEffectContext, MonsterCombatEffectResult } from './monster_combat_effect_types.js';

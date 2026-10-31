@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import {
     BAG_OF_HOLDING, BAG_OF_TRICKS, CHEST, CORPSE, ICE_BOX, LARGE_BOX,
     OILSKIN_SACK, SACK, WAN_CANCELLATION,

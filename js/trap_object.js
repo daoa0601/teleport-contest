@@ -3,7 +3,7 @@ import { buryObject } from './buried_object.js';
 import { newsym } from './display.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { monsterAtPosition } from './monster_location.js';
 import { DART } from './object_data.js';
 import { sellHeroDroppedObject } from './shop_sell.js';

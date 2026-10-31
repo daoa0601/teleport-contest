@@ -14,9 +14,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { GameObject } from '../js/object_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import {
-    createCorpstatAt, mksobj, set_corpsenm,
-} from '../js/mklev.js';
+import { createCorpstatAt, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterAtPosition } from '../js/monster_location.js';

@@ -14,7 +14,7 @@ import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, S
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, ARROW, HEAVY_IRON_BALL, IRON_SHOES, ORCISH_HELM, ROCK, SCR_IDENTIFY, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';

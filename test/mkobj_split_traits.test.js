@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { CORPSE } from '../js/object_data.js';
 import { splitObjectStack } from '../js/object_stack.js';
 import { freshObjectRoom } from './support/object-room.js';

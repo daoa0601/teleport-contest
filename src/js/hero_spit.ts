@@ -19,7 +19,7 @@ import {
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 
 import { MONSTER_ATTACKS } from './monster_data.js';
 import {

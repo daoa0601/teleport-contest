@@ -8,7 +8,7 @@ import { game } from '../gstate.js';
 import { removeHeroEquipment } from '../hero_equipment.js';
 import { finishInventoryRemoval } from '../hero_inventory.js';
 import { cleanupObjectBurn } from '../light.js';
-import { mkobj, mksobj } from '../mklev.js';
+import { mkobj, mksobj } from '../mkobj.js';
 import { MONSTER_NAME } from '../monster_data.js';
 import { addObjectToContainer } from '../object_container.js';
 import { deleteObject } from '../object_delete.js';
