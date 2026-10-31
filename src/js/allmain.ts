@@ -44,7 +44,7 @@ import type {
 } from './monster_action_types.js';
 import { clearBypasses } from './object_bypass.js';
 import { clearSplitObjects } from './object_stack.js';
-import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
@@ -119,7 +119,6 @@ import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     mklev, l_nhcore_init, makemonAt,
-    summonNastyMonsters,
     u_on_upstairs,
 } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
@@ -129,11 +128,11 @@ import { clearRepeatCommand } from './command_repeat.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { amuletTurn, monsterCarriesAmulet, resurrectWizard } from './wizard.js';
+import { amuletTurn, intervene, monsterCarriesAmulet } from './wizard.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
-import { aggravateMonsters, angerMonster } from './monster_anger.js';
+import { angerMonster } from './monster_anger.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
@@ -143,7 +142,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap,
+    canSpotMonster, clearMessageWindow, displayMessageWindow, docrt, redrawMap,
     bot,
     flush_screen, flushPendingTopline, updateStatusLines, statusEvalNextUnhilite,
     pline,
@@ -327,7 +326,6 @@ import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
-import { msummon } from './minion.js';
 import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
 
 interface TurnMaintenance {
@@ -851,40 +849,12 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
     if (game.u.uhave.amulet) await amuletTurn(game);
     if (!rn2(40 + currentAttribute(A_DEX) * 3)) wipeHeroEngraving(rnd(3));
     // allmain.c's demigod intervention clock advances after engraving wear
-    // and before environmental level motion. Each announcement waits only
-    // when pline() needs input, before curses or the next intervention roll.
+    // and before environmental level motion. Complete any paged intervention
+    // before restarting the countdown, as the synchronous C call does.
     if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
         if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0) game.u.udg_cnt--;
         if ((game.u.udg_cnt ?? 0) === 0) {
-            const intervention = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
-            if (intervention <= 1) {
-                await plineWithContinuation(formatFeltMessage('vaguely nervous.'));
-                delete game._unresolvedDemigodIntervention;
-            } else if (intervention === 2) {
-                if (!heroIsBlind(game))
-                    await plineWithContinuation(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
-                game._pendingDemigodIntervention = {
-                    kind: intervention, sourceTurn,
-                };
-                return;
-            } else if (intervention === 5) {
-                game._pendingDemigodIntervention = {
-                    kind: intervention, sourceTurn,
-                };
-                return;
-            } else if (intervention === 4) {
-                game._pendingDemigodIntervention = {
-                    kind: intervention, sourceTurn,
-                };
-                return;
-            } else if (intervention === 3) {
-                const affected = aggravateMonsters(game, rn2);
-                game._lastDemigodAggravation = affected.map(monster =>
-                    monster.m_id);
-                delete game._unresolvedDemigodIntervention;
-            } else {
-                game._unresolvedDemigodIntervention = intervention;
-            }
+            await intervene();
             game.u.udg_cnt = 50 + rn2(200);
         }
     }
@@ -1689,28 +1659,6 @@ async function advanceWorldTurn(): Promise<void> {
         const monster = await activateStatueTrapAt(phase.x, phase.y);
         if (monster) await exerciseAttribute(A_WIS, true);
         phase = await finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
-    }
-    if (game._pendingDemigodIntervention) {
-        const intervention = game._pendingDemigodIntervention;
-        game._pendingDemigodIntervention = null;
-        if (intervention.kind === 2) {
-            const heroAttack = { deferredCurseItems: true };
-            await resolveDeferredHeroCurseItems(heroAttack);
-            delete game._unresolvedDemigodIntervention;
-        } else if (intervention.kind === 5) {
-            await resurrectWizard();
-            delete game._unresolvedDemigodIntervention;
-        } else if (intervention.kind === 4) {
-            let effect = await summonNastyMonsters(null);
-            if (effect.deferredDemonSummon) effect = await msummon();
-            game._lastDemigodNasty = (effect.created || []).map(monster =>
-                monster.m_id);
-            delete game._unresolvedDemigodIntervention;
-        }
-        game.u.udg_cnt = 50 + rn2(200);
-        await finishInitialTurnMaintenanceAfterIntervention(
-            intervention.sourceTurn,
-        );
     }
     const helplessDelayTurn = game._helplessRunmodeDelayPending;
     delete game._helplessRunmodeDelayPending;

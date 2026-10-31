@@ -432,7 +432,6 @@ function resetRestoredInstanceState(): void {
     delete game._initialPwBonus;
     delete game._lastDemigodAggravation;
     delete game._lastDemigodNasty;
-    delete game._unresolvedDemigodIntervention;
     delete game._preserveLeadingStyledBlanks;
     delete game._restoredBones;
     delete game._specialLevelPrototype;

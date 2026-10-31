@@ -1,21 +1,25 @@
-// C wizard.c:wizdeadorgone() and resurrect().
+// C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import { plineWithContinuation } from './display.js';
-import { makemonNear } from './mklev.js';
+import { displayColorName, plineWithContinuation } from './display.js';
+import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
+import { Is_astralevel, MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
+import { aggravateMonsters } from './monster_anger.js';
+import { msummon } from './minion.js';
+import { formatFeltMessage } from './hero_speech.js';
+import { rndcurse } from './throne.js';
 import {
     catchUpMonster, monsterArrive, WIZ_ARRIVE,
 } from './monster_migration.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import { definiteObjectAction } from './objnam.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 
 const WIZARD = 285;
 
@@ -42,6 +46,36 @@ export async function amuletTurn(state: PlayingGameState): Promise<void> {
         if (Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) > 1)
             await plineWithContinuation('You get the creepy feeling that somebody noticed your taking the Amulet.');
         return;
+    }
+}
+
+// C wizard.c:intervene(). Paging suspends the whole intervention before
+// its caller restarts the countdown and continues environmental maintenance.
+export async function intervene(): Promise<void> {
+    const which = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
+    switch (which) {
+    case 0:
+    case 1:
+        await plineWithContinuation(formatFeltMessage('vaguely nervous.'));
+        break;
+    case 2:
+        if (!heroIsBlind(game))
+            await plineWithContinuation(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
+        await rndcurse();
+        break;
+    case 3:
+        game._lastDemigodAggravation = aggravateMonsters(game, rn2)
+            .map(monster => monster.m_id);
+        break;
+    case 4: {
+        let effect = await summonNastyMonsters(null);
+        if (effect.deferredDemonSummon) effect = await msummon();
+        game._lastDemigodNasty = effect.created.map(monster => monster.m_id);
+        break;
+    }
+    case 5:
+        await resurrectWizard();
+        break;
     }
 }
 
