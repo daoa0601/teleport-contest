@@ -2,7 +2,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame, requireGameLevel } from './gstate.js';
 // detect.js — Searching and detection.
 // C ref: detect.c — dosearch(), dosearch0().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import { game } from './gstate.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -395,9 +395,10 @@ export async function findit() {
     });
     for (const { x, y } of cells) {
         const loc = game.level.requireAt(x, y);
-        const monster = game.level.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-            !candidate.dead && (candidate.mhp ?? 1) > 0
-            && candidate.mx === x && candidate.my === y);
+        // C's m_at() includes worm tails: each unseen occupied square is
+        // detected and remembered independently, even for the same worm.
+        const occupant = monsterAtPosition(game.level, x, y);
+        const monster = occupant && !occupant.dead && occupant.mhp > 0 ? occupant : null;
         if (loc.typ === SDOOR) {
             await flashGlyphAt(x, y, terrain_glyph({ ...loc, typ: DOOR, doormask: D_CLOSED }, x, y), 6);
             revealSecretDoor(x, y);
