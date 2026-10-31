@@ -4,8 +4,19 @@ import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import {
-    objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectNameWithArticle,
+    definiteName, objectCombatName, objectQuestion, observeObjectForNaming,
+    ownedSimpleObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
+import { autokey, autoUnlockFlags, pickLock } from './lock_pick.js';
+import { isForceableWeapon } from './lock.js';
+import { getAdjacentLocation } from './tty_prompts.js';
+import { lootCommand } from './container_loot.js';
+import {
+    AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP,
+    SHOPBASE, A_WIS, STONE, W_WEP, is_pit,
+    LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING,
+    MENU_TRADITIONAL,
+} from './const.js';
 import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -53,11 +64,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-import {
-    SHOPBASE, A_WIS, STONE, W_WEP, is_pit,
-    LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING,
-    MENU_TRADITIONAL,
-} from './const.js';
+
 
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -585,3 +592,31 @@ export function pickupObjectClass(object: GameObject): string {
     return objectClassHeading(oclass);
 }
 
+
+// C pickup.c:doloot().
+export async function doloot() {
+    await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
+}
+
+// C pickup.c:do_loot_cont(): untrapping or applying a key takes precedence
+// over queuing #force, even when the player declines those earlier offers.
+async function lootLockedContainer(container: GameObject, containerCount: number): Promise<void> {
+    if (!container.olocked) return;
+    const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+    await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
+    container.lknown = true;
+    const flags = autoUnlockFlags(game);
+    game.context.move = 0;
+    if (!flags) return;
+    game.u.dz = 0;
+    const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
+    if (tool || flags & AUTOUNLOCK_UNTRAP) {
+        game.context.move = Number(await pickLock(tool, { target: { x: game.u.ux, y: game.u.uy }, container }));
+        return;
+    }
+    if (flags & AUTOUNLOCK_FORCE && containerCount === 1 && isForceableWeapon(game.uwep)) {
+        // The queued command owns its confirmation and any time spent.
+        game._cannedCommands ??= [];
+        game._cannedCommands.push({ kind: 'command', name: 'force' });
+    }
+}

@@ -3,7 +3,7 @@ import type { InputGate } from '../js/input.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { askTeleportDestination } from '../js/cmd.js';
+import { askTeleportDestination } from '../js/teleport.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

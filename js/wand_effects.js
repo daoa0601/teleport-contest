@@ -4,7 +4,7 @@ import { requirePlayingGame } from './gstate.js';
 import { objectIsHardHelmet } from './armor.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_CLOSED, D_LOCKED, ENGRAVE, HOLE, ICE, IS_FURNITURE, Is_airlevel, Is_waterlevel, SDOOR, SHOPBASE, SHOP_DOOR_COST, TRAPDOOR, ZAP_POS, isok, } from './const.js';
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { findit } from './detect.js';

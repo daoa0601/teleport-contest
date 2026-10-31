@@ -4,7 +4,7 @@ import { clearMessageWindow, flushPendingTopline, renderKeyPrompt } from './tty_
 import { flush_screen } from './display.js';
 import { pline, setTopline } from './pline.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
-import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
+import { CLICK_1, CLICK_2, COLNO, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, ROWNO, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
 import { readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
@@ -281,5 +281,25 @@ export function directionAssistPage(invalidDirection = true, ctrlHintKey = null)
         lines.push('');
     lines.push('--More--');
     return { lines, cursor: [8, 23] };
+}
+// C cmd.c:get_adjacent_loc() delegates input and command assistance to
+// getdir(), then turns its relative result into a checked map location.
+export async function getAdjacentLocation(prompt, errorMessage, x, y) {
+    const direction = await promptDirection((_message, retry) => readDirectionKey(`${prompt} `, retry));
+    if (!direction) {
+        await pline('Never mind.');
+        game.context.move = 0;
+        return null;
+    }
+    const { dx, dy, dz } = direction;
+    const target = { x: x + dx, y: y + dy, dx, dy, dz };
+    if (target.x < 1 || target.x >= COLNO
+        || target.y < 0 || target.y >= ROWNO) {
+        if (errorMessage)
+            await pline(errorMessage);
+        game.context.move = 0;
+        return null;
+    }
+    return target;
 }
 //# sourceMappingURL=tty_prompts.js.map

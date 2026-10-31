@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { askMonsterTeleportDestination, askTeleportDestination } from '../js/cmd.js';
+import { askMonsterTeleportDestination, askTeleportDestination } from '../js/teleport.js';
 import { STAIRS } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { showFloorPile } from '../js/floor_object_display.js';

@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addBuriedObject } from '../js/buried_object.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { askTeleportDestination } from '../js/cmd.js';
+import { askTeleportDestination } from '../js/teleport.js';
 import { A_STR, HOLE, M_AP_NOTHING, PIT, VIBRATING_SQUARE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, newsym } from '../js/display.js';

@@ -1,6 +1,6 @@
 // C uhitm.c:mhitm_ad_poly() and mhitm.c:mon_poly(), for a hero attacker.
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NON_PM } from './const.js';
 import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

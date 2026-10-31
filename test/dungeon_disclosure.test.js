@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TRICKED } from '../js/const.js';
-import { dungeonOverviewDisclosure } from '../js/cmd.js';
+import { dungeonOverviewDisclosure } from '../js/dungeon.js';
 import { initOverviewRecord } from '../js/dungeon.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

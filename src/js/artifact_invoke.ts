@@ -4,13 +4,14 @@
 import { commandResultCancelled } from './command_state.js';
 import { formatFeltMessage } from './hero_speech.js';
 import type { Artifact } from './artifacts.js';
+import { artifactById } from './artifacts.js';
 import type { ArtifactPower } from './data_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import type { PropertyName } from './property_types.js';
 import type { UntrapOptions } from './untrap.js';
-import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
+import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
 import { newsym } from './display.js';
 import { pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -23,7 +24,11 @@ import {
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
 import { mksobj } from './mkobj.js';
-import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, OBJECT_UNIQUE, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
+import { retouchHeroObject } from './hero_retouch.js';
+import { useCrystalBall } from './crystal_ball.js';
+import { moveIntoFailedUntrap } from './untrap.js';
 import {
     captureLevitationState,
     hasInvokedProperty,
@@ -624,4 +629,45 @@ export async function deactivateArtifactProperty(
     if (!isPropertyArtifact(artifact) || !artifactInvokeIsActive(artifact, state)) return false;
     await invokeProperty(object, artifact, state, publish, rollDice, scaledRandom);
     return true;
+}
+
+// C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
+// suggests artifacts and other unique objects; an artifact with inv_prop 0
+// still consumes a turn after retouching, but its only effect is the ordinary
+// "Nothing happens." line.
+export async function doinvoke() {
+    const object = await chooseInventoryObject('invoke', candidate =>
+        candidate.oartifact || OBJECT_UNIQUE[candidate.otyp] || candidate.otyp === CRYSTAL_BALL
+            || candidate.otyp === FAKE_AMULET_OF_YENDOR && !candidate.known
+            ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
+    if (!object) {
+        commandResultCancelled(); // artifact.c:doinvoke() returns ECMD_CANCEL.
+        return;
+    }
+
+    game._pending_message = '';
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
+    const artifact = object.oartifact
+        ? artifactById(object.oartifact) : null;
+    if (!artifact || artifact.invokePower === null) {
+        if (object.otyp === CRYSTAL_BALL) await useCrystalBall(object);
+        else await pline('Nothing happens.');
+        game.context.move = 1;
+        return;
+    }
+
+    const invocation = await invokeArtifactPower(object, artifact, {
+        enterTrap: moveIntoFailedUntrap,
+    });
+    if ('heroDied' in invocation && invocation.heroDied) return;
+    if (invocation.used) {
+        game.context.move = 'spentTime' in invocation && invocation.spentTime === false ? 0 : 1;
+        return;
+    }
+    await pline('Nothing happens.');
+    game.context.move = 1;
 }

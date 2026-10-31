@@ -5,7 +5,10 @@ import { nomul } from './command_state.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { displayColorName } from './display.js';
 import { flushPendingTopline } from './tty_topline.js';
+import { pline as printLine } from './pline.js';
 import { plineWithContinuation as pline } from './pline.js';
+import { castSpell } from './spell.js';
+import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 import { rn1, rn2, rnl, rnd, rnz } from './rng.js';
@@ -317,5 +320,20 @@ function inHell() {
 }
 function luck() {
     return (game.u.uluck || 0) + (game.u.moreluck || 0);
+}
+// C ref: pray.c:doturn().
+export async function doturn() {
+    const role = game.urole?.key;
+    if (role !== 'priest' && role !== 'knight') {
+        const spell = (game.spells || []).find(known => known.name === 'turn undead');
+        if (!spell) {
+            await printLine("You don't know how to turn undead!");
+            game.context.move = 0;
+            return;
+        }
+        await castSpell(spell.otyp);
+        return;
+    }
+    await turnUndeadByCallingOnDeity(game);
 }
 //# sourceMappingURL=pray.js.map

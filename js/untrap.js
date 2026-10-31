@@ -25,7 +25,12 @@ import { addExperience, checkExperienceLevel, } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
 import { convertTrapToObject } from './trap_object.js';
-import { heroBadRock } from './hack.js';
+import { blocksDiagonalDoor, blocksMove, heroBadRock } from './hack.js';
+import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
+import { placeHeroOnLevel } from './hero_location.js';
+import { checkHeroLeashes } from './leash_apply.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
+import { vision_recalc } from './vision.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
@@ -831,5 +836,47 @@ async function awardExperience(experience, scoreBonus, state, publish) {
     addExperience(experience, scoreBonus, state);
     if (state === game)
         await checkExperienceLevel({ publish });
+}
+// C trap.c:move_into_trap(): while attempting to disarm an adjacent trap,
+// the hero has fallen into it.
+export async function moveIntoFailedUntrap(trap) {
+    const u = game.u;
+    const newx = trap.tx;
+    const newy = trap.ty;
+    const dx = newx - u.ux;
+    const dy = newy - u.uy;
+    const loc = game.level?.at?.(newx, newy);
+    if (!loc || blocksMove(newx, newy)
+        || (dx && dy && blocksDiagonalDoor(game.level?.at?.(u.ux, u.uy), loc)))
+        return { entered: false, died: false };
+    const ballChainMove = await beginBallAndChainMove(newx, newy);
+    if (ballChainMove?.blocked)
+        return { entered: false, died: !!game.program_state.gameover };
+    const oldx = u.ux;
+    const oldy = u.uy;
+    u.ux0 = oldx;
+    u.uy0 = oldy;
+    await placeHeroOnLevel(newx, newy);
+    u.umoved = true;
+    await newsym(oldx, oldy);
+    await vision_recalc(1);
+    await checkHeroLeashes(oldx, oldy);
+    if (game.program_state.gameover)
+        return { entered: true, died: true };
+    await finishBallAndChainMove(ballChainMove);
+    // C move_into_trap() has its own arrival order and does not run the
+    // footstep, concealment, or dragging-delay tail of domove_core().
+    trap.tseen = false;
+    await finishDestinationSpotEffects({
+        oldx, oldy, newx: u.ux, newy: u.uy,
+        trapOptions: { failedUntrap: true },
+    });
+    if (game.program_state.gameover)
+        return { entered: true, died: true };
+    const remainingTrap = game.level?.traps?.find(candidate => candidate.tx === u.ux && candidate.ty === u.uy);
+    if (remainingTrap)
+        remainingTrap.tseen = true;
+    await exerciseAttribute(A_WIS, false);
+    return { entered: true, died: false };
 }
 //# sourceMappingURL=untrap.js.map

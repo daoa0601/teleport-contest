@@ -56,7 +56,7 @@ import {
     PANICKED, QUIT, STARVING, STONING, TRICKED,
     In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
-import { dungeonOverviewDisclosure } from './cmd.js';
+import { dungeonOverviewDisclosure } from './dungeon.js';
 import {
     AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES,

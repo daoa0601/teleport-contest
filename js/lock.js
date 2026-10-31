@@ -1,13 +1,30 @@
 import { currency } from './currency.js';
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
-import { exerciseAttribute } from './attrib.js';
-import { A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, } from './const.js';
+import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
+import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
+import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, isok, } from './const.js';
+import { commandResultCancelled } from './command_state.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { BAG_OF_TRICKS } from './object_data.js';
+import { doloot } from './pickup.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { newsym } from './display.js';
+import { feel_location, feel_newsym, newsym } from './display.js';
+import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { vision_note_blocker_change } from './vision.js';
+import { findDrawbridgeAt } from './dbridge.js';
+import { doorObstructed } from './door_magic.js';
+import { recordMappedOverviewState } from './dungeon.js';
+import { stumbleOnDoorMimic } from './mimic.js';
+import { triggerBoobyTrap } from './booby_trap.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
+import { heroPassesWalls } from './hero_species.js';
+import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
+import { isContainer } from './container.js';
+import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
-import { game } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, } from './object_data.js';
@@ -24,10 +41,8 @@ import { objectResistsDestruction } from './object_state.js';
 import { isWeaponTool } from './object_properties.js';
 import { CORPSE, ICE_BOX } from './object_data.js';
 import { startCorpseTimeout } from './mkobj.js';
-import { heroHasNoHands } from './polyself.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion_hit.js';
 import { promptYesNoQuit } from './query.js';
-import { rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject } from './shk.js';
 import { stolenValue } from './shop_loss.js';
@@ -309,5 +324,247 @@ export async function breakChestLock(box, destroyIt, state) {
         await plineWithContinuation(`You owe ${loss} ${currency(loss, { state })} for objects destroyed.`);
     }
     await delobj(box, state);
+}
+// C refs: lock.c doclose(); cmd.c getdir()/help_dir().  Invalid direction
+// help is a modal text window: bytes typed before a real More dismissal must
+// not leak back into the top-level command dispatcher.
+export async function doclose() {
+    if (heroHasNoHands(game)) {
+        await pline("You can't close anything -- you have no hands!");
+        game.context.move = 0;
+        return;
+    }
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
+    const direction = await promptDirection();
+    if (!direction) {
+        commandResultCancelled(); // lock.c:doclose() returns ECMD_CANCEL.
+        game.context.move = 0;
+        return;
+    }
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
+        await pline('You are in the way!');
+        game.context.move = 1;
+        return;
+    }
+    if (!isok(x, y)) {
+        await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
+    if (loc && heroIsBlind(game)) {
+        const previousGlyph = loc.remembered_glyph?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = loc.lastseentyp;
+        await feel_location(x, y);
+        if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            game.context.move = 1;
+    }
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP)
+            await pline('The drawbridge is already closed.');
+        else if (portcullis || loc?.typ === DRAWBRIDGE_DOWN)
+            await pline('There is no obvious way to close the drawbridge.');
+        else
+            await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        return;
+    }
+    if (loc.doormask === D_NODOOR) {
+        await pline('This doorway has no door.');
+        return;
+    }
+    requirePlayingGame(game);
+    if (await doorObstructed(x, y, false, game))
+        return;
+    if (loc.doormask === D_BROKEN) {
+        await pline('This door is broken.');
+        return;
+    }
+    if (loc.doormask & (D_CLOSED | D_LOCKED)) {
+        await pline('This door is already closed.');
+        return;
+    }
+    if (loc.doormask === D_ISOPEN) {
+        if (heroIsVerySmall(game) && !game.u.usteed) {
+            await pline("You're too small to push the door closed.");
+            return;
+        }
+        const effort = Math.trunc((currentStrength()
+            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
+        if (game.u.usteed || rn2(25) < effort) {
+            await pline('The door closes.');
+            loc.doormask = D_CLOSED;
+            await feel_newsym(x, y);
+            vision_note_blocker_change(x, y);
+        }
+        else {
+            await exerciseAttribute(A_STR, true);
+            await pline('The door resists!');
+        }
+    }
+    game.context.move = 1;
+}
+// C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
+// validation is owned by the same modal assistance transaction as close;
+// the door mutation happens only after that transaction returns a direction.
+export async function doopen(x = 0, y = 0) {
+    if (heroHasNoHands(game)) {
+        await pline("You can't open anything -- you have no hands!");
+        game.context.move = 0;
+        return;
+    }
+    if (!(x > 0 && y >= 0)) {
+        const boxes = game.level?.objects[game.u.ux]?.[game.u.uy] ?? [];
+        const inPitWithContainer = game.u.utrap && game.u.utraptype === TT_PIT
+            && boxes.some(object => isContainer(object));
+        const direction = await promptDirection(inPitWithContainer
+            ? (_message, retry) => readDirectionKey('Open where? [.>] ', retry) : readDirectionKey);
+        if (!direction) {
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        x = game.u.ux + direction.dx;
+        y = game.u.uy + direction.dy;
+    }
+    if (!isok(x, y)) {
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
+    if (x === game.u.ux && y === game.u.uy
+        && ((game.u.dz ?? 0) > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        await doloot();
+        return;
+    }
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
+    let spentTime = !!(game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns);
+    if (loc) {
+        const previousGlyph = loc.remembered_glyph?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = loc.lastseentyp;
+        await newsym(x, y);
+        // doopen_indir() uses a turn when looking at the target teaches
+        // the hero something, even if the target has no door to open.
+        if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            spentTime = true;
+    }
+    game.context.move = Number(spentTime);
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP) {
+            await pline('There is no obvious way to open the drawbridge.');
+            return;
+        }
+        if (portcullis || loc?.typ === DRAWBRIDGE_DOWN) {
+            await pline('The drawbridge is already open.');
+            return;
+        }
+        const floorPile = game.level?.objects[x]?.[y] ?? [];
+        // Native Is_container includes a bag of tricks for this hint.
+        const hasContainer = floorPile.some(object => object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS);
+        const blind = heroIsBlind(game);
+        await pline(hasContainer
+            ? `${blind ? 'Feels' : 'Seems'} like something lootable over there.`
+            : `You ${blind ? 'feel' : 'see'} no door there.`);
+        return;
+    }
+    if (loc.doormask === D_BROKEN) {
+        await pline('This door is broken.');
+        return;
+    }
+    if (loc.doormask === D_NODOOR) {
+        await pline('This doorway has no door.');
+        return;
+    }
+    if (loc.doormask === D_ISOPEN) {
+        await pline('This door is already open.');
+        return;
+    }
+    if (loc.doormask & D_LOCKED) {
+        game.context.move = Number(await openLockedDoor(x, y));
+        return;
+    }
+    if (heroIsVerySmall(game)) {
+        await pline("You're too small to pull the door open.");
+        return;
+    }
+    if (rnl(20) < Math.trunc((currentStrength()
+        + currentAttribute(A_DEX)
+        + currentAttribute(A_CON)) / 3)) {
+        await openClosedDoor(loc, x, y);
+    }
+    else {
+        await exerciseAttribute(A_STR, true);
+        await pline('The door resists!');
+    }
+    if (game.program_state.gameover)
+        return;
+    game.context.move = 1;
+}
+// lock.c:doopen_indir() announces opening before the explosion. The door
+// remains closed across that message pause and any fatal explosion.
+async function openClosedDoor(door, x, y) {
+    await plineWithContinuation('The door opens.');
+    if (door.doormask & D_TRAPPED) {
+        if (await triggerBoobyTrap('door', { bodypart: true }))
+            return;
+        door.doormask = D_NODOOR;
+        const level = requireGameLevel();
+        if (roomsAt(level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_DOOR_COST);
+    }
+    else
+        door.doormask = D_ISOPEN;
+    await feel_newsym(x, y);
+    vision_note_blocker_change(x, y);
+}
+async function openLockedDoor(x, y) {
+    await pline('This door is locked.');
+    const flags = autoUnlockFlags(game);
+    if (!flags)
+        return Boolean(game.context.move);
+    game.u.dz = 0;
+    if (flags & AUTOUNLOCK_APPLY_KEY) {
+        const tool = autokey(true);
+        if (tool)
+            return pickLock(tool, { target: { x, y } });
+    }
+    if (flags & AUTOUNLOCK_KICK && !game.u.usteed
+        && await promptYesNoQuit('Kick it?') === 'y') {
+        // lock.c queues dokick with the door direction; the open command
+        // itself spends no turn, the kick that follows owns the action.
+        game._cannedCommands ||= [];
+        game._cannedCommands.push({
+            kind: 'kick',
+            dx: Math.sign(x - game.u.ux), dy: Math.sign(y - game.u.uy),
+        });
+        return false;
+    }
+    return Boolean(game.context.move);
 }
 //# sourceMappingURL=lock.js.map

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createBonesFromDeath } from '../js/bones_death.js';
-import { dungeonOverviewDisclosure } from '../js/cmd.js';
+import { dungeonOverviewDisclosure } from '../js/dungeon.js';
 import { setMulti } from '../js/command_state.js';
 import { CORR, STARVING, STONING } from '../js/const.js';
 import { map_location } from '../js/display.js';
