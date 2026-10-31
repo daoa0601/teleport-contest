@@ -1,22 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { rhack } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
+import { zapHeroWithObject } from '../js/hero_self_zap.js';
 import { resetInputState } from '../js/input.js';
 import { dodiscovered } from '../js/o_init.js';
 import {
-    LEATHER_GLOVES, MAGIC_HARP, POT_BOOZE, POT_FULL_HEALING, POT_HEALING,
-    POT_WATER, SACK, WOODEN_HARP,
+    DAGGER, FOOD_RATION, LEATHER_ARMOR, LEATHER_GLOVES, MAGIC_HARP,
+    POT_BOOZE, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_HEALING, POT_SICKNESS,
+    POT_WATER, RIN_PROTECTION, SACK, SCR_IDENTIFY, WAN_CANCELLATION, WOODEN_HARP,
 } from '../js/object_data.js';
 import {
     learnObjectType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge,
+    recordObjectPriceQuote,
 } from '../js/object_knowledge.js';
 import { objectName } from '../js/objnam.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { changeTutorialState } from '../js/tutorial_state.js';
 import { vision_reset } from '../js/vision.js';
-import { knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoomLevel } from './support/playable-room.js';
@@ -113,6 +117,9 @@ void test('Healers preknow full healing while carried healing potions count as e
 
     assert.ok(lines.includes(`* potion of full healing (${game.objectDescriptions?.[POT_FULL_HEALING]})`));
     assert.ok(lines.includes(`  potion of healing (${game.objectDescriptions?.[POT_HEALING]})`));
+    assert.ok(lines.findIndex(line => line.includes('potion of full healing'))
+        < lines.findIndex(line => line.includes('potion of healing')),
+        'Role preknowledge precedes later starting-inventory encounters');
 });
 
 void test('Rogues list their starting sack as encountered', async () => {
@@ -123,6 +130,57 @@ void test('Rogues list their starting sack as encountered', async () => {
     const lines = await discoveryLines();
 
     assert.ok(lines.includes('  sack (bag)'));
+});
+
+void test('inventory after self-cancellation discovers fruit juice before water while displaying water first', async () => {
+    await freshObjectRoom();
+    const types = [DAGGER, LEATHER_ARMOR, RIN_PROTECTION, POT_HEALING,
+        POT_SICKNESS, FOOD_RATION, SCR_IDENTIFY, WAN_CANCELLATION];
+    for (const [index, type] of types.entries())
+        await addInventoryObject(type, { invlet: String.fromCharCode(97 + index) });
+    const wand = game.inventory.find(object => object.otyp === WAN_CANCELLATION);
+    assert.ok(wand, 'The hero carries a wand of cancellation');
+    await zapHeroWithObject(wand);
+    assert.equal(game.inventory.find(object => object.invlet === 'd')?.otyp, POT_WATER);
+    assert.equal(game.inventory.find(object => object.invlet === 'e')?.otyp, POT_FRUIT_JUICE);
+
+    const input = resetInputState();
+    let inventory = '';
+    input.display = {
+        async readKey(): Promise<number> {
+            inventory += requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            return 32;
+        },
+    };
+    try {
+        await rhack('i'.charCodeAt(0));
+    } finally {
+        input.display = null;
+    }
+    assert.match(inventory, /d - an uncursed clear potion/);
+    const juiceAppearance = game.objectDescriptions?.[POT_FRUIT_JUICE];
+    assert.ok(inventory.indexOf('d - an uncursed clear potion')
+        < inventory.indexOf(`e - an uncursed ${juiceAppearance} potion`));
+
+    const discoveries = await discoveryLines();
+    const juice = discoveries.indexOf(`  potion (${juiceAppearance})`);
+    const water = discoveries.indexOf('  potion (clear)');
+    assert.ok(juice >= 0, 'The inventory menu encounters the cancelled fruit juice');
+    assert.ok(water > juice, 'Water follows fruit juice in discovery order');
+});
+
+void test('a shop quote remembers the price without reserving a discovery position', async () => {
+    await freshObjectRoom();
+    recordObjectPriceQuote(POT_WATER, 8);
+    recordObjectEncounter(POT_HEALING);
+    recordObjectEncounter(POT_WATER);
+
+    const lines = await discoveryLines();
+
+    const healing = lines.indexOf(`  potion (${game.objectDescriptions?.[POT_HEALING]})`);
+    const water = lines.indexOf('  potion (clear) {buy 8}');
+    assert.ok(healing >= 0, 'The first encountered potion appears in discoveries');
+    assert.ok(water > healing, 'The quoted potion takes its position when encountered');
 });
 
 void test('saving discoveries retains preknowledge, encounter markers, and discovery order', async () => {
