@@ -80,12 +80,7 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
-<<<<<<< HEAD
-import { finishImmediateMonsterTrap, trapTriggeredByFloor, triggerImmediateMonsterTrap } from './monmove.js';
 import { askTeleportDestination } from './teleport.js';
-=======
-import { askTeleportDestination } from './cmd.js';
->>>>>>> 3767145a0 (Move non-combat foreign code out of monmove.ts into C-owner modules)
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 const M1_CLING = 0x00000010;
