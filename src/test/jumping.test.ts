@@ -9,11 +9,11 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_PIT, TT_WEB, WEB,
 } from '../js/const.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
-import { newsym } from '../js/display.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { jumpHero } from '../js/jumping.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { GOLD_PIECE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { forceLearnSpell } from '../js/spell.js';
@@ -83,6 +83,24 @@ void test('physical jump lands, pays nutrition, and installs its delay', async (
     assert.equal(game._helplessTurns, 1);
     assert.equal(game._helplessReason, 'jumping around');
     assert.ok(game.u.uhunger >= 875 && game.u.uhunger < 900);
+});
+
+void test('jump landing preserves hallucinated objects whose visibility has not changed', async () => {
+    const input = await readyJump({ hero: { hallucinationTurns: 20 } });
+    const location = requireGameLevel().requireAt(7, 6);
+    location.seenv = 255;
+    await floorObject(DAGGER, 7, 6);
+    await newsym(7, 6);
+    const appearance = glyphAt(7, 6)?.glyph;
+    assert.ok(appearance !== undefined);
+    input.feed('l.');
+
+    const result = await jumpHero();
+
+    assert.equal(result.spentTime, true);
+    assert.equal(game.u.ux, 11);
+    assert.equal(glyphAt(7, 6)?.glyph, appearance,
+        'landing updates sight without redrawing an unchanged distant object');
 });
 
 void test('jump landing performs native autopickup on the final square', async () => {

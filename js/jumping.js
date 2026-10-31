@@ -5,7 +5,7 @@ import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
-import { bot, newsym, redrawMap, plineWithContinuation, displayLiquidName } from './display.js';
+import { plineWithContinuation, displayLiquidName } from './display.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -16,7 +16,7 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { spendHeroNutrition } from './hunger.js';
 import { gotoLevel } from './level_change.js';
-import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './location_effects.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { makePlural } from './object_grammar.js';
@@ -30,7 +30,7 @@ import { stuckSteed } from './steed.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { cansee, vision_recalc } from './vision.js';
+import { cansee } from './vision.js';
 import { nearCapacity } from './weight.js';
 const ANY = 0, HORIZONTAL = 1, VERTICAL = 2, DIAGONAL = 3;
 function jumpResult(spentTime, state) {
@@ -253,16 +253,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
     });
     if (state.program_state.gameover)
         return jumpResult(true, state);
-    await moveHeroByTeleport(destination.x, destination.y, state, {
-        finishArrival: async (movement) => {
-            await newsym(movement.oldx, movement.oldy);
-            await vision_recalc(0);
-            await redrawMap();
-            await bot();
-            return finishDestinationSpotEffects({ ...movement,
-                newx: movement.x, newy: movement.y });
-        },
-    });
+    await moveHeroByTeleport(destination.x, destination.y, state);
     if (state.program_state.gameover)
         return jumpResult(true, state);
     nomul(-1, state);
