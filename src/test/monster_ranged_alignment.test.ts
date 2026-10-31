@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import {
     monsterLinedUpWithHero, monsterLinedUpWithMonster,
-} from '../js/monster_ranged_alignment.js';
+} from '../js/mthrowu.js';
 import { BOULDER, WAN_STRIKING } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';

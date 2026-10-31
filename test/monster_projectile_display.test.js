@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { heroIsBlind } from '../js/senses.js';
 import { monsterProjectileDisplay } from '../js/monster_projectile_display.js';
-import { throwMonsterProjectile } from '../js/monster_throw.js';
+import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';

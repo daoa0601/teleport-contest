@@ -88,9 +88,9 @@ mkshop	isbig	inlined	area > 20 (mkroom.ts)
 mkshop	mkzoo	n/a	only through the wizard SHOPTYPE environment override
 mkshop	mktemple	n/a	only through the wizard SHOPTYPE environment override
 mkshop	mkswamp	n/a	only through the wizard SHOPTYPE environment override
-linedup	distmin	inlined	monster_ranged_alignment.ts
+linedup	distmin	inlined	mthrowu.ts
 linedup	sgn	inlined	Math.sign
-linedup	sobj_at	inlined	boulder test (monster_ranged_alignment.ts)
+linedup	sobj_at	inlined	boulder test (mthrowu.ts)
 exerchk	exerper	inlined	periodicTurnExercise runs beside exerchk in the same turn pass (allmain.ts)
 exerchk	sgn	inlined	Math.sign
 drinkfountain	update_inventory	n/a	no perm_invent window on an 80x24 tty
@@ -314,7 +314,7 @@ bestow_artifact	artiname	inlined	artifact name in the gift announcement (sacrifi
 bestow_artifact	at_your_feet	inlined	landFloorObject places the gift (sacrifice.ts)
 bestow_artifact	discover_object	inlined	learnObjectType/discoverArtifact (sacrifice.ts)
 bestow_artifact	unrestrict_weapon_skill	inlined	unrestrictHeroSkill (sacrifice.ts)
-blocking_terrain	closed_door	inlined	closed/locked door blocks the bolt (monster_ranged_alignment.ts)
+blocking_terrain	closed_door	inlined	closed/locked door blocks the bolt (mthrowu.ts)
 break_armor	Armor_gone	inlined	removeHeroArmor with voluntary:false runs the gone path (polyself.ts, armor.ts)
 break_armor	Blindf_off	inlined	blindfold removal via dropCarriedObject/eyewear off handling (polyself.ts, eyewear.ts)
 break_armor	Helmet_off	inlined	helmet drop runs Helmet_off luck handling (polyself.ts, armor.ts)

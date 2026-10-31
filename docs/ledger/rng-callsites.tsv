@@ -1346,6 +1346,27 @@ src/js/mkmaze.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
 src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
 src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
 src/js/mthrowu.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
+src/js/mthrowu.ts	throwMonsterProjectile	random	"[""3""]"	constant
+src/js/mthrowu.ts	throwMonsterProjectile	random	"[""3""]"	constant
+src/js/mthrowu.ts	throwMonsterProjectile	random	"[""5""]"	constant
+src/js/mthrowu.ts	throwMonsterProjectile	random	"[""7""]"	constant
+src/js/mthrowu.ts	catchThrownObject	random	"[""chance""]"	invariant
+src/js/mthrowu.ts	hitMonsterWithProjectile	random	"[""30""]"	constant
+src/js/mthrowu.ts	hitMonsterWithProjectile	rollOne	"[""20""]"	constant
+src/js/mthrowu.ts	hitMonsterWithProjectile	rollOne	"[""25""]"	constant
+src/js/mthrowu.ts	hitMonsterWithProjectile	rollOne	"[""6""]"	constant
+src/js/mthrowu.ts	monsterVolleyCount	rollOne	"[""maximum""]"	unproved
+src/js/mthrowu.ts	throwMonsterWeaponAtMonster	(options.random ?? rn2)	"[""chance""]"	constant
+src/js/mthrowu.ts	returnMonsterWeapon	random	"[""100""]"	constant
+src/js/mthrowu.ts	returnMonsterWeapon	random	"[""100""]"	constant
+src/js/mthrowu.ts	returnMonsterWeapon	random	"[""2""]"	constant
+src/js/mthrowu.ts	returnMonsterWeapon	rollOne	"[""3""]"	constant
+src/js/mthrowu.ts	spitAtTarget	random	"[""BOLT_LIM - distance""]"	unproved
+src/js/mthrowu.ts	resolveMonsterCombatBreath	random	"[""18""]"	constant
+src/js/mthrowu.ts	resolveMonsterCombatBreath	random	"[""3""]"	constant
+src/js/mthrowu.ts	resolveMonsterCombatBreath	random	"[""8""]"	constant
+src/js/mthrowu.ts	linedUp	random	"[""2 + boulderSquares""]"	guarded
+src/js/mthrowu.ts	monsterLinedUpWithHero	random	"[""25""]"	constant
 src/js/mhitu.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
 src/js/uhitm.ts	mhitmAdLegs	rollOne	"[""durationSides""]"	invariant
 src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
@@ -1372,9 +1393,6 @@ src/js/monster_brain_attack.ts	resolveMonsterBrainAttack	random	"[""8""]"	consta
 src/js/monster_carry.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
 src/js/monster_clone.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/monster_clone.ts	cloneMonster	random	"[""attitudeRange""]"	constant
-src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""18""]"	constant
-src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""3""]"	constant
-src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""8""]"	constant
 src/js/monster_combat_damage.ts	applyMonsterCombatEffect	context.random	"[""8""]"	constant
 src/js/monster_combat_damage.ts	resolveMonsterCombatDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/monster_combat_drain.ts	applyMonsterDrainEffect	context.rollOne	"[""Math.trunc(result.damage / 2)""]"	unproved
@@ -1614,14 +1632,8 @@ src/js/monster_polymorph.ts	selectSandestinForm	rn2	"[""7""]"	constant
 src/js/monster_polymorph.ts	shapechangerGender	rn2	"[""10""]"	constant
 src/js/monster_polymorph_attack.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
 src/js/monster_quest_theft.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
-src/js/monster_ranged_alignment.ts	linedUp	random	"[""2 + boulderSquares""]"	guarded
-src/js/monster_ranged_alignment.ts	monsterLinedUpWithHero	random	"[""25""]"	constant
 src/js/monster_resistance.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
 src/js/monster_return.ts	returnDeadKop	rollOne	"[""5""]"	constant
-src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""100""]"	constant
-src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""100""]"	constant
-src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""2""]"	constant
-src/js/monster_returning_weapon.ts	returnMonsterWeapon	rollOne	"[""3""]"	constant
 src/js/monster_seduction.ts	exchangeAdornmentRings	random	"[""20""]"	constant
 src/js/monster_seduction.ts	maybeRemoveArmor	random	"[""2""]"	constant
 src/js/monster_seduction.ts	maybeRemoveArmor	random	"[""2""]"	constant
@@ -1644,23 +1656,11 @@ src/js/monster_sound.ts	publishMonsterNoise	rn2	"[""2""]"	constant
 src/js/monster_speed.ts	mcalcmove	random	"[""2""]"	constant
 src/js/monster_speed.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/monster_spell_insects.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded
-src/js/monster_spit.ts	spitAtTarget	random	"[""BOLT_LIM - distance""]"	unproved
 src/js/monster_starting_inventory.ts	giveMonsterStartingObject	rn2	"[""4""]"	constant
 src/js/monster_stoning.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
 src/js/muse.ts	consumeMonsterStoningCure	rollOne	"[""15""]"	constant
 src/js/monster_taming.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/monster_taming.ts	tameMonster	rnd	"[""10""]"	constant
-src/js/monster_throw.ts	catchThrownObject	random	"[""chance""]"	invariant
-src/js/monster_throw.ts	hitMonsterWithProjectile	random	"[""30""]"	constant
-src/js/monster_throw.ts	hitMonsterWithProjectile	rollOne	"[""20""]"	constant
-src/js/monster_throw.ts	hitMonsterWithProjectile	rollOne	"[""25""]"	constant
-src/js/monster_throw.ts	hitMonsterWithProjectile	rollOne	"[""6""]"	constant
-src/js/monster_throw.ts	monsterVolleyCount	rollOne	"[""maximum""]"	unproved
-src/js/monster_throw.ts	throwMonsterProjectile	random	"[""3""]"	constant
-src/js/monster_throw.ts	throwMonsterProjectile	random	"[""3""]"	constant
-src/js/monster_throw.ts	throwMonsterProjectile	random	"[""5""]"	constant
-src/js/monster_throw.ts	throwMonsterProjectile	random	"[""7""]"	constant
-src/js/monster_throw.ts	throwMonsterWeaponAtMonster	(options.random ?? rn2)	"[""chance""]"	constant
 src/js/monster_traits.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
 src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""2""]"	constant
 src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""40""]"	constant

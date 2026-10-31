@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { throwMonsterWeaponAtHero } from '../js/monster_throw.js';
+import { throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
 import { DART } from '../js/object_data.js';
 import { unlinkObject } from '../js/object_location.js';

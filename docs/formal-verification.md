@@ -476,7 +476,7 @@ There are six C calls and six corresponding port calculations:
 | `polyself.c:newman:396` | `polyself.js:renewHumanForm:1041`, `roundDiv` | native `u.uhpmax`; JS clamps it to at least 1 |
 | `polyself.c:newman:404` | `polyself.js:renewHumanForm:1048`, `roundDiv` | 10 |
 | `polyself.c:newman:409` | `polyself.js:renewHumanForm:1055`, `roundDiv` | maximum of native energy maximum and 1; JS also clamps |
-| `mthrowu.c:monmulti:236` | `monster_throw.js:monsterVolleyCount:269`, inline `Math.trunc((spe + 1) / 3)` | 3; the call is guarded by launcher `spe > 1` |
+| `mthrowu.c:monmulti:236` | `mthrowu.js:monsterVolleyCount:214`, inline `Math.trunc((spe + 1) / 3)` | 3; the call is guarded by launcher `spe > 1` |
 | `eat.c:doeat:3058` | `eat.js:doeat:101`, `roundNutritionTime` | `(int) obj_nutrition(otmp)`; zero is guarded |
 
 **A negative denominator has a source-derived game path in wizard mode.**

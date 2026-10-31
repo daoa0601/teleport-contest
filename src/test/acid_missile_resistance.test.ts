@@ -4,7 +4,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { AD_ACID } from '../js/monster_attack_types.js';
 import { seenResistanceForDamage } from '../js/monster_perception.js';
-import { throwMonsterProjectile } from '../js/monster_throw.js';
+import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { ACID_VENOM } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { knownObject } from './support/game-objects.js';

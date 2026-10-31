@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { lightHitsGremlin } from '../js/light.js';
-import { returnMonsterWeapon } from '../js/monster_returning_weapon.js';
+import { returnMonsterWeapon } from '../js/mthrowu.js';
 import { AKLYS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { dismountHero } from '../js/steed.js';
