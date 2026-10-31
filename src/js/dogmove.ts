@@ -25,8 +25,8 @@ import type {
 import type {
     PetRangedSelection, PetRangedTarget, PetTargetOptions,
 } from './pet_ranged_types.js';
+import { beginMonsterHeroAttack } from './mhitu.js';
 import {
-    beginMonsterHeroAttack,
     monsterAvoidsKickedLocation,
     monsterAvoidsSokobanPushLocation,
     readyMonsterDiggingWeapon,

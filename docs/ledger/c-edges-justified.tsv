@@ -26,8 +26,8 @@ init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mkobj.
 getbones	compress_bonesfile	n/a	file I/O
 getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it
 dog_goal	cursed_object_at	inlined	cursedAtLocation (dogmove.ts)
-hitmu	midnight	inlined	recorderLocalHour(...) === 0 (monmove.ts)
-hitmu	minuhpmax	inlined	Math.max(ulevel, 1) clamp (monmove.ts)
+hitmu	midnight	inlined	recorderLocalHour(...) === 0 (mhitu.ts)
+hitmu	minuhpmax	inlined	Math.max(ulevel, 1) clamp (mhitu.ts)
 mattackm	is_fainted	inlined	heroIsUnaware tests uhs === FAINTED (hero_sleep.ts)
 gulpmu	sobj_at	inlined	boulder-in-pit test in monsterCanEngulfHero (hero_engulf.ts)
 gulpmu	number_leashed	inlined	inventory leash count (hero_engulf.ts)
@@ -576,7 +576,7 @@ lspo_map	selection_setpoint	inlined	mappedCells.add for stair/ladder cells (sp_l
 make_blinded	is_fainted	inlined	heroIsUnaware message suppression (sight_change.ts)
 make_blinded	strange_feeling	inlined	masked-blindness momentary feeling wording (sight_change.ts)
 make_confused	is_fainted	inlined	heroIsUnaware message suppression (hero_mental_status.ts)
-make_corpse	clear_dknown	inlined	corpses start dknown=false via the merge rule (object_constructor.ts); reveal substitutes 'something' (monmove.ts)
+make_corpse	clear_dknown	inlined	corpses start dknown=false via the merge rule (object_constructor.ts); reveal substitutes 'something' (mhitu.ts)
 make_corpse	mksobj_at	inlined	mksobj then placeCreatedObject (mkobj.ts, monster_death.ts)
 make_corpse	obj_nexto	inlined	stack_object merge with neighbors (monster_death.ts)
 make_deaf	is_fainted	inlined	heroIsUnaware message suppression (hero_hearing.ts)

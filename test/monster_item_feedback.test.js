@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { lootMonsterContainer } from '../js/monster_container_loot.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterName } from '../js/monster_name.js';
-import { beginMonsterHeroAttack } from '../js/monmove.js';
+import { beginMonsterHeroAttack } from '../js/mhitu.js';
 import { resolveDeferredHeroHasteSelf, resumeDeferredHeroSpell, } from '../js/mcastu.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { DAGGER, POT_FULL_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
