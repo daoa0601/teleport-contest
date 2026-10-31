@@ -11,6 +11,8 @@ import { putHeroToSleep } from '../js/hero_sleep.js';
 import { HOLE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { dopray } from '../js/pray.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { statusConditionBit } from '../js/status_conditions.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
@@ -165,4 +167,37 @@ void test('a fall scheduled during the recovery turn travels after the recovery 
     assert.match(transcript, /You can move again\./);
     assert.doesNotMatch(transcript, /You fall through[\s\S]*You can move again\./,
         'The fall trigger cannot postdate the recovery that travels it');
+});
+
+// C allmain.c:381 runs runmode_delay_output() while gm.multi is still
+// negative — before the increment that may finish the delay.  The engine's
+// delay frame therefore shows the helpless condition ("Zzz") on every
+// helpless turn, including the one whose counter reaches zero, and the
+// recovery line is published only after that frame.  Regeneration keeps the
+// status dirty so each delay repaints the full status row.
+void test('every delay frame is captured while the hero is still helpless', async () => {
+    const input = freshTurnRoom({ flags: { runmode: 'walk' },
+        hero: { uhp: 50, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const sleepBit = statusConditionBit(['Zzz', 'Zzz', 'Zz']);
+    assert.ok(sleepBit, 'The sleep condition has its status bit');
+    game.flags.statusConditionMask = (game.flags.statusConditionMask ?? 0) | sleepBit;
+    grantIntrinsicProperty('regeneration', 'outside');
+    const frames: { status: string; pending: string }[] = [];
+    game.animationFrame = async () => {
+        frames.push({
+            status: requireScreenRow(23).map(cell => cell.ch).join(''),
+            pending: game._pending_message || '',
+        });
+    };
+    recordToplines(input, []);
+
+    await putHeroToSleep(2);
+    await drainHelplessTurns();
+
+    assert.equal(frames.length, 2, 'One walk-mode delay frame per helpless turn');
+    for (const [index, frame] of frames.entries()) {
+        assert.match(frame.status, /Zzz/,
+            `Delay frame ${index} is captured before the counter moves`);
+    }
 });
