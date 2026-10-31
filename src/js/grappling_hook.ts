@@ -75,10 +75,6 @@ function monsterAt(x: number, y: number, state: GameState) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 
-
-// C apply.c:3838 names a pulled-in creature with mon_nam(); the shared
-// namer in monster_name.ts owns that contract.
-
 // C apply.c:can_grapple_location().
 async function chooseTarget(hook: GameObject, state: GameState) {
     await pline('Where do you want to hit?');
@@ -123,6 +119,7 @@ async function snagObject(x: number, y: number, state: GameState) {
     return true;
 }
 
+// C apply.c:3838: "You pull in mon_nam(mtmp)!".
 async function pullTinyMonster(monster: Monster, destination: Position, state: GameState) {
     await pline(`You pull in ${monsterName(monster, { state })}!`);
     monster.mundetected = 0;

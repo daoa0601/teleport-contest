@@ -470,9 +470,6 @@ function reduceHeroTrapDuration() {
         throw new Error('An active hero trap requires a remaining duration.');
     return --hero.utrap;
 }
-// C pline.c:Norep(): trapmove() and climb_pit() suppress a repeat message
-// without side effects, which plineWithContinuation({ noRepeat: true })
-// provides (vpline returns before touching the tty line).
 function objectAtHero(type) {
     const hero = game.u;
     return (game.level?.objects?.[hero.ux]?.[hero.uy] || [])
@@ -527,6 +524,8 @@ export async function climbOutOfPit() {
         game.vision_full_recalc = 1;
         return;
     }
+    // C trap.c:4224-4228 Norep(): climb_pit() suppresses an immediate repeat
+    // without side effects; { noRepeat: true } is pline.c's Norep flag.
     if (hero.dz || game.flags?.verbose !== false) {
         if (hero.usteed) {
             await plineWithContinuation(`${monsterName(hero.usteed, {
