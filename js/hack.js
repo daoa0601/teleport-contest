@@ -2408,11 +2408,9 @@ async function domoveCore(dx, dy) {
     if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
     if (u.utrap) {
+        // domove()'s trapmove() + reset_utrap(TRUE) release live in the
+        // trapmove port, including the flight/levitation restore.
         const canMove = await heroCanMoveFromTrap(newx, newy);
-        // domove_core() resets trapping again after trapmove() returns;
-        // the escape message may already have flushed its status update.
-        if (!u.utrap)
-            await resetHeroTrap(true);
         if (!canMove)
             return true;
     }
