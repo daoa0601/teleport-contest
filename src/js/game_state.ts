@@ -390,8 +390,6 @@ export interface GameState {
     _helplessDoneMessage?: string | null;
     _digestedMonsterSpecies?: number | null;
     _mimicMealMessage?: string | null;
-    _queuedHelplessRecoveryMessage?: string | null;
-    _helplessRunmodeDelayPending?: number | null;
     _prayerAlignment?: number;
     _prayerTrouble?: PrayerTrouble;
     _prayerOutcome?: PrayerOutcome;

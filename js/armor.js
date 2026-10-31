@@ -1052,7 +1052,6 @@ export async function armorOffMessage(object, state = game) {
 export function cancelDonning(state = game) {
     state._afterMove = null;
     state._helplessDoneMessage = null;
-    state._queuedHelplessRecoveryMessage = null;
     setMulti(0, state);
     const progress = state.context.takeoff;
     if (progress) {
