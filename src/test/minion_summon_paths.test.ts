@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_EMIN, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishSpecialRoamer } from '../js/mklev.js';
+import { finishSpecialRoamer } from '../js/sp_lev.js';
 import { msummon, summonMinion } from '../js/minion.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';

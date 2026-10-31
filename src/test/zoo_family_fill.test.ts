@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANTHOLE, COCKNEST, FILL_NORMAL, LEPREHALL, ROOMOFFSET } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { fillSpecialRoom } from '../js/mklev.js';
+import { fillSpecialRoom } from '../js/sp_lev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import type { Room } from '../js/map_types.js';

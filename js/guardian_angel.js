@@ -2,7 +2,8 @@ import { MM_ADJACENTOK, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG, W_ARMS } from './con
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { requireInitializedGame, requireLiveGame } from './gstate.js';
-import { findMonsterNearPosition, finishSpecialRoamer } from './mklev.js';
+import { findMonsterNearPosition } from './mklev.js';
+import { finishSpecialRoamer } from './sp_lev.js';
 import { makemonAt } from './makemon.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';

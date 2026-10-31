@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { A_CHAOTIC, A_LAWFUL, COURT, FILL_NORMAL, MM_ANGRY, MM_NOMSG, NO_MINVENT, ROOMOFFSET, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { fillSpecialRoom } from '../js/mklev.js';
+import { fillSpecialRoom } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { makedog } from '../js/u_init.js';
