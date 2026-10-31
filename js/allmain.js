@@ -166,7 +166,7 @@ import { dist2, dungeonDepth } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
 import { finishHeroDeath, } from './end.js';
 import { runLevelRegions } from './regions.js';
-import { maintainVaultResidence, continueVaultGuardArrival, moveVaultGuard, } from './vault.js';
+import { invault, moveVaultGuard } from './vault.js';
 import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
 import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -799,12 +799,12 @@ async function finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount
     // the resulting C turn number is the existing JS value, not value + 1.
     await periodicTurnExercise(sourceTurn);
     await checkAttributeExercise(sourceTurn);
-    if (await maintainVaultResidence(game)) {
-        // C invault() finishes its dialogue before this turn decrements
-        // negative multi. A busy hero's armor removal can finish below,
-        // paging the guard's departure before the recovery message.
-        await continueVaultGuardArrival(game);
-    }
+    // C allmain.c:357 — invault() runs here in the once-per-turn block,
+    // after exerchk() and before the Amulet check.  Its interrogation
+    // completes before the turn decrements negative multi, so a busy
+    // hero's armor removal can finish below, paging the guard's
+    // departure before the recovery message.
+    await invault(game);
     await finishInitialTurnMaintenanceRng(sourceTurn);
     return { kind: 'complete', moveAmount };
 }
@@ -3748,9 +3748,6 @@ export async function runMoveloopCore() {
     // teleport can finish several arrival pagers before returning here; the
     // wish then begins without consuming a new hero action.
     await grantAmuletWish();
-    if (g._vaultGuardArrivalPending) {
-        await continueVaultGuardArrival(g);
-    }
     // C allmain.c:find_ac() is a once-per-player-input operation after all
     // monster/global time caused by the command.  The vault-guard
     // arrival (C invault(), inside the once-per-turn block) still precedes

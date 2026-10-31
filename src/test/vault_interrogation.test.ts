@@ -4,14 +4,14 @@ import { moveloop_core } from '../js/allmain.js';
 import { CORR, DOOR, ROOMOFFSET, SHARED, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
+import { invault } from '../js/vault.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
-async function arrivingGuard() {
+async function vaultDueForGuard() {
     const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
@@ -20,12 +20,11 @@ async function arrivingGuard() {
     level.requireAt(16, 10).typ = CORR;
     level.requireAt(11, 10).typ = VWALL;
     game.u.uinvault = 29;
-    assert.equal(await maintainVaultResidence(), true);
     return level;
 }
 
 void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vault closed', async () => {
-    const level = await arrivingGuard();
+    const level = await vaultDueForGuard();
     installPolymorphedHero('small mimic');
     await runMonsterAbilityCommand();
     game._moveloopStarted = true;
@@ -40,6 +39,9 @@ void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vaul
     };
 
     await moveloop_core();
+    // The first call spends the hero's ration; the guard arrives inside
+    // the world turn the second call completes.
+    await moveloop_core();
     messages.push(game._pending_message);
 
     assert.match(messages.join('\n'), /"Hey!  Who left that whatcha-may-callit in here\?"/);
@@ -49,10 +51,10 @@ void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vaul
 
 for (const name of ['Croesus', 'Kroisos', 'Creosote']) {
     void test(`a vault guard leaves an unopened wall when the hero claims to be ${name}`, async () => {
-        const level = await arrivingGuard();
+        const level = await vaultDueForGuard();
         const input = resetInputState();
 
-        await answerPrompts(continueVaultGuardArrival(), input, [
+        await answerPrompts(invault(), input, [
             { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
             { prompt: /Hello stranger, who are you\?/, keys: `${name}\n` },
         ]);
@@ -64,13 +66,13 @@ for (const name of ['Croesus', 'Kroisos', 'Creosote']) {
 }
 
 void test('a lawful hero loses alignment for lying to a vault guard', async () => {
-    await arrivingGuard();
+    await vaultDueForGuard();
     requirePlayingGame(game);
     game.u.ualign = { type: 1, record: 5 };
     game.plname = 'TestHero';
     const input = resetInputState();
 
-    await answerPrompts(continueVaultGuardArrival(), input, [
+    await answerPrompts(invault(), input, [
         { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'Somebody Else\n' },
     ]);
@@ -79,10 +81,10 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
 });
 
 void test('a nonbreaking space is part of a claimed name rather than ordinary padding', async () => {
-    const level = await arrivingGuard();
+    const level = await vaultDueForGuard();
     const input = resetInputState();
 
-    await answerPrompts(continueVaultGuardArrival(), input, [
+    await answerPrompts(invault(), input, [
         { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'Croesus\u00a0\n' },
     ]);
@@ -92,13 +94,13 @@ void test('a nonbreaking space is part of a claimed name rather than ordinary pa
 });
 
 void test('a lawful hero cannot substitute an accented letter with different case in a claimed name', async () => {
-    await arrivingGuard();
+    await vaultDueForGuard();
     requirePlayingGame(game);
     game.u.ualign = { type: 1, record: 5 };
     game.plname = '\u00c9clair';
     const input = resetInputState();
 
-    await answerPrompts(continueVaultGuardArrival(), input, [
+    await answerPrompts(invault(), input, [
         { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: '\u00e9clair\n' },
     ]);
@@ -107,7 +109,7 @@ void test('a lawful hero cannot substitute an accented letter with different cas
 });
 
 void test('a guard reports interrupted work before asking the hero name', async () => {
-    await arrivingGuard();
+    await vaultDueForGuard();
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
     const messages: string[] = [];
     const input = resetInputState();
@@ -122,7 +124,7 @@ void test('a guard reports interrupted work before asking the hero name', async 
         } else input.feed(' ');
     };
 
-    await continueVaultGuardArrival();
+    await invault();
 
     assert.match(messages.join('\n'), /You stop wiping your face\..*\n.*Hello stranger, who are you\?/);
     assert.equal(game._occupation, null);
@@ -173,17 +175,14 @@ void test('a guard silently cancels a counted search repeat before asking the he
 });
 
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
-    const level = await arrivingGuard();
-    game._vaultGuardArrivalPending = null;
-    game.u.uinvault = 29;
+    const level = await vaultDueForGuard();
     game.u.ux = 11;
     level.requireAt(11, 10).typ = DOOR;
     level.requireAt(11, 10).roomno = SHARED;
     level.requireAt(11, 11).typ = VWALL;
     const input = resetInputState();
 
-    assert.equal(await maintainVaultResidence(), true);
-    await answerPrompts(continueVaultGuardArrival(), input, [
+    await answerPrompts(invault(), input, [
         { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
     ]);

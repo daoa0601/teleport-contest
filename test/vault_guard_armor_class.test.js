@@ -11,7 +11,6 @@ import { moveloop_core } from '../js/allmain.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { LEATHER_CLOAK } from '../js/object_data.js';
-import { maintainVaultResidence } from '../js/vault.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
@@ -42,9 +41,12 @@ void test('a guard arriving over a pending removal message pages with the old ar
     assert.ok(game._armorClassDirty, 'the removal defers its armor class');
     assert.equal(game.uarmc, null, 'the cloak is off');
     assert.match(game._pending_message ?? '', /You were wearing/);
-    // The guard arrives while the removal message is still pending.
+    // The removal spent the hero's movement ration, and the guard countdown
+    // is one turn away: the next core call owns the world turn in which
+    // C invault() produces the guard while the removal message is pending.
     game.u.uinvault = 29;
-    assert.equal(await maintainVaultResidence(), true);
+    game._heroTimePending = true;
+    game.u.umovement = 0;
     const seenClasses = [];
     const input = resetInputState();
     input.beforeRead = () => {
