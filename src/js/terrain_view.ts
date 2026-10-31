@@ -89,6 +89,13 @@ async function revealTerrain(subset: number): Promise<void> {
         // under_water(2)/under_ground(2) that makes the turn's restricted
         // update perform the full paged reset instead of a viewport repair.
         await redisplayDetectionMap(constraints, game);
+        // C map_redisplay() refills the glyph buffer but does not flush:
+        // the restored map and status become visible at moveloop's bot()
+        // plus parse()'s flush_screen(1) before the next command key.
+        // doterrain() takes no game time, so that input wait follows the
+        // browse immediately; paint the restored map here to reach the
+        // same on-screen state without waiting for a queued key.
+        await flush_screen(1);
     }
 }
 
