@@ -241,6 +241,18 @@ export async function invault(state = game) {
     setVaultTerrainFlags(original, D_NODOOR);
     vision_note_blocker_change(entry.x, entry.y);
     game.vision_full_recalc = 1;
+    // No C counterpart: vault.c:invault() never writes context.move, and
+    // allmain.c:483 presets context.move = 1 after the once-per-turn block
+    // and before the next rhack(), so in C nothing the interrogation could
+    // write is ever read.  This port presets nothing; each command handler
+    // records its own context.move (the cmd.c:3810-3826 result seam), and
+    // every reader that could observe this square after the interrogation —
+    // rhack's tail, dokick's maybe_kick_monster return (dokick.c:1380),
+    // doopen's locked-door result, doloot's unlock — writes it first.  The
+    // zero is shadowed before any reader: removing it replays every
+    // vault-guard holdout session and a per-keystroke battery taken right
+    // after the dialog identically.  Retained, do not grow new readers of
+    // the post-interrogation value.
     game.context.move = 0;
 }
 function guardEntryToward(destination) {
