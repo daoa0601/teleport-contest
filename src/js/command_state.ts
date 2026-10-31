@@ -41,7 +41,7 @@ export function commandResultSpentTime(state: GameState = game): void {
 // time repaint is queued and the terrain classifier is not recomputed.
 export function resetCommandVariables(clearQueues: boolean): void {
     game.context.run = 0;
-    if (game._runState?.mode === 8) delete game._runState.visited;
+    game._travelMap = undefined;
     game._runState = null;
     game.context.mv = false;
     game.context.travel = false;
