@@ -41,7 +41,7 @@ import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { leaveHeroShop } from './shop_departure.js';
-import { performMonsterTurn } from './allmain.js';
+import { performMonsterTurn } from './monmove.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';

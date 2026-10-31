@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { MMOVE_DONE, MMOVE_NOMOVES, MMOVE_NOTHING, MM_NOGRP, NO_MINVENT, POLY_TRAP, POOL, ROOM } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';

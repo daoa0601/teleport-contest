@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';

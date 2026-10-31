@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { NO_MINVENT } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';

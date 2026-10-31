@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { moveloop_core, performMonsterHeroAttack } from '../js/allmain.js';
+import { moveloop_core } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { LOST_NONE, LOST_STOLEN, MENU_PARTIAL, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';

@@ -21,7 +21,7 @@ import { addTrap } from './support/level-state.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { nameToMonster } from '../js/mondata.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { NO_MINVENT } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { installPagerInput } from './support/pager-input.js';

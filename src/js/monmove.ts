@@ -436,7 +436,22 @@ import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, 
 import { lootMonsterContainer } from './monster_container_loot.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { prepareMonsterItemUse, presentMonsterQuaff, presentMonsterWandUse, consumeMonsterItem } from './monster_item_use.js';
+import { prepareMonsterItemUse, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, consumeMonsterItem, revealAggravatingMonster } from './monster_item_use.js';
+import { ceilingName } from './terrain_name.js';
+import { commitPetPickup, reluctantPetMessage } from './dogmove.js';
+import { finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination } from './muse.js';
+import { finishMonsterHideUnder } from './monster_hiding.js';
+import { inventoryItemDescription } from './invent.js';
+import { learnWand } from './wand_charge.js';
+import { monsterName, possessiveName, visibleMonsterSubject } from './monster_name.js';
+import { presentMonsterAttackEffects } from './mhitu.js';
+import { presentMonsterGrowth } from './mon.js';
+import { publishMonsterCuss } from './monster_cuss.js';
+import { resumeDeferredMonsterTrap } from './trap.js';
+import { resumeDeferredMovementSpell } from './mcastu.js';
+import { tryCallObjectType } from './object_call.js';
+import { performQuestExpulsion } from './quest.js';
+import { observeDistantObjectForNaming } from './objnam.js';
 import { dragonFormForArmor } from './armor.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from './monster_defensive_item.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
@@ -4937,4 +4952,390 @@ export async function beginMonsterDochug(
     } = await takeMonsterTurn(monster, state, random, rollDice, rollOne);
     calls.push(...actionCalls);
     return { monster, calls, movement, dochugContext };
+}
+async function resumeTrappedMonster(action: MonsterAction): Promise<void> {
+    const game = requireInitializedGame();
+    if (!action.movement?.escapingTrap) return;
+    game._deferVisibleMonsterContact = true;
+    try {
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: plineWithContinuation,
+            describeMonster: visibleMonsterSubject,
+        });
+    } finally {
+        game._deferVisibleMonsterContact = false;
+    }
+}
+async function presentMonsterHiding(action: MonsterMovementAction): Promise<void> {
+    const game = requireInitializedGame();
+    const { monster, movement } = action;
+    const concealment = movement.hideUnder;
+    if (!concealment) return;
+    await finishMonsterHideUnder(monster, concealment, game);
+    await resumeDeferredMonsterHideUnder(action, game);
+    delete movement.hideUnder;
+}
+// Trap, door, tunneling, and hiding feedback belongs to postmov(), before
+// returning to either dochug() or the hero's out-of-sequence movement caller.
+export async function presentMonsterPostMove(
+    action: MonsterMovementAction, game: PlayingGameState,
+): Promise<boolean> {
+    // dog_move() finishes mattacku() before m_move() enters postmov().
+    if (action.movement.deferredAfterPetAttack) return false;
+    let movement = action.movement;
+    // C postmov() repaints the old square before mintrap(), but delays
+    // the destination newsym() until the trap's message has returned.
+    // A pager on the prior topline must still show the floor object.
+    // dog_move() can return MMOVE_MOVED without a step; postmov() still
+    // repaints the old square and runs mintrap() there.
+    const deferredTrapDestination = !!((movement?.moved
+        || movement?.postMoveOldSquarePainted) && movement?.trap);
+    const deferredHideUnderDestination = !!(movement?.moved
+        && movement?.hideUnder?.message);
+    if (movement?.moved || movement?.postMoveOldSquarePainted) {
+        if (!movement.postMoveOldSquarePainted)
+            await newsym(movement.oldx, movement.oldy);
+        if (!movement.postMoveDestinationPainted
+            && !deferredTrapDestination && !deferredHideUnderDestination)
+            await newsym(movement.x, movement.y);
+    }
+    if (movement.deferredAfterMonsterTrap) {
+        const event = movement.trap;
+        if (!event) throw new Error('Deferred monster trap requires its event.');
+        await resumeDeferredMonsterTrap(action, game, {
+            publish: plineWithContinuation,
+            describeMonster: visibleMonsterSubject,
+        });
+        if ('heroDied' in event && event.heroDied) return true;
+        movement = action.movement;
+    }
+    if (deferredTrapDestination && !movement.postMoveDestinationPainted)
+        await newsym(movement.x, movement.y);
+    await presentMonsterHiding(action);
+    return !!game.program_state.gameover || !!movement.heroDied;
+}
+export async function presentMonsterPickups(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    if (movement?.pickedUp
+        && cansee(movement.oldx, movement.oldy)) {
+        observeDistantObjectForNaming(movement.pickedUp);
+        const name = await inventoryItemDescription(movement.pickedUp);
+        if (game.flags.verbose !== false) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} picks up ${name}.`,
+            );
+        }
+    }
+    if (movement) await commitPetPickup(monster, movement, game);
+}
+async function presentPetMovementPrelude(
+    action: MonsterMovementAction, game: PlayingGameState, actorWasOpticallySeen: boolean,
+): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    if (movement?.deferredPetMove) {
+        if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
+            observeDistantObjectForNaming(movement.pickedUp);
+            const name = await inventoryItemDescription(movement.pickedUp);
+            if (game.flags.verbose !== false) {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} picks up ${name}.`,
+                );
+            }
+        }
+        await commitPetPickup(monster, movement, game);
+        // dog_invent() returns to the same dog_move() transaction after
+        // its pickup/drop pline.  A following visible mattackm() must
+        // remain deferred too: its hit line can fill tty's topline before
+        // damage, death prose, and growth RNG are committed.
+        game._deferVisibleMonsterContact = true;
+        try {
+            await resumeDeferredPetMove(action, game);
+        } finally {
+            game._deferVisibleMonsterContact = false;
+        }
+        movement = action.movement;
+    }
+    if (movement?.deferredPetEating) {
+        await resumeDeferredPetEating(action, game);
+        movement = action.movement;
+    }
+    if (movement.deferredPetReluctance) {
+        if (actorWasOpticallySeen || canSeeMonster(monster))
+            await plineWithContinuation(await reluctantPetMessage(monster, movement));
+        await resumeDeferredPetReluctance(action, game);
+    }
+}
+async function presentMonsterMoveMessage(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
+    const movement = action.movement;
+    if (movement?.message) await plineWithContinuation(movement.message);
+}
+async function presentRestrictedMonsterTeleport(
+    action: MonsterMovementAction, game: PlayingGameState, actorWasOpticallySeen: boolean,
+): Promise<void> {
+    const monster = action.monster;
+    let movement = action.movement;
+    // C monmove.c:m_move() calls tele_restrict() immediately after a
+    // tengu's one-in-five innate teleport probe.  The rejected probe is
+    // an ordinary pline producer; retaining it here lets a later actor's
+    // prose force the same tty continuation boundary.
+    if (movement?.deferredAfterRestrictedTenguTeleport) {
+        if (actorWasOpticallySeen) {
+            await plineWithContinuation(
+                `A mysterious force prevents ${monsterName(monster)} from teleporting!`,
+            );
+        }
+        // The resumed m_move() can still reach dochug()'s contact attack;
+        // its hit line must page before damage and knockback, as on the
+        // ordinary path.
+        const previousDeferral = game._deferVisibleMonsterContact;
+        game._deferVisibleMonsterContact = true;
+        try {
+            await resumeDeferredRestrictedTenguTeleport(action, game);
+        } finally {
+            game._deferVisibleMonsterContact = previousDeferral;
+        }
+        movement = action.movement;
+    }
+}
+// C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
+// Resolve that movement transaction before the hero tests its new position;
+// no movement ration, dochug prelude, or dochug attack tail belongs here.
+export async function moveMonsterForHeroAttack(
+    monster: Monster, state: PlayingGameState = requireInitializedGame(),
+): Promise<{ status: number; heroDied: boolean }> {
+    requireLiveGame(state);
+    const wasSeen = canSeeMonster(monster);
+    const previousDeferral = state._deferVisibleMonsterContact;
+    state._deferVisibleMonsterContact = true;
+    let action: MonsterMovementAction;
+    try {
+        action = await beginMonsterMove(monster, state);
+    } finally {
+        state._deferVisibleMonsterContact = previousDeferral;
+    }
+    await resumeTrappedMonster(action);
+    await presentRestrictedMonsterTeleport(action, state, wasSeen);
+    await presentPetMovementPrelude(action, state, wasSeen);
+    let heroDied = await presentMonsterPostMove(action, state);
+    if (!heroDied) heroDied = (await presentMonsterAttackEffects(action, state)).heroDied;
+    if (!heroDied && action.movement.deferredAfterPetAttack) {
+        await resumeDeferredPetAttack(action, state);
+        heroDied = await presentMonsterPostMove(action, state);
+    }
+    if (!heroDied) {
+        await presentMonsterPickups(action, state);
+        await presentMonsterMoveMessage(action, state);
+    }
+    const status = action.movement.postMoveStatus;
+    if (status === undefined)
+        throw new Error('Monster movement completed without its native movement result.');
+    return { status, heroDied: heroDied || !!state.program_state.gameover };
+}
+// Complete the same action and message phases for scheduled turns and
+// direct dochug() calls. The caller owns movement rations and dochugw().
+export async function presentMonsterAction(
+    action: MonsterAction, game: PlayingGameState, actorWasOpticallySeen: boolean,
+): Promise<'check-occupation' | 'next-monster' | 'stop'> {
+    if (game.program_state?.gameover) return 'stop';
+    if (game._questExpulsionPending) {
+        await performQuestExpulsion(game);
+        return 'stop';
+    }
+    if (action.conflictFight) return 'next-monster';
+    // C dochug() returns after gelcube_digests(), before attacks or cursing.
+    if (action.movement.digestedInventory) return 'next-monster';
+    // C dochug() returns immediately when item use spends the turn.
+    if (action.movement?.usedDefense) return 'next-monster';
+    if (action.movement?.usedMisc?.kind === 'item-result'
+        && action.movement.usedMisc.nativeResult !== 0) return 'next-monster';
+    await resumeTrappedMonster(action);
+    let { monster, movement } = action;
+    // A fleeing teleport spends this actor's turn, even if no destination was found.
+    if (movement?.fleeingRelocation || movement?.fleeingTeleportFailed) return 'next-monster';
+    await presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen);
+    movement = action.movement;
+    if (movement?.deferredCovetousRelocation) {
+        // tactics() has completed relocation and its input pauses.
+        // Resume range checks and attacks from the new position.
+        game._deferVisibleMonsterContact = true;
+        try {
+            await resumeDeferredCovetousRelocation(action, game);
+        } finally {
+            game._deferVisibleMonsterContact = false;
+        }
+        await resumeTrappedMonster(action);
+        movement = action.movement;
+        if (movement?.usedDefense) return 'next-monster';
+        if (movement?.usedMisc?.kind === 'item-result'
+            && movement.usedMisc.nativeResult !== 0) return 'next-monster';
+    }
+    if (movement?.spellCast?.cast) {
+        // dochug() chooses the movement spell after covetous tactics,
+        // so a resumed relocation can still produce this casting phase.
+        if (canSpotMonster(monster)) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} casts a spell!`,
+            );
+        }
+        await resumeDeferredMovementSpell(action, game);
+        movement = action.movement;
+    }
+    await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
+    movement = action.movement;
+    if (await presentMonsterPostMove(action, game)) return 'stop';
+    movement = action.movement;
+    const attackEffects = await presentMonsterAttackEffects(action, game);
+    if (attackEffects.heroDied) return 'stop';
+    if (action.movement.deferredAfterPetAttack) {
+        await resumeDeferredPetAttack(action, game);
+        if (await presentMonsterPostMove(action, game)) return 'stop';
+    }
+    movement = action.movement;
+    // monmove.c:dochug() performs the vile-monster emotional attack only
+    // after the complete standard attack set. Item use returns earlier,
+    // including items whose effects await their messages below.
+    const offensive = movement.heroAttackSequence?.offensive;
+    const attackReturnedDeath = movement.heroAttackResult === 1
+        || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
+    if (action.dochugContext?.reachesFinalActions && !movement.usedMisc
+        && !attackReturnedDeath && !monster.dead && monster.mhp > 0
+        && monster.mcanmove && !monster.msleeping
+        && action.dochugContext.range?.nearby)
+        await talkQuestCharacter(monster, game);
+    if (game._questExpulsionPending) {
+        await performQuestExpulsion(game);
+        return 'stop';
+    }
+    if (action.dochugContext?.reachesFinalActions
+        && !movement.usedMisc && !attackReturnedDeath && action.dochugContext.range?.inRange
+        && !monster.dead && monster.mhp > 0 && monster.mx !== 0
+        && MONSTER_SOUND[monster.mnum] === 34 && !monster.mpeaceful
+        && couldsee(monster.mx, monster.my) && !monster.minvis) {
+        const cussGate = rn2(5);
+        action.calls.push('rn2(5)');
+        if (cussGate === 0)
+            movement.deferredCuss = true;
+    }
+    if (movement?.deferredCuss) {
+        movement.deferredCuss = false;
+        await presentMonsterCuss(action);
+    }
+
+    await presentMonsterPickups(action, game);
+    movement = action.movement;
+    if (movement?.usedMisc?.kind === 'polymorph-trap'
+        || movement?.usedMisc?.kind === 'wand-polymorph' || movement?.usedMisc?.kind === 'potion-polymorph')
+        await finishDeferredMonsterMiscItem(action, game);
+    if (movement?.usedMisc?.kind === 'potion-gain-level') {
+        const misc = movement.usedMisc;
+        const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+        if (sawDrinking) {
+            if (misc.object.cursed) {
+                const destination = monsterGainLevelRiseDestination(monster, game);
+                if (destination) misc.riseDestination = destination;
+                await plineWithContinuation(destination
+                    ? `${visibleMonsterSubject(monster)} rises up, through the ${ceilingName(monster.mx, monster.my, game)}!`
+                    : `${visibleMonsterSubject(monster)} looks uneasy.`);
+                await tryCallObjectType(misc.object, game);
+            } else {
+                await plineWithContinuation(
+                    `${visibleMonsterSubject(monster)} seems more experienced.`,
+                );
+                learnObjectType(misc.object.otyp);
+            }
+        }
+        if (misc.object.cursed && !sawDrinking) {
+            const destination = monsterGainLevelRiseDestination(monster, game);
+            if (destination) misc.riseDestination = destination;
+        }
+        await finishDeferredMonsterMiscItem(action, game);
+        await presentMonsterGrowth(monster, misc.growth);
+        movement = action.movement;
+    }
+    if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
+        const misc = movement.usedMisc;
+        let sawDrinking;
+        if (misc.kind === 'wand-invisibility') {
+            sawDrinking = canSeeMonster(monster);
+            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
+        } else sawDrinking = await presentMonsterQuaff(monster, misc.object);
+        const nameBeforeInvisibility = monsterName(monster, { state: game });
+        await finishDeferredMonsterMiscItem(action, game);
+        await newsym(monster.mx, monster.my);
+        const stillSeen = canSpotMonster(monster);
+        if (sawDrinking && monster.minvis) {
+            if (stillSeen) {
+                await plineWithContinuation(
+                    `${possessiveName(nameBeforeInvisibility).replace(/^./, letter => letter.toUpperCase())} body takes on a ${heroIsHallucinating(game) ? 'normal' : 'strange'} transparency.`,
+                );
+            } else {
+                await plineWithContinuation(
+                    `Suddenly you cannot see ${nameBeforeInvisibility}.`,
+                );
+                if (cansee(monster.mx, monster.my))
+                    await map_invisible(monster.mx, monster.my);
+            }
+            learnObjectType(misc.object.otyp);
+        } else if (sawDrinking && !monster.minvis) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
+            );
+        }
+        if (misc.kind === 'potion-invisibility') {
+            if (misc.object.cursed) await revealAggravatingMonster(monster, game);
+            await consumeMonsterItem(monster, misc.object, game);
+        }
+    }
+    if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
+        await finishDeferredMonsterMiscItem(action, game);
+        if (game.program_state.gameover) return 'stop';
+    }
+    if (movement?.usedMisc?.kind === 'potion-speed' || movement?.usedMisc?.kind === 'wand-speed-monster') {
+        const misc = movement.usedMisc;
+        const seen = canSeeMonster(monster);
+        if (misc.kind === 'wand-speed-monster')
+            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
+        else await presentMonsterQuaff(monster, misc.object);
+        await finishDeferredMonsterMiscItem(action, game);
+        if (seen && misc.speedChanged) {
+            await plineWithContinuation(
+                `${visibleMonsterSubject(monster)} is suddenly moving ${
+                    misc.speedMuch ? 'much ' : ''
+                }faster.`,
+            );
+            learnWand(misc.object, { state: game });
+        }
+        if (misc.kind === 'potion-speed') await consumeMonsterItem(monster, misc.object, game);
+    }
+    await presentMonsterMoveMessage(action, game);
+    return 'check-occupation';
+}
+// C monmove.c:dochug(). Shop entry gives its keeper an immediate action,
+// including resumed messages and attacks, without movemon()'s per-turn work.
+export async function performMonsterTurn(
+    monster: Monster, state: PlayingGameState = requireInitializedGame(),
+): Promise<void> {
+    const wasSeen = canSeeMonster(monster);
+    const previousDeferral = state._deferVisibleMonsterContact;
+    try {
+        state._deferVisibleMonsterContact = true;
+        const action = await beginMonsterDochug(monster, state);
+        state._deferVisibleMonsterContact = false;
+        await presentMonsterAction(action, state, wasSeen);
+    } finally {
+        state._deferVisibleMonsterContact = previousDeferral;
+    }
+}
+
+// C muse.c:mquaffmsg(). Sensing the drinker does not reveal the potion.
+async function presentMonsterQuaff(monster: Monster, object: GameObject): Promise<boolean> {
+    return publishMonsterQuaff(monster, object, { state: requireInitializedGame() });
+}
+async function presentMonsterCuss(action: MonsterAction): Promise<void> {
+    await publishMonsterCuss(action.monster, requireInitializedGame(), sides => {
+        action.calls.push(`rn2(${sides})`);
+        return rn2(sides);
+    });
 }

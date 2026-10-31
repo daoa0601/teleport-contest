@@ -5,7 +5,7 @@ import { glyphAt } from '../js/display.js';
 import { vision_recalc } from '../js/vision.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import test from 'node:test';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

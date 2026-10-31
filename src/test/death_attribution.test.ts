@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { STONING, TURNED_SLIME } from '../js/const.js';
 import { applyCorpsePreEffects } from '../js/corpse_eating.js';
 import { finishOrdinaryDeath } from '../js/end.js';
