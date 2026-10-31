@@ -159,16 +159,16 @@ src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/character_selection.ts	rigidChecks	rn2	"[""1""]"	constant
 src/js/character_selection.ts	rigidChecks	rn2	"[""candidates.length""]"	unproved
 src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
-src/js/cmd.ts	dochat	rn2	"[""10""]"	constant
-src/js/cmd.ts	doclose	rn2	"[""25""]"	constant
-src/js/cmd.ts	domoveCore	rn2	"[""5""]"	constant
-src/js/cmd.ts	doopen	rnl	"[""20""]"	constant
-src/js/cmd.ts	dorub	rn2	"[""2""]"	constant
-src/js/cmd.ts	dorub	rn2	"[""3""]"	constant
-src/js/cmd.ts	dorub	rn2	"[""500""]"	constant
-src/js/cmd.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
-src/js/cmd.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
-src/js/cmd.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
+src/js/ambient_sounds.ts	dochat	rn2	"[""10""]"	constant
+src/js/lock.ts	doclose	rn2	"[""25""]"	constant
+src/js/hack.ts	domoveCore	rn2	"[""5""]"	constant
+src/js/lock.ts	doopen	rnl	"[""20""]"	constant
+src/js/apply.ts	dorub	rn2	"[""2""]"	constant
+src/js/apply.ts	dorub	rn2	"[""3""]"	constant
+src/js/apply.ts	dorub	rn2	"[""500""]"	constant
+src/js/apply.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
+src/js/apply.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
+src/js/apply.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""100""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""2""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""dexterity""]"	invariant

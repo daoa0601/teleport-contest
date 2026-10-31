@@ -29,7 +29,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard, setVaultTerrainFlags } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 export function findGuardDestination(state = game, guard = null) {
     const level = requireGameLevel(state);
     const ux = state.u.ux;

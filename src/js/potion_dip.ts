@@ -32,6 +32,7 @@ import { waterbodyName } from './terrain_name.js';
 import { waterDamageObject } from './trap.js';
 import { LENSES, POT_ACID } from './object_data.js';
 import { treatDippedObject } from './potion_item_dip.js';
+import { dipFountain } from './fountain.js';
 
 export async function dip({
     fountain,
@@ -192,4 +193,9 @@ async function dipTargetDescription(object: GameObject): Promise<string> {
         format: async (item, state) => await objectDescription(item, { state }),
         shortFormat: (item, state) => definiteName(simpleObjectName(item, state), state),
     });
+}
+
+// C potion.c:dodip(): the command entry over the shared dip transaction.
+export async function dodip(): Promise<void> {
+    if (await dip({ fountain: dipFountain }) === 'cancelled') commandResultCancelled();
 }

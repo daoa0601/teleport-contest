@@ -1,9 +1,23 @@
-// Level ambience and its resident checks. C ref: sounds.c:dosounds().
+// Level ambience, its resident checks, and the #chat command.
+// C ref: sounds.c:dosounds(), dochat().
 import { hallucinatedDeityName } from './alignment.js';
 import { heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
-import { canSeeMonster } from './display.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, isok, } from './const.js';
+import { canSeeMonster, canSpotMonster, map_invisible, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import { game } from './gstate.js';
+import { commandResultCancelled } from './command_state.js';
+import { heroSpecies } from './hero_species.js';
+import { monsterIsHumanoid, monsterTypeName } from './monster_data.js';
+import { propertyIsActive } from './properties.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { quoteShopGoods } from './shop_price_quote.js';
+import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { publishMonsterNoise } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
+import { monsterAtPosition } from './monster_location.js';
+import { heroIsBlind } from './senses.js';
+import { STATUE } from './object_data.js';
 import { requireInitializedGame } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { searchSpecial } from './mkroom.js';
@@ -219,5 +233,103 @@ async function hearChoice(state, messages, selection) {
 }
 async function hear(state, message) {
     await publishHeardMessage(message, plineWithContinuation, state);
+}
+// C sounds.c:dochat().
+export async function dochat() {
+    const species = heroSpecies(game);
+    let refusal = null;
+    if (MONSTER_SOUND[species] === 0)
+        refusal = `As ${withIndefiniteArticle(monsterTypeName(species, !!game.flags.female))}, you cannot speak.`;
+    else if (propertyIsActive('strangled', game))
+        refusal = "You can't speak.  You're choking!";
+    else if (game.u.uswallow)
+        refusal = "They won't hear you out there.";
+    else if (game.u.uinwater)
+        refusal = 'Your speech is unintelligible underwater.';
+    if (refusal) {
+        await plineWithContinuation(refusal);
+        game.context.move = 0;
+        return;
+    }
+    if (await quoteShopGoods()) {
+        game.context.move = 1;
+        return;
+    }
+    const direction = await promptDirection((_message, retry) => readDirectionKey('Talk to whom? (in what direction) ', retry));
+    if (!direction) {
+        commandResultCancelled(); // sounds.c:dochat() returns ECMD_CANCEL.
+        return;
+    }
+    const steed = game.u.usteed;
+    if (steed && direction.dz > 0) {
+        if (steed.msleeping || !steed.mcanmove) {
+            await plineWithContinuation(`${monsterName(steed, { capitalized: true })} seems not to notice you.`);
+            game.context.move = 1;
+        }
+        else {
+            game.context.move = Number(await publishMonsterNoise(steed, game));
+        }
+        return;
+    }
+    game.context.move = 0;
+    if (direction.dz) {
+        await plineWithContinuation(`They won't hear you ${direction.dz < 0 ? 'up' : 'down'} there.`);
+        return;
+    }
+    if (!direction.dx && !direction.dy) {
+        await plineWithContinuation('Talking to yourself is a bad habit for a dungeoneer.');
+        return;
+    }
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (!isok(x, y))
+        return;
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+    if (!monster || monster.mundetected) {
+        const topObject = game.level?.objects[x]?.[y]?.[0];
+        const loc = game.level?.at(x, y);
+        if (topObject?.otyp === STATUE) {
+            if (!heroIsBlind(game))
+                await plineWithContinuation(`The ${heroIsHallucinating(game) ? randomDisplayMonsterName() : 'statue'} seems not to notice you.`);
+        }
+        else if (!heroIsDeaf(game) && loc && (IS_WALL(loc.typ) || loc.typ === SDOOR)
+            && (!heroIsBlind(game) || IS_WALL(loc.lastseentyp))) {
+            if (!heroIsHallucinating(game)) {
+                await plineWithContinuation("It's like talking to a wall.");
+            }
+            else {
+                const wallTalk = [
+                    'gripes about its job.', 'tells you a funny joke!',
+                    'insults your heritage!', 'chuckles.', 'guffaws merrily!',
+                    'deprecates your exploration efforts.', 'suggests a stint of rehab...',
+                    "doesn't seem to be interested.",
+                ];
+                await plineWithContinuation(`The wall ${wallTalk[Math.min(rn2(10), wallTalk.length - 1)]}`);
+            }
+        }
+        return;
+    }
+    if (M_AP_TYPE(monster) === M_AP_FURNITURE || M_AP_TYPE(monster) === M_AP_OBJECT)
+        return;
+    if (!monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
+        if (canSpotMonster(monster))
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
+        return;
+    }
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    if (!heroIsDeaf(game) && monster.mtame && monster.meating) {
+        if (!canSpotMonster(monster))
+            await map_invisible(monster.mx, monster.my);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
+        return;
+    }
+    if (heroIsDeaf(game)) {
+        const response = monsterIsHumanoid(species)
+            ? 'falls on deaf ears' : 'is inaudible';
+        // Native calls canspotmon() for each fragment but names the target once.
+        await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
+        return;
+    }
+    game.context.move = Number(await publishMonsterNoise(monster, game));
 }
 //# sourceMappingURL=ambient_sounds.js.map

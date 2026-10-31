@@ -22,7 +22,7 @@ import { corpseName, killerObjectName, objectCombatName, objectName, observeObje
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectClassForType } from './object_knowledge.js';
-import { applyPolearm, applyTool } from './cmd.js';
+import { applyPolearm, applyTool } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
 import { couldPoleMonster } from './polearm.js';
 import { doquiverCore } from './wield.js';

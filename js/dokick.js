@@ -13,7 +13,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { applyHeroContactPassive } from './monster_passive.js';
 import { AT_KICK } from './monster_attack_types.js';

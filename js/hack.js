@@ -92,8 +92,10 @@ import { diggingTarget } from './hero_digging.js';
 import { objectTypeKnown, tendedShop } from './shk.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { announceInvocationSquare } from './invocation.js';
-// Door opening and teleport input remain in cmd.ts until their owners move.
-import { askTeleportDestination, doopen, xyToDirection } from './cmd.js';
+// Door opening and teleport input live with their C owners.
+import { xyToDirection } from './cmd.js';
+import { doopen } from './lock.js';
+import { askTeleportDestination } from './teleport.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {

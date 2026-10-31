@@ -6,7 +6,7 @@ import { findArmorClass, heroHasDrainResistance } from './armor.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroIsPunished } from './ball.js';
 import { changeBoxLockByMagic } from './box_magic.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { A_CHA, A_CON, A_STR, DIED, EXPL_FIERY, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, Upolyd, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation as pline } from './pline.js';

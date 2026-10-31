@@ -39,7 +39,7 @@ import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard,
 import type { VaultGuard } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 
 export function findGuardDestination(state: GameState = game, guard: Monster | null = null) {
     const level = requireGameLevel(state);

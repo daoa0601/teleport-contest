@@ -2,7 +2,7 @@
 // before the item-use owner resumes the monster's turn.
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { D_BROKEN, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP, IS_DOOR, M_SEEN_MAGR, RLOC_MSG, SDOOR, SHOPBASE, TEMPLE, ZAP_POS, isok, } from './const.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';

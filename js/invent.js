@@ -8,18 +8,25 @@ import { objectBlessingDescription, objectDescription } from './object_descripti
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import { bot, consumeHallucinatedMenuObjectGlyph, docrt, flush_screen, formatStrength } from './display.js';
-import { clearMessageWindow, flushPendingTopline, showMessageMenu } from './tty_topline.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { clearMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu } from './tty_topline.js';
+import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
-import { nhgetch } from './input.js';
-import { reassignInventoryLetters } from './inventory_prompt.js';
+import { nhgetch, readchar } from './input.js';
+import { chooseInventoryObject, compactInventoryLetters, reassignInventoryLetters } from './inventory_prompt.js';
+import { commandResultCancelled, commandResultFailed } from './command_state.js';
+import { assignInventoryLetter, inventoryLetterRank } from './u_init.js';
+import { mergable, mergeObjectStacks } from './object_merge.js';
+import { unlinkObject } from './object_location.js';
+import { rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { ynSingleKey } from './tty_prompts.js';
+import { keyText } from './prevmsg.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
+import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
-import { getLine, promptYesNoAllQuit } from './query.js';
+import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
 import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
@@ -869,5 +876,294 @@ async function inspectHere() {
     }
     const { tookTime } = await lookHere(0);
     game.context.move = tookTime ? 1 : 0;
+}
+// C invent.c:doperminv(). The recorder's tty port is built without
+// TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is
+// WIN32-only), so it does not advertise WC_PERM_INVENT and the command
+// always reports the unsupported window port.
+export async function doPermanentInventory() {
+    game.context.move = 0;
+    await pline("Persistent inventory display is not supported by 'tty'.");
+}
+export function inventoryCommandLetter(item) {
+    if (item.invlet === null || item.invlet === undefined)
+        throw new TypeError(`Carried object ${item.o_id} has no inventory letter`);
+    return item.invlet;
+}
+// C ref: invent.c:adjust_split(). The split remains linked beside its
+// original until the destination is chosen; cancelling merges it back.
+export async function adjustSplit() {
+    game.context.move = 0;
+    const object = await chooseInventoryObject('split', candidate => candidate.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
+    if (!object || object.quan < 2 || object.oclass === 12) {
+        commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
+        return;
+    }
+    const amount = object.quan === 2 ? 1 : await readInventorySplitCount();
+    if (amount === null) {
+        await pline('Never mind.');
+        commandResultCancelled(); // adjust_split() quit answer ECMD_CANCEL.
+        return;
+    }
+    if (amount < 1 || amount >= object.quan) {
+        await pline(`Amount to split from current stack must be ${amount < 1
+            ? 'at least 1' : `less than ${object.quan}`}.`);
+        commandResultCancelled(); // adjust_split() bad amount ECMD_CANCEL.
+        return;
+    }
+    const split = splitObjectStack(object, amount, game);
+    if (!split)
+        throw new Error('An admitted inventory stack could not be split');
+    await doadjust(split, object);
+}
+// C cmd.c:get_count(GC_ECHOFIRST | GC_CONDHIST) behind doorganize's split:
+// the yn answer names the first digit, each "Count: N" echo is
+// custompline(SUPPRESS_HISTORY), and only a final count differing from the
+// first digit is filed for recall, with Escape leaving a count of zero.
+async function readInventorySplitCount() {
+    await flushPendingTopline();
+    let key = await ynSingleKey('Split off how many? ');
+    if (key < 48 || key > 57)
+        return null;
+    const firstDigit = key - 48;
+    let count = BigInt(key - 48);
+    let showCount = true;
+    for (;;) {
+        const text = `Count: ${showCount ? count : ''}`;
+        clearMessageWindow();
+        await setTopline(text);
+        await flush_screen(0);
+        game.nhDisplay?.setCursor(text.length, 0);
+        key = await readchar();
+        if (key >= 48 && key <= 57) {
+            const nextCount = count * 10n + BigInt(key - 48);
+            // AppendLongDigit() reports native long overflow; get_count()
+            // clears that count so subsequent digits can start another.
+            count = nextCount > 9223372036854775807n ? 0n : nextCount;
+            showCount = true;
+        }
+        else if (key === 8 || key === 127) {
+            count /= 10n;
+            showCount = count > 0n;
+        }
+        else {
+            clearMessageWindow();
+            // GC_CONDHIST: "Count: N <key>" joins the recall history only
+            // when the final count differs from its first digit; Escape
+            // breaks with a count of zero.
+            const finalCount = key === 27 ? 0n : count;
+            if (finalCount !== BigInt(firstDigit))
+                putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
+            return key === 32 || key === 10 || key === 13 ? Number(count) : null;
+        }
+    }
+}
+// C ref: invent.c:doorganize()/doorganize_core().
+export async function doadjust(selected = null, splitting = null) {
+    const inventory = (game.inventory || [])
+        .filter((object) => typeof object.invlet === 'string' && object.invlet.length > 0)
+        .sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+    if (!inventory.length) {
+        await pline("You aren't carrying anything to adjust.");
+        game.context.move = 0;
+        return;
+    }
+    if (inventory.length === 1 && inventory[0]?.oclass === 12 && inventory[0].invlet === '$') {
+        await pline("You aren't carrying anything adjustable.");
+        game.context.move = 0;
+        return;
+    }
+    if (!selected && game.flags.fixinv === false)
+        reassignInventoryLetters();
+    const repairGold = !selected && await checkInventoryGold('adjust');
+    let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
+    if (!object) {
+        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
+        // dismissed; the rhack seam clears both command queues.
+        game.context.move = 0;
+        commandResultCancelled();
+        return;
+    }
+    if (!splitting) {
+        const previous = game.inventory[game.inventory.indexOf(object) - 1];
+        if (previous && previous.invlet === object.invlet)
+            splitting = previous;
+    }
+    const source = object.invlet;
+    if (!source)
+        throw new Error('Adjusting inventory requires a lettered object.');
+    // C doorganize_core() chooses '$' itself when repairing gold. A purse
+    // already in '$' collects other stacks; one elsewhere merges into '$'.
+    if (object.oclass === 12) {
+        const collect = object.invlet === '$';
+        let purse = object;
+        let action = collect ? 'Collecting' : 'Moving';
+        for (const candidate of inventory) {
+            if (candidate === purse || candidate === object)
+                continue;
+            if (!collect && candidate.invlet !== '$')
+                continue;
+            const candidateName = candidate.oextra?.oname ?? candidate.oname;
+            const purseName = purse.oextra?.oname ?? purse.oname;
+            const merged = (!candidateName || candidateName === purseName)
+                ? await mergeObjectStacks(candidate, purse) : null;
+            if (merged) {
+                purse = merged;
+                if (collect)
+                    continue;
+                action = 'Merging';
+            }
+            else if (!collect) {
+                candidate.invlet = source;
+                action = 'Swapping';
+            }
+            if (!collect)
+                break;
+        }
+        purse.invlet = '$';
+        game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+        if (game.flags.fixinv === false)
+            reassignInventoryLetters();
+        observeObjectForNaming(purse);
+        await pline(`${action}: $ - ${await inventoryItemDescription(purse)}.`);
+        game.context.move = 0;
+        return;
+    }
+    const adjusting = object;
+    const occupied = new Set(inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
+        .map(candidate => candidate.invlet));
+    const slots = game.flags.fixinv === false
+        ? game.inventory.filter(item => item.oclass !== 12).length + (splitting ? 0 : 1) : 52;
+    const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, slots)
+        .split('')
+        .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
+        .join('') + (occupied.has('#') ? '#' : '');
+    const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${compactInventoryLetters(recommended)}] (? see used letters)?`;
+    // The source item's queued letter bypasses getobj's prompt, but the
+    // destination uses tty_yn_function(), which acknowledges unread prose.
+    await flushPendingTopline();
+    let destination = '';
+    for (let attempt = 1;; attempt++) {
+        let key = (await yn_function(destinationPrompt, null, '', true)).answer.charCodeAt(0);
+        if (key === 63 || key === 42) {
+            key = await selectUsedInventoryLetter(splitting ? source : null);
+            if (!key)
+                continue;
+        }
+        destination = String.fromCharCode(key);
+        // C strchr(quitchars, let) also matches a literal fuzzer NUL.
+        if ([0, 27, 32, 10, 13].includes(key) || splitting && destination === source) {
+            if (splitting)
+                await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        if (destination === '$') {
+            if (splitting)
+                await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline("Only gold coins may be moved into the '$' slot.");
+            game.context.move = 0;
+            return;
+        }
+        if (/^[a-zA-Z]$/.test(destination) || destination === '#' && occupied.has('#'))
+            break;
+        if (attempt === 5) {
+            if (splitting)
+                await rejoinObjectStack(splitting, object, game);
+            clearMessageWindow();
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        await plineWithContinuation('Select an inventory slot letter.');
+        await flushPendingTopline();
+    }
+    let action = splitting ? 'Splitting:' : destination === source ? 'Collecting:' : 'Moving:';
+    let bumped = null;
+    // C extracts the selected stack before collecting. A merge can free
+    // that object, so it must never reappear among the remaining candidates.
+    unlinkObject(object, game);
+    for (const candidate of game.inventory.slice()) {
+        const name = object.oextra?.oname ?? object.oname;
+        const candidateName = candidate.oextra?.oname ?? candidate.oname;
+        const permitsName = !candidateName || !!name && name === candidateName;
+        if (destination === source) {
+            if (permitsName) {
+                const merged = await mergeObjectStacks(candidate, object);
+                if (merged) {
+                    object = merged;
+                    unlinkObject(object, game);
+                }
+            }
+            continue;
+        }
+        if (candidate.invlet !== destination)
+            continue;
+        const merged = permitsName ? await mergeObjectStacks(candidate, object) : null;
+        if (merged) {
+            object = merged;
+            unlinkObject(object, game);
+            action = 'Merging:';
+        }
+        else if (!splitting) {
+            candidate.invlet = source;
+            action = 'Swapping:';
+        }
+        else {
+            // A split takes the destination's name when otherwise compatible.
+            if (name && !object.oartifact) {
+                if (object.oextra)
+                    delete object.oextra.oname;
+                delete object.oname;
+            }
+            const splitMerge = await mergeObjectStacks(candidate, object);
+            if (splitMerge) {
+                object = splitMerge;
+                unlinkObject(object, game);
+                action = 'Splitting and merging:';
+            }
+            else {
+                if (name) {
+                    if (object.oextra)
+                        object.oextra.oname = name;
+                    object.oname = name;
+                }
+                if (game.inventory.filter(item => item !== object && item.oclass !== 12).length >= 52) {
+                    object.where = 'inventory';
+                    game.inventory.unshift(object);
+                    await rejoinObjectStack(splitting, object, game);
+                    clearMessageWindow();
+                    await pline('Your pack is too full.');
+                    game.context.move = 0;
+                    return;
+                }
+                unlinkObject(candidate, game);
+                bumped = candidate;
+            }
+        }
+        break;
+    }
+    object.invlet = destination;
+    object.where = 'inventory';
+    game.inventory.unshift(object);
+    if (bumped) {
+        assignInventoryLetter(bumped);
+        bumped.where = 'inventory';
+        game.inventory.unshift(bumped);
+    }
+    game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+    if (game.flags.fixinv === false)
+        reassignInventoryLetters();
+    game._pending_message = '';
+    observeObjectForNaming(object);
+    await pline(`${action} ${object.invlet} - ${await inventoryItemDescription(object, {
+        primaryHandDetail: inventoryPrimaryHandDetail(object),
+    })}.`);
+    if (bumped)
+        await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
+    game.context.move = 0;
 }
 //# sourceMappingURL=invent.js.map

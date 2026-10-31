@@ -73,8 +73,8 @@ dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickF
 dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	n't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
-dungeon.c	br_string2	One way stairs down	composed	src/js/cmd.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
-dungeon.c	br_string2	One way stairs up	composed	src/js/cmd.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
+dungeon.c	br_string2	One way stairs down	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
+dungeon.c	br_string2	One way stairs up	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
 dungeon.c	dumpit	, dunlev_ureached	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
 dungeon.c	dumpit	, ledger_start	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
 dungeon.c	dumpit	Special levels:	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
@@ -90,7 +90,7 @@ dungeon.c	load_mapseen	mapseen-msrooms	diagnostic	Native save-stream field label
 dungeon.c	overview_stats	annotations, text	diagnostic	Annotation-bytes statistics row for the #stats memory report; native-introspection output.
 dungeon.c	overview_stats	cemetery, size	diagnostic	sizeof(struct cemetery) statistics rows for the #stats memory report; native-introspection output.
 dungeon.c	overview_stats	general, size	diagnostic	sizeof(mapseen) statistics rows for the #stats memory report; native-introspection output.
-dungeon.c	print_mapseen	: levels	composed	src/js/cmd.ts:dungeonOverviewHeading; Composes `levels ${from} up to ${to}` or `levels ${from} to ${to}` per the reached-versus-full-range case.
+dungeon.c	print_mapseen	: levels	composed	src/js/dungeon.ts:dungeonOverviewHeading; Composes `levels ${from} up to ${to}` or `levels ${from} to ${to}` per the reached-versus-full-range case.
 dungeon.c	restore_dungeon	level_info_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
 dungeon.c	restore_dungeon	svd.dungeon_topology	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
 dungeon.c	restore_dungeon	svl.level_info	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
@@ -167,7 +167,7 @@ insight.c	ustatusline	, engulfed by	composed	src/js/hero_status.ts:heroStatusLin
 insight.c	ustatusline	ed by sticky goop	composed	src/js/hero_status.ts:heroStatusLine; Covered/blinded by sticky goop is appended to the blind condition exactly as the native ", cover" + "ed by sticky goop" split composes it.
 insight.c	vanqorders	alphabetically, unique monsters and others intermixed	dead	set_vanq_order() skips the VANQ_ALPHA_MIX row (insight.c:2732-2733) and nothing else displays column 2 of that mode.
 insight.c	vanqorders	by monster class, high to low level within class	dead	set_vanq_order() skips the VANQ_MCLS_HTOL row (insight.c:2732-2733) and nothing else displays column 2 of that mode.
-invent.c	adjust_split	at least 1.	composed	src/js/cmd.ts:adjustSplit; A count below one selects at least 1 before the period.
+invent.c	adjust_split	at least 1.	composed	src/js/invent.ts:adjustSplit; A count below one selects at least 1 before the period.
 invent.c	display_pickinv	Not using any items	dead	Only the doing_perm_invent branch adds these strings; it needs display_inventory(NULL, FALSE) without override_ID, and the pinned tty build has no TTY_PERM_INVENT (sync_perminvent returns at maxslot==0; wiz_identify sets override_ID).
 invent.c	display_pickinv	Only carrying gold	dead	Only the doing_perm_invent branch adds these strings; it needs display_inventory(NULL, FALSE) without override_ID, and the pinned tty build has no TTY_PERM_INVENT (sync_perminvent returns at maxslot==0; wiz_identify sets override_ID).
 invent.c	doperminv	Persistent inventory ('perm_invent' option) is not presently enabled.	dead	The pinned tty window port has no WC_PERM_INVENT (config.h leaves TTY_PERM_INVENT commented out), so doperminv() always reports the unsupported window first and never reaches this branch.

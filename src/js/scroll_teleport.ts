@@ -1,5 +1,5 @@
 // C read.c:seffect_teleportation(). The read transaction owns useup().
-import { askTeleportDestination } from './cmd.js';
+import { askTeleportDestination } from './teleport.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levelTeleport } from './level_teleport.js';
 import { learnScroll } from './scroll_discovery.js';

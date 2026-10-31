@@ -7,7 +7,8 @@ import { updateHeroRegions, updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { askMonsterTeleportDestination, askTeleportDestination } from './cmd.js';
+import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { pline } from './pline.js';
 import { prepareTeleportAtWill } from './wizard_teleport.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { randomTeleportDepth } from './level_teleport.js';
@@ -1028,5 +1029,57 @@ export async function teleportMonsterToRandomLevel(monster, trap, { state = game
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL))
         monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) }, { kind: 'level-migration' });
+}
+// C teleport.c:control_mon_tele() and the shared getpos() input prelude.
+export async function askMonsterTeleportDestination(monster, start) {
+    await plineWithContinuation(`Teleport ${monsterName(monster, {
+        article: 'your', suppressIt: true,
+    })} @ <${monster.mx},${monster.my}> where?`);
+    const goal = `where to teleport ${monsterName(monster, {
+        article: 'your', suppressIt: true,
+    })}`;
+    const firstUse = shouldShowGetposTip();
+    if (firstUse)
+        await showGetposTip();
+    if (game.flags.verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation(`Move cursor to ${goal}:`);
+    const destination = await selectMapPosition({
+        start, prompt: game._pending_message, goal, force: false,
+    });
+    return destination;
+}
+export async function askTeleportDestination({ onPrompt = null } = {}) {
+    const subject = game.u.usteed
+        ? `you and ${monsterName(game.u.usteed)}` : 'you';
+    await plineWithContinuation(`Where do ${subject} want to be teleported?`);
+    await onPrompt?.();
+    const firstUse = shouldShowGetposTip();
+    if (firstUse)
+        await showGetposTip();
+    if (game.flags.verbose)
+        await plineWithContinuation("(For instructions type a '?')");
+    if (firstUse)
+        await plineWithContinuation('Move cursor to the desired position:');
+    const target = game._travelTarget;
+    const destination = await selectMapPosition({
+        start: target && isok(target.x, target.y)
+            ? { ...target } : { x: game.u.ux, y: game.u.uy },
+        prompt: game._pending_message,
+        goal: 'the desired position',
+    });
+    game._pending_message = '';
+    return destination;
+}
+// C refs: teleport.c dotelecmd(), dotele()/teleds(), getpos.c getpos(),
+// and priest.c intemple(). A successful position teleport returns
+// ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
+// the destination room separately owns entry effects after relocation.
+export async function teleportAtWillCommand(ignoreRestrictions) {
+    const result = await teleportHeroAtWill({
+        ignoreRestrictions, chooseDestination: askTeleportDestination,
+    });
+    game.context.move = Number(result.spentTime);
 }
 //# sourceMappingURL=teleport.js.map

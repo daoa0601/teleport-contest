@@ -137,8 +137,10 @@ import { objectTypeKnown, tendedShop } from './shk.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { announceInvocationSquare } from './invocation.js';
 
-// Door opening and teleport input remain in cmd.ts until their owners move.
-import { askTeleportDestination, doopen, xyToDirection } from './cmd.js';
+// Door opening and teleport input live with their C owners.
+import { xyToDirection } from './cmd.js';
+import { doopen } from './lock.js';
+import { askTeleportDestination } from './teleport.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;

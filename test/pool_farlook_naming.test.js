@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { askTeleportDestination } from '../js/cmd.js';
+import { askTeleportDestination } from '../js/teleport.js';
 import { farlookLocationDescription } from '../js/pager_description.js';
 import { feel_location, glyphAt, newsym } from '../js/display.js';
 import { NO_MINVENT, POOL, ROOM } from '../js/const.js';
