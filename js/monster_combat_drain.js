@@ -1,14 +1,16 @@
-// C uhitm.c:mhitm_ad_drli/dren/deth/pest/famn/dise/curs(), monster defenders.
+// C uhitm.c:mhitm_ad_dren/deth/pest/famn/dise/curs(), monster defenders;
+// mhitm_ad_drli() lives in uhitm.ts with its other actor branches and
+// receives mhitm_ad_deth()'s redirected call, as in C.
 import { publishHeardMessage } from './hero_speech.js';
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS, STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { monsterCombatDefense } from './monster_combat_defense.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
-import { AD_CURS, AD_DETH, AD_DISE, AD_DREN, AD_DRLI, AD_FAMN, AD_PEST, AT_ENGL, } from './monster_attack_types.js';
+import { AD_CURS, AD_DETH, AD_DISE, AD_DREN, AD_FAMN, AD_PEST, AT_ENGL, } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsUndead } from './monster_data.js';
 import { drainMonsterEnergy } from './monster_energy.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { monsterHasDrainResistance } from './monster_resistance.js';
+import { mhitmAdDrli } from './uhitm.js';
 import { sessionIsNight } from './monster_sound.js';
 import { heroIsDeaf } from './senses.js';
 import { isHumanWereMonster, isWereMonster, wereChange } from './were.js';
@@ -27,18 +29,19 @@ export async function applyMonsterDrainEffect(attacker, defender, context) {
         damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
     };
     switch (damageType) {
-        case AD_DRLI:
-            result.damage = await drainLife(attacker, defender, context, result.damage);
-            return result;
-        case AD_DREN:
-            await drainEnergy(attacker, defender, context);
-            result.damage = 0;
-            return result;
         case AD_DETH:
             if (monsterIsUndead(defender.mnum) && result.damage > 1) {
                 result.damage = context.rollOne(Math.trunc(result.damage / 2));
             }
-            result.damage = await drainLife(attacker, defender, context, result.damage);
+            // C mhitm_ad_deth() simulates Death's touch by redirecting to
+            // mhitm_ad_drli(), whose mhitm branch lives in uhitm.ts.
+            result.damage = (await mhitmAdDrli({
+                attacker, defender, context: { ...context, damage: result.damage },
+            })).damage;
+            return result;
+        case AD_DREN:
+            await drainEnergy(attacker, defender, context);
+            result.damage = 0;
             return result;
         case AD_DISE:
         case AD_PEST:
@@ -57,32 +60,9 @@ export async function applyMonsterDrainEffect(attacker, defender, context) {
     }
 }
 function isDrainDamageType(damageType) {
-    return damageType === AD_DRLI || damageType === AD_DREN || damageType === AD_DETH
+    return damageType === AD_DREN || damageType === AD_DETH
         || damageType === AD_DISE || damageType === AD_PEST || damageType === AD_FAMN
         || damageType === AD_CURS;
-}
-async function drainLife(attacker, defender, context, damage) {
-    const { state, visible, random, rollDice, publish } = context;
-    if (context.attack[1] !== AD_DETH) {
-        if (random(3) || monsterHasDrainResistance(defender)
-            || monsterCombatDefense(defender, AD_DRLI, state)
-            || await monsterCombatAttackNegated(attacker, defender, {
-                state, visible, random, publish, verbose: true,
-            }))
-            return damage;
-        damage = rollDice(2, 6);
-    }
-    if (visible && canSpotMonster(defender)) {
-        await publish(`${monsterName(defender, { state, capitalized: true })} becomes weaker!`);
-    }
-    if (defender.mhpmax - damage > defender.m_lev)
-        defender.mhpmax -= damage;
-    else if (defender.mhpmax > defender.m_lev)
-        defender.mhpmax = defender.m_lev + 1;
-    if (defender.m_lev === 0)
-        return defender.mhp;
-    defender.m_lev--;
-    return damage;
 }
 async function drainEnergy(attacker, defender, context) {
     const { state, visible, random, rollDice, publish } = context;
