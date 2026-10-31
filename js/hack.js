@@ -518,9 +518,9 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
         hero.uhp = Math.trunc(((hero.uhp ?? 1) + 2) / 3);
     hero.utrap -= 1 << 8;
     if (hero.utrap < 1 << 8) {
-        await publish('You sink below the surface and die.');
+        await publish('You sink below the surface and die.', { urgent: true });
         await burnAwayHeroSlime(state, publish);
-        hero.uhp = -1;
+        // sink_into_lava() leaves HP intact for done()'s initial status redraw.
         if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer: 'molten lava',
