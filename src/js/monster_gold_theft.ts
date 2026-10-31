@@ -1,7 +1,8 @@
 // C steal.c:stealgold(), somegold(), and uhitm.c:mhitm_ad_sgld().
 import { heroFootName, monsterFootName } from './body_parts.js';
 import { LARGEST_INT, RLOC_MSG } from './const.js';
-import { newsym, type MessagePublisher } from './display.js';
+import { newsym } from './display.js';
+import { type MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';

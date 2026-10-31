@@ -1,8 +1,8 @@
 // Native potion.c:make_deaf(). Commit the timeout before publishing its change.
 import { TIMEOUT } from './const.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf, syncDeafness } from './senses.js';

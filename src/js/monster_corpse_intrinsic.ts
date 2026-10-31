@@ -1,7 +1,8 @@
 // Properties conveyed to monsters by corpses. C mon.c:mon_givit(), mon_give_prop().
 
 import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './corpse_intrinsics.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME, MONSTER_RESISTS, requireMonsterData } from './monster_data.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
@@ -9,7 +10,7 @@ import { monsterName } from './monster_name.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PropertyName } from './property_types.js';
 
 const STALKER = MONSTER_NAME.indexOf('stalker');

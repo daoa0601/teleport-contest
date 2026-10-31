@@ -6,8 +6,9 @@ import {
     CORR, DOOR, P_BOW, P_CROSSBOW, P_DART, P_KNIFE, P_SHURIKEN, P_SPEAR,
     ROOM, W_NONDIGGABLE, WT_IRON_BALL_INCR,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { specialLevelAt } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';

@@ -12,7 +12,8 @@ import {
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
-import { bot, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { bot, docrt, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

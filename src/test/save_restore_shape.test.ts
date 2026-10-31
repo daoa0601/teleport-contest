@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 
 import { restoregamePreamble } from '../js/allmain.js';
 import { GameDisplay } from '../js/game_display.js';
-import { flushPendingTopline, flush_screen } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

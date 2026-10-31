@@ -4,11 +4,11 @@ import { isPoolAt } from './terrain_properties.js';
 
 import { FOUNTAIN } from './const.js';
 
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dryFountainAt } from './fountain.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';

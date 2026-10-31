@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
-import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithRay } from '../js/hero_breath.js';
 import { resetInputState } from '../js/input.js';

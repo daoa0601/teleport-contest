@@ -2,7 +2,8 @@ import { formatFeltMessage } from './hero_speech.js';
 // Native potion.c:peffects(). Selection, naming, and useup belong to quaff.js.
 import { exerciseAttribute, restoreHeroBaseAttributes } from './attrib.js';
 import { A_CON, A_DEX, A_STR, A_WIS, COLNO, ROWNO, TIMEOUT, WEAK } from './const.js';
-import { plineWithContinuation as pline, see_monsters, unmap_invisible } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { see_monsters, unmap_invisible } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { gainExperienceLevel } from './exper.js';
 import { fruitName } from './fruit.js';

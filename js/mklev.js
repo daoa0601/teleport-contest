@@ -79,7 +79,8 @@ import { changeMonsterForm, pickNastyShape, shapechangerGender, } from './monste
 import { restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { nhgetch } from './input.js';
-import { flush_screen, newsym, pline, terrain_glyph, } from './display.js';
+import { flush_screen, newsym, terrain_glyph } from './display.js';
+import { pline } from './pline.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
 import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';

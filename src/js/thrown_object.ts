@@ -37,17 +37,10 @@ import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
 import {
-    canSpotMonster,
-    flush_screen,
-    glyphAt,
-    lastDirtyMapCursor,
-    map_invisible,
-    newsym,
-    plineWithContinuation,
-    show_glyph_cell,
-    transientObjectGlyph,
-    unmapObject,
+    canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym,
+    show_glyph_cell, transientObjectGlyph, unmapObject,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -55,7 +48,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
-import type { DisplayGlyph, MessagePublisher } from './display.js';
+import type { DisplayGlyph } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { costlySpot } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';

@@ -13,7 +13,7 @@ import type { Monster } from './monster_types.js';
 import { impossible, panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type {
@@ -219,13 +219,8 @@ import {
 } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
 import { respondToImmediateMagic } from './monster_magic_response.js';
-import {
-    canSeeMonster,
-    canSpotMonster,
-    map_invisible,
-    newsym,
-    plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     MONSTER_ATTACKS,
     MONSTER_FLAGS1,

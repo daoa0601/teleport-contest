@@ -14,9 +14,8 @@ import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { recordAchievement } from './achievements.js';
 import { buryObject } from './buried_object.js';
-import {
-    canSeeMonster, monsterKillLineVisible, newsym, plineWithContinuation, unmap_invisible,
-} from './display.js';
+import { canSeeMonster, monsterKillLineVisible, newsym, unmap_invisible } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { removeMonsterWormBody } from './monster_worm.js';
@@ -63,7 +62,7 @@ import { wizardDeadOrGone } from './wizard.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 export interface MonsterDeathOptions {
     deathMessage?: string | null;

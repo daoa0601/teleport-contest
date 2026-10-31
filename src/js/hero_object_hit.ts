@@ -3,13 +3,13 @@
 import { objectMaterial } from './object_material.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';

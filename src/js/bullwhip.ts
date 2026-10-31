@@ -15,9 +15,8 @@ import {
     IS_WATERWALL, Is_airlevel, Is_waterlevel,
     LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok,
 } from './const.js';
-import {
-    canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
-} from './display.js';
+import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './mimic.js';
 import {
     placeObject, remove_object, stack_object,

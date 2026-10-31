@@ -2,9 +2,8 @@
 import {
     EXPL_FIERY, FIRE_TRAP, NORMAL_SPEED, STRAT_WAITFORU, isok,
 } from './const.js';
-import {
-    canSeeMonster, displayColorName, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, displayColorName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -40,7 +39,7 @@ import { heroIsHallucinating } from './senses.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
 import { isAccessibleAt } from './terrain_properties.js';
 import { cansee } from './vision.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, Trap } from './map_types.js';
 import type { Monster } from './monster_types.js';

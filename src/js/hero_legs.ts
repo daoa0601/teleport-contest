@@ -1,11 +1,11 @@
 // Wounded legs affect temporary Dexterity, carrying capacity, and recovery.
 // C do.c:set_wounded_legs()/heal_legs(). Mounted wounds belong to the steed.
 
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { requireHeroAttributes } from './hero_types.js';
 import { A_DEX } from './const.js';
 import { heroLegName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import { reportHeroEncumbrance } from './encumbrance.js';

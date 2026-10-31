@@ -1,6 +1,6 @@
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
 import { BEAR_TRAP, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, IRONBARS, TT_BEARTRAP, W_NONDIGGABLE, } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { veganCorpse } from './food_traits.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { M_AP_OBJECT, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STRAT_WAITFORU, STRAT_CLOSE, TELEP_TRAP, LEVEL_TELEP, W_ARMF } from '../js/const.js';
-import { canSeeMonster, pline } from '../js/display.js';
+import { canSeeMonster } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterHeroAttack, completeHeroAttackSlot, finishDeferredMonsterMiscItem, rollDeferredHeroSpellDamage, takeMonsterTurn } from '../js/monmove.js';

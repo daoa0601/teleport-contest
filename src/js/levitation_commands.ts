@@ -10,8 +10,9 @@ import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './terrain_properties.js';
 import type { GameState } from './game_state.js';
 import type { Stairway } from './map_types.js';
-import type { MessagePublisher } from './display.js';
-import { glyphAt, plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { glyphAt } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource,
     propertyIsBlocked,

@@ -5,7 +5,7 @@ import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, Upolyd } from './const.js';
-import { pline } from './display.js';
+import { pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { getHungry } from './hunger.js';

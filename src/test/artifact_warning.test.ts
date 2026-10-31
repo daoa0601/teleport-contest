@@ -3,12 +3,9 @@ import { installPagerInput } from './support/pager-input.js';
 import { inventoryLetter } from './support/commands.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-    see_monsters,
-    canSpotMonster,
-    flushPendingTopline,
-    plineWithContinuation,
-} from '../js/display.js';
+import { see_monsters, canSpotMonster } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';

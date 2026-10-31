@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { flushPendingTopline, flush_screen, moreUntilDismissed, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline, moreUntilDismissed } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshPlayableRoom } from './support/playable-room.js';

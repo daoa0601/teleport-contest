@@ -1,10 +1,10 @@
 // The #monster shriek used by a polymorphed shrieker.
 // C ref: cmd.c domonability().
 
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { aggravateMonsters } from './monster_anger.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';

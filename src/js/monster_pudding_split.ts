@@ -1,5 +1,6 @@
 // Native mhitm.c:mattackm(), after a landed weapon contact finishes hitmm().
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { cloneMonster } from './monster_clone.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -7,7 +8,7 @@ import { monsterName } from './monster_name.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { objectMaterial } from './object_material.js';
 import { rn2 } from './rng.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

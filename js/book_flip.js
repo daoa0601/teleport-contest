@@ -1,6 +1,7 @@
 // Applying a spellbook without studying it. C apply.c:flip_through_book().
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { displayColorName, plineWithContinuation } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import { learnObjectType } from './object_knowledge.js';

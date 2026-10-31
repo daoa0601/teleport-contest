@@ -3,10 +3,11 @@
 
 import { HUNGRY, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 import type { Monster, MonsterFlag, ShopBillEntry } from './monster_types.js';
 import { hasShopkeeperData } from './shop_types.js';

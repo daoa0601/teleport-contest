@@ -17,7 +17,8 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { QUEST_LUA_SOURCE } from './quest_data.js';
 import { LuaTable } from './lua/runtime.js';
-import { flushPendingTopline, plineWithContinuation, putMessageHistory } from './display.js';
+import { flushPendingTopline, putMessageHistory } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
 
 const M2_PNAME = 0x00080000;

@@ -3,11 +3,11 @@ import {
     D_CLOSED, D_LOCKED, DOOR, FOUNTAIN, IS_DOOR, IS_OBSTRUCTED,
     IS_TREE, IS_WALL, MON_OFFMAP, SDOOR,
 } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { ensureDiggingContext, isDigging } from './hero_digging.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';

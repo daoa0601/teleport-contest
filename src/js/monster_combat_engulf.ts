@@ -4,8 +4,9 @@ import {
     DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE,
     M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER,
 } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { MapLocation } from './map_types.js';

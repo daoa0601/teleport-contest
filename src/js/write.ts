@@ -5,7 +5,7 @@ import { heroFingerName } from './body_parts.js';
 import { commandResultCancelled } from './command_state.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV } from './const.js';
 import { impossible } from './diagnostics.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { wipeoutText } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';

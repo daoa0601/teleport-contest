@@ -1,5 +1,6 @@
 import { MIGR_EXACT_XY, STRAT_WAITFORU } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
 import { questMonsterFlags2 } from './role_monsters.js';

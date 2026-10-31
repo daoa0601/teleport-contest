@@ -7,9 +7,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
-import {
-    canSpotMonster, pline, plineWithContinuation,
-} from './display.js';
+import { canSpotMonster } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';

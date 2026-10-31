@@ -3,7 +3,8 @@ import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEM
 import { game } from './gstate.js';
 import { getMenuColoring } from './menu_coloring.js';
 import { nhgetch } from './input.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, row_refresh } from './display.js';
+import { bot, docrt, flush_screen, row_refresh } from './display.js';
+import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { tty_getlin } from './query.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';

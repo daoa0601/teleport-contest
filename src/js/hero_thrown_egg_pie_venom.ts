@@ -2,7 +2,7 @@
 // enter the same hmon object-contact and damage owner as melee attacks.
 import { currentAttribute } from './attrib.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
@@ -11,7 +11,7 @@ import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { prepareHeroThrownTarget } from './thrown_object.js';
 import { offerThrownFood } from './thrown_food.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';

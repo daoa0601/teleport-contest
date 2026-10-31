@@ -2,7 +2,8 @@
 // selected object is still carried until its own effect consumes or throws it.
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { DOOR, D_CLOSED, D_LOCKED, IS_AIR, IS_OBSTRUCTED, isok } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
 import { requireLiveGame } from './gstate.js';
 import { distmin } from './hacklib.js';

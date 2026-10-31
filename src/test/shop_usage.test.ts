@@ -5,7 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { A_CHA } from '../js/const.js';
-import { clearMessageWindow, pline } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import {

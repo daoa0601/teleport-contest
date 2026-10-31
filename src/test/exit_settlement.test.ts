@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { finishLivingGame, finishOrdinaryQuit } from '../js/end.js';
 import { doGenocide } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

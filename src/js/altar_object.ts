@@ -1,7 +1,8 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 
-import { displayColorName, plineWithContinuation } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
@@ -13,7 +14,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface AltarLandingOptions {
     state?: GameState;

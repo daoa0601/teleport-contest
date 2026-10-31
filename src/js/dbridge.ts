@@ -10,9 +10,8 @@ import {
     ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL, MOAT,
     ROOM, W_NONDIGGABLE, isok,
 } from './const.js';
-import {
-    displayLiquidName, newsym, plineWithContinuation,
-} from './display.js';
+import { displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import {
     destroyDrawbridgeOccupants, moveDrawbridgeOccupants,

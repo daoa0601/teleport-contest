@@ -10,8 +10,9 @@ import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from 
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
-import { newsym, plineWithContinuation, map_object } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { newsym, map_object } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { propertyIsActive } from './properties.js';

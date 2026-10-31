@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_STR, G_GENOD, M_AP_NOTHING, POLY_CONTROLLED, UNENCUMBERED } from '../js/const.js';
 import { heroHasInvoluntaryDelay } from '../js/command_state.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';

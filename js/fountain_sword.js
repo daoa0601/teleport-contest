@@ -1,7 +1,8 @@
 import { artifactByName, discoverArtifact, nameArtifact } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, ROOM } from './const.js';
-import { displayLiquidName, newsym, plineWithContinuation as pline } from './display.js';
+import { displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { countLevelFeatures } from './mklev.js';

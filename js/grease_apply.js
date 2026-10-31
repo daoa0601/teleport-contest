@@ -3,7 +3,7 @@ import { armorSimpleName } from './armor.js';
 import { commandResultCancelled } from './command_state.js';
 import { heroFingerName } from './body_parts.js';
 import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { getobj } from './inventory_prompt.js';

@@ -8,7 +8,8 @@ import {
     MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP,
 } from './const.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
-import { cls, docrt, flush_screen, plineWithContinuation } from './display.js';
+import { cls, docrt, flush_screen } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { initOverviewRecord, insideWizardTower, levelIsWizardTower, specialPrototypeAt } from './dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { rewindEngravingsForSave } from './engrave.js';

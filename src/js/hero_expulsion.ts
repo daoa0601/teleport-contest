@@ -7,7 +7,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { heroFormSticks } from './hero_species.js';
@@ -20,9 +20,8 @@ import {
 import {
     AD_COLD, AD_ELEC, AD_STCK, AT_ENGL, AT_HUGS,
 } from './monster_attack_types.js';
-import {
-    docrt, newsym, plineWithContinuation,
-} from './display.js';
+import { docrt, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeBallAndChain } from './ball.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';

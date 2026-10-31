@@ -10,7 +10,8 @@ import {
 } from './const.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
 import { sweepFloorPile } from './floor_object.js';
-import { canSpotMonster, map_invisible, plineWithContinuation, shieldeff } from './display.js';
+import { canSpotMonster, map_invisible, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { changeDoorByMagic } from './door_magic.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitObjectWithWand } from './immediate_zap.js';
@@ -37,7 +38,7 @@ import { randomMonsterRelocation, teleportHero } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { MonsterOffensiveOptions } from './monster_offensive_types.js';
 import type { Monster } from './monster_types.js';

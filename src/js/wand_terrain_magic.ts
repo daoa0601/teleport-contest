@@ -12,7 +12,8 @@ import {
 import { revealSecretDoor, showMapSpot } from './detect.js';
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { glyphAt, newsym, plineWithContinuation as pline, shieldeff } from './display.js';
+import { glyphAt, newsym, shieldeff } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { forceDescribeDecor } from './dungeon_feature.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt } from './engrave.js';

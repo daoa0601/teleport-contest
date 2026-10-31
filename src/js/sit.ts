@@ -8,7 +8,8 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { displayLiquidName, plineWithContinuation as pline } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { GameObject } from './object_types.js';

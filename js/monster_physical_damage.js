@@ -1,7 +1,8 @@
 // Native uhitm.c:mhitm_ad_phys(), monster against monster.
 import { applyArtifactHit } from './artifact_hit.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AT_CLAW, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { rejectMonsterShadeContact, showMonsterArtifactFallbackHit, } from './monster_combat_messages.js';

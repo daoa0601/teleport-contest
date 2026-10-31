@@ -9,7 +9,7 @@ export interface FireExplosionOptions extends ExplosionOptions {
 // Fire explosions from pyrolisk eggs and burning oil.
 // C explode.c:explode_oil(), splatter_burning_oil().
 import { BURNING_OIL, EXPL_FIERY, LOST_EXPLODING } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { explode } from './explosion.js';
 import { game } from './gstate.js';

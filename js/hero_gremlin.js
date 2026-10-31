@@ -2,7 +2,7 @@ import { isPoolAt } from './terrain_properties.js';
 // The #monster water-splitting ability for a hero in gremlin form.
 // C ref: cmd.c domonability().
 import { FOUNTAIN } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dryFountainAt } from './fountain.js';
 import { game } from './gstate.js';
 import { splitHeroMonsterForm } from './mklev.js';

@@ -4,11 +4,11 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { finishMonsterTrapDeath } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
 import {

@@ -10,9 +10,9 @@ import {
     TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok,
 } from './const.js';
 import {
-    canSpotMonster, feel_location, glyphAt, map_invisible, map_object,
-    newsym, plineWithContinuation, unmap_invisible,
+    canSpotMonster, feel_location, glyphAt, map_invisible, map_object, newsym, unmap_invisible,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { levelAtDepth } from './dungeon.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { applyFloorEffects } from './floor_effects.js';

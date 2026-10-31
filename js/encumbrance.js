@@ -1,6 +1,6 @@
 // C pickup.c:encumber_msg(). Status reads nearCapacity() live; oldcap
 // records only the last completed encumbrance check.
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { encumbranceMessage, nearCapacity } from './weight.js';
 export async function reportHeroEncumbrance(state = game, publish = plineWithContinuation) {

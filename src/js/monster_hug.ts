@@ -5,7 +5,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { armorSimpleName } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';

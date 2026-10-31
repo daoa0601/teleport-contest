@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PARANOID_AUTOALL, PARANOID_CONFIRM } from '../js/const.js';
 import { useContainer } from '../js/container.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { fullyIdentifyObject } from '../js/invent.js';

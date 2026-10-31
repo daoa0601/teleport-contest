@@ -6,7 +6,8 @@ import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED
 import { definiteObjectAction, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
-import { canSeeMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, monsterVisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';

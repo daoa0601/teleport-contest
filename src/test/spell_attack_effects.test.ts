@@ -8,7 +8,8 @@ import {
     DRAWBRIDGE_UP, HWALL, IRONBARS, LAVAPOOL, LAVAWALL, MM_ANGRY, MM_NOGRP,
     MOAT, NO_MINVENT, POOL, STONE, WATER, W_AMUL,
 } from '../js/const.js';
-import { clearMessageWindow, flushPendingTopline, glyphAt, newsym } from '../js/display.js';
+import { clearMessageWindow, flushPendingTopline } from '../js/tty_topline.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_REFLECTION, SPE_CONE_OF_COLD, SPE_FIREBALL } from '../js/object_data.js';

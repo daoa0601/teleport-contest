@@ -5,12 +5,12 @@ import {
     gainHeroStrength,
 } from './attrib.js';
 import { POISONING } from './const.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { healHeroLegs } from './hero_legs.js';

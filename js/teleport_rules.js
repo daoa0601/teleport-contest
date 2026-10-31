@@ -1,7 +1,8 @@
 // teleport_rules.js - teleport restrictions and legal destinations.
 // C refs: teleport.c noteleport_level(), goodpos(), goodpos_onscary().
 import { game, requireGameLevel } from './gstate.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { monsterName } from './monster_name.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';

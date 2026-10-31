@@ -1,5 +1,5 @@
 // C cfgfiles.c:config_error_init(), config_erradd(), config_error_done().
-import { rawPrint, rawPrintf } from './display.js';
+import { rawPrint, rawPrintf } from './pline.js';
 import { truncatePlineMessage } from './pline_text.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';

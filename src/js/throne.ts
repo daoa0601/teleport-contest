@@ -17,15 +17,16 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
-    displayColorName, map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff,
+    displayColorName, map_background, newsym, newsym_force, see_monsters, shieldeff,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './armor.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;

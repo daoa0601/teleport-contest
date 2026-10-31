@@ -1,6 +1,7 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
-import { displayColorName, plineWithContinuation } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';

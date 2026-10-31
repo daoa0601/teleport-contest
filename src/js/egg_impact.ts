@@ -7,7 +7,7 @@ import { createFireExplosion } from './fire_explosion.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { EGG, ROCK } from './object_data.js';
 import { stopAllObjectTimers } from './object_timers.js';

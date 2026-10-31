@@ -8,8 +8,9 @@
 
 import { objectIsHardHelmet } from './armor.js';
 import { M_AP_NOTHING, W_ARMH } from './const.js';
-import type { MessagePublisher } from './display.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';

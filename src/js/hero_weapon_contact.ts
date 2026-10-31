@@ -1,7 +1,8 @@
 // C uhitm.c:hmon_hitmon_weapon(), before artifact and damage-bonus handling.
 import { artifactById } from './artifacts.js';
 import { P_BOW, P_CROSSBOW, P_KNIFE, P_NONE, P_SKILLED, Upolyd } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import {
@@ -24,7 +25,7 @@ import { ensureHeroSkills } from './skills.js';
 import { rollPhysicalWeaponDamage, shadeBlocksWeaponBaseDamage } from './weapon_damage.js';
 import { losePrimaryWeapon } from './weapon_slots.js';
 import { ammunitionMatchesLauncher, isAmmunition, isPolearm } from './weapon_type.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { Monster } from './monster_types.js';

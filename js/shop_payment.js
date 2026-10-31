@@ -13,7 +13,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { objectDescription, paymentObjectDescription } from './object_description.js';
 import { definiteName, simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { heroIsDeaf } from './senses.js';
 import { shopkeeperName } from './monster_name.js';

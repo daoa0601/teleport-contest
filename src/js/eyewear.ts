@@ -6,9 +6,7 @@ import { W_TOOL } from './const.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
-import {
-    pline, plineWithContinuation,
-} from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { BLINDFOLD, LENSES, TOWEL } from './object_data.js';
@@ -21,7 +19,7 @@ import { releaseWeaponSlots } from './weapon_slots.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 function currentEyewear(): GameObject | null {
     return game.ublindf || game.u?.ublindf || null;

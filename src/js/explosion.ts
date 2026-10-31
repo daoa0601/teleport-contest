@@ -9,10 +9,10 @@ import {
     KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX,
 } from './const.js';
 import {
-    canSeeMonster, canSpotMonster, flush_screen, map_invisible,
-    newsym, plineWithContinuation, randomDisplayMonsterName, SHIELD_STATIC,
-    show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph,
+    canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, randomDisplayMonsterName,
+    SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -61,7 +61,8 @@ import {
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { DisplayGlyph, MessagePublisher } from './display.js';
+import type { DisplayGlyph } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import type { PropertyName } from './property_types.js';
 import type { DamageType } from './monster_attack_types.js';

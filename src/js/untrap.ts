@@ -23,7 +23,9 @@ import {
     MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB,
     WT_TOOMUCH_DIAGONAL, isok,
 } from './const.js';
-import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { newsym } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { level_difficulty } from './dungeon.js';
 import { abusePet } from './dog.js';
 import {
@@ -35,7 +37,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Trap, MapLocation, Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DirectionSelection } from './tty_prompts.js';
 import { convertTrapToObject } from './trap_object.js';
 import { heroBadRock } from './hack.js';

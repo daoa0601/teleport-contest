@@ -15,7 +15,7 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import type { NethackConfiguration } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
-import { rawPrint } from './display.js';
+import { rawPrint } from './pline.js';
 import { parseCharacterName } from './character_name.js';
 import type { ParsedCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';

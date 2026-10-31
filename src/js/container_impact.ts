@@ -8,8 +8,8 @@ import {
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { plineWithContinuation } from './pline.js';
 import { isContainer } from './container.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { deleteObject } from './object_delete.js';

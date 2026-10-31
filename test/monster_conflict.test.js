@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { heroHasConflict } from '../js/hero_conflict.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

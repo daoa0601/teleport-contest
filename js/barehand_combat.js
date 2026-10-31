@@ -1,7 +1,8 @@
 // Native uhitm.c:double_punch(), hmon_hitmon_barehands(), and damage bonuses.
 import { P_BARE_HANDED_COMBAT, P_BASIC, W_ARMG, W_RINGL, W_RINGR, } from './const.js';
 import { specialContactDamage } from './contact_damage.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade, } from './monster_data.js';
 import { monsterName } from './monster_name.js';

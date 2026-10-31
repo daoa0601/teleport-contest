@@ -1,7 +1,8 @@
 // C read.c:create_particular(), create_particular_parse(), and
 // create_particular_creation(). The caller owns the command's turn.
 import { COLNO, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, ROWNO } from './const.js';
-import { canSpotMonster, flashGlyphAt, newsym, plineWithContinuation, transientMonsterGlyph } from './display.js';
+import { canSpotMonster, flashGlyphAt, newsym, transientMonsterGlyph } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { mkclassAligned, rndmonstAdj } from './makemon.js';

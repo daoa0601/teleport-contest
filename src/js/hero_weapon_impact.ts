@@ -1,6 +1,7 @@
 // Native uhitm.c:joust(), hmon_hitmon_jousting(), and hmon_hitmon_splitmon().
 import { P_ISRESTRICTED, P_TWO_WEAPON_COMBAT, P_UNSKILLED } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordFirstHeroWeaponHit } from './hero_attack_conduct.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -17,7 +18,7 @@ import { ownedObjectName } from './objnam.js';
 import { d, rn2, rnl } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { losePrimaryWeapon, setTwoWeaponCombat } from './weapon_slots.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

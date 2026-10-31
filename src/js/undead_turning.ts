@@ -17,9 +17,8 @@ export interface UndeadTurningOptions {
 // C zap.c:bhitm(), bhito(), unturn_dead(), and unturn_you().
 
 import { G_GENOD, PLNMSG_OBJ_GLOWS } from './const.js';
-import {
-    canSeeMonster, plineWithContinuation as pline,
-} from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';
 import { makeStunned } from './hero_mental_status.js';

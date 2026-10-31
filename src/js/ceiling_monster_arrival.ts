@@ -4,7 +4,7 @@ import { heroHasCarriedArtifactFlag } from './artifacts.js';
 import { objectIsHardHelmet } from './armor.js';
 import { RLOC_NOMSG } from './const.js';
 import { canSenseMonster } from './display.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { MONSTER_SYMBOL } from './monster_data.js';

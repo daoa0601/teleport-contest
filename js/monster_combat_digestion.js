@@ -1,7 +1,8 @@
 // Monster-versus-monster digestion. C uhitm.c:mhitm_ad_dgst() and the
 // post-death meal effects in mhitm.c:mdamagem().
 import { G_NOCORPSE, M_ATTK_AGR_DIED, M_ATTK_MISS, ismnum } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { requireLiveGame } from './gstate.js';
 import { mksobj, set_corpsenm } from './mkobj.js';
 import { healMonster } from './mon.js';

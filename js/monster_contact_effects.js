@@ -7,6 +7,7 @@ import { exerciseAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { A_CON, A_DEX, A_STR, FAINTED, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { displayLiquidName, shieldeff } from './display.js';
+import {} from './pline.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';

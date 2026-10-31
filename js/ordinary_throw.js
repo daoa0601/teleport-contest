@@ -6,7 +6,7 @@ import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';

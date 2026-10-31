@@ -1,6 +1,6 @@
 // C wizcmds.c:wiz_show_seenv(), wiz_show_vision(), wiz_show_wmodes().
 import { COLNO, ROWNO, COULD_SEE, IN_SIGHT, TEMP_LIT, WM_MASK, CORR, SDOOR, IS_WALL, IS_ROOM, IS_DOOR } from './const.js';
-import { displayMessageWindow } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { showTextWindow } from './windows.js';
 // C wizcmds.c:wiz_show_seenv().

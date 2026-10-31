@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { discoverArtifact } from '../js/artifacts.js';
 import { M_AP_OBJECT, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flush_screen, glyphAt, plineWithContinuation } from '../js/display.js';
+import { flush_screen, glyphAt } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { addFruit } from '../js/fruit.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import {

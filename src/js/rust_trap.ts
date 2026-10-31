@@ -4,13 +4,13 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { finishMonsterKilled } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_RUST } from './monster_attack_types.js';
 import type { MonsterRustTrapEvent as RustTrapEffect } from './trap.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { splitMonster } from './monster_clone.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';

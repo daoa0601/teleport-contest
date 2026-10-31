@@ -3,7 +3,7 @@
 import { artifactById, resolveHeroArtifactTouch, rollHeroArtifactBlast } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, KILLED_BY } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';

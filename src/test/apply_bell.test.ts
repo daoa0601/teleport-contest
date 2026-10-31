@@ -14,12 +14,8 @@ import { openit } from '../js/magic_opening.js';
 import { openHoldingTrap, closeHoldingTrap, openFallingTrap } from '../js/trap_magic.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import {
-    flashGlyphAt,
-    flush_screen,
-    plineWithContinuation,
-    transientTrapGlyph,
-} from '../js/display.js';
+import { flashGlyphAt, flush_screen, transientTrapGlyph } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { initializePet } from '../js/dog.js';

@@ -2,7 +2,7 @@
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Shopkeeper } from './shop_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { observeObject, learnObjectType } from './object_knowledge.js';
 import { MIRROR, OBJECT_MAGIC } from './object_data.js';
 import { paymentObjectDescription } from './object_description.js';

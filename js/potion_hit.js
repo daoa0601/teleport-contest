@@ -14,7 +14,8 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName, plineWithContinuation, shieldeff, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName, shieldeff, } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';

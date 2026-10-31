@@ -2,7 +2,7 @@
 // C refs: eat.c:gethungry(), newuhs(), morehungry(), lesshungry(), choke().
 
 import { finishHeroHelplessness } from './allmain.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { nearCapacity } from './weight.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
@@ -19,7 +19,8 @@ import {
 import { hasNonArtifactConflict } from './hero_conflict.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { bot, plineWithContinuation } from './display.js';
+import { bot } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { makeDeaf } from './hero_hearing.js';
 import { stopHeroOccupation } from './occupation.js';

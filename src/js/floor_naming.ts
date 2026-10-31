@@ -1,7 +1,8 @@
 // C do_name.c:namefloorobj().
 import { Upolyd } from './const.js';
 import { visibleCommandKey } from './command_keys.js';
-import { glyphAt, plineWithContinuation as pline, randomBogusMonsterName } from './display.js';
+import { glyphAt, randomBogusMonsterName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
 import { withMapObject } from './map_object_description.js';

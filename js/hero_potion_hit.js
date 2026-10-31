@@ -1,7 +1,7 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';

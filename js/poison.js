@@ -2,7 +2,8 @@
 // C ref: attrib.c poisoned().
 import { adjustAttribute, currentAttribute, loseHeroStrength, } from './attrib.js';
 import { A_CHA, A_CON, A_STR, DIED, POISONING, Upolyd, } from './const.js';
-import { plineWithContinuation, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';

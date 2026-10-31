@@ -2,11 +2,8 @@
 import { MM_NOMSG } from './const.js';
 import { commandResultCancelled } from './command_state.js';
 import { monsterStomachName } from './body_parts.js';
-import {
-    canSpotMonster,
-    plineWithContinuation as pline,
-    randomDisplayMonsterName,
-} from './display.js';
+import { canSpotMonster, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { doBlindingRay } from './flash.js';
@@ -14,7 +11,7 @@ import { game, requireLiveGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { lightDamage } from './light.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { rn2, rnd } from './rng.js';

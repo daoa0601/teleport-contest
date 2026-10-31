@@ -1,6 +1,7 @@
 // C dog.c:pick_familiar_pm() and make_familiar().
 import { G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NEED_HTH_WEAPON, NO_MINVENT, } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './terrain_properties.js';

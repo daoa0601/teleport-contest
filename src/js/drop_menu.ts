@@ -1,7 +1,8 @@
 // C do.c:doddrop(), menu_drop(), menudrop_split(); invent.c:ggetobj()/askchain().
 import { ECMD_FAIL, ECMD_OK, ECMD_TIME, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, SORTLOOT_INVLET } from './const.js';
 import { chooseObjectCategories } from './container.js';
-import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { dropHeroObject } from './hero_drop.js';
 import { selectInventoryObject } from './invent.js';

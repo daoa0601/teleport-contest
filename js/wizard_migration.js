@@ -1,7 +1,7 @@
 // C wizcmds.c:wiz_migrate_mons()/list_migrating_mons(). A negative count
 // moves existing actors; a positive count creates random actors to migrate.
 import { COLNO, Is_botlevel, Is_stronghold, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, ROWNO } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { levelAtDepth } from './dungeon.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';

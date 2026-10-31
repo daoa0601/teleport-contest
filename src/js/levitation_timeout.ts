@@ -8,8 +8,8 @@ import {
 } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { plineWithContinuation } from './pline.js';
 import {
     captureLevitationState, hasCarriedProperty, hasInvokedProperty,
     hasWornProperty, propertyIsActive, refreshProperty,

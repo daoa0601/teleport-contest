@@ -1,6 +1,7 @@
 // A monster strikes the hero with a weapon it keeps in its hands.
 // C refs: mthrowu.c thrwmu() polearm branch and thitu().
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { heroSpecies } from './hero_species.js';

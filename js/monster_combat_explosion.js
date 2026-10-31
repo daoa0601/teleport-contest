@@ -1,7 +1,7 @@
 // C mhitm.c:explmm(), uhitm.c:mhitm_ad_blnd()/mhitm_ad_halu(),
 // and explode.c:mon_explodes().
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';

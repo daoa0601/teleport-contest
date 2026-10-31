@@ -2,7 +2,7 @@
 import { currentAttribute } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';

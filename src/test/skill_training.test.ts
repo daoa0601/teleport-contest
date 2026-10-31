@@ -8,7 +8,8 @@ import {
     P_ATTACK_SPELL, P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_HEALING_SPELL,
     P_NONE, P_RIDING, P_SKILLED, P_SKILL_LIMIT, TIP_ENHANCE,
 } from '../js/const.js';
-import { flushPendingTopline, pline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { pline } from '../js/pline.js';
 import { gainExperienceLevel } from '../js/exper.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

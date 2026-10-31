@@ -1,6 +1,7 @@
 import { G_GENOD, isok } from './const.js';
 import { thawObject } from './container.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
 import { game } from './gstate.js';

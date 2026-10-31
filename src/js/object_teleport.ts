@@ -7,7 +7,8 @@ import {
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
 import { goodPosition } from './teleport_rules.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { insideWizardTower } from './dungeon.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
@@ -15,7 +16,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { ArrivalRegion, Position, Rectangle } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { CORPSE } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { rn2 } from './rng.js';

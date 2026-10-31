@@ -12,8 +12,9 @@ import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
-import { map_background, newsym, plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { map_background, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';

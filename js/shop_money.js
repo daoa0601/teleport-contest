@@ -1,6 +1,6 @@
 // C shk.c:money2u() and hack.c:money_cnt(). Coins retain ordinary ownership.
 import { game } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { monsterName } from './monster_name.js';
 import { splitObjectStack } from './object_stack.js';

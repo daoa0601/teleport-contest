@@ -3,7 +3,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { armorSimpleName } from './armor.js';
 import { heroLegName } from './body_parts.js';
 import { DROWNING, POOL, WATER } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';

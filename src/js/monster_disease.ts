@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute } from './attrib.js';
 import { A_CON, SICK_NONVOMITABLE } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { startHeroSickness } from './hero_illness.js';
 import { monsterTypeName } from './monster_data.js';

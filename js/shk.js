@@ -16,7 +16,8 @@ import { monsterName, monsterPossessive, monsterSubjectPronoun, possessiveName, 
 import { containedGold } from './gold.js';
 import { containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer, shopClaimsObject, shopGetPrice, shopkeeperIsMuted, stolenValue, } from './shop_loss.js';
 import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, shopStocksObject, } from './shop_sell.js';
-import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';

@@ -1,7 +1,7 @@
 import { resetPick } from './lock_context.js';
 // Locking and opening magic applied to a box. C ref: lock.c boxlock().
 import { game } from './gstate.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { OBJECT_NAMES, WAN_POLYMORPH, SPE_POLYMORPH } from './object_data.js';
 export async function changeBoxLockByMagic(box, source, { state = game } = {}) {
     const effect = OBJECT_NAMES[source.otyp];

@@ -13,7 +13,8 @@ import { corpseName, killerObjectName, observeObjectForNaming,
     simpleObjectName, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { displayColorName, newsym, plineWithContinuation, see_monsters } from './display.js';
+import { displayColorName, newsym, see_monsters } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
@@ -52,7 +53,7 @@ import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';

@@ -3,7 +3,7 @@
 import { requireHeroAttributes } from './hero_types.js';
 import { A_DEX } from './const.js';
 import { heroLegName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import { reportHeroEncumbrance } from './encumbrance.js';

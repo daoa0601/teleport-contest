@@ -2,7 +2,8 @@
 
 import { artifactById, artifactGlowColor, artifactWarningMask } from './artifacts.js';
 import { DOOR, D_TRAPPED, W_WEP, isok } from './const.js';
-import { displayColorName, glyphAt, plineWithContinuation, see_monsters } from './display.js';
+import { displayColorName, glyphAt, see_monsters } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { isContainer } from './container.js';
 import { game, requireLiveGame } from './gstate.js';
 import { verbForSubject } from './object_grammar.js';

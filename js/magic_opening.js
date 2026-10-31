@@ -6,7 +6,8 @@ import { BOLT_LIM, DOOR, SDOOR, SCORR, D_CLOSED, D_LOCKED, D_TRAPPED, D_NODOOR, 
 import { CHEST, LARGE_BOX } from './object_data.js';
 import { monsterDigests } from './monster_data.js';
 import { clearAreaCells, cansee, vision_note_blocker_change } from './vision.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { monsterName } from './monster_name.js';
 import { expelHero } from './hero_expulsion.js';

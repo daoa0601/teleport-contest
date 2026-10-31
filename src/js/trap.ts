@@ -40,7 +40,7 @@ import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { canSeeMonster, map_trap, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
 import type { GameState } from './game_state.js';

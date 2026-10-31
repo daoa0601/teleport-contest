@@ -1,6 +1,6 @@
 // C timeout.c:nh_timeout(), counters between dialogue and property expiry.
 import { game } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { MONSTER_LEVEL, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';

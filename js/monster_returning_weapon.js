@@ -2,7 +2,8 @@
 import { publishHeardMessage } from './hero_speech.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { W_WEP } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { objectShedsLight } from './light.js';

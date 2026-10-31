@@ -2,7 +2,8 @@
 // C mhitm.c:gazemm(); ordinary damage belongs to mdamagem().
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_MISS } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { AD_BLND } from './monster_attack_types.js';

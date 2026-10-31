@@ -7,7 +7,7 @@ import { recalculateTelepathyRange, setWornArtifactProperties } from './artifact
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsBlind } from './senses.js';
 import { weaponNeedsBashingMessage, willWeld } from './weapon_type.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';

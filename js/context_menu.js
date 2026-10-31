@@ -1,6 +1,7 @@
 // C cmd.c:there_cmd_menu(), its entry builders, and act_on_act().
 import { ALTAR, BOLT_LIM, CLICK_1, CLICK_2, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FOUNTAIN, NHW_MENU, PICK_ONE, SCORR, SINK, THRONE, Upolyd, VIBRATING_SQUARE, } from './const.js';
-import { canSpotMonster, clearMessageWindow, glyphAt } from './display.js';
+import { canSpotMonster, glyphAt } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';

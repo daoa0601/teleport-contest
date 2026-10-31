@@ -4,7 +4,7 @@ import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import { A_DEX, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';

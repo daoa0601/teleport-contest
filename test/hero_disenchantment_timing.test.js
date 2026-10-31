@@ -3,7 +3,7 @@ import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { NO_MINVENT } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';

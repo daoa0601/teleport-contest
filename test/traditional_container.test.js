@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_COMBINATION, MENU_TRADITIONAL, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { useContainer } from '../js/container.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { fullyIdentifyObject } from '../js/invent.js';

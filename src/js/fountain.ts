@@ -4,11 +4,12 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { DOOR, FOUNTAIN, F_WARNED, MON_FLOOR, POOL, ROOM, SDOOR } from './const.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
-import { glyphAt, newsym, plineWithContinuation } from './display.js';
+import { glyphAt, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireLiveGame, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { countLevelFeatures, deleteFloorTrap, splitHeroMonsterForm } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerWatchGuards } from './monster_anger.js';

@@ -3,7 +3,7 @@
 
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { LOST_THROWN } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
@@ -14,7 +14,7 @@ import { deallocateObject, deleteObject, stopObjectTimers } from './object_delet
 import { unlinkObject } from './object_location.js';
 import { billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
 import { announceGlobMerge, startGlobTimeout } from './glob.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { assertCreatedObject } from './object_release.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

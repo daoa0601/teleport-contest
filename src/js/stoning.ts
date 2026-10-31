@@ -13,12 +13,12 @@ import {
     A_CHA, A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON,
     NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
 } from './const.js';
-import {
-    canSpotMonster, displayMessageWindow, pline, plineWithContinuation, randomDisplayMonsterSubject,
-} from './display.js';
+import { canSpotMonster, randomDisplayMonsterSubject } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

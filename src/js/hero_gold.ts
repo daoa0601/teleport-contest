@@ -2,7 +2,7 @@
 // C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

@@ -14,7 +14,7 @@ import type { GameState } from './game_state.js';
 import type { Monster, ShopBillEntry } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Room } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type {
     BilledShopkeeper, CostlyShopSpot,
@@ -33,7 +33,8 @@ import {
     costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject,
     shopStocksObject,
 } from './shop_sell.js';
-import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';

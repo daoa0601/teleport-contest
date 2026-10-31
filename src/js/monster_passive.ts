@@ -12,9 +12,8 @@ import {
     A_DEX, A_STR, A_WIS, STONING,
     M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR,
 } from './const.js';
-import {
-    canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff,
-} from './display.js';
+import { canSeeMonster, displayLiquidName, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { healMonster } from './mon.js';
@@ -51,7 +50,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Hero } from './hero_types.js';
 import type { MonsterAttack } from './data_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import type { DeathHandler } from './end.js';
 import type { ErosionKind } from './object_erosion.js';

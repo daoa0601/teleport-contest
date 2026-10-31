@@ -5,9 +5,8 @@ import {
     BOLT_LIM, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
     M_AP_OBJECT, M_AP_TYPE, MM_NOMSG, MM_NOEXCLAM,
 } from './const.js';
-import {
-    canSeeMonster, canSenseMonster, glyphAt, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, canSenseMonster, glyphAt, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';

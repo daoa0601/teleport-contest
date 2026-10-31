@@ -1,6 +1,6 @@
 // C shk.c:shop_object(), price_quote(), and shk_embellish().
 import { game } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, objectTypeKnown, shopObjectUnitCost } from './shk.js';
 import { containedBuyCost, objectPricingUnits, shopkeeperIsMuted } from './shop_loss.js';

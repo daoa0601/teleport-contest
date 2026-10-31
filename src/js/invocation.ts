@@ -4,7 +4,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { heroFootName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';

@@ -3,7 +3,8 @@
 import { currentAttribute } from './attrib.js';
 import { A_CHA, DISMOUNT_THROWN, W_ARMS } from './const.js';
 import { heroEyeName, heroHasEyes } from './body_parts.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';

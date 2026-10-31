@@ -18,9 +18,9 @@ import {
     is_hole, is_pit, isok,
 } from './const.js';
 import {
-    canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible,
-    newsym, plineWithContinuation,
+    canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible, newsym,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroTestMove } from './hack.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';

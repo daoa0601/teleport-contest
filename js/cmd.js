@@ -39,7 +39,8 @@ import { continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish, releaseDjinni } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { jumpHero } from './jumping.js';
-import { clearMessageWindow, feel_location } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { feel_location } from './display.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
@@ -140,7 +141,9 @@ import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, setTopline, putMessageHistory, rememberToplines, bot, glyphAt, canSeeMonster, canSpotMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, consumeHallucinatedMenuObjectGlyph, } from './display.js';
+import { displayLiquidName, newsym, feel_newsym, flush_screen, docrt, bot, glyphAt, canSeeMonster, canSpotMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, consumeHallucinatedMenuObjectGlyph, } from './display.js';
+import { displayMessageWindow, flushPendingTopline, moreUntilDismissed, putMessageHistory, rememberToplines, } from './tty_topline.js';
+import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { transformMagicLampToOilLamp } from './light.js';

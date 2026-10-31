@@ -16,7 +16,8 @@ import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn, objectShedsLight, snuffLightSource } from './light.js';
 import { monsterCanEngulf, monsterTypeName } from './monster_data.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import {
@@ -31,7 +32,7 @@ import {
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface MonsterPickupOptions {
     atFront?: boolean;

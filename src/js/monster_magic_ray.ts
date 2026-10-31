@@ -1,7 +1,7 @@
 import type { Monster } from './monster_types.js';
 import type { MonsterAttack } from './data_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { MonsterCallLog } from './monster_action_types.js';
 // C mcastu.c:buzzmu(). Ranged spell rays are one original attack slot.
@@ -9,7 +9,8 @@ import { heroIsDisplaced } from './armor.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { M_AP_OBJECT, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { heroIsInvisible } from './hero_invisibility.js';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { pline, plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshPlayableRoom } from './support/playable-room.js';

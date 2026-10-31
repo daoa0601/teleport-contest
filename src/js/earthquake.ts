@@ -11,9 +11,8 @@ import {
     FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO,
     NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
 } from './const.js';
-import {
-    newsym, plineWithContinuation,
-} from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { MapLocation, Trap } from './map_types.js';

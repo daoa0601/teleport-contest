@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LAVAPOOL, MOAT, ROOM } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { runRay } from '../js/ray.js';
 import { requireScreenCell } from './support/screen.js';
 import { game } from '../js/gstate.js';

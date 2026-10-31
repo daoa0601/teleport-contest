@@ -22,9 +22,8 @@ import {
     W_ARM, W_ARMC, W_ARMU, W_ARMS,
 } from './const.js';
 import { artifactById } from './artifacts.js';
-import {
-    canSeeMonster, canSenseMonster, newsym, plineWithContinuation, shieldeff,
-} from './display.js';
+import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
@@ -79,7 +78,7 @@ import {
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { HeroMonsterKillOptions, HeroMonsterDeathContext } from './hero_monster_death.js';
 import type { MonsterAttack } from './data_types.js';

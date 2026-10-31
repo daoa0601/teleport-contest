@@ -2,7 +2,7 @@
 // enter the same hmon object-contact and damage owner as melee attacks.
 import { currentAttribute } from './attrib.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';

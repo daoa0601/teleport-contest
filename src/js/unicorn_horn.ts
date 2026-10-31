@@ -10,7 +10,7 @@ import { currentAttribute } from './attrib.js';
 import {
     A_CON, SICK_ALL, SICK_NONVOMITABLE,
 } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectName } from './objnam.js';
 import {
@@ -26,7 +26,7 @@ import { d, rn2 } from './rng.js';
 import {
     heroIsDeaf, heroIsHallucinating,
 } from './senses.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 

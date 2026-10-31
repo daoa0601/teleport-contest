@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CORR, LAVAPOOL, M_AP_OBJECT, M_AP_TYPE, PIT, POOL, STONE, WEB } from '../js/const.js';
-import { canSeeMonster, flush_screen, glyphAt, newsym, plineWithContinuation } from '../js/display.js';
+import { canSeeMonster, flush_screen, glyphAt, newsym } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

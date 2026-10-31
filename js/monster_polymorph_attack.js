@@ -8,7 +8,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { rn2 } from './rng.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { monsterName } from './monster_name.js';
 const POTION_ATTACK_LEVEL = 6;
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');

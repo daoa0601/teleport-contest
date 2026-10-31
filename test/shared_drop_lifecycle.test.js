@@ -4,7 +4,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { ALTAR, LADDER, LAVAWALL, VWALL } from '../js/const.js';

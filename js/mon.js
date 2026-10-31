@@ -6,7 +6,8 @@ import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInA
 import { makeMonsterFlee } from './monster_flee.js';
 import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, displayLiquidName, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';

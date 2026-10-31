@@ -4,7 +4,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLightHeadedFeeling, heroStomachName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { EXPL_FIERY, Is_airlevel, Is_waterlevel, MON_FLOOR, TIMEOUT } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { explode } from './explosion.js';
 import { addExperience, checkExperienceLevel } from './exper.js';

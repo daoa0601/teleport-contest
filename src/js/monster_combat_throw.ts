@@ -3,7 +3,7 @@ import { M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { throwMonsterWeaponAtMonster } from './monster_throw.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { rn2, rnd } from './rng.js';
 
 export async function resolveMonsterCombatThrow(source: Monster, target: Monster, {

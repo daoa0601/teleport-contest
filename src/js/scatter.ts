@@ -20,7 +20,7 @@ import type { Position } from './map_types.js';
 import type { PotionHitOptions } from './potion_hit.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ALTAR, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';

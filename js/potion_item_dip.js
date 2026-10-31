@@ -1,6 +1,7 @@
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, EXPL_FIERY, PLNMSG_OBJ_GLOWS } from './const.js';
-import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { fingersOrGloves } from './dip_water.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';

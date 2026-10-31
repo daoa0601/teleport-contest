@@ -1,6 +1,6 @@
 // C pickup.c:query_classes(), simple_look(), allow_category().
 import { PARANOID_AUTOALL } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { selectInventoryObject } from './invent.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';

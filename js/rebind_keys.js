@@ -1,7 +1,9 @@
 // cmd.c handler_rebind_keys()/handler_rebind_keys_add(): the interactive
 // key-binding menus behind the full options menu's "bind keys" row.
 import { game } from './gstate.js';
-import { flush_screen, pline, renderKeyPrompt } from './display.js';
+import { flush_screen } from './display.js';
+import { pline } from './pline.js';
+import { renderKeyPrompt } from './tty_topline.js';
 import { pgetchar } from './input.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';

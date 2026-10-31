@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newsym, pline } from '../js/display.js';
+import { newsym } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, DAGGER } from '../js/object_data.js';

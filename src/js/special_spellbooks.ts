@@ -5,7 +5,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { ACH_INVK, ACH_NOVL, recordAchievement } from './achievements.js';
 import { heroSpineName } from './body_parts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { level_difficulty } from './dungeon.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

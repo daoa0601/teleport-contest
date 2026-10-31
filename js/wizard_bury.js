@@ -2,7 +2,7 @@
 // disappear into the ground rather than joining the buried-object list.
 import { buryFloorObjectsAt } from './buried_object.js';
 import { isok } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 // C dig.c:wiz_debug_cmd_bury().
 export async function wizBury() {

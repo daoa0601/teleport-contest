@@ -12,7 +12,8 @@ import {
 import {
     WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT,
 } from './object_data.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';

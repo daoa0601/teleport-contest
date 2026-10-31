@@ -1,6 +1,7 @@
 // C timeout.c:run_timers(). Used by ordinary turns and level arrivals.
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishEggHatchTimer, runClaimedEggHatchTimer } from './egg.js';
 import { finishFigurineTimer, runClaimedFigurineTimer } from './figurine.js';
 import { game } from './gstate.js';

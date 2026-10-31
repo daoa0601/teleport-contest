@@ -1,6 +1,7 @@
 // C polyself.c:dopoly(): the monster ability adds feedback after polyself.
 import { POLY_MONSTER } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterTypeName } from './monster_data.js';
 import { heroCanChangeVampireShape, polymorphHero } from './polyself.js';

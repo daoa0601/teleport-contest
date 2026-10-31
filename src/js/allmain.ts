@@ -4,7 +4,7 @@ import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { dolookaround } from './lookaround.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { slipOrTrip } from './fumbling.js';
 import { heroLegName } from './body_parts.js';
 import { recoverTimedLuck } from './timeout_luck.js';
@@ -144,26 +144,16 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, clearMessageWindow, displayMessageWindow, docrt, redrawMap,
-    bot,
-    flush_screen, flushPendingTopline, updateStatusLines, statusEvalNextUnhilite,
-    pline,
-    rememberToplines,
-    appendSuppressedTopline,
-    resetToplineClip,
-    plineWithContinuation,
-    newsym,
-    map_invisible,
-    randomDisplayMonsterName,
-    see_monsters,
-    see_objects,
-    see_traps,
-    show_glyph_cell,
-    swallowed,
-    under_ground, under_water,
-    canSeeMonster, monsterVisible,
-    shieldeff,
+    canSpotMonster, docrt, redrawMap, bot, flush_screen, updateStatusLines,
+    statusEvalNextUnhilite, newsym, map_invisible, randomDisplayMonsterName, see_monsters,
+    see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster,
+    monsterVisible, shieldeff,
 } from './display.js';
+import {
+    clearMessageWindow, displayMessageWindow, flushPendingTopline, rememberToplines,
+    appendSuppressedTopline, resetToplineClip,
+} from './tty_topline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import {
     cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level,
     hasLightSources,

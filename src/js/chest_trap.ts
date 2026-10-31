@@ -10,15 +10,15 @@ import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
 import { currency } from './currency.js';
-import {
-    bot, displayMessageWindow, plineWithContinuation, randomColorName, shieldeff,
-} from './display.js';
+import { bot, randomColorName, shieldeff } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { staggerVerb } from './monster_hurtle.js';

@@ -3,13 +3,12 @@
 
 import { heroIsHallucinating } from './senses.js';
 import { Upolyd } from './const.js';
-import {
-    canSpotMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterSubject, shieldeff,
-} from './display.js';
+import { canSpotMonster, displayLiquidName, randomDisplayMonsterSubject, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

@@ -5,7 +5,7 @@ import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { nomul, setMulti } from '../js/command_state.js';
 import { M_AP_NOTHING, M_AP_OBJECT, NO_MINVENT, POOL } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { resolveHeroCombatEngulf } from '../js/hero_combat_engulf.js';

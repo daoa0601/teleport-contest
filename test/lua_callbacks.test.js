@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { PANICLOG } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { pushKeys, resetInputState } from '../js/input.js';

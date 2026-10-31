@@ -13,7 +13,7 @@ import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, POT_O
 import { LAVAPOOL } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { waterDamageObject } from '../js/trap.js';
 import { cansee, couldsee, vision_recalc } from '../js/vision.js';

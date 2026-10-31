@@ -2,9 +2,10 @@
 // C refs: teleport.c noteleport_level(), goodpos(), goodpos_onscary().
 
 import { game, requireGameLevel } from './gstate.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { monsterName } from './monster_name.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';

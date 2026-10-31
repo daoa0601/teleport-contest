@@ -19,10 +19,11 @@ import {
     finishBallAndChainMove,
 } from './ball.js';
 import {
-    bot, displayLiquidName, docrt, feel_newsym, newsym, plineWithContinuation, under_water,
-    updateLastSeenTerrain, feel_location, pline, terrain_glyph, glyphAt, canSpotMonster,
-    canSenseMonster, monsterVisible, pline_dir, set_msg_xy, unmap_invisible, map_object, unmapObject,
+    bot, displayLiquidName, docrt, feel_newsym, newsym, under_water,
+    updateLastSeenTerrain, feel_location, terrain_glyph, glyphAt, canSpotMonster,
+    canSenseMonster, monsterVisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
+import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn, nomul } from './command_state.js';
@@ -83,7 +84,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { ingSuffix } from './hacklib.js';

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { displayMessageWindow, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { displayMessageWindow } from '../js/tty_topline.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';

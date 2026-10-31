@@ -1,6 +1,7 @@
 // C wizcmds.c:wiz_intrinsic(), with menu order from timeout.c:propertynames.
 import { KILLED_BY, SICK_NONVOMITABLE, SICK_VOMITABLE } from './const.js';
-import { docrt, plineWithContinuation } from './display.js';
+import { docrt } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';

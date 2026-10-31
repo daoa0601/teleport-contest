@@ -2,7 +2,8 @@
 // weapon (or bare hands) spends the move and may cut the web away.
 import { currentStrength } from './attrib.js';
 import { artifactById } from './artifacts.js';
-import { newsym, plineWithContinuation as pline } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { rn2 } from './rng.js';

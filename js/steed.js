@@ -8,7 +8,8 @@ import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, D
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
-import { canSpotMonster, displayLiquidName, newsym, pline, plineWithContinuation } from './display.js';
+import { canSpotMonster, displayLiquidName, newsym } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

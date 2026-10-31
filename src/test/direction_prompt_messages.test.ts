@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flush_screen, newsym, plineWithContinuation } from '../js/display.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { promptDirection } from '../js/tty_prompts.js';

@@ -11,7 +11,7 @@ import { heroStomachName } from './body_parts.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { A_CON, ALTAR, FAINTING, POISONING, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT, } from './const.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { definiteName } from './objnam.js';

@@ -1,5 +1,6 @@
 import { NEED_HTH_WEAPON } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { placeObject } from './floor_object.js';
 import { game, requireLiveGame } from './gstate.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { MM_ANGRY, MM_NOGRP, NEED_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

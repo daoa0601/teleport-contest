@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, MM_ANGRY, MM_MINVIS, MM_NOMSG, MM_NOEXCLAM, NO_MINVENT, } from '../js/const.js';
-import { canSeeMonster, glyphAt, newsym, pline } from '../js/display.js';
+import { canSeeMonster, glyphAt, newsym } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

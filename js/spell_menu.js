@@ -1,7 +1,8 @@
 // Native spell.c:getspell(), dovspell(), dospellmenu(), sortspells(), and
 // spellretention(). Display sorting changes letters only when explicitly kept.
 import { MENU_TRADITIONAL, NHW_MENU, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_SKILLED, } from './const.js';
-import { flushPendingTopline, plineWithContinuation } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { OBJECT_NAMES, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_DIG } from './object_data.js';
 import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, } from './spell_casting_rules.js';

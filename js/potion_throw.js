@@ -3,7 +3,7 @@
 // breaktest(), breakmsg(), breakobj(); zap.c bhit().
 import { currentAttribute } from './attrib.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';

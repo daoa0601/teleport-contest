@@ -5,7 +5,8 @@ import {
     A_CHA, CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED,
     HWALL, NO_MINVENT, ROOM, SCORR, SDOOR, STONE, TREE, W_AMUL, W_NONDIGGABLE,
 } from '../js/const.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

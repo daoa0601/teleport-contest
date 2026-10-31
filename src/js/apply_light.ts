@@ -1,7 +1,7 @@
 // Applied fire sources. C apply.c:use_lamp(), use_candle(),
 // use_candelabrum(), and light_cocktail(). Command admission belongs to doapply.
 import { game, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { beginObjectBurn, endObjectBurn } from './light.js';
 import { heroIsBlind } from './senses.js';
 import { definiteObjectAction, objectName, ownedObjectName } from './objnam.js';

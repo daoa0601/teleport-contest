@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flushPendingTopline, flush_screen, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { strangulationDialogue } from '../js/hero_strangulation.js';
 import { resetInputState } from '../js/input.js';

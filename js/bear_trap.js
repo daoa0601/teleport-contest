@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_bear_trap().
 import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';

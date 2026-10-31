@@ -4,7 +4,7 @@ import { canLetGo } from './hero_inventory.js';
 import { clearCannedCommands } from './command_state.js';
 import { removeHeroAccessory } from './accessory.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { AKLYS, OBJECT_BIMANUAL } from './object_data.js';
 import { makePlural, makeSingular } from './object_grammar.js';

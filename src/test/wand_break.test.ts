@@ -9,7 +9,7 @@ import {
     PARANOID_BREAKWAND, PIT, W_WEP,
 } from '../js/const.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';

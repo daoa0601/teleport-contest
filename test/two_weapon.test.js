@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { rndcurse } from '../js/throne.js';

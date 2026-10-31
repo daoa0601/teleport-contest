@@ -3,7 +3,7 @@ import { currentAttribute } from './attrib.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroFootName } from './body_parts.js';
 import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

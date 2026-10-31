@@ -1,6 +1,7 @@
 // C do_name.c:noveltitle() and files.c:choose_passage()/read_tribute().
 import { game } from './gstate.js';
-import { plineWithContinuation, putMessageHistory } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { putMessageHistory } from './tty_topline.js';
 import { rn2 } from './rng.js';
 import { NOVEL_PASSAGES } from './tribute_data.js';
 import { showTextMenuOverlay } from './windows.js';

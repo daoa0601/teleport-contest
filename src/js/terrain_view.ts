@@ -5,9 +5,9 @@ import {
     M_AP_FURNITURE, M_AP_TYPE,
 } from './const.js';
 import {
-    cmapSymbolAppearance, docrt, flush_screen,
-    pline, plineWithContinuation, show_glyph_cell, terrain_glyph, transientTrapGlyph,
+    cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, terrain_glyph, transientTrapGlyph,
 } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import type { DisplayGlyph } from './display.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';

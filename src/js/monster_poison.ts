@@ -2,7 +2,8 @@
 // mhitm_really_poison(), and mhitu.c:mpoisons_subj().
 
 import { A_CON, A_DEX, A_STR } from './const.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import {
     AD_DRCO, AD_DRDX, AD_DRST, AT_BITE, AT_GAZE, AT_TUCH, AT_WEAP,
@@ -15,7 +16,7 @@ import { monsterWieldedWeapon } from './monster_weapon.js';
 import { poisonHero } from './poison.js';
 import { rn2 } from './rng.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { HeroPoisonOptions } from './poison.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 

@@ -1,7 +1,8 @@
 // C vault.c:clear_fcorr(), blackout(), parkguard(), and grddead().
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, isok } from './const.js';
-import { map_location, newsym, plineWithContinuation } from './display.js';
+import { map_location, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { deleteEngravingAt } from './engrave.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { releaseMonsterInventory } from './monster_drop.js';

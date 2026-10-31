@@ -3,7 +3,8 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { LADDER, LA_DOWN, LA_UP, STAIRS } from '../js/const.js';
-import { flushPendingTopline, newsym } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -6,7 +6,7 @@ import { artifactById } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

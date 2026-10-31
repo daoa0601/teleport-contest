@@ -2,12 +2,13 @@
 // C ref: mon.c wake_msg() and wake_nearto_core().
 
 import { STRAT_WAITMASK } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { disturbBuriedZombies } from './object_impact.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 

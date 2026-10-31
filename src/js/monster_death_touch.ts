@@ -2,7 +2,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { KILLED_BY, Upolyd } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import type { PlayingGameState } from './game_state.js';

@@ -10,7 +10,9 @@ import type { Position, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { getLine } from './query.js';
 import { deleteEngravingAt } from './engrave.js';
-import { bot, redrawMap, newsym, plineWithContinuation, displayMessageWindow } from './display.js';
+import { bot, redrawMap, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { displayMessageWindow } from './tty_topline.js';
 import {
     ROOM,
     ROOMOFFSET,

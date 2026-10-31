@@ -2,7 +2,7 @@ import { installPagerInput } from './support/pager-input.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { resetInputState } from '../js/input.js';
 import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, TIMEOUT } from '../js/const.js';
 import { BLINDFOLD, SCR_IDENTIFY } from '../js/object_data.js';

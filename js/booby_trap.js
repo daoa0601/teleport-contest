@@ -3,7 +3,7 @@ import { A_CON, A_STR } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { level_difficulty } from './dungeon.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { makeStunned } from './hero_mental_status.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';

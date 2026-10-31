@@ -17,7 +17,8 @@ import {
 } from './const.js';
 import { isAccessibleAt } from './terrain_properties.js';
 import { artifactById } from './artifacts.js';
-import { canSenseMonster, glyphAt, pline, unmap_invisible } from './display.js';
+import { canSenseMonster, glyphAt, unmap_invisible } from './display.js';
+import { pline } from './pline.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { game } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';

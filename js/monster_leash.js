@@ -1,6 +1,7 @@
 // Shared ownership for a leash attached to a monster.
 // C refs: apply.c:m_unleash(), get_mleash(), and unleash_all().
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';

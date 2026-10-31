@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { A_DEX, A_STR, P_BOW, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';

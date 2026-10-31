@@ -2,7 +2,8 @@
 import { monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_AGR_DIED, M_ATTK_MISS, WATER } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';

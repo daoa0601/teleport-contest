@@ -1,7 +1,7 @@
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { PotionWakeMonster, PotionWakeNearby } from './potion_hit.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
@@ -30,7 +30,7 @@ type PotionThrowAdmission = Pick<MapPotionThrowOptions,
 
 import { currentAttribute } from './attrib.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';

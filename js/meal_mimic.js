@@ -2,7 +2,9 @@
 import { finishHeroHelplessness } from './allmain.js';
 import { nomul } from './command_state.js';
 import { DISMOUNT_FELL, M_AP_NOTHING, M_AP_OBJECT, Upolyd } from './const.js';
-import { canSeeMonster, canSpotMonster, flushPendingTopline, flush_screen, map_invisible, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './hero_species.js';

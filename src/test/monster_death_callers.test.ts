@@ -4,7 +4,8 @@ import test from 'node:test';
 
 import { moveloop_core } from '../js/allmain.js';
 import { DISMOUNT_GENERIC, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STONE } from '../js/const.js';
-import { clearMessageWindow, flush_screen } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

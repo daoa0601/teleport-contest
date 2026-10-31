@@ -3,7 +3,7 @@
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { game } from './gstate.js';
 import { FAINTED } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { stopHeroOccupation } from './occupation.js';
 // C timeout.c:fall_asleep().
 export async function putHeroToSleep(turns, { state = game, doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {

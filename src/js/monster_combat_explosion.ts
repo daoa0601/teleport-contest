@@ -2,7 +2,7 @@
 // and explode.c:mon_explodes().
 
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
@@ -14,7 +14,7 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { d, rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { AttackTuple, RandomBelow, RollDice } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';

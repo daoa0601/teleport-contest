@@ -19,7 +19,8 @@ import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { announceInvocationSquare } from './invocation.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation, see_monsters } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
 import {
     leashAttachedToMonster, releaseMonsterLeash,
@@ -88,7 +89,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position, Rectangle, Trap } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from './monster_action_types.js';
 
 type RandomBelow = (limit: number) => number;

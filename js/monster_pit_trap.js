@@ -1,7 +1,7 @@
 // A monster falling into an ordinary or spiked pit.
 // C ref: trap.c:trapeffect_pit().
 import { SPIKED_PIT } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterTrapDeath } from './monster_death.js';

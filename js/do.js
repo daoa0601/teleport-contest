@@ -3,7 +3,8 @@
 //         hack.c monster_nearby().
 import { heroIsHallucinating } from './senses.js';
 import { game } from './gstate.js';
-import { canSpotMonster, pline, plineWithContinuation, } from './display.js';
+import { canSpotMonster } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';

@@ -3,7 +3,8 @@
 import { armorSlotFor } from './armor.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { M_AP_MONSTER, M_AP_TYPE, P_WHIP } from './const.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, map_invisible, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, map_invisible } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade } from './monster_data.js';

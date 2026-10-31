@@ -7,7 +7,7 @@ import { makeDeaf } from './hero_hearing.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { currentAttribute } from './attrib.js';
 import { A_CON, SICK_ALL, SICK_NONVOMITABLE, } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectName } from './objnam.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroSickness, startHeroVomiting, vomitHero, } from './hero_illness.js';

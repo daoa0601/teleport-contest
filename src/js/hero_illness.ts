@@ -5,7 +5,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
 import { isIceAt } from './terrain_properties.js';
@@ -21,7 +21,7 @@ import {
     A_CON, ALTAR, FAINTING, POISONING, SICK_ALL,
     SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT,
 } from './const.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { definiteName } from './objnam.js';

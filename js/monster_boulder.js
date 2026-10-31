@@ -1,5 +1,5 @@
 // C monmove.c:m_can_break_boulder() and m_break_boulder().
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { monsterIsRider } from './monster_data.js';
 import { questMonsterSound } from './role_monsters.js';

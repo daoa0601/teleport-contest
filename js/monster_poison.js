@@ -1,7 +1,8 @@
 // Poison delivered by monster attacks. C uhitm.c:mhitm_ad_drst(),
 // mhitm_really_poison(), and mhitu.c:mpoisons_subj().
 import { A_CON, A_DEX, A_STR } from './const.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AD_DRCO, AD_DRDX, AD_DRST, AT_BITE, AT_GAZE, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { monsterName, possessiveName } from './monster_name.js';

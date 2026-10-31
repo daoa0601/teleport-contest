@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reviveCorpseByMagic, reviveCorpseImmediately, runClaimedCorpseRevivalTimer, } from '../js/corpse_revival.js';
 import { MFAST, MM_NOTAIL, NO_MINVENT, ROOM } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { doeat } from '../js/eat.js';
 import { initializePet } from '../js/dog.js';
 import { placeCreatedObject } from '../js/floor_object.js';

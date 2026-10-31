@@ -1,7 +1,7 @@
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 // Native HMON_* modes share damage and aftermath, but retain different
 // weapon, Strength, training, and contact rules.

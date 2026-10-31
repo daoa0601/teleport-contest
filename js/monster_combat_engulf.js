@@ -1,7 +1,8 @@
 // C mhitm.c:engulf_target()/gulpmm(). Engulfing changes map occupancy
 // temporarily while both actors remain in the level's monster chain.
 import { DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsVampireShifter, monsterIsWhirly, requireMonsterData, } from './monster_data.js';

@@ -3,11 +3,11 @@
 
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, Is_airlevel } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
 import { definiteObjectAction, objectName } from './objnam.js';

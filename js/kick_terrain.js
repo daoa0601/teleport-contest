@@ -2,7 +2,9 @@
 import { publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, IS_TREE, Is_stronghold, LADDER, LA_DOWN, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE_LOOTED, TREE_SWARM, T_LOOTED, } from './const.js';
-import { displayColorName, displayMessageWindow, feel_newsym, newsym, plineWithContinuation as pline } from './display.js';
+import { displayColorName, feel_newsym, newsym } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { placeCreatedObject } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dungeonDepth } from './hacklib.js';

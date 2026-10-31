@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import { Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makeDeaf } from './hero_hearing.js';
 import { cureHeroSicknessWithMessages, cureHeroVomiting } from './hero_illness.js';

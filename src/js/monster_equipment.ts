@@ -1,7 +1,8 @@
 // Properties granted or blocked by monster armor. C worn.c:update_mon_extrinsics().
 
 import { DISMOUNT_FELL } from './const.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import {
     ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData,
@@ -10,7 +11,7 @@ import { monsterName } from './monster_name.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { dismountHero } from './steed.js';
 import { learnWand } from './wand_charge.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

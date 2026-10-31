@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { rawPrintf } from '../js/display.js';
+import { rawPrintf } from '../js/pline.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('raw formatted output keeps the beginning of oversized text without an ellipsis', () => {

@@ -5,13 +5,13 @@ import { addShopObjectToBill, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { hideHeroUnder } from './monster_hiding.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface FloorConsumptionOptions { state?: GameState; publish?: MessagePublisher }
 

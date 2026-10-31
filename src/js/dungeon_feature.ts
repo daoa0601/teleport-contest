@@ -11,8 +11,9 @@ import {
 } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { displayLiquidName, plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';

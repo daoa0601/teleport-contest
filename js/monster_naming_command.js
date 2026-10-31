@@ -1,7 +1,8 @@
 // C do_name.c:do_mgivenname()/alreadynamed().
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME } from './const.js';
 import { visibleCommandKey } from './command_keys.js';
-import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, plineWithContinuation as pline, seeMonsterWithInfrared } from './display.js';
+import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, seeMonsterWithInfrared, } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';

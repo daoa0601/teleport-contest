@@ -5,7 +5,7 @@ import { barehandSkill, prepareHeroBarehandContact } from './barehand_combat.js'
 import { confuseTouchedMonster } from './confusing_touch.js';
 import { P_LANCE, Upolyd } from './const.js';
 import { isZombieMaker } from './corpse_species.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordFirstHeroWeaponHit } from './hero_attack_conduct.js';
@@ -37,7 +37,7 @@ import { heroIsBlind } from './senses.js';
 import { dryTowel } from './towel.js';
 import { cansee } from './vision.js';
 import { isPolearm } from './weapon_type.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalHitOptions, HeroPhysicalHitResult } from './hero_physical_types.js';

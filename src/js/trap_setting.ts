@@ -2,7 +2,7 @@ import { feelTrap } from './trap.js';
 // C apply.c:use_trap(), set_trap(), reset_trapset().
 import { currentAttribute } from './attrib.js';
 import { A_DEX, A_STR, AIR, BEAR_TRAP, CLOUD, D_CLOSED, D_LOCKED, DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_airlevel, Is_waterlevel, LANDMINE, P_BASIC, P_RIDING, SHOPBASE } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { triggerHeroTrap } from './hero_traps.js';

@@ -5,7 +5,8 @@
 import {
     hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
-import { flush_screen, plineWithContinuation } from './display.js';
+import { flush_screen } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { definiteObjectAction } from './objnam.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';

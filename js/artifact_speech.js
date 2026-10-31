@@ -1,6 +1,6 @@
 // C artifact.c:arti_speak(). Speaking artifacts select rumors by their BUC.
 import { artifactById } from './artifacts.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { getRumor } from './mklev.js';
 import { objectName, objectNameIsPlural } from './objnam.js';

@@ -3,7 +3,8 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { CORPSTAT_HISTORIC } from './const.js';
 import { shopkeeperName } from './monster_name.js';
-import { newsym, pline } from './display.js';
+import { newsym } from './display.js';
+import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';

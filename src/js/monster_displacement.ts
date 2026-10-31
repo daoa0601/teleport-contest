@@ -4,7 +4,8 @@ import {
     ALLOW_MDISP, M_AP_MONSTER, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS,
     STRAT_WAITMASK, W_ARMG,
 } from './const.js';
-import { canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, flush_screen, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
@@ -25,7 +26,7 @@ import { touchPetrifies } from './stoning.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');

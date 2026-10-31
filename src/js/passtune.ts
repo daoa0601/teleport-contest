@@ -10,9 +10,7 @@ import {
 import {
     findDrawbridgeAt, toggleDrawbridge,
 } from './dbridge.js';
-import {
-    pline, plineWithContinuation,
-} from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { definiteName, objectCombatName } from './objnam.js';

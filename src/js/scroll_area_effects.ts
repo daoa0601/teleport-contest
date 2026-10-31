@@ -7,9 +7,9 @@ import {
     IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE,
     PLNMSG_TOWER_OF_FLAME, isok,
 } from './const.js';
-import {
-    clearMessageWindow, displayLiquidName, plineWithContinuation as pline, shieldeff,
-} from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { displayLiquidName, shieldeff } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { explode } from './explosion.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
 import {

@@ -2,7 +2,7 @@
 import { SATIATED, Upolyd } from './const.js';
 import { applyCorpsePostEffects, applyCorpsePreEffects } from './corpse_eating.js';
 import { prepareCorpseMeal } from './corpse_meal.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { recordFoodConsumption, recordOrdinaryFoodDiet } from './food_conduct.js';
 import { consumeFoodObject, consumeRemainingFood, foodNutrition, touchFoodObject, } from './food_lifecycle.js';
 import { selectFoodToEat } from './food_selection.js';

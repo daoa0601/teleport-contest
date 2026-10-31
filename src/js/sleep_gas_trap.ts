@@ -4,7 +4,7 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import {
     monsterIsBreathless,

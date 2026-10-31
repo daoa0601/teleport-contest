@@ -2,7 +2,7 @@
 // from the options menus ("status highlight rules"), and the rule store
 // (blstats[][].thresholds plus gc.cond_hilites) that they edit.
 import { game } from './gstate.js';
-import { pline } from './display.js';
+import { pline } from './pline.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import { colorName, queryAttributeSet, queryAttributeMenu, queryColorMenu } from './color_query.js';

@@ -12,9 +12,11 @@ import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { nomul } from './command_state.js';
 import {
-    canSpotMonster, currentBoulderSymbol, displayColorName, flushPendingTopline,
-    glyphAt, magic_map_background, map_invisible, plineWithContinuation as pline,
+    canSpotMonster, currentBoulderSymbol, displayColorName, glyphAt, magic_map_background,
+    map_invisible,
 } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './hacklib.js';

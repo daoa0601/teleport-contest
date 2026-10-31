@@ -4,7 +4,7 @@ import { objectIsHardHelmet, simpleArmorName } from './armor.js';
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { heroFaceName, heroHeadName } from './body_parts.js';
 import { KILLED_BY, STONING, Upolyd, WT_TO_DMG } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { game, requirePlayingGame } from './gstate.js';

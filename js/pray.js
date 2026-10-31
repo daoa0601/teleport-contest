@@ -3,7 +3,9 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { nomul } from './command_state.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
-import { displayColorName, flushPendingTopline, plineWithContinuation as pline } from './display.js';
+import { displayColorName } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 import { rn1, rn2, rnl, rnd, rnz } from './rng.js';

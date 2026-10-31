@@ -1,6 +1,6 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 // Monster anger, alarm sounds, and peaceful bystander reactions.
 // C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards(),
 // and wizard.c aggravate().
@@ -10,9 +10,8 @@ import {
     M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, PLNMSG_GROWL, STRAT_APPEARMSG,
     STRAT_WAITFORU, STRAT_WAITMASK,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { insideWizardTower } from './dungeon.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

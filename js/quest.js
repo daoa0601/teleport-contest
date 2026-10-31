@@ -3,7 +3,8 @@
 import { game } from './gstate.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
-import { canSeeMonster, flush_screen, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, flush_screen } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_WAITMASK, MAGIC_PORTAL, } from './const.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { questMonsterSound } from './role_monsters.js';

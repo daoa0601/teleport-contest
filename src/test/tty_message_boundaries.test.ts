@@ -3,7 +3,8 @@ import test from 'node:test';
 
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';

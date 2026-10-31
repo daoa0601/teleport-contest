@@ -3,7 +3,8 @@
 import { objectMaterial } from './object_material.js';
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { displayLiquidName, plineWithContinuation as pline } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { spendHeroNutrition } from './hunger.js';

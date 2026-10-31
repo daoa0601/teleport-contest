@@ -1,6 +1,6 @@
 // C monmove.c:m_can_break_boulder() and m_break_boulder().
 
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { monsterIsRider } from './monster_data.js';
 import { questMonsterSound } from './role_monsters.js';
@@ -13,7 +13,7 @@ import { billDummyObject } from './shk.js';
 import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 const MS_LEADER = 36;
 

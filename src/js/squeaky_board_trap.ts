@@ -5,7 +5,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';

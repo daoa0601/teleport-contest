@@ -5,7 +5,7 @@ import {
     isok, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR,
     STRAT_PLAYER, STRAT_WAITMASK,
 } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';

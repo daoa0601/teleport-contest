@@ -3,7 +3,7 @@ import type { ObjectRoomOptions } from './support/object-room.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { resetInputState } from '../js/input.js';

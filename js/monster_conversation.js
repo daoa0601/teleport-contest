@@ -4,7 +4,7 @@ import { nomul } from './command_state.js';
 import { Upolyd, In_endgame } from './const.js';
 import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';

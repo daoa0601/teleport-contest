@@ -6,10 +6,9 @@ import {
     ALTAR, AM_LAWFUL, AM_NEUTRAL, AM_SHRINE, CORPSTAT_FEMALE, CORPSTAT_MALE, DOOR, D_CLOSED,
     DRAWBRIDGE_UP, ICE, MAGIC_TRAP, MM_NOGRP, NO_MINVENT, PIT, SPIKED_PIT, WEB,
 } from '../js/const.js';
-import {
-    displayMessageWindow, flush_screen, map_invisible, newsym, plineWithContinuation,
-    show_glyph_cell,
-} from '../js/display.js';
+import { displayMessageWindow } from '../js/tty_topline.js';
+import { flush_screen, map_invisible, newsym, show_glyph_cell } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';

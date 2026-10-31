@@ -5,15 +5,13 @@ import { setHeroGrip } from './hero_grip.js';
 import {
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
 } from './const.js';
-import {
-    canSenseMonster, canSpotMonster, glyphAt, map_invisible,
-    plineWithContinuation as pline,
-} from './display.js';
+import { canSenseMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { AD_STCK } from './monster_attack_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { objectAtMonsterDescription } from './monster_birth.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';

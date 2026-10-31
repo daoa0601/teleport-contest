@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_TELEPORTATION, SCR_IDENTIFY, SCR_BLANK_PAPER } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';

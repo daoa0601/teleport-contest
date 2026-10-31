@@ -5,7 +5,7 @@ import { touchArtifactByHero } from './artifact_touch.js';
 import { artifactBaneApplies, artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, DISMOUNT_THROWN, IS_ALTAR, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';

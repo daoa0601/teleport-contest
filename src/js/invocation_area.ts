@@ -5,7 +5,9 @@ import {
     TT_BURIEDBALL,
 } from './const.js';
 import { buriedBallToPunishment } from './buried_object.js';
-import { flushPendingTopline, flush_screen, newsym, plineWithContinuation as pline } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { flush_screen, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';

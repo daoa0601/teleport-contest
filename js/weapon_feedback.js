@@ -1,7 +1,7 @@
 // Readiness messages around a semantic primary-weapon change.
 // C refs: wield.c ready_weapon(), before and after setuwep().
 import { heroHandName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
 import { makePlural } from './object_grammar.js';

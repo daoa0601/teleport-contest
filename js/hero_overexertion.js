@@ -2,7 +2,7 @@
 // C ref: hack.c overexertion() and overexert_hp().
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, Upolyd } from './const.js';
-import { pline } from './display.js';
+import { pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { getHungry } from './hunger.js';

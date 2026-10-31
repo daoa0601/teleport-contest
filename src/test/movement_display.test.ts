@@ -3,7 +3,9 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { displayMessageWindow, flush_screen, newsym, pline } from '../js/display.js';
+import { displayMessageWindow } from '../js/tty_topline.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

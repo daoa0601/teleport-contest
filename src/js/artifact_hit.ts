@@ -5,7 +5,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { artifactById, artifactDamageBonus } from './artifacts.js';
 import type { Artifact, ArtifactDefender } from './artifacts.js';
 import type { ArtifactDamage } from './data_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { canSeeMonster, displayColorName } from './display.js';
 import { monsterNeckName } from './body_parts.js';
 import { loseHeroExperience } from './exper.js';

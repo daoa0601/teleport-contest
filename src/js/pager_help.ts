@@ -1,6 +1,7 @@
 // C pager.c:dispfile_*, docontact(), domenucontrols().
 import { visibleCommandKey } from './command_keys.js';
-import { clearMessageWindow, displayMessageWindow, pline } from './display.js';
+import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { HELP_FILES } from './help_files.js';
 import { restoreCommandMap } from './tty_prompts.js';

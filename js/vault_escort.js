@@ -1,7 +1,8 @@
 // C vault.c:gd_move(), its escort helpers, and find_guard_dest().
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { ACCESSIBLE, BLCORNER, BRCORNER, COLNO, COULD_SEE, CORR, DOOR, D_NODOOR, GD_EATGOLD, HWALL, IN_SIGHT, IS_POOL, IS_ROOM, IS_STWALL, IS_WALL, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, ROWNO, SCORR, STONE, TLCORNER, TRCORNER, VAULT, VWALL, isok, } from './const.js';
-import { canSpotMonster, monsterVisible, newsym, plineWithContinuation as pline } from './display.js';
+import { canSpotMonster, monsterVisible, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { deleteEngravingAt } from './engrave.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';

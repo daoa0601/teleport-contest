@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HUNGRY, NOT_HUNGRY } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { spendHeroNutrition } from '../js/hunger.js';
 import { resetInputState } from '../js/input.js';

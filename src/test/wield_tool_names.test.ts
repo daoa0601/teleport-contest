@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { setTopline } from '../js/display.js';
+import { setTopline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OIL_LAMP } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';

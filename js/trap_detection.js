@@ -3,7 +3,8 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { D_TRAPPED, SDOOR, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TRAPPED_CHEST, TRAPPED_DOOR, isok, } from './const.js';
 import { heroToeName } from './body_parts.js';
-import { glyphAt, map_object, map_trap, newsym, pline } from './display.js';
+import { glyphAt, map_object, map_trap, newsym } from './display.js';
+import { pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { browseDetectionMap, clearDetectionMap, redisplayDetectionMap, unconstrainMap, } from './magic_map_display.js';
 import { MONSTER_NAME } from './monster_data.js';

@@ -12,7 +12,8 @@ import {
     MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM,
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { makePetWary } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';

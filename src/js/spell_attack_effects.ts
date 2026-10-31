@@ -12,10 +12,9 @@ import {
     EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel,
     LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, clearMessageWindow, flush_screen,
-    map_invisible, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { game, requireLiveGame } from './gstate.js';

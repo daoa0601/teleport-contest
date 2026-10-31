@@ -9,7 +9,8 @@ import {
     IRONBARS, IS_DOOR, IS_ROOM, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL,
     N_DIRS, ROOMOFFSET, ROWNO, SCORR, SDOOR, isok, xdir, ydir,
 } from './const.js';
-import { glyphAt, pline, pline_xy, set_msg_xy } from './display.js';
+import { glyphAt } from './display.js';
+import { pline, pline_xy, set_msg_xy } from './pline.js';
 import { cansee } from './vision.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';

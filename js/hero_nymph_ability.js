@@ -1,7 +1,7 @@
 // The #monster ability for a hero in nymph form.
 // C refs: cmd.c domonability() and polyself.c doremove().
 import { TT_BURIEDBALL } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsPolymorphed } from './polyself.js';

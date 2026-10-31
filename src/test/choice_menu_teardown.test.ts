@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { showChoiceWindow } from '../js/windows.js';

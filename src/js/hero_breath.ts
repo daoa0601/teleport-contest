@@ -2,7 +2,7 @@
 // C refs: polyself.c dobreathe() and zap.c ubreatheu()/zhitu().
 
 import type { MonsterAttack } from './data_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { DamageType } from './monster_attack_types.js';
@@ -16,7 +16,8 @@ import { exerciseAttribute } from './attrib.js';
 import {
     A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM,
 } from './const.js';
-import { displayLiquidName, plineWithContinuation, shieldeff } from './display.js';
+import { displayLiquidName, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { monsterSpellDeathReason } from './monster_name.js';

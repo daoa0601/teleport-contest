@@ -3,7 +3,7 @@ import { COLNO, ROWNO, STONE, Invocation_lev, In_endgame, In_mines, In_quest, In
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { levelIsWizardTower, sameDungeonLevel, specialDisplayName } from './dungeon.js';
-import { displayMessageWindow } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mayDig } from './hero_digging.js';
 import { showTextWindow } from './windows.js';

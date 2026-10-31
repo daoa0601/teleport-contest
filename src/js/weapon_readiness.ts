@@ -2,7 +2,7 @@
 import { speakArtifact } from './artifact_speech.js';
 import { heroHandName } from './body_parts.js';
 import { P_SABER, P_SHORT_SWORD } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { heroSpecies } from './hero_species.js';

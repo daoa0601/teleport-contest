@@ -1,5 +1,6 @@
 import { currency } from './currency.js';
-import { canSeeMonster, canSpotMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { foodNutrition } from './food_lifecycle.js';
 import { inventoryItemDescription } from './invent.js';

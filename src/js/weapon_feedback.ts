@@ -2,7 +2,7 @@
 // C refs: wield.c ready_weapon(), before and after setuwep().
 
 import { heroHandName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

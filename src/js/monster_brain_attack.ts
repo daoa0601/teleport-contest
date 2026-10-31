@@ -1,6 +1,7 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), monster against monster.
 import { M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, W_AMUL, W_ARMH } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import {
     monsterHasHead, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider,
@@ -10,7 +11,7 @@ import { prepareMonsterPetrification } from './monster_stoning.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { fleshPetrifies } from './stoning.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import type { Monster } from './monster_types.js';

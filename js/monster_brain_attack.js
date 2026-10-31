@@ -1,6 +1,7 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), monster against monster.
 import { M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, W_AMUL, W_ARMH } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterHasHead, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, } from './monster_data.js';
 import { monsterName, monsterPossessive, possessiveName } from './monster_name.js';

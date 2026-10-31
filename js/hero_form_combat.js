@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, } from './const.js';
 import { selectAttack } from './attack_selection.js';
 import { specialContactDamage } from './contact_damage.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { resolveHeroCombatEngulf } from './hero_combat_engulf.js';

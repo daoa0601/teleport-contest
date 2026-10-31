@@ -11,9 +11,9 @@ import {
 } from './const.js';
 import { mapLevel, showMapSpot } from './detect.js';
 import {
-    canSpotMonster, docrt, flush_screen, glyphAt, map_invisible,
-    map_object, pline, see_monsters,
+    canSpotMonster, docrt, flush_screen, glyphAt, map_invisible, map_object, see_monsters,
 } from './display.js';
+import { pline } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
     browseDetectionMap, mapDetectedMonster, reconstrainMap,

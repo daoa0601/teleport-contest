@@ -3,7 +3,7 @@ import { artifactById, artifactByName } from './artifacts.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_WIS, GD_EATGOLD, SATIATED, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { digestAccessory } from './eaten_accessory.js';
 import { checkFoodEdibility } from './food_edibility.js';
 import { consumeFoodObject } from './food_lifecycle.js';

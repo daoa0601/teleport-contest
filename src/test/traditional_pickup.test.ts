@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_COMBINATION, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
-import { glyphAt, pline } from '../js/display.js';
+import { glyphAt } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKeys, resetInputState } from '../js/input.js';

@@ -1,5 +1,5 @@
 // C wizard.c:cuss(), shared by monster turns and sounds.c:domonnoise().
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName } from './monster_name.js';

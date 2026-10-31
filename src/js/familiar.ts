@@ -9,14 +9,15 @@ import {
     NEED_HTH_WEAPON,
     NO_MINVENT,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './terrain_properties.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt, rndmonstAdj } from './makemon.js';
 import { resolveMonsterLiquid } from './mon.js';

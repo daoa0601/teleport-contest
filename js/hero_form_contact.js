@@ -1,6 +1,6 @@
 // Native mhitu.c:could_seduce(), mhitm.c:failed_grab(), and weapon.c:silver_sears().
 import { W_AMUL, W_RINGL, W_RINGR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, monsterHasHead, monsterIsMindless, monsterIsUnsolid, } from './monster_data.js';

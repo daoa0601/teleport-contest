@@ -7,7 +7,7 @@ import { deallocateObject, deleteObject, stopObjectTimers } from './object_delet
 import { unlinkObject } from './object_location.js';
 import { billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
 import { announceGlobMerge, startGlobTimeout } from './glob.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { assertCreatedObject } from './object_release.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

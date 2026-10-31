@@ -18,7 +18,8 @@ import type { Hero } from './hero_types.js';
 import type { Trap } from './map_types.js';
 import type { LevitationState } from './property_types.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     captureLevitationState, clearLevitationMasks, levitationAtWill,
     propertyIsActive, propertyIsBlocked, refreshMovementProperties,

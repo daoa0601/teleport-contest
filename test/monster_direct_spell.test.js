@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { ICE, MM_ANGRY, MM_NOGRP, M_SEEN_COLD, M_SEEN_FIRE, NO_MINVENT, POOL } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, POT_HEALING } from '../js/object_data.js';

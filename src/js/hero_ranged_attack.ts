@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { A_DEX, A_STR, P_BOW, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
@@ -33,7 +33,7 @@ import { offerUnicornGem } from './unicorn_gift.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { Position } from './map_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';

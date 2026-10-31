@@ -2,7 +2,9 @@ import { ingSuffix } from './hacklib.js';
 // Inventory selection shared by commands which use NetHack's getobj flow.
 // C ref: invent.c getobj().
 
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, renderKeyPrompt } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
@@ -19,7 +21,7 @@ import { isWeldedPrimary } from './weapon_slots.js';
 import type { GameObject } from './object_types.js';
 import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
-import { putMessageHistory } from './display.js';
+import { putMessageHistory } from './tty_topline.js';
 
 export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
     | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;

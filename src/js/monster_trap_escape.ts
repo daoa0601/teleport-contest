@@ -4,7 +4,7 @@
 import { trapName } from './trap_name.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { BEAR_TRAP, HOLE, PIT, SPIKED_PIT, WEB, is_pit } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { BOULDER } from './object_data.js';
@@ -13,7 +13,7 @@ import { rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { monsterName } from './monster_name.js';
 
 const M1_METALLIVORE = 0x80000000;

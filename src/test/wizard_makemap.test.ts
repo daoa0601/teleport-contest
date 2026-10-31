@@ -4,7 +4,7 @@ import { DUST, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU } from '../js/con
 import { init_dungeons } from '../js/dungeon.js';
 import { makeEngravingAt, readEngravingAt, wipeEngravingAt } from '../js/engrave.js';
 import { initializePet } from '../js/dog.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';

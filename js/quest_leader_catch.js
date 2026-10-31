@@ -2,7 +2,7 @@
 import { deityName } from './alignment.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { STRAT_WAITMASK, isok } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { fullyIdentifyObject } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';

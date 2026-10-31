@@ -8,7 +8,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { applyCannibalPenalty } from '../js/cannibalism.js';
 import { A_INT, M_AP_OBJECT } from '../js/const.js';
 import { applyCorpsePostEffects, applyCorpsePreEffects } from '../js/corpse_eating.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { advanceDisplacementTimeout } from '../js/hero_displacement.js';

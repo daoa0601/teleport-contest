@@ -3,7 +3,8 @@
 import { CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, IS_OBSTRUCTED, IS_TREE, IS_WALL, ROOM, SCORR, SDOOR, SHOPBASE, W_NONDIGGABLE, } from './const.js';
 import { convertSecretDoor } from './detect.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { placeCreatedObject } from './floor_object.js';
 import { requireLiveGame } from './gstate.js';

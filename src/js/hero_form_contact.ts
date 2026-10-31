@@ -1,6 +1,6 @@
 // Native mhitu.c:could_seduce(), mhitm.c:failed_grab(), and weapon.c:silver_sears().
 import { W_AMUL, W_RINGL, W_RINGR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import {
@@ -10,7 +10,7 @@ import { monsterName, possessiveName } from './monster_name.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { AttackTuple } from './monster_action_types.js';

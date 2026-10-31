@@ -1,6 +1,7 @@
 // C mhitm.c:mattackm(), pre_mm_attack(), hitmm(), missmm(), and noises().
 import { M_AP_TYPE, PLNMSG_HIDE_UNDER } from './const.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { heroIsUnaware } from './hero_sleep.js';

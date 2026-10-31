@@ -1,6 +1,6 @@
 // Native read.c:doread(). Effects own their exceptions to scroll disposal.
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroCanChant } from './hero_speech.js';
 import { consumeInventoryItem } from './invent.js';

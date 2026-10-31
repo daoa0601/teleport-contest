@@ -11,7 +11,8 @@ import { currentAttribute } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
-import { plineWithContinuation, see_monsters } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { see_monsters } from './display.js';
 import {
     rankAchievement, recordAchievement,
 } from './achievements.js';
@@ -24,7 +25,7 @@ import {
 import { adjustWeaponSkillSlots } from './skills.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { IntrinsicOrigin } from './property_types.js';
 import type { RoleKey } from './roles.js';

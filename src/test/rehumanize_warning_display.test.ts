@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flush_screen, map_invisible, plineWithContinuation } from '../js/display.js';
+import { flush_screen, map_invisible } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';

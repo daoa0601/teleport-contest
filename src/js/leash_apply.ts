@@ -1,6 +1,7 @@
 // C apply.c:use_leash() and use_leash_core().
 import { isok } from './const.js';
-import { canSpotMonster, map_invisible, plineWithContinuation as pline, unmap_invisible } from './display.js';
+import { canSpotMonster, map_invisible, unmap_invisible } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
