@@ -11,7 +11,7 @@ import { monsterLinedUpWithPerceivedHero } from './monster_ranged_alignment.js';
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './monster_throw.js';
 import { selectMonsterRangedWeapon } from './monster_weapon.js';
-import { recordRandom } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { couldsee } from './vision.js';
 function isFiniteNumber(value) {

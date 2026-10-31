@@ -32,7 +32,7 @@ import {
     monsterMayDigLocation,
     resistConflict,
 } from './mon.js';
-import { DISCARDED_CALL_LOG, recordRandom } from './rng.js';
+import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { couldSeeFromHero } from './vision.js';
 import { trapAt } from './trap.js';
 import {

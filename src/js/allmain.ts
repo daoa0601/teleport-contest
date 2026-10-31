@@ -99,7 +99,8 @@ import type { MonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { d, recordRandom, rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import {
     mklev, l_nhcore_init,
     u_on_upstairs,

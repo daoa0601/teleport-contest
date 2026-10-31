@@ -90,7 +90,7 @@ import { dist2, distmin } from './hacklib.js';
 import {
     DISCARDED_CALL_LOG,
     recordRandom,
-} from './rng.js';
+} from './monster_action_types.js';
 import { monstersInFmonOrder, resistConflict } from './mon.js';
 import { stopMonsterHeldByHero } from './monmove.js';
 import { trapAt } from './trap.js';

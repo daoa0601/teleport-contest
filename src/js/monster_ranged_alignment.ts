@@ -5,7 +5,8 @@ import {
 } from './const.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { BOULDER, WAN_STRIKING } from './object_data.js';
-import { recordRandom, rn2 } from './rng.js';
+import { rn2 } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { clearPath } from './vision.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';

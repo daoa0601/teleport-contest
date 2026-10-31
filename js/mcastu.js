@@ -26,7 +26,7 @@ import { heroIsBlinded, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee, } from './vision.js';
 import { finishDochugAfterMovement, requireDochugContext, } from './monmove.js';
-import { recordRandom } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { finishWizardClone, monsterSpellHasAggravatables } from './wizard.js';
 import { msummon } from './minion.js';
 import { heroEyeCount, heroEyeName, heroHeadName, } from './body_parts.js';

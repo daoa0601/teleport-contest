@@ -15,8 +15,8 @@ import {
 } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import { recordRandom } from './rng.js';
 import type { PlayingGameState } from './game_state.js';
+import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies } from './hero_species.js';
 import {

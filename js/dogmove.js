@@ -2,7 +2,7 @@ import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack } from './allmain.js';
 import { beginMonsterHeroAttack, monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon, speciesHasWeaponAttack, } from './monmove.js';
 import { mfndpos, monAllowFlags, monsterMayDigLocation, resistConflict, } from './mon.js';
-import { DISCARDED_CALL_LOG, recordRandom } from './rng.js';
+import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { couldSeeFromHero } from './vision.js';
 import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor, } from './mhitm.js';

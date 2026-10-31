@@ -2,7 +2,8 @@
 import { BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, Upolyd, isok, } from './const.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { BOULDER, WAN_STRIKING } from './object_data.js';
-import { recordRandom, rn2 } from './rng.js';
+import { rn2 } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { clearPath } from './vision.js';
 const M2_ROCKTHROW = 0x08000000;
 export function monsterLinedUpWithMonster(source, target, state) {

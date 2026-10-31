@@ -27,7 +27,7 @@ import { plineWithContinuation } from './pline.js';
 import { AD_DGST, AD_DRIN, AD_STCK, AD_WRAP, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_SPIT, AT_TENT, AT_WEAP, } from './monster_attack_types.js';
 import { M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NEED_HTH_WEAPON, NEED_WEAPON, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
 import { dist2, distmin } from './hacklib.js';
-import { DISCARDED_CALL_LOG, recordRandom, } from './rng.js';
+import { DISCARDED_CALL_LOG, recordRandom, } from './monster_action_types.js';
 import { monstersInFmonOrder, resistConflict } from './mon.js';
 import { stopMonsterHeldByHero } from './monmove.js';
 import { trapAt } from './trap.js';

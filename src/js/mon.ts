@@ -40,7 +40,8 @@ import {
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
 } from './object_timers.js';
-import { DISCARDED_CALL_LOG, d, rn2, rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
+import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';

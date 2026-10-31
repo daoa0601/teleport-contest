@@ -10,7 +10,7 @@ import { monsterIsHumanoid } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import { recordRandom } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies } from './hero_species.js';
 import { heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, } from './polyself.js';
 import { makePlural } from './object_grammar.js';

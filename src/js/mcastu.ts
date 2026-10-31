@@ -71,7 +71,7 @@ import {
     finishDochugAfterMovement,
     requireDochugContext,
 } from './monmove.js';
-import { recordRandom } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import { finishWizardClone, monsterSpellHasAggravatables } from './wizard.js';
 import { msummon } from './minion.js';
 import {

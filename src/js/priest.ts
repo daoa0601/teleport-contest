@@ -25,7 +25,8 @@ import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { cansee, couldSeeFromHero, couldsee } from './vision.js';
-import { d, recordRandom, rn2 } from './rng.js';
+import { d, rn2 } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import {
     A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED,
     MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS,
