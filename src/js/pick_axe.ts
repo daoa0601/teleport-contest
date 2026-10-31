@@ -73,7 +73,7 @@ export interface PickAxeResult {
 
 interface PickAxeDirectionOptions {
     state?: GameState;
-    attackMonster: (monster: Monster) => void | Promise<unknown>;
+    attackMonster: (monster: Monster, struckAt: Position) => void | Promise<unknown>;
     payShopkeeper: () => void | Promise<unknown>;
 }
 
@@ -212,7 +212,7 @@ async function attackWithTool(
     }
     const verdict = await prepareAppliedWeaponAttack(
         monster, tool, { state, struckAt });
-    if (verdict.proceed) await attackMonster(monster);
+    if (verdict.proceed) await attackMonster(monster, struckAt);
     return true;
 }
 

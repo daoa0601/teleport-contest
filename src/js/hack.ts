@@ -1971,7 +1971,8 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
                 game.u.dz = 0;
                 await applyPickAxeDirection(weapon, {
                     state: game,
-                    attackMonster: monster => attackHostileMonster(monster, monster.mx, monster.my),
+                    attackMonster: (monster, struckAt) =>
+                        attackHostileMonster(monster, struckAt.x, struckAt.y),
                     payShopkeeper: dopay,
                 });
                 return true;
@@ -2622,9 +2623,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             u.dz = 0;
             const result = await applyPickAxeDirection(weapon, {
                 state: game,
-                attackMonster: (target: Monster) => attackHostileMonster(
-                    target, target.mx, target.my,
-                ),
+                attackMonster: (target: Monster, struckAt: Position) =>
+                    attackHostileMonster(target, struckAt.x, struckAt.y),
                 payShopkeeper: dopay,
             });
             if (result.died) return false;
