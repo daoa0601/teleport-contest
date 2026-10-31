@@ -7,12 +7,12 @@ import {
 import {
     cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, terrain_glyph, transientTrapGlyph,
 } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline } from './pline.js';
 import type { DisplayGlyph } from './display.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
+import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './magic_map_display.js';
 import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
@@ -65,18 +65,15 @@ async function revealTerrain(subset: number): Promise<void> {
         await pline('You are too disoriented for this.');
         return;
     }
-    const saved = { water: hero.uinwater, buried: hero.uburied, swallowed: hero.uswallow,
-        underwater: game.underwater, autodescribe: game.iflags.autodescribe };
-    hero.uinwater = false;
-    hero.uburied = false;
-    hero.uswallow = 0;
-    game.underwater = false;
+    // C reveal_terrain(): unconstrain_map() before painting the whole level.
+    const constraints = unconstrainMap(game);
     try {
-        if (saved.water || saved.buried || saved.swallowed) await docrt();
+        if (constraints.changed) await docrt();
         const level = requireGameLevel();
         for (let x = 1; x < COLNO; x++) for (let y = 0; y < ROWNO; y++) {
             const location = level.requireAt(x, y);
-            const glyph = terrainViewGlyph(location, x, y, subset, !!saved.swallowed);
+            const glyph = terrainViewGlyph(location, x, y, subset,
+                !!constraints.saved.uswallow);
             await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
         }
         await flush_screen(1);
@@ -84,32 +81,20 @@ async function revealTerrain(subset: number): Promise<void> {
             ? 'known terrain, traps, and objects' : subset & TER_TRP
                 ? 'known terrain and traps' : 'known terrain';
         await pline(`Showing ${kind} only...`);
-        // C browse_map() -> getpos(): the one-time tip overwrites the prompt,
-        // then the verbose instructions line pages the announcement above
-        // when the two cannot share the topl.  browse_map() also forces
-        // autodescribe on and installs the terrain mode before getpos().
-        const hadTip = await showGetposTip();
-        game.iflags.autodescribe = true;
-        game.iflags.terrainmode = subset;
-        await showGetposInstructions();
-        if (hadTip) await plineWithContinuation('Move cursor to anything of interest:');
-        await selectMapPosition({
-            start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
-            prompt: game._pending_message, force: false,
-        });
+        // C browse_map(): force autodescribe on and browse the temporary
+        // terrain glyphs with the terrain mode active until a spot is picked.
+        await browseDetectionMap(subset | TER_MAP, 'anything of interest', { state: game });
     } finally {
-        if (saved.water === undefined) delete hero.uinwater;
-        else hero.uinwater = saved.water;
-        if (saved.buried === undefined) delete hero.uburied;
-        else hero.uburied = saved.buried;
-        if (saved.swallowed === undefined) delete hero.uswallow;
-        else hero.uswallow = saved.swallowed;
-        if (saved.underwater === undefined) delete game.underwater;
-        else game.underwater = saved.underwater;
-        if (saved.autodescribe === undefined) delete game.iflags.autodescribe;
-        else game.iflags.autodescribe = saved.autodescribe;
-        game.iflags.terrainmode = 0;
-        await docrt();
+        // C map_redisplay(): reconstrain_map(), docrt(), and the deferred
+        // under_water(2)/under_ground(2) that makes the turn's restricted
+        // update perform the full paged reset instead of a viewport repair.
+        await redisplayDetectionMap(constraints, game);
+        // C map_redisplay() refills the glyph buffer but does not flush:
+        // the restored map and status become visible at moveloop's bot()
+        // plus parse()'s flush_screen(1) before the next command key.
+        // doterrain() takes no game time, so that input wait follows the
+        // browse immediately; paint the restored map here to reach the
+        // same on-screen state without waiting for a queued key.
         await flush_screen(1);
     }
 }
