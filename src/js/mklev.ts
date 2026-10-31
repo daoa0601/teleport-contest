@@ -827,7 +827,6 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
         }
         trap.dst = { dnum, dlevel };
     }
-    if (!oldTrap) level.traps.push(trap);
     if (is_pit(typ) || is_hole(typ)) {
         await preparePitOrHoleTerrain(x, y, typ);
     } else if (typ === STATUE_TRAP) {
@@ -925,6 +924,12 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
             trap.launch2 = { x, y };
         }
     }
+    // C trap.c:maketrap() links the new trap into ftrap only after the
+    // per-type construction (trap.c:577). The newsym() from unearth_objs()
+    // inside that construction therefore cannot observe this trap yet: a
+    // hole dug under a standing monster maps the remembered background, not
+    // the fresh tseen hole, into hero memory.
+    if (!oldTrap) level.traps.push(trap);
     if (oldTrap) finishSokobanIfSolved();
     return trap;
 }
