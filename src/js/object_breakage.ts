@@ -4,6 +4,8 @@ import { armorSimpleName } from './armor.js';
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 
 import { objectMaterial } from './object_material.js';
+import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { publishHeardMessage } from './hero_speech.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
@@ -146,7 +148,13 @@ async function applyPotionBreakEffect(
     const profile = heroPotionVaporProfile(state);
     if (object.otyp !== POT_WATER && !state.u?.halfGasDamage) {
         if (!profile.breathless) await publish('You smell a peculiar odor...');
-        else if (profile.hasEyes) await publish('Your eyes water.');
+        else if (profile.hasEyes) {
+            // C dothrow.c breakobj(): the eye name follows the current form's
+            // anatomy, pluralized by eyecount() and tensed by vtense().
+            const eye = heroEyeName(state);
+            const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+            await publish(`Your ${eyes} ${verbForSubject(eyes, 'water')}.`);
+        }
     }
     await applySupportedPotionVapor({ state, potion: object, publish });
     return true;

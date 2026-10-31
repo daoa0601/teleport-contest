@@ -11,6 +11,7 @@ import {
     OBJECT_NAMES, POT_HEALING, POT_OIL, POT_WATER,
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
 import { floorObject, knownObject } from './support/game-objects.js';
@@ -98,6 +99,39 @@ void test('a free potion breaks and gives vapor at its explicit impact square', 
     assert.ok(game.u.uhp > 10);
     assert.equal(potion.where, 'gone');
     assert.ok(messages.some(text => /shatters/.test(text)));
+});
+
+void test('a breathless form with eyes waters its own named eyes in potion vapor', async () => {
+    // C dothrow.c breakobj(): a breathless form with eyes gets
+    // "Your %s water." where %s is body_part(EYE) pluralized by eyecount().
+    const messages: string[] = [];
+    const breakPotionAtHero = async () => {
+        messages.length = 0;
+        const potion = await knownObject(POT_HEALING, { ox: 50, oy: 18 });
+        await breakFloorObject(potion, {
+            x: game.u.ux, y: game.u.uy, fromInventory: true,
+            random: () => 99, publish: text => messages.push(text),
+        });
+    };
+
+    freshGameplayRoom();
+    requirePlayingGame(game);
+    await breakPotionAtHero();
+    assert.ok(messages.includes('You smell a peculiar odor...'));
+
+    freshGameplayRoom({
+        hero: { umonnum: MONSTER_NAME.indexOf('gas spore'), mh: 20, mhmax: 20 },
+    });
+    requirePlayingGame(game);
+    await breakPotionAtHero();
+    assert.ok(messages.includes('Your optic nerves water.'));
+
+    freshGameplayRoom({
+        hero: { umonnum: MONSTER_NAME.indexOf('stone golem'), mh: 20, mhmax: 20 },
+    });
+    requirePlayingGame(game);
+    await breakPotionAtHero();
+    assert.ok(messages.includes('Your eyes water.'));
 });
 
 void test('a blind hero hears a dropped potion shatter without seeing its description', async () => {
