@@ -3,7 +3,7 @@
 // doswapweapon(), dotwoweapon(), and finish_splitting().
 
 import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import {
     commandResultCancelled, commandResultFailed, setMulti,
 } from './command_state.js';

@@ -2,7 +2,7 @@
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), and finish_splitting().
 import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti, } from './command_state.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
 import { LENSES, LOADSTONE, OBJECT_NAMES } from './object_data.js';
