@@ -468,21 +468,16 @@ function monsterIsWere(monster: Monster) {
     return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
 }
 
-function waterEffectSubject(monster: Monster, targetSpotted: boolean) {
-    return targetSpotted ? sentenceSubject(monster) : 'It';
-}
-
 // potion.c:potionhit() shares this exact pain/wake transaction between holy
 // water and acid.  Silence selects writhing and suppresses wake_nearto(); an
 // audible species wakes the level-scaled radius before any damage die.
+// Monnam() also names sensed monsters and the hero's engulfer without sight.
 async function publishPotionPainAndWakeRadius({
-    monster, targetSpotted, wakeNearby, effectName,
+    monster, wakeNearby, effectName,
     publish = plineWithContinuation,
-}: { monster: Monster; targetSpotted: boolean; wakeNearby: PotionWakeNearby | null; effectName: string; publish?: MessagePublisher }): Promise<void> {
+}: { monster: Monster; wakeNearby: PotionWakeNearby | null; effectName: string; publish?: MessagePublisher }): Promise<void> {
     const silent = (MONSTER_SOUND[monster.mnum] ?? 0) === 0;
-    await publish(`${waterEffectSubject(
-        monster, targetSpotted,
-    )} ${silent ? 'writhes' : 'shrieks'} in pain!`);
+    await publish(`${sentenceSubject(monster)} ${silent ? 'writhes' : 'shrieks'} in pain!`);
     if (!silent) {
         if (!wakeNearby)
             throw new Error(`${effectName} wake-radius owner unavailable`);
@@ -754,7 +749,6 @@ async function applySupportedDirectEffect({
         if (!acidResistant && !resisted) {
             await publishPotionPainAndWakeRadius({
                 monster,
-                targetSpotted,
                 wakeNearby,
                 effectName: 'acid',
                 publish,
@@ -804,7 +798,6 @@ async function applySupportedDirectEffect({
             if (potion.blessed) {
                 await publishPotionPainAndWakeRadius({
                     monster,
-                    targetSpotted,
                     wakeNearby,
                     effectName: 'water',
                     publish,
