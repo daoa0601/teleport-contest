@@ -3,6 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { autoDescribePosition } from '../js/getpos.js';
+import { continueRun } from '../js/hack.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C refs: hack.c:findtravelpath() (gt.travelmap), hack.c:is_valid_travelpt(),
 // getpos.c:auto_describe(), cmd.c:dotravel_target().
@@ -36,10 +37,13 @@ void test('travel stops after one step onto a cell marked by an earlier getpos v
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game._pending_message, 'You stop, unsure which way to go.');
     assert.equal(game.multi, 0, 'the stopping step still spends its turn');
+    assert.equal(game.context.move, 1);
     assert.equal(game.context.travel, false);
     assert.equal(game.context.travel1, false);
     assert.equal(game.context.mv, false);
     // The unsure stop keeps the travel destination for a retravel.
     assert.deepEqual(game._travelTarget, { x: 13, y: 10 });
+    assert.equal((await continueRun()).tookTime, false, 'the stopped travel cannot take another step');
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
 //# sourceMappingURL=travel_visited_map.test.js.map
