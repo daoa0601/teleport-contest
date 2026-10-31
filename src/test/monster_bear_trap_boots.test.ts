@@ -1,9 +1,10 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { BEAR_TRAP, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { IRON_SHOES, KICKING_BOOTS, ELVEN_BOOTS, OBJECT_NAMES } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { equipMonsterObject } from './support/monsters.js';

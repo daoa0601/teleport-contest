@@ -21,19 +21,20 @@ import type {
 } from './pet_ranged_types.js';
 import {
     beginMonsterHeroAttack,
-    couldSeeFromHero,
-    DISCARDED_CALL_LOG,
-    mfndpos,
-    monAllowFlags,
     monsterAvoidsKickedLocation,
     monsterAvoidsSokobanPushLocation,
-    monsterMayDigLocation,
     readyMonsterDiggingWeapon,
-    recordRandom,
-    resistConflict,
     speciesHasWeaponAttack,
-    trapAt,
 } from './monmove.js';
+import {
+    mfndpos,
+    monAllowFlags,
+    monsterMayDigLocation,
+    resistConflict,
+} from './mon.js';
+import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
+import { couldSeeFromHero } from './vision.js';
+import { trapAt } from './trap.js';
 import {
     attackMonsterWithMonster,
     beginMonsterMeleeAttack,

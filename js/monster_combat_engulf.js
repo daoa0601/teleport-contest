@@ -11,7 +11,7 @@ import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { d, rn2, rnd } from './rng.js';
 import { goodPosition } from './teleport_rules.js';
 import { cansee } from './vision.js';

@@ -9,7 +9,7 @@ import { plineWithContinuation } from './pline.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { gotoLevel } from './level_change.js';
-import { triggerImmediateMonsterTrap, finishImmediateMonsterTrap } from './monmove.js';
+import { triggerImmediateMonsterTrap, finishImmediateMonsterTrap } from './trap.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
 import { rewardMonsterRescue } from './untrap.js';

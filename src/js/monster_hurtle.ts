@@ -27,7 +27,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import {
     finishImmediateMonsterTrap, triggerImmediateMonsterTrap,
-} from './monmove.js';
+} from './trap.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterWearsTorsoArmor, petrifyMonsterImmediately } from './monster_stoning.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';

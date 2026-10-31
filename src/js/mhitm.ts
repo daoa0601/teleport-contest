@@ -89,12 +89,11 @@ import {
 import { dist2, distmin } from './hacklib.js';
 import {
     DISCARDED_CALL_LOG,
-    monstersInFmonOrder,
     recordRandom,
-    resistConflict,
-    stopMonsterHeldByHero,
-    trapAt,
-} from './monmove.js';
+} from './monster_action_types.js';
+import { monstersInFmonOrder, resistConflict } from './mon.js';
+import { stopMonsterHeldByHero } from './monmove.js';
+import { trapAt } from './trap.js';
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;

@@ -93,6 +93,21 @@ export function monsterAtPosition<T extends MonsterPosition>(
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
 
+// C m_at(): the live occupant of a square, ignoring one actor and skipping
+// the dead. Movement destination scans and item-use proximity share this.
+export function monsterAt(
+    state: GameState, x: number, y: number, ignore: Monster | null = null,
+): Monster | null {
+    return state?.level?.monsters?.find(
+        (monster) =>
+            monsterHasMapPosition(monster, state) &&
+            monster !== ignore &&
+            (monster.mhp ?? 1) > 0 &&
+            monster.mx === x &&
+            monster.my === y,
+    ) || null;
+}
+
 // remove_monster() clears the mounted actor's map slot, without unlinking
 // it from fmon or changing mstate. Its coordinates still follow the hero.
 export function monsterHasMapPosition(

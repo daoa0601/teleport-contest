@@ -17,7 +17,7 @@ import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, monsterIsUndead, monsterIsVampireShifter, requireMonsterData, } from './monster_data.js';
 import { makeMonsterFlee } from './monster_flee.js';
-import { monstersInFmonOrder } from './monmove.js';
+import { monstersInFmonOrder } from './mon.js';
 import { tameMonster } from './monster_taming.js';
 import { novelTitle } from './novel_titles.js';
 import { readNovelTribute } from './novel_tribute.js';

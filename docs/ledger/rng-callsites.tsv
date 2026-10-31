@@ -1338,20 +1338,20 @@ src/js/mon.ts	resolveMonsterLiquid	random	"[""8""]"	constant
 src/js/mon.ts	resolveMonsterLiquid	random	"[""monster.mhp""]"	guarded
 src/js/mon.ts	rollMonsterPoolReaction	random	"[""5""]"	constant
 src/js/mon.ts	rollMonsterPoolReaction	rollDice	"[""2"", ""6""]"	constant
-src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
-src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
-src/js/monmove.ts	fumaroles	rn2	"[""3""]"	constant
-src/js/monmove.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
-src/js/monmove.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
+src/js/mkmaze.ts	fumaroles	rn2	"[""10""]"	constant
+src/js/mkmaze.ts	fumaroles	rn2	"[""10""]"	constant
+src/js/mkmaze.ts	fumaroles	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
+src/js/mkmaze.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
 src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
 src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
 src/js/monmove.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
 src/js/monmove.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
-src/js/monmove.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
+src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved
-src/js/monmove.ts	triggerMonsterTrap	rnl	"[""5""]"	constant
+src/js/trap.ts	triggerMonsterTrap	rnl	"[""5""]"	constant
 src/js/monster_anger.ts	aggravateMonsters	random	"[""5""]"	constant
 src/js/monster_anger.ts	angerMonster	rnd	"[""5""]"	constant
 src/js/monster_anger.ts	maybeHumanoidGasp	rn2	"[""HUMANOID_GASP_EXCLAMATIONS.length""]"	constant

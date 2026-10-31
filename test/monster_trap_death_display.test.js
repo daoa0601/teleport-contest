@@ -1,10 +1,10 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, LANDMINE, NO_MINVENT, PIT, ROCKTRAP, SPIKED_PIT, } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';

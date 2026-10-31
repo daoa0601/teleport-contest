@@ -12,7 +12,7 @@ import { AD_MAGM, AD_SPC2 } from './monster_attack_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { seenResistanceForDamage } from './monster_perception.js';
-import { monsterLinedUpWithPerceivedHero } from './monmove.js';
+import { monsterLinedUpWithPerceivedHero } from './monster_ranged_alignment.js';
 import { d, rn2, rnd } from './rng.js';
 import { displayRayName } from './ray_name.js';
 import { heroIsDeaf } from './senses.js';

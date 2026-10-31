@@ -1,11 +1,11 @@
+import { mfndpos } from '../js/mon.js';
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {
-    mfndpos, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
-} from '../js/monmove.js';
+
 import { placeMonsterAt } from '../js/monster_location.js';
 import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
 import { ROCK } from '../js/object_data.js';

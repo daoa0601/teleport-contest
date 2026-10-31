@@ -72,7 +72,7 @@ import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall,
     onQuestStart, okToQuest,
 } from './quest.js';
-import { fumaroles } from './monmove.js';
+import { fumaroles } from './mkmaze.js';
 import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,

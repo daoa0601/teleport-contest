@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,7 +7,6 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { newsym } from '../js/display.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from '../js/monster_pit_trap.js';
 import { pushKeys } from '../js/input.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, STATUE, } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

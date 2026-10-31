@@ -8,7 +8,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { rn2 } from './rng.js';
 import { goodPosition } from './teleport_rules.js';

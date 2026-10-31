@@ -13,7 +13,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { fractureRock } from './rock_breakage.js';

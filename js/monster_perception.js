@@ -13,6 +13,13 @@ import { isAccessibleAt } from './terrain_properties.js';
 import { D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, isok, } from './const.js';
 import { isContainer } from './container.js';
 import { ARROW, BAG_OF_HOLDING, BAG_OF_TRICKS, BLINDFOLD, BOOMERANG, CANDY_BAR, CORPSE, CREDIT_CARD, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEASH, LEATHER_JACKET, LEMBAS_WAFER, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_MARKER, MAGIC_WHISTLE, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, } from './object_data.js';
+// Movement and ranged-attack code asserts the remembered apparent-hero
+// coordinate before using it; makemon() and dochug() establish it first.
+export function requirePerceivedHero(monster) {
+    if (typeof monster.mux !== 'number' || !Number.isFinite(monster.mux)
+        || typeof monster.muy !== 'number' || !Number.isFinite(monster.muy))
+        throw new Error('An active monster must retain its perceived hero position');
+}
 const M1_WALLWALK = 0x00000008;
 const M1_SEE_INVIS = 0x01000000;
 const PM_FOG_CLOUD = 106;

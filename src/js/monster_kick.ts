@@ -45,7 +45,7 @@ import { invWeight, weightCapacity } from './weight.js';
 import {
     finishImmediateMonsterTrap,
     triggerImmediateMonsterTrap,
-} from './monmove.js';
+} from './trap.js';
 
 const M1_FLY = 0x00000001;
 const M1_NOEYES = 0x00001000;

@@ -1,10 +1,10 @@
+import { mfndpos } from '../js/mon.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, NO_MINVENT, ROOM } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
-import { mfndpos } from '../js/monmove.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';

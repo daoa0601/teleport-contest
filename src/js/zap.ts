@@ -46,7 +46,7 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { monsterResistanceBits } from './monster_resistance.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import {

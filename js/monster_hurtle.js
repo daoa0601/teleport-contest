@@ -12,7 +12,7 @@ import { monsterName } from './monster_name.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, } from './trap.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterWearsTorsoArmor, petrifyMonsterImmediately } from './monster_stoning.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';

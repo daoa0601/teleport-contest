@@ -2,7 +2,7 @@
 // C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
 // water_damage(), and erode_obj().
 import { formatSeenMessage } from './hero_speech.js';
-import { Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
@@ -10,15 +10,15 @@ import { objectDescription as fullObjectDescription } from './object_description
 import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
-import { game } from './gstate.js';
+import { game, requireInitializedGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
+import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
-import { isPoolAt, monsterFliesOrFloats } from './terrain_properties.js';
+import { isPoolAt, levelHasCeiling, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
-import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
 import { erodeObject } from './object_erosion.js';
@@ -29,10 +29,37 @@ import { objectResistsDestruction } from './object_state.js';
 import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
-import { rnl, rn2, rnd } from './rng.js';
-import { canSeeMonster, map_trap, newsym } from './display.js';
+import { d, rnl, rn2, rnd } from './rng.js';
+import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
+import { plineWithContinuation } from './pline.js';
+import { canSeeMonster, canSpotMonster, map_trap, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
 import { verbForSubject } from './object_grammar.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance, } from './anti_magic_trap.js';
+import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
+import { beginMonsterFireTrap, finishMonsterFireTrap } from './fire_trap.js';
+import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume, } from './landmine_trap.js';
+import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
+import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
+import { beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume, } from './projectile_trap.js';
+import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume, } from './sleep_gas_trap.js';
+import { beginMonsterSqueakyBoard, finishMonsterSqueakyBoard } from './squeaky_board_trap.js';
+import { beginMonsterVibratingSquare, finishMonsterVibratingSquare, } from './vibrating_square_trap.js';
+import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymorph_trap.js';
+import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
+import { finishMonsterWebTrap } from './web_trap.js';
+import { tryMonsterTrapEscape } from './monster_trap_escape.js';
+import { launchRollingBoulder } from './rolling_boulder.js';
+import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, } from './teleport.js';
+import { canFallThrough } from './mklev.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
+import { angerMonster } from './monster_anger.js';
+import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterResistsSleep } from './monster_sleep.js';
+import { monsterHasFireResistance } from './monster_resistance.js';
+import { maybeUnhideAt } from './monster_hiding.js';
+import { completeMovedMonsterAction, moveMonsterAfterTrap, requireMovementCapabilities, } from './monmove.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export async function seeTrap(trap, state = game) {
     if (trap.tseen)
@@ -60,6 +87,15 @@ const FIRE_RESISTANT_OBJECTS = new Set([
     RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE,
 ]);
+const M1_FLY = 0x00000001;
+const M1_AMORPHOUS = 0x00000004;
+const M1_CLING = 0x00000010;
+const M1_MINDLESS = 0x00010000;
+const M1_UNSOLID = 0x00100000;
+const S_EYE = 5;
+const S_LIGHT = 25;
+const S_VORTEX = 22;
+const PM_AIR_ELEMENTAL = 154;
 function lavaCanBurnObject(object, random) {
     if (!object || object.in_use || object.oerodeproof)
         return false;
@@ -618,5 +654,667 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
     if (monster.mnum === PM_IRON_GOLEM)
         event.completelyRusted = true;
     return event;
+}
+// ---------------------------------------------------------------------------
+// C trap.c:mintrap() and the monster trap-effect completions it defers.
+// ---------------------------------------------------------------------------
+// C trap.c:t_at(). The level keeps at most one trap per square.
+export function trapAt(state, x, y) {
+    return state?.level?.traps?.find((trap) => trap.tx === x && trap.ty === y);
+}
+// C trap.c:floor_trigger(). These traps require contact with the floor even
+// when their eventual effect (a dart or falling rock) could hit a flyer.
+export function trapTriggeredByFloor(trap) {
+    return [ARROW_TRAP, DART_TRAP, ROCKTRAP, SQKY_BOARD, BEAR_TRAP,
+        LANDMINE, ROLLING_BOULDER_TRAP, SLP_GAS_TRAP, RUST_TRAP, FIRE_TRAP,
+        PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+}
+// C ref: trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
+// candidate info; dog_move() then applies its separate hero-seen 1/40 rule.
+export function monsterTrapIsHarmless(monster, trap, state) {
+    const speciesFlags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    const airborne = speciesFlags & M1_FLY || symbol === S_EYE || symbol === S_LIGHT;
+    const sokoban = state.level.flags.sokoban_rules;
+    const floorTriggered = trapTriggeredByFloor(trap);
+    if (!sokoban && floorTriggered && airborne)
+        return true;
+    const whirly = symbol === S_VORTEX || monster.mnum === PM_AIR_ELEMENTAL;
+    switch (trap.ttyp) {
+        case BEAR_TRAP:
+            return ((MONSTER_SIZE[monster.mnum] ?? 2) <= 1 ||
+                !!(speciesFlags & (M1_AMORPHOUS | M1_UNSOLID)) ||
+                whirly);
+        case WEB:
+            return (!!(speciesFlags & (M1_AMORPHOUS | M1_UNSOLID)) ||
+                [94, 96].includes(monster.mnum) ||
+                whirly);
+        case SLP_GAS_TRAP:
+            return monsterResistsSleep(monster);
+        case RUST_TRAP:
+            return monster.mnum !== PM_IRON_GOLEM;
+        case FIRE_TRAP:
+            return monsterHasFireResistance(monster);
+        case PIT:
+        case SPIKED_PIT:
+        case HOLE:
+        case TRAPDOOR:
+            return !!(speciesFlags & M1_CLING) && !sokoban;
+        case ANTI_MAGIC:
+            return monsterHasMagicResistance(monster);
+        case STATUE_TRAP:
+        case MAGIC_TRAP:
+        case VIBRATING_SQUARE:
+            return true;
+        default:
+            return false;
+    }
+}
+// C trap.c:mintrap(). Called from m_move()/postmov() after a monster steps
+// onto a square, and from the source effects below via the immediate entry.
+export async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
+    const trap = trapAt(state, monster.mx, monster.my);
+    if (!trap || monster.mtrapped)
+        return null;
+    const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
+        && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+    const fixedTeleport = trap.ttyp === TELEP_TRAP && trap.teledest
+        && isok(trap.teledest.x, trap.teledest.y);
+    const forced = movement.forcedTrapLanding || fixedTeleport;
+    if (monster !== state.u.usteed && !sokobanFall && !forced) {
+        if (monsterFliesOrFloats(monster) && trapTriggeredByFloor(trap))
+            return null;
+        const alreadyKnown = monsterKnowsTrap(monster, trap)
+            || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
+        if (alreadyKnown && recordRandom(random, calls, 4) !== 0
+            && !movement.forcedTrapBungle) {
+            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            return event;
+        }
+    }
+    monsterLearnsTrap(monster, trap);
+    monstersSeeTrap(state, trap);
+    if (trap.madeby_u && rnl(5))
+        await angerMonster(monster);
+    if (trap.ttyp === STATUE_TRAP) {
+        // C mintrap() teaches the type before trapeffect_statue_trap()
+        // declines to animate statues for monsters.
+        return null;
+    }
+    if (trap.ttyp === MAGIC_PORTAL) {
+        const event = await teleportMonsterThroughPortal(monster, trap, {
+            state, random, force: !!movement.forcedTrapLanding, publish,
+        });
+        if (event) {
+            movement.trap = event;
+            movement.actorLeftLevel = true;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+        }
+        return event;
+    }
+    if (trap.ttyp === LEVEL_TELEP) {
+        const event = await teleportMonsterToRandomLevel(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding,
+        });
+        if (event) {
+            movement.trap = event;
+            movement.actorLeftLevel = true;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+        }
+        return event;
+    }
+    if (trap.ttyp === TELEP_TRAP) {
+        const event = await teleportMonsterFromTrap(monster, trap, {
+            state,
+            calls,
+            random,
+            rollOne,
+            publish,
+        });
+        movement.trap = event;
+        movement.postMoveStatus = MMOVE_DIED;
+        movement.actionCompleted = true;
+        if (event.relocation) {
+            movement.x = event.relocation.x;
+            movement.y = event.relocation.y;
+            movement.moved = movement.oldx !== movement.x || movement.oldy !== movement.y;
+        }
+        return event;
+    }
+    if (trap.ttyp === RUST_TRAP) {
+        const event = await beginMonsterRustTrap(monster, trap, state, {
+            random: (range) => recordRandom(random, calls, range),
+        });
+        movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
+        const event = beginMonsterPitTrap(monster, trap, state, {
+            forced: !!movement.forcedTrapLanding,
+        });
+        if (!event)
+            return null;
+        movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
+        // mintrap() handles avoidance and learning before trapeffect_hole()
+        // discovers that this level has nowhere to fall.
+        if (!canFallThrough(state.u.uz))
+            return null;
+        const clinging = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING) && levelHasCeiling(state);
+        const airborne = monsterFliesOrFloats(monster) || clinging;
+        const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
+        const longWorm = !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
+        if (airborne || tooLarge || longWorm) {
+            const seen = canSeeMonster(monster) || monster === state.u.usteed;
+            if (movement.forcedTrapLanding && !state.level.flags.sokoban_rules) {
+                if (seen) {
+                    await seeTrap(trap, state);
+                    await publish(trap.ttyp === TRAPDOOR
+                        ? `A trap door opens, but ${canonicalMonsterName(monster, { state })} doesn't fall through.`
+                        : `${canonicalMonsterName(monster, { state, capitalized: true })} doesn't fall through the hole.`);
+                }
+                return null;
+            }
+            if (!movement.forcedTrapLanding && !sokobanFall)
+                return null;
+            if (seen) {
+                await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} seems to be yanked down!`);
+                await seeTrap(trap, state);
+            }
+        }
+        const event = await teleportMonsterThroughHole(monster, trap, {
+            state, force: !!movement.forcedTrapLanding, publish,
+        });
+        if (!event)
+            return null;
+        movement.trap = event;
+        movement.actorLeftLevel = true;
+        movement.postMoveStatus = MMOVE_DIED;
+        movement.actionCompleted = true;
+        return event;
+    }
+    if (trap.ttyp === ROLLING_BOULDER_TRAP) {
+        // trap.c:trapeffect_rolling_boulder_trap()->launch_obj().  Airborne
+        // actors do not depress the trigger even when forced.
+        if (monsterInAir(monster, state))
+            return null;
+        const inSight = state.u.usteed === monster
+            || cansee(monster.mx, monster.my) && canSpotMonster(monster);
+        const wasSeen = !!trap.tseen;
+        await newsym(monster.mx, monster.my);
+        if (inSight)
+            await publish(`${heroIsDeaf(state) ? '' : 'Click!  '}${canonicalMonsterName(monster, { state, capitalized: true })} triggers ${wasSeen ? 'a rolling boulder trap' : 'something'}.`);
+        const launch = trap.launch;
+        const endpoint = trap.launch2 ?? launch;
+        const released = await launchRollingBoulder(launch, endpoint, {
+            state, unseen: !inSight, publish, random, rollOne, rollDice,
+        });
+        if (released && inSight)
+            trap.tseen = true;
+        const event = {
+            kind: 'rolling-boulder', trap,
+            released, killed: !!monster.dead || monster.mhp <= 0,
+            heroDied: !!state.program_state.gameover,
+        };
+        movement.trap = event;
+        if (event.killed) {
+            movement.actorDied = true;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+        }
+        return event;
+    }
+    if (trap.ttyp === SQKY_BOARD) {
+        const event = beginMonsterSqueakyBoard(monster, trap, state);
+        if (!event)
+            return null;
+        movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === SLP_GAS_TRAP) {
+        const event = await beginMonsterSleepGasTrap(monster, trap, state, {
+            rollOne: (range) => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
+        movement.trap = event;
+        if (sleepGasTrapNeedsResume(event))
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
+        const event = await beginMonsterProjectileTrap(monster, trap, state, {
+            random: (range) => recordRandom(random, calls, range),
+            rollOne: (range) => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
+        movement.trap = event;
+        if (projectileTrapNeedsResume(event))
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === ROCKTRAP) {
+        const event = await beginMonsterRockTrap(monster, trap, state, {
+            random: (range) => recordRandom(random, calls, range),
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+        });
+        movement.trap = event;
+        if (rockTrapNeedsResume(event))
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === LANDMINE) {
+        const event = beginMonsterLandMine(monster, trap, state, {
+            random: (range) => recordRandom(random, calls, range),
+            rollOne: (range) => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
+        });
+        movement.trap = event;
+        if (landMineNeedsResume(event))
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === FIRE_TRAP) {
+        const event = beginMonsterFireTrap(monster, trap, state, {
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+        });
+        movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === WEB) {
+        // trap.c:mintrap() checks learned-trap avoidance, then projects trap
+        // knowledge, before delegating to trapeffect_web().  Only the effect
+        // discovers that webmakers cross safely, so they still learn an
+        // unknown web and own later avoidance probes.
+        if ([94, 96].includes(monster.mnum))
+            return null;
+        const { inSight } = monsterTrapVisibility(monster, state);
+        const event = {
+            kind: 'web-trap',
+            trap,
+            visible: inSight,
+            damage: 0,
+            killed: false,
+        };
+        movement.trap = event;
+        movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === MAGIC_TRAP) {
+        // mintrap() still triggers traps which m_harmless_trap() allowed the
+        // monster to enter.  A monster which has learned this trap type gets
+        // the ordinary 3-in-4 avoidance check before the effect selector.
+        const fire = recordRandom(random, calls, 21) === 0;
+        if (fire) {
+            const event = beginMonsterFireTrap(monster, trap, state, {
+                rollDice: (count, sides) => {
+                    const result = rollDice(count, sides);
+                    calls.push(`d(${count},${sides})`);
+                    return result;
+                },
+            });
+            movement.trap = event;
+            movement.deferredAfterMonsterTrap = true;
+            return event;
+        }
+        const event = {
+            kind: 'magic-trap',
+            trap,
+            damage: 0,
+            killed: false,
+        };
+        movement.trap = event;
+        return event;
+    }
+    if (trap.ttyp === ANTI_MAGIC) {
+        const effect = await applyMonsterAntiMagicTrap(monster, {
+            trap, state,
+            rollDice: (count, sides) => {
+                const result = rollDice(count, sides);
+                calls.push(`d(${count},${sides})`);
+                return result;
+            },
+            rollOne: (sides) => {
+                const result = rollOne(sides);
+                calls.push(`rnd(${sides})`);
+                return result;
+            },
+        });
+        const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
+        const event = {
+            trap,
+            ...effect,
+            inSight,
+            seeSquare,
+            visible: inSight,
+        };
+        if (inSight && effect.energyDrain > 0)
+            movement.deferredAfterMonsterTrap = true;
+        if (effect.kind === 'anti-magic-damage')
+            movement.deferredAfterMonsterTrap = true;
+        if (effect.killed) {
+            movement.actorDied = true;
+            movement.actionCompleted = true;
+        }
+        movement.trap = event;
+        return event;
+    }
+    if (trap.ttyp === POLY_TRAP) {
+        const event = await applyMonsterPolymorphTrap(monster, trap, state, {
+            random: (range) => recordRandom(random, calls, range),
+        });
+        movement.trap = event;
+        if (!event.finished)
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp === VIBRATING_SQUARE) {
+        const event = beginMonsterVibratingSquare(monster, trap, state);
+        movement.trap = event;
+        if (!event.finished)
+            movement.deferredAfterMonsterTrap = true;
+        return event;
+    }
+    if (trap.ttyp !== BEAR_TRAP)
+        return null;
+    const event = beginMonsterBearTrap(monster, trap, state, {
+        forced: !!movement.forcedTrapLanding,
+    });
+    movement.trap = event;
+    if (!event.finished || event.forced)
+        movement.deferredAfterMonsterTrap = true;
+    return event;
+}
+// C trap.c:mintrap() entry for actors placed by a source effect rather than
+// by m_move()/postmov().  The trap engine remains the single state/RNG owner;
+// this boundary intentionally does not run tunneling, pickup, concealment,
+// distfleeck(), or an attack tail.  Callers must present and resume any
+// deferred trap event before continuing their own source transaction.
+export async function triggerImmediateMonsterTrap(monster, state = requireInitializedGame(), { inAir = false, force = false, forceBungle = false, random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, } = {}) {
+    const calls = DISCARDED_CALL_LOG;
+    const movement = {
+        oldx: monster?.mx,
+        oldy: monster?.my,
+        x: monster?.mx,
+        y: monster?.my,
+        moved: false,
+        immediateTrap: true,
+        forcedTrapLanding: force,
+        forcedTrapBungle: forceBungle,
+    };
+    const trap = trapAt(state, monster.mx, monster.my);
+    if (!trap) {
+        monster.mtrapped = 0;
+        return { monster, movement, event: null, calls };
+    }
+    const floorTriggered = trapTriggeredByFloor(trap);
+    const sokobanFall = state.level.flags.sokoban_rules &&
+        !trap.madeby_u &&
+        [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+    // C mintrap() takes its already-trapped branch before any check_in_air().
+    if (monster.mtrapped) {
+        movement.escapingTrap = true;
+        return { monster, movement, event: null, calls };
+    }
+    if (inAir && floorTriggered && !sokobanFall)
+        return { monster, movement, event: null, calls };
+    const event = await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish);
+    return { monster, movement, event, calls };
+}
+// Finish the m_move()/postmov() tail which was interrupted by a deferred
+// trap effect presentation. This is the continuation m_move() would have
+// run synchronously in C.
+async function continueAfterMonsterTrap(action, state, random, rollDice, rollOne, calls) {
+    if (action.movement?.immediateTrap)
+        return action;
+    if (action.movement.postMoveStatus === MMOVE_MOVED)
+        requireMovementCapabilities(action.movement).species = action.monster.mnum;
+    await completeMovedMonsterAction(action.monster, action.movement, state, random, rollDice, rollOne, calls, action.dochugContext, { trapAlreadyHandled: true });
+    return action;
+}
+// Complete mintrap() for a source effect without running a movement tail.
+// C mintrap() gives an already trapped monster its escape roll whatever the
+// caller's flags, so a monster caught mid-hurtle rolls again on landing.
+export async function finishImmediateMonsterTrap(action, state = requireInitializedGame(), { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath, describeMonster } = {}) {
+    if (action.event?.kind === 'rolling-boulder')
+        return action;
+    await resumeDeferredMonsterTrap(action, state, {
+        publish, random, rollOne, rollDice,
+        ...(finishDeath ? { finishDeath } : {}),
+        ...(describeMonster ? { describeMonster } : {}),
+    });
+    return action;
+}
+// Resume a deferred monster trap event: the trapped monster's escape roll,
+// the deferred trap-effect completions, and the m_move() tail that follows.
+export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
+    const movement = action?.movement;
+    if (movement?.escapingTrap) {
+        await tryMonsterTrapEscape(action.monster, state, {
+            random,
+            publish,
+            ...(describeMonster ? { describeMonster } : {}),
+        });
+        delete movement.escapingTrap;
+        if (!movement.immediateTrap) {
+            const held = action.monster.mtrapped
+                ? {
+                    ...movement,
+                    trapped: true,
+                    postMoveStatus: MMOVE_NOTHING,
+                    movementStage: 'dochug',
+                }
+                : null;
+            const next = await moveMonsterAfterTrap(action.monster, state, random, rollDice, rollOne, action.calls, action.dochugContext, held);
+            action.movement = next.movement;
+        }
+        return action;
+    }
+    const event = movement?.trap;
+    if (!movement?.deferredAfterMonsterTrap)
+        return action;
+    delete movement.deferredAfterMonsterTrap;
+    const calls = action.calls || DISCARDED_CALL_LOG;
+    const recordedRandom = (range) => recordRandom(random, calls, range);
+    const recordedRollOne = (range) => {
+        const result = rollOne(range);
+        calls.push(`rnd(${range})`);
+        return result;
+    };
+    if (!event)
+        throw new Error('A deferred monster trap must retain its event');
+    switch (event.kind) {
+        case 'web-trap':
+            await finishMonsterWebTrap(action.monster, event.trap, {
+                state,
+                publish,
+                ...(describeMonster ? { subject: describeMonster } : {}),
+            });
+            break;
+        case 'bear-trap':
+            await finishMonsterBearTrap(action.monster, event, state, {
+                publish,
+                random,
+                rollDice,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            break;
+        case 'rust-trap':
+            await finishMonsterRustTrap(action.monster, event, state, {
+                publish,
+                random: recordedRandom,
+            });
+            break;
+        case 'projectile-trap':
+        case 'spent-projectile-trap':
+            await finishMonsterProjectileTrap(action.monster, event, state, {
+                publish,
+                random,
+                rollOne: recordedRollOne,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            break;
+        case 'anti-magic-drain':
+        case 'anti-magic-damage': {
+            const death = await finishMonsterAntiMagicTrap(action.monster, event, state, {
+                random,
+                publish,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            if (death) {
+                event.death = death;
+                if (death.survived) {
+                    event.killed = false;
+                    movement.actorDied = false;
+                    movement.actionCompleted = false;
+                }
+            }
+            break;
+        }
+        case 'fire-trap':
+            await finishMonsterFireTrap(action.monster, event, state, {
+                publish,
+                random,
+                rollOne,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            break;
+        case 'land-mine': {
+            // A victim relocated by the blast meets mintrap(FORCETRAP) at
+            // its new square, which may end its stay on this level.
+            const relocated = { action: null };
+            await finishMonsterLandMine(action.monster, event, state, {
+                finishDeath,
+                publish,
+                random: recordedRandom,
+                rollOne: recordedRollOne,
+                ...(describeMonster ? { describeMonster } : {}),
+                forceTrapAtMonster: async (victim) => {
+                    relocated.action = await finishImmediateMonsterTrap(await triggerImmediateMonsterTrap(victim, state, {
+                        force: true, random: recordedRandom, rollOne: recordedRollOne,
+                        rollDice, publish,
+                    }), state, {
+                        publish, random: recordedRandom, rollOne: recordedRollOne, rollDice,
+                        finishDeath,
+                        ...(describeMonster ? { describeMonster } : {}),
+                    });
+                },
+            });
+            const nested = relocated.action?.movement;
+            if (nested?.heroDied)
+                movement.heroDied = true;
+            if (nested?.actorLeftLevel && !movement.heroDied) {
+                movement.actorLeftLevel = true;
+                movement.actionCompleted = true;
+                return action;
+            }
+            break;
+        }
+        case 'pit-trap':
+            await finishMonsterPitTrap(action.monster, event, {
+                publish,
+                random,
+                rollOne: recordedRollOne,
+                ...(describeMonster ? { describeMonster } : {}),
+                state,
+            });
+            break;
+        case 'falling-rock':
+        case 'spent-rock-trap':
+            await finishMonsterRockTrap(action.monster, event, state, {
+                publish,
+                random,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            break;
+        case 'sleep-gas':
+            await finishMonsterSleepGasTrap(action.monster, event, {
+                state,
+                publish,
+                ...(describeMonster ? { describeMonster } : {}),
+            });
+            break;
+        case 'squeaky-board':
+            await finishMonsterSqueakyBoard(action.monster, event, state, {
+                publish,
+            });
+            break;
+        case 'vibrating-square':
+            await finishMonsterVibratingSquare(action.monster, event, {
+                state,
+                publish,
+            });
+            break;
+        case 'polymorph-trap':
+            await finishMonsterPolymorphTrap(event, {
+                finishDeath,
+                publish,
+                state,
+            });
+            break;
+        case 'anti-magic':
+        case 'anti-magic-shoes':
+        case 'known-trap-avoided':
+        case 'level-fall-migration':
+        case 'level-migration':
+        case 'limbo-migration':
+        case 'magic-portal-migration':
+        case 'magic-trap':
+        case 'rolling-boulder':
+        case 'shop-return':
+        case 'teleport-trap':
+            throw new Error(`Trap ${event.kind} has no ordinary deferred continuation`);
+    }
+    // C trap.c:3831-3837: a monster newly caught by the trap cannot stay
+    // hidden under an object; a first sighting reports that it appears.
+    if (!action.monster.dead && (action.monster.mhp ?? 0) > 0
+        && action.monster.mtrapped) {
+        const alreadySpotted = canSpotMonster(action.monster);
+        await maybeUnhideAt(action.monster.mx, action.monster.my, state);
+        if (!alreadySpotted && canSeeMonster(action.monster)) {
+            await publish(`${canonicalMonsterName(action.monster, {
+                state, capitalized: true, article: 'a',
+            })} appears.`);
+        }
+    }
+    if (('heroDied' in event && event.heroDied)
+        || ('death' in event && event.death?.heroDied)
+        || state.program_state.gameover) {
+        movement.heroDied = true;
+        return action;
+    }
+    if ('killed' in event && event.killed) {
+        movement.actorDied = true;
+        movement.postMoveStatus = MMOVE_DIED;
+        movement.actionCompleted = true;
+        return action;
+    }
+    await continueAfterMonsterTrap(action, state, random, rollDice, rollOne, calls);
+    return action;
 }
 //# sourceMappingURL=trap.js.map

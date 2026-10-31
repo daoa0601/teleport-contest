@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import { createDungeon } from './support/topology.js';
 import type { Trap } from '../js/map_types.js';
 import { requirePlayingGame } from '../js/gstate.js';
@@ -20,7 +21,7 @@ import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { triggerHeroTrapAt } from '../js/hero_traps.js';
 import { heroLiquidEffects } from '../js/hack.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/monster_worm.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { deleteFloorTrap, maketrap } from '../js/mklev.js';

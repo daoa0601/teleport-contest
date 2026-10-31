@@ -1,3 +1,4 @@
+import { mfndpos } from '../js/mon.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
@@ -9,7 +10,7 @@ import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mfndpos } from '../js/monmove.js';
+
 import { resolveMonsterDoorPassage, shiftMonsterForDoor } from '../js/monster_door_passage.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

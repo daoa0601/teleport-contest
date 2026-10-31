@@ -1,7 +1,9 @@
-// priest.js — Runtime temple ownership and entry feedback.
-// C refs: priest.c intemple()/findpriest()/has_shrine().  Level construction
-// owns the room, altar, and resident; this module owns their live relationship
-// with the hero after movement or a level transition.
+// priest.js — Runtime temple ownership, priest and shopkeeper movement.
+// C refs: priest.c intemple()/findpriest()/has_shrine()/pri_move()/
+// move_special().  Level construction owns the room, altar, and resident;
+// this module owns their live relationship with the hero after movement or
+// a level transition, and the special mover both temple priests and
+// shopkeepers use to reach a goal square.
 
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -16,28 +18,42 @@ import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import { canSeeMonster, canSpotMonster } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
-import { cansee, couldsee } from './vision.js';
+import { cansee, couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
+import { recordRandom } from './monster_action_types.js';
 import {
-    A_NONE, A_WIS, AM_SHRINE, MM_EPRI, ROOMOFFSET, SPACE_POS,
-    Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, RLOC_NOMSG,
+    A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED,
+    MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS,
+    Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE,
     ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
-import { MONSTER_FLAGS2 } from './monster_data.js';
+import { dist2, pointsOnline } from './hacklib.js';
+import { mfndpos, monAllowFlags, resistConflict } from './mon.js';
+import { breakMonsterBoulder } from './monster_boulder.js';
+import { beginMonsterHeroAttack, moveMonsterAggress } from './monmove.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
+import { checkSpecialRoom, shopkeeperInOwnShop } from './shk.js';
+import { heroHasConflict } from './hero_conflict.js';
+import { heroIsDisplaced } from './armor.js';
+import { heroIsInvisible } from './hero_invisibility.js';
+import type { PlayingGameState } from './game_state.js';
+import type {
+    MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne,
+} from './monster_action_types.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { makemon, makemonAt } from './makemon.js';
 import { mksobj, mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { monsterAtPosition } from './monster_location.js';
 import { randomMonsterRelocation } from './teleport.js';
 import {
     AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE,
@@ -48,6 +64,7 @@ import { SPBOOK_no_NOVEL, xdir, ydir } from './mklev.js';
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
+const M1_SEE_INVIS = 0x01000000;
 
 function sameLevel(
     left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
@@ -469,3 +486,215 @@ export async function specialShrinePriest(
     return priest;
 }
 
+
+// ---------------------------------------------------------------------------
+// C priest.c:move_special() and pri_move().
+// ---------------------------------------------------------------------------
+
+// C priest.c:move_special(). Source MOVED also covers breaking a boulder
+// or attacking another monster without changing the mover's coordinates.
+// Called from pri_move() here and from shk_move() in shk.js.
+export async function moveSpecial(
+    monster: Monster,
+    state: PlayingGameState,
+    random: RandomBelow,
+    rollDice: RollDice,
+    rollOne: RollOne,
+    calls: MonsterCallLog,
+    {
+        inHisShop,
+        approach,
+        heroOnDoor,
+        avoid,
+        goalX,
+        goalY,
+    }: {
+        inHisShop: boolean;
+        approach: number;
+        heroOnDoor: boolean;
+        avoid: boolean;
+        goalX: number;
+        goalY: number;
+    },
+): Promise<MonsterMovement> {
+    const oldx = monster.mx,
+        oldy = monster.my;
+    const movement: MonsterMovement = {
+        oldx,
+        oldy,
+        x: oldx,
+        y: oldy,
+        moved: false,
+        postMoveStatus: MMOVE_NOTHING,
+        movementStage: 'postmov',
+    };
+    if (oldx === goalX && oldy === goalY) return movement;
+    if (monster.mconf) {
+        avoid = false;
+        approach = 0;
+    }
+    const candidates = await mfndpos(monster, state, monAllowFlags(monster, state, rollOne, calls));
+    if (
+        monster.isshk &&
+        avoid &&
+        heroOnDoor &&
+        !candidates.some((candidate) => !(candidate.info & NOTONL))
+    )
+        avoid = false;
+
+    const pickMove = (avoidOnline: boolean) => {
+        let selected = { x: oldx, y: oldy, info: 0 };
+        let choiceCount = 0;
+        for (const candidate of candidates) {
+            if (
+                !(
+                    IS_ROOM(state.level.at(candidate.x, candidate.y)?.typ ?? STONE) ||
+                    (monster.isshk && (!inHisShop || monster.eshk?.following))
+                )
+            )
+                continue;
+            if (avoidOnline && candidate.info & NOTONL && !(candidate.info & ALLOW_M)) continue;
+            const better = !approach
+                ? recordRandom(random, calls, ++choiceCount) === 0
+                : dist2(candidate.x, candidate.y, goalX, goalY) <
+                  dist2(selected.x, selected.y, goalX, goalY);
+            if (better || candidate.info & ALLOW_M) selected = candidate;
+        }
+        return selected;
+    };
+    let selected = pickMove(avoid);
+    if (
+        monster.ispriest &&
+        avoid &&
+        selected.x === oldx &&
+        selected.y === oldy &&
+        pointsOnline(oldx, oldy, state.u.ux, state.u.uy)
+    )
+        selected = pickMove(false);
+    if (selected.x === oldx && selected.y === oldy) return movement;
+
+    if (selected.info & ALLOW_ROCK) {
+        await breakMonsterBoulder(monster, selected.x, selected.y, state, { random });
+        movement.postMoveStatus = MMOVE_MOVED;
+        return movement;
+    }
+    if (selected.info & ALLOW_M) {
+        const combat = await moveMonsterAggress(
+            monster,
+            selected.x,
+            selected.y,
+            state,
+            random,
+            rollDice,
+            rollOne,
+            calls,
+        );
+        return {
+            ...movement,
+            ...combat,
+            postMoveStatus: combat.postMoveStatus === MMOVE_DIED ? MMOVE_DIED : MMOVE_MOVED,
+        };
+    }
+    if (
+        monsterAtPosition(state.level, selected.x, selected.y) ||
+        (selected.x === state.u.ux && selected.y === state.u.uy)
+    )
+        return movement;
+    removeMonsterFromMapAt(oldx, oldy, state);
+    await placeMonsterOnMap(monster, selected.x, selected.y, state);
+    if (state === game) await newsym(selected.x, selected.y);
+    if (monster.isshk && !inHisShop && shopkeeperInOwnShop(monster, state))
+        await checkSpecialRoom();
+    return {
+        ...movement,
+        x: selected.x,
+        y: selected.y,
+        moved: true,
+        postMoveStatus: MMOVE_MOVED,
+    };
+}
+
+// C priest.c:pri_move() via m_canseeu(): the special mover sees the hero
+// with its own eyes, without displacement, and not from the water.
+export function specialMoverSeesHero(monster: Monster, state: PlayingGameState) {
+    const seesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    return (
+        monster.mcansee !== 0 &&
+        monster.mcansee !== false &&
+        (!heroIsInvisible(state) || seesInvisible) &&
+        !state.u.uinwater &&
+        couldSeeFromHero(state, monster.mx, monster.my)
+    );
+}
+
+// C priest.c:pri_move(): return 1: moved  0: didn't  -1: let m_move do it.
+export async function movePriest(
+    monster: Monster,
+    state: PlayingGameState,
+    random: RandomBelow,
+    rollDice: RollDice,
+    rollOne: RollOne,
+    calls: MonsterCallLog,
+): Promise<MonsterMovement | null> {
+    const roomno = roomsAt(state.level, monster.mx, monster.my, TEMPLE)[0];
+    if (roomno === undefined || !priestInOwnTemple(monster, roomno, state)) return null;
+    const epri = monster.epri || monster.mextra?.epri;
+    if (!epri) throw new Error('A temple priest must retain its temple state');
+    let goalX = epri.shrpos.x + recordRandom(random, calls, 3) - 1;
+    let goalY = epri.shrpos.y + recordRandom(random, calls, 3) - 1;
+    let avoid = true;
+    if (
+        !monster.mpeaceful ||
+        (heroHasConflict(state) && !resistConflict(monster, state, rollOne, calls))
+    ) {
+        const dx = monster.mx - state.u.ux;
+        const dy = monster.my - state.u.uy;
+        if (
+            dx * dx + dy * dy < 3 &&
+            (MONSTER_NAME[monster.mnum] !== 'grid bug' || dx === 0 || dy === 0)
+        ) {
+            if (heroIsDisplaced(state)) {
+                await plineWithContinuation(
+                    `Your displaced image doesn't fool ${monsterName(monster, { state })}!`,
+                );
+            }
+            return {
+                oldx: monster.mx,
+                oldy: monster.my,
+                x: monster.mx,
+                y: monster.my,
+                moved: false,
+                priest: true,
+                postMoveStatus: MMOVE_NOTHING,
+                movementStage: 'postmov',
+                deferredAfterSpecialAttack: true,
+                ...await beginMonsterHeroAttack(
+                    monster,
+                    state,
+                    random,
+                    rollOne,
+                    rollDice,
+                    calls,
+                ),
+            };
+        }
+        if (state.u.urooms.includes(epri.shroom)) {
+            if (specialMoverSeesHero(monster, state)) {
+                goalX = state.u.ux;
+                goalY = state.u.uy;
+            }
+            avoid = false;
+        }
+    } else if (heroIsInvisible(state)) {
+        avoid = false;
+    }
+    const movement = await moveSpecial(monster, state, random, rollDice, rollOne, calls, {
+        inHisShop: false,
+        approach: 1,
+        heroOnDoor: false,
+        avoid,
+        goalX,
+        goalY,
+    });
+    return { ...movement, priest: true };
+}

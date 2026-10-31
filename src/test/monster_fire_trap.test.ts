@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import type { TrapMonsterOptions } from './support/monster-traps.js';
 import test from 'node:test';
@@ -7,9 +8,7 @@ import {
     A_WIS, FIRE_TRAP, MAGIC_TRAP, NO_MINVENT, W_AMUL, W_ARM,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {
-    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
-} from '../js/monmove.js';
+
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { monsterName } from '../js/monster_name.js';

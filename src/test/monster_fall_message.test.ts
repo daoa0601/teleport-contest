@@ -1,10 +1,11 @@
+import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOLE, MAGIC_PORTAL, TRAPDOOR } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { vision_recalc } from '../js/vision.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';

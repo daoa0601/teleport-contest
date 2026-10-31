@@ -6,8 +6,12 @@
 // regular room-and-corridor generation stays in mklev.ts.
 import { game, requireGameLevel } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_stronghold, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok, } from './const.js';
+import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok, } from './const.js';
 import { BOULDER, STATUE } from './object_data.js';
+import { createPoisonGasCloud } from './regions.js';
+import { heroIsDeaf } from './senses.js';
+import { plineWithContinuation } from './pline.js';
+import { requireInitializedGame } from './gstate.js';
 import { monsterAtPosition } from './monster_location.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
@@ -817,5 +821,39 @@ export function bound_digging() {
             if (y < ymin || y > ymax || x < xmin || x > xmax)
                 loc.wall_info |= W_NONPASSWALL;
         }
+}
+// C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
+// fire striking water leaves harmless steam. Called from goto_level() when
+// arriving and moveloop_core() when on the level.
+export async function fumaroles(state = requireInitializedGame()) {
+    let cloudCount = rn2(3);
+    let minimumSize = 5;
+    if (Is_firelevel(state.u?.uz)) {
+        cloudCount++;
+        minimumSize += 5;
+    }
+    if ((state.level?.flags?.temperature || 0) > 0) {
+        cloudCount++;
+        minimumSize += 5;
+    }
+    let heard = false;
+    let loud = false;
+    for (let count = cloudCount; count > 0; count--) {
+        const x = rn2(COLNO - 4) + 3;
+        const y = rn2(ROWNO - 4) + 3;
+        if (state.level?.at?.(x, y)?.typ !== LAVAPOOL)
+            continue;
+        const cloud = await createPoisonGasCloud(state, x, y, rn2(10) + minimumSize, rn2(10) + 5);
+        if (cloud)
+            cloud.heroFault = false;
+        heard = true;
+        const dx = x - (state.u?.ux ?? 0);
+        const dy = y - (state.u?.uy ?? 0);
+        if (dx * dx + dy * dy < 15)
+            loud = true;
+    }
+    if (heard && !heroIsDeaf(state))
+        await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
+    return { heard, loud };
 }
 //# sourceMappingURL=mkmaze.js.map

@@ -1,10 +1,11 @@
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FIRE_TRAP, PIT, SPIKED_PIT } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { initRng } from '../js/rng.js';
