@@ -7,7 +7,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { startHeroVomiting } from '../js/hero_illness.js';
 import { pushKeys } from '../js/input.js';
-import { tryKnockback } from '../js/knockback.js';
+import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { applyHeroContactPassive } from '../js/monster_passive.js';
 import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';

@@ -17,7 +17,7 @@ import { impossible } from './diagnostics.js';
 import { releaseHold, releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks } from './hero_species.js';
-import { isSteadfast } from './knockback.js';
+import { isSteadfast } from './uhitm.js';
 import { probeMonster } from './magic_probe.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './mimic.js';

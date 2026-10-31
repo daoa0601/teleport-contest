@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { tryKnockback } from '../js/knockback.js';
+import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { tryKnockback } from '../js/knockback.js';
+import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { createMonsterAt } from './support/monsters.js';

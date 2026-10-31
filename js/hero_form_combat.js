@@ -16,7 +16,7 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './he
 import { resolveHeroNaturalDamage } from './hero_natural_damage.js';
 import { heroSpecies } from './hero_species.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
-import { tryKnockback } from './knockback.js';
+import { tryKnockback } from './uhitm.js';
 import { AD_DRIN, AD_PHYS, AD_SPEL, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead, monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks, } from './monster_data.js';

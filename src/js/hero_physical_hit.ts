@@ -22,7 +22,7 @@ import { heroSpecies } from './hero_species.js';
 import { prepareHeroWeaponContact } from './hero_weapon_contact.js';
 import { resolveHeroJoust, rollHeroJoust, tryHeroPuddingSplit } from './hero_weapon_impact.js';
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
-import { tryKnockback } from './knockback.js';
+import { tryKnockback } from './uhitm.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight,
