@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { farlookLocationDescription, rhack } from '../js/cmd.js';
+import { rhack } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';

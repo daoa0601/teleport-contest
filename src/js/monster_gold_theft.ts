@@ -50,7 +50,7 @@ export async function stealHeroGold(
     state.context.botl = true;
 }
 
-function someGold(amount: number, random: typeof rn2): number {
+export function someGold(amount: number, random: typeof rn2): number {
     const gold = Math.min(amount, LARGEST_INT);
     if (gold < 50) return gold;
     const minimum = gold < 100 ? 25 : gold < 500 ? 50 : gold < 1000 ? 100

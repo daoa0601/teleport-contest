@@ -606,12 +606,7 @@ function declKey(decl) {
     return `${path.relative(repo, decl.getSourceFile().fileName)}:${decl.getStart()}`;
 }
 
-function summarize(decl, depth) {
-    if (!decl || !ts.isFunctionLike(decl) || !decl.body) return null;
-    if (!path.relative(repo, decl.getSourceFile().fileName).startsWith('js/')) return null;
-    const key = declKey(decl);
-    if (key in summaries) return key;
-    summaries[key] = null;   // cycle guard
+function buildSummary(decl, depth) {
     const returns = [];
     if (!ts.isBlock(decl.body)) {
         returns.push(inContext(decl.body, () => ({ term: term(decl.body, depth), guards: [] })));
@@ -632,8 +627,35 @@ function summarize(decl, depth) {
             : prm.initializer ? term(prm.initializer, depth) : { undefined: true })),
         guards: guards(call, depth),
     })));
-    summaries[key] = { name: decl.name ? decl.name.getText() : '(anonymous)', returns, callers };
+    return { name: decl.name ? decl.name.getText() : '(anonymous)', returns, callers };
+}
+
+const summaryFirstDepth = new Map();
+
+function summarize(decl, depth) {
+    if (!decl || !ts.isFunctionLike(decl) || !decl.body) return null;
+    if (!path.relative(repo, decl.getSourceFile().fileName).startsWith('js/')) return null;
+    const key = declKey(decl);
+    if (key in summaries) return key;
+    summaries[key] = null;   // cycle guard
+    summaries[key] = buildSummary(decl, depth);
+    // A summary's terms must not depend on the recursion depth at which it
+    // happened to be requested first; summaries first mentioned deep inside
+    // another summary are rebuilt at the budgeted depth below.
+    if (!summaryFirstDepth.has(key)) summaryFirstDepth.set(key, { decl, depth });
     return key;
+}
+
+function rebuildDeepSummaries() {
+    // Only summaries first requested at or beyond the budget during the
+    // original walk are rebuilt; summaries that first appear while rebuilding
+    // keep the ordinary truncated terms, exactly as they would under a
+    // direct depth-budgeted request.
+    const deep = [...summaryFirstDepth.values()].filter(entry => entry.depth >= SUMMARY_DEPTH);
+    for (const entry of deep) {
+        if (!(declKey(entry.decl) in summaries)) continue;
+        summaries[declKey(entry.decl)] = buildSummary(entry.decl, SUMMARY_DEPTH - 1);
+    }
 }
 
 // The type of a record whose fields are read. A parameter of a non-escaping
@@ -753,4 +775,5 @@ for (const file of program.getSourceFiles()) {
     };
     visit(file);
 }
+rebuildDeepSummaries();
 process.stdout.write(JSON.stringify({ sites, summaries, locals }));

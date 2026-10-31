@@ -47,7 +47,7 @@ export async function stealHeroGold(monster, state, publish, random, rollOne) {
     await fleeWithGold(monster, state, publish, random, rollOne);
     state.context.botl = true;
 }
-function someGold(amount, random) {
+export function someGold(amount, random) {
     const gold = Math.min(amount, LARGEST_INT);
     if (gold < 50)
         return gold;

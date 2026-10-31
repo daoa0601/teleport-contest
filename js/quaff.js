@@ -17,7 +17,7 @@ import { applyPotionEffect } from './potion_effects.js';
 import { releasePotionOccupant } from './potion_occupants.js';
 import { promptYesNo } from './query.js';
 import { heroIsHallucinating } from './senses.js';
-import { drinkFountain } from './cmd.js';
+import { drinkFountain } from './fountain.js';
 import { drinkSink } from './sink_drinking.js';
 // C potion.c:drink_ok().
 // C potion.c:dodrink().

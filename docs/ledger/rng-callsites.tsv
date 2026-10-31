@@ -159,38 +159,16 @@ src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/character_selection.ts	rigidChecks	rn2	"[""1""]"	constant
 src/js/character_selection.ts	rigidChecks	rn2	"[""candidates.length""]"	unproved
 src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
-src/js/cmd.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
-src/js/cmd.ts	dipFountain	rn2	"[""2""]"	constant
-src/js/cmd.ts	dipFountain	rnd	"[""30""]"	constant
 src/js/cmd.ts	dochat	rn2	"[""10""]"	constant
 src/js/cmd.ts	doclose	rn2	"[""25""]"	constant
-src/js/cmd.ts	dokick	rn2	"[""2""]"	constant
-src/js/cmd.ts	dokick	rn2	"[""30""]"	constant
-src/js/cmd.ts	dokick	rn2	"[""4""]"	constant
 src/js/cmd.ts	domoveCore	rn2	"[""5""]"	constant
 src/js/cmd.ts	doopen	rnl	"[""20""]"	constant
 src/js/cmd.ts	dorub	rn2	"[""2""]"	constant
 src/js/cmd.ts	dorub	rn2	"[""3""]"	constant
 src/js/cmd.ts	dorub	rn2	"[""500""]"	constant
-src/js/cmd.ts	drinkFountain	rn2	"[""20""]"	constant
-src/js/cmd.ts	drinkFountain	rn2	"[""20""]"	constant
-src/js/cmd.ts	drinkFountain	rn2	"[""4""]"	constant
-src/js/cmd.ts	drinkFountain	rn2	"[""5""]"	constant
-src/js/cmd.ts	drinkFountain	rnd	"[""10""]"	constant
-src/js/cmd.ts	drinkFountain	rnd	"[""10""]"	constant
-src/js/cmd.ts	drinkFountain	rnd	"[""30""]"	constant
-src/js/cmd.ts	drinkFountain	rnd	"[""4""]"	constant
-src/js/cmd.ts	kickDumb	rn2	"[""2""]"	constant
-src/js/cmd.ts	kickDumb	rn2	"[""3""]"	constant
-src/js/cmd.ts	kickDumb	rnd	"[""5""]"	constant
-src/js/cmd.ts	kickOuch	rn2	"[""2""]"	constant
-src/js/cmd.ts	kickOuch	rn2	"[""3""]"	constant
-src/js/cmd.ts	kickOuch	rnd	"[""5""]"	constant
-src/js/cmd.ts	kickOuch	rnd	"[""currentAttribute(A_CON) > 15 ? 3 : 5""]"	constant
 src/js/cmd.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
 src/js/cmd.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
 src/js/cmd.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
-src/js/cmd.ts	someGold	rn2	"[""gold - floor + 1""]"	guarded
 src/js/coin_flip.ts	flipCoin	rn2	"[""100""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""2""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""dexterity""]"	invariant
@@ -297,6 +275,16 @@ src/js/dog.ts	makePetWary	random	"[""2""]"	constant
 src/js/dog.ts	makePetWary	random	"[""monster.mtame + 1""]"	unproved
 src/js/dogmove.ts	performPetRangedAttack/rollOne	rollOne	"[""sides""]"	unproved
 src/js/dogmove.ts	selectPetRangedTarget	random	"[""5""]"	constant
+src/js/dokick.ts	dokick	rn2	"[""2""]"	constant
+src/js/dokick.ts	dokick	rn2	"[""30""]"	constant
+src/js/dokick.ts	dokick	rn2	"[""4""]"	constant
+src/js/dokick.ts	kickDumb	rn2	"[""2""]"	constant
+src/js/dokick.ts	kickDumb	rn2	"[""3""]"	constant
+src/js/dokick.ts	kickDumb	rnd	"[""5""]"	constant
+src/js/dokick.ts	kickOuch	rn2	"[""2""]"	constant
+src/js/dokick.ts	kickOuch	rn2	"[""3""]"	constant
+src/js/dokick.ts	kickOuch	rnd	"[""5""]"	constant
+src/js/dokick.ts	kickOuch	rnd	"[""currentAttribute(A_CON) > 15 ? 3 : 5""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""2""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
@@ -409,6 +397,17 @@ src/js/flash.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
 src/js/floor_naming.ts	nameFloorType	rn2Display	"[""30""]"	constant
 src/js/floor_naming.ts	nameFloorType	rn2Display	"[""choices.length""]"	constant
 src/js/force_bolt.ts	hitMonsterWithForce	options.rollDice	"[""2"", ""12""]"	constant
+src/js/fountain.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
+src/js/fountain.ts	dipFountain	rn2	"[""2""]"	constant
+src/js/fountain.ts	dipFountain	rnd	"[""30""]"	constant
+src/js/fountain.ts	drinkFountain	rn2	"[""20""]"	constant
+src/js/fountain.ts	drinkFountain	rn2	"[""20""]"	constant
+src/js/fountain.ts	drinkFountain	rn2	"[""4""]"	constant
+src/js/fountain.ts	drinkFountain	rn2	"[""5""]"	constant
+src/js/fountain.ts	drinkFountain	rnd	"[""10""]"	constant
+src/js/fountain.ts	drinkFountain	rnd	"[""10""]"	constant
+src/js/fountain.ts	drinkFountain	rnd	"[""30""]"	constant
+src/js/fountain.ts	drinkFountain	rnd	"[""4""]"	constant
 src/js/fountain.ts	dryFountainAt	random	"[""3""]"	constant
 src/js/fountain.ts	gushForthFromFountain	rn2	"[""1 + distmin(ux, uy, x, y)""]"	guarded
 src/js/fountain_effects.ts	applyFountainDemonActor	random	"[""100""]"	constant

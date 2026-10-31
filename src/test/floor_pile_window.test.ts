@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { farlookLocationDescription } from '../js/cmd.js';
+import { farlookLocationDescription } from '../js/pager_description.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { showFloorPile } from '../js/floor_object_display.js';
