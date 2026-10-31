@@ -302,22 +302,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     engulfOldX?: number;
     engulfOldY?: number;
     engulfResolved?: boolean;
-    deferredLifeDrainGate?: boolean;
-    deferredLifeDrain?: boolean;
-    deferredStunGate?: boolean;
-    stunSelected?: boolean;
-    stunDuration?: number;
-    stunIncrement?: number | null;
-    stunnedHero?: boolean;
-    deferredLegEffect?: boolean;
-    legSide?: 'left' | 'right';
-    legContact?: 'reach' | 'nuzzle' | 'prick' | 'exposed-prick' | 'boot-prick' | 'boot-scratch';
-    deferredBlindEffect?: boolean;
-    blindIncrement?: number;
-    blindApplicable?: boolean;
-    blindMessage?: boolean;
-    blindResolved?: boolean;
-    toggledBlindness?: boolean;
     deferredSlimeEffect?: boolean;
     slimeNegated?: boolean;
     slimeCancelled?: boolean;
@@ -330,9 +314,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredDecayRehumanize?: boolean;
     deferredDecayArmor?: boolean;
     rehumanize?: boolean;
-    deferredEnchantment?: boolean;
-    drainedObject?: GameObject | null;
-    drainMessage?: string | null;
 }
 
 export interface HeroSpellAttack extends HeroAttackProgress {

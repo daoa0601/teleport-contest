@@ -551,8 +551,8 @@ src/js/hero_natural_damage.ts	applyNaturalEffect	random	"[""4""]"	constant
 src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""10""]"	constant
 src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	unproved
 src/js/hero_natural_damage.ts	curseNaturalTarget	random	"[""10""]"	constant
-src/js/hero_natural_damage.ts	drainLife	random	"[""3""]"	constant
-src/js/hero_natural_damage.ts	drainLife	rollDice	"[""2"", ""6""]"	constant
+src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
 src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""10""]"	constant
 src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""10""]"	constant
 src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""8""]"	constant
@@ -1347,7 +1347,7 @@ src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
 src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
 src/js/mthrowu.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
 src/js/mhitu.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
-src/js/mhitu.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
+src/js/uhitm.ts	mhitmAdLegs	rollOne	"[""durationSides""]"	invariant
 src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved
@@ -1380,8 +1380,8 @@ src/js/monster_combat_damage.ts	resolveMonsterCombatDamage	rollDice	"[""attack[2
 src/js/monster_combat_drain.ts	applyMonsterDrainEffect	context.rollOne	"[""Math.trunc(result.damage / 2)""]"	unproved
 src/js/monster_combat_drain.ts	curseDefender	random	"[""10""]"	constant
 src/js/monster_combat_drain.ts	drainEnergy	random	"[""4""]"	constant
-src/js/monster_combat_drain.ts	drainLife	random	"[""3""]"	constant
-src/js/monster_combat_drain.ts	drainLife	rollDice	"[""2"", ""6""]"	constant
+src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
 src/js/monster_combat_elements.ts	acidContact	random	"[""30""]"	constant
 src/js/monster_combat_elements.ts	acidContact	random	"[""6""]"	constant
 src/js/monster_combat_explosion.ts	resolveMonsterCombatExplosion	rollDice	"[""(MONSTER_LEVEL[attacker.mnum] ?? 0) + 1"", ""sides""]"	unproved

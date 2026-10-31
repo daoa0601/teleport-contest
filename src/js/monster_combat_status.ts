@@ -1,4 +1,7 @@
-// Monster-versus-monster status attacks from uhitm.c:mhitm_adtyping().
+// Monster-versus-monster status attacks from uhitm.c:mhitm_adtyping();
+// mhitm_ad_blnd(), mhitm_ad_stun(), mhitm_ad_legs() and mhitm_ad_ench()
+// live in uhitm.ts with their other actor branches.
+
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_MISS, MSLOW, STRAT_WAITFORU, W_ARMH } from './const.js';
 import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
@@ -8,15 +11,14 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { paralyzeMonster } from './mon.js';
 import {
-    AD_BLND, AD_CONF, AD_ENCH, AD_HALU, AD_HEAL, AD_LEGS, AD_PLYS, AD_SLEE,
-    AD_SLOW, AD_STCK, AD_STUN, AD_WERE, AD_WRAP,
+    AD_CONF, AD_HALU, AD_HEAL, AD_PLYS, AD_SLEE,
+    AD_SLOW, AD_STCK, AD_WERE, AD_WRAP,
     AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE,
     AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import { monsterCombatDefense } from './monster_combat_defense.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
-import { staggerVerb } from './monster_hurtle.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
@@ -33,8 +35,8 @@ const M1_NOEYES = 0x00001000;
 const PM_ARCHON = MONSTER_NAME.indexOf('Archon');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const STATUS_DAMAGE = [
-    AD_BLND, AD_HALU, AD_PLYS, AD_SLEE, AD_SLOW, AD_CONF, AD_STUN,
-    AD_LEGS, AD_WERE, AD_HEAL, AD_STCK, AD_WRAP, AD_ENCH,
+    AD_HALU, AD_PLYS, AD_SLEE, AD_SLOW, AD_CONF,
+    AD_WERE, AD_HEAL, AD_STCK, AD_WRAP,
 ] as const;
 
 function isStatusDamage(type: DamageType): type is (typeof STATUS_DAMAGE)[number] {
@@ -50,10 +52,6 @@ export async function applyMonsterStatusEffect(
         throw new RangeError(`Unsupported monster status damage type ${type}`);
     let damage = context.damage;
     switch (type) {
-    case AD_BLND:
-        await applyMonsterCombatBlindness(attacker, defender, attack, context);
-        damage = 0;
-        break;
     case AD_HALU:
         if (!attacker.mcan && hasEyes(defender) && defender.mcansee) {
             if (visible && canSeeMonster(defender))
@@ -115,18 +113,6 @@ export async function applyMonsterStatusEffect(
             clearWaiting(defender);
         }
         break;
-    case AD_STUN:
-        if (attacker.mcan) break;
-        if (canSeeMonster(defender))
-            await publish(`${monsterName(defender, { state, capitalized: true })} ${staggerVerb(defender.mnum)} for a moment.`);
-        defender.mstun = 1;
-        return context.applyPhysical();
-    case AD_LEGS:
-        if (attacker.mcan) {
-            damage = 0;
-            break;
-        }
-        return context.applyPhysical();
     case AD_WERE:
     case AD_HEAL:
         return context.applyPhysical();
@@ -140,8 +126,6 @@ export async function applyMonsterStatusEffect(
             await publish(`${name} brushes against ${monsterName(defender, { state, augmentIt: true })}.`);
         }
         break;
-    case AD_ENCH:
-        break; // Native has no monster armor selection for this attack.
     }
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }

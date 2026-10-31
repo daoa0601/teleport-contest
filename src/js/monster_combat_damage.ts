@@ -22,6 +22,9 @@ import { applyMonsterDrainEffect } from './monster_combat_drain.js';
 import { applyMonsterElementEffect } from './monster_combat_elements.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
 import { applyMonsterStatusEffect } from './monster_combat_status.js';
+import {
+    mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun,
+} from './uhitm.js';
 import { applyMonsterTheftEffect } from './monster_combat_theft.js';
 import { applyMonsterTransformEffect } from './monster_combat_transform.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -197,10 +200,17 @@ async function applyMonsterCombatEffect(
     case AD_PHYS: return context.applyPhysical();
     case AD_FIRE: case AD_COLD: case AD_ELEC: case AD_ACID: case AD_RUST: case AD_CORR: case AD_DCAY:
         return applyMonsterElementEffect(attacker, defender, context);
-    case AD_BLND: case AD_HALU: case AD_PLYS: case AD_SLEE: case AD_SLOW: case AD_CONF:
-    case AD_STUN: case AD_LEGS: case AD_WERE: case AD_HEAL: case AD_STCK: case AD_WRAP: case AD_ENCH:
+    case AD_HALU: case AD_PLYS: case AD_SLEE: case AD_SLOW: case AD_CONF:
+    case AD_WERE: case AD_HEAL: case AD_STCK: case AD_WRAP:
         return applyMonsterStatusEffect(attacker, defender, context);
-    case AD_DRLI: case AD_DREN: case AD_DETH: case AD_PEST: case AD_FAMN: case AD_DISE: case AD_CURS:
+    // C uhitm.c:mhitm_ad_drli/blnd/ench/stun/legs() own their mhitm
+    // branches in uhitm.ts.
+    case AD_DRLI: return mhitmAdDrli({ attacker, defender, context });
+    case AD_BLND: return mhitmAdBlnd({ attacker, defender, context });
+    case AD_ENCH: return mhitmAdEnch({ attacker, defender, context });
+    case AD_STUN: return mhitmAdStun({ attacker, defender, context });
+    case AD_LEGS: return mhitmAdLegs({ attacker, defender, context });
+    case AD_DREN: case AD_DETH: case AD_PEST: case AD_FAMN: case AD_DISE: case AD_CURS:
         return applyMonsterDrainEffect(attacker, defender, context);
     case AD_SEDU: case AD_SITM: case AD_SSEX: case AD_SGLD:
         return applyMonsterTheftEffect(attacker, defender, context);

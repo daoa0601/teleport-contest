@@ -2,10 +2,9 @@
 // hitmu()/mdamageu() damage and resume machinery, and slot presentation.
 // C ref: mhitu.c.
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { heroLegName } from './body_parts.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
-import { A_DEX, A_STR, KILLED_BY_AN, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, SPIKED_PIT, Upolyd, WATER, } from './const.js';
+import { A_STR, KILLED_BY_AN, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, SPIKED_PIT, Upolyd, WATER, } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, newsym, senseWithTelepathy, } from './display.js';
@@ -16,7 +15,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DGST, AD_DRIN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { heroHasDrainResistance, heroIsDisplaced } from './armor.js';
+import { heroIsDisplaced } from './armor.js';
 import { monsterWieldedWeapon, swingMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { applyArtifactHit } from './artifact_hit.js';
 import { artifactById } from './artifacts.js';
@@ -25,11 +24,9 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
 import { stopRun } from './runmode.js';
 import { makeBlinded } from './sight_change.js';
-import { makeStunned } from './hero_mental_status.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath } from './monster_attack_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
-import { loseHeroExperience } from './exper.js';
-import { currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
+import { loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
@@ -55,14 +52,14 @@ import { disturbMealMimicry } from './meal_mimic.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './monster_offensive_selection.js';
 import { isPoolAt } from './terrain_properties.js';
-import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
+import { observeObjectForNaming } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { recorderLocalHour } from './calendar.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
-import { CORPSE, IRON_SHOES } from './object_data.js';
+import { CORPSE } from './object_data.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
@@ -75,15 +72,13 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { mhitmAdCold, mhitmAdElec, mhitmAdFire, tryKnockback } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdStun, tryKnockback, } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
-import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { resolveMonsterSpitAtHero } from './monster_spit.js';
 import { unplaceBallAndChain } from './ball.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
-const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_CONCEAL = 0x00000080;
 const M1_SEE_INVIS = 0x01000000;
@@ -91,7 +86,6 @@ const M2_ORC = 0x00000080;
 const S_EEL = 57;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_LEATHER_GOLEM = 253;
-const LOW_BOOTS = 163;
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
     if (attack.specialMessage)
@@ -108,8 +102,6 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
         || attack.effect === 'engulf-refused')
         return null;
     if (attack.effect === 'item-theft' && !monsterIsAnimal(monster))
-        return null;
-    if (attack.effect === 'blind-natural' && !attack.blindMessage)
         return null;
     if (attack.effect === 'failed-grab') {
         const subject = monsterName(monster, { capitalized: true });
@@ -132,24 +124,6 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
         return attack.effect === 'electric-avoided'
             ? `${subject} bites!  You avoid harm.`
             : `${subject} bites!  You get zapped!`;
-    }
-    if (attack.effect === 'blind-natural')
-        return attack.blindMessage ? `${subject} blinds you!` : null;
-    if (attack.effect === 'leg-natural') {
-        const side = attack.legSide || 'left';
-        const leg = heroLegName(game);
-        const contact = attack.legContact === 'reach'
-            ? `tries to reach your ${side} ${leg}`
-            : attack.legContact === 'nuzzle'
-                ? `nuzzles against your ${side} ${leg}`
-                : attack.legContact === 'exposed-prick'
-                    ? `pricks the exposed part of your ${side} ${leg}`
-                    : attack.legContact === 'boot-prick'
-                        ? `pricks through your ${side} boot`
-                        : attack.legContact === 'boot-scratch'
-                            ? `scratches your ${side} boot`
-                            : `pricks your ${side} ${leg}`;
-        return `${subject} ${contact}!`;
     }
     const verb = attack.attackType === 16 ? 'tentacles suck your brain'
         : attack.attackType === 2 ? 'bites'
@@ -539,12 +513,17 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     if (!artifact.damage)
                         heroAttack.poison = null;
                 }
-                // mhitm_ad_fire/cold/elec project hitmsg() themselves from
-                // uhitm.ts, so an elemental slot composes its hit line
-                // there instead of here.
+                // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs project
+                // hitmsg() themselves from uhitm.ts, so one of those slots
+                // composes its hit line there instead of here.
                 const message = heroAttack.effect === 'fire-natural'
                     || heroAttack.effect === 'cold-natural'
                     || heroAttack.effect === 'electric-natural'
+                    || heroAttack.effect === 'life-drain-natural'
+                    || heroAttack.effect === 'blind-natural'
+                    || heroAttack.effect === 'enchantment-natural'
+                    || heroAttack.effect === 'stun-natural'
+                    || heroAttack.effect === 'leg-natural'
                     ? null
                     : await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
                 const contactDismissal = message
@@ -695,34 +674,95 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                         heroAttack.deferredPostHit = false;
                     }
                 }
-                if (heroAttack.deferredLifeDrainGate)
-                    await resumeDeferredHeroLifeDrain(action, game, random, publishSlotMessage);
-                if (heroAttack.deferredLifeDrain) {
-                    heroAttack.deferredLifeDrain = false;
-                    const died = await loseHeroExperience('life drainage', {
-                        die: finishHeroDeathAfterMonsterMessage,
-                        publish: async (message) => {
-                            const dismissal = await plineWithContinuation(message);
-                            if (dismissal !== null && dismissal !== undefined)
-                                paging.pagerOwned = true;
+                if (heroAttack.effect === 'life-drain-natural') {
+                    // C uhitm.c:mhitm_ad_drli() mhitu branch: hitmsg(), the
+                    // selection gate, magic cancellation and losexp() run
+                    // here with direct awaits.
+                    const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
+                    const drain = await mhitmAdDrli({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            die: finishHeroDeathAfterMonsterMessage,
+                            random, calls: action.calls,
                         },
                     });
-                    if (died)
+                    heroAttack.damage = drain.damage;
+                    if (drain.heroDied)
                         return { heroDied: true };
                 }
-                if (heroAttack.deferredStunGate)
-                    resumeDeferredHeroStun(action, random);
-                if (heroAttack.stunIncrement != null) {
-                    const increment = heroAttack.stunIncrement;
-                    heroAttack.stunIncrement = null;
-                    await makeStunned((game.u.stunnedTurns ?? 0) + increment, {
-                        state: game,
-                        publish: async (message) => {
-                            const dismissal = await plineWithContinuation(message);
-                            if (dismissal !== null && dismissal !== undefined)
-                                paging.pagerOwned = true;
+                if (heroAttack.effect === 'blind-natural') {
+                    // C uhitm.c:mhitm_ad_blnd() mhitu branch: the blinding
+                    // line, make_blinded() and hitmu()'s knockback draws run
+                    // here with direct awaits.
+                    const blnd = await mhitmAdBlnd({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            attackType: heroAttack.attackType,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            random, calls: action.calls,
                         },
                     });
+                    heroAttack.damage = blnd.damage;
+                }
+                if (heroAttack.effect === 'enchantment-natural') {
+                    // C uhitm.c:mhitm_ad_ench() mhitu branch: the negation
+                    // probe precedes hitmsg(); the armor selection, drain and
+                    // "less effective" line follow it with direct awaits.
+                    const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
+                    const ench = await mhitmAdEnch({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            random, calls: action.calls,
+                        },
+                    });
+                    heroAttack.damage = ench.damage;
+                }
+                if (heroAttack.effect === 'stun-natural') {
+                    // C uhitm.c:mhitm_ad_stun() mhitu branch: hitmsg(), the
+                    // one-in-four gate and make_stunned() run here with
+                    // direct awaits.
+                    const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
+                    const stun = await mhitmAdStun({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            random, calls: action.calls,
+                        },
+                    });
+                    heroAttack.damage = stun.damage;
+                }
+                if (heroAttack.effect === 'leg-natural') {
+                    // C uhitm.c:mhitm_ad_legs() mhitu branch: the side and
+                    // boot rolls, the contact line, set_wounded_legs() and
+                    // both exercise() calls run here with direct awaits.
+                    const legs = await mhitmAdLegs({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            damage: heroAttack.damage ?? 0,
+                            publish: publishSlotMessage,
+                            random, rollOne, calls: action.calls,
+                        },
+                    });
+                    heroAttack.damage = legs.damage;
                 }
                 if (heroAttack.deferredRustRehumanize) {
                     const rustFormPagerOwned = await resolveErosionFormRehumanization(heroAttack, 'You rust!');
@@ -744,18 +784,6 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     heroAttack.deferredDecayArmor = false;
                     heroAttack.deferredPostHit = true;
                 }
-                if (heroAttack.deferredEnchantment)
-                    await resumeDeferredHeroEnchantment(action, game, random);
-                if (heroAttack.drainMessage) {
-                    const drainDismissal = await plineWithContinuation(heroAttack.drainMessage);
-                    heroAttack.drainMessage = null;
-                    if (drainDismissal !== null
-                        && drainDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
-                }
-                if (heroAttack.deferredLegEffect)
-                    await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
                 if (heroAttack.deferredPostHit) {
                     const publishContactMessage = async (message, options) => {
                         const dismissal = await plineWithContinuation(message, options);
@@ -771,9 +799,6 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     await resumeDeferredHeroContact(action, game, contactOptions);
                     if (game.program_state?.gameover)
                         return { heroDied: true };
-                }
-                if (heroAttack.deferredBlindEffect) {
-                    await resumeDeferredHeroBlindness(action, game);
                 }
                 if (heroAttack.effectMessage) {
                     const effectDismissal = await plineWithContinuation(heroAttack.effectMessage);
@@ -1877,44 +1902,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_LEGS) {
-        // uhitm.c:mhitm_ad_legs().  The declared sting damage and chosen
-        // side precede the special contact line.  Wound duration, attribute
-        // exercise, knockback, and HP damage all remain after that pline, so
-        // a tty pager can suspend one xan slot at the same source boundary.
-        const legSide = recordRandom(random, calls, 2) ? 'right' : 'left';
-        const boots = state?.uarmf || state?.u?.uarmf;
-        const airborneHero = !!(state?.u?.usteed ||
-            state?.u?.levitating ||
-            state?.u?.levitation ||
-            state?.u?.flying);
-        const attackerFlies = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
-        let legContact = 'prick';
-        let deferredLegEffect = true;
-        if (airborneHero && !attackerFlies) {
-            legContact = 'reach';
-            damage = 0;
-            deferredLegEffect = false;
-        }
-        else if (monster.mcan) {
-            legContact = 'nuzzle';
-            damage = 0;
-            deferredLegEffect = false;
-        }
-        else if (boots) {
-            const exposed = recordRandom(random, calls, 2) !== 0 &&
-                [LOW_BOOTS, IRON_SHOES].includes(boots.otyp);
-            if (exposed) {
-                legContact = 'exposed-prick';
-            }
-            else if (recordRandom(random, calls, 5) === 0) {
-                legContact = 'boot-prick';
-            }
-            else {
-                legContact = 'boot-scratch';
-                damage = 0;
-                deferredLegEffect = false;
-            }
-        }
         return {
             kind: 'hero-attack',
             roll,
@@ -1924,41 +1911,29 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: 'leg-natural',
-            legSide,
-            legContact,
-            deferredLegEffect,
-            deferredPostHit: !deferredLegEffect,
+            // uhitm.ts:mhitmAdLegs() runs the whole mhitm_ad_legs() mhitu
+            // body with direct awaits; only hitmu()'s shared knockback and
+            // damage tail remains deferred with the other contact effects.
+            deferredPostHit: true,
             oldFormMnum,
         };
     }
     else if (hit && damageType === AD_BLND && dice > 0 && sides > 0) {
-        // hitmu() rolls the declared damage before mhitm_ad_blnd().  A raven
-        // claw converts that amount into blindness duration, prints its
-        // special line before toggling sight, then still enters the shared
-        // knockback tail with zero HP damage.
-        const blindIncrement = damage;
-        const blindApplicable = heroCanBeBlindedByContact(monster, attackType, state);
-        const heroWasBlind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+        // hitmu() rolls the declared damage before mhitm_ad_blnd(); the
+        // raven claw converts it into blindness duration inside
+        // uhitm.ts:mhitmAdBlnd() and reports zero HP damage.
         return {
             kind: 'hero-attack',
             roll,
             threshold,
             hit,
-            damage: 0,
+            damage,
             attackType,
             damageType,
             effect: 'blind-natural',
-            blindIncrement,
-            blindApplicable,
-            blindMessage: blindApplicable && !heroWasBlind,
-            deferredBlindEffect: true,
         };
     }
     else if (hit && damageType === AD_STUN) {
-        // uhitm.c:mhitm_ad_stun().  The kick's declared damage and hitmsg
-        // precede cancellation and the one-in-four stun gate.  A selected
-        // effect adds the full damage to HStun, then halves only the HP
-        // damage before entering the common knockback/contact tail.
         return {
             kind: 'hero-attack',
             roll,
@@ -1968,7 +1943,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: 'stun-natural',
-            deferredStunGate: true,
+            // uhitm.ts:mhitmAdStun() runs the whole mhitm_ad_stun() mhitu
+            // body with direct awaits; only hitmu()'s shared knockback and
+            // damage tail remains deferred with the other contact effects.
+            deferredPostHit: true,
             oldFormMnum,
         };
     }
@@ -2071,12 +2049,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         };
     }
     else if (hit && damageType === AD_ENCH) {
-        // uhitm.c:mhitm_ad_ench().  Base damage and magic negation precede
-        // hitmsg(); some_armor(), drain resistance, and the state mutation
-        // precede the optional "less effective" pline which can force the
-        // earlier hit line through tty.
-        const armorProtection = magicNegation(state.u, state);
-        const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
             kind: 'hero-attack',
             roll,
@@ -2085,8 +2057,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             damage,
             attackType,
             damageType,
-            effect: negated ? 'cancelled-enchantment-natural' : 'enchantment-natural',
-            deferredEnchantment: !negated,
+            effect: 'enchantment-natural',
+            // uhitm.ts:mhitmAdEnch() runs the negation probe, hitmsg(), the
+            // armor drain and its line with direct awaits; only hitmu()'s
+            // shared knockback and damage tail remains deferred.
             deferredPostHit: true,
             oldFormMnum,
         };
@@ -2101,7 +2075,11 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: 'life-drain-natural',
-            deferredLifeDrainGate: true,
+            // uhitm.ts:mhitmAdDrli() runs hitmsg(), the selection gate and
+            // losexp() with direct awaits; only hitmu()'s shared knockback
+            // and damage tail remains deferred with the other contact
+            // effects.
+            deferredPostHit: true,
             oldFormMnum,
         };
     }
@@ -2213,56 +2191,6 @@ export async function resumeDeferredHeroEngulf(action, state, { random = rn2, ro
     attack.engulfResolved = true;
     delete attack.engulfDamage;
     return result;
-}
-// C mhitm_ad_ench(): hitmsg() completes before armor selection and draining.
-export async function resumeDeferredHeroEnchantment(action, state, random = rn2) {
-    const attack = action.movement.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredEnchantment)
-        return;
-    attack.deferredEnchantment = false;
-    const target = selectHeroDisenchantmentTarget(state, random, action.calls);
-    if (!await drainObjectEnchantment(target, { state,
-        random: range => recordRandom(random, action.calls, range),
-    }) || !target)
-        return;
-    attack.drainedObject = target;
-    attack.drainMessage = `${ownedObjectAction(target, 'seem', state)} less effective.`;
-}
-// Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
-// message precede shared knockback and the touch's ordinary HP damage.
-export async function resumeDeferredHeroLifeDrain(action, state, random = rn2, publish = plineWithContinuation) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredLifeDrainGate)
-        return action;
-    const selected = recordRandom(random, action.calls, 3) === 0;
-    const drainResistant = heroHasDrainResistance(state);
-    if (selected && !drainResistant) {
-        const negated = specialAttackNegated(action.monster, state.u, {
-            state, random: limit => recordRandom(random, action.calls, limit),
-        });
-        if (negated && !action.monster.mcan)
-            await publish('You avoid harm.');
-        attack.deferredLifeDrain = !negated;
-    }
-    attack.deferredLifeDrainGate = false;
-    attack.deferredPostHit = true;
-    return action;
-}
-// Resume mhitm_ad_stun() after hitmsg().  make_stunned() receives the full
-// pre-halving damage; only the ordinary HP tail is reduced on selection.
-// The caller applies make_stunned(), whose message precedes the timeout.
-export function resumeDeferredHeroStun(action, random = rn2) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredStunGate)
-        return action;
-    if (!action.monster?.mcan && recordRandom(random, action.calls, 4) === 0) {
-        attack.stunIncrement = Math.max(0, attack.damage ?? 0);
-        attack.damage = Math.trunc((attack.damage ?? 0) / 2);
-        attack.stunSelected = true;
-    }
-    attack.deferredStunGate = false;
-    attack.deferredPostHit = true;
-    return action;
 }
 async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
     const finishDeath = (target, options = {}) => finishEnvironmentalMonsterDeath(target, state, { ...options, publish });
@@ -2380,47 +2308,6 @@ export async function resumeDeferredHeroReveal(action, state, random = rn2, roll
     const resumedContact = { ...attack, ...resumed };
     sequence.current = resumedContact;
     return resumedContact;
-}
-// Resume mhitm_ad_legs() after the xan's special contact line has crossed
-// tty.  set_wounded_legs() owns the duration and one-time Dexterity penalty;
-// its two exercise() calls precede hitmu()'s shared knockback/damage tail.
-export async function resumeDeferredHeroLegs(action, state, { publish } = {}) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredLegEffect)
-        return action;
-    if (!attack.legSide)
-        throw new Error('A deferred leg wound needs the selected leg');
-    const durationSides = 60 - currentAttribute(A_DEX, state);
-    const duration = rnd(durationSides);
-    action.calls.push(`rnd(${durationSides})`);
-    await woundHeroLegs(attack.legSide, duration, state, publish ? { publish } : {});
-    await exerciseAttribute(A_STR, false, state);
-    await exerciseAttribute(A_DEX, false, state);
-    attack.deferredLegEffect = false;
-    attack.deferredPostHit = true;
-    return action;
-}
-// Resume mhitm_ad_blnd() after its special contact line has crossed tty.
-// make_blinded() precedes hitmu()'s shared knockback probes and contributes no
-// HP damage; keeping those phases together preserves the next attack/actor
-// boundary when the blindness line itself requires acknowledgement.
-export async function resumeDeferredHeroBlindness(action, state, random = rn2) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredBlindEffect)
-        return;
-    if (attack.blindApplicable) {
-        const oldTurns = state?.u?.blindTurns ?? 0;
-        // uhitm.c:mhitm_ad_blnd() passes the full declared damage to
-        // make_blinded(), which adds it to the current timeout even when the
-        // hero is already blind.  The one-turn repeated-blindness behavior in
-        // mhitu.c belongs to engulfing attacks, not ordinary raven contact.
-        const increment = attack.blindIncrement ?? 0;
-        await makeBlinded(oldTurns + increment, { state, talk: false });
-    }
-    recordRandom(random, action.calls, 3);
-    recordRandom(random, action.calls, 6);
-    attack.deferredBlindEffect = false;
-    attack.blindResolved = true;
 }
 export async function completeHeroAttackSlot(action, state, random = rn2, rollDice = d, rollOne = rnd) {
     const sequence = action.movement?.heroAttackSequence;

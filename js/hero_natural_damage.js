@@ -1,10 +1,10 @@
 // C uhitm.c:damageum() and the hero-attacker branches of mhitm_adtyping();
-// the mhitm_ad_fire(), mhitm_ad_cold() and mhitm_ad_elec() branches live in
-// uhitm.ts with those functions' other actor branches.
+// the mhitm_ad_fire(), mhitm_ad_cold(), mhitm_ad_elec(), mhitm_ad_drli(),
+// mhitm_ad_blnd(), mhitm_ad_ench(), mhitm_ad_stun() and mhitm_ad_legs()
+// branches live in uhitm.ts with those functions' other actor branches.
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
-import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MSLOW, STRAT_WAITFORU, W_ARM, W_ARMH, } from './const.js';
 import { canSeeMonster, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -22,26 +22,23 @@ import { normalDemon } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { paralyzeMonster } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsShade, monsterIsUndead, } from './monster_data.js';
-import { mhitmAdCold, mhitmAdElec, mhitmAdFire } from './uhitm.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_CLAW, AT_GAZE, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsUndead, } from './monster_data.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdStun, physicalDamage, } from './uhitm.js';
 import { drainMonsterEnergy } from './monster_energy.js';
-import { staggerVerb } from './monster_hurtle.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { monsterHasAcidResistance, monsterHasDrainResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { sessionIsNight } from './monster_sound.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { tameMonster } from './monster_taming.js';
-import { OBJECT_DESCRIPTIONS, OBJECT_NAMES } from './object_data.js';
+import { OBJECT_NAMES } from './object_data.js';
 import { erodeArmor } from './object_erosion.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
-const M1_NOEYES = 0x00001000;
-const M1_THICK_HIDE = 0x00200000;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
 const M1_METALLIVORE = 0x80000000;
@@ -95,18 +92,23 @@ async function applyNaturalEffect(monster, context) {
     const { state, publish, attack, random, rollOne } = context;
     let damage = context.damage;
     switch (attack[1]) {
-        case AD_STUN:
-            if (!heroIsBlind(state))
-                await publish(`${subject(monster, context)} ${staggerVerb(monster.mnum)} for a moment.`);
-            monster.mstun = 1;
-            damage = physicalDamage(monster, context);
+        case AD_STUN: {
+            // C uhitm.c:mhitm_ad_stun() uhitm branch now owns the stun attack.
+            const stun = await mhitmAdStun({ magr: 'youmonst', defender: monster, context });
+            damage = stun.damage;
             break;
+        }
         case AD_PHYS:
         case AD_WERE:
         case AD_HEAL:
-        case AD_LEGS:
             damage = physicalDamage(monster, context);
             break;
+        case AD_LEGS: {
+            // C uhitm.c:mhitm_ad_legs() uhitm branch reduces to mhitm_ad_phys().
+            const legs = await mhitmAdLegs({ magr: 'youmonst', defender: monster, context });
+            damage = legs.damage;
+            break;
+        }
         case AD_FIRE: {
             // C uhitm.c:mhitm_ad_fire() uhitm branch now owns the fire attack.
             const fire = await mhitmAdFire({ magr: 'youmonst', defender: monster, context });
@@ -142,10 +144,15 @@ async function applyNaturalEffect(monster, context) {
         case AD_DETH:
             if (monsterIsUndead(monster.mnum) && damage > 1)
                 damage = rollOne(Math.trunc(damage / 2));
-            damage = await drainLife(monster, { ...context, damage });
+            // C uhitm.c:mhitm_ad_deth() redirects its hero branch to
+            // mhitm_ad_drli(), which lives in uhitm.ts.
+            damage = (await mhitmAdDrli({
+                magr: 'youmonst', defender: monster, context: { ...context, damage },
+            })).damage;
             break;
         case AD_DRLI:
-            damage = await drainLife(monster, context);
+            // C uhitm.c:mhitm_ad_drli() uhitm branch now owns the drain attack.
+            damage = (await mhitmAdDrli({ magr: 'youmonst', defender: monster, context })).damage;
             break;
         case AD_DREN:
             if (!await negated(monster, context, false) && !random(4))
@@ -170,15 +177,12 @@ async function applyNaturalEffect(monster, context) {
         case AD_SLOW:
             await slowNaturalTarget(monster, context);
             break;
-        case AD_BLND:
-            if (naturalAttackCanBlind(monster, context)) {
-                if (!heroIsBlind(state) && monster.mcansee)
-                    await publish(`${subject(monster, context)} is blinded.`);
-                monster.mcansee = 0;
-                monster.mblinded = Math.min(127, damage + (monster.mblinded ?? 0));
-            }
-            damage = 0;
+        case AD_BLND: {
+            // C uhitm.c:mhitm_ad_blnd() uhitm branch now owns the blinding.
+            const blnd = await mhitmAdBlnd({ magr: 'youmonst', defender: monster, context });
+            damage = blnd.damage;
             break;
+        }
         case AD_CONF:
             if (!monster.mconf) {
                 if (canSeeMonster(monster))
@@ -217,8 +221,12 @@ async function applyNaturalEffect(monster, context) {
             if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & (M1_CARNIVORE | M1_HERBIVORE | M1_METALLIVORE)))
                 damage = 0;
             break;
-        case AD_ENCH:
+        case AD_ENCH: {
+            // C uhitm.c:mhitm_ad_ench() uhitm branch has no armor selection.
+            const ench = await mhitmAdEnch({ magr: 'youmonst', defender: monster, context });
+            damage = ench.damage;
             break;
+        }
         case AD_DGST:
         case AD_HALU:
         case AD_SAMU:
@@ -250,23 +258,6 @@ async function summonDemonPet(context) {
     exerciseWisdom(true, state);
     return true;
 }
-function physicalDamage(monster, { state, damage, attack, specialDamage }) {
-    if (monsterIsShade(monster))
-        damage = 0;
-    damage += specialDamage;
-    if (attack[0] === AT_WEAP)
-        return 0;
-    if ([AT_KICK, AT_CLAW, AT_TUCH, AT_HUGS].includes(attack[0])) {
-        if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_THICK_HIDE)
-            damage = attack[0] === AT_KICK ? 0 : Math.trunc((damage + 1) / 2);
-        const bonus = state.u.udaminc ?? 0;
-        if (bonus > 0)
-            damage += bonus;
-        else if (damage > 0)
-            damage = Math.max(1, damage + bonus);
-    }
-    return damage;
-}
 async function erodeNaturalTarget(monster, context) {
     const { attack, state, publish, random } = context;
     if (attack[1] === AD_RUST && speciesIs(monster, 'iron golem')
@@ -290,27 +281,6 @@ async function curseNaturalTarget(monster, context) {
         monster.mcan = 1;
         await publish('You chuckle.');
     }
-}
-async function drainLife(monster, context) {
-    const { state, random, rollDice, publish } = context;
-    if (random(3) || monsterHasDrainResistance(monster)
-        || monsterHasArtifactDefense(monster, 'life-drain', state)
-        || await negated(monster, context, true))
-        return context.damage;
-    const damage = rollDice(2, 6);
-    await publish(`${subject(monster, context)} becomes weaker!`);
-    if (monster.mhpmax - damage > monster.m_lev)
-        monster.mhpmax -= damage;
-    else if (monster.mhpmax > monster.m_lev)
-        monster.mhpmax = monster.m_lev + 1;
-    monster.mhp -= damage;
-    if (monster.mhp <= 0 || !monster.m_lev) {
-        await publish(`${subject(monster, context)} ${monsterIsNonliving(monster.mnum) ? 'expires' : 'dies'}!`);
-        await killNaturalTarget(monster, context);
-    }
-    else
-        monster.m_lev--;
-    return 0;
 }
 async function poisonNaturalTarget(monster, context) {
     const { state, attack, random, publish } = context;
@@ -398,25 +368,6 @@ async function negated(monster, { state, random, publish }, tell) {
     if (blocked && tell && canSeeMonster(monster))
         await publish(`${monsterName(monster, { state, capitalized: true })} avoids harm.`);
     return blocked;
-}
-function naturalAttackCanBlind(monster, { state, attack }) {
-    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES || !monster.mcansee && !monster.mblinded)
-        return false;
-    if (heroSpecies(state) === MONSTER_NAME.indexOf('raven') && speciesIs(monster, 'raven'))
-        return false;
-    const method = attack[0];
-    if ([AT_EXPL, AT_BOOM, AT_GAZE, AT_MAGC, AT_BREA].includes(method))
-        return !monsterResistsBlindingLight(monster, state);
-    if ([AT_WEAP, AT_SPIT, AT_NONE].includes(method))
-        return false;
-    if (method === AT_ENGL)
-        return !monster.msleeping;
-    if (method !== AT_CLAW)
-        return true;
-    if (state.u.uswallow)
-        return false;
-    return !(monster.minvent ?? []).some(object => (object.owornmask ?? 0) & W_ARMH
-        && (state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
 }
 function wearsDragonDefense(monster, species, scales, mail) {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object => ((object.owornmask ?? 0) & W_ARM) && (object.otyp === scales || object.otyp === mail));

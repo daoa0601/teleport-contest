@@ -14,6 +14,7 @@ import { applyMonsterDrainEffect } from './monster_combat_drain.js';
 import { applyMonsterElementEffect } from './monster_combat_elements.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
 import { applyMonsterStatusEffect } from './monster_combat_status.js';
+import { mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, } from './uhitm.js';
 import { applyMonsterTheftEffect } from './monster_combat_theft.js';
 import { applyMonsterTransformEffect } from './monster_combat_transform.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -166,21 +167,23 @@ async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_CORR:
         case AD_DCAY:
             return applyMonsterElementEffect(attacker, defender, context);
-        case AD_BLND:
         case AD_HALU:
         case AD_PLYS:
         case AD_SLEE:
         case AD_SLOW:
         case AD_CONF:
-        case AD_STUN:
-        case AD_LEGS:
         case AD_WERE:
         case AD_HEAL:
         case AD_STCK:
         case AD_WRAP:
-        case AD_ENCH:
             return applyMonsterStatusEffect(attacker, defender, context);
-        case AD_DRLI:
+        // C uhitm.c:mhitm_ad_drli/blnd/ench/stun/legs() own their mhitm
+        // branches in uhitm.ts.
+        case AD_DRLI: return mhitmAdDrli({ attacker, defender, context });
+        case AD_BLND: return mhitmAdBlnd({ attacker, defender, context });
+        case AD_ENCH: return mhitmAdEnch({ attacker, defender, context });
+        case AD_STUN: return mhitmAdStun({ attacker, defender, context });
+        case AD_LEGS: return mhitmAdLegs({ attacker, defender, context });
         case AD_DREN:
         case AD_DETH:
         case AD_PEST:

@@ -1,72 +1,71 @@
-// C uhitm.c:mhitm_ad_fire(), mhitm_ad_cold() and mhitm_ad_elec(): each
-// attack's three actor branches (hero attacking a monster, monster
-// attacking the hero, monster versus monster) share a single owner, in
-// native order. Every message is awaited directly, so a --More--
-// suspends the attack at the same source boundary as C and no
-// elemental progress flags survive the call.
+// C uhitm.c:mhitm_ad_fire(), mhitm_ad_cold(), mhitm_ad_elec(),
+// mhitm_ad_drli(), mhitm_ad_blnd(), mhitm_ad_ench(), mhitm_ad_stun() and
+// mhitm_ad_legs(): each attack's three actor branches (hero attacking a
+// monster, monster attacking the hero, monster versus monster) share a
+// single owner, in native order. Every message is awaited directly, so a
+// --More-- suspends the attack at the same source boundary as C and no
+// per-attack progress flags survive the call.
 //
 // C uhitm.c:mhitm_knockback() and m_is_steadfast(): a physical blow can
 // throw a much smaller opponent backward. The shared owner tests the
 // knockback destination through dothrow.c:will_hurtle(), words the
 // message, then hurtles the defender.
 
-import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { formatFeltMessage } from './hero_speech.js';
-import { artifactById } from './artifacts.js';
+import { heroHasDrainResistance } from './armor.js';
+import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { heroCanBeBlindedByContact, monsterResistsBlindingLight } from './blinding_attack.js';
+import { heroLegName } from './body_parts.js';
 import {
-    DOOR, DISMOUNT_KNOCKED, Is_airlevel, Is_waterlevel, M_ATTK_MISS,
-    MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, M_SEEN_COLD, M_SEEN_ELEC,
-    M_SEEN_FIRE, Upolyd, W_SADDLE, isok,
+    A_DEX, A_STR, DISMOUNT_KNOCKED, DOOR, Is_airlevel, Is_waterlevel, isok, M_ATTK_MISS,
+    M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, Upolyd,
+    W_ARMH, W_SADDLE,
 } from './const.js';
-import { doorlessDoor } from './hack.js';
-import { canSeeMonster, shieldeff } from './display.js';
-import { plineWithContinuation } from './pline.js';
-import { game, requirePlayingGame } from './gstate.js';
+import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
+import { selectHeroDisenchantmentTarget } from './do_wear.js';
+import { loseHeroExperience } from './exper.js';
+import { woundHeroLegs } from './hero_legs.js';
+import { makeStunned } from './hero_mental_status.js';
 import { heroSpecies } from './hero_species.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { requireInitializedHero } from './hero_types.js';
 import { igniteItems } from './light.js';
 import { applyMonsterGolemEffects } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import {
-    AD_COLD, AD_ELEC, AD_FIRE, AD_PHYS, AD_STCK, AD_WRAP,
-    AT_BUTT, AT_CLAW, AT_ENGL, AT_HUGS, AT_KICK, AT_WEAP,
+    AD_COLD, AD_DETH, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_STCK, AD_STUN,
+    AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS,
+    AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import { monsterCombatAttackNegated } from './monster_combat_negation.js';
 import { monsterCombatDefense } from './monster_combat_defense.js';
+import { applyMonsterCombatBlindness } from './monster_combat_status.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterIsNonliving, monsterIsShade, monsterIsThickSkinned,
 } from './monster_data.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { monsterName } from './monster_name.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance,
-    setMonsterApparentHeroPosition,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import {
-    monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
+    monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance,
+    monsterHasShockResistance,
 } from './monster_resistance.js';
 import { recordRandom } from './monster_action_types.js';
+import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
+import { IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS } from './object_data.js';
+import { ownedObjectAction } from './objnam.js';
+import { drainObjectEnchantment } from './object_state.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { burnAwayHeroSlime } from './slime.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
     destroyMonsterInventoryByElement,
 } from './zap.js';
-import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
-import { hurtleMonster, willMonsterHurtle } from './monster_hurtle.js';
-import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './monster_hurtle.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
-import { LOADSTONE } from './object_data.js';
-import { isBluntWeapon, isFlimsyObject } from './object_properties.js';
-import { rn2 } from './rng.js';
-import { dismountHero } from './steed.js';
-import { makeStunned } from './hero_mental_status.js';
-import { goodPosition } from './teleport_rules.js';
-import { isPoolAt } from './terrain_properties.js';
 import type { DeathHandler } from './end.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -75,9 +74,23 @@ import type { HeroNaturalEffectContext } from './hero_natural_types.js';
 import type { MonsterCallLog } from './monster_action_types.js';
 import type { MonsterCombatEffectContext } from './monster_combat_effect_types.js';
 import type { Monster } from './monster_types.js';
+import type { d, rnd } from './rng.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { formatFeltMessage } from './hero_speech.js';
+import { doorlessDoor } from './hack.js';
+import { plineWithContinuation } from './pline.js';
+import { game, requirePlayingGame } from './gstate.js';
+import { requireInitializedHero } from './hero_types.js';
+import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
+import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './monster_hurtle.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
+import { isBluntWeapon, isFlimsyObject } from './object_properties.js';
+import { rn2 } from './rng.js';
+import { dismountHero } from './steed.js';
+import { goodPosition } from './teleport_rules.js';
+import { isPoolAt } from './terrain_properties.js';
 import type { Hero } from './hero_types.js';
 import type { GameObject } from './object_types.js';
-import type { d, rnd } from './rng.js';
 
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster: Pick<Monster, 'mnum'>): boolean {
@@ -488,7 +501,397 @@ export async function mhitmAdElec(call: MhitmAdElecCall): Promise<MhitmAdElement
     }
 }
 
+// Local copies of the C mondata.h flags the status owners read.
 const M1_FLY = 0x00000001;
+const M1_NOEYES = 0x00001000;
+const PM_RAVEN = MONSTER_NAME.indexOf('raven');
+const LOW_BOOTS = 163;
+
+// C uhitm.c:mhitm_ad_phys(), uhitm branch: shade contact, the special
+// damage bonus and the hand-to-hand accuracy rings. The hero attacker
+// cannot be cancelled, and this branch never sets mhm->done, so callers
+// inline the follow-up `if (mhm->done) return;` only in the other branches.
+export function physicalDamage(
+    monster: Monster, { state, damage, attack, specialDamage }: HeroNaturalEffectContext,
+): number {
+    if (monsterIsShade(monster)) damage = 0;
+    damage += specialDamage;
+    if (attack[0] === AT_WEAP) return 0;
+    if ([AT_KICK, AT_CLAW, AT_TUCH, AT_HUGS].includes(attack[0])) {
+        if (monsterIsThickSkinned(monster))
+            damage = attack[0] === AT_KICK ? 0 : Math.trunc((damage + 1) / 2);
+        const bonus = state.u.udaminc ?? 0;
+        if (bonus > 0) damage += bonus;
+        else if (damage > 0) damage = Math.max(1, damage + bonus);
+    }
+    return damage;
+}
+
+// C mondata.c:can_blnd() for the hero's own contact attack; the monster
+// defender twin lives with mhitm_ad_blnd's monster-versus-monster branch.
+function naturalAttackCanBlind(
+    monster: Monster, { state, attack }: HeroNaturalEffectContext,
+): boolean {
+    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES || !monster.mcansee && !monster.mblinded)
+        return false;
+    if (heroSpecies(state) === PM_RAVEN && monster.mnum === PM_RAVEN) return false;
+    const method = attack[0];
+    if ([AT_EXPL, AT_BOOM, AT_GAZE, AT_MAGC, AT_BREA].includes(method))
+        return !monsterResistsBlindingLight(monster, state);
+    if ([AT_WEAP, AT_SPIT, AT_NONE].includes(method)) return false;
+    if (method === AT_ENGL) return !monster.msleeping;
+    if (method !== AT_CLAW) return true;
+    if (state.u.uswallow) return false;
+    return !(monster.minvent ?? []).some(object => (object.owornmask ?? 0) & W_ARMH
+        && (state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
+}
+
+// mhitu-branch call context shared by the stun and enchantment owners.
+export interface HeroDefenderStatusContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** Precomposed mhitu.c:hitmsg() line for the attacking slot. */
+    hitMessage: string | null;
+    /** mhitm_data.damage on entry: hitmu()'s declared damage roll. */
+    damage: number;
+    publish: MessagePublisher;
+    random: typeof rn2;
+    calls: MonsterCallLog;
+}
+
+export interface HeroDefenderDrliContext extends HeroDefenderStatusContext {
+    die: DeathHandler;
+}
+
+export interface HeroDefenderBlndContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** mattk->aatyp, for can_blnd()'s contact rules. */
+    attackType: AttackMethod;
+    damage: number;
+    publish: MessagePublisher;
+    random: typeof rn2;
+    calls: MonsterCallLog;
+}
+
+export interface HeroDefenderLegsContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    damage: number;
+    publish: MessagePublisher;
+    random: typeof rn2;
+    rollOne: typeof rnd;
+    calls: MonsterCallLog;
+}
+
+export interface MhitmAdStatusResult {
+    /** mhm->damage after the branch. */
+    damage: number;
+    nativeResult: number;
+    done: boolean;
+    heroDied: boolean;
+}
+
+function statusContinueResult(damage: number): MhitmAdStatusResult {
+    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
+}
+
+// One call of mhitm_adtyping(… AD_DRLI …); the monster-versus-monster arm
+// also serves mhitm_ad_deth()'s redirected branch, as in C.
+export type MhitmAdDrliCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderDrliContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_drli().
+export async function mhitmAdDrli(call: MhitmAdDrliCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero attacks a monster with life drainage */
+        const mdef = call.defender;
+        const { state, random, rollDice, publish } = call.context;
+        // C's uhitm branch has no is_death shortcut: the full selection
+        // gate applies even to the call mhitm_ad_deth() redirects here
+        // (no hero form carries AD_DETH).
+        if (random(3) || monsterHasDrainResistance(mdef)
+            || monsterHasArtifactDefense(mdef, 'life-drain', state))
+            return statusContinueResult(call.context.damage);
+        // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
+        // cancelled, so the rn2(10) probe always runs.
+        if (specialAttackNegated(state.u, mdef, { state, random })) {
+            if (canSeeMonster(mdef))
+                await publish(`${monsterName(mdef, { state, capitalized: true })} avoids harm.`);
+            return statusContinueResult(call.context.damage);
+        }
+        const damage = rollDice(2, 6); /* Stormbringer uses monhp_per_lvl
+                                        * (usually 1d8) */
+        await publish(`${monsterName(mdef, { state, capitalized: true })} becomes weaker!`);
+        if (mdef.mhpmax - damage > mdef.m_lev) mdef.mhpmax -= damage;
+        else if (mdef.mhpmax > mdef.m_lev) mdef.mhpmax = mdef.m_lev + 1;
+        mdef.mhp -= damage;
+        /* !m_lev: level 0 monster is killed regardless of hit points
+           rather than drop to level -1; note: some non-living creatures
+           (golems, vortices) are subject to life-drain */
+        if (mdef.mhp <= 0 || !mdef.m_lev) {
+            await publish(`${monsterName(mdef, { state, capitalized: true })} ${monsterIsNonliving(mdef.mnum) ? 'expires' : 'dies'}!`);
+            await finishHeroMonsterKillOutcome(mdef, mdef.mx, mdef.my, {
+                showKillMessage: false, publish,
+            });
+        } else mdef.m_lev--;
+        // damage has already been inflicted; unlike hitting with
+        // Stormbringer, the wounded hero doesn't heal any from the drained
+        // life.
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster attacks the hero with life drainage */
+        const { state, attacker, hitMessage, publish, die, random, calls } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage) await publish(hitMessage);
+        if (recordRandom(random, calls, 3) === 0 && !heroHasDrainResistance(state)) {
+            // mhitm_mgc_atk_negated(magr, mdef, TRUE), which owns the
+            // "You avoid harm." line; a cancelled attacker returns quietly.
+            const negated = specialAttackNegated(attacker, state.u, {
+                state, random: limit => recordRandom(random, calls, limit),
+            });
+            if (negated && !attacker.mcan) await publish('You avoid harm.');
+            // unlike hitting with Stormbringer, the wounded attacker doesn't
+            // heal any from the drained life
+            if (!negated && await loseHeroExperience('life drainage', { die, publish }))
+                return { damage: call.context.damage, nativeResult: M_ATTK_MISS,
+                    done: false, heroDied: true };
+        }
+        return statusContinueResult(call.context.damage);
+    } else {
+        /* mhitm: monster versus monster; mhitm_ad_deth() redirects here
+           for Death's touch */
+        const { attacker, defender, context } = call;
+        const { state, visible, random, rollDice, publish } = context;
+        const isDeath = context.attack[1] === AD_DETH;
+        let damage = context.damage;
+        if (isDeath
+            || (random(3) === 0
+                && !(monsterHasDrainResistance(defender)
+                    || monsterCombatDefense(defender, AD_DRLI, state))
+                && !await monsterCombatAttackNegated(attacker, defender, {
+                    state, visible, random, publish, verbose: true,
+                }))) {
+            if (!isDeath) /* Stormbringer uses monhp_per_lvl (1d8) */
+                damage = rollDice(2, 6);
+            if (visible && canSpotMonster(defender))
+                await publish(`${monsterName(defender, { state, capitalized: true })} becomes weaker!`);
+            if (defender.mhpmax - damage > defender.m_lev) defender.mhpmax -= damage;
+            else if (defender.mhpmax > defender.m_lev)
+                defender.mhpmax = defender.m_lev + 1;
+            if (defender.m_lev === 0) /* automatic kill if drained past level 0 */
+                damage = defender.mhp;
+            else defender.m_lev--;
+            // unlike hitting with Stormbringer, the wounded attacker doesn't
+            // heal any from the drained life
+        }
+        return statusContinueResult(damage);
+    }
+}
+
+// One call of mhitm_adtyping(… AD_BLND …).
+export type MhitmAdBlndCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderBlndContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_blnd().
+export async function mhitmAdBlnd(call: MhitmAdBlndCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero attacks a monster with blinding contact */
+        const mdef = call.defender;
+        const { state, publish } = call.context;
+        if (naturalAttackCanBlind(mdef, call.context)) {
+            if (!heroIsBlind(state) && mdef.mcansee)
+                await publish(`${monsterName(mdef, { state, capitalized: true })} is blinded.`);
+            mdef.mcansee = 0;
+            let damage = call.context.damage;
+            damage += mdef.mblinded ?? 0;
+            if (damage > 127) damage = 127;
+            mdef.mblinded = damage;
+        }
+        return statusContinueResult(0);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster attacks the hero with blinding contact */
+        const { state, attacker, attackType, publish, random, calls } = call.context;
+        if (heroCanBeBlindedByContact(attacker, attackType, state)) {
+            if (!(!!state.blind || (state.u.blindTurns ?? 0) > 0))
+                await publish(`${monsterName(attacker, { capitalized: true })} blinds you!`);
+            // mhitm_ad_blnd() passes the full declared damage to
+            // make_blinded(), which adds it to the current timeout even when
+            // the hero is already blind.  The one-turn repeated-blindness
+            // behavior in mhitu.c belongs to engulfing attacks, not ordinary
+            // raven contact.
+            await makeBlinded((state.u.blindTurns ?? 0) + call.context.damage, {
+                state, talk: false,
+            });
+        }
+        // mhm->damage = 0, but hitmu()'s knockback probe still consumes its
+        // distance and chance draws even though a blinding claw cannot
+        // knock the hero back.
+        recordRandom(random, calls, 3);
+        recordRandom(random, calls, 6);
+        return statusContinueResult(0);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        await applyMonsterCombatBlindness(attacker, defender, context.attack, context);
+        return statusContinueResult(0);
+    }
+}
+
+// One call of mhitm_adtyping(… AD_ENCH …).
+export type MhitmAdEnchCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderStatusContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_ench().
+export async function mhitmAdEnch(call: MhitmAdEnchCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: there's no msomearmor() function, so just do damage */
+        return statusContinueResult(call.context.damage);
+    } else if ('mdef' in call) {
+        /* mhitu: a monster attacks the hero's worn gear */
+        const { state, attacker, hitMessage, publish, random, calls } = call.context;
+        // mhitm_mgc_atk_negated(magr, mdef, FALSE) precedes hitmsg(); a
+        // cancelled attacker returns without rolling.
+        const negated = !!attacker.mcan
+            || recordRandom(random, calls, 10) < 3 * magicNegation(state.u, state);
+        // hitmsg(magr, mattk)
+        if (hitMessage) await publish(hitMessage);
+        // uncancelled is sufficient enough; please
+        // don't make this attack less frequent
+        if (!negated) {
+            const target = selectHeroDisenchantmentTarget(state, random, calls);
+            if (target && await drainObjectEnchantment(target, {
+                state, random: limit => recordRandom(random, calls, limit),
+            }))
+                await publish(`${ownedObjectAction(target, 'seem', state)} less effective.`);
+        }
+        return statusContinueResult(call.context.damage);
+    } else {
+        /* mhitm: there's no msomearmor() function, so just do damage */
+        return statusContinueResult(call.context.damage);
+    }
+}
+
+// One call of mhitm_adtyping(… AD_STUN …).
+export type MhitmAdStunCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderStatusContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_stun().
+export async function mhitmAdStun(call: MhitmAdStunCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the hero attacks a monster with a stunning blow */
+        const mdef = call.defender;
+        const { state, publish } = call.context;
+        if (!heroIsBlind(state))
+            await publish(`${monsterName(mdef, { state, capitalized: true })} ${staggerVerb(mdef.mnum)} for a moment.`);
+        mdef.mstun = 1;
+        // mhitm_ad_phys(); its uhitm branch never sets mhm->done.
+        return statusContinueResult(physicalDamage(mdef, call.context));
+    } else if ('mdef' in call) {
+        /* mhitu: a monster attacks the hero with a stunning blow */
+        const { state, attacker, hitMessage, publish, random, calls } = call.context;
+        // hitmsg(magr, mattk)
+        if (hitMessage) await publish(hitMessage);
+        let damage = call.context.damage;
+        if (!attacker.mcan && recordRandom(random, calls, 4) === 0) {
+            // make_stunned() receives the full pre-halving damage; only the
+            // ordinary HP tail is reduced.
+            await makeStunned((state.u.stunnedTurns ?? 0) + Math.max(0, damage), {
+                state, publish,
+            });
+            damage = Math.trunc(damage / 2);
+        }
+        return statusContinueResult(damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan) return statusContinueResult(context.damage);
+        if (canSeeMonster(defender))
+            await context.publish(`${monsterName(defender, { state: context.state, capitalized: true })} ${staggerVerb(defender.mnum)} for a moment.`);
+        defender.mstun = 1;
+        // mhitm_ad_phys(); its mhitm branch can finish the attack itself.
+        return await context.applyPhysical();
+    }
+}
+
+// One call of mhitm_adtyping(… AD_LEGS …).
+export type MhitmAdLegsCall =
+    | { magr: 'youmonst'; defender: Monster; context: HeroNaturalEffectContext }
+    | { mdef: 'youmonst'; context: HeroDefenderLegsContext }
+    | { attacker: Monster; defender: Monster; context: MonsterCombatEffectContext };
+
+// C uhitm.c:mhitm_ad_legs().
+export async function mhitmAdLegs(call: MhitmAdLegsCall): Promise<MhitmAdStatusResult> {
+    if ('magr' in call) {
+        /* uhitm: the #if 0 u.ucancelled probe is disabled upstream, so the
+           branch reduces to mhitm_ad_phys(), whose uhitm branch never sets
+           mhm->done. */
+        return statusContinueResult(physicalDamage(call.defender, call.context));
+    } else if ('mdef' in call) {
+        /* mhitu: a xan pricks the hero's leg */
+        const { state, attacker, publish, random, rollOne, calls } = call.context;
+        const side = recordRandom(random, calls, 2) ? 'right' : 'left';
+        const leg = heroLegName(state);
+        const subject = monsterName(attacker, { capitalized: true });
+        let damage = call.context.damage;
+        // This case is too obvious to ignore, but Nethack is not in
+        // general very good at considering height--most short monsters
+        // still _can_ attack you when you're flying or mounted.
+        const airborneHero = !!(
+            state.u.usteed ||
+            state.u.levitating ||
+            state.u.levitation ||
+            state.u.flying
+        );
+        const attackerFlies = !!((MONSTER_FLAGS1[attacker.mnum] ?? 0) & M1_FLY);
+        if (airborneHero && !attackerFlies) {
+            await publish(`${subject} tries to reach your ${side} ${leg}!`);
+            damage = 0;
+        } else if (attacker.mcan) {
+            await publish(`${subject} nuzzles against your ${side} ${leg}!`);
+            damage = 0;
+        } else {
+            const boots = state.uarmf || state.u.uarmf;
+            if (boots) {
+                if (recordRandom(random, calls, 2) !== 0
+                    && [LOW_BOOTS, IRON_SHOES].includes(boots.otyp)) {
+                    await publish(`${subject} pricks the exposed part of your ${side} ${leg}!`);
+                } else if (recordRandom(random, calls, 5) === 0) {
+                    await publish(`${subject} pricks through your ${side} boot!`);
+                } else {
+                    await publish(`${subject} scratches your ${side} boot!`);
+                    damage = 0;
+                    return statusContinueResult(damage);
+                }
+            } else {
+                await publish(`${subject} pricks your ${side} ${leg}!`);
+            }
+            // set_wounded_legs(side, rnd(60 - ACURR(A_DEX)))
+            const durationSides = 60 - currentAttribute(A_DEX, state);
+            const duration = rollOne(durationSides);
+            calls.push(`rnd(${durationSides})`);
+            await woundHeroLegs(side, duration, state, { publish });
+            // exercise(A_STR, FALSE); exercise(A_DEX, FALSE)
+            await exerciseAttribute(A_STR, false, state);
+            await exerciseAttribute(A_DEX, false, state);
+        }
+        return statusContinueResult(damage);
+    } else {
+        /* mhitm: monster versus monster */
+        const { attacker, defender, context } = call;
+        if (attacker.mcan) return statusContinueResult(0);
+        return await context.applyPhysical();
+    }
+}
+
 const M1_UNSOLID = 0x00100000;
 const S_EYE = 5;
 const S_LIGHT = 25;

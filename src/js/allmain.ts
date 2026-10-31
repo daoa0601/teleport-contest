@@ -188,10 +188,8 @@ import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.
 import {
     completeHeroAttackSlot,
     resumeDeferredHeroContact,
-    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment,
     resumeDeferredHeroSticking,
-    resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
-    resumeDeferredHeroLegs,
+    resumeDeferredHeroEngulf,
     resumeDeferredHeroReveal,
     beginMonsterHeroAttack,
 } from './mhitu.js';
