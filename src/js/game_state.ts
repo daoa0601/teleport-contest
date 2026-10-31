@@ -415,6 +415,10 @@ export interface GameState {
     _cannibalCheckMove?: number;
     were_changes?: number;
     _travelTipShown?: boolean;
+    // C hack.c gt.travelmap: hero cells that findtravelpath() has moved
+    // through or validated. Runtime selection, freed by end_running() and
+    // reset_cmd_vars(); ordinary movement keeps it across commands.
+    _travelMap?: Set<number> | undefined;
     _wishHistory?: string[];
     _monTelecontrol?: boolean;
     _monPolycontrol?: boolean;

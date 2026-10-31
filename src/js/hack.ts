@@ -1539,12 +1539,20 @@ export async function isValidTravelTarget(targetX: number, targetY: number, g: G
     if (direction) {
         g.u.dx = direction.dx;
         g.u.dy = direction.dy;
-        if (g._runState?.mode === 8) {
-            g._runState.visited ??= new Set<number>();
-            g._runState.visited.add(g.u.uy * COLNO + g.u.ux);
-        }
+        // C hack.c:1416-1418 selection_setpoint(): every successful
+        // validation marks the hero's cell in gt.travelmap, even with no
+        // travel run active. The mark survives until end_running() or
+        // reset_cmd_vars() frees the selection.
+        markTravelStep(g.u.ux, g.u.uy, g);
     }
     return direction !== null;
+}
+
+// C hack.c findtravelpath() selection_setpoint(u.ux, u.uy, gt.travelmap, 1).
+function markTravelStep(x: number, y: number, g: GameState): void {
+    const map = g._travelMap ?? new Set<number>();
+    map.add(y * COLNO + x);
+    g._travelMap = map;
 }
 
 function travelDistance(x1: number, y1: number, x2: number, y2: number): number {
@@ -1631,21 +1639,27 @@ async function selectTravelStep(state: TravelRunState): Promise<{ dx: number; dy
         nomul(0);
         return { dx: 0, dy: 0 };
     }
-    const visited = state.visited ?? new Set<number>();
+    // C hack.c:1400-1401 checks gt.travelmap, a global selection that also
+    // holds marks from earlier is_valid_travelpt() calls, against the
+    // proposed first step. The general-direction fallback records the
+    // origin without testing history; only a completed backward search
+    // checks the chosen next step.
+    const travelMap = game._travelMap ?? new Set<number>();
     const nextX = hero.ux + direction.dx, nextY = hero.uy + direction.dy;
-    // C's general-direction fallback records the origin without testing
-    // history. Only a completed backward search checks the chosen next step.
-    const returning = direction.checkVisited && visited.has(nextY * COLNO + nextX);
+    const returning = direction.checkVisited && travelMap.has(nextY * COLNO + nextX);
     if (returning || direction.checkVisited && nextX === targetX && nextY === targetY) {
         nomul(0);
         // Keep the running checks for a final path step, unlike the
-        // adjacent first-step shortcut above.
+        // adjacent first-step shortcut above. C's trailing
+        // selection_setpoint() writes into the map nomul(0) just freed
+        // (end_running), so no mark survives a stopping step.
         game.context.run = 8;
         if (returning) await plineWithContinuation('You stop, unsure which way to go.');
         else game._travelTarget = null;
     } else {
-        visited.add(hero.uy * COLNO + hero.ux);
-        state.visited = visited;
+        // C hack.c:1416 and 1486: both the backward search and the
+        // general-direction fallback mark the hero's cell.
+        markTravelStep(hero.ux, hero.uy, game);
     }
     return direction;
 }

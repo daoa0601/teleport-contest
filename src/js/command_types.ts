@@ -45,7 +45,6 @@ export interface TravelRunState {
     mode: 8;
     targetX: number;
     targetY: number;
-    visited?: Set<number>;
 }
 
 export type RunState = DirectionalRunState | TravelRunState;

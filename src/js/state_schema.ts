@@ -174,6 +174,7 @@ const transientFields = {
     _thrownObject: true,
     _kickedObject: true,
     _travelTarget: true,
+    _travelMap: true,
     _tutorialState: true,
     _viz_rmax: true,
     _viz_rmin: true,
