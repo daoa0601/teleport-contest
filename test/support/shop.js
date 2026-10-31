@@ -43,6 +43,10 @@ export async function createStaffedShop({ left = 8, right = 14, top = 8, bottom 
         shk: { x: keeperX, y: keeperY },
         shd: { x: doorX, y: doorY },
         debit: 0, bill, billct: bill.length,
+        // A resident starts with the native zero-initialized eshk breakage
+        // tracking (monster_birth_extensions): nothing has broken yet in the
+        // current hero sequence.
+        break_seq: 0, seq_peaceful: 0,
     };
     const shopkeeper = await createMonsterAt(PM_SHOPKEEPER, keeperX, keeperY);
     shopkeeper.isshk = true;

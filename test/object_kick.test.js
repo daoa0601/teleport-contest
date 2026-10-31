@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { ICE, STONE } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { GOLD_PIECE, CLUB } from '../js/object_data.js';
+import { GOLD_PIECE, CLUB, EGG } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { kickFloorObject } from '../js/object_kick.js';
 import { initRng } from '../js/rng.js';
@@ -206,5 +206,28 @@ void test('a heavy coin pile that stays together can hurt the kicker', async () 
         }
     }
     assert.equal(injured, true, 'a failed heavy-pile kick must sometimes injure the hero');
+});
+void test('kicking fragile shop stock breaks it into a debt, not a theft charge', async () => {
+    freshGameplayRoom({ role: 'tourist' });
+    requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({ left: 9, right: 11, keeperX: 10, keeperY: 9 });
+    placeCreatedObject(await knownObject(EGG, { quantity: 1, bknown: false }), 11, 10);
+    const messages = [];
+    await kickFloorObject(11, 10, {
+        dx: 1, dy: 0,
+        random: limit => 1 % limit,
+        publish: message => { messages.push(message); },
+    });
+    // C dokick.c really_kick_object() -> dothrow.c breakobj(): the splatted
+    // egg is unpaid shop floor stock, so shk.c stolen_value() runs with the
+    // keeper's turn-start peacefulness and bills the hero instead of crying
+    // theft (dothrow.c:2550-2566).
+    assert.ok(messages.some(message => message.startsWith('You kick an egg')), `expected the kick line, got: ${messages.join(' | ')}`);
+    assert.ok(messages.includes('Splat!'), `expected Splat!, got: ${messages.join(' | ')}`);
+    assert.ok(messages.some(message => /^You owe .+ \d+ zorkmids for it!$/.test(message)), `expected a debt line, got: ${messages.join(' | ')}`);
+    assert.ok(!messages.some(message => message.includes('you are a thief')));
+    assert.equal(shopkeeper.mpeaceful, 1);
+    assert.ok(!shopkeeper.eshk.robbed, 'an inside breakage must not count as robbery');
+    assert.ok((shopkeeper.eshk.debit ?? 0) > 0);
 });
 //# sourceMappingURL=object_kick.test.js.map
