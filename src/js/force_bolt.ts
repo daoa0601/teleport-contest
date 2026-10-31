@@ -44,7 +44,10 @@ export async function hitMonsterWithForce(monster: Monster, source: 'wand' | 'sp
         return targetCellWasVisible;
     }
 
-    const hit = (state.u?.uswallow && state.u?.ustuck === monster)
+    // C zap.c:202: `u.uswallow || rnd(20) < 10 + find_mac(mtmp)`. Swallowing
+    // skips the to-hit roll for every target, not just the engulfer: a
+    // broken striking wand strikes monsters on adjacent squares too.
+    const hit = !!state.u?.uswallow
         || options.roll(20) < 10 + findMonsterArmorClass(monster);
     if (!hit) {
         if (!monster.m_ap_type) {

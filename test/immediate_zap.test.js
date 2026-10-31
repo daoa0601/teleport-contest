@@ -16,6 +16,7 @@ import { monsterStatusLine } from '../js/monster_status.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { probeObjectChain } from '../js/magic_probe.js';
 import { chargedWand, floorObject, knownObject, unopenedCatBox } from './support/game-objects.js';
+import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 function room(options = {}) {
@@ -39,6 +40,32 @@ void test('immediate striking is blocked by innate anti-magic immunity', async (
     const health = dragon.mhp;
     await hitMonsterWithWand(dragon, await chargedWand(WAN_STRIKING));
     assert.equal(dragon.mhp, health);
+});
+void test('a striking wand auto-hits any monster while the hero is swallowed', async () => {
+    room();
+    requireFixtureGame(game);
+    // C zap.c:bhitm() WAN_STRIKING/SPE_FORCE_BOLT: the to-hit test is
+    // `u.uswallow || rnd(20) < 10 + find_mac(mtmp)`. Swallowing skips the
+    // roll for every target, not only the engulfer: a broken striking wand
+    // hits monsters on adjacent squares while the hero is engulfed.
+    const engulfer = await createMonsterAt('purple worm', 12, 10);
+    await installSwallowedHero(engulfer);
+    // A displacer beast has armor class -10, so a rolled attack
+    // (rnd(20) < 10 - 10) can never hit it.
+    const target = await createMonsterAt('displacer beast', 11, 10);
+    const health = target.mhp ?? 1;
+    await hitMonsterWithWand(target, await chargedWand(WAN_STRIKING));
+    assert.ok(target.mhp !== undefined && target.mhp < health, 'the wand must strike the bystander without a to-hit roll');
+});
+void test('a striking wand still rolls to hit a monster when the hero is not swallowed', async () => {
+    room();
+    requireFixtureGame(game);
+    // Without u.uswallow, the same branch rolls rnd(20) and the
+    // unhittable displacer beast is missed instead of struck.
+    const target = await createMonsterAt('displacer beast', 11, 10);
+    const health = target.mhp ?? 1;
+    await hitMonsterWithWand(target, await chargedWand(WAN_STRIKING));
+    assert.equal(target.mhp, health);
 });
 void test('broken sleep magic leaves the monster in timed sleep after hostility', async () => {
     room();
