@@ -23,15 +23,15 @@ void test('knocking an eel back consumes goodpos eel draws around the message', 
     const eel = await createMonsterAt('jellyfish', 12, 10, NO_MINVENT);
     const messages = [];
     // Without the eel draw the wording rolls read 1 and 0, so a missing
-    // draw yields "forceful strike" and no stun instead of the outcomes
-    // asserted below.
+    // draw words the message "forceful strike" instead of the outcome
+    // asserted below. mhurtle() stuns the defender regardless of that
+    // (dothrow.c:1137), so mstun proves nothing here.
     const random = scriptedRandom([1, 0, 1, 0, 1, 0, 0]);
     const outcome = await tryKnockback(giant, eel, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         state: game, random, publish: message => { messages.push(message); },
     });
     assert.equal(outcome.knocked, true);
     assert.equal(eel.mx, 13);
-    assert.equal(eel.mstun, 1);
     assert.ok(messages.includes('The hill giant knocks the jellyfish backward with a powerful blow!'), messages.join('\n'));
 });
 void test('a non-eel defender draws no eel roll in its knockback', async () => {
