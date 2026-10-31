@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { advanceHeroStrangulation } from '../js/hero_strangulation.js';
 import { AMULET_OF_STRANGULATION } from '../js/object_data.js';

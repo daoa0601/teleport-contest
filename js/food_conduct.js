@@ -2,7 +2,7 @@
 // C refs: eat.c doeat(), eatcorpse(), doeat_nonfood(), eating_conducts(), fpostfx().
 import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { veganCorpse, vegetarianCorpse } from './food_traits.js';

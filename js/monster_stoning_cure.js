@@ -2,7 +2,8 @@
 // C refs: muse.c munstone(), mon_consume_unstone(), and cures_stoning().
 import { heroIsHallucinating } from './senses.js';
 import { NORMAL_SPEED, P_DAGGER, P_KNIFE, STRAT_WAITFORU, W_WEP, } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatHeardMessage } from './hero_speech.js';

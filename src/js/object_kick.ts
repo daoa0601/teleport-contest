@@ -10,7 +10,8 @@ import {
     A_DEX, DOOR, D_CLOSED, D_LOCKED, IS_OBSTRUCTED, SHOPBASE, STATUE_TRAP, Is_airlevel,
     Is_waterlevel, WEB, ZAP_POS, is_pit, isok,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { splitObjectStack } from './object_stack.js';
@@ -18,7 +19,7 @@ import { impactDisturbsZombies } from './object_impact.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { breakChestLock } from './lock.js';
 import { game } from './gstate.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation } from './map_types.js';

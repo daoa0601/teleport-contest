@@ -15,7 +15,8 @@ import {
     BEAR_TRAP, HOLE, ROCKTRAP, TRAPDOOR, WEB, is_pit,
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { gotoLevel } from './level_change.js';

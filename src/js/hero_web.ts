@@ -1,7 +1,7 @@
 // Spinning a web with #monster while polymorphed into a spider.
 // C refs: cmd.c domonability(), polyself.c dospinweb().
 
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -16,7 +16,8 @@ import {
     TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
 } from './const.js';
 
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { expelHero } from './hero_expulsion.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';

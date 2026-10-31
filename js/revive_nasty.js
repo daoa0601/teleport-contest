@@ -1,7 +1,7 @@
 // C hack.c:revive_nasty(). Revive protected corpses before crushing a pile.
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';

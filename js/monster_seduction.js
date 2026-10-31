@@ -11,6 +11,7 @@ import { heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, KILLED_BY, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster } from './display.js';
+import {} from './pline.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { loseHeroHp } from './hero_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';

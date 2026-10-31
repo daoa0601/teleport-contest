@@ -5,7 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { Position } from './map_types.js';
 import type { ObjectCallResult } from './object_call.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
@@ -28,9 +28,9 @@ import {
     M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, STRAT_WAITFORU, TIMEOUT, Upolyd,
 } from './const.js';
 import {
-    canSeeMonster, canSpotMonster, map_invisible, newsym,
-    displayColorName, plineWithContinuation, shieldeff,
+    canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName, shieldeff,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';

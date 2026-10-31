@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OBJECT_NAMES, TWO_HANDED_SWORD } from '../js/object_data.js';

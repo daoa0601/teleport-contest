@@ -11,10 +11,11 @@ import {
 import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { MonsterAction } from './monster_action_types.js';
-import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
+import { displayColorName, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';

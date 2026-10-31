@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SICK_ALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { healHero } from '../js/hero_healing.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

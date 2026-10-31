@@ -8,7 +8,8 @@ import {
 } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SPE_LIM } from './const.js';
-import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { enchantWeapon } from './enchant_weapon.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';

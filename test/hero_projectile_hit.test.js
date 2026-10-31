@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findArmorClass } from '../js/armor.js';
 import { NO_MINVENT, Upolyd } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

@@ -1,7 +1,8 @@
 // Monster-versus-monster status attacks from uhitm.c:mhitm_adtyping().
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_MISS, MSLOW, STRAT_WAITFORU, W_ARMH } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation, shieldeff } from './display.js';
+import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';

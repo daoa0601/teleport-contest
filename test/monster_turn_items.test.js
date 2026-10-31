@@ -9,7 +9,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { lootMonsterContainer } from '../js/monster_container_loot.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { addObjectToContainer } from '../js/object_container.js';

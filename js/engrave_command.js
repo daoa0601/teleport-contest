@@ -4,7 +4,8 @@
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
 import { commandResultCancelled, commandResultFailed, setMulti } from './command_state.js';
-import { plineWithContinuation as pline, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { getobj } from './inventory_prompt.js';

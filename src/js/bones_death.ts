@@ -12,7 +12,8 @@ import {
     completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave,
 } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

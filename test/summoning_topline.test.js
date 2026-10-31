@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { msummon } from '../js/minion.js';
 import { createMonsterAt } from './support/monsters.js';

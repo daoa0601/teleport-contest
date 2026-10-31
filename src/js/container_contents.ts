@@ -1,6 +1,7 @@
 // C end.c:container_contents(), shared by final disclosure and #loot ':'.
 import { isContainer } from './container.js';
-import { displayMessageWindow, plineWithContinuation } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { identifyObjectForDisclosure } from './invent.js';
 import { objectDescription } from './object_description.js';
 import { BAG_OF_TRICKS, STATUE } from './object_data.js';

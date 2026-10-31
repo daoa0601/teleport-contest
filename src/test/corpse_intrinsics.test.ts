@@ -14,7 +14,9 @@ import {
     corpseEnergyBuzz,
     grantCorpseIntrinsic,
 } from '../js/corpse_intrinsics.js';
-import { flushPendingTopline, flush_screen, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';

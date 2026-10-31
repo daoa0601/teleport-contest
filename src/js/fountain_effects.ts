@@ -7,7 +7,7 @@ import { rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 type DescribedPart = string | (() => string);
 

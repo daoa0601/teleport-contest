@@ -8,7 +8,7 @@ import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { AT_EXPL } from '../js/monster_attack_types.js';
 import { D_CLOSED, D_NODOOR, DOOR, MM_ANGRY, MM_NOGRP, NO_MINVENT, NON_PM, PIT, POOL, TT_PIT, W_AMUL, W_ARM, W_WEP } from '../js/const.js';
 import { RED_DRAGON_SCALES } from '../js/object_data.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';

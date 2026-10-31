@@ -5,7 +5,7 @@ import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor
 import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
 import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

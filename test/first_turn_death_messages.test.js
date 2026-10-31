@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { pline, plineWithContinuation } from '../js/pline.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { damageHeroFromMonster } from '../js/hero_damage.js';
 import { finishOrdinaryDeath } from '../js/end.js';

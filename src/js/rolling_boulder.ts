@@ -8,8 +8,9 @@ import {
     IS_TREE, LANDMINE, LEVEL_TELEP, M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP,
     is_hole, is_pit, isok,
 } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation, transientObjectGlyph } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSpotMonster, newsym, transientObjectGlyph } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { levelAtDepth } from './dungeon.js';
 import { deleteEngravingAt } from './engrave.js';
 import { applyFloorEffects } from './floor_effects.js';

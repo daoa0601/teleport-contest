@@ -2,7 +2,8 @@
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import { QBUFSZ } from './const.js';
-import { displayMessageWindow, plineWithContinuation as pline } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { wipeoutText } from './engrave.js';
 import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';

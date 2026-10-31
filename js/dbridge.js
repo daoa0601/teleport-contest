@@ -3,7 +3,8 @@
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL, MOAT, ROOM, W_NONDIGGABLE, isok, } from './const.js';
-import { displayLiquidName, newsym, plineWithContinuation, } from './display.js';
+import { displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { destroyDrawbridgeOccupants, moveDrawbridgeOccupants, } from './drawbridge_occupants.js';
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';

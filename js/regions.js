@@ -4,7 +4,8 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 import { ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok, } from './const.js';
-import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './monster_location.js';

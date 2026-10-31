@@ -11,7 +11,8 @@ import { A_CON, A_LAWFUL, A_STR, CHOKING, FAINTED, FAINTING, HUNGRY, NOT_HUNGRY,
 import { hasNonArtifactConflict } from './hero_conflict.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { bot, plineWithContinuation } from './display.js';
+import { bot } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { makeDeaf } from './hero_hearing.js';
 import { stopHeroOccupation } from './occupation.js';

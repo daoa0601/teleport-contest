@@ -1,12 +1,13 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 // C steal.c:mdrop_obj()/mdrop_special_objs(), mkobj.c:discard_minvent().
 
 import { artifactByName, uncreateArtifact } from './artifacts.js';
 import { SHOPBASE, W_SADDLE } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { petDroppableObject } from './dog.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';

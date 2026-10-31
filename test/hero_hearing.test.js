@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { TIMEOUT } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { makeDeaf } from '../js/hero_hearing.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

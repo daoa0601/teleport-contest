@@ -11,7 +11,8 @@ import {
     A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED,
     PLNMSG_OBJ_GLOWS, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok,
 } from './const.js';
-import { displayColorName, docrt, plineWithContinuation as pline } from './display.js';
+import { displayColorName, docrt } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { confersLuck } from './hero_inventory.js';
 import { announceTerrainRescue } from './hack.js';

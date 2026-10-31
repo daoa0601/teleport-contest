@@ -8,8 +8,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
 import type { Stairway } from './map_types.js';
-import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import type { MessagePublisher } from './pline.js';
+import { plineWithContinuation } from './pline.js';
 import {
     captureLevitationState, grantIntrinsicProperty, propertyIsActive,
     propertyIsBlocked, refreshMovementProperties, refreshProperty,

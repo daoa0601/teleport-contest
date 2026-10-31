@@ -20,10 +20,9 @@ import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import {
-    flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym,
-    checkGoldSymbol, reglyphSymbolSet,
-} from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { flush_screen, docrt, bot, newsym, checkGoldSymbol, reglyphSymbolSet } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices } from './monster_notices.js';
 import { d, rnd, rn1, rn2 } from './rng.js';

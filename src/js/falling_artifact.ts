@@ -1,7 +1,7 @@
 // Falling and returning weapons have no attacker for artifact_hit().
 import { applyArtifactHit } from './artifact_hit.js';
 import type { ArtifactHitResult } from './artifact_hit.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { rn2, rnd } from './rng.js';

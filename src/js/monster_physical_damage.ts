@@ -1,7 +1,8 @@
 // Native uhitm.c:mhitm_ad_phys(), monster against monster.
 import { applyArtifactHit } from './artifact_hit.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AT_CLAW, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import {
@@ -17,7 +18,7 @@ import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage } from './weapon_damage.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { MonsterMeleeAttack } from './monster_action_types.js';
 import type { PetrificationDeathHandler } from './monster_stoning.js';

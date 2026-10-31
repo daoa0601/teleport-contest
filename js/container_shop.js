@@ -1,6 +1,6 @@
 // C shk.c:pick_pick(), called by pickup.c:out_container() before addinv().
 import { game } from './gstate.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { currentShopResident, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { shopkeeperCustomerInsult } from './shop_damage.js';

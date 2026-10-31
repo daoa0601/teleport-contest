@@ -13,9 +13,8 @@ import { setHeroSpecies } from './hero_species.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
-import {
-    canSeeMonster, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman,
 } from './monster_data.js';
@@ -40,7 +39,7 @@ import { monsterGrowlSound } from './monster_sound.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 export interface HeroWereChangeOptions {
     state?: GameState;

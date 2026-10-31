@@ -2,7 +2,8 @@
 import { heroIsDisplaced } from './armor.js';
 import { IS_WATERWALL } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, set_msg_xy } from './display.js';
+import { canSeeMonster } from './display.js';
+import { set_msg_xy } from './pline.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { AD_SEDU, AD_SSEX, AT_BITE, AT_BUTT, AT_KICK, AT_STNG, } from './monster_attack_types.js';

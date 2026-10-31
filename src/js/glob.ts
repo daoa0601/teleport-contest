@@ -2,7 +2,8 @@
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { isok } from './const.js';
 import { isIceAt } from './terrain_properties.js';
 import { deallocateObject } from './object_delete.js';
@@ -29,7 +30,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimer } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DueObjectTimer } from './object_timers.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
 

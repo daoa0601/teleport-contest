@@ -2,7 +2,7 @@
 // tshirt_text(), apron_text(), hawaiian_design(), and candy_wrapper_text().
 import { armorSimpleName } from './armor.js';
 import { artifactById } from './artifacts.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import { recordLiteracy } from './literacy.js';

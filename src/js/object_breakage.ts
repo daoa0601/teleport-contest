@@ -9,9 +9,8 @@ import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
     CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE,
 } from './object_data.js';
-import {
-    newsym, plineWithContinuation,
-} from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { releaseCameraDemon } from './camera.js';
 import {
     applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg,
@@ -34,7 +33,7 @@ import {
 import { stolenValue } from './shop_loss.js';
 import { makeAngryShopkeeper } from './shop_damage.js';
 import { cansee } from './vision.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

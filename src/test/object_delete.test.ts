@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { beginObjectBurn } from '../js/light.js';
 import { cansee } from '../js/vision.js';
 import { deleteObject, delobj } from '../js/object_delete.js';

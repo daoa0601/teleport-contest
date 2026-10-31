@@ -1,6 +1,7 @@
 // Decide how much of a floor or container stack the hero can lift.
 // C refs: pickup.c carry_count() and lift_object().
-import { clearMessageWindow, plineWithContinuation } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { inventoryItemDescription } from './invent.js';

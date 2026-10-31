@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { fullyIdentifyObject, objectNeedsFullIdentification } from '../js/invent.js';

@@ -3,7 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, MM_NOGRP, NO_MINVENT, W_AMUL, W_WEP } from '../js/const.js';
-import { canSpotMonster, flush_screen, plineWithContinuation } from '../js/display.js';
+import { canSpotMonster, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resolveHeroCombatExplosion } from '../js/hero_combat_explosion.js';
 import { resetInputState } from '../js/input.js';

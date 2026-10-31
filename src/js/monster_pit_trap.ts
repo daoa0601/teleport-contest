@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_pit().
 
 import { SPIKED_PIT } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterTrapDeath } from './monster_death.js';
@@ -18,7 +18,7 @@ import { levelHasCeiling } from './terrain_properties.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathResult } from './monster_death.js';
 
 export interface MonsterPitTrap {

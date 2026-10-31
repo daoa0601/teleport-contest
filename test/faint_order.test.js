@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { FAINTED, HUNGRY } from '../js/const.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

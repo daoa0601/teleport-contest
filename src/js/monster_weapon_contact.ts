@@ -1,7 +1,7 @@
 // C uhitm.c:mhitm_ad_phys(): silver contact and pudding division.
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroHatesSilver } from './hero_species.js';
 import { cloneHeroMonsterForm } from './mklev.js';

@@ -3,7 +3,7 @@
 import { commandResultCancelled, nomul } from './command_state.js';
 import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL, PLNMSG_OBJNAM_ONLY } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
 import { ableToLoot } from './container_location.js';
 import { heroHasNoHands } from './polyself.js';

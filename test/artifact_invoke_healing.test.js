@@ -7,7 +7,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { heroIsBlind } from '../js/senses.js';
 import { invokeArtifactPower } from '../js/artifact_invoke.js';
 import { artifactByName } from '../js/artifacts.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { requireScreenRow } from './support/screen.js';
 void test('the Staff reports slight relief when it cures a timeout but permanent blindness remains', async () => {
     await freshObjectRoom({ role: 'healer', hero: { permaBlind: true, blindTurns: 7 } });

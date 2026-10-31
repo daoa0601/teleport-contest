@@ -5,7 +5,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { heroIsBlind } from '../js/senses.js';
 import { BLINDFOLD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

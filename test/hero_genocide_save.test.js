@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { Upolyd } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { GameDisplay } from '../js/game_display.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame, resetGame } from '../js/gstate.js';

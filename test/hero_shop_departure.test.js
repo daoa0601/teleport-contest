@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, G_EXTINCT, G_GENOD, NO_MINVENT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { initializePet } from '../js/dog.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { requireGameDisplay, game } from '../js/gstate.js';

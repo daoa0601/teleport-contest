@@ -8,7 +8,7 @@ import { rn1, rn2, rn2Display } from './rng.js';
 import { nativeRoleAt, roles } from './roles.js';
 import { heroIsHallucinating } from './senses.js';
 import { A_NONE, G_GONE, Is_astralevel, MM_ADJACENTOK, MM_NOWAIT } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { makeConfused } from './hero_mental_status.js';

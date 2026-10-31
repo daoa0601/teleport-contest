@@ -3,7 +3,7 @@ import { removeHeroAccessory } from './accessory.js';
 import { armorOffMessage, armorSimpleName, removeHeroArmor } from './armor.js';
 import { heroFingerName, heroFootName, heroHandName } from './body_parts.js';
 import { TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import { BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';

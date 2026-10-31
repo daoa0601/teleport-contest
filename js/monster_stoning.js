@@ -1,7 +1,9 @@
 // Monster petrification and the statue left behind.
 // C refs: trap.c minstapetrify(), mon.c mon_to_stone() and monstone().
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, D_CLOSED, D_LOCKED, DOOR, G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, } from './const.js';
-import { canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, unmap_invisible, } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, unmap_invisible } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { expelHero } from './hero_expulsion.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { relocateMonsterTo } from './teleport.js';

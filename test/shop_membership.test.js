@@ -2,7 +2,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { STAIRS } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';

@@ -1,7 +1,7 @@
 import type { Monster } from './monster_types.js';
 import type { MonsterAttack } from './data_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { DamageType } from './monster_attack_types.js';
 // Active monster self-explosions. Native mhitu.c:explmu(), explode.c:mon_explodes().
@@ -9,7 +9,8 @@ import { monsterWieldsOrWearsDefense } from './artifacts.js';
 import type { ArtifactDefenseQuery } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_AGR_DIED, M_ATTK_MISS, WATER } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';

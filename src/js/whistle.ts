@@ -6,9 +6,8 @@ import {
     LUCKMIN, M_AP_TYPE, PLNMSG_enum, RLOC_MSG, RLOC_NONE,
 } from './const.js';
 import { heroNoseName } from './body_parts.js';
-import {
-    canSpotMonster, displayColorName, newsym, plineWithContinuation,
-} from './display.js';
+import { canSpotMonster, displayColorName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { heroCanBlow } from './hero_species.js';

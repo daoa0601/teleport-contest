@@ -3,7 +3,7 @@ import type { GameObject } from './object_types.js';
 import { requirePlayingGame } from './gstate.js';
 // Native zap.c:zappable()/learnwand(), shared by zapping and breaking wands.
 
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { useUpInventoryStack } from './hero_inventory.js';

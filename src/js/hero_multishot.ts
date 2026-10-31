@@ -2,7 +2,7 @@
 // C refs: dothrow.c multishot_class_bonus() and throw_obj().
 
 import { currentAttribute } from './attrib.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     A_DEX, A_STR, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE,
     P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR,

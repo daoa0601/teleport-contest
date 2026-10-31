@@ -3,7 +3,8 @@
 import { artifactById } from './artifacts.js';
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { tryKnockback } from './knockback.js';
 import {
@@ -34,7 +35,7 @@ import { petrifyMonsterAttacker, petrifyMonsterDefender } from './monster_stonin
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { d, rn2, rnd } from './rng.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { AttackTuple, MonsterCallLog, MonsterCombatDeath } from './monster_action_types.js';

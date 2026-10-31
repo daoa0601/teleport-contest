@@ -20,12 +20,13 @@ import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import {
-    canSpotMonster, canSenseMonster, monsterHasWarningProjection, displayMessageWindow, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving,
-    map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell,
-    unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph,
-    transientMonsterGlyph, transientTrapGlyph,
-    cls, displaySelf, docrt, feel_newsym, set_msg_xy,
+    canSpotMonster, canSenseMonster, monsterHasWarningProjection, feel_location, glyphAt,
+    magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap,
+    newsym, show_glyph_cell, unmap_invisible, flashGlyphAt, terrain_glyph, transientMonsterGlyph,
+    transientTrapGlyph, cls, displaySelf, docrt, feel_newsym,
 } from './display.js';
+import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
     M_AP_TYPE, Is_airlevel, Is_waterlevel, isok,

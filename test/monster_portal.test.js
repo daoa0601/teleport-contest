@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAGIC_PORTAL, MIGR_PORTAL, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { triggerImmediateMonsterTrap } from '../js/monmove.js';

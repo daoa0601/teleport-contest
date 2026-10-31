@@ -4,7 +4,8 @@
 import { setArtifactOrigin } from './artifacts.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_WISH, recordGameLogEvent } from './gamelog.js';
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, NHW_MENU, PICK_ONE } from './const.js';
-import { flushPendingTopline, pline, plineWithContinuation, } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { objectDescription } from './object_description.js';

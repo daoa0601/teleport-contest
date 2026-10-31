@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsDisplaced } from './armor.js';
 import { TIMEOUT } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { heroIsInvisible } from './hero_invisibility.js';

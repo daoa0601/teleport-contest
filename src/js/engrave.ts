@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { Engraving } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';

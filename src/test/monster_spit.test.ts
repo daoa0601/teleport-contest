@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOWAIT, MMOVE_NOTHING, NO_MINVENT, ROOM, STONE, W_AMUL, W_WEP } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeDeaf } from '../js/hero_hearing.js';
@@ -21,7 +21,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-import type { MessagePublisher } from '../js/display.js';
+import type { MessagePublisher } from '../js/pline.js';
 
 const BIRTH_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 

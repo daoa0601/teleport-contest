@@ -12,9 +12,8 @@ import {
     RANDOM_TIN, ROTTEN_TIN, SPINACH_TIN,
 } from './const.js';
 import { applyCorpsePostEffects, applyCorpsePreEffects } from './corpse_eating.js';
-import {
-    displayColorName, plineWithContinuation, randomDisplayMonsterName,
-} from './display.js';
+import { displayColorName, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { nonrottingCorpse, vegetarianCorpse } from './food_traits.js';
 import { eatingConducts, recordSpinachConsumption } from './food_conduct.js';
 import { consumeFoodObject } from './food_lifecycle.js';

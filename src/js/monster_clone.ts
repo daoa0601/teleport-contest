@@ -2,8 +2,9 @@
 // C refs: makemon.c clone_mon() and potion.c split_mon().
 
 import { G_EXTINCT, isok } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { nextIdent } from './ident.js';
 import { findMonsterNearPosition } from './mklev.js';

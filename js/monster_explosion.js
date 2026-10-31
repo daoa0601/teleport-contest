@@ -1,7 +1,8 @@
 // Death explosions, including a blast contained inside another monster.
 // C mon.c:corpse_chance(), explode.c:mon_explodes().
 import { EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
 import { game } from './gstate.js';
 import { formatHeardMessage } from './hero_speech.js';

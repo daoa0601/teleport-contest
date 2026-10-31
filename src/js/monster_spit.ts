@@ -4,7 +4,8 @@
 import { BOLT_LIM, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { requireLiveGame } from './gstate.js';
 import { dist2, distmin } from './hacklib.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -17,7 +18,7 @@ import { ACID_VENOM, BLINDING_VENOM } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';

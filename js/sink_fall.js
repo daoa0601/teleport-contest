@@ -7,7 +7,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { armorOffMessage, removeHeroArmor, stopDonning } from './armor.js';
 import { removeHeroAccessory } from './accessory.js';
 import { game, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishHeroDeath } from './end.js';

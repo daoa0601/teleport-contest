@@ -9,9 +9,10 @@ import { heroStomachName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { applyCorpsePostEffects } from './corpse_eating.js';
 import {
-    canSpotMonster, flush_screen, map_invisible, map_location, newsym,
-    plineWithContinuation, show_glyph_cell, transientMonsterGlyph,
+    canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell,
+    transientMonsterGlyph,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { eatingConducts } from './food_conduct.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -46,7 +47,7 @@ import { heroIsFlaming, setHeroSlimingTimeout } from './slime.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';

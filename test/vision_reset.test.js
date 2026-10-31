@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { STONE } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { cansee, couldsee, init_vision_globals, vision_recalc, vision_reset_new_level, } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('initializing vision starts without sight from the previous game', async () => {

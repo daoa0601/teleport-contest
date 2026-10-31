@@ -1,11 +1,11 @@
 // C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
 
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { Monster } from './monster_types.js';
 import type { DeathHandler, KillerFormat } from './end.js';
 import { KILLED_BY_AN, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';

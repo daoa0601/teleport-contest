@@ -21,7 +21,7 @@ import type { PlayingGameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GameObject, ObjectMigration } from './object_types.js';
 import type { Position, Stairway, Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
 import { maybeResetPick } from './lock_context.js';

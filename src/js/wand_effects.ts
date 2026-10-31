@@ -18,10 +18,8 @@ import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } 
 import { findit } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { zapDigWithObject } from './digging_magic.js';
-import {
-    displayLiquidName, newsym,
-    plineWithContinuation as pline, unmap_invisible,
-} from './display.js';
+import { displayLiquidName, newsym, unmap_invisible } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { changeDoorByMagic } from './door_magic.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { recordMappedOverviewState } from './dungeon.js';

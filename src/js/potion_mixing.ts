@@ -2,7 +2,8 @@
 import type { GameObject } from './object_types.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BOLT_LIM } from './const.js';
-import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { holdAnotherObject } from './hero_hold_object.js';

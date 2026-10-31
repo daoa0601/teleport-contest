@@ -19,7 +19,7 @@ import { monsterName } from './monster_name.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import type { ArtifactHitDefender, ArtifactHitResult } from './artifact_hit.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

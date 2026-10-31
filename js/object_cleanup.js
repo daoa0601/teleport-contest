@@ -5,7 +5,7 @@ import { restoreBallAndChainPlacement } from './ball.js';
 import { consumeInventoryItem } from './invent.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './terrain_properties.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';
 export async function doneObjectCleanup() {
     await finishInUseInventory(true);

@@ -9,9 +9,10 @@ import {
 import { exerciseWisdom } from './attrib.js';
 import { heroFootName, heroNoseName } from './body_parts.js';
 import {
-    currentBoulderSymbol, displaySelf, docrt, flushPendingTopline, glyphAt,
-    map_object, newsym, plineWithContinuation as pline, unmapObject,
+    currentBoulderSymbol, displaySelf, docrt, glyphAt, map_object, newsym, unmapObject,
 } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
     browseDetectionMap, clearDetectionMap, mapDetectedMonster,

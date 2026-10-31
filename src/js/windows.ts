@@ -4,7 +4,8 @@
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
+import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED,

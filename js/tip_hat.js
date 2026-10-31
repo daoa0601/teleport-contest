@@ -1,7 +1,8 @@
 // C sounds.c:tiphat() and responsive_mon_at().
 import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH, isok } from './const.js';
 import { armorSimpleName } from './armor.js';
-import { canSeeMonster, glyphAt, map_invisible, plineWithContinuation as pline } from './display.js';
+import { canSeeMonster, glyphAt, map_invisible } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND, monsterIsHumanoid } from './monster_data.js';

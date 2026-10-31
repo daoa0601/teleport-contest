@@ -4,7 +4,7 @@
 import { artifactById, resolveHeroArtifactTouch, rollHeroArtifactBlast } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, KILLED_BY } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -12,7 +12,7 @@ import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js'
 import type { Artifact, ArtifactTouchResult } from './artifacts.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 
 export interface HeroArtifactTouchResult extends ArtifactTouchResult {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_WIS, SICK_ALL } from '../js/const.js';
-import { setTopline } from '../js/display.js';
+import { setTopline } from '../js/pline.js';
 import { canHeroRiseUp, levelAtDepth } from '../js/dungeon.js';
 import { newExperienceThreshold } from '../js/exper.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

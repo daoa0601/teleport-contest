@@ -3,7 +3,8 @@
 
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_MISS } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { AD_BLND } from './monster_attack_types.js';
@@ -16,7 +17,7 @@ import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { monsterReflectionSource } from './ray.js';
 import { d, rn2 } from './rng.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { MonsterCombatDamageResult, ResolveMonsterCombatDamage } from './monster_combat_effect_types.js';

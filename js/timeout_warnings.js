@@ -1,6 +1,6 @@
 // C timeout.c:phaze_dialogue(), region_dialogue(), and their expiry cases.
 import { formatFeltMessage } from './hero_speech.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsBreathless } from './hero_species.js';
 import { heroIsSurroundedByRock } from './prayer_trouble.js';

@@ -1,6 +1,7 @@
 // Native hack.c:domove_attackmon_at() and domove_core(), displacer-beast swap.
 import { GP_ALLOW_U, IS_OBSTRUCTED, STONE } from './const.js';
-import { canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym, plineWithContinuation } from './display.js';
+import { canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroBadRock } from './hack.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_NAME } from './monster_data.js';

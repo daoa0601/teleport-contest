@@ -1,6 +1,6 @@
 // Native eat.c:maybe_cannibal(), shared by the first bite and tainted meat.
 import { LUCKMIN, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';

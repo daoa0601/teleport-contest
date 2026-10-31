@@ -1,5 +1,6 @@
 // Slow-monster and speed-monster point effects. C zap.c:bhitm().
-import { canSeeMonster, plineWithContinuation as pline, } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { expelHero, holdingMonsterName } from './hero_expulsion.js';
 import { wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';

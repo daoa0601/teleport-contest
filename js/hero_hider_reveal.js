@@ -7,7 +7,8 @@
 //     mimicked something via #monster; sticky forms grab the attacker.
 import { objectIsHardHelmet } from './armor.js';
 import { M_AP_NOTHING, W_ARMH } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';

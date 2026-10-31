@@ -4,10 +4,10 @@ import {
     DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED,
     IRONBARS, SHOPBASE, W_NONDIGGABLE,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation,
-} from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';

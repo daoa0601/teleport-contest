@@ -1,6 +1,8 @@
 // Temporary disguises caused by eating mimic corpses. C dogmove.c:quickmimic().
 import { DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT } from './const.js';
-import { canSpotMonster, displayMessageWindow, glyphAt, newsym, plineWithContinuation, } from './display.js';
+import { canSpotMonster, glyphAt, newsym } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';

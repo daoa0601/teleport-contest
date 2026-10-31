@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, DART_TRAP, NO_MINVENT, ROCKTRAP } from '../js/const.js';
-import { flush_screen, newsym, plineWithContinuation } from '../js/display.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';

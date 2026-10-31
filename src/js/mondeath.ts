@@ -8,9 +8,8 @@ import {
     NON_PM, W_AMUL,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import {
-    canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { expelHero, releaseHeroGrip } from './hero_expulsion.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
@@ -31,7 +30,7 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathResult } from './monster_death.js';
 
 interface LifeSavingOptions {

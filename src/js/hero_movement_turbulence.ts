@@ -2,7 +2,7 @@
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, Is_airlevel, Is_waterlevel, isok } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroCanSwim } from './hack.js';
 import { rn2 } from './rng.js';

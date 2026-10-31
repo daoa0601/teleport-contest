@@ -2,7 +2,7 @@
 import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOMEMADE_TIN } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';

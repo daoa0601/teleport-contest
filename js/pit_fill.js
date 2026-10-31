@@ -1,7 +1,8 @@
 // C trap.c:fill_pit() and do.c:flooreffects()'s boulder/pit branch.
 import { buryFloorObjectsAt } from './buried_object.js';
 import { TRAPDOOR, HOLE, is_hole, is_pit } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';

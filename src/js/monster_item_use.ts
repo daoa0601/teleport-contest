@@ -3,10 +3,11 @@ import { setMulti } from './command_state.js';
 import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
 import {
-    canSeeMonster, canSenseMonster, canSpotMonster, cls, displayMessageWindow,
-    displaySelf, docrt, flashGlyphAt, map_invisible, newsym,
-    plineWithContinuation, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph,
+    canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt,
+    map_invisible, newsym, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph,
 } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnconscious } from './hero_sleep.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';

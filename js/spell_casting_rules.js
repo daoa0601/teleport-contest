@@ -3,7 +3,7 @@ import { requirePlayingGame } from './gstate.js';
 // percent_success(), and spell_skilltype(). The caller owns successful casting.
 import { currentAttribute } from './attrib.js';
 import { A_INT, A_STR, A_WIS, P_CLERIC_SPELL, P_ISRESTRICTED, P_UNSKILLED, } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { formatFeltMessage, heroCanChant } from './hero_speech.js';

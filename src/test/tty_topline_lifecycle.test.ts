@@ -6,10 +6,9 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import { readCommandInput } from '../js/command_input.js';
-import {
-    clearMessageWindow, displayMessageWindow, docrt, flushPendingTopline,
-    flush_screen, pline, plineWithContinuation,
-} from '../js/display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from '../js/tty_topline.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { pline, plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { promptKey, readDirectionKey } from '../js/tty_prompts.js';

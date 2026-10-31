@@ -8,7 +8,7 @@ import { heroHandName } from './body_parts.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
 import type { BoomerangFlight } from './boomerang.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ProjectileFlight } from './thrown_object.js';

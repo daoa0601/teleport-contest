@@ -1,5 +1,6 @@
 // C detect.c:unconstrain_map(), browse_map(), map_monst(), map_redisplay().
-import { cls, docrt, flush_screen, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, under_ground, under_water, } from './display.js';
+import { cls, docrt, flush_screen, show_glyph_cell, transientMonsterGlyph, under_ground, under_water, } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';

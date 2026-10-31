@@ -4,7 +4,7 @@
 import { objectMaterial } from './object_material.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, EGG, MIRROR, } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { isContainer } from './container.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { deleteObject } from './object_delete.js';

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { clearMessageWindow, docrt } from '../../js/display.js';
+import { clearMessageWindow } from '../../js/tty_topline.js';
+import { docrt } from '../../js/display.js';
 import { game, requireGameDisplay } from '../../js/gstate.js';
 import { Engine, runSegment } from '../../js/jsmain.js';
 import { vision_recalc, vision_reset } from '../../js/vision.js';

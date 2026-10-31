@@ -4,7 +4,9 @@ import { setMulti } from './command_state.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import { readchar } from './input.js';
-import { clearMessageWindow, flush_screen, setTopline } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { setTopline } from './pline.js';
 export async function readCommandInput() {
     game._commandCount = 0;
     setMulti(0);

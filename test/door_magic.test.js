@@ -11,7 +11,8 @@ import { AMULET_OF_LIFE_SAVING, LOCK_PICK, ROCK, SPE_FORCE_BOLT, SPE_KNOCK, SPE_
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { cansee, vision_reset, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';

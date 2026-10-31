@@ -9,9 +9,8 @@ import {
     Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK,
 } from './const.js';
 import { tameMonster } from './monster_taming.js';
-import {
-    canSeeMonster, newsym, pline, plineWithContinuation, shieldeff,
-} from './display.js';
+import { canSeeMonster, newsym, shieldeff } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';

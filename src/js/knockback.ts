@@ -10,14 +10,15 @@ import {
     W_SADDLE, isok,
 } from './const.js';
 import { doorlessDoor } from './hack.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './monster_hurtle.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import {

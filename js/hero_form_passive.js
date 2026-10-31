@@ -2,7 +2,8 @@
 // C mhitu.c:passiveum() and assess_dmg().
 import { heroIsHallucinating } from './senses.js';
 import { Upolyd } from './const.js';
-import { canSpotMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterSubject, shieldeff, } from './display.js';
+import { canSpotMonster, displayLiquidName, randomDisplayMonsterSubject, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

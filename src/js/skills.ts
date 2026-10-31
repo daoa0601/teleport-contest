@@ -9,7 +9,8 @@ import {
     P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE,
 } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { flushPendingTopline, plineWithContinuation } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';

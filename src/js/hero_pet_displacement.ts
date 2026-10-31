@@ -1,6 +1,7 @@
 // C hack.c:domove_swap_with_pet(), after the hero's tentative move.
 import { IS_OBSTRUCTED, IS_STWALL, IS_TREE, MGIVENNAME, W_NONDIGGABLE, W_NONPASSWALL, is_pit } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { abusePet } from './dog.js';
 import { recordHeroKillConduct } from './end.js';

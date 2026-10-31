@@ -14,7 +14,8 @@ import {
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
-import { canSeeMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, monsterVisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -41,7 +42,7 @@ import { heroIsBlind } from './senses.js';
 import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
 import { isPolearm, monsterWeaponSwingVerb, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

@@ -4,7 +4,7 @@
 // in the property loop at C property order, levitation before flying.
 import { ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { captureLevitationState, hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';

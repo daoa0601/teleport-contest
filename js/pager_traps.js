@@ -1,6 +1,7 @@
 // C pager.c:doidtrap(). Identifying a known trap never spends a turn.
 import { BEAR_TRAP, ROCKTRAP, TRAPPED_CHEST, TRAPPED_DOOR, WEB, is_hole, PIT, HOLE } from './const.js';
-import { glyphAt, pline } from './display.js';
+import { glyphAt } from './display.js';
+import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { detectedTrapDisguise } from './pager_features.js';

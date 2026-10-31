@@ -2,7 +2,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -18,7 +18,7 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsFromBill } from './shk.js';
 import { cansee } from './vision.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 

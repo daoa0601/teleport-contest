@@ -1,4 +1,4 @@
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { AttackTuple, MonsterCombatDeath } from './monster_action_types.js';
 import type { DamageType } from './monster_attack_types.js';

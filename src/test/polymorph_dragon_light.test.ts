@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';

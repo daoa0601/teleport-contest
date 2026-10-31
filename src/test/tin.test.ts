@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { currentAttribute } from '../js/attrib.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { A_STR, HEALTHY_TIN, HOMEMADE_TIN, ROTTEN_TIN, SATIATED, SPINACH_TIN } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';

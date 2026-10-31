@@ -1,5 +1,5 @@
 // C apply.c:snuff_lit(), for the inventory enclosed by an engulfing actor.
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { endObjectBurn } from './light.js';

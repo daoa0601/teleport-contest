@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { expelHero } from '../js/hero_expulsion.js';
 import { createPoisonGasCloud, runLevelRegions, updateMonsterRegions } from '../js/regions.js';
 import { game } from '../js/gstate.js';

@@ -6,14 +6,15 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathResult } from './monster_death.js';
 import {
     D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED,
     IS_STWALL, IS_WATERWALL, W_ARM, W_ARMC, W_ARMU, W_NONPASSWALL, isok,
 } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';

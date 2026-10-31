@@ -5,7 +5,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import { monsterHasMagicResistance, monsterWornIronShoes } from './anti_magic_trap.js';
 import { W_ARMF } from './const.js';

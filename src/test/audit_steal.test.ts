@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { pushKeys, resetInputState } from '../js/input.js';

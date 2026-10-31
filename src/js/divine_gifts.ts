@@ -8,7 +8,8 @@ import {
 } from './artifacts.js';
 import { heroFootName, monsterStomachName } from './body_parts.js';
 import { ACH_TUNE, A_STR, P_BROAD_SWORD, P_LONG_SWORD, PLNMSG_OBJ_GLOWS, Upolyd } from './const.js';
-import { displayColorName, newsym, plineWithContinuation as pline, see_monsters } from './display.js';
+import { displayColorName, newsym, see_monsters } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { godVoice } from './divine_wrath.js';
 import { gainExperienceLevel } from './exper.js';
 import { placeCreatedObject } from './floor_object.js';

@@ -2,7 +2,8 @@ import { requirePlayingGame } from './gstate.js';
 // Native spell.c:cast_protection() and the direct healing spell effects.
 import { findArmorClass } from './armor.js';
 import { CLOUD, IS_STWALL, IS_TREE, P_EXPERT } from './const.js';
-import { displayColorName, displayLiquidName, plineWithContinuation } from './display.js';
+import { displayColorName, displayLiquidName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { healHero } from './hero_healing.js';
 import { heroIsSick } from './hero_illness.js';

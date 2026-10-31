@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { STONE } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import {
     cansee, couldsee, init_vision_globals, vision_recalc, vision_reset_new_level,
 } from '../js/vision.js';

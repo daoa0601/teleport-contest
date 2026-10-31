@@ -29,9 +29,9 @@ import {
     squeakyBoardNoteWithArticle, MGIVENNAME,
 } from './const.js';
 import {
-    displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, pline,
-    plineWithContinuation, shieldeff, show_glyph_cell,
+    displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, shieldeff, show_glyph_cell,
 } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

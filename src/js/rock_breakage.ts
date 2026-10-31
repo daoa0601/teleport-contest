@@ -4,11 +4,12 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { CORPSTAT_HISTORIC } from './const.js';
 import { shopkeeperName } from './monster_name.js';
-import { newsym, pline } from './display.js';
+import { newsym } from './display.js';
+import { pline } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface FractureOptions {
     state?: GameState;

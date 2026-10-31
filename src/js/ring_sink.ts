@@ -11,12 +11,10 @@ import {
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { observeObjectForNaming } from './objnam.js';
-import {
-    displayColorName, displayLiquidName, newsym, plineWithContinuation,
-    randomDisplayMonsterName,
-} from './display.js';
+import { displayColorName, displayLiquidName, newsym, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { tryCallObjectType } from './object_call.js';

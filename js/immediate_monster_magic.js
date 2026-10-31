@@ -3,7 +3,8 @@ import { requirePlayingGame } from './gstate.js';
 // C ref: zap.c bhitm(). Direction and range belong to the caller.
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, W_SADDLE } from './const.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation as pline, shieldeff, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { abusePet } from './dog.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';

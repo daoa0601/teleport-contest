@@ -1,6 +1,7 @@
 // Properties conveyed to monsters by corpses. C mon.c:mon_givit(), mon_give_prop().
 import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './corpse_intrinsics.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME, MONSTER_RESISTS, requireMonsterData } from './monster_data.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';

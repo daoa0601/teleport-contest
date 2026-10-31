@@ -1,12 +1,12 @@
 // The #monster mind blast used by a polymorphed mind flayer.
 // C refs: cmd.c domonability() and polyself.c domindblast().
 
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { HeroCoordinates } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import { BOLT_LIM } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

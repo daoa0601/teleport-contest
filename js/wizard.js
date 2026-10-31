@@ -1,7 +1,8 @@
 // C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { displayColorName, plineWithContinuation } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { Is_astralevel, MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';

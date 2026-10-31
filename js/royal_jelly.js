@@ -2,7 +2,7 @@
 // C refs: apply.c use_royal_jelly(), eat.c fpostfx().
 import { gainHeroStrength, } from './attrib.js';
 import { POISONING } from './const.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { freeInventoryObject } from './hero_inventory.js';

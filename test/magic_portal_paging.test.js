@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MAGIC_PORTAL } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';

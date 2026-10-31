@@ -1,7 +1,7 @@
 // Monster responses and relocation caused by immediate magic.
 // C refs: mon.c m_respond() and teleport.c u_teleport_mon().
 import { RLOC_MSG } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { level_difficulty } from './dungeon.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';

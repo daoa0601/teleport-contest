@@ -5,7 +5,8 @@ import { formatSeenMessage } from './hero_speech.js';
 import {
     COULD_SEE, IN_SIGHT, MGIVENNAME, M_AP_TYPE, PLNMSG_HIDE_UNDER, ROOM, is_pit,
 } from './const.js';
-import { canSeeMonster, canSenseMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { setMimicAppearance } from './makemon.js';

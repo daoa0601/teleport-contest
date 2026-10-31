@@ -5,7 +5,7 @@ import { nhgetch } from './input.js';
 import { rn2 } from './rng.js';
 import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { rawPrint } from './display.js';
+import { rawPrint } from './pline.js';
 import { findRole, findRace, findGender, findAlignment, randomCharacterOption, roles, races, genders, aligns } from './roles.js';
 import { characterSelectionQuestion, nativeRoleChoices, ROLE_SELECTION_RULES as ROLE_RULES, RACE_SELECTION_RULES } from './character_choices.js';
 import { characterRoleAllowed, characterRaceAllowed, characterGenderAllowed, characterAlignmentAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';

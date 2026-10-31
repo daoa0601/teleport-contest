@@ -4,10 +4,10 @@
 import type { HeroRayResult } from './hero_breath.js';
 import type { NativeRayResult } from './ray_attack.js';
 import type { MonsterAttack } from './data_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import { breatheInDirection } from './breath_ray.js';

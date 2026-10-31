@@ -3,7 +3,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { In_endgame, TT_BURIEDBALL } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makeStunned } from './hero_mental_status.js';
 import { buriedBallToPunishment } from './buried_object.js';

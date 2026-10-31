@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { A_STR, G_GENOD, ICE, NO_MINVENT, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { doeat } from '../js/eat.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { heroIsUnconscious } from '../js/hero_sleep.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { races } from '../js/roles.js';

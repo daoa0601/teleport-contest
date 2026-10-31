@@ -1,7 +1,8 @@
 // C potion.c:ghost_from_bottle(), djinni_from_bottle(), mongrantswish().
 import { G_GONE, MM_NOMSG } from './const.js';
 import { nomul } from './command_state.js';
-import { canSpotMonster, newsym, plineWithContinuation as pline, randomDisplayMonsterName, show_glyph_cell, } from './display.js';
+import { canSpotMonster, newsym, randomDisplayMonsterName, show_glyph_cell } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { MONSTER_NAME } from './monster_data.js';

@@ -1,7 +1,8 @@
 // C mon.c:mpickstuff(). Selection, visible naming, and transfer are one action.
 import { SHOPBASE } from './const.js';
 import { cansee } from './vision.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { inventoryItemDescription } from './invent.js';
 import { isLevelPrize } from './level_prize.js';

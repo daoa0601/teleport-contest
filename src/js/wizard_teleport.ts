@@ -4,7 +4,7 @@
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
 import { impossible } from './diagnostics.js';
-import { plineWithContinuation, type MessagePublisher } from './display.js';
+import { plineWithContinuation, type MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { OBJECT_SPELL_LEVEL, SPE_TELEPORT_AWAY } from './object_data.js';

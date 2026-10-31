@@ -12,11 +12,10 @@ import {
     STRAT_WAITMASK,
 } from './const.js';
 import {
-    canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible,
-    newsym,
-    plineWithContinuation,
+    canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym,
     senseWithTelepathy,
 } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroDetectsMonsters } from './senses.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';

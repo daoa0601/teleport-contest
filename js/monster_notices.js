@@ -5,7 +5,8 @@
 // vision_recalc() owns the catch-up, including recalculations triggered by
 // message output. Startup, level arrival, mapping, and teleport landings
 // block both monster and glyph notices until their own messages finish.
-import { canSeeMonster, canSpotMonster, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';

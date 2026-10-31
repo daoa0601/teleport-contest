@@ -2,7 +2,7 @@
 // a door opened by its occupant; the explosion precedes damage and death.
 import { game, requireLiveGame } from './gstate.js';
 import { TRAPPED_DOOR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -13,7 +13,7 @@ import { rnd, rn2 } from './rng.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 export async function triggerMonsterDoorTrap(monster: Monster, visible: boolean, {
     state = game, publish = plineWithContinuation, rollOne = rnd, random = rn2,

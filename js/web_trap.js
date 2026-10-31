@@ -1,7 +1,8 @@
 // C trap.c:mu_maybe_destroy_web() and the monster half of trapeffect_web().
 import { publishHeardMessage } from './hero_speech.js';
 import { game } from './gstate.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';

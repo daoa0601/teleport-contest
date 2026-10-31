@@ -6,7 +6,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { A_STR, BEAR_TRAP, M_AP_F_DKNOWN, M_AP_OBJECT, M_SEEN_COLD, M_SEEN_FIRE, M_SEEN_MAGR, TIMEOUT, TT_BEARTRAP, Upolyd, } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { zapHeroWithObject } from '../js/hero_self_zap.js';
 import { heroHasRemovableSpeed, speedUpHero } from '../js/hero_speed.js';

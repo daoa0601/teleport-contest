@@ -5,7 +5,8 @@
 import { ALTAR, COLNO, FOUNTAIN, ROOM, ROWNO, SINK, THRONE, AM_NONE, Align2amask, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { observeObjectForNaming } from './objnam.js';
-import { displayColorName, displayLiquidName, newsym, plineWithContinuation, randomDisplayMonsterName, } from './display.js';
+import { displayColorName, displayLiquidName, newsym, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { tryCallObjectType } from './object_call.js';

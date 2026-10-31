@@ -6,7 +6,8 @@ import {
     ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET,
     SHOPBASE, TEMPLE, VAULT, ZOO,
 } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { requireInitializedGame } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { searchSpecial } from './mkroom.js';

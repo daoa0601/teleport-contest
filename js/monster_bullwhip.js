@@ -1,7 +1,8 @@
 // C muse.c:use_misc(MUSE_BULLWHIP). The weapon is detached before the yank
 // announcement, then placed only after that message has returned.
 import { heroHandName } from './body_parts.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeObjectSynchronously } from './floor_object.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';

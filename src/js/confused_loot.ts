@@ -2,7 +2,7 @@
 // give away a random fraction of one carried gold stack.
 import { THRONE, T_LOOTED } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { CHEST, GOLD_PIECE, SPE_WIZARD_LOCK } from './object_data.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { removeHeroEquipment } from './hero_equipment.js';

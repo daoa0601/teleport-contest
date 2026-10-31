@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { rhack } from '../js/cmd.js';
 import { pushKeys, queueCommandKeys, resetInputState } from '../js/input.js';
 import { CLUB } from '../js/object_data.js';

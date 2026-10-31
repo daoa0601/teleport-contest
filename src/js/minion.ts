@@ -14,7 +14,8 @@ export interface MonsterSummoningResult {
 import { artifactById } from './artifacts.js';
 import { deityName } from './alignment.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
-import { canSeeMonster, canSpotMonster, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear } from './mklev.js';

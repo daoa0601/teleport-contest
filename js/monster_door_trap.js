@@ -2,7 +2,7 @@
 // a door opened by its occupant; the explosion precedes damage and death.
 import { game, requireLiveGame } from './gstate.js';
 import { TRAPPED_DOOR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';

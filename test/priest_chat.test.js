@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { rhack } from '../js/cmd.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { dosave, saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { restoreBonesMonsters } from '../js/bones_monster.js';

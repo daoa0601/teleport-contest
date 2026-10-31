@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroHitAftermath, shouldAngerGuardsAfterHeroHit } from '../js/hero_hit_aftermath.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';

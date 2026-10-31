@@ -28,7 +28,8 @@ import {
     is_pit,
     isok,
 } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { fireDamageObject } from './fire_damage.js';
 import { heroCanReachFloor } from './floor_reach.js';

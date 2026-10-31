@@ -14,7 +14,7 @@ import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, M_AP_OBJECT, M_AP_TYPE, PL_PSIZ, QBUFSZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { deleteObject } from './object_delete.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './monster_name.js';

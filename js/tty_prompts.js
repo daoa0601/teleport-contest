@@ -1,6 +1,8 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, renderKeyPrompt } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { pline, setTopline } from './pline.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';

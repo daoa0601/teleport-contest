@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';

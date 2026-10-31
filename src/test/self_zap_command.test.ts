@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline, flush_screen } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { playInstrument } from '../js/music.js';

@@ -1,7 +1,7 @@
 // C vault.c:paygd(). Only openly carried coins can be reclaimed by a guard.
 import { RLOC_NOMSG } from './const.js';
 import { currency } from './currency.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';

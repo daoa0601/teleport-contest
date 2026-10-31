@@ -3,7 +3,8 @@ import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.
 import { buryFloorObjectsAt } from './buried_object.js';
 import { DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, Is_waterlevel, ROOM, WATER } from './const.js';
 import { impossible } from './diagnostics.js';
-import { displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
+import { displayLiquidName, docrt, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { loseHeroHp } from './hero_damage.js';

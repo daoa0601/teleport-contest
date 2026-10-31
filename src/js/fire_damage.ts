@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
 import { delobj } from './object_delete.js';

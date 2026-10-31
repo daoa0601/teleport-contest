@@ -1,7 +1,8 @@
 // Glob shrink timers.
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { isok } from './const.js';
 import { isIceAt } from './terrain_properties.js';
 import { deallocateObject } from './object_delete.js';

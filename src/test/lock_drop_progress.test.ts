@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { DOOR, D_LOCKED } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CHEST, CLUB, CREDIT_CARD, LOADSTONE, TOWEL } from '../js/object_data.js';

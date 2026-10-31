@@ -1,7 +1,7 @@
 // Hiding with #monster while polymorphed.
 // C refs: cmd.c domonability(), polyself.c dohide(), insight.c youhiding().
 
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -9,7 +9,8 @@ import type { DungeonLocation } from './dungeon_types.js';
 import {
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, SPIKED_PIT, STONING, TT_PIT,
 } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 

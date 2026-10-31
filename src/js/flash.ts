@@ -10,10 +10,11 @@ import { CLR_WHITE } from './terminal.js';
 import { monsterHasArtifactDefense } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
-    canSeeMonster, canSpotMonster, displayMessageWindow, flush_screen, glyphAt,
-    map_invisible, newsym, plineWithContinuation as pline, shieldeff,
+    canSeeMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, shieldeff,
     show_glyph_cell, unmap_invisible,
 } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { lightHitsGremlin } from './light.js';

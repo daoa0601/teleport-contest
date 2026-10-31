@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { farlookLocationDescription } from '../js/cmd.js';
-import { flush_screen, newsym, pline, plineWithContinuation } from '../js/display.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { pline, plineWithContinuation } from '../js/pline.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';

@@ -11,7 +11,7 @@ import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { A_DEX, A_STR, SICK_VOMITABLE } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     APPLE, CARROT, CORPSE, EGG, EUCALYPTUS_LEAF, FORTUNE_COOKIE,

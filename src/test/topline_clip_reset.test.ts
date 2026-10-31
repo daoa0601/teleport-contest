@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flush_screen, pline } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';

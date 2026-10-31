@@ -2,9 +2,10 @@
 // C ref: potion.c toggle_blindness().
 
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { COLNO, ROWNO } from './const.js';
-import { redrawMap, plineWithContinuation, see_monsters, shieldeff, terrain_glyph } from './display.js';
+import { redrawMap, see_monsters, shieldeff, terrain_glyph } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { game, requireLiveGame } from './gstate.js';

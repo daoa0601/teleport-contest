@@ -5,7 +5,7 @@ import { dropHeroInventoryForBones } from './bones_death.js';
 import { LOW_PM, PL_NSIZ, isok } from './const.js';
 import { currency } from './currency.js';
 import { impossible } from './diagnostics.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { heroGoldAmount } from './hero_gold.js';

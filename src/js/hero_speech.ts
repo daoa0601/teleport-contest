@@ -1,7 +1,7 @@
 // C mondata.c:can_chant(), shared by reading and calling on a deity.
 // C pline.c:You_feel(), You_hear(), and You_see() wording.
 
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

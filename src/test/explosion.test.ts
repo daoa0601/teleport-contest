@@ -8,7 +8,8 @@ import {
     EXPL_MAGICAL, EXPL_NOXIOUS, MM_ANGRY, MM_NOGRP, MON_EXPLODE,
     IRONBARS, NO_MINVENT, PHYS_EXPL_TYPE, W_AMUL,
 } from '../js/const.js';
-import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { explode } from '../js/explosion.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { beginHeroEngulf } from '../js/hero_engulf.js';

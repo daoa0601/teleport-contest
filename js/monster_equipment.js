@@ -1,6 +1,7 @@
 // Properties granted or blocked by monster armor. C worn.c:update_mon_extrinsics().
 import { DISMOUNT_FELL } from './const.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
 import { monsterName } from './monster_name.js';

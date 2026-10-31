@@ -5,7 +5,7 @@ import { barehandSkill, prepareHeroBarehandContact } from './barehand_combat.js'
 import { confuseTouchedMonster } from './confusing_touch.js';
 import { P_LANCE, Upolyd } from './const.js';
 import { isZombieMaker } from './corpse_species.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordFirstHeroWeaponHit } from './hero_attack_conduct.js';

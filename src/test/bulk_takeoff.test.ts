@@ -5,7 +5,8 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM, TT_BEARTRAP, TT_PIT } from '../js/const.js';
-import { glyphAt, newsym, plineWithContinuation } from '../js/display.js';
+import { glyphAt, newsym } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import {

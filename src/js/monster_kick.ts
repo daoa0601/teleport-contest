@@ -7,7 +7,7 @@ import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface KickOptions {
     clumsy?: boolean;

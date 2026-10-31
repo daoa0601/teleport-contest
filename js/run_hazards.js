@@ -1,7 +1,8 @@
 // C hack.c:avoid_moving_on_trap()/avoid_moving_on_liquid().
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { IS_WATERWALL, LAVAWALL, VIBRATING_SQUARE } from './const.js';
-import { displayLiquidName, plineWithContinuation, set_msg_xy } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap_name.js';

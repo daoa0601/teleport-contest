@@ -1,7 +1,8 @@
 // A monster strikes the hero with a weapon it keeps in its hands.
 // C refs: mthrowu.c thrwmu() polearm branch and thitu().
 
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { heroSpecies } from './hero_species.js';
@@ -19,7 +20,7 @@ import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 interface WeaponOptions {
     state?: GameState;

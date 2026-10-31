@@ -6,7 +6,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { M_SEEN_MAGR, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

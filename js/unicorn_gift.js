@@ -1,6 +1,6 @@
 // C dothrow.c:thitmonst()'s unicorn catch and gem_accept().
 import { P_SLING, RLOC_MSG } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { MONSTER_ALIGNMENT, monsterIsUnicorn } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';

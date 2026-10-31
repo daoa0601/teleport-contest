@@ -11,10 +11,8 @@ import {
 } from './const.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import {
-    canSeeMonster, displayLiquidName, feel_location, glyphAt, newsym,
-    plineWithContinuation as pline,
-} from './display.js';
+import { canSeeMonster, displayLiquidName, feel_location, glyphAt, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';

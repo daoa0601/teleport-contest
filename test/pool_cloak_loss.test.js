@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { disintegrateWornArmor, wearHeroArmor } from '../js/armor.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_DISPLACEMENT } from '../js/object_data.js';

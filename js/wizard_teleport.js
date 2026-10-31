@@ -3,7 +3,7 @@
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
 import { impossible } from './diagnostics.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { OBJECT_SPELL_LEVEL, SPE_TELEPORT_AWAY } from './object_data.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';

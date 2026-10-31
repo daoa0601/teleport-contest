@@ -2,7 +2,7 @@
 // they cannot currently spot. Species-specific smells take precedence;
 // remaining species fall through to a class-based smell, and several
 // species are deliberately smell-free.
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { heroHasOlfaction, heroMonsterForm } from './polyself.js';

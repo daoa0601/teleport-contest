@@ -3,7 +3,7 @@
 // potion_nothing fallback message plus identification.
 import { IS_SINK, TIMEOUT } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { captureLevitationState, grantIntrinsicProperty, propertyIsActive, propertyIsBlocked, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty, } from './properties.js';
 import { floatHeroUp } from './terrain_movement.js';
 import { rnd, rn1 } from './rng.js';

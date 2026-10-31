@@ -1,7 +1,9 @@
 // C monmove.c:postmov(). Fog shifting precedes mintrap(); door and bars
 // effects follow it and complete their own messages before movement resumes.
 import { DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IRONBARS, SHOPBASE, W_NONDIGGABLE, } from './const.js';
-import { canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoLimbs, monsterIsAmorphous, monsterIsSlithy, } from './monster_data.js';

@@ -2,7 +2,7 @@
 import { castMonsterSpellRay } from './breath_ray.js';
 import { CLOUD, COLNO, ROWNO } from './const.js';
 import { nomul } from './command_state.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { stopHeroOccupation } from './occupation.js';

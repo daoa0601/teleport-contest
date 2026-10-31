@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DUST } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

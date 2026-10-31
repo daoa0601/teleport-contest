@@ -5,9 +5,9 @@ import {
     CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, D_CLOSED, D_LOCKED, DOOR,
     G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, unmap_invisible,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, unmap_invisible } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { expelHero } from './hero_expulsion.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { relocateMonsterTo } from './teleport.js';
@@ -46,7 +46,7 @@ import { rn2, rnd } from './rng.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';

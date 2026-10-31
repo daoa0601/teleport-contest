@@ -1,7 +1,8 @@
 // C steal.c:mdrop_obj()/mdrop_special_objs(), mkobj.c:discard_minvent().
 import { artifactByName, uncreateArtifact } from './artifacts.js';
 import { SHOPBASE, W_SADDLE } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { petDroppableObject } from './dog.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';

@@ -8,7 +8,7 @@ export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 // Spell learning and the native spell.c:spelleffects() transaction.
 import { commandResultFailed } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { promptDirection } from './tty_prompts.js';
 import { P_SKILLED } from './const.js';
 import { exerciseWisdom } from './attrib.js';

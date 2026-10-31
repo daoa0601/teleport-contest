@@ -31,9 +31,8 @@ import {
 import {
     addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig,
 } from './shop_damage.js';
-import {
-    canSeeMonster, displayLiquidName, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { levelAtDepth } from './dungeon.js';

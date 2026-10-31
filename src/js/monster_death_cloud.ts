@@ -6,8 +6,8 @@ import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { createPoisonGasCloud } from './regions.js';
-import { plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { rn2 } from './rng.js';
 
 const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');

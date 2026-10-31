@@ -1,6 +1,7 @@
 // The make-invisible wand against a monster. C zap.c:bhitm().
 import { BOLT_LIM } from './const.js';
-import { canSeeMonster, newsym, plineWithContinuation as pline, } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';

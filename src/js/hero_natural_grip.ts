@@ -15,7 +15,7 @@ import { OBJECT_NAMES } from './object_data.js';
 import { objectName } from './objnam.js';
 import { objectTypeKnown } from './shk.js';
 import { isPoolAt } from './terrain_properties.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { Monster } from './monster_types.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, MM_ANGRY, MM_NOTAIL, NO_MINVENT, PANICLOG } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { InputGate, bindInputGate, resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/monster_location.js';

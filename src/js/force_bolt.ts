@@ -14,9 +14,8 @@ import type { Monster } from './monster_types.js';
 // Point-target striking and force-bolt damage. C zap.c:bhitm()/bhito().
 // The wand effect owner chooses targets and handles traversal and terrain.
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import {
-    newsym, plineWithContinuation as pline, randomDisplayMonsterName, shieldeff,
-} from './display.js';
+import { newsym, randomDisplayMonsterName, shieldeff } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';

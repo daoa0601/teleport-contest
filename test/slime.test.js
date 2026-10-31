@@ -18,7 +18,7 @@ import { freshHeroConditionRoom } from './support/hero-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 void test('a green slime touch infects and still deals its physical damage', async () => {
     freshTurnRoom();
     requirePlayingGame(game);

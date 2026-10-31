@@ -1,6 +1,6 @@
 // C potion.c:strange_feeling(). Detection already owns its result message;
 // both paths finish through the same object naming and single-use boundary.
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './object_call.js';

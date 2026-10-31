@@ -3,7 +3,7 @@
 import { game, requireLiveGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeObject } from './floor_object.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';

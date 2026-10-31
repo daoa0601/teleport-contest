@@ -1,5 +1,5 @@
 // C ref: uhitm.c check_caitiff().
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { adjustHeroAlignment } from './alignment.js';

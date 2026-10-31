@@ -1,7 +1,8 @@
 // Waking monsters near a noise or disturbance.
 // C ref: mon.c wake_msg() and wake_nearto_core().
 import { STRAT_WAITMASK } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';

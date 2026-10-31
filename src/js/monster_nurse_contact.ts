@@ -1,7 +1,7 @@
 // C uhitm.c:mhitm_ad_heal(), against the hero.
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR, M_ATTK_DEF_DIED, M_ATTK_HIT, RLOC_MSG, Upolyd } from './const.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { heroSpecies } from './hero_species.js';

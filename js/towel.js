@@ -2,7 +2,8 @@
 import { armorSimpleName } from './armor.js';
 import { heroFaceName, heroHandName } from './body_parts.js';
 import { TIMEOUT } from './const.js';
-import { canSeeMonster, plineWithContinuation as pline } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { removeEyewear } from './eyewear.js';
 import { game, requireLiveGame } from './gstate.js';

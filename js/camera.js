@@ -2,7 +2,8 @@
 import { MM_NOMSG } from './const.js';
 import { commandResultCancelled } from './command_state.js';
 import { monsterStomachName } from './body_parts.js';
-import { canSpotMonster, plineWithContinuation as pline, randomDisplayMonsterName, } from './display.js';
+import { canSpotMonster, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { doBlindingRay } from './flash.js';

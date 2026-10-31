@@ -1,7 +1,7 @@
 // How many objects the hero throws or shoots with one command.
 // C refs: dothrow.c multishot_class_bonus() and throw_obj().
 import { currentAttribute } from './attrib.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { A_DEX, A_STR, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, } from './object_data.js';

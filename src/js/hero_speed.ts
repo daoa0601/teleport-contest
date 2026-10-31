@@ -3,7 +3,7 @@
 import { exerciseAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { A_DEX } from './const.js';
-import { plineWithContinuation, type MessagePublisher } from './display.js';
+import { plineWithContinuation, type MessagePublisher } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import {

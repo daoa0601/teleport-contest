@@ -1,7 +1,8 @@
 // Converting a sink to a fountain by breaking it.
 // C ref: fountain.c breaksink().
 import { FOUNTAIN, F_LOOTED, SINK } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { countLevelFeatures } from './mklev.js';
 import { cansee } from './vision.js';

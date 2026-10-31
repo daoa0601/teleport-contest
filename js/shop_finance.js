@@ -1,7 +1,7 @@
 // C shk.c:shopper_financial_report(). Robbed balances are not reported.
 import { game } from './gstate.js';
 import { currency } from './currency.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { possessiveName, shopkeeperName } from './monster_name.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
 import { addUpBill, rileShopkeeper } from './shop_damage.js';

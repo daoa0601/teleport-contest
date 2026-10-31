@@ -2,7 +2,8 @@
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroHandName } from './body_parts.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';

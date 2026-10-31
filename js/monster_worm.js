@@ -1,7 +1,8 @@
 // Long-worm body ownership.
 // C refs: makemon.c:initworm(), worm.c:place_worm_tail_randomly(), wormgone().
 import { MAX_NUM_WORMS, MHPMAX, MON_FLOOR, NORMAL_SPEED, isok, xdir, ydir } from './const.js';
-import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';

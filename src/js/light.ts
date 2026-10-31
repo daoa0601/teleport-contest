@@ -25,10 +25,8 @@ import {
     CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
     NO_MINVENT, PLNMSG_OBJ_GLOWS,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, map_invisible, newsym,
-    plineWithContinuation, displayColorName,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { makemonNear } from './mklev.js';
 import { mksobj } from './mkobj.js';

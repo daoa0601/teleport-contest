@@ -1,6 +1,6 @@
 // C mhitu.c:gulp_blnd_check() and the AD_BLND effect within gulpmu().
 import { heroHasEyes } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { resolveHeroEngulf } from './hero_engulf.js';
 import { heroIsUnaware } from './hero_sleep.js';

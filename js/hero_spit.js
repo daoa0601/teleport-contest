@@ -2,7 +2,8 @@
 // C refs: polyself.c dospit(), dothrow.c throwit()/thitmonst()/toss_up(),
 // and uhitm.c hmon() venom cases.
 import { IS_SOFT, LOST_THROWN } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';

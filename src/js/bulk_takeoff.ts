@@ -6,7 +6,7 @@ import {
     TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD,
     P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD,
 } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';

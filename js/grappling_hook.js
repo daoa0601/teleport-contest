@@ -1,7 +1,8 @@
 // Applying a grappling hook.
 // C ref: apply.c use_grapple().
 import { IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, isok, } from './const.js';
-import { newsym, pline } from './display.js';
+import { newsym } from './display.js';
+import { pline } from './pline.js';
 import { commandResultCancelled } from './command_state.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';

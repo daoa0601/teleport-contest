@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PICK_NONE, PICK_ONE } from '../js/const.js';
-import {
-    bot, docrt, flush_screen, plineWithContinuation, showMessageMenu,
-} from '../js/display.js';
+import { bot, docrt, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
+import { showMessageMenu } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';

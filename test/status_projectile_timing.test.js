@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, MM_NOMSG, NO_MINVENT, NOT_HUNGRY } from '../js/const.js';
-import { bot, clearMessageWindow, plineWithContinuation } from '../js/display.js';
+import { bot } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { doeat } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

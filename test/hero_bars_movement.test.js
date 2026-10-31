@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { heroTestMove } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
 import { IRONBARS, W_NONDIGGABLE } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';

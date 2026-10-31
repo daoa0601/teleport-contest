@@ -1,7 +1,7 @@
 // C eat.c:edibility_prompts(). Blessed food detection lasts until a warning
 // is offered, whether the hero accepts or declines that meal.
 import { heroNoseName } from './body_parts.js';
-import { pline } from './display.js';
+import { pline } from './pline.js';
 import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';

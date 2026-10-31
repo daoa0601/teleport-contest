@@ -8,9 +8,8 @@ import { uncreateArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
-import {
-    canSpotMonster, newsym, plineWithContinuation, see_monsters,
-} from './display.js';
+import { canSpotMonster, newsym, see_monsters } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { LL_KILLEDPET, recordGameLogEvent } from './gamelog.js';
@@ -21,7 +20,7 @@ import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mkobj.js';

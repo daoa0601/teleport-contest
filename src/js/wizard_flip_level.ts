@@ -1,5 +1,6 @@
 // C wizcmds.c:wiz_flip_level(): transpose a live map without taking a turn.
-import { docrt, plineWithContinuation } from './display.js';
+import { docrt } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { flipSpecialLevel, flipSpecialLevelRandom } from './mklev.js';
 import { yn_function } from './query.js';

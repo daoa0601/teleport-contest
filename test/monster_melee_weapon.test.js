@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { A_STR, NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

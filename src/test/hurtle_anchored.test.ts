@@ -5,7 +5,7 @@ import test from 'node:test';
 // and surface(), so hallucination and the floor type both show through.
 
 import { TT_INFLOOR, TT_LAVA } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { hurtleHero } from '../js/hero_hurtle.js';

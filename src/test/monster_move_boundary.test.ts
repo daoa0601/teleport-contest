@@ -7,7 +7,8 @@ import {
     D_CLOSED, D_ISOPEN, DOOR, DUST, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED,
     MMOVE_NOTHING, NO_MINVENT, PIT, SQKY_BOARD,
 } from '../js/const.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

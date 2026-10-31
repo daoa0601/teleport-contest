@@ -10,10 +10,8 @@ import {
     CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG,
     MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP,
 } from './const.js';
-import {
-    canSpotMonster, feel_newsym, map_invisible, newsym,
-    plineWithContinuation as pline, randomDisplayMonsterName,
-} from './display.js';
+import { canSpotMonster, feel_newsym, map_invisible, newsym, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { makePetWary } from './dog.js';
 import { delobj } from './object_delete.js';
 import { removeWornHeroItem } from './hero_equipment.js';

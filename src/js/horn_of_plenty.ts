@@ -1,6 +1,6 @@
 // C mkobj.c:hornoplenty(), for doapply's one-charge use.
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, MAX_OIL_IN_FLASK } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { addObjectToContainer } from './object_container.js';

@@ -7,11 +7,12 @@ import { exerciseAttribute } from './attrib.js';
 import {
     A_STR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, SPE_LIM,
 } from './const.js';
-import { displayColorName, plineWithContinuation as pline } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';

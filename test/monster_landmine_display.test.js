@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { canSeeMonster, newsym, plineWithContinuation } from '../js/display.js';
+import { canSeeMonster, newsym } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';

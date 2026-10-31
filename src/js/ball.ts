@@ -8,9 +8,8 @@ import { isPoolAt } from './terrain_properties.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './monster_hiding.js';
-import {
-    cls, displayLiquidName, map_object, newsym, plineWithContinuation,
-} from './display.js';
+import { cls, displayLiquidName, map_object, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import {
     moveObject, placeObjectSynchronously, remove_object,
 } from './floor_object.js';
@@ -52,7 +51,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { KillerFormat } from './end.js';
 
 interface BallMoveGeometry {

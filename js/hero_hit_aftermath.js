@@ -1,4 +1,4 @@
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { angerWatchGuards, isWatch } from './monster_anger.js';
 import { ghodHitsu } from './priest.js';

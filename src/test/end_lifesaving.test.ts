@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_CON, NON_PM, TT_LAVA } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';

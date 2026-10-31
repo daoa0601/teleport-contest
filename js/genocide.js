@@ -2,7 +2,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOMSG, NO_MINVENT, POLY_REVERT, Upolyd } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { listGenocided, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';

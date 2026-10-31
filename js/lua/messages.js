@@ -1,5 +1,6 @@
 // C nhlua.c:nhl_pline() and nhl_text().
-import { flushPendingTopline, plineWithContinuation } from '../display.js';
+import { flushPendingTopline } from '../tty_topline.js';
+import { plineWithContinuation } from '../pline.js';
 import { NethackLuaError } from './errors.js';
 import { showTextMenuOverlay } from '../windows.js';
 import { luaCheckString } from './runtime.js';

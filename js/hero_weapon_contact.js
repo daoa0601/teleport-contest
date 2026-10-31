@@ -1,7 +1,8 @@
 // C uhitm.c:hmon_hitmon_weapon(), before artifact and damage-bonus handling.
 import { artifactById } from './artifacts.js';
 import { P_BOW, P_CROSSBOW, P_KNIFE, P_NONE, P_SKILLED, Upolyd } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import { MONSTER_SYMBOL, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade, monsterIsWhirly, } from './monster_data.js';

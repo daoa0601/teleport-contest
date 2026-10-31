@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { flush_screen, newsym, pline, terrain_glyph } from '../js/display.js';
+import { flush_screen, newsym, terrain_glyph } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { paintGetposCursor, selectMapPosition } from '../js/getpos.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

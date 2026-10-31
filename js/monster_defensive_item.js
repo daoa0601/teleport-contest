@@ -1,6 +1,7 @@
 // C muse.c:find_defensive(), m_use_healing(), and use_defensive().
 import { BEAR_TRAP, CORR, HOLE, In_endgame, In_sokoban, IS_DRAWBRIDGE, IS_FURNITURE, LADDER, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS, MON_OFFMAP, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, PIT, RLOC_MSG, SCORR, STAIRS, TELEP_TRAP, WEB, W_NONDIGGABLE, PLNMSG_enum, PLNMSG_UNKNOWN, is_hole, is_pit, isok, } from './const.js';
-import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
 import { dist2, depth, ledgerNo } from './hacklib.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';

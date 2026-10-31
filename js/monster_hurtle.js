@@ -4,7 +4,8 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { D_CLOSED, D_LOCKED, DOOR, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_WATERWALL, W_ARM, W_ARMC, W_ARMU, W_NONPASSWALL, isok, } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';

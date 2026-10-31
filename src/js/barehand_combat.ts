@@ -4,7 +4,8 @@ import {
     W_ARMG, W_RINGL, W_RINGR,
 } from './const.js';
 import { specialContactDamage } from './contact_damage.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

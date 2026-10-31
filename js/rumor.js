@@ -1,7 +1,7 @@
 // C rumors.c: rumor delivery and Oracle consultations.
 import { setMulti } from './command_state.js';
 import { ACH_ORCL, BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { getRumor } from './mklev.js';
 import { heroIsBlind } from './senses.js';
@@ -15,7 +15,7 @@ import { exerciseWisdom } from './attrib.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { recordAchievement } from './achievements.js';
 import { showTextWindow } from './windows.js';
-import { flushPendingTopline } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 // C rumors.c:doconsult(). Refusals are free; payment commits a turn even
 // when the hero can afford only the deliberately unhelpful major oracle.

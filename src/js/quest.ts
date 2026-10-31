@@ -8,7 +8,8 @@ import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
-import { canSeeMonster, flush_screen, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, flush_screen } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import {
     MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_WAITMASK, MAGIC_PORTAL,
 } from './const.js';

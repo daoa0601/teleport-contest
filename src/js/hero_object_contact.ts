@@ -5,7 +5,7 @@ import {
     applyMonsterBlindness, heroBlindingObjectHitMessage, monsterCanBeBlindedByObject,
 } from './blinding_attack.js';
 import { releaseCameraDemon } from './camera.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
@@ -41,7 +41,7 @@ import { touchPetrifies } from './stoning.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { objectWeight } from './weight.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';

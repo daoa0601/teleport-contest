@@ -1,5 +1,5 @@
 import { game } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { monsterName, monsterObjectPronoun, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { heroArmName } from './body_parts.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';

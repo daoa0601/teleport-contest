@@ -11,7 +11,8 @@ import {
     observeDistantObjectForNaming, simpleObjectName,
 } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
-import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, displayColorName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -27,7 +28,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import {
     MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL,
     monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands,

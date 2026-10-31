@@ -172,9 +172,8 @@ import {
 import { setMonsterMalign } from './monster_alignment.js';
 
 import { nhgetch } from './input.js';
-import {
-    flush_screen, newsym, pline, terrain_glyph,
-} from './display.js';
+import { flush_screen, newsym, terrain_glyph } from './display.js';
+import { pline } from './pline.js';
 import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { DBWALL, DB_EAST, DB_MOAT, DOOR, DRAWBRIDGE_UP, D_BROKEN, D_CLOSED, M_AP_OBJECT, M_SEEN_MAGR, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STONE, W_AMUL, } from '../js/const.js';
-import { pline, plineWithContinuation } from '../js/display.js';
+import { pline, plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

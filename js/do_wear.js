@@ -3,7 +3,7 @@
 // armor_or_accessory_off(), dotakeoff()/doremring()/ia_dotakeoff(), and the
 // Armor_off()/off_msg() completion shared with allmain.c.
 import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, nomul } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid } from './monster_data.js';

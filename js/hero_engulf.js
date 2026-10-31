@@ -10,7 +10,9 @@ import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfo
 import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
-import { displayMessageWindow, newsym, plineWithContinuation, shieldeff, swallowed } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { newsym, shieldeff, swallowed } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';

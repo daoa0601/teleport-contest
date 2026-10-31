@@ -4,7 +4,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { CORR, DOOR, ROOMOFFSET, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
 import { createRoom } from './support/topology.js';

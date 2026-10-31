@@ -3,7 +3,8 @@
 import { commandResultCancelled } from './command_state.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
-import { newsym, pline } from './display.js';
+import { newsym } from './display.js';
+import { pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility, } from './hero_invisibility.js';

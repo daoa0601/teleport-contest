@@ -4,6 +4,7 @@ import { armorSimpleName } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, exerciseWisdom } from './attrib.js';
 import { A_INT } from './const.js';
 import { canSeeMonster } from './display.js';
+import {} from './pline.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { heroSpecies } from './hero_species.js';
 import { finishMonsterAttackDeath } from './monster_attack_death.js';

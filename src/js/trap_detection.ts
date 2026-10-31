@@ -7,7 +7,8 @@ import {
     TRAPPED_CHEST, TRAPPED_DOOR, isok,
 } from './const.js';
 import { heroToeName } from './body_parts.js';
-import { glyphAt, map_object, map_trap, newsym, pline } from './display.js';
+import { glyphAt, map_object, map_trap, newsym } from './display.js';
+import { pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

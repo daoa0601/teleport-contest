@@ -2,7 +2,8 @@
 import { NATIVE_COMMAND_FLAGS as flags, NATIVE_COMMANDS } from './command_data.js';
 import { commandDescription } from './extended_commands.js';
 import { visibleCommandKey } from './command_keys.js';
-import { flushPendingTopline, pline, plineWithContinuation } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { promptKey, restoreCommandMap } from './tty_prompts.js';

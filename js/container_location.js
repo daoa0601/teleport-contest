@@ -2,7 +2,8 @@
 import { is_pit, P_BASIC, P_RIDING } from './const.js';
 import { floorReachProblem, heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
-import { displayLiquidName, plineWithContinuation as pline } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroHasNoLimbs } from './polyself.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';

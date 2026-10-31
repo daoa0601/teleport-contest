@@ -1,6 +1,7 @@
 // C monmove.c:mind_blast(). Psychic attacks precede ordinary movement.
 import { BOLT_LIM, M_AP_MONSTER, M_AP_NOTHING } from './const.js';
-import { canSeeMonster, canSenseMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dist2 } from './hacklib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { loseHeroHp } from './hero_damage.js';

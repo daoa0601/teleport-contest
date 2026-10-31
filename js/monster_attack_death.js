@@ -3,7 +3,9 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
-import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation, resetToplineClip } from './display.js';
+import { canSpotMonster, flush_screen } from './display.js';
+import { flushPendingTopline, resetToplineClip } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';

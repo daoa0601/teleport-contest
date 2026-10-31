@@ -2,10 +2,10 @@
 // C refs: cmd.c domonability() and polyself.c doremove().
 
 import { TT_BURIEDBALL } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { unpunishHero } from './punishment.js';

@@ -4,11 +4,12 @@
 
 import type { GameState } from './game_state.js';
 import type { DeathHandler } from './end.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroNeckName } from './body_parts.js';
 import { A_STR, DIED, KILLED_BY } from './const.js';
-import { displayColorName, plineWithContinuation } from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { heroHasNoHead, heroIsBreathless } from './hero_species.js';

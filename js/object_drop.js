@@ -4,7 +4,8 @@
 import { ALTAR, HOLE, IS_SOFT, IS_ALTAR, LEFT_SIDE, PIT, RIGHT_SIDE, SPIKED_PIT, TRAPDOOR, } from './const.js';
 import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { newsym, plineWithContinuation, map_object } from './display.js';
+import { newsym, map_object } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { propertyIsActive } from './properties.js';

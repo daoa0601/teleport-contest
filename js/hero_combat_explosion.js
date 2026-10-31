@@ -2,7 +2,7 @@
 // the hero's monster form after this effect, before passive retaliation.
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, M_ATTK_DEF_DIED, M_ATTK_HIT, MON_EXPLODE, } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { AD_BLND, AD_COLD, AD_ELEC, AD_FIRE, AD_HALU } from './monster_attack_types.js';

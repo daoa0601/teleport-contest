@@ -2,7 +2,7 @@
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
 import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { beginCommandResult, commandResultCancelled, setMulti, } from './command_state.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

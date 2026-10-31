@@ -6,7 +6,8 @@ import { DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED,
 import { currentStrength } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { feel_location, newsym, plineWithContinuation as pline } from './display.js';
+import { feel_location, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { watchDigging } from './digging_watch.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';

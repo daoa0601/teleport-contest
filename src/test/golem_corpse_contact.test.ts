@@ -4,7 +4,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
 import { putIntoContainer, takeFromContainer } from '../js/container.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

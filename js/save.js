@@ -3,7 +3,9 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint, reglyphSymbolSet, rememberToplines } from './display.js';
+import { clearMessageWindow, displayMessageWindow, rememberToplines } from './tty_topline.js';
+import { docrt, reglyphSymbolSet } from './display.js';
+import { pline, plineWithContinuation, rawPrint } from './pline.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';

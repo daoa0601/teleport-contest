@@ -5,7 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { flush_screen, pline } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, queueCommandKeys, resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';

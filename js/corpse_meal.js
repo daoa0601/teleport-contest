@@ -2,7 +2,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { applyCannibalPenalty } from './cannibalism.js';
 import { SICK_VOMITABLE } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { recordCorpseDiet } from './food_conduct.js';
 import { consumeFoodObject, consumeRemainingFood, touchFoodObject } from './food_lifecycle.js';
 import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';

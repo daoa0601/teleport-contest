@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import type { MonsterDeathResult, MonsterLiquidDeathResult } from './monster_death.js';
 import type { MonsterRelocation } from './monster_action_types.js';
@@ -13,9 +13,8 @@ import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInA
 import { makeMonsterFlee } from './monster_flee.js';
 import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
 import { dryFountainAt } from './fountain.js';
-import {
-    canSeeMonster, displayLiquidName, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { splitMonster } from './monster_clone.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME,

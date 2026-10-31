@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_MONSTER, M_AP_TYPE, NO_MINVENT } from '../js/const.js';
-import {
-    canSeeMonster, clearMessageWindow, flush_screen, glyphAt,
-    moreUntilDismissed, newsym, plineWithContinuation,
-} from '../js/display.js';
+import { canSeeMonster, flush_screen, glyphAt, newsym } from '../js/display.js';
+import { clearMessageWindow, moreUntilDismissed } from '../js/tty_topline.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

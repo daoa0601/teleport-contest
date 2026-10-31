@@ -6,9 +6,8 @@ import { exerciseAttribute } from './attrib.js';
 import { artifactById, ARTIFACTS } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import { A_DEX, SPE_LIM } from './const.js';
-import {
-    displayColorName, plineWithContinuation as pline,
-} from './display.js';
+import { displayColorName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

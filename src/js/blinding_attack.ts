@@ -24,8 +24,8 @@ import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
-import { plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { monsterName } from './monster_name.js';
 
 const M1_NOEYES = 0x00001000;

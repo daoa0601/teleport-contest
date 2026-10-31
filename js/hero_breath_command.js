@@ -1,7 +1,7 @@
 // The #monster breath command for a polymorphed hero.
 // C refs: cmd.c domonability() and polyself.c dobreathe().
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import { breatheInDirection } from './breath_ray.js';

@@ -1,7 +1,7 @@
 // Nonfatal impossible() reports and the Engine-local panic boundary.
 // C refs: pline.c:impossible(), files.c:paniclog(), end.c:panic().
 import { BUFSZ, PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './const.js';
-import { beginPanicOutput, plineWithContinuation, rawPrint, rawPrintf } from './display.js';
+import { beginPanicOutput, plineWithContinuation, rawPrint, rawPrintf } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { saveErrorGame } from './save.js';
 import { PanicTermination } from './panic_termination.js';

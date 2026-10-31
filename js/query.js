@@ -1,7 +1,9 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberToplines, resetToplineClip, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, rememberToplines, resetToplineClip, } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar, takeCommandResponse } from './input.js';
 import { restoreCannedCommandTail } from './cmd.js';

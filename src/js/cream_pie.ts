@@ -2,7 +2,7 @@
 // C ref: apply.c use_cream_pie().
 
 import { heroIsHallucinating } from './senses.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { CREAM_PIE } from './object_data.js';
 import { heroFaceName, heroHasEyes } from './body_parts.js';

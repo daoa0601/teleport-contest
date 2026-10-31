@@ -1,10 +1,11 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 // Cancellation applied to a monster.
 // C ref: zap.c cancel_monst() and mon.c normal_shape().
 
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_NAME } from './monster_data.js';

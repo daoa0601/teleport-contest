@@ -2,7 +2,8 @@
 import { objectIsHardHelmet } from './armor.js';
 import { heroHeadName, monsterStomachName } from './body_parts.js';
 import { W_ARMH } from './const.js';
-import { canSpotMonster, map_invisible, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, map_invisible, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { finishHeroDeath as defaultHeroDeath } from './end.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DIR_E, NO_MINVENT } from '../js/const.js';
-import { clearMessageWindow, pline_dir, pline_mon, pline_xy, plineWithContinuation, set_msg_xy } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
+import { pline_dir, pline_mon, pline_xy, plineWithContinuation, set_msg_xy } from '../js/pline.js';
 import { applyNethackrc } from '../js/options.js';
 import { game } from '../js/gstate.js';
 import { triggerMonsterDoorTrap } from '../js/monster_door_trap.js';

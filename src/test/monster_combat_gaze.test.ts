@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import {
     M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, W_AMUL, W_ARMS,
 } from '../js/const.js';
-import { canSeeMonster, plineWithContinuation } from '../js/display.js';
+import { canSeeMonster } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AT_GAZE } from '../js/monster_attack_types.js';
@@ -20,7 +21,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-import type { MessagePublisher } from '../js/display.js';
+import type { MessagePublisher } from '../js/pline.js';
 
 async function gazeRoom(source = 'umber hulk', target = 'orc') {
     await freshObjectRoom({ heroX: 8, heroY: 10, flags: { verbose: true } });

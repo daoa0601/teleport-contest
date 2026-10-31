@@ -7,7 +7,7 @@ import { armorSlotFor } from './armor.js';
 import { FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, SINK, } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';

@@ -3,7 +3,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { A_NONE, G_GONE, MM_NOMSG, NO_MINVENT, TT_BURIEDBALL } from './const.js';
 import { BELL_OF_OPENING } from './object_data.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { objectName, objectNameIsPlural } from './objnam.js';
 import { makePlural } from './object_grammar.js';
 import { objectResistsDestruction } from './object_state.js';

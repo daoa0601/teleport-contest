@@ -11,9 +11,8 @@ import {
 } from './const.js';
 import { digHole, liquidFlow } from './digging_terrain.js';
 import { watchDigging } from './digging_watch.js';
-import {
-    flush_screen, newsym, plineWithContinuation, show_glyph_cell,
-} from './display.js';
+import { flush_screen, newsym, show_glyph_cell } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';

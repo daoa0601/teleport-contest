@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
-import { pline } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { roomBindings } from './support/themed-room-bindings.js';
 void test('a Lua shapechanger in a fire-elemental body illuminates nearby dark floor before the next message', async (t) => {

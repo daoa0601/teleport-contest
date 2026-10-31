@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CHEST, CLUB, DAGGER, OBJECT_NAMES, BOULDER, TOWEL } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';

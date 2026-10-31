@@ -3,7 +3,8 @@
 import { BOLT_LIM, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { requireLiveGame } from './gstate.js';
 import { dist2, distmin } from './hacklib.js';
 import { formatHeardMessage } from './hero_speech.js';

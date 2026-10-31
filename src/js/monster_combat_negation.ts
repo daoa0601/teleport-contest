@@ -1,10 +1,11 @@
 // C uhitm.c:mhitm_mgc_atk_negated(), for monster-vs-monster effects.
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { specialAttackNegated } from './magic_negation.js';
 import { monsterName } from './monster_name.js';
 import { rn2 } from './rng.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 

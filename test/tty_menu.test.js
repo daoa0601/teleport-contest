@@ -4,7 +4,8 @@ import { NHW_MENU, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_S
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/tty_menu.js';
-import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { showMultiSelectWindow } from '../js/windows.js';
 import { getLine } from '../js/query.js';
 import { freshPlayableRoom } from './support/playable-room.js';

@@ -5,7 +5,7 @@ import { W_TOOL } from './const.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
-import { pline, plineWithContinuation, } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { BLINDFOLD, LENSES, TOWEL } from './object_data.js';

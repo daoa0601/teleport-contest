@@ -3,7 +3,8 @@ import { currency } from './currency.js';
 // C refs: dig.c bury_an_obj()/bury_objs() and dungeon.c earth_sense().
 import { CORR, ROOM, TT_BURIEDBALL, Upolyd } from './const.js';
 import { heroFootName } from './body_parts.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { propertyIsActive, refreshMovementProperties } from './properties.js';

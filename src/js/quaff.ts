@@ -3,7 +3,7 @@ import type { GameState } from './game_state.js';
 import type { PotionEffectOptions } from './potion_types.js';
 // C potion.c:dodrink()/dopotion(). Effects are shared with spells and digestion.
 import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, SINK } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { addExperience } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { useUpFloorObject } from './floor_consumption.js';

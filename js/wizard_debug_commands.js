@@ -1,6 +1,6 @@
 // C wizcmds.c:wiz_panic()/wiz_fuzzer(). Both confirmations take no time.
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 export async function wizPanic() {

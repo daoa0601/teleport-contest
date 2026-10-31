@@ -3,8 +3,9 @@
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { placeCreatedObject } from './floor_object.js';
 import { veganCorpse } from './food_traits.js';
 import type { GameMap } from './game.js';

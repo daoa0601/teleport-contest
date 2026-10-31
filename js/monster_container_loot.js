@@ -1,7 +1,8 @@
 // C muse.c:mloot_container(). Removal precedes the carry check so a carried
 // container's contents are not counted twice against the monster's load.
 import { thawObject } from './container.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { dist2 } from './hacklib.js';
 import { inventoryItemDescription } from './invent.js';
 import { monsterCanCarryObject } from './monster_carry.js';

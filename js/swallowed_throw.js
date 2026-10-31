@@ -2,7 +2,8 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
-import { flush_screen, plineWithContinuation } from './display.js';
+import { flush_screen } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { definiteObjectAction } from './objnam.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';

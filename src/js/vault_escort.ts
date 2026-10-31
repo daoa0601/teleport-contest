@@ -10,7 +10,8 @@ import {
     MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_MSG, RLOC_NOMSG,
     ROWNO, SCORR, STONE, TLCORNER, TRCORNER, VAULT, VWALL, isok,
 } from './const.js';
-import { canSpotMonster, monsterVisible, newsym, plineWithContinuation as pline } from './display.js';
+import { canSpotMonster, monsterVisible, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { deleteEngravingAt } from './engrave.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';

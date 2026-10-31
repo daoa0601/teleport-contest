@@ -10,7 +10,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT, PIT, WEB, W_AMUL } from '../js/const.js
 import { initializePet } from '../js/dog.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';

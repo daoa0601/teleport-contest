@@ -2,7 +2,8 @@
 import { currentAttribute } from './attrib.js';
 import { heroUsesMartialArts } from './barehand_combat.js';
 import { A_DEX, A_STR, STR18, Upolyd, } from './const.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSpotMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { heroSeductionCompatibility } from './hero_form_contact.js';

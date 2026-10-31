@@ -4,13 +4,14 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
 import { setMulti } from './command_state.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsUnconscious } from './hero_sleep.js';
 import { explodeLandMine } from './landmine_explosion.js';

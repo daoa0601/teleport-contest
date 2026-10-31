@@ -1,7 +1,7 @@
 // Native uhitm.c:known_hitum(). hmon owns damage; callers own turns/passives.
 import { setHeroGrip } from './hero_grip.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { rnd, rn2 } from './rng.js';

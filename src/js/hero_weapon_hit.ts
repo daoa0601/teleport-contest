@@ -4,7 +4,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { rnd, rn2 } from './rng.js';

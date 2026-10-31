@@ -2,7 +2,8 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_
 // C do_wear.c:menu_remarm(); pickup.c:query_category()/allow_category();
 // invent.c:ggetobj()/askchain(). The window API owns rendering and input.
 import { MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
-import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline, } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
 import { objectDescription } from './object_description.js';

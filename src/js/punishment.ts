@@ -2,7 +2,8 @@
 // C refs: read.c punish()/unpunish().
 
 import { W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroIsBlind } from './senses.js';
 import { landFloorObject } from './floor_effects.js';

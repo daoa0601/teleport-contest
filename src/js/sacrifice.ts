@@ -18,9 +18,8 @@ import {
 } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
-import {
-    displayColorName, newsym, plineWithContinuation as pline,
-} from './display.js';
+import { displayColorName, newsym } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { angryGods, desecrateAltar, fryByGod, godsUpset, godVoice } from './divine_wrath.js';
 import { announceDivineGift } from './divine_gifts.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';

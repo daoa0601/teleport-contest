@@ -1,7 +1,7 @@
 // C vault.c:paygd(). Only openly carried coins can be reclaimed by a guard.
 import { RLOC_NOMSG } from './const.js';
 import { currency } from './currency.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
@@ -13,7 +13,7 @@ import { monsterName } from './monster_name.js';
 import { rn2 } from './rng.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { findVaultGuard } from './vault_guard.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 const COIN_CLASS = 12;
 

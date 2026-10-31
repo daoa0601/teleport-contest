@@ -5,7 +5,8 @@ import { heroLocomotion } from './hero_locomotion.js';
 // C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
 import type { Trap } from './map_types.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { newsym, plineWithContinuation, shieldeff } from './display.js';
+import { newsym, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
 import { monsterName } from './monster_name.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';

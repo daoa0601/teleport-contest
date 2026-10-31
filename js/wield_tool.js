@@ -4,7 +4,7 @@ import { W_ACCESSORY, W_ARMOR } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { objectCombatName, ownedObjectName } from './objnam.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { OBJECT_BIMANUAL } from './object_data.js';

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { abusePetAfterHeroHit, initializePet } from '../js/dog.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym, pline, } from '../js/display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym } from '../js/display.js';
+import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';

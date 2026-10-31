@@ -2,7 +2,8 @@
 // C ref: trap.c:blow_up_landmine().
 import { deleteTrap } from './trap_lifecycle.js';
 import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM, } from './const.js';
-import { displayLiquidName, newsym, plineWithContinuation } from './display.js';
+import { displayLiquidName, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { liquidForHole } from './hole.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';

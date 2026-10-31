@@ -16,7 +16,8 @@ import {
     M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, Upolyd,
 } from './const.js';
 import { impossible } from './diagnostics.js';
-import { plineWithContinuation as pline, shieldeff } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { explode } from './explosion.js';
 import { loseHeroExperience } from './exper.js';

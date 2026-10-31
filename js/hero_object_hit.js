@@ -2,7 +2,7 @@
 import { objectMaterial } from './object_material.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';

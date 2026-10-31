@@ -2,7 +2,7 @@
 // C wizard.c:strategy(), target_on(), and tactics()'s target branches.
 import { artifactById } from './artifacts.js';
 import { isok, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR, STRAT_PLAYER, STRAT_WAITMASK, } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { MONSTER_NAME } from './monster_data.js';

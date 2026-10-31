@@ -1,6 +1,7 @@
 // C mon.c:mm_displacement() and mhitm.c:mdisplacem().
 import { ALLOW_MDISP, M_AP_MONSTER, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, STRAT_WAITMASK, W_ARMG, } from './const.js';
-import { canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
+import { canSpotMonster, flush_screen, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterIsDisplacer, monsterIsRider, requireMonsterData, } from './monster_data.js';

@@ -1,7 +1,8 @@
 // Probing reveals object descriptions and immediate container contents.
 // C refs: zap.c probe_objchain(), probe_monster(), and bhito(WAN_PROBING).
 import { game } from './gstate.js';
-import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline, randomDisplayMonsterName } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, randomDisplayMonsterName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { isContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
 import { objectDescription } from './object_description.js';

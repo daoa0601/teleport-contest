@@ -1,9 +1,10 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
 
-import { bot, plineWithContinuation } from './display.js';
+import { bot } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { HeroTeleportMovement } from './teleport.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { HeroTrapOptions } from './hero_traps.js';
 import type { Trap, Position } from './map_types.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';

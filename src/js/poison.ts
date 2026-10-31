@@ -7,11 +7,12 @@ import {
 import {
     A_CHA, A_CON, A_STR, DIED, POISONING, Upolyd,
 } from './const.js';
-import { plineWithContinuation, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { nameToMonster } from './mondata.js';

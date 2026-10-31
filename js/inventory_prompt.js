@@ -1,7 +1,9 @@
 import { ingSuffix } from './hacklib.js';
 // Inventory selection shared by commands which use NetHack's getobj flow.
 // C ref: invent.c getobj().
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, renderKeyPrompt } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
@@ -14,7 +16,7 @@ import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
-import { putMessageHistory } from './display.js';
+import { putMessageHistory } from './tty_topline.js';
 const CANCELLED = { cancelled: true, object: null, none: false, count: null };
 const HANDS = { cancelled: false, object: null, none: true, count: null };
 const COIN_CLASS = 12;

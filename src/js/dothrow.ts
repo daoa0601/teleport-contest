@@ -3,7 +3,7 @@
 // per-missile handoff to the flight owners.
 
 import { game } from './gstate.js';
-import { pline, plineWithContinuation } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import {
     beginCommandResult, commandResultCancelled, setMulti,
 } from './command_state.js';

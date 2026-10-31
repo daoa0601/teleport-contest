@@ -9,9 +9,9 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { game } from './gstate.js';
-import {
-    bot, displayLiquidName, docrt, flushPendingTopline, flush_screen, pline,
-} from './display.js';
+import { bot, displayLiquidName, docrt, flush_screen } from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { pline } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages } from './windows.js';
 import {
     A_WIS, G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd,

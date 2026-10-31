@@ -5,7 +5,8 @@ import { heroIsHallucinating } from './senses.js';
 import {
     NORMAL_SPEED, P_DAGGER, P_KNIFE, STRAT_WAITFORU, W_WEP,
 } from './const.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -37,7 +38,7 @@ import { objectWeight } from './weight.js';
 import { distantObjectName } from './objnam.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { willWeld } from './weapon_type.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

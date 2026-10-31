@@ -11,7 +11,8 @@ import { artifactToHitBonus } from './artifacts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject,
     prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -70,7 +71,7 @@ import { calcCapacity } from './weight.js';
 import { ammunitionMatchesLauncher, heroHasFreeHand, isAmmunition, isPolearm, returningWeaponRangeSquared } from './weapon_type.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

@@ -1,8 +1,8 @@
 // Interrupt ongoing work without cancelling an involuntary delay.
 // C allmain.c:stop_occupation(), eat.c:maybe_finished_meal().
 
-import { plineWithContinuation } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { continueFoodMeal } from './eat.js';
 import { game } from './gstate.js';
 import { clearCannedCommands, endVoluntaryMultiTurn } from './command_state.js';

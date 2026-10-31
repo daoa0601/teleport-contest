@@ -6,9 +6,9 @@ import { exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE,
 } from './const.js';
-import {
-    flushPendingTopline, newsym, pline, plineWithContinuation,
-} from './display.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { newsym } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';

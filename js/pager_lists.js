@@ -1,6 +1,7 @@
 // C pager.c:look_all(), look_traps(), look_engrs(), look_region_nearby().
 import { BOLT_LIM, BUFSZ, COLNO, CORR, GRAVE, Is_airlevel, Is_waterlevel, ROWNO, def_warnsyms, } from './const.js';
-import { canSpotHeroSelf, glyphAt, pline, transientTrapGlyph } from './display.js';
+import { canSpotHeroSelf, glyphAt, transientTrapGlyph } from './display.js';
+import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { objectAtMapDescription } from './map_object_description.js';

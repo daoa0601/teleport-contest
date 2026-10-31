@@ -8,7 +8,7 @@ import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { verbForSubject, makePlural } from './object_grammar.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -52,9 +52,8 @@ import {
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES,
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
-import {
-    canSpotMonster, newsym, pline, plineWithContinuation, see_monsters,
-} from './display.js';
+import { canSpotMonster, newsym, see_monsters } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { deleteObject } from './object_delete.js';
 import { cancelDonning, dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
 import { isFlimsyObject } from './object_properties.js';

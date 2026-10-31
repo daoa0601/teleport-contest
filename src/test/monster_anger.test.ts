@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import { BURN, ENGRAVE, HEADSTONE, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { flush_screen } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';

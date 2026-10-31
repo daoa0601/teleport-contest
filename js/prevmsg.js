@@ -3,7 +3,7 @@
 // tty_doprev_message() and redotoplin(), and the window-port menu those
 // build through putstr()/display_nhwindow()/destroy_nhwindow().
 import { game } from './gstate.js';
-import { messageHistoryCapacity, pageTopline, resetToplineClip, toplineRows } from './display.js';
+import { messageHistoryCapacity, pageTopline, resetToplineClip, toplineRows } from './tty_topline.js';
 import { showDisclosureOverlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 const CTRL_P = 16;

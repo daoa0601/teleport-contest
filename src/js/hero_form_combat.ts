@@ -8,7 +8,7 @@ import {
 } from './const.js';
 import { selectAttack } from './attack_selection.js';
 import { specialContactDamage } from './contact_damage.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { resolveHeroCombatEngulf } from './hero_combat_engulf.js';

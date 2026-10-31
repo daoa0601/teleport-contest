@@ -1,7 +1,8 @@
 // A monster's passive response to another monster's melee attack.
 // C mhitm.c:passivemm() and paralyze_monst().
 
-import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { applyMonsterGolemEffects, healMonster, paralyzeMonster } from './mon.js';
 import {
@@ -26,7 +27,7 @@ import { d, rn2 } from './rng.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 export interface MonsterContactPassiveResult {
     stopped: boolean;

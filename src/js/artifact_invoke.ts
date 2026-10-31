@@ -7,11 +7,12 @@ import type { Artifact } from './artifacts.js';
 import type { ArtifactPower } from './data_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { PropertyName } from './property_types.js';
 import type { UntrapOptions } from './untrap.js';
 import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
-import { newsym, pline } from './display.js';
+import { newsym } from './display.js';
+import { pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import {

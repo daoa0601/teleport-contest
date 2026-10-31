@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { M_AP_MONSTER, M_AP_NOTHING, NO_MINVENT, W_AMUL } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { initializePet, makePetWary } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

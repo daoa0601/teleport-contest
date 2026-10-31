@@ -4,7 +4,7 @@
 import { IS_ALTAR, IS_SINK, LOST_DROPPED } from './const.js';
 import { CORPSE, MEAT_RING } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { canLetGo, freeInventoryObject } from './hero_inventory.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { paranoidQuery } from './query.js';

@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';

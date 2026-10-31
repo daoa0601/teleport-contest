@@ -5,7 +5,7 @@ import { recordAchievement } from './achievements.js';
 import { exerciseAttribute } from './attrib.js';
 import { ACH_TUNE, A_WIS, Is_stronghold, isok, } from './const.js';
 import { findDrawbridgeAt, toggleDrawbridge, } from './dbridge.js';
-import { pline, plineWithContinuation, } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';

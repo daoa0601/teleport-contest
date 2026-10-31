@@ -3,7 +3,8 @@ import { requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 // Native uhitm.c:nohandglow() and hmon's surviving hand-to-hand target.
 import { heroHandName } from './body_parts.js';
-import { canSeeMonster, displayColorName, plineWithContinuation } from './display.js';
+import { canSeeMonster, displayColorName } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { monsterName } from './monster_name.js';

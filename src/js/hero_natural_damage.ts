@@ -7,8 +7,9 @@ import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
     M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MSLOW, STRAT_WAITFORU, W_ARM, W_ARMH,
 } from './const.js';
-import { canSeeMonster, plineWithContinuation, shieldeff } from './display.js';
-import type { MessagePublisher } from './display.js';
+import { canSeeMonster, shieldeff } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

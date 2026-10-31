@@ -1,7 +1,8 @@
 // C fountain.c:wash_hands(), shared by fountain, sink and pool dips.
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { armorSimpleName } from './armor.js';
-import { displayLiquidName, plineWithContinuation as pline } from './display.js';
+import { displayLiquidName } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { makePlural } from './object_grammar.js';
 import { setPropertyTimeout } from './properties.js';

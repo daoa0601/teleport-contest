@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { LAVAPOOL, MFAST, NO_MINVENT, W_ARMF, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { setTopline } from '../js/display.js';
+import { setTopline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';

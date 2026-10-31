@@ -3,14 +3,15 @@
 // and uhitm.c hmon() venom cases.
 
 import type { MonsterAttack } from './data_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
 import { IS_SOFT, LOST_THROWN } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import {

@@ -1,6 +1,6 @@
 // C minion.c:bribe(), shared by demon and priest conversations.
 import { currency } from './currency.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName } from './monster_name.js';

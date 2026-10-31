@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { clearMessageWindow } from '../js/display.js';
+import { clearMessageWindow } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { getHungry } from '../js/hunger.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

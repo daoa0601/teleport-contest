@@ -1,5 +1,6 @@
 // C dokick.c:dokick(): refusals precede the direction prompt.
-import { displayMessageWindow, plineWithContinuation as pline } from './display.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { commandResultFailed } from './command_state.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroLegName } from './body_parts.js';

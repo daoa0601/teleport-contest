@@ -3,7 +3,8 @@ import { canOverwriteTerrain } from './terrain_properties.js';
 // light, and liquid-effect owners, then refresh the hero's changed square.
 import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, CLOUD, COLNO, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, MAGIC_PORTAL, MOAT, POOL, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, } from './const.js';
 import { applyHeroLiquidEffects } from './hack.js';
-import { docrt, feel_newsym, plineWithContinuation } from './display.js';
+import { docrt, feel_newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { deleteEngravingAt } from './engrave.js';
 import { fireDamageChain } from './fire_damage.js';

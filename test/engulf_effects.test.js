@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resolveHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';

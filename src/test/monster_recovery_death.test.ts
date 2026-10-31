@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { wearHeroAccessory } from '../js/accessory.js';
 import { DOOR, D_CLOSED, D_NODOOR, D_TRAPPED, NO_MINVENT, PIT } from '../js/const.js';
-import { plineWithContinuation } from '../js/display.js';
+import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';

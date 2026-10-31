@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { finishArmorRemoval } from '../js/do_wear.js';
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

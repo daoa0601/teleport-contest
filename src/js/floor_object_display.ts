@@ -9,9 +9,9 @@ import { surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
-import {
-    clearMessageWindow, displayMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation,
-} from './display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { flush_screen } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { readEngravingAt } from './engrave.js';
 import { nomul } from './command_state.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';

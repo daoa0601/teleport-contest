@@ -2,7 +2,7 @@ import { installPagerInput } from './support/pager-input.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { damageHeroFromMonster } from '../js/hero_damage.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { runExtendedCommand } from './support/commands.js';

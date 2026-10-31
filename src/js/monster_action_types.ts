@@ -2,7 +2,7 @@ import type { MonsterHideUnder } from './monster_hiding.js';
 import type { PetMeal } from './pet_eating.js';
 import type { MonsterFormChange } from './monster_polymorph.js';
 import type { WereChange } from './were.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 import type { reassessMonsterArmor } from './monworn.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

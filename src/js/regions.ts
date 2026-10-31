@@ -7,9 +7,8 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import {
     ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok,
 } from './const.js';
-import {
-    canSeeMonster, newsym, plineWithContinuation,
-} from './display.js';
+import { canSeeMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -20,7 +19,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GasCloud, Position } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { MessagePublisher } from './pline.js';
 
 import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { heroIsBreathless } from './hero_species.js';

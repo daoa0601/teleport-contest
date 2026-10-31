@@ -5,7 +5,9 @@ import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHan
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { clearMessageWindow, consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
+import { clearMessageWindow } from './tty_topline.js';
+import { consumeHallucinatedMenuObjectGlyph } from './display.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { yn_function } from './query.js';
 import { heroHandName } from './body_parts.js';
