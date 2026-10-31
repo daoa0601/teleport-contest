@@ -16,7 +16,8 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
-import { performPetRangedAttack, takeMonsterTurn } from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
+import { performPetRangedAttack } from '../js/dogmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 

@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2 } from '../js/monster_data.js';
 import { msummon } from '../js/minion.js';
 import { AD_SPEL } from '../js/monster_attack_types.js';
-import { resumeDeferredMovementSpell } from '../js/monmove.js';
+import { resumeDeferredMovementSpell } from '../js/mcastu.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
