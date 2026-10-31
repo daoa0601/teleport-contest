@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { finishArmorRemoval } from '../js/cmd.js';
+import { finishArmorRemoval } from '../js/do_wear.js';
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { flushPendingTopline } from '../js/display.js';
 import { wearEyewear } from '../js/eyewear.js';

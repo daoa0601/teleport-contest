@@ -65,8 +65,8 @@ do_name.c	minimal_monnam	[Invalid mon->data	diagnostic	Defensive fallbacks of mi
 do_name.c	minimal_monnam	[Null mon->data]	diagnostic	Defensive fallbacks of minimal_monnam() for a null monster or data pointer; not reachable with valid monster state.
 do_name.c	minimal_monnam	[Null monster]	diagnostic	Defensive fallbacks of minimal_monnam() for a null monster or data pointer; not reachable with valid monster state.
 do_name.c	obj_pmname	two-legged glorkum-seeker	diagnostic	Return value after impossible("obj_pmname otyp:..."); the fallback never names a real corpse.
-do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
-do_wear.c	dotakeoff	dragon scales are	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
+do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/do_wear.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
+do_wear.c	dotakeoff	dragon scales are	composed	src/js/do_wear.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
 do_wear.c	unknown_type	Unknown type of	diagnostic	impossible() format for an unrecognized armor otyp; developer diagnostic.
 dogmove.c	dog_invent	edog->apport > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.

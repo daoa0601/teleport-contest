@@ -124,7 +124,8 @@ import {
 import { makemonAt } from './makemon.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueRun } from './hack.js';
-import { askTeleportDestination, continueCountedCommand, finishArmorRemoval, getLine, promptYesNo, rhack } from './cmd.js';
+import { askTeleportDestination, continueCountedCommand, getLine, promptYesNo, rhack } from './cmd.js';
+import { finishArmorRemoval } from './do_wear.js';
 import { clearRepeatCommand } from './command_repeat.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';

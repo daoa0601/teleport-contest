@@ -17,7 +17,7 @@ import { curseObject, uncurseObjectState } from './object_state.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
-import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
+import { CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -69,21 +69,21 @@ import { showLookList } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
 import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
-import { isGrayStone, isWeaponTool } from './object_properties.js';
+import { isGrayStone } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
 import { flipCoin } from './coin_flip.js';
 import { useGrayStone } from './gray_stone.js';
 import { useMirror } from './mirror.js';
 import { useCamera } from './camera.js';
-import { dryTowel, useTowel } from './towel.js';
+import { useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
 import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun, } from './monster_name.js';
@@ -95,12 +95,11 @@ import { stumbleOnDoorMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { definiteName, objectCombatName, minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
+import { definiteName, objectCombatName, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { beginCommandResult, clearCannedCommands, commandResultCancelled, commandResultFailed, commandResultSpentTime, endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
-import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { pickupAtHero } from './pickup.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -121,8 +120,8 @@ import { blocksDiagonalDoor, blocksMove, TRAVEL_DIRECTIONS, heroMayDisplaceMonst
 import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
-import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
+import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { readCommandInput } from './command_input.js';
@@ -190,42 +189,30 @@ import { rndClass } from './objnam.js';
 import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt, dungeonBuildsUp, sameDungeonLevel, } from './dungeon.js';
 import { questLeaderName } from './quest_pager.js';
 import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
-import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
-import { freeInventoryObject } from './hero_inventory.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
-import { autoquiverCandidate, readySuggestion, } from './quiver.js';
-import { isWeldedPrimary, releaseWeaponSlots, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './weapon_slots.js';
-import { launcherMatchesAmmo } from './object_properties.js';
-import { resolveMapPotionThrow } from './potion_throw.js';
-import { throwOrdinaryObject } from './ordinary_throw.js';
-import { isAutoReturningThrow } from './returning_throw.js';
-import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
+import { setSecondaryWeapon } from './weapon_slots.js';
 import { captureThrownObjectFlight, } from './thrown_object.js';
 import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, CORPSE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, LENSES, BLINDFOLD, TOWEL, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_WEIGHT, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_ALIGNMENT, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests, monsterSpeciesHidesOnCeiling, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_ALIGNMENT, monsterTypeName, monsterClassSymbol, monsterDigests, monsterSpeciesHidesOnCeiling, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
-import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
-import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { autopickupAtHero } from './pickup.js';
-import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
-import { armorWearDecision } from './armor_wear.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { dosave } from './save.js';
 import { arriveTravel, captureRunmodeDelay, startRun, startWalkRepeat, stopRun } from './runmode.js';
-import { armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, removeHeroArmor, wearHeroArmor, } from './armor.js';
 import { findMonsterArmorClass, } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
+import { aggravateMonsters, angerAttackedMonster } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, stuckSteed } from './steed.js';
 import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
@@ -238,32 +225,26 @@ import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
-import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
-import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
-import { objectWearMessage } from './object_wear_message.js';
-import { isWetTowel, willWeld } from './weapon_type.js';
-import { refuseWeldedPrimary } from './weapon_feedback.js';
-import { readyHeroWeapon } from './weapon_readiness.js';
-import { dropCursedSecondaryWeapon, stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
+import { heroArmName } from './body_parts.js';
+import { withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { dist2, distmin, dungeonDepth, ledgerNo, endgameLevelName } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
 import { roomForRoomno, roomsAt } from './room.js';
-import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, OBJECT_CLASS_SYMBOLS, } from './object_knowledge.js';
+import { learnObjectType, recordObjectCall, recordObjectEncounter, OBJECT_CLASS_SYMBOLS, } from './object_knowledge.js';
 import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
 import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { dosacrifice } from './sacrifice.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
-import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doborn, doquit, finishHeroDeath, listGenocided, listVanquished, } from './end.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
-import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, } from './polyself.js';
-import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
+import { heroHasNoHands, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, } from './polyself.js';
+import { applyEyewear } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
 import { checkHeroLeashes, useLeash } from './leash_apply.js';
@@ -277,21 +258,22 @@ import { useSaddle } from './steed.js';
 import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
 import { useGrapplingHook } from './grappling_hook.js';
-import { couldPoleMonster, usePolearm } from './polearm.js';
-import { isAmmunition, isAxe, isPick, isPolearm } from './weapon_type.js';
+import { usePolearm } from './polearm.js';
+import { isAxe, isPick, isPolearm } from './weapon_type.js';
 import { applyPickAxeDirection, usePickAxe } from './pick_axe.js';
 import { continueHeroDigging } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
+import { dowear, doputon, removeWornItem } from './do_wear.js';
+import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
+import { dofire, dothrow } from './dothrow.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, shopkeeperForHero, } from './shk.js';
+import { chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, shopkeeperForHero, } from './shk.js';
 import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
-import { corpseName, killerObjectName } from './objnam.js';
-import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { shouldShowGetposTip, showGetposTip, showGetposInstructions, selectMapPosition, } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
@@ -306,7 +288,7 @@ import { kickDoor } from './kick_door.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR, ROOM, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, Is_valley, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR, ROOM, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, Is_valley, W_ARMOR, W_ACCESSORY, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, isok, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -314,7 +296,6 @@ const SKELETON_KEY = 221;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
-const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
 function isMovementKey(ch) {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
@@ -2317,11 +2298,6 @@ async function getAdjacentLocation(prompt, errorMessage, x, y) {
     }
     return target;
 }
-async function dotwoweapon() {
-    const spentTime = await toggleTwoWeaponCombat();
-    if (!game.program_state.gameover)
-        game.context.move = spentTime ? 1 : 0;
-}
 // C iactions.c:itemactions_pushkeys(). The menu closes before the queued
 // command runs; its object letter answers the later inventory prompt.
 function inventoryActionCommand({ key, item }) {
@@ -2475,43 +2451,6 @@ async function executeInventoryAction({ key, item }) {
             game.context.move = 0;
             return;
     }
-}
-// C ref: wield.c:doswapweapon()/ready_weapon().  Clearing the old secondary
-// slot through setworn() also ends two-weapon mode before either new
-// inventory description is projected.
-async function doswapweapon() {
-    setMulti(0);
-    if (heroHasNoHands(game) || heroIsVerySmall(game)) {
-        await pline("Don't be ridiculous!");
-        commandResultFailed(); // wield.c:doswapweapon() ECMD_FAIL.
-        return;
-    }
-    if (await refuseWeldedPrimary()) {
-        commandResultFailed(); // wield.c:doswapweapon() ECMD_FAIL.
-        return;
-    }
-    const oldPrimary = game.uwep || game.u?.uwep || null;
-    const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-    await setSecondaryWeapon(null, game);
-    const result = await readyHeroWeapon(oldSecondary);
-    // C compares the uwep pointer, so read the slot the same way on both
-    // sides: an all-along-empty hand is an unchanged hand even though the
-    // optional fields stay undefined rather than null.
-    if ((game.uwep || game.u?.uwep || null) === oldPrimary) {
-        await setSecondaryWeapon(oldSecondary, game);
-    }
-    else if (oldPrimary) {
-        await setSecondaryWeapon(oldPrimary, game);
-        observeObjectForNaming(oldPrimary);
-        await plineWithContinuation(`${oldPrimary.invlet} - ${await inventoryItemDescription(oldPrimary)}.`);
-    }
-    else {
-        await plineWithContinuation('You have no secondary weapon readied.');
-    }
-    if (result === 'failed')
-        commandResultFailed(); // ready_weapon() ECMD_FAIL.
-    else
-        game.context.move = result === 'time' ? 1 : 0;
 }
 async function dochat() {
     const species = heroSpecies(game);
@@ -5019,472 +4958,6 @@ async function dohelp() {
     }
     game.context.move = 0;
 }
-async function doputon() {
-    if (wearingFullEquipment()) {
-        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
-        await pline(`Your ${prefix}${makePlural(heroFingerName(game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
-        game.context.move = 0;
-        return;
-    }
-    const object = await chooseInventoryObject('put on', candidate => equipmentClassification(candidate, 'put on'));
-    if (!object) {
-        // do_wear.c:doputon() returns ECMD_CANCEL when getobj() is
-        // declined; the rhack seam clears the queues after the command.
-        commandResultCancelled();
-        return;
-    }
-    if (object.oclass === 3) {
-        await putOnArmorObject(object);
-        return;
-    }
-    await putOnAccessoryObject(object);
-}
-// do_wear.c:accessory_or_armor_on() is shared by both W and P.  getobj()
-// downplays the other command's class in its compact prompt but still accepts
-// a directly typed inventory letter and routes it through this same owner.
-async function putOnAccessoryObject(object) {
-    if (object.worn) {
-        await pline('You are already wearing that!');
-        game.context.move = 0;
-        return;
-    }
-    if (isEyewear(object)) {
-        if (!heroHasNoHead(game) && !game.ublindf && !game.u.ublindf) {
-            const touch = await retouchHeroObject(object);
-            if (touch.rejected || touch.died) {
-                game.context.move = 1;
-                return;
-            }
-        }
-        const worn = await wearEyewear(object);
-        game.context.move = worn ? 1 : 0;
-        return;
-    }
-    if (object.oclass === 5 || object.class === 'Amulets') {
-        if (game.uamul) {
-            await pline('You are already wearing an amulet.');
-            game.context.move = 0;
-            return;
-        }
-        const touch = await retouchHeroObject(object);
-        if (touch.rejected || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-        await wearHeroAccessory(object, 'uamul', game);
-        game.context.move = 1;
-        return;
-    }
-    if ((object.oclass === 4 || object.class === 'Rings' || object.otyp === MEAT_RING)
-        && heroHasNoLimbs(game)) {
-        await pline('You cannot make the ring stick to your body.');
-        game.context.move = 0;
-        return;
-    }
-    if (game.uleft && game.uright) {
-        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
-        await pline(`There are no more ${prefix}${makePlural(heroFingerName(game))} to fill.`);
-        game.context.move = 0;
-        return;
-    }
-    let hand;
-    if (!game.uleft && !game.uright) {
-        // C calls yn_function(qbuf, rightleftchars, '\0', TRUE): a queued
-        // answer replays without prompting and any key outside "rl" is
-        // replaced by the NUL default; a live question keeps asking until
-        // 'r', 'l', or a quit key answers it, and only that final answer
-        // is recorded into CQ_REPEAT for the next do-again.
-        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`, 'rl', '', true, { menuable: true });
-        if (answer !== 'r' && answer !== 'l') {
-            game.context.move = 0;
-            return;
-        }
-        hand = answer === 'r' ? 'right' : 'left';
-    }
-    else {
-        hand = game.uright ? 'left' : 'right';
-    }
-    const ringSlot = hand === 'right' ? 'uright' : 'uleft';
-    const gloves = game.uarmg;
-    if (gloves && (game.u.glib || (game.u.glibTurns ?? 0) > 0)) {
-        await pline(`Your ${armorSimpleName(gloves)} are too slippery to remove, so you cannot put on the ring.`);
-        game.context.move = 1;
-        return;
-    }
-    if (gloves?.cursed) {
-        const discovered = !gloves.bknown;
-        gloves.bknown = true;
-        await pline('You cannot remove your gloves to put on the ring.');
-        game.context.move = discovered ? 1 : 0;
-        return;
-    }
-    const weapon = game.uwep;
-    const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
-    const discoveredWeld = !!weapon && !weapon.bknown;
-    if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
-        && isWeldedPrimary(weapon)) {
-        const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
-        await pline(`You cannot free your weapon ${handName} to put on the ring.`);
-        game.context.move = discoveredWeld ? 1 : 0;
-        return;
-    }
-    const touch = await retouchHeroObject(object);
-    if (touch.rejected || touch.died) {
-        game.context.move = 1;
-        return;
-    }
-    await wearHeroAccessory(object, ringSlot, game);
-    // Sink effects can remove the ring inside Ring_on().
-    if (game.uleft === object || game.uright === object) {
-        observeObjectForNaming(object);
-        await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object)}.`);
-    }
-    game.context.move = 1;
-}
-// C ref: objnam.c armor_simple_name() and category helpers.  Delayed armor
-// nomovemsg deliberately uses a short category noun, not xname()/doname().
-// C ref: do_wear.c Armor_off()/off_msg().  Delayed removal calls this from
-// allmain only after negative multi has reached zero; zero-delay armor can use
-// the same state owner immediately.
-export async function finishArmorRemoval(object, { silent = false } = {}) {
-    await removeHeroArmor(object, game, { deferArmorClass: true });
-    if (silent || game.flags?.verbose === false)
-        return '';
-    return await armorOffMessage(object, game);
-}
-// C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
-// T suggests armor and R suggests accessories; either accepts the other kind.
-async function removeWornItem(action, itemAction = false) {
-    const worn = (game.inventory || []).filter(object => object.worn);
-    if (!worn.length) {
-        await pline(action === 'take off' && game.uskin
-            ? `The dragon ${game.uskin.otyp >= GRAY_DRAGON_SCALES ? 'scales are' : 'scale mail is'} merged with your skin!`
-            : action === 'remove' ? 'Not wearing any accessories or armor.'
-                : 'Not wearing any armor or accessories.');
-        game.context.move = 0;
-        return;
-    }
-    let object;
-    let inventoryPrompt = null;
-    const preferred = accessibleEquipment(action === 'remove');
-    // C ia_dotakeoff() forces getobj() to consume the queued item letter,
-    // even if another accessible piece is the only normal suggestion.
-    if (preferred.length === 1 && !itemAction && !((game.flags.paranoia_bits ?? 0) & PARANOID_REMOVE)) {
-        [object] = preferred;
-    }
-    else {
-        const suggested = game.inventory.filter(candidate => equipmentClassification(candidate, action, itemAction) === GETOBJ_SUGGEST);
-        const letters = compactInventoryLetters(suggested.map(candidate => candidate.invlet).join(''));
-        inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
-        object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
-    }
-    if (!object) {
-        // do_wear.c:dotakeoff()/doremring() return ECMD_CANCEL when
-        // getobj() is declined; the rhack seam clears the queues.
-        commandResultCancelled();
-        return;
-    }
-    if (!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))) {
-        await pline('You are not wearing that.');
-        game.context.move = 0;
-        return;
-    }
-    const cloak = game.uarmc;
-    const suit = game.uarm;
-    if (object === game.uskin || object === suit && cloak
-        || object === game.uarmu && (cloak || suit)) {
-        const coverings = [cloak, object === game.uarmu ? suit : null]
-            .filter(covering => covering != null).map(covering => armorSimpleName(covering));
-        await pline(object === game.uskin ? "You can't take that off; it's embedded."
-            : `You can't take that off without taking off your ${coverings.join(' and ')} first.`);
-        game.context.move = 0;
-        return;
-    }
-    resetBulkTakeoff();
-    const slot = TAKEOFF_ORDER.find(candidate => takeoffSlotObject(candidate) === object);
-    if (!slot || !await canSelectOff(object, slot)) {
-        game.context.move = 0;
-        return;
-    }
-    resetBulkTakeoff();
-    if (object === game.ublindf) {
-        game._pending_message = '';
-        const removed = await removeEyewear(object);
-        if (game.program_state.gameover)
-            return;
-        game.context.move = removed ? 1 : 0;
-        return;
-    }
-    if (object === game.uamul || object === game.uleft
-        || object === game.uright) {
-        // C armor_or_accessory_off(): a ring's off_msg() runs while it is
-        // still worn, so the report keeps the "(on {right|left} hand)"
-        // suffix and precedes Ring_off()'s side effects such as a
-        // levitation landing or the death it causes; Amulet_off() clears
-        // the slot first and reports afterwards, without a suffix.
-        const ring = object === game.uleft || object === game.uright;
-        if (ring && game.flags?.verbose !== false) {
-            await plineWithContinuation(await armorOffMessage(object, game));
-        }
-        await removeHeroAccessory(object, game);
-        game.context.move = 1;
-        return;
-    }
-    const delay = OBJECT_DELAY[object.otyp] ?? 0;
-    const isArmor = object.class === 'Armor' || object.oclass === 3;
-    if (isArmor && delay > 0) {
-        nomul(-delay);
-        game._helplessReason = 'disrobing';
-        game._helplessDoneMessage = `You finish taking off your ${armorSimpleName(object)}.`;
-        game._afterMove = {
-            kind: 'remove',
-            object,
-        };
-        game.context.move = 1;
-        return;
-    }
-    // do_wear.c:off_msg() is conditional on flags.verbose.  When disabled,
-    // immediate zero-delay armor removal leaves getobj's selector as the
-    // physical topline even though the timed state change has committed.
-    game._pending_message = '';
-    if (game.flags?.verbose === false && inventoryPrompt)
-        game._retained_message = inventoryPrompt.trimEnd();
-    const removalMessage = await finishArmorRemoval(object);
-    if (removalMessage)
-        await plineWithContinuation(removalMessage);
-    game.context.move = 1;
-}
-async function putOnArmorObject(object) {
-    if (object.worn) {
-        await pline('You are already wearing that!');
-        game.context.move = 0;
-        return;
-    }
-    const decision = armorWearDecision(object);
-    if (decision.checkedWeldedWeapon)
-        decision.checkedWeldedWeapon.bknown = true;
-    if (decision.refusal) {
-        await pline(decision.refusal);
-        game.context.move = 0;
-        return;
-    }
-    if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT && game.u.uz?.dnum === game.quest_dnum) {
-        await pline(game.u.ualignbase?.[0] === game.u.ualignbase?.[1]
-            ? 'You narrowly avoid losing all chance at your goal.'
-            : 'You are suddenly overcome with shame and change your mind.');
-        game.u.ublessed = 0;
-        learnObjectType(object.otyp, game);
-        game.context.botl = true;
-        game.context.move = 1;
-        return;
-    }
-    const touch = await retouchHeroObject(object);
-    if (touch.rejected || touch.died) {
-        game.context.move = 1;
-        return;
-    }
-    // C accessory_or_armor_on(): armor leaves any held slot before setworn.
-    // Cursed armor does not weld to the hand.
-    await releaseWeaponSlots(object, game);
-    wearHeroArmor(object, game);
-    // C do_wear.c installs the slot with setworn() now, but allmain.c does
-    // not run find_ac() until the command's monster/global time has passed.
-    // Mark that once-per-input boundary; identification and Armor_on()
-    // extrinsics remain later afternmv effects.
-    const delay = OBJECT_DELAY[object.otyp] ?? 0;
-    game._armorClassDirty = true;
-    game._afterMove = { kind: 'wear', object };
-    if (delay > 0) {
-        nomul(-delay);
-        game._helplessReason = 'dressing up';
-        game._helplessDoneMessage = 'You finish your dressing maneuver.';
-    }
-    else {
-        await finishHeroHelplessness('');
-        object._armorApplied = true;
-        const onMessage = await objectWearMessage(object);
-        if (onMessage)
-            await plineWithContinuation(onMessage);
-    }
-    // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
-    resetBulkTakeoff();
-    game.context.move = 1;
-}
-// C refs: wield.c:dowield(), ready_weapon(), invent.c:getobj().  The prompt
-// advertises weapons and weapon-tools but still permits the full inventory
-// through ?/*; '-' represents the synthetic empty-hands object.
-async function dowield() {
-    setMulti(0);
-    if (heroHasNoHands(game) || heroIsVerySmall(game)) {
-        await pline("Don't be ridiculous!");
-        commandResultFailed(); // wield.c:dowield() cantwield ECMD_FAIL.
-        return;
-    }
-    clearSplitObjects();
-    // C wield.c:wield_ok(): hands are a likely candidate; coins are excluded.
-    const selection = await getobj('wield', object => object.oclass === 12 ? GETOBJ_EXCLUDE
-        : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
-        forcePrompt: true, allowCount: true, hands: GETOBJ_SUGGEST,
-        handsText: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
-    });
-    if (selection.cancelled) {
-        commandResultCancelled(); // wield.c:dowield() getobj ECMD_CANCEL.
-        return;
-    }
-    let object = selection.object;
-    if (!selection.none && !object) {
-        commandResultCancelled(); // wield.c:dowield() ECMD_CANCEL.
-        return;
-    }
-    let splitParent = null;
-    if (object && selection.count !== null && selection.count < object.quan) {
-        if (object.otyp === LOADSTONE && object.cursed)
-            object.corpsenm = selection.count;
-        else if (isWeldedPrimary(object))
-            object.bknown = true;
-        else {
-            splitParent = object;
-            object = splitCarriedStack(object, selection.count);
-        }
-    }
-    if (object && object === game.uwep) {
-        await reportAlreadyWielded(object);
-        return;
-    }
-    if (await refuseWeldedPrimary()) {
-        resetBulkTakeoff();
-        if (splitParent && object)
-            await rejoinObjectStack(splitParent, object);
-        commandResultFailed(); // wield.c:dowield() welded ECMD_FAIL.
-        return;
-    }
-    if (splitParent && object) {
-        if (splitParent === game.uwep) {
-            await rejoinObjectStack(splitParent, object);
-            await reportAlreadyWielded(splitParent);
-        }
-        else {
-            await finishSplittingCarriedStack(object);
-            await wieldSelectedWeapon(object);
-        }
-        return;
-    }
-    if (selection.none) {
-        await wieldSelectedWeapon(null);
-        return;
-    }
-    if (!object)
-        return;
-    // C dowield() hands an alternate-weapon selection to doswapweapon()
-    // rather than treating it as an unrelated primary.  That continuation
-    // prints the new primary before committing the old primary as secondary;
-    // tty can page between those two prinv() calls, before monster time.
-    if (object === (game.uswapwep || game.u?.uswapwep)) {
-        await doswapweapon();
-        return;
-    }
-    if (object === game.uquiver) {
-        const quantity = object.quan;
-        let confirmation;
-        if (quantity > 1 && hasFreeBasicInventoryLetter() && splittableForQuiver(object)) {
-            const names = makePlural(minimalObjectName(object, game));
-            const answer = await promptYesNoQuit(`You have ${quantity} ${names} readied.  Wield one?`);
-            if (answer === 'q') {
-                game.context.move = 0;
-                return;
-            }
-            if (answer === 'y') {
-                await wieldSelectedWeapon(await splitStackForQuiver(object, 1));
-                return;
-            }
-            confirmation = 'Wield all of them instead?';
-        }
-        else {
-            const plural = objectNameIsPlural(object, game)
-                || object.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[object.otyp]);
-            confirmation = `You have ${plural ? 'those' : 'that'} readied.  Wield ${plural ? 'them' : 'it'} instead?`;
-        }
-        if (await promptYesNoQuit(confirmation) !== 'y') {
-            const names = minimalObjectName(object, game);
-            const plural = objectNameIsPlural(object, game);
-            await plineWithContinuation(`${objectOwnershipPrefix(object, game)}${quantity > 1 ? makePlural(names) : names} ${plural ? 'remain' : 'remains'} readied.`);
-            game.context.move = 0;
-            return;
-        }
-        await setQuiverObject(null);
-    }
-    else if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE)) {
-        await pline('You cannot wield that!');
-        commandResultFailed(); // wield.c:dowield() "cannot wield that" ECMD_FAIL.
-        return;
-    }
-    await wieldSelectedWeapon(object);
-}
-async function reportAlreadyWielded(object) {
-    await pline('You are already wielding that!');
-    if (isWeaponTool(object) || isWetTowel(object))
-        game._unweapon = false;
-    commandResultFailed(); // wield.c:dowield() already-wielded ECMD_FAIL.
-}
-async function wieldSelectedWeapon(object) {
-    const oldPrimary = game.uwep || game.u.uwep || null;
-    const result = await readyHeroWeapon(object);
-    // C dowield() applies pushweapon only after ready_weapon() has installed
-    // the new primary.  The displaced primary becomes the authoritative
-    // secondary object; preserving that identity is what makes a later
-    // selection of it enter doswapweapon() and its two-prinv continuation.
-    if (game.flags?.pushweapon && oldPrimary && game.uwep !== oldPrimary) {
-        await setSecondaryWeapon(oldPrimary, game);
-    }
-    await stopTwoWeaponCombat();
-    if (result === 'failed')
-        commandResultFailed(); // ready_weapon() ECMD_FAIL.
-    else
-        game.context.move = result === 'time' ? 1 : 0;
-}
-// C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
-// `multi`/afternmv completion in allmain.c.  Armor is installed in its worn
-// slot immediately, but its known state and completion message are delayed
-// until the required elapsed-turn scheduler round has finished.
-function classifyWearChoice(object, action) {
-    const classification = equipmentClassification(object, action);
-    // Native canwearobj() checks welded() even during getobj's silent fit
-    // check. Keep that knowledge change at the command boundary.
-    if (action === 'wear' && object.oclass === 3) {
-        const decision = armorWearDecision(object);
-        if (decision.checkedWeldedWeapon)
-            decision.checkedWeldedWeapon.bknown = true;
-    }
-    return classification;
-}
-async function dowear() {
-    // do_wear.c:dowear() owns this form-capability check before getobj().
-    // W therefore rejects the whole transaction without exposing either
-    // armor or cross-accepted accessory inventory letters.
-    if (heroIsVerySmall(game) || heroHasNoHands(game)) {
-        await pline("Don't even bother.");
-        game.context.move = 0;
-        return;
-    }
-    // wear_ok() downplays accessories but accepts them through the same
-    // getobj transaction, including a queued inventory action.
-    if (wearingFullEquipment()) {
-        await pline('You are already wearing a full complement of armor.');
-        game.context.move = 0;
-        return;
-    }
-    const object = await chooseInventoryObject('wear', candidate => classifyWearChoice(candidate, 'wear'));
-    if (!object) {
-        // do_wear.c:dowear() returns ECMD_CANCEL when getobj() is
-        // declined; the rhack seam clears the queues after the command.
-        commandResultCancelled();
-        return;
-    }
-    if (object.oclass === 3)
-        await putOnArmorObject(object);
-    else
-        await putOnAccessoryObject(object);
-}
 function droppedObjectDescription(object) {
     const quantity = objectQuantity(object);
     // C do.c:drop() delegates to objnam.c:doname(), which keeps beatitude
@@ -5778,7 +5251,7 @@ async function applyPickAxe(item) {
     }
     game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
 }
-async function applyPolearm(item, autohit = false) {
+export async function applyPolearm(item, autohit = false) {
     const result = await usePolearm(item, {
         state: game,
         autohit,
@@ -5848,7 +5321,7 @@ async function doapply(cannedInvlet = null) {
 }
 // Return the surviving object for the native talking-artifact tail. Applied
 // stacks can split or disappear, so each destructive owner returns its object.
-async function applyTool(item, underlay) {
+export async function applyTool(item, underlay) {
     if (item.otyp === CRYSTAL_BALL) {
         const object = await useCrystalBall(item);
         game.context.move = 1;
@@ -6082,620 +5555,6 @@ async function applyTool(item, underlay) {
     // queues so a later ^A reports nothing to repeat.
     commandResultFailed();
     return null;
-}
-// C refs: dowieldquiver(), doquiver_core().  Q and empty-quiver fire share
-// one live inventory transaction; neither role nor recorded input selects a
-// different readiness implementation.
-async function doready() {
-    await doquiverCore('ready');
-}
-function splitCarriedStack(item, count) {
-    const split = splitObjectStack(item, count, game);
-    if (!split)
-        throw new Error('cannot split selected inventory stack');
-    return split;
-}
-async function splitStackForQuiver(item, count) {
-    const child = splitCarriedStack(item, count);
-    await finishSplittingCarriedStack(child);
-    return child;
-}
-// C finish_splitting(): take the child out and add it without merging so
-// its inherited inventory letter is replaced and carried effects refresh.
-async function finishSplittingCarriedStack(object) {
-    await freeInventoryObject(object);
-    const nomerge = !!object.nomerge;
-    object.nomerge = true;
-    await addInventoryItem(object, null, false);
-    object.nomerge = nomerge;
-}
-function splittableForQuiver(item) {
-    return !(item?.otyp === LOADSTONE && item.cursed)
-        && !isWeldedPrimary(item);
-}
-function hasFreeBasicInventoryLetter() {
-    return game.inventory.filter(item => item.oclass !== 12).length < 52;
-}
-async function doquiverCore(verb) {
-    setMulti(0);
-    if (!(game.inventory || []).length) {
-        await pline('You have nothing to ready for firing.');
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: false };
-    }
-    clearSplitObjects();
-    // C wield.c:ready_ok(): '-' empties the quiver and is suggested only
-    // while something is readied.
-    const selection = await getobj(verb, item => readySuggestion(item, game) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
-        forcePrompt: true, allowCount: true, hands: game.uquiver ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
-        handsText: verb === 'ready' ? `empty quiver${game.uquiver ? '' : ' (nothing readied)'}`
-            : `your ${makePlural(heroHandName(game))}`,
-    });
-    if (selection.cancelled) {
-        commandResultCancelled(); // doquiver_core() getobj ECMD_CANCEL.
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: true };
-    }
-    if (selection.none) {
-        if (game.uquiver) {
-            await pline('You now have no ammunition readied.');
-            await setQuiverObject(null, game);
-        }
-        else {
-            await pline('You already have no ammunition readied!');
-        }
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: false };
-    }
-    let item = selection.object;
-    if (!item) {
-        commandResultCancelled(); // doquiver_core() getobj ECMD_CANCEL.
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: true };
-    }
-    const knewWeld = !!item.bknown;
-    if (isWeldedPrimary(item)) {
-        // getobj() tests splittable() first for a partial count. That test
-        // reveals the weld before doquiver_core() checks whether it is new.
-        const countedPart = selection.count !== null && selection.count < item.quan;
-        const spentTime = !knewWeld && !countedPart;
-        await refuseWeldedPrimary();
-        resetBulkTakeoff();
-        game.context.move = spentTime ? 1 : 0;
-        return {
-            item: null, spentTime, cancelled: false,
-        };
-    }
-    const requestedCount = selection.count;
-    const initialQuantity = item.quantity ?? item.quan ?? 1;
-    const partialCount = requestedCount !== null
-        && requestedCount < initialQuantity;
-    if (partialCount && item.otyp === LOADSTONE && item.cursed)
-        item.corpsenm = requestedCount;
-    if (item === game.uquiver) {
-        // C getobj() splits before doquiver_core() notices the readied parent.
-        if (partialCount && splittableForQuiver(item)) {
-            const split = splitCarriedStack(item, requestedCount);
-            await rejoinObjectStack(item, split, game);
-        }
-        await pline('That ammunition is already readied!');
-        game.context.move = 0;
-        return { item, spentTime: false, cancelled: false };
-    }
-    const selectedClass = item.oclass || objectClassForType(item.otyp);
-    if (partialCount && selectedClass === 12) {
-        // C getobj()/unsplitobj(): partial purses are not valid ammunition.
-        const split = splitCarriedStack(item, requestedCount);
-        await rejoinObjectStack(item, split, game);
-        await pline("You can't ready only part of your gold.");
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: false };
-    }
-    if (requestedCount !== null && requestedCount < initialQuantity
-        && splittableForQuiver(item)) {
-        item = await splitStackForQuiver(item, requestedCount);
-    }
-    const incompatibleMask = W_ARMOR | W_ACCESSORY | W_SADDLE;
-    if (((item.owornmask ?? 0) & incompatibleMask)
-        || (item.worn && item !== game.uwep && item !== game.uswapwep)) {
-        await pline(`You cannot ${verb} that!`);
-        game.context.move = 0;
-        return { item: null, spentTime: false, cancelled: false };
-    }
-    const primary = item === game.uwep;
-    const alternate = item === game.uswapwep;
-    const wasTwoweap = !!game.u?.twoweap;
-    let spentTime = false;
-    if (primary || alternate) {
-        const quantity = item.quantity ?? item.quan ?? 1;
-        const noun = minimalObjectName(item, game);
-        const names = quantity === 1 ? noun : makePlural(noun);
-        const usePlural = objectNameIsPlural(item, game)
-            || item.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[item.otyp]);
-        let confirmation = primary
-            ? `You are wielding ${usePlural ? 'those' : 'that'}.  Ready ${usePlural ? 'them' : 'it'} instead?`
-            : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
-        let readyAll = true;
-        if (quantity > 1 && hasFreeBasicInventoryLetter()
-            && splittableForQuiver(item)) {
-            const slotDescription = primary
-                ? `You are wielding ${quantity} ${names}.`
-                : `${wasTwoweap ? 'You are dual wielding'
-                    : 'Your alternate weapon is'} ${quantity} ${names}.`;
-            const partial = await promptYesNoQuit(`${slotDescription}  Ready ${quantity - 1} of them?`);
-            if (partial === 'q') {
-                game.context.move = 0;
-                return { item: null, spentTime: false, cancelled: false };
-            }
-            if (partial === 'y') {
-                item = await splitStackForQuiver(item, quantity - 1);
-                readyAll = false;
-            }
-            else
-                confirmation = 'Ready all of them instead?';
-        }
-        if (readyAll) {
-            const answer = await promptYesNoQuit(confirmation);
-            if (answer !== 'y') {
-                const owner = objectOwnershipPrefix(item, game);
-                const remains = objectNameIsPlural(item, game) ? 'remain' : 'remains';
-                const slot = primary || wasTwoweap ? 'wielded' : 'as secondary weapon';
-                await plineWithContinuation(`${owner}${names} ${remains} ${slot}.`);
-                game.context.move = 0;
-                return { item: null, spentTime: false, cancelled: false };
-            }
-            if (primary) {
-                await setPrimaryWeapon(null, game);
-                spentTime = true;
-            }
-            else {
-                await setSecondaryWeapon(null, game);
-                spentTime = wasTwoweap;
-            }
-        }
-    }
-    if (verb !== 'fire')
-        await setQuiverObject(item, game);
-    observeObjectForNaming(item);
-    const description = await inventoryItemDescription(item);
-    await plineWithContinuation(verb === 'fire'
-        ? `You ready: ${item.invlet} - ${description}.`
-        : `${item.invlet} - ${description}.`);
-    if (verb === 'fire')
-        await setQuiverObject(item, game);
-    if (spentTime) {
-        if (primary) {
-            const humanoid = !!((MONSTER_FLAGS1[heroSpecies(game)] ?? 0) & M1_HUMANOID);
-            const hands = game.uarmg ? 'empty handed'
-                : humanoid ? 'bare handed' : 'not wielding anything';
-            await plineWithContinuation(`You are now ${hands}.`);
-        }
-        else
-            await plineWithContinuation('You are no longer using two weapons at once.');
-    }
-    game.context.move = spentTime ? 1 : 0;
-    return { item, spentTime, cancelled: false };
-}
-// C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
-// a new object id, then obj_resists() is consulted when it lands.
-async function okToThrow() {
-    // dothrow.c:ok_to_throw() is shared by #throw and #fire.  It rejects
-    // form capabilities before capacity and before either command chooses an
-    // object. M1_NOTAKE deliberately precedes M1_NOHANDS because forms such
-    // as brown molds satisfy both and own the stronger message.
-    if (heroCannotTake(game)) {
-        await pline('You are physically incapable of throwing or shooting anything.');
-        game.context.move = 0;
-        return false;
-    }
-    if (heroHasNoHands(game)) {
-        await pline("You can't throw or shoot without hands.");
-        game.context.move = 0;
-        return false;
-    }
-    if (exceedsActionCapacity(game)) {
-        await pline("You can't do that while carrying so much stuff.");
-        game.context.move = 0;
-        return false;
-    }
-    return true;
-}
-async function dofire(cannedShotLimit = null) {
-    const shotLimit = cannedShotLimit === null
-        ? Math.max(0, game._commandCount || 0)
-        : Math.max(0, cannedShotLimit || 0);
-    setMulti(0);
-    if (!await okToThrow())
-        return;
-    let fireObject = game.uquiver;
-    const weapon = game.uwep;
-    const throwWielded = weapon && isAutoReturningThrow(weapon, weapon.owornmask ?? 0, game)
-        && (artifactById(weapon.oartifact, game)?.name !== 'Mjollnir'
-            || currentAttribute(A_STR) >= STR19(25))
-        && (!fireObject || isAmmunition(fireObject));
-    if (throwWielded)
-        fireObject = weapon;
-    let quiverSelectionSpentTime = false;
-    if (!fireObject) {
-        if (game.flags?.autoquiver) {
-            fireObject = autoquiverCandidate(game);
-            if (fireObject) {
-                const wasReady = fireObject.ready;
-                fireObject.ready = false;
-                observeObjectForNaming(fireObject);
-                await pline(`You ready: ${fireObject.invlet} - ${await inventoryItemDescription(fireObject)}.`);
-                if (wasReady === undefined)
-                    delete fireObject.ready;
-                else
-                    fireObject.ready = wasReady;
-                await setQuiverObject(fireObject, game);
-            }
-            else {
-                await pline('You have nothing appropriate for your quiver.');
-            }
-        }
-        else {
-            if (game.uwep && isPolearm(game.uwep))
-                return applyPolearm(game.uwep, true);
-            if (game.uwep?.otyp === BULLWHIP) {
-                await applyTool(game.uwep, snapshotMenuUnderlay());
-                return;
-            }
-            const alternate = game.uswapwep || game.u?.uswapwep;
-            if (game.flags?.fireassist !== false && alternate && isPolearm(alternate)
-                && !(alternate.cursed && alternate.bknown)) {
-                game._cannedCommands ||= [];
-                game._cannedCommands.push({ kind: 'swap-weapon' });
-                game._cannedCommands.push({ kind: 'fire', shotLimit });
-                game.context.move = 0;
-                return;
-            }
-            await pline('You have no ammunition readied.');
-        }
-        if (!fireObject) {
-            // A repeated direction cannot answer the empty-quiver picker.
-            game._inDoAgain = false;
-            const selection = await doquiverCore('fire');
-            // doquiverCore() reports its own ECMD_CANCEL from the declined
-            // verb prompt.
-            if (selection.cancelled)
-                return;
-            fireObject = selection.item;
-            quiverSelectionSpentTime = selection.spentTime;
-        }
-        if (!fireObject) {
-            // dofire() keeps the quiver refill's ECMD_TIME in place of the
-            // missing missile (dothrow.c:585).
-            if (!quiverSelectionSpentTime)
-                commandResultCancelled();
-            return;
-        }
-    }
-    // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
-    // matching alternate weapon is swapped in as one timed action, then fire
-    // resumes after the complete monster/global turn without consuming a new
-    // physical key.  This applies to every matching ammo/launcher pair; role
-    // names and recorded command streams do not participate in selection.
-    if (fireObject) {
-        const matchingLauncher = (launcher) => launcherMatchesAmmo(fireObject, launcher);
-        const alternate = game.uswapwep || game.u?.uswapwep || null;
-        const fireassist = !throwWielded && game.flags?.fireassist !== false;
-        if (fireassist && isAmmunition(fireObject) && game.uwep && isPolearm(game.uwep)
-            && couldPoleMonster(game.uwep, { state: game })) {
-            return applyPolearm(game.uwep, true);
-        }
-        if (fireassist && !matchingLauncher(game.uwep)
-            && matchingLauncher(alternate)) {
-            game._cannedCommands ||= [];
-            game._cannedCommands.push({ kind: 'swap-weapon' });
-            game._cannedCommands.push({ kind: 'fire', shotLimit });
-            game.context.move = quiverSelectionSpentTime ? 1 : 0;
-            return;
-        }
-        if (fireassist && !matchingLauncher(game.uwep)) {
-            // dothrow.c:find_launcher() scans the live inventory chain.  A
-            // known cursed launcher is ineligible; the first known blessed
-            // or uncursed match wins immediately, while only the first
-            // unknown-BUC match is retained as a fallback.
-            let unknownLauncher = null;
-            let inventoryLauncher = null;
-            for (const candidate of game.inventory || []) {
-                if (candidate.cursed && candidate.bknown)
-                    continue;
-                if (!matchingLauncher(candidate))
-                    continue;
-                if (candidate.bknown) {
-                    inventoryLauncher = candidate;
-                    break;
-                }
-                if (!unknownLauncher)
-                    unknownLauncher = candidate;
-            }
-            inventoryLauncher ||= unknownLauncher;
-            if (inventoryLauncher) {
-                if (!inventoryLauncher.invlet)
-                    throw new Error('Cannot queue a wield command for an object without an inventory letter.');
-                game._cannedCommands ||= [];
-                if (game.uwep && !game.flags?.pushweapon) {
-                    game._cannedCommands.push({ kind: 'swap-weapon' });
-                }
-                game._cannedCommands.push({
-                    kind: 'wield', invlet: inventoryLauncher.invlet,
-                });
-                game._cannedCommands.push({ kind: 'fire', shotLimit });
-                game.context.move = quiverSelectionSpentTime ? 1 : 0;
-                return;
-            }
-        }
-        await throwCommand(fireObject, true, shotLimit);
-        // dofire() returns the quiver refill's ECMD_TIME in place of the
-        // cancelled throw's ECMD_CANCEL (dothrow.c:585), so a refill that
-        // spent the turn drops the throw's cancellation.
-        if (quiverSelectionSpentTime) {
-            beginCommandResult();
-            game.context.move = 1;
-        }
-        return;
-    }
-}
-async function finishOrdinarySwallowedThrowKill(monster, projectile, options = {}) {
-    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
-        ...options,
-        deathContext: {
-            kind: 'swallowed-projectile',
-            projectile,
-        },
-    });
-}
-async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
-    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
-        ...death,
-        deathContext: {
-            kind,
-        },
-    });
-}
-async function finishOrdinaryMapPotionKill(monster, death = {}) {
-    return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
-}
-async function dothrow(selectedItem = null) {
-    await throwCommand(selectedItem);
-}
-async function throwCommand(selectedItem = null, capabilityChecked = false, suppliedShotLimit = null) {
-    const shotLimit = suppliedShotLimit === null
-        ? Math.max(0, game._commandCount || 0)
-        : Math.max(0, suppliedShotLimit || 0);
-    requireInitializedHero(game.u);
-    setMulti(0);
-    if (!capabilityChecked && !await okToThrow())
-        return;
-    // getobj("throw") changes its suggested class when the primary weapon is
-    // a sling: ordinary weapons become downplayed and GEM_CLASS sling ammo is
-    // suggested instead.  Every directly selected inventory letter remains
-    // valid even when downplayed.
-    const launcher = game.uwep;
-    const wieldingSling = !!launcher
-        && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    // C getobj() sorts its candidates independently of the carried chain.
-    const throwClassification = (item) => {
-        const objectClass = item.oclass || objectClassForType(item.otyp);
-        if (item.bknown && isWeldedPrimary(item))
-            return GETOBJ_DOWNPLAY;
-        if (item.otyp === BOOMERANG || item === game.uwep && (item.otyp === AKLYS
-            || artifactById(item.oartifact)?.name === 'Mjollnir'
-                && game.urole?.key === 'valkyrie' && currentAttribute(A_STR) >= STR19(25)))
-            return GETOBJ_SUGGEST;
-        if (item.quan === 1 && (item === game.uwep || item === game.uswapwep && game.u.twoweap))
-            return GETOBJ_DOWNPLAY;
-        return objectClass === 12 || objectClass === (wieldingSling ? 13 : 2)
-            || item.otyp === BOULDER && ((MONSTER_FLAGS2[game.u.umonnum ?? -1] ?? 0) & M2_ROCKTHROW)
-            ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
-    };
-    if (!selectedItem) {
-        selectedItem = await chooseInventoryObject('throw', throwClassification, { forcePrompt: true, allowCount: true });
-    }
-    const item = selectedItem;
-    if (!item) {
-        commandResultCancelled(); // dothrow.c:dothrow() getobj ECMD_CANCEL.
-        return;
-    }
-    const previous = game.inventory[game.inventory.indexOf(item) - 1];
-    const splitParent = previous && previous.invlet === item.invlet ? previous : null;
-    const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
-    const selectedIsGold = selectedObjectClass === 12;
-    const directGoldThrow = selectedIsGold && item !== game.uquiver;
-    const direction = await promptDirection();
-    if (!direction) {
-        if (splitParent)
-            await rejoinObjectStack(splitParent, item, game);
-        // getdir() already cleared its prompt; a message it printed for
-        // the rejected key ("What a strange direction!") stays visible in
-        // C because throw_obj() just returns ECMD_CANCEL (dothrow.c).
-        commandResultCancelled(); // throw_obj() getdir ECMD_CANCEL.
-        return;
-    }
-    const { dx, dy, dz } = direction;
-    const selfThrow = !dx && !dy && !dz;
-    if (directGoldThrow) {
-        if (selfThrow) {
-            if (splitParent)
-                await rejoinObjectStack(splitParent, item, game);
-            await pline('You cannot throw gold at yourself.');
-            commandResultCancelled(); // throw_gold() self ECMD_CANCEL.
-            game.context.move = 0;
-            return;
-        }
-        await resolveDirectGoldThrow({
-            state: game,
-            gold: item,
-            dx, dy, dz,
-            captureFlight: captureThrownObjectFlight,
-            wakeMonster: wakeAttackedMonster,
-            angerMonster: angerAttackedMonster,
-        });
-        game.context.move = 1;
-        return;
-    }
-    if (!await canLetGo(item, 'throw')) {
-        if (splitParent)
-            await rejoinObjectStack(splitParent, item, game);
-        game.context.move = 0;
-        return;
-    }
-    const mjollnir = artifactById(item.oartifact, game)?.name === 'Mjollnir';
-    if (mjollnir && item !== game.uwep) {
-        if (splitParent)
-            await rejoinObjectStack(splitParent, item, game);
-        await pline(`The ${objectName(item)} must be wielded before it can be thrown.`);
-        game.context.move = 0;
-        return;
-    }
-    if (mjollnir && currentAttribute(A_STR) < STR19(25)
-        || item.otyp === BOULDER
-            && !((MONSTER_FLAGS2[game.u.umonnum] ?? 0) & M2_ROCKTHROW)) {
-        if (splitParent)
-            await rejoinObjectStack(splitParent, item, game);
-        await pline("It's too heavy.");
-        game.context.move = 1;
-        return;
-    }
-    if (selfThrow) {
-        if (splitParent)
-            await rejoinObjectStack(splitParent, item, game);
-        await pline('You cannot throw an object at yourself.');
-        game.context.move = 0;
-        return;
-    }
-    wipeHeroEngraving(2);
-    if (!(game.uarmg || game.u.uarmg) && item.otyp === CORPSE
-        && touchPetrifies(item.corpsenm) && !heroResistsStoning(game)) {
-        await plineWithContinuation(`You throw ${corpseName(item, { definite: true })} with your bare ${makePlural(heroHandName(game))}.`);
-        const result = await resolveImmediatePetrification({
-            state: game,
-            killer: `throwing ${killerObjectName(item, game)} bare-handed`,
-        });
-        if (result.died || game.program_state.gameover)
-            return;
-    }
-    if (isWetTowel(item))
-        await dryTowel(item, -1);
-    const volleyCount = chooseHeroVolleyCount(item, { state: game, shotLimit });
-    if (volleyCount > 1 || shotLimit > 0) {
-        if (volleyCount === 1)
-            observeObjectForNaming(item);
-        const noun = volleyCount === 1
-            ? singularObjectName(item) : objectCombatName(item, { includeCorpseSpecies: false });
-        await plineWithContinuation(`You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${volleyCount} ${noun}.`);
-    }
-    const volley = {
-        count: volleyCount, index: 1, objectType: item.otyp,
-        shooting: launcherMatchesAmmo(item, game.uwep),
-    };
-    // end.c:savelife() truncates m_shot so a life-saved hero fires no
-    // further missiles; the loop reads the shared volley for that cut.
-    beginHeroVolley(volley);
-    try {
-        for (; volley.index <= volley.count; volley.index++) {
-            const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
-            if (game.program_state.gameover)
-                return;
-            await reportHeroEncumbrance(game);
-            if (game.program_state.gameover || stopVolley)
-                break;
-        }
-    }
-    finally {
-        finishHeroVolley();
-    }
-    game.context.move = 1;
-}
-// throw_obj() hands off one missile at a time. An engulfer can die during a
-// volley, so every remaining missile must choose its current destination.
-async function throwSelectedUnit(item, dx, dy, volley) {
-    if (item.oclass === 12 && item === game.uquiver) {
-        await resolveQuiveredGoldThrow({
-            state: game,
-            gold: item,
-            dx, dy, dz: game.u.dz ?? 0,
-            captureFlight: captureThrownObjectFlight,
-            wakeMonster: wakeAttackedMonster,
-        });
-        return false;
-    }
-    const selectedQuantity = item.quantity ?? item.quan ?? 1;
-    const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
-    if (await resolveSwallowedEggPieOrVenomThrow({
-        state: game,
-        item,
-        selectedQuantity,
-        finishKill: (monster) => finishOrdinarySwallowedConsumedKill(monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom'),
-    }))
-        return false;
-    if (await resolveSwallowedWeaponThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        volley,
-        finishKill: finishOrdinarySwallowedThrowKill,
-    }))
-        return false;
-    if (await resolveSwallowedPotionThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        wakeMonster: wakeAttackedMonster,
-        wakeNearby: wakeMonstersNearWithMessages,
-        finishKill: (monster, death) => finishOrdinarySwallowedConsumedKill(monster, 'swallowed-potion', death),
-    }))
-        return false;
-    if (await resolveSwallowedFoodThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        wakeMonster: wakeAttackedMonster,
-    }))
-        return false;
-    if (await resolveGenericSwallowedThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        wakeMonster: wakeAttackedMonster,
-    }))
-        return false;
-    if (game.u?.uswallow) {
-        // Every swallowed object class owns a monster-contact continuation
-        // above: C's throwit() never reaches its flight or floor paths
-        // while u.uswallow (dothrow.c:1569-1578, 1704-1706).
-        throw new Error('a swallowed throw reached no engulfer contact arm');
-    }
-    if (!game.u?.uswallow && await resolveMapPotionThrow({
-        state: game,
-        item,
-        objectClass: thrownObjectClass,
-        selectedQuantity,
-        dx,
-        dy,
-        captureFlight: captureThrownObjectFlight,
-        wakeMonster: wakeAttackedMonster,
-        wakeNearby: wakeMonstersNearWithMessages,
-        finishKill: finishOrdinaryMapPotionKill,
-    }))
-        return false;
-    if (!game.u?.uswallow && thrownObjectClass === 8)
-        throw new Error('map potion impact is not implemented');
-    const shotResult = await throwOrdinaryObject({
-        state: game,
-        item,
-        quantity: selectedQuantity,
-        dx,
-        dy,
-        volley,
-    });
-    return 'stopVolley' in shotResult && !!shotResult.stopVolley;
 }
 async function openLockedDoor(x, y) {
     await pline('This door is locked.');
