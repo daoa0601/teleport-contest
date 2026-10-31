@@ -821,22 +821,31 @@ async function finishInitialTurnMaintenanceAfterIntervention(
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
         await moveElementalBubbles();
     else if (game.level?.flags?.fumaroles) await fumaroles(game);
-    // C allmain.c increments negative `multi` only after the complete global
-    // turn (monster allocation, timeouts, sounds, hunger, and engraving wear).
-    // Keep the counter here rather than in the command which caused the
-    // helplessness so fast heroes and multi-round movement rations retain the
-    // same boundary.
+    // C allmain.c:379-388, still inside the once-per-turn block: an immobile
+    // hero's delay output runs before the counter moves, so the animation
+    // frames still see the helpless condition in the status line.  Reaching
+    // zero calls unmul() and, when that scheduled travel, deferred_goto().
     if (currentMulti(game) < 0) {
-        game._helplessRunmodeDelayPending = sourceTurn;
+        // Dressing retains its physical topline through each negative-multi
+        // frame; its armor effects still wait for unmul's recovery message.
+        const delayedAction = pendingArmorAction(game);
+        if (delayedAction) {
+            if (game._pending_message) {
+                delete delayedAction._runmodeRetainedTopline;
+            } else if (!delayedAction._runmodeRetainedTopline) {
+                delayedAction._runmodeRetainedTopline
+                    = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
+            }
+        }
+        await captureRunmodeDelay(game, true, sourceTurn, {
+            preservePhysicalTopline: true,
+            retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
+        });
         setMulti(currentMulti(game) + 1, game);
-        if (game._helplessTurns === 0) {
-            const doneMessage = game._helplessDoneMessage
-                ?? 'You can move again.';
-            // Live actor schedulers finish this synchronous phase inside an
-            // async moveloop owner.  Queue recovery there so an occupied
-            // topline can page before unmul's message replaces it, as tty
-            // pline() does in C.
-            game._queuedHelplessRecoveryMessage = doneMessage;
+        if (currentMulti(game) === 0) {
+            await finishHeroHelplessness();
+            // if unmul() caused a level change, take it now
+            await finishScheduledLevelChange();
         }
     }
 }
@@ -1628,7 +1637,6 @@ async function advanceWorldTurn(): Promise<void> {
     const initialPhase = await beginInitialTurnMaintenance();
     if (initialPhase.kind === 'hero-died') return;
     let phase: MaintenancePhase = initialPhase;
-    const completedTurn = game.moves;
     while (phase.kind === 'timeout-message') {
         if (phase.timeoutKind === 'stun') {
             await makeStunned(0);
@@ -1660,27 +1668,6 @@ async function advanceWorldTurn(): Promise<void> {
         if (monster) await exerciseAttribute(A_WIS, true);
         phase = await finishInitialTurnMaintenanceAfterAutomaticSearch(phase);
     }
-    const helplessDelayTurn = game._helplessRunmodeDelayPending;
-    delete game._helplessRunmodeDelayPending;
-    // Dressing retains its physical topline through each negative-multi
-    // frame; its armor effects still wait for unmul's recovery message.
-    const delayedAction = pendingArmorAction(game);
-    if (delayedAction) {
-        if (game._pending_message) {
-            delete delayedAction._runmodeRetainedTopline;
-        } else if (!delayedAction._runmodeRetainedTopline) {
-            delayedAction._runmodeRetainedTopline
-                = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
-        }
-    }
-    await captureRunmodeDelay(
-        game, Number.isInteger(helplessDelayTurn), helplessDelayTurn ?? completedTurn,
-        {
-            preservePhysicalTopline: true,
-            retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
-        },
-    );
-    await drainQueuedHelplessRecoveryMessage();
 }
 
 // C allmain.c:moveloop_core() calls unmul() at the end of the world turn
@@ -1740,15 +1727,6 @@ async function settleHeroLiquidAfterAction() {
     return applyHeroLiquidEffects(plineWithContinuation, { entry: 'turn' });
 }
 
-async function drainQueuedHelplessRecoveryMessage() {
-    const game = requireInitializedGame();
-    if (game._queuedHelplessRecoveryMessage == null) return;
-    const message = game._queuedHelplessRecoveryMessage;
-    await finishHeroHelplessness(message);
-    // allmain.c takes travel caused by unmul() before find_ac() and the Seer update.
-    await finishScheduledLevelChange();
-}
-
 // Native hack.c:unmul(). The after-handler is cleared before invocation so
 // recovery can start another delay without inheriting the old completion.
 export async function finishHeroHelplessness(
@@ -1757,7 +1735,6 @@ export async function finishHeroHelplessness(
 ): Promise<void> {
     state.context.botl = true;
     setMulti(0, state);
-    state._queuedHelplessRecoveryMessage = null;
     const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
     if (message) {
         await publish(message);

@@ -353,7 +353,6 @@ export async function restoreGame(
         clearCannedCommands();
         game._afterMove = null;
         game._armorTheft = null;
-        delete game._helplessRunmodeDelayPending;
         game.context.move = 0;
         // Saved flags govern future resets; the current Space binding still
         // belongs to this process until an option change reconciles it.
@@ -425,7 +424,6 @@ function resetRestoredInstanceState(): void {
     delete game._prayerAlignment;
     delete game._prayerTrouble;
     delete game._prayerOutcome;
-    delete game._queuedHelplessRecoveryMessage;
 
     delete game._bonesSaved;
     delete game._characterPickerUsed;
