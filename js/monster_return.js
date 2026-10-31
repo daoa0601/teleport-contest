@@ -1,7 +1,7 @@
 // Monsters which may be replaced after they die.
 // C ref: mon.c mondead().
 import { game } from './gstate.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { monsterIsKop } from './monster_data.js';
 import { rnd } from './rng.js';
 function downstairs(state) {

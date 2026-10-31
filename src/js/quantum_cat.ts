@@ -10,7 +10,8 @@ import {
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireGameLevel } from './gstate.js';
 import { getObjectLocation } from './object_location.js';
-import { makemonAt, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { set_corpsenm } from './mkobj.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_NAME } from './monster_data.js';

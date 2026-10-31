@@ -29,7 +29,7 @@ import { monsterIsScaredAt } from './monster_fear.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
-import { setMimicAppearance } from './mklev.js';
+import { setMimicAppearance } from './makemon.js';
 import { smellUnseenMonster } from './monster_smell.js';
 import { isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';

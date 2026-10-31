@@ -1,6 +1,6 @@
 import { MM_NOMSG, W_SADDLE, W_WEP } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
-import { makemonAt } from '../../js/mklev.js';
+import { makemonAt } from '../../js/makemon.js';
 import { nameToMonster } from '../../js/mondata.js';
 import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
 import { initializePet } from '../../js/dog.js';

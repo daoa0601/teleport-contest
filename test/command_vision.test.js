@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT, PIT, TT_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_NOMSG } from '../js/const.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ARROW, AXE, BOW, CHAIN_MAIL, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CLUB, CREAM_PIE, DAGGER, DART, LEATHER_ARMOR, LEATHER_JACKET, LONG_SWORD, MACE, OBJECT_NAMES, ROBE, SHORT_SWORD, SMALL_SHIELD, } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -8,7 +8,8 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';
 import { pushKeys } from '../js/input.js';
-import { findMonsterNearPosition, generateMedusaLevel, makemonAt, makemonNear, splitHeroMonsterForm } from '../js/mklev.js';
+import { findMonsterNearPosition, generateMedusaLevel, makemonNear, splitHeroMonsterForm } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { mksobj, rndmonnum } from '../js/mkobj.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_NAME, SPECIAL_PM, requireMonsterData,

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOMSG, NO_MINVENT } from '../js/const.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { game } from '../js/gstate.js';
 import { setMonsterMalign } from '../js/monster_alignment.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

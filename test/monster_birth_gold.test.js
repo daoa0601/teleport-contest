@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_NOMSG } from '../js/const.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';

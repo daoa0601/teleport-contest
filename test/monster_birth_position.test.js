@@ -3,7 +3,7 @@ import test from 'node:test';
 import { G_GENOD, MM_ADJACENTOK, MM_IGNOREWATER, MM_NOGRP, MM_NOMSG, NO_MINVENT, POOL, ROOM, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

@@ -23,7 +23,7 @@ import {
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,
 } from './monster_data.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { mkobj, mksobj, set_corpsenm } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';

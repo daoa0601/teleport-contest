@@ -10,7 +10,7 @@ import { makeDeaf } from './hero_hearing.js';
 import { hasInternalInvisibility, showInvisibilityMessage, syncHeroInvisibility } from './hero_invisibility.js';
 import { heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { tameMonster } from './monster_taming.js';

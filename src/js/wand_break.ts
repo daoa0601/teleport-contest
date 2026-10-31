@@ -30,7 +30,8 @@ import {
     beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand,
 } from './immediate_zap.js';
 import { lightRoom } from './light.js';
-import { canDigDown, makemonAt } from './mklev.js';
+import { canDigDown } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { delobj } from './object_delete.js';
 import {

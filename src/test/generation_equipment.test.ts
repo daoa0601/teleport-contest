@@ -6,7 +6,7 @@ import { NO_MINVENT, W_SADDLE } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CHEST, SADDLE } from '../js/object_data.js';

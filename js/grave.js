@@ -4,7 +4,7 @@ import { exerciseAttribute } from './attrib.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 const PM_GHOUL = 246;
 export async function disturbGrave(x, y, state = game) {
     const location = requireGameLevel(state).requireAt(x, y);

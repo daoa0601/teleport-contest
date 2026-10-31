@@ -17,7 +17,8 @@ import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.
 import { canSeeMonster, canSpotMonster, pline, plineWithContinuation } from './display.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
-import { makemonNear, mkclassAligned } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { mkclassAligned } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { ensureMinionData } from './monster_birth_extensions.js';
 import { monsterName } from './monster_name.js';

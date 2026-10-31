@@ -5,7 +5,7 @@ import { canSeeMonster, glyphAt, newsym, pline } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { finishMonsterBirth } from '../js/monster_birth.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { makePlural } from '../js/object_grammar.js';

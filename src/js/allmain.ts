@@ -118,9 +118,10 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import {
-    mklev, l_nhcore_init, makemonAt,
+    mklev, l_nhcore_init,
     u_on_upstairs,
 } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueRun } from './hack.js';
 import { askTeleportDestination, continueCountedCommand, finishArmorRemoval, getLine, promptYesNo, rhack } from './cmd.js';

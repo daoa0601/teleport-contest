@@ -17,7 +17,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';
-import { createCritters } from './mklev.js';
+import { createCritters } from './makemon.js';
 import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { angerMonster } from './monster_anger.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';

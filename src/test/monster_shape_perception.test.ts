@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';

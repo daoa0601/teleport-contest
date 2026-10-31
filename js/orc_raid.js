@@ -4,7 +4,7 @@
 import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from './const.js';
 import { addFruit } from './fruit.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './monster_given_name.js';

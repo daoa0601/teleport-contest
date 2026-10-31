@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { rndmonstAdj } from '../js/mklev.js';
+import { rndmonstAdj } from '../js/makemon.js';
 import { monsterClassSymbol } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 

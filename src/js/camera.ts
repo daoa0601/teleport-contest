@@ -7,7 +7,7 @@ import {
     plineWithContinuation as pline,
     randomDisplayMonsterName,
 } from './display.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { doBlindingRay } from './flash.js';
 import { game, requireLiveGame } from './gstate.js';

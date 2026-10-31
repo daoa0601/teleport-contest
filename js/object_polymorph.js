@@ -5,7 +5,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import { AMULET_OF_UNCHANGING, BOULDER, CHEST, CORPSE, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_LAMP, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, SPE_NOVEL, OBJECT_BIMANUAL, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, POT_WATER, ROCK, SPE_BLANK_PAPER, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, } from './object_data.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { mkobj, mksobj, set_corpsenm } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';

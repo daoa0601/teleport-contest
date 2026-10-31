@@ -14,7 +14,7 @@ import type { Position, Stairway } from './map_types.js';
 import { requireShopGame } from './shop_types.js';
 import type { ShopGameState, Shopkeeper } from './shop_types.js';
 import { depth } from './hacklib.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, shopkeeperName } from './monster_name.js';

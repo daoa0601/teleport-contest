@@ -20,7 +20,8 @@ import { setTwoWeaponCombat } from './weapon_slots.js';
 import { forgetEngravings, makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
-import { bonesLevelExists, deleteBonesLevel, makemonAt, saveBonesLevel } from './mklev.js';
+import { bonesLevelExists, deleteBonesLevel, saveBonesLevel } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { createCorpstatAt, mkcorpstat, mksobj } from './mkobj.js';
 import {
     monsterCanCarryObject, monsterLikesObjects,

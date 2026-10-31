@@ -472,7 +472,7 @@ import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { rndmonstAdj } from './mklev.js';
+import { rndmonstAdj } from './makemon.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { lootMonsterContainer } from './monster_container_loot.js';

@@ -3,7 +3,8 @@
 import { COLNO, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, ROWNO } from './const.js';
 import { canSpotMonster, flashGlyphAt, newsym, plineWithContinuation, transientMonsterGlyph } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { mkclassAligned, makemonNear, rndmonstAdj } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { mkclassAligned, rndmonstAdj } from './makemon.js';
 import { resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';

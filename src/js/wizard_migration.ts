@@ -6,7 +6,7 @@ import { levelAtDepth } from './dungeon.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
-import { makemonAt, rndmonstAdj } from './mklev.js';
+import { makemonAt, rndmonstAdj } from './makemon.js';
 import { monsterTypeName } from './monster_data.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import type { Monster } from './monster_types.js';
