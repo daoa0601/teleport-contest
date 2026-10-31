@@ -1902,14 +1902,12 @@ moveloop_core	dosounds
 moveloop_core	encumber_msg
 moveloop_core	end_running
 moveloop_core	exerchk
-moveloop_core	fumaroles
 moveloop_core	gethungry
 moveloop_core	glibr
 moveloop_core	l_nhcore_call
 moveloop_core	makewish
 moveloop_core	mcalcdistress
 moveloop_core	mkot_trap_warn
-moveloop_core	movebubbles
 moveloop_core	near_capacity
 moveloop_core	next_to_u
 moveloop_core	nh_timeout
