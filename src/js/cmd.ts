@@ -1226,7 +1226,8 @@ export async function travelStairs(up: boolean) {
         if (!up && game.flags.autodig && !game.context.nopick && pick && isPick(pick)) {
             const result = await applyPickAxeDirection(pick, {
                 state: game,
-                attackMonster: (target: Monster) => attackHostileMonster(target, target.mx, target.my),
+                attackMonster: (target: Monster, struckAt: Position) =>
+                    attackHostileMonster(target, struckAt.x, struckAt.y),
                 payShopkeeper: dopay,
             });
             game.context.move = result.spentTime ? 1 : 0;
@@ -3441,8 +3442,8 @@ async function applyPickAxe(item: GameObject): Promise<void> {
         ),
         readDirection: pickAxeDirection,
         payShopkeeper: dopay,
-        attackMonster: (monster: Monster) => attackHostileMonster(
-            monster, monster.mx, monster.my,
+        attackMonster: (monster: Monster, struckAt: Position) => attackHostileMonster(
+            monster, struckAt.x, struckAt.y,
         ),
     });
     if ('died' in result && result.died) return;
