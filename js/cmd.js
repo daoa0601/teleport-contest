@@ -14,7 +14,7 @@ import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displa
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
@@ -252,7 +252,7 @@ import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from '.
 import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
-import { continueForceLock, doforce } from './lock.js';
+import { continueForceLock, doforce, isForceableWeapon } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
@@ -3837,18 +3837,29 @@ async function wizLevelChange() {
 async function doloot() {
     await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
 }
-async function lootLockedContainer(container) {
+// C pickup.c:do_loot_cont(): untrapping or applying a key takes precedence
+// over queuing #force, even when the player declines those earlier offers.
+async function lootLockedContainer(container, containerCount) {
     if (!container.olocked)
         return;
     const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
     await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
     container.lknown = true;
     const flags = autoUnlockFlags(game);
+    game.context.move = 0;
+    if (!flags)
+        return;
+    game.u.dz = 0;
     const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
-    if (tool || flags & AUTOUNLOCK_UNTRAP)
+    if (tool || flags & AUTOUNLOCK_UNTRAP) {
         game.context.move = Number(await pickLock(tool, { target: { x: game.u.ux, y: game.u.uy }, container }));
-    else
-        game.context.move = 0;
+        return;
+    }
+    if (flags & AUTOUNLOCK_FORCE && containerCount === 1 && isForceableWeapon(game.uwep)) {
+        // The queued command owns its confirmation and any time spent.
+        game._cannedCommands ??= [];
+        game._cannedCommands.push({ kind: 'command', name: 'force' });
+    }
 }
 // C cmd.c:enter_explore_mode(). The pinned build's sysconf ships
 // EXPLORERS=*, so authorize_explore_mode() always grants access; the

@@ -122,7 +122,7 @@ async function lootFloorContainers(x, y, unlock) {
     let resetJustPicked = true;
     for (const [index, container] of selected.entries()) {
         if (container.olocked) {
-            await unlock(container);
+            await unlock(container, selected.length);
             spentTime ||= !!game.context.move;
             continue;
         }
