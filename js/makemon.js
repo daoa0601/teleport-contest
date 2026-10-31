@@ -44,7 +44,7 @@ import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMon
 import { inTown, roomForIndex } from './room.js';
 import { maybeGiveDomesticSaddle } from './steed.js';
 import { goodPosition } from './teleport_rules.js';
-import { vision_note_blocker_change } from './vision.js';
+import { block_point, visionCellBlocksLight } from './vision.js';
 import { objectWeight } from './weight.js';
 import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear, } from './mklev.js';
 import { getShopItem } from './shknam.js';
@@ -578,7 +578,11 @@ export async function setMimicAppearance(monster) {
     }
     else if (monster.mcorpsenm != null)
         monster.mcorpsenm = -1;
-    vision_note_blocker_change(monster.mx, monster.my);
+    // C makemon.c:set_mimic_sym() ends by joining the blocker table only
+    // when the disguise actually obstructs light.  It never digs the cell
+    // back out here, so a non-blocking mimic must not request a recalc.
+    if (visionCellBlocksLight(requireGameLevel(), monster.mx, monster.my))
+        block_point(monster.mx, monster.my);
 }
 async function chooseMimicAppearance(x, y) {
     const level = requireGameLevel();

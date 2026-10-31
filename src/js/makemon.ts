@@ -223,7 +223,7 @@ import {
 import { inTown, roomForIndex } from './room.js';
 import { maybeGiveDomesticSaddle } from './steed.js';
 import { goodPosition } from './teleport_rules.js';
-import { vision_note_blocker_change } from './vision.js';
+import { block_point, visionCellBlocksLight } from './vision.js';
 import { objectWeight } from './weight.js';
 import {
     findMonsterNearPosition,
@@ -756,7 +756,11 @@ export async function setMimicAppearance(monster: Monster): Promise<void> {
         monster.mcorpsenm = In_hell(game.u.uz) && rn2(3)
             ? 0 : Align2amask(alignment);
     } else if (monster.mcorpsenm != null) monster.mcorpsenm = -1;
-    vision_note_blocker_change(monster.mx, monster.my);
+    // C makemon.c:set_mimic_sym() ends by joining the blocker table only
+    // when the disguise actually obstructs light.  It never digs the cell
+    // back out here, so a non-blocking mimic must not request a recalc.
+    if (visionCellBlocksLight(requireGameLevel(), monster.mx, monster.my))
+        block_point(monster.mx, monster.my);
 }
 
 async function chooseMimicAppearance(x: number, y: number): Promise<{ type: number; appearance: number }> {
