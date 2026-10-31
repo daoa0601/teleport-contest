@@ -132,7 +132,7 @@ import { initializeSourceStartup } from './startup.js';
 import { ensureQuestStatus } from './quest.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
-import { completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, beginMonsterHeroAttack, } from './mhitu.js';
+import { completeHeroAttackSlot, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, beginMonsterHeroAttack, } from './mhitu.js';
 import { resolveDeferredMonsterBreath } from './mthrowu.js';
 import { resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredSpecialAttack, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction, } from './monmove.js';
 import { allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, } from './mon.js';

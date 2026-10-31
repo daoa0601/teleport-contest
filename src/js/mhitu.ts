@@ -17,7 +17,7 @@ import type {
 import { recordRandom } from './monster_action_types.js';
 import {
     A_DEX, A_STR, KILLED_BY_AN, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE,
-    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR,
+    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_MAGR,
     NEED_HTH_WEAPON, NEED_WEAPON, PIT, SPIKED_PIT, Upolyd, WATER,
 } from './const.js';
 import type { MessagePublisher } from './pline.js';
@@ -66,9 +66,8 @@ import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath } from './
 import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import {
-    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
+    destroyColdInventory, destroyElectricInventory,
 } from './zap.js';
-import { igniteItems } from './light.js';
 import { loseHeroExperience } from './exper.js';
 import { currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -116,7 +115,7 @@ import {
     requirePerceivedHero, seenResistanceForDamage,
 } from './monster_perception.js';
 import { resolveDeferredHeroItemTheft } from './steal.js';
-import { burnAwayHeroSlime, finishDeferredHeroSlime, resumeDeferredHeroSlime } from './slime.js';
+import { finishDeferredHeroSlime, resumeDeferredHeroSlime } from './slime.js';
 import { finishHeroDeath } from './end.js';
 import type { FinishHeroDeathOptions } from './end.js';
 import { dist2 } from './hacklib.js';
@@ -158,7 +157,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { monsterFireDescription } from './monster_fire_description.js';
+import { mhitmAdFire } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
 import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
@@ -633,9 +632,13 @@ export async function presentMonsterAttackEffects(
                     heroAttack.specialMessage = artifact.specialMessage;
                     if (!artifact.damage) heroAttack.poison = null;
                 }
-                const message = await monsterAttackMessage(
-                    monster, heroAttack, previousHeroAttack, random,
-                );
+                // mhitm_ad_fire() projects hitmsg() itself from
+                // uhitm.ts:mhitmAdFire(), so a fire slot composes its hit
+                // line there instead of here.
+                const message = heroAttack.effect === 'fire-natural' ? null
+                    : await monsterAttackMessage(
+                        monster, heroAttack, previousHeroAttack, random,
+                    );
                 const contactDismissal = message
                     ? await plineWithContinuation(message) : undefined;
                 if (contactDismissal !== null
@@ -732,43 +735,33 @@ export async function presentMonsterAttackEffects(
                         paging.pagerOwned = true;
                     }
                 }
-                if (heroAttack.deferredFireNegation)
-                    resumeDeferredHeroFireSpecial(action, game);
-                if (heroAttack.fireEffectMessage) {
-                    const fireDismissal = await plineWithContinuation(
-                        heroAttack.fireEffectMessage,
+                if (heroAttack.effect === 'fire-natural') {
+                    // C uhitm.c:mhitm_ad_fire() mhitu branch: hitmsg(),
+                    // magic cancellation, the fire lines, witness updates,
+                    // inventory destruction, ignition and the slime cure all
+                    // run here with direct awaits.
+                    const hitMessage = await monsterAttackMessage(
+                        monster, heroAttack, previousHeroAttack, random,
                     );
-                    heroAttack.fireEffectMessage = null;
-                    if (fireDismissal !== null
-                        && fireDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
-                }
-                if (heroAttack.deferredFireRehumanize) {
-                    await publishSlotMessage('You go up in flames!');
-                    monstersForgetHeroResistance(M_SEEN_FIRE, game);
-                    const restored = await returnHeroToHumanForm(game, {
-                        publish: publishSlotMessage,
-                        die: finishHeroDeathAfterMonsterMessage,
+                    const fire = await mhitmAdFire({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            hitMessage,
+                            damage: heroAttack.damage ?? 0,
+                            attackType: heroAttack.attackType,
+                            publish: publishSlotMessage,
+                            die: finishHeroDeathAfterMonsterMessage,
+                            random, rollOne, calls: action.calls,
+                        },
                     });
-                    if (restored.died) return { heroDied: true };
-                    heroAttack.deferredFireRehumanize = false;
-                }
-                if (heroAttack.fireResistanceMessage) {
-                    const resistanceDismissal = await plineWithContinuation(
-                        heroAttack.fireResistanceMessage,
-                    );
-                    heroAttack.fireResistanceMessage = null;
-                    if (resistanceDismissal !== null
-                        && resistanceDismissal !== undefined) {
-                        paging.pagerOwned = true;
+                    heroAttack.damage = fire.damage;
+                    if (fire.heroDied) return { heroDied: true };
+                    if (fire.heroAtZeroHitPoints) {
+                        heroAttack.heroDied = true;
+                        heroAttack.deferredPostHit = false;
                     }
-                }
-                // mhitm_ad_fire() updates witnesses after the fire messages,
-                // before inventory damage. Cancelled contact teaches nothing.
-                if (heroAttack.deferredFireInventory) {
-                    if (game.u.fireResistance) monstersObserveHeroResistance(M_SEEN_FIRE, game);
-                    else monstersForgetHeroResistance(M_SEEN_FIRE, game);
                 }
                 if (heroAttack.deferredElectricNegation)
                     resumeDeferredHeroElectricSpecial(action, game);
@@ -880,7 +873,6 @@ export async function presentMonsterAttackEffects(
                             = heroAttack.deferredElementalInventory;
                         const destroyInventory = {
                             cold: destroyColdInventory,
-                            fire: destroyFireInventory,
                             electric: destroyElectricInventory,
                         }[inventoryDamage.damageType];
                         const items = await destroyInventory(
@@ -888,15 +880,8 @@ export async function presentMonsterAttackEffects(
                             { state: game, ...contactOptions },
                         );
                         if (items.heroDied) return { heroDied: true };
-                        if (inventoryDamage.damageType === 'fire') {
-                            await igniteItems(game.inventory, {
-                                state: game,
-                                publish: publishContactMessage,
-                            });
-                        }
                         heroAttack.deferredElementalInventory = null;
                         delete heroAttack.coldOriginalDamage;
-                        delete heroAttack.fireOriginalDamage;
                         delete heroAttack.electricOriginalDamage;
                         const hitPoints = Upolyd(game.u) ? 'mh' : 'uhp';
                         if ((game.u?.[hitPoints] ?? 1) > 0) {
@@ -2027,7 +2012,10 @@ async function beginHeroAttackSlot(
             attackType,
             damageType,
             effect: 'fire-natural',
-            deferredFireNegation: true,
+            // uhitm.ts:mhitmAdFire() runs the whole mhitm_ad_fire() body
+            // with direct awaits; only hitmu()'s shared knockback and damage
+            // tail remains deferred with the other contact effects.
+            deferredPostHit: true,
             oldFormMnum,
         };
     } else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
@@ -2472,45 +2460,6 @@ export function resumeDeferredHeroColdSpecial(
     return action;
 }
 
-// Continue mhitm_ad_fire() after its hit message. Fire can burn slime and
-// carried objects before the ordinary contact damage is applied.
-export function resumeDeferredHeroFireSpecial(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredFireNegation) return action;
-    const armorProtection = magicNegation(state.u, state);
-    const cancelled = !!action.monster?.mcan;
-    attack.fireOriginalDamage = attack.damage ?? 0;
-    attack.negated = cancelled || recordRandom(random, action.calls, 10) < 3 * armorProtection;
-    if (cancelled) {
-        attack.damage = 0;
-        attack.fireEffectMessage = null;
-    } else if (attack.negated) {
-        attack.damage = 0;
-        attack.fireEffectMessage = 'You avoid harm.';
-    } else {
-        const species = heroSpecies(state);
-        const form = MONSTER_NAME[species];
-        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: species }, attack.attackType)}!`;
-        if (form === 'paper golem' || form === 'straw golem') {
-            // mhitm_ad_fire() burns these bodies before checking resistance.
-            attack.deferredFireRehumanize = true;
-        } else if (state.u.fireResistance) {
-            attack.damage = 0;
-            attack.fireResistanceMessage = "The fire doesn't feel hot!";
-        }
-    }
-    const continuesFireEffects = !attack.negated && !attack.deferredFireRehumanize;
-    attack.deferredFireInventory = continuesFireEffects;
-    attack.deferredFireSlimeCure = continuesFireEffects;
-    if (!continuesFireEffects) delete attack.fireOriginalDamage;
-    attack.deferredPostHit = true;
-    attack.deferredFireNegation = false;
-    return action;
-}
 
 // Continue mhitm_ad_elec() after its hit message.
 export function resumeDeferredHeroElectricSpecial(
@@ -2681,20 +2630,6 @@ export async function resumeDeferredHeroContact(
         attack.deferredColdInventory = false;
         delete attack.coldOriginalDamage;
     }
-    if (attack.deferredFireInventory) {
-        const destructionGate = recordRandom(random, calls, 20);
-        const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        if (attackerLevel > destructionGate) {
-            attack.deferredElementalInventory = {
-                damageType: 'fire',
-                sourceDamage: attack.fireOriginalDamage ?? 0,
-            };
-            attack.deferredFireInventory = false;
-            return action;
-        }
-        attack.deferredFireInventory = false;
-        delete attack.fireOriginalDamage;
-    }
     if (attack.deferredElectricInventory) {
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
@@ -2708,12 +2643,6 @@ export async function resumeDeferredHeroContact(
         }
         attack.deferredElectricInventory = false;
         delete attack.electricOriginalDamage;
-    }
-    // mhitm_ad_fire() cures slime after destroying and igniting inventory,
-    // including when the level check skips inventory damage altogether.
-    if (attack.deferredFireSlimeCure) {
-        attack.deferredFireSlimeCure = false;
-        await burnAwayHeroSlime({ state, publish });
     }
     const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
     if (knockback.defenderLeftLevel) attack.attackerDone = true;

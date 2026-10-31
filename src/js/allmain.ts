@@ -188,7 +188,6 @@ import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.
 import {
     completeHeroAttackSlot,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
-    resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
     resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment,
     resumeDeferredHeroSticking,

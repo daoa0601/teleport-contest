@@ -302,25 +302,18 @@ export interface HeroContactAttack extends HeroAttackProgress {
     engulfOldX?: number;
     engulfOldY?: number;
     engulfResolved?: boolean;
-    deferredFireNegation?: boolean;
-    deferredFireRehumanize?: boolean;
     deferredColdNegation?: boolean;
     deferredElectricNegation?: boolean;
-    deferredFireInventory?: boolean;
-    deferredFireSlimeCure?: boolean;
     deferredColdInventory?: boolean;
     deferredElectricInventory?: boolean;
-    fireOriginalDamage?: number;
     coldOriginalDamage?: number;
     electricOriginalDamage?: number;
-    fireEffectMessage?: string | null;
     coldEffectMessage?: string | null;
     electricEffectMessage?: string | null;
-    fireResistanceMessage?: string | null;
     coldResistanceMessage?: string | null;
     electricResistanceMessage?: string | null;
     deferredElementalInventory?: {
-        damageType: 'cold' | 'fire' | 'electric';
+        damageType: 'cold' | 'electric';
         sourceDamage: number;
     } | null;
     deferredLifeDrainGate?: boolean;
