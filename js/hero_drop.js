@@ -13,8 +13,8 @@ import { heroHandName, monsterStomachName } from './body_parts.js';
 import { MONSTER_NAME, monsterDigests } from './monster_data.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { inventoryItemDescription } from './invent.js';
-import { objectName, observeObjectForNaming, } from './objnam.js';
-import { carriedObjectOwner, objectIsUnpaid } from './shk.js';
+import { ownedObjectAction, observeObjectForNaming, } from './objnam.js';
+import { objectIsUnpaid } from './shk.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';
 import { dropRingIntoSink } from './ring_sink.js';
@@ -99,19 +99,10 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
             const into = monsterDigests(hero.ustuck)
                 ? `${possessive(swallowerName)} ${monsterStomachName(hero.ustuck.mnum)}`
                 : swallowerName;
-            // C do.c:748: unpaid objects take the yobjnam form — shk_your()
-            // ownership ("your"/"Kabale's") plus aobjnam's counted xname —
-            // while paid objects take plain doname.
-            const owner = carriedObjectOwner(object, state);
-            // C shk_your() yields lowercase "your"/"the" but keeps proper
-            // shopkeeper names capitalized; only the generic articles are
-            // lowercased for mid-sentence use
-            const ownerText = owner === 'Your' ? 'your'
-                : owner === 'The' ? 'the' : owner;
+            // C drop() uses yobjnam() for unpaid objects and doname() otherwise.
             observeObjectForNaming(object, { state });
             const description = objectIsUnpaid(object)
-                ? `${ownerText} ${(object.quan > 1 ? `${object.quan} ` : '')
-                    + objectName(object, state)}`
+                ? ownedObjectAction(object, null, state, { capitalized: false })
                 : await inventoryItemDescription(object);
             await publish(`You drop ${description} into ${into}.`);
         }

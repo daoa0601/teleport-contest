@@ -13,7 +13,7 @@ import {
     clearMessageWindow, displayMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation,
 } from './display.js';
 import { readEngravingAt } from './engrave.js';
-import { stopRun } from './runmode.js';
+import { nomul } from './command_state.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
 import { windowOrigin } from './tty_menu.js';
 import type { GameDisplay } from './game_display.js';
@@ -34,7 +34,7 @@ export async function readFloorEngraving(x: number, y: number): Promise<void> {
     const read = await readEngravingAt(x, y, plineWithContinuation);
     // engrave.c:read_engr_at() only calls nomul(0) for a real run
     // (context.run > 0); a counted walk keeps moving past the engraving.
-    if (read && (game.context.run ?? 0) > 0) stopRun();
+    if (read && (game.context.run ?? 0) > 0) nomul(0);
 }
 
 // C invent.c:look_here() outside an engulfer. A positive objectCount is
