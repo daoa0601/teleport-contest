@@ -533,39 +533,21 @@ export function removeObjectAndContentsFromBill(
     return billed;
 }
 
+// C potion.c:potionhit()'s unpaid tail and dothrow.c:check_shop_obj() both
+// settle an unpaid object the hero used up with shk.c:stolen_value(obj,
+// u.ux, u.uy, shkp->mpeaceful, FALSE): the bill entry comes off, credit is
+// consumed by shk.c:check_credit() with its own messages, the remainder is
+// still owed, and an angry keeper is set on the hero instead.
 export async function chargeUnpaidObjectAsDebt(
     object: GameObject,
     state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,
 ) {
     if (!object?.unpaid) return null;
-    const billed = removeOneObjectFromBill(object, state);
-    if (!billed) return null;
-
-    const { resident, entry } = billed;
-    const eshk = resident.eshk;
-    const value = Math.max(0, entry.price ?? 0) * billed.removedQuantity;
-
-    let message = null;
-    if (resident.mpeaceful) {
-        const creditUsed = Math.min(eshk.credit ?? 0, value);
-        eshk.credit = Math.max(0, (eshk.credit ?? 0) - creditUsed);
-        const debt = value - creditUsed;
-        eshk.debit = (eshk.debit ?? 0) + debt;
-        if (debt) {
-            message = `You owe ${shopkeeperName(resident)} ${debt} ${currency(debt, { state })} for it!`;
-        } else {
-            message = eshk.credit
-                ? `You have ${eshk.credit} ${currency(eshk.credit, { state })} credit remaining.`
-                : 'You have no credit remaining.';
-        }
-    } else {
-        eshk.robbed = (eshk.robbed ?? 0) + value;
-        eshk.following = 1;
-        message = `${shopkeeperName(resident)} calls you a thief!`;
-    }
-    if (message) await publish(message);
-    return { resident, value, message };
+    const resident = currentShopResident(state);
+    if (!resident) return null;
+    return stolenValue(object, state.u.ux, state.u.uy, resident.mpeaceful,
+        { silent: false, state, publish });
 }
 
 export async function payShopDebt(resident: Monster | null | undefined, state: GameState = game) {
