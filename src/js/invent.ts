@@ -89,6 +89,7 @@ export interface InventoryObjectMenuOptions {
 export interface InventoryDescriptionOptions {
     primaryHandDetail?: string | null;
     projectPrimaryHand?: boolean;
+    withPrice?: boolean;
 }
 
 export type InventoryActionKey = '-' | 'a' | 'c' | 'C' | 'd' | 'e' | 'E' | 'f' | 'i' | 'I' | 'O' | 'p' | 'P' | 'q' | 'Q' | 'r' | 'R' | 't' | 'T' | 'V' | 'w' | 'W' | 'x' | 'X' | 'z' | '/'
