@@ -3,7 +3,8 @@
 // homebase()). Quest text from dat/quest.lua carries % codes; convert_line()
 // expands each code and the optional letter that follows it (article,
 // capitalization, pronoun, plural, or possessive form).
-import { MIN_QUEST_LEVEL } from './const.js';
+import { G_GENOD, MIN_QUEST_LEVEL } from './const.js';
+import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import { experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
@@ -319,5 +320,17 @@ export function convertQuestLine(line, g = game) {
         out += value;
     }
     return out;
+}
+// C questpgr.c:qt_montype(). The chosen role supplies both species and
+// fallback classes; a genocided preferred species still spends rn2(5).
+export function questMonsterType() {
+    const role = game.urole;
+    if (!role)
+        throw new Error('Quest monsters require an initialized role');
+    const first = rn2(5) !== 0;
+    const species = first ? role.enemy1num : role.enemy2num;
+    if (species !== null && rn2(5) && !((game.mvitals?.[species]?.mvflags ?? 0) & G_GENOD))
+        return species;
+    return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
 }
 //# sourceMappingURL=quest_pager.js.map

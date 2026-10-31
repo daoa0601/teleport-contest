@@ -26,7 +26,7 @@ import {
     BRCORNER,
     MM_NOMSG,
 } from './const.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';

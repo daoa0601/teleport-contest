@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, G_GENOD, LAVAPOOL, MM_NOMSG, MM_NOTAIL, NO_MINVENT, PIT, HOLE, POOL, WATER, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt } from '../js/display.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { initRng } from '../js/rng.js';

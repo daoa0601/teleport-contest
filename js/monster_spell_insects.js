@@ -6,7 +6,7 @@ import { canSeeMonster, canSpotMonster, howMonsterSeen, newsym, randomBogusMonst
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { makemonAt, mkclassAligned } from './mklev.js';
+import { makemonAt, mkclassAligned } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './monster_name.js';

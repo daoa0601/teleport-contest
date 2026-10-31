@@ -1,7 +1,8 @@
 // C mkroom.c:mkundead(). Position selection precedes revival or construction.
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { level_difficulty } from './dungeon.js';
-import { findMonsterNearPosition, makemonAt, morgueMonsterType } from './mklev.js';
+import { findMonsterNearPosition, morgueMonsterType } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { CORPSE } from './object_data.js';
 import { rnd } from './rng.js';

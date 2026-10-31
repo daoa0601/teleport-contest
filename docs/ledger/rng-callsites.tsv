@@ -762,6 +762,178 @@ src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[1])""]"	unpro
 src/js/lua/lifecycle.ts	bindingsFor/rn2	rn2	"[""luaInteger(args[0])""]"	unproved
 src/js/magic_detection.ts	detectedCoins	rnd	"[""10""]"	constant
 src/js/magic_negation.ts	specialAttackNegated	random	"[""10""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""10""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""8""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""classes.length - 2""]"	constant
+src/js/makemon.ts	chooseMimicAppearance	rn2	"[""classes.length""]"	constant
+src/js/makemon.ts	initMonsterGroup	rnd	"[""countRange""]"	guarded
+src/js/makemon.ts	initialMonsterSleepState	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	d	"[""level_difficulty()"", ""30""]"	invariant
+src/js/makemon.ts	makemon	d	"[""level_difficulty()"", ""hasMonsterInventory ? 5 : 10""]"	invariant
+src/js/makemon.ts	makemon	rn1	"[""10"", ""20""]"	constant
+src/js/makemon.ts	makemon	rn1	"[""2"", ""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""10""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""10""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""100""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""11""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""12""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""13""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""13""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""13""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""2""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""20""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""20""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""3""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""4""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""5""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""50""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""50""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""7""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""75""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""8""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""Math.trunc(baseLevel / 2)""]"	unproved
+src/js/makemon.ts	makemon	rn2	"[""candleChance""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""polearms.length""]"	constant
+src/js/makemon.ts	makemon	rn2	"[""range""]"	constant
+src/js/makemon.ts	makemon	rnd	"[""14 - (2 * bias)""]"	constant
+src/js/makemon.ts	makemon	rnd	"[""3""]"	constant
+src/js/makemon.ts	makemon	rnd	"[""3""]"	constant
+src/js/makemon.ts	mkclassAligned	rn2	"[""2""]"	constant
+src/js/makemon.ts	mkclassAligned	rn2	"[""9""]"	constant
+src/js/makemon.ts	mkclassAligned	rnd	"[""totalWeight""]"	guarded
+src/js/makemon.ts	peaceMinded	rn2	"[""16 + record""]"	constant
+src/js/makemon.ts	peaceMinded	rn2	"[""2 + Math.abs(monsterAlignment)""]"	constant
+src/js/makemon.ts	randomMonsterPosition	rn1	"[""COLNO - 3"", ""2""]"	constant
+src/js/makemon.ts	randomMonsterPosition	rn2	"[""2""]"	constant
+src/js/makemon.ts	randomMonsterPosition	rn2	"[""ROWNO""]"	constant
+src/js/makemon.ts	rndmonstAdj	rn2	"[""7""]"	constant
+src/js/makemon.ts	rndmonstReservoir	rn2	"[""totalWeight""]"	unproved
+src/js/makemon.ts	setMimicAppearance	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST + 1"", ""PM_ARCHAEOLOGIST""]"	constant
+src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
+src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
 src/js/maze_terrain.ts	carveMazeFrom	rn2	"[""available.length""]"	guarded
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeXMax >> 1) - 1""]"	unproved
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
@@ -799,13 +971,6 @@ src/js/mklev.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
 src/js/mklev.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
 src/js/mklev.ts	buildSpecialRoom	rn2	"[""100""]"	constant
 src/js/mklev.ts	check_room	rn2	"[""3""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""10""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""8""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""classes.length - 2""]"	constant
-src/js/mklev.ts	chooseMimicAppearance	rn2	"[""classes.length""]"	constant
 src/js/mklev.ts	collectShuffledMonsterCoordinates	rn2	"[""remaining""]"	unproved
 src/js/mklev.ts	courtMonsterType	rn2	"[""3 * level_difficulty()""]"	invariant
 src/js/mklev.ts	courtMonsterType	rn2	"[""60""]"	constant
@@ -918,8 +1083,6 @@ src/js/mklev.ts	getRandomTextLine	rn2	"[""fileSize""]"	unproved
 src/js/mklev.ts	getRumor	rn2	"[""2""]"	constant
 src/js/mklev.ts	getShopItem	rnd	"[""100""]"	constant
 src/js/mklev.ts	getbones	rn2	"[""3""]"	constant
-src/js/mklev.ts	initMonsterGroup	rnd	"[""countRange""]"	guarded
-src/js/mklev.ts	initialMonsterSleepState	rn2	"[""5""]"	constant
 src/js/mklev.ts	makeSwamps	rn2	"[""2""]"	constant
 src/js/mklev.ts	makeSwamps	rn2	"[""4""]"	constant
 src/js/mklev.ts	makeSwamps	rn2	"[""4""]"	constant
@@ -938,156 +1101,6 @@ src/js/mklev.ts	makelevel	rn2	"[""fillableRooms.length""]"	unproved
 src/js/mklev.ts	makelevel	rn2	"[""i""]"	unproved
 src/js/mklev.ts	makelevel	rnd	"[""variants""]"	constant
 src/js/mklev.ts	makelevel/finishVault	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	d	"[""level_difficulty()"", ""30""]"	invariant
-src/js/mklev.ts	makemon	d	"[""level_difficulty()"", ""hasMonsterInventory ? 5 : 10""]"	invariant
-src/js/mklev.ts	makemon	rn1	"[""10"", ""20""]"	constant
-src/js/mklev.ts	makemon	rn1	"[""2"", ""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""10""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""10""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""100""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""11""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""12""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""13""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""13""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""13""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""2""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""20""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""20""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""3""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""4""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""5""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""50""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""50""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""7""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""75""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""75""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""75""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""8""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""Math.trunc(baseLevel / 2)""]"	unproved
-src/js/mklev.ts	makemon	rn2	"[""candleChance""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""polearms.length""]"	constant
-src/js/mklev.ts	makemon	rn2	"[""range""]"	constant
-src/js/mklev.ts	makemon	rnd	"[""14 - (2 * bias)""]"	constant
-src/js/mklev.ts	makemon	rnd	"[""3""]"	constant
-src/js/mklev.ts	makemon	rnd	"[""3""]"	constant
 src/js/mklev.ts	makemon/giveGeneralMonsterWeapon	rnd	"[""14 - 2 * bias""]"	constant
 src/js/mklev.ts	makemon/giveOffensiveMonsterItem	rn2	"[""75""]"	constant
 src/js/mklev.ts	makemon/mInitthrow	rn2	"[""oquan""]"	guarded
@@ -1158,9 +1171,6 @@ src/js/mklev.ts	mineralize	rn2	"[""3""]"	constant
 src/js/mklev.ts	mineralize	rnd	"[""2 + Math.trunc(dunLevel / 3)""]"	unproved
 src/js/mklev.ts	mineralize	rnd	"[""goldprob * 3""]"	unproved
 src/js/mklev.ts	mkaltar	rn2	"[""A_LAWFUL + 2""]"	constant
-src/js/mklev.ts	mkclassAligned	rn2	"[""2""]"	constant
-src/js/mklev.ts	mkclassAligned	rn2	"[""9""]"	constant
-src/js/mklev.ts	mkclassAligned	rnd	"[""totalWeight""]"	guarded
 src/js/mklev.ts	mkfount	rn2	"[""7""]"	constant
 src/js/mklev.ts	mkgrave_room	rn2	"[""10""]"	constant
 src/js/mklev.ts	mkgrave_room	rn2	"[""3""]"	constant
@@ -1182,8 +1192,6 @@ src/js/mklev.ts	mkveggy_at	rnd	"[""totalProbability""]"	unproved
 src/js/mklev.ts	morgueMonsterType	rn2	"[""100""]"	constant
 src/js/mklev.ts	morgueMonsterType	rn2	"[""level_difficulty()""]"	invariant
 src/js/mklev.ts	noncoalignedSpecialAlignment	rn2	"[""2""]"	constant
-src/js/mklev.ts	peaceMinded	rn2	"[""16 + record""]"	constant
-src/js/mklev.ts	peaceMinded	rn2	"[""2 + Math.abs(monsterAlignment)""]"	constant
 src/js/mklev.ts	pickSpecialRoom	rn2	"[""3""]"	constant
 src/js/mklev.ts	pickSpecialRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	pickSpecialRoom	rn2	"[""rooms.length""]"	unproved
@@ -1199,17 +1207,10 @@ src/js/mklev.ts	populateRandomMaze	rn1	"[""6"", ""7""]"	constant
 src/js/mklev.ts	populateRandomMaze	rn1	"[""8"", ""11""]"	constant
 src/js/mklev.ts	populateRandomMaze	rn2	"[""2""]"	constant
 src/js/mklev.ts	populateRandomMaze	rn2	"[""3""]"	constant
-src/js/mklev.ts	questMonsterType	rn2	"[""5""]"	constant
-src/js/mklev.ts	questMonsterType	rn2	"[""5""]"	constant
 src/js/mklev.ts	randomEngraving	rn2	"[""4""]"	constant
-src/js/mklev.ts	randomMonsterPosition	rn1	"[""COLNO - 3"", ""2""]"	constant
-src/js/mklev.ts	randomMonsterPosition	rn2	"[""2""]"	constant
-src/js/mklev.ts	randomMonsterPosition	rn2	"[""ROWNO""]"	constant
 src/js/mklev.ts	randomSpecialDoorMask	rn2	"[""states.length""]"	constant
 src/js/mklev.ts	randomSpecialTrapType	rnd	"[""TRAPNUM - 1""]"	constant
 src/js/mklev.ts	replaceLuaTerrain/selection.forEachXMajor argument 1	rn2	"[""100""]"	constant
-src/js/mklev.ts	rndmonstAdj	rn2	"[""7""]"	constant
-src/js/mklev.ts	rndmonstReservoir	rn2	"[""totalWeight""]"	unproved
 src/js/mklev.ts	rogueCorrCell	rn2	"[""50""]"	constant
 src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
 src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
@@ -1223,9 +1224,6 @@ src/js/mklev.ts	roguecorr	rn2	"[""source.dy""]"	unproved
 src/js/mklev.ts	roguejoin	rn2	"[""x2 - x1 + 1""]"	unproved
 src/js/mklev.ts	roguejoin	rn2	"[""y2 - y1 + 1""]"	unproved
 src/js/mklev.ts	setLevelTerrainLit	rn2	"[""2""]"	constant
-src/js/mklev.ts	setMimicAppearance	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST + 1"", ""PM_ARCHAEOLOGIST""]"	constant
-src/js/mklev.ts	setMimicAppearance	rn2	"[""3""]"	constant
-src/js/mklev.ts	setMimicAppearance	rn2	"[""3""]"	constant
 src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
 src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialExplicitMonster	rn2	"[""2""]"	constant
@@ -2035,6 +2033,8 @@ src/js/quantum_cat.ts	observeQuantumCat	rn2	"[""2""]"	constant
 src/js/quest.ts	talkQuestCharacter	rn2	"[""5""]"	constant
 src/js/quest.ts	talkQuestCharacter	rn2	"[""5""]"	constant
 src/js/quest_pager.ts	prepareSection	rn2	"[""count""]"	guarded
+src/js/quest_pager.ts	questMonsterType	rn2	"[""5""]"	constant
+src/js/quest_pager.ts	questMonsterType	rn2	"[""5""]"	constant
 src/js/ray.ts	rayBounceDirection	random	"[""2""]"	constant
 src/js/ray.ts	rayBounceDirection	random	"[""bounceback""]"	guarded
 src/js/ray.ts	rayHitsHero	random	"[""20""]"	constant

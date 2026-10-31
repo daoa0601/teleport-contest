@@ -2,7 +2,7 @@
 import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { setMonsterMalign } from './monster_alignment.js';

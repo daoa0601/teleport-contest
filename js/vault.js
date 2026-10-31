@@ -7,7 +7,7 @@ import { getLine } from './query.js';
 import { deleteEngravingAt } from './engrave.js';
 import { bot, redrawMap, newsym, plineWithContinuation, displayMessageWindow } from './display.js';
 import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, } from './const.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';

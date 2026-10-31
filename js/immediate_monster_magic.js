@@ -30,7 +30,7 @@ import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { respondToImmediateMagic, teleportMonsterByHero } from './monster_magic_response.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { setMimicAppearance } from './mklev.js';
+import { setMimicAppearance } from './makemon.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
 import { monsterHasDrainResistance, monsterResistsEffect } from './monster_resistance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';

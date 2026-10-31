@@ -5,7 +5,7 @@ import { plineWithContinuation } from './display.js';
 import { levelAtDepth } from './dungeon.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
-import { makemonAt, rndmonstAdj } from './mklev.js';
+import { makemonAt, rndmonstAdj } from './makemon.js';
 import { monsterTypeName } from './monster_data.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { getLine, promptChoice } from './query.js';

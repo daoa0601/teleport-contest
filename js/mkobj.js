@@ -23,7 +23,7 @@ import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTime
 import { objectWeight } from './weight.js';
 import { curseObjectState } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject } from './object_properties.js';
-import { rndmonstAdj } from './mklev.js';
+import { rndmonstAdj } from './makemon.js';
 import { addCreatedObjectToContainer } from './object_container.js';
 import { objectProb } from './o_init.js';
 import { rndClass } from './objnam.js';

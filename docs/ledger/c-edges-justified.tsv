@@ -1,7 +1,7 @@
 # caller	callee	verdict	note — C call edges the port covers without naming the callee (inlined), or that cannot change play (n/a); static-gaps.mjs edges
 # Read on both sides for the most-run C functions (RNG ledger call counts).
-rndmonst_adj	uncommon	inlined	rndmonstReservoir tests NOGEN/UNIQ, G_GONE, Inhell alignment and G_HELL (mklev.ts)
-mkclass_aligned	init_mongen_order	inlined	monsterGenerationOrder sorts by symbol, difficulty, index (mklev.ts)
+rndmonst_adj	uncommon	inlined	rndmonstReservoir tests NOGEN/UNIQ, G_GONE, Inhell alignment and G_HELL (makemon.ts)
+mkclass_aligned	init_mongen_order	inlined	monsterGenerationOrder sorts by symbol, difficulty, index (makemon.ts)
 mkclass_aligned	mk_gen_ok	inlined	mvflags, genocide mask, placeholders and mail daemon tested in the class loop (mklev.ts)
 mkclass_aligned	sgn	inlined	Math.sign
 fill_ordinary_room	mksink	inlined	sink placement in fillOrdinaryRoom (mklev.ts)
@@ -133,7 +133,7 @@ readobjnam	wizterrainwish	n/a	wizard mode only
 really_done	paygd	inlined	settleGameExit calls payVaultGuardOnExit (end.ts, vault_exit.ts)
 rehumanize	polyman	inlined	becomeHuman keeps the pit rn1(6,2) (polyself.ts)
 reverse_loot	courtmon	inlined	courtMonsterType (confused_loot.ts)
-rndmonst	rndmonst_adj	inlined	rndmonstAdj with no bounds is rndmonst (mklev.ts)
+rndmonst	rndmonst_adj	inlined	rndmonstAdj with no bounds is rndmonst (makemon.ts)
 role_init	randrole	inlined	priest pantheon rn2(13) loop (startup.ts)
 role_init	randrole_filtered	n/a	character selection resolves a valid role before role_init
 role_init	randrace	n/a	character selection resolves a valid race before role_init

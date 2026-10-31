@@ -7,7 +7,8 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { fillSpecialRoom, makemonAt } from '../js/mklev.js';
+import { fillSpecialRoom } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import type { AlignmentValue } from '../js/roles.js';
 import type { Room } from '../js/map_types.js';

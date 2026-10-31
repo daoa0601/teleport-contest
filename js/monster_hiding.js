@@ -5,7 +5,7 @@ import { COULD_SEE, IN_SIGHT, MGIVENNAME, M_AP_TYPE, PLNMSG_HIDE_UNDER, ROOM, is
 import { canSeeMonster, canSenseMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
-import { setMimicAppearance } from './mklev.js';
+import { setMimicAppearance } from './makemon.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';

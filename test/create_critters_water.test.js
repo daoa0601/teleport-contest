@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_GENOD, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { createCritters } from '../js/mklev.js';
+import { createCritters } from '../js/makemon.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('creation in water places the monster at a wet square without revealing the hero to it', async () => {

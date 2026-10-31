@@ -13,7 +13,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { objectDescription } from './object_description.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { observeObjectForNaming } from './objnam.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './object_state.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile, } from './potion_hit.js';
 import { d, rnl, rn2 } from './rng.js';

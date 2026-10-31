@@ -4,7 +4,7 @@ import { G_GENOD, NO_MINVENT } from '../js/const.js';
 import { pline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a group leader already has its kill-alignment value when a member arrival pauses for input', async () => {

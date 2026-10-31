@@ -7,7 +7,7 @@ import { plineWithContinuation as pline } from './display.js';
 import { level_difficulty } from './dungeon.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { aggravateMonsters } from './monster_anger.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, monsterIsRider,

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { adjustHeroAlignment } from '../js/alignment.js';
 import { A_CHAOTIC, G_GENOD } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { mkclassAligned } from '../js/mklev.js';
+import { mkclassAligned } from '../js/makemon.js';
 import { MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';

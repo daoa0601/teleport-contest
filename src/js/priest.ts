@@ -32,7 +32,7 @@ import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;

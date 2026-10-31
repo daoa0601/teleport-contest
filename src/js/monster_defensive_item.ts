@@ -43,7 +43,8 @@ import { awakenSoldiers } from './music.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterCanOpenTin, consumeMonsterStoningCure } from './monster_stoning_cure.js';
 import { resolveMonsterImmediateWand } from './monster_wand_ray.js';
-import { canDigDown, canFallThrough, makemonAt, maketrap } from './mklev.js';
+import { canDigDown, canFallThrough, maketrap } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import {
     AMULET_OF_YENDOR, BOULDER, BUGLE, CORPSE, POT_EXTRA_HEALING, POT_FULL_HEALING,
     POT_HEALING, POT_SICKNESS, SCR_CREATE_MONSTER, SCR_TELEPORTATION, TIN,

@@ -5,7 +5,8 @@ import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MIN
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';
 import { pushKeys } from '../js/input.js';
-import { findMonsterNearPosition, generateMedusaLevel, makemonAt, makemonNear, splitHeroMonsterForm } from '../js/mklev.js';
+import { findMonsterNearPosition, generateMedusaLevel, makemonNear, splitHeroMonsterForm } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { mksobj, rndmonnum } from '../js/mkobj.js';
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';

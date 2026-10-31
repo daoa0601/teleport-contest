@@ -5,7 +5,8 @@ import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NOMS
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { findMonsterNearPosition, peaceMinded } from './mklev.js';
+import { findMonsterNearPosition } from './mklev.js';
+import { peaceMinded } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';

@@ -24,7 +24,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { makemonAt, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,

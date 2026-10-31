@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_NOMSG } from '../js/const.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_ARMOR, LONG_SWORD, MACE, OBJECT_NAMES, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_POLYMORPH, POT_SICKNESS, POT_SPEED, RING_MAIL, SCR_CREATE_MONSTER, SCR_TELEPORTATION, SPLINT_MAIL, TIN_WHISTLE, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SPEED_MONSTER, WAN_TELEPORTATION, } from '../js/object_data.js';

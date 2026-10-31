@@ -12,7 +12,7 @@ import { plineWithContinuation } from './display.js';
 import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { makeConfused } from './hero_mental_status.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { adjustErinys, MONSTER_NAME } from './monster_data.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT } from './object_data.js';
 

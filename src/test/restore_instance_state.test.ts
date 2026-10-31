@@ -11,7 +11,7 @@ import { game, resetGame, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { updateHeroHunger } from '../js/hunger.js';
-import { rndmonstAdj } from '../js/mklev.js';
+import { rndmonstAdj } from '../js/makemon.js';
 import { beginMealMimicry } from '../js/meal_mimic.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { reportMonsterCombatNoise } from '../js/monster_combat_messages.js';

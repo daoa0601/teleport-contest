@@ -21,7 +21,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { deleteObject, delobjCore } from './object_delete.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { findMonsterNearPosition, makemonAt, makemonNear, maketrap } from './mklev.js';
+import { findMonsterNearPosition, makemonNear, maketrap } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { riderRevivalTime, set_corpsenm } from './mkobj.js';
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME,

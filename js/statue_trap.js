@@ -14,7 +14,8 @@ import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from '.
 import { stolenValue } from './shop_loss.js';
 import { game, requireGameLevel } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { makemonAt, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';

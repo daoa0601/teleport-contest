@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BELL_OF_OPENING, POT_SICKNESS, SPE_DIG } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';

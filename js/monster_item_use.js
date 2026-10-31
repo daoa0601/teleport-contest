@@ -19,7 +19,7 @@ import { learnObjectType, observeObject } from './object_knowledge.js';
 import { minimalObjectName, objectCombatName, observeObjectForNaming } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { d, rn2 } from './rng.js';
-import { makemonAt } from './mklev.js';
+import { makemonAt } from './makemon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { OBJECT_DESCRIPTIONS } from './object_data.js';
 import { setMonsterMalign } from './monster_alignment.js';

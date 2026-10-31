@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_GENO, MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, CHEST, CORPSE, RIN_PROTECTION_FROM_SHAPE_CHANGERS, TIN } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

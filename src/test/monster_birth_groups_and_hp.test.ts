@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { G_GENOD, MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_GENO, MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import {

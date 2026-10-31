@@ -7,7 +7,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt } from '../js/display.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { initRng } from '../js/rng.js';
