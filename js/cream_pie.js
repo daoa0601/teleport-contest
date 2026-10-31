@@ -4,7 +4,9 @@ import { heroIsHallucinating } from './senses.js';
 import { pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { CREAM_PIE } from './object_data.js';
-import { heroHasEyes } from './body_parts.js';
+import { heroFaceName, heroHasEyes } from './body_parts.js';
+import { makePlural } from './object_grammar.js';
+import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind, } from './senses.js';
 import { chargeAlteredUnpaidObject, } from './shk.js';
@@ -26,23 +28,25 @@ async function deletePie(pie) {
     // C apply.c:use_cream_pie() clears the wield slot via setnotworn(),
     // which does not arm the "begin bashing" bare-hands notice.
     await releaseWeaponSlots(pie, game, { keepUnweapon: true });
+    await chargeAlteredUnpaidObject(pie, 'splatter');
     unlinkObject(pie, game);
     await delobj(pie, game);
 }
 export async function useCreamPie(stack) {
     if (stack?.otyp !== CREAM_PIE)
         return false;
-    const { pie, several } = splitOnePie(stack);
     const wasBlind = heroIsBlind(game);
     const wasCreamed = (game.u?.ucreamed ?? 0) > 0;
+    const { pie, several } = splitOnePie(stack);
     const hallucinating = heroIsHallucinating(game);
     if (hallucinating) {
         await pline('You give yourself a facial.');
     }
     else {
-        await pline(several
-            ? 'You immerse your face in one of the cream pies.'
-            : 'You immerse your face in the cream pie.');
+        observeObjectForNaming(pie);
+        const name = definiteName(objectName(pie));
+        const target = several ? `one of ${makePlural(name)}` : name;
+        await pline(`You immerse your ${heroFaceName()} in ${target}.`);
     }
     if (heroHasEyes(game) && !blindfolded(game)) {
         const blindIncrement = rnd(25);
@@ -50,13 +54,12 @@ export async function useCreamPie(stack) {
         await makeBlinded((game.u.blindTurns ?? 0) + blindIncrement, { talk: false });
         const blind = heroIsBlind(game);
         if (!blind || wasBlind) {
-            await plineWithContinuation(`There's ${wasCreamed ? 'more ' : ''}sticky goop all over your face.`);
+            await plineWithContinuation(`There's ${wasCreamed ? 'more ' : ''}sticky goop all over your ${heroFaceName()}.`);
         }
         else {
-            await plineWithContinuation("You can't see through all the sticky goop on your face.");
+            await plineWithContinuation(`You can't see through all the sticky goop on your ${heroFaceName()}.`);
         }
     }
-    await chargeAlteredUnpaidObject(pie, 'splatter');
     await deletePie(pie);
     return true;
 }
