@@ -2,7 +2,7 @@
 import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -300,7 +300,8 @@ async function choosePickupObjects(source, objects, count, { autoSelect = true, 
     for (const selection of selected) {
         if (source.monster && selection.value.owornmask) {
             observeObjectForNaming(selection.value);
-            await plineWithContinuation(`You can't pick the ${objectName(selection.value)} up.`);
+            const name = ownedSimpleObjectName(selection.value, game, { capitalized: false });
+            await plineWithContinuation(`You can't pick ${name} up.`);
         }
         else
             allowed.push(selection);
@@ -331,7 +332,8 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
             continue;
         if (source.monster && object.owornmask) {
             observeObjectForNaming(object);
-            await plineWithContinuation(`You can't pick the ${objectName(object)} up.`);
+            const name = ownedSimpleObjectName(object, game, { capitalized: false });
+            await plineWithContinuation(`You can't pick ${name} up.`);
             continue;
         }
         attempted = true;
