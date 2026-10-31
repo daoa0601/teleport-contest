@@ -14,7 +14,6 @@ import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback, } from './monster_leash.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { initializeUnplacedMonsterWormBody, removeMonsterWormBody, } from './monster_worm.js';
-import { newsym } from './display.js';
 import { monsterEmitsLight, vision_recalc } from './vision.js';
 import { rn2, rn1, rnd } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
@@ -402,8 +401,6 @@ export async function monsterArrive(monster, when, state) {
             return await failArrival(monster, when, state);
     }
     monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
-    if (monster.mx)
-        await newsym(monster.mx, monster.my);
     return true;
 }
 export async function deliverMigratingMonsters(state = game, followers = []) {
