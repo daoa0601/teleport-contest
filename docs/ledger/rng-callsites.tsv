@@ -946,6 +946,8 @@ src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
 src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
 src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
 src/js/maze_terrain.ts	openDeadEnds	rn2	"[""openings.length""]"	guarded
+src/js/mhitm.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
+src/js/mhitm.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
 src/js/minion.ts	demonLord	rn1	"[""PM_YEENOGHU + 1 - PM_JUIBLEX"", ""PM_JUIBLEX""]"	constant
 src/js/minion.ts	demonPrince	rn1	"[""PM_DEMOGORGON + 1 - PM_ORCUS"", ""PM_ORCUS""]"	constant
 src/js/minion.ts	msummon	rn2	"[""4""]"	constant
@@ -1337,8 +1339,6 @@ src/js/mon.ts	resolveMonsterLiquid	random	"[""8""]"	constant
 src/js/mon.ts	resolveMonsterLiquid	random	"[""monster.mhp""]"	guarded
 src/js/mon.ts	rollMonsterPoolReaction	random	"[""5""]"	constant
 src/js/mon.ts	rollMonsterPoolReaction	rollDice	"[""2"", ""6""]"	constant
-src/js/monmove.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
-src/js/monmove.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
 src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""3""]"	constant

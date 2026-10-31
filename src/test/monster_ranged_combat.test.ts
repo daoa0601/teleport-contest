@@ -8,7 +8,7 @@ import {
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { attackMonsterWithMonster } from '../js/monmove.js';
+import { attackMonsterWithMonster } from '../js/mhitm.js';
 import { DAGGER } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
