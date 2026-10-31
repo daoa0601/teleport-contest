@@ -6,6 +6,7 @@ import { BC_CHAIN, PIT, TT_BEARTRAP, TT_LAVA, TT_WEB, WEB } from '../js/const.js
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
+import { setHeroTrap } from '../js/hero_traps.js';
 import { punishHero } from '../js/punishment.js';
 import { moveObject, placeObjectSynchronously, remove_object } from '../js/floor_object.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
@@ -173,8 +174,7 @@ void test('a ball pulling the hero out of a web resumes blocked levitation', asy
     await punishedHero({ ballAt: [11, 10], chainAt: [10, 10], seed: 71 });
     grantIntrinsicProperty('levitation', 'outside');
     const web = addTrap(requireGameLevel(), WEB, 10, 10, { tseen: true });
-    game.u.utrap = 4;
-    game.u.utraptype = TT_WEB;
+    setHeroTrap(4, TT_WEB);
     game.u.dx = 1;
     game.u.dy = 0;
     requirePlayingGame(game);

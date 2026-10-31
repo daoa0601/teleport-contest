@@ -635,12 +635,16 @@ async function struggleInWeb(steedName: string | null) {
     requirePlayingGame(game);
     const hero = game.u;
     if (heroWieldsSting()) {
-        clearHeroTrap();
+        // C hack.c:trapmove() zeroes u.utrap with a bare field write and
+        // lets its caller's reset_utrap() finish the release (see
+        // heroCanMoveFromTrap), so flight is still blocked while the
+        // message prints; trap.c:reset_utrap() then reports "You can fly."
+        // from its own was-flying snapshot.
+        hero.utrap = 0;
         await pline('Sting cuts through the web!');
         return;
     }
     if (reduceHeroTrapDuration() <= 0) {
-        clearHeroTrap();
         await pline(steedName
             ? `${upstart(steedName)} breaks out of the web.`
             : 'You disentangle yourself.');
@@ -707,12 +711,14 @@ async function struggleInFloor(
             ? 'You finally wrench the ball free.'
             : 'You finally wriggle free.');
     }
-    if (ball) await buriedBallToPunishment();
-    else clearHeroTrap();
+    // wriggle_free: only the buried-ball case resets here (silently);
+    // otherwise trapmove() leaves the bare u.utrap zeroed and the release
+    // in heroCanMoveFromTrap() follows, possibly reporting flight.
+    if (anchored) await buriedBallToPunishment();
     return false;
 }
 
-export async function heroCanMoveFromTrap(targetX: number, targetY: number): Promise<boolean> {
+async function heroTrapmove(targetX: number, targetY: number): Promise<boolean> {
     const hero = game.u;
     if (!hero?.utrap) return true;
     requirePlayingGame(game);
@@ -733,7 +739,8 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
         if ((hero.dx && hero.dy) || rn2(5) === 0) hero.utrap--;
         if (hero.utrap <= 0) {
             await plineWithContinuation(`${subject} finally ${steedName ? 'lurches' : 'wriggle'} free.`);
-            clearHeroTrap();
+            // trapmove() leaves the bare u.utrap zeroed here; the release
+            // in heroCanMoveFromTrap() follows and may report flight.
         }
         return false;
     }
@@ -754,8 +761,9 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
         if (!isLavaAt(targetX, targetY)) {
             hero.utrap--;
             if ((hero.utrap & 0xff) === 0) {
-                // domove_core() resets the trap after this message returns.
-                // Its pager must keep the preceding InLava status visible.
+                // The release in heroCanMoveFromTrap() runs after this
+                // message returns. Its pager must keep the preceding
+                // InLava status visible.
                 hero.utrap = 0;
                 await pline(steedName
                     ? `You lead ${steedName} to the edge of the ${displayLiquidName('lava', game)}.`
@@ -774,6 +782,18 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
     default:
         return false;
     }
+}
+
+// C hack.c:domove(): trapmove()'s only caller releases the hero through
+// reset_utrap(TRUE) the moment the bare u.utrap zeroing appears, so the
+// was-levitating/was-flying snapshots see float_vs_flight()'s blocked
+// masks and the recompute below restores flight blocked by the trap.
+export async function heroCanMoveFromTrap(targetX: number, targetY: number): Promise<boolean> {
+    const hero = game.u;
+    if (!hero?.utrap) return true;
+    const moved = await heroTrapmove(targetX, targetY);
+    if (!hero.utrap) await resetHeroTrap(true);
+    return moved;
 }
 
 async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport']): Promise<boolean> {
