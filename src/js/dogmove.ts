@@ -20,14 +20,11 @@ import type {
     PetRangedSelection, PetRangedTarget, PetTargetOptions,
 } from './pet_ranged_types.js';
 import {
-    attackMonsterWithMonster,
     beginMonsterHeroAttack,
-    beginMonsterMeleeAttack,
     couldSeeFromHero,
     DISCARDED_CALL_LOG,
     mfndpos,
     monAllowFlags,
-    monsterAttackStopsAggressor,
     monsterAvoidsKickedLocation,
     monsterAvoidsSokobanPushLocation,
     monsterMayDigLocation,
@@ -37,6 +34,11 @@ import {
     speciesHasWeaponAttack,
     trapAt,
 } from './monmove.js';
+import {
+    attackMonsterWithMonster,
+    beginMonsterMeleeAttack,
+    monsterAttackStopsAggressor,
+} from './mhitm.js';
 import {
     monsterAtPosition,
     placeMonsterOnMap,

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT, W_WEP } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { attackMonsterWithMonster } from '../js/monmove.js';
+import { attackMonsterWithMonster } from '../js/mhitm.js';
 import { DAGGER } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
 import { knownObject } from './support/game-objects.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { attackMonsterWithMonster } from '../js/monmove.js';
+import { attackMonsterWithMonster } from '../js/mhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['iron golem', 'air elemental']) {
