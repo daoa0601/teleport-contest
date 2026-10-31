@@ -7,7 +7,6 @@ import {
     IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE,
     PLNMSG_TOWER_OF_FLAME, isok,
 } from './const.js';
-import { clearMessageWindow } from './tty_topline.js';
 import { displayLiquidName, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { explode } from './explosion.js';
@@ -222,6 +221,9 @@ async function chooseCenter(question: string, state: PlayingGameState): Promise<
         isValidLocation: valid,
         highlightHero: false,
     });
-    clearMessageWindow();
+    // C getpos() clears the message window itself at exit, and only when a
+    // non-autodescribe message is pending (getpos.c:exitgetpos); a pick made
+    // with autodescribe on leaves the last description visible, and
+    // do_stinking_cloud() prints nothing after a valid center.
     return selected;
 }

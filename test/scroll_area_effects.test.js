@@ -23,6 +23,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenRow } from './support/screen.js';
 async function room(t, answers = [], options = {}) {
     await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
         hero: { uhp: 500, uhpmax: 500 }, flags: { verbose: true, tips: false },
@@ -240,6 +241,23 @@ for (const [blessed, cursed, size, damage] of [[false, true, 5, 4], [false, fals
         assert.ok(cloud.cells.some(cell => cell.x === 13 && cell.y === 10));
     });
 }
+// C getpos.c:getpos(): a pick key ends selection with msg_given FALSE while
+// autodescribe is on, so the last automatic description is not cleared at
+// exit; C read.c:do_stinking_cloud() prints nothing after a valid pick, and
+// that description stays on the message line (getpos.c:889-890, 1156-1157,
+// read.c:3091-3104).
+void test('a cloud-center pick leaves the last automatic description visible', async (t) => {
+    const input = await room(t);
+    requirePlayingGame(game);
+    const source = await scroll(SCR_STINKING_CLOUD);
+    input.feed(' l,');
+    const result = await applyAreaScrollEffect(source);
+    assert.equal(result.known, true);
+    const cloud = game.level.regions[0];
+    assert.ok(cloud != null, 'The picked center becomes a gas cloud.');
+    assert.ok(cloud.cells.some(cell => cell.x === 11 && cell.y === 10));
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(), 'floor of a room');
+});
 for (const keys of ['\x1b', 'llllll.']) {
     void test(`cancelled or out-of-range stinking cloud creates no region (${JSON.stringify(keys)})`, async (t) => {
         const input = await room(t);
