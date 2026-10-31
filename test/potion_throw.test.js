@@ -14,6 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { ALCHEMY_SMOCK, AMULET_OF_LIFE_SAVING, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN, LARGE_BOX, POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SPEED, SADDLE, POT_WATER, YELLOW_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
+import { installPagerInput } from './support/pager-input.js';
 import { checkSpecialRoom } from '../js/shk.js';
 import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
@@ -211,6 +212,66 @@ void test('an unpaid thrown potion becomes debt that the hero can pay', async ()
     await rhack('p'.charCodeAt(0));
     assert.equal(shopkeeper.eshk.debit, 0);
     assert.equal(heroGoldAmount(game), 25);
+});
+void test('an unpaid thrown potion is settled partly from shop credit', async () => {
+    const monster = await freshMapPotionState(2);
+    requirePlayingGame(game);
+    const potion = await addInventoryObject(POT_INVISIBILITY, {
+        unpaid: true,
+    });
+    const { shopkeeper } = await enterPotionShopWithBill(potion);
+    shopkeeper.eshk.credit = 30;
+    installPagerInput(resetInputState(), { expected: /^/, limit: 80 });
+    initRng(3321n);
+    await throwEast(potion);
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.match(said, /The price is partially covered by your credit\./);
+    assert.ok(said.indexOf('partially covered') < said.indexOf('still owe'), 'credit is spent before the remaining debt is announced');
+    assert.match(said, /You still owe .* 45 zorkmids for it!/);
+    assert.equal(monster.minvis, 1);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+    assert.equal(shopkeeper.eshk.credit, 0);
+    assert.equal(shopkeeper.eshk.debit, 45);
+    assert.equal(potion.where, 'gone');
+});
+void test('an unpaid thrown potion covered by credit leaves the rest as credit', async () => {
+    await freshMapPotionState(2);
+    requirePlayingGame(game);
+    const potion = await addInventoryObject(POT_INVISIBILITY, {
+        unpaid: true,
+    });
+    const { shopkeeper } = await enterPotionShopWithBill(potion);
+    shopkeeper.eshk.credit = 100;
+    installPagerInput(resetInputState(), { expected: /^/, limit: 80 });
+    initRng(3321n);
+    await throwEast(potion);
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.match(said, /The price is deducted from your credit\./);
+    assert.match(said, /You have 25 zorkmids credit remaining\./);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+    assert.equal(shopkeeper.eshk.credit, 25);
+    assert.equal(shopkeeper.eshk.debit ?? 0, 0);
+    assert.equal(potion.where, 'gone');
+});
+void test('an unpaid thrown potion worth exactly the credit leaves no debt', async () => {
+    await freshMapPotionState(2);
+    requirePlayingGame(game);
+    const potion = await addInventoryObject(POT_INVISIBILITY, {
+        unpaid: true,
+    });
+    const { shopkeeper } = await enterPotionShopWithBill(potion);
+    shopkeeper.eshk.credit = 75;
+    installPagerInput(resetInputState(), { expected: /^/, limit: 80 });
+    initRng(3321n);
+    await throwEast(potion);
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.match(said, /The price is deducted from your credit\./);
+    assert.match(said, /You have no credit remaining\./);
+    assert.doesNotMatch(said, /You (still )?owe/);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+    assert.equal(shopkeeper.eshk.credit, 0);
+    assert.equal(shopkeeper.eshk.debit ?? 0, 0);
+    assert.equal(potion.where, 'gone');
 });
 void test('throwing one unpaid potion splits its shop bill', async () => {
     await freshMapPotionState(2);
