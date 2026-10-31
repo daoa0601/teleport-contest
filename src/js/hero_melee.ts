@@ -20,7 +20,7 @@ import {
     monsterIsVerySmall, requireMonsterData,
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { applyHeroContactPassive } from './monster_passive.js';
+import { applyHeroContactPassive } from './uhitm.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { makePlural } from './object_grammar.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';

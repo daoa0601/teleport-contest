@@ -11,7 +11,7 @@ import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL } from './monster_data.js';
-import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
 import { cutWorm } from './monster_worm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {

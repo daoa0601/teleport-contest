@@ -4,7 +4,7 @@ import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { beginMonsterHeroAttack } from '../js/mhitu.js';
-import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { AD_CURS, AT_CLAW } from '../js/monster_attack_types.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from '../js/properties.js';
 import { RING_MAIL } from '../js/object_data.js';

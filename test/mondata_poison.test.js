@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, W_WEP } from '../js/const.js';
 import { AT_BITE } from '../js/monster_attack_types.js';
-import { poisonMonsterFromAttack } from '../js/monster_poison.js';
+import { poisonMonsterFromAttack } from '../js/uhitm.js';
 import { game } from '../js/gstate.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

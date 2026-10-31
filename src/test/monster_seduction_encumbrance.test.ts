@@ -7,7 +7,7 @@ import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
-import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { initRng } from '../js/rng.js';
 import { nearCapacity } from '../js/weight.js';
 import { createMonsterAt } from './support/monsters.js';

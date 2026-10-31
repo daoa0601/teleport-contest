@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_ACID, AT_TUCH } from '../js/monster_attack_types.js';
-import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

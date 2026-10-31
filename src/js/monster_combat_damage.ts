@@ -16,23 +16,24 @@ import {
     AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE,
     AD_WRAP, AT_BITE, AT_CLAW, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import { resolveMonsterBrainAttack } from './monster_brain_attack.js';
-import { applyMonsterDigestionEffect, finishMonsterDigestion } from './monster_combat_digestion.js';
-import { applyMonsterDrainEffect } from './monster_combat_drain.js';
-import { applyMonsterElementEffect } from './monster_combat_elements.js';
-import { monsterCombatAttackNegated } from './monster_combat_negation.js';
-import { applyMonsterStatusEffect } from './monster_combat_status.js';
+import { resolveMonsterBrainAttack } from './uhitm.js';
+import { applyMonsterDigestionEffect } from './uhitm.js';
+import { applyMonsterDrainEffect } from './uhitm.js';
+import { applyMonsterElementEffect } from './uhitm.js';
+import { monsterCombatAttackNegated } from './uhitm.js';
+import { applyMonsterStatusEffect } from './uhitm.js';
 import {
     mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun,
 } from './uhitm.js';
-import { applyMonsterTheftEffect } from './monster_combat_theft.js';
-import { applyMonsterTransformEffect } from './monster_combat_transform.js';
+import { applyMonsterTheftEffect } from './uhitm.js';
+import { applyMonsterTransformEffect } from './uhitm.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
 import { finishMonsterGrowth, growMonster } from './monster_growth.js';
 import { exposeEngulfedDefenderForDeath } from './monster_location.js';
-import { resolveMonsterPhysicalDamage } from './monster_physical_damage.js';
-import { poisonMonsterFromAttack } from './monster_poison.js';
+import { resolveMonsterPhysicalDamage } from './uhitm.js';
+import { poisonMonsterFromAttack } from './uhitm.js';
+import { finishMonsterDigestion } from './mhitm.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterAttacker, petrifyMonsterDefender } from './monster_stoning.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';

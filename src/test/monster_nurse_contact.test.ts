@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, SICK_ALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { AD_HEAL, AT_CLAW } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

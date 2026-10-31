@@ -30,7 +30,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun, possessiveName } from './monster_name.js';
-import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';

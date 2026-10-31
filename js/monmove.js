@@ -139,7 +139,7 @@ import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetr
 import { monsterHasFireResistance, } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
-import { poisonAttackAttribute, poisonHeroFromMonster, } from './monster_poison.js';
+import { poisonAttackAttribute, poisonHeroFromMonster, } from './uhitm.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { movePriest } from './priest.js';
 import { currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './monster_carry.js';

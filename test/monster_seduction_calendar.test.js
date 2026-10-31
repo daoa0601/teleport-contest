@@ -5,7 +5,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
-import { resolveMonsterContactEffect } from '../js/monster_contact_effects.js';
+import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

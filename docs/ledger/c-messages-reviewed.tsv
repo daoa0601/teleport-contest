@@ -195,8 +195,8 @@ mhitm.c	passivemm	is mildly tingled.	composed	src/js/monster_contact_passive.ts:
 mhitm.c	passivemm	is mildly warmed.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
 mhitm.c	passivemm	is suddenly very cold!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
 mhitm.c	passivemm	is suddenly very hot!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitu.c	doseduce	on your left	composed	src/js/monster_seduction.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
-mhitu.c	doseduce	on your right	composed	src/js/monster_seduction.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
+mhitu.c	doseduce	on your left	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
+mhitu.c	doseduce	on your right	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
 mhitu.c	gazemu	doesn't look all that ugly	dead	The AD_STON cancellation branch tests !react while react is still initialized to -1; assignments later in the switch cannot reach that test.
 mhitu.c	passiveum	is jolted with your electricity!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	passiveum	is mildly chilly.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
@@ -538,8 +538,8 @@ uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/uhitm.ts:mhitmAdCold;
 uhitm.c	mhitm_ad_elec	gets zapped!	composed	src/js/uhitm.ts:mhitmAdElec; The monster-to-monster electric branch selects gets zapped after the defender name.
 uhitm.c	mhitm_ad_fire	fire doesn't heat	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
 uhitm.c	mhitm_ad_fire	fire doesn't seem to burn	composed	src/js/uhitm.ts:mhitmAdFire; The uhitm branch composes fire does not heat; the mhitm branch composes the seem to burn variant.
-uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
-uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/uhitm.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/uhitm.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
 version.c	check_version	Configuration incompatibility for file "	out-of-scope	Checks native feature bits and entity-count metadata in binary save/bones/data headers; native binary file compatibility is outside the browser runtime.
 version.c	check_version	Version mismatch for file "	out-of-scope	Checks the binary incarnation header of native save/bones/data files; the browser validates its own saved-state format and does not load native binary files.
 uhitm.c	that_is_a_mimic	mndx >= LOW_PM && mndx <= HIGH_PM	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.

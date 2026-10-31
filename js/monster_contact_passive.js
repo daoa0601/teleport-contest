@@ -9,7 +9,7 @@ import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { staggerVerb } from './monster_hurtle.js';
-import { passiveAttack, passiveDamage } from './monster_passive.js';
+import { passiveAttack, passiveDamage } from './uhitm.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, } from './monster_resistance.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';

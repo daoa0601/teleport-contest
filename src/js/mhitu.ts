@@ -6,6 +6,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import type { GameObject } from './object_types.js';
 import type {
     HeroAttack, HeroAttackSequence, HeroAttackSlot, HeroContactAttack,
     MonsterMovementAction, MonsterCallLog,
@@ -13,11 +14,13 @@ import type {
     AttackTuple, MonsterAttackInitiation, MonsterAttackPaging,
     MonsterDamageOptions, MonsterEngulfOptions, PublishMonsterMessage,
 } from './monster_action_types.js';
+import type { AttackMethod } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
 import {
-    A_STR, KILLED_BY_AN, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE,
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, KILLED_BY, KILLED_BY_AN,
+    LARGEST_INT, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE,
     M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_MAGR,
-    NEED_HTH_WEAPON, NEED_WEAPON, PIT, SPIKED_PIT, Upolyd, WATER,
+    NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SPIKED_PIT, Upolyd, WATER,
 } from './const.js';
 import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation } from './pline.js';
@@ -28,8 +31,8 @@ import {
 } from './display.js';
 import { cansee } from './vision.js';
 import {
-    monsterName, monsterName as canonicalMonsterName, monsterSubjectPronoun,
-    possessiveName, visibleMonsterSubject,
+    monsterName, monsterName as canonicalMonsterName, monsterObjectPronoun,
+    monsterSubjectPronoun, possessiveName, visibleMonsterSubject,
 } from './monster_name.js';
 import { monsterMissMessage } from './monster_miss.js';
 import {
@@ -51,11 +54,13 @@ import {
 } from './monster_attack_types.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { heroIsDisplaced } from './armor.js';
+import {
+    armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced,
+    stopDonning,
+} from './armor.js';
 import { monsterWieldedWeapon, swingMonsterWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { applyArtifactHit } from './artifact_hit.js';
 import { artifactById } from './artifacts.js';
-import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
 import { stopRun } from './runmode.js';
@@ -63,10 +68,13 @@ import { makeBlinded } from './sight_change.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath } from './monster_attack_death.js';
 import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
-import { loseHeroStrength } from './attrib.js';
+import {
+    adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength,
+} from './attrib.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     completeMonsterOffensiveAction,
@@ -123,23 +131,24 @@ import { disturbMealMimicry } from './meal_mimic.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './muse.js';
 import { isPoolAt } from './terrain_properties.js';
-import { observeObjectForNaming } from './objnam.js';
+import {
+    observeObjectForNaming, objectCombatName, objectName, ownedObjectName,
+    simpleObjectName,
+} from './objnam.js';
 import { objectDescription } from './object_description.js';
-import { recorderLocalHour } from './calendar.js';
+import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import {
     monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
-import { CORPSE } from './object_data.js';
+import { CORPSE, OBJECT_NAMES } from './object_data.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import {
     applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies,
 } from './stoning.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
-import { poisonAttackAttribute, poisonHeroFromMonster } from './monster_poison.js';
-import { resolvePhysicalHeroHug } from './monster_hug.js';
 import { setHeroGrip } from './hero_grip.js';
 import {
     beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf,
@@ -153,11 +162,33 @@ import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec,
-    mhitmAdFire, mhitmAdLegs, mhitmAdStun, tryKnockback,
+    mhitmAdFire, mhitmAdLegs, mhitmAdStun, nurseContactMode,
+    poisonAttackAttribute, poisonHeroFromMonster,
+    resolveMonsterContactEffect, resolveMonsterWeaponContact,
+    resolvePhysicalHeroHug, tryKnockback,
 } from './uhitm.js';
-import { nurseContactMode } from './monster_nurse_contact.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { unplaceBallAndChain } from './ball.js';
+import { heroHairName, heroHandName } from './body_parts.js';
+import { currency } from './currency.js';
+import { gainExperienceLevel, loseHeroExperience } from './exper.js';
+import { loseHeroHp } from './hero_damage.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
+import { heroIsUnaware } from './hero_sleep.js';
+import { inventoryItemDescription } from './invent.js';
+import {
+    addObjectToMonsterInventory, linkObjectToMonsterInventory,
+} from './monster_inventory.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
+import { unlinkObject } from './object_location.js';
+import { promptYesNo } from './query.js';
+import { seductionCompatibility } from './seduction_compatibility.js';
+import { randomMonsterRelocation } from './teleport.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { objectTypeKnown } from './shk.js';
+import { isWeldedPrimary } from './weapon_slots.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
@@ -2615,3 +2646,385 @@ export async function completeHeroAttackSlot(
     }
 }
 
+
+// C mhitu.c:mpoisons_subj(). The noun for a poisoning monster's attack
+// method; uhitm.c's effect branches compose it into their reasons.
+export function poisonAttackNoun(monster: Monster, attackType: AttackMethod): string {
+    if (attackType === AT_WEAP)
+        return monsterWieldedWeapon(monster)?.opoisoned ? 'weapon' : 'attack';
+    if (attackType === AT_TUCH) return 'contact';
+    if (attackType === AT_GAZE) return 'gaze';
+    return attackType === AT_BITE ? 'bite' : 'sting';
+}
+
+const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
+
+// C mhitu.c:u_slip_free(), greased-or-oilskin armor against a grab
+// (mhitm_ad_phys()'s hug branch).
+export async function heroSlipsFree(
+    monster: Monster, state: PlayingGameState,
+    random: (range: number) => number, publish: MessagePublisher,
+): Promise<boolean> {
+    const armor = state.uarmc || state.uarm || state.uarmu;
+    if (!armor || (!armor.greased && armor.otyp !== OILSKIN_CLOAK)) return false;
+    if (armor.cursed && random(3) === 0) return false;
+
+    const name = armor.greased || objectTypeKnown(armor, state)
+        ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
+    await publish(`${monsterName(monster, { state, capitalized: true })} grabs you, but cannot hold onto your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
+    // The grease roll and inventory change follow the slip message, which
+    // may suspend for a pager while the armor is still greased.
+    if (armor.greased && random(2) === 0) {
+        await publish('The grease wears off.');
+        armor.greased = false;
+    }
+    return true;
+}
+
+// C mhitu.c:u_slip_free(), the wrapping variant (mhitm_ad_wrap()'s hero
+// branch): engulfing wraps ignore grease entirely.
+export async function heroSlipsFromWrapping(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2,
+): Promise<boolean> {
+    if (attack.attackType === AT_ENGL) return false;
+    const armor = state.uarmc || state.uarm || state.uarmu;
+    if (!armor || (!armor.greased && armor.otyp !== OILSKIN_CLOAK)) return false;
+    if (armor.cursed && random(3) === 0) return false;
+    const name = armor.greased || objectTypeKnown(armor, state)
+        ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
+    await publish(`${monsterName(monster, { state, capitalized: true })} slips off of your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
+    if (armor.greased && random(2) === 0) {
+        await publish('The grease wears off.');
+        armor.greased = false;
+    }
+    return true;
+}
+
+// C mhitu.c:doseduce() and mayberem(); entered from uhitm.c:mhitm_ad_ssex()'s
+// hero branch and sounds.c chat with a cancelled seducer.
+
+const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
+
+interface SeductionContext {
+    monster: Monster;
+    state: PlayingGameState;
+    level: PlayingGameState['level'];
+    publish: MessagePublisher;
+    random: typeof rn2;
+    rollOne: typeof rnd;
+    female: boolean;
+    who: string;
+}
+
+export async function resolveHeroSeduction(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, random: typeof rn2, rollOne: typeof rnd,
+    { allowCancelledSeducer = false }: { allowCancelledSeducer?: boolean } = {},
+): Promise<void> {
+    if (monster.mcan) {
+        // C sounds.c:MS_SEDUCE calls doseduce() without a cancellation gate,
+        // so a cancelled seducer still complains about a severe headache when
+        // chatting.  The attack path (uhitm.c:mhitm_ad_ssex) gates on !mcan
+        // and stays silent.
+        if (allowCancelledSeducer) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} acts as though ${monsterSubjectPronoun(monster, { state })} has got a severe headache.`);
+        }
+        return;
+    }
+    if (seductionCompatibility(monster, 'hero',
+        [attack.attackType, attack.damageType, 0, 0], state) !== 1) return;
+    const female = !!monster.female;
+    if (monster.mspec_used) {
+        await publish(`${monsterName(monster, { state, capitalized: true })} acts as though ${monsterSubjectPronoun(monster, { state })} has got a headache.`);
+        return;
+    }
+    const reason = state._helplessReason;
+    const reasonText = typeof reason === 'string' ? reason : reason?.text ?? '';
+    if (heroIsUnaware(state) || (heroHasInvoluntaryDelay(state) && /^(?:frozen|paralyzed)/.test(reasonText))) {
+        await publish(`${monsterName(monster, { state, capitalized: true })} seems dismayed at your lack of response.`);
+        return;
+    }
+    const visible = canSeeMonster(monster);
+    await publish(visible ? formatFeltMessage(`very attracted to ${monsterName(monster, { state })}.`, state)
+        : 'Someone caresses you...');
+    const context: SeductionContext = { monster, state, level: state.level, publish, random, rollOne,
+        female, who: visible ? monsterName(monster, { state, capitalized: true }) : female ? 'She' : 'He' };
+    await stopDonning(null, state);
+    const triedGloves = await exchangeAdornmentRings(context);
+    if (!stillTogether(context)) return finishSeductionAttack(attack);
+    await undressHero(context, triedGloves);
+    if (!stillTogether(context)) return finishSeductionAttack(attack);
+    if (state.uarm || state.uarmc) {
+        if (!heroIsDeaf(state)) {
+            if (recorderIsLeapDay(state.datetime) && female) {
+                const gloves = state.uarmg
+                    ?? state.inventory.find(object => armorSlotFor(object.otyp) === 'uarmg');
+                // The succubus reveals the gloves even when the hero is blind.
+                if (gloves) {
+                    observeObject(gloves, state);
+                    observeObjectForNaming(gloves, { state });
+                }
+                await publish(`"Well, then you owe me ${gloves
+                    ? `${ownedObjectName(gloves, state, { capitalized: false })} and eleven more pairs of gloves`
+                    : 'twelve pairs of gloves'}!"`);
+            } else {
+                await publish(`"You're such a ${state.flags.female ? 'sweet lady' : 'nice guy'}; I wish..."`);
+            }
+        } else if (visible) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} appears to sigh.`);
+        }
+        await leaveSeduction(context);
+        return finishSeductionAttack(attack);
+    }
+    if (state.u.ualign.type === -1) adjustHeroAlignment(1, state);
+    await publish(`Time stands still while you and ${monsterName(monster, { state, article: 'your', suppressIt: true })} lie in each other's arms...`, { urgent: true });
+    await seductionOutcome(context);
+    if (state.program_state.gameover) return finishSeductionAttack(attack);
+    await paySeducer(context);
+    if (random(25) === 0) monster.mcan = 1;
+    await leaveSeduction(context);
+    finishSeductionAttack(attack);
+}
+
+function stillTogether({ state, monster, level }: SeductionContext): boolean {
+    return !state.u.utotype && state.level === level && !state.program_state.gameover
+        && Math.abs(state.u.ux - monster.mx) <= 1 && Math.abs(state.u.uy - monster.my) <= 1;
+}
+
+function finishSeductionAttack(attack: HeroContactAttack): void {
+    attack.contactDone = true;
+    attack.attackerDone = true;
+    attack.nativeResult = M_ATTK_AGR_DONE;
+}
+
+async function exchangeAdornmentRings(context: SeductionContext): Promise<boolean> {
+    const { state, monster, female, who, publish, random } = context;
+    let triedGloves = isWeldedPrimary(state.uwep, state);
+    for (const ring of [...state.inventory]) {
+        if (ring.otyp !== RIN_ADORNMENT) continue;
+        if (!female && state.uleft?.otyp === RIN_ADORNMENT && state.uright?.otyp === RIN_ADORNMENT) break;
+        if (!female && (ring === state.uleft || ring === state.uright)) continue;
+        if (state.uarmg && (!female || ring.owornmask)) {
+            if (!triedGloves) {
+                triedGloves = true;
+                await maybeRemoveArmor(context, state.uarmg, 'gloves');
+            }
+            if (state.uarmg) {
+                if (!female) break;
+                continue;
+            }
+        }
+        if (!heroIsDeaf(state) && random(20) < currentAttribute(A_CHA, state)) {
+            const suffix = female ? ' looks pretty.  May I have it?"'
+                : ' looks pretty.  Would you wear it for me?"';
+            observeObjectForNaming(ring, { state });
+            const prefix = '"That ';
+            const name = seductionRingName(ring, state, QBUFSZ - 1 - prefix.length - suffix.length);
+            learnObjectType(RIN_ADORNMENT, state);
+            if (await promptYesNo(`${prefix}${name}${suffix}`) === 'n') continue;
+        } else {
+            observeObjectForNaming(ring, { state });
+            if (female) {
+                await publish(`${who} decides she'd like ${ownedObjectName(ring, state, { capitalized: false })}, and takes it.`);
+            } else {
+                await publish(`${who} decides you'd look prettier wearing ${ownedObjectName(ring, state, { capitalized: false })},`);
+                await publish('and puts it on your finger.');
+            }
+        }
+        learnObjectType(RIN_ADORNMENT, state);
+        if (female) {
+            if (ring.owornmask) await removeWornHeroItem(ring, state);
+            unlinkObject(ring, state);
+            await addObjectToMonsterInventory(monster, ring, state);
+            continue;
+        }
+        const slot = !state.uright ? 'uright' : !state.uleft ? 'uleft'
+            : state.uright.otyp !== RIN_ADORNMENT ? 'uright' : 'uleft';
+        const previous = state[slot];
+        if (previous) {
+            observeObjectForNaming(previous, { state });
+            await publish(`${who} replaces ${ownedObjectName(previous, state, { capitalized: false })} with ${ownedObjectName(ring, state, { capitalized: false })}.`);
+            await removeHeroAccessory(previous, state);
+            if (!stillTogether(context)) return triedGloves;
+        } else {
+            await publish(`${who} puts the ${objectName(ring, state)} on your ${slot === 'uright' ? 'right' : 'left'} ${heroHandName(state)}.`);
+        }
+        await wearHeroAccessory(ring, slot, state);
+        await publish(`${ring.invlet || '?'} - ${await inventoryItemDescription(ring)}.`);
+    }
+    return triedGloves;
+}
+
+// C safe_qbuf()/short_oname(xname, simpleonames). Ring xname() has no
+// beatitude or erosion prefixes; shorten user names before the simple fallback.
+function seductionRingName(ring: GameObject, state: PlayingGameState, limit: number): string {
+    const fullName = objectName(ring, state);
+    if (fullName.length <= limit) return fullName;
+
+    const callName = state._objectCallNames?.[ring.otyp];
+    const personalName = ring.oextra?.oname || ring.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+            ...state._objectCallNames, [ring.otyp]: `${callName.slice(0, 8)}...`,
+        } } : state;
+    const shortNamedRing = personalName && personalName.length >= 12
+        ? { ...ring, oextra: { ...ring.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : ring;
+
+    if (shortCallState !== state) {
+        const name = objectName(ring, shortCallState);
+        if (name.length <= limit) return name;
+    }
+    if (shortNamedRing !== ring) {
+        const name = objectName(shortNamedRing, state);
+        if (name.length <= limit) return name;
+    }
+    if (shortCallState !== state && shortNamedRing !== ring) {
+        const name = objectName(shortNamedRing, shortCallState);
+        if (name.length <= limit) return name;
+    }
+    const simpleName = simpleObjectName(ring, state);
+    return simpleName.length <= limit ? simpleName : 'ring';
+}
+
+async function undressHero(context: SeductionContext, triedGloves: boolean): Promise<void> {
+    const { state, who, publish } = context;
+    const naked = !state.uarmc && !state.uarmf && !state.uarmg && !state.uarms && !state.uarmh && !state.uarmu;
+    await publish(`${who} ${heroIsDeaf(state) ? 'seems to murmur into your ear'
+        : naked ? 'murmurs sweet nothings into your ear' : 'murmurs in your ear'}${naked ? '' : ', while helping you undress'}.`, { urgent: true });
+    if (state.uarmc) await maybeRemoveArmor(context, state.uarmc, armorSimpleName(state.uarmc, state));
+    if (!state.uarmc && state.uarm) await maybeRemoveArmor(context, state.uarm, armorSimpleName(state.uarm, state));
+    await maybeRemoveArmor(context, state.uarmf, 'boots');
+    if (!triedGloves) await maybeRemoveArmor(context, state.uarmg, 'gloves');
+    await maybeRemoveArmor(context, state.uarms, 'shield');
+    if (state.uarmh) await maybeRemoveArmor(context, state.uarmh, armorSimpleName(state.uarmh, state));
+    if (!state.uarmc && !state.uarm) await maybeRemoveArmor(context, state.uarmu, 'shirt');
+}
+
+// C mhitu.c:mayberem().
+async function maybeRemoveArmor(context: SeductionContext, armor: GameObject | null | undefined, name: string): Promise<void> {
+    if (!armor?.owornmask || !stillTogether(context)) return;
+    const { state, who, publish, random } = context;
+    if (heroIsDeaf(state)) {
+        await publish(`${who} takes off your ${name}.`);
+    } else if (random(20) < currentAttribute(A_CHA, state)) {
+        const endearment = random(2) === 0 ? 'lover' : random(2) === 0 ? 'dear' : 'sweetheart';
+        if (await promptYesNo(`"Shall I remove your ${name}, ${endearment}?"`) === 'n') return;
+    } else {
+        const explanation = armor === state.uarm ? "let's get a little closer"
+            : armor === state.uarmc || armor === state.uarms ? "it's in the way"
+            : armor === state.uarmf ? 'let me rub your feet'
+            : armor === state.uarmg ? "they're too clumsy"
+            : armor === state.uarmu ? 'let me massage you'
+            : `let me run my fingers through your ${heroHairName(state)}`;
+        await publish(`"Take off your ${name}; ${explanation}."`);
+    }
+    await removeWornHeroItem(armor, state);
+}
+
+async function seductionOutcome(context: SeductionContext): Promise<void> {
+    const { state, monster, publish, random, rollOne } = context;
+    const hero = state.u;
+    const attributes = currentAttribute(A_CHA, state) + currentAttribute(A_INT, state);
+    if (random(35) > Math.min(attributes, 32)) {
+        await publish(`${monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true })} seems to have enjoyed it more than you...`);
+        const outcome = random(5);
+        if (outcome === 0) {
+            await publish(formatFeltMessage('drained of energy.', state));
+            hero.uen = 0;
+            hero.uenmax -= rollOne(hero.halfPhysicalDamage ? 5 : 10);
+            await exerciseAttribute(A_CON, false, state);
+            hero.uenmax = Math.max(0, hero.uenmax);
+        } else if (outcome === 1 || outcome === 2) {
+            await publish(outcome === 1 ? 'You are down in the dumps.' : 'Your senses are dulled.');
+            const attribute = outcome === 1 ? A_CON : A_WIS;
+            const change = adjustAttribute(attribute, -1, state);
+            if (change.changed && attribute === A_CON && state._moveloopStarted)
+                await reportHeroEncumbrance(state);
+            await exerciseAttribute(attribute, false, state);
+            state.context.botl = true;
+        } else if (outcome === 3) {
+            if (!heroHasDrainResistance(state)) {
+                await publish(formatFeltMessage('out of shape.', state));
+                await loseHeroExperience('overexertion', { state, publish });
+            } else await publish('You have a curious feeling...');
+            await exerciseAttribute(A_CON, false, state);
+            await exerciseAttribute(A_DEX, false, state);
+            await exerciseAttribute(A_WIS, false, state);
+        } else {
+            await publish(formatFeltMessage('exhausted.', state));
+            await exerciseAttribute(A_STR, false, state);
+            const damage = 6 + random(10);
+            await loseHeroHp(hero.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exhaustion',
+                { state, publish, killerFormat: KILLED_BY });
+        }
+        return;
+    }
+    monster.mspec_used = rollOne(100);
+    await publish(`You seem to have enjoyed it more than ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
+    const outcome = random(5);
+    if (outcome === 0) {
+        await publish(formatFeltMessage('raised to your full potential.', state));
+        await exerciseAttribute(A_CON, true, state);
+        hero.uenmax += rollOne(5);
+        hero.uen = hero.uenmax;
+        hero.uenpeak = Math.max(hero.uenpeak, hero.uenmax);
+    } else if (outcome === 1 || outcome === 2) {
+        await publish(outcome === 1 ? formatFeltMessage('good enough to do it again.', state)
+            : `You will always remember ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
+        const attribute = outcome === 1 ? A_CON : A_WIS;
+        const change = adjustAttribute(attribute, 1, state);
+        if (change.changed && attribute === A_CON && state._moveloopStarted)
+            await reportHeroEncumbrance(state);
+        await exerciseAttribute(attribute, true, state);
+        state.context.botl = true;
+    } else if (outcome === 3) {
+        await publish('That was a very educational experience.');
+        await gainExperienceLevel({ state, publish });
+        await exerciseAttribute(A_WIS, true, state);
+    } else {
+        await publish(formatFeltMessage('restored to health!', state));
+        hero.uhp = hero.uhpmax;
+        if (Upolyd(hero)) hero.mh = hero.mhmax;
+        await exerciseAttribute(A_STR, true, state);
+        state.context.botl = true;
+    }
+}
+
+async function paySeducer(context: SeductionContext): Promise<void> {
+    const { state, monster, publish, random, rollOne } = context;
+    if (monster.mtame) return;
+    if (random(20) < currentAttribute(A_CHA, state)) {
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
+        await publish(`${name} demands that you pay ${monsterObjectPronoun(monster, { state, noIt: true, random })}, but you refuse...`);
+        return;
+    }
+    if (heroSpecies(state) === MONSTER_NAME.indexOf('leprechaun')) {
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
+        await publish(`${name} tries to take your gold, but fails...`);
+        return;
+    }
+    const money = heroGoldAmount(state);
+    let cost = rollOne(money > LARGEST_INT - 10 ? LARGEST_INT : money + 10) + 500;
+    if (monster.mpeaceful) cost = Math.max(1, Math.trunc(cost / 5));
+    cost = Math.min(cost, money);
+    if (!cost) await publish(heroIsDeaf(state) ? 'No charge.' : '"It\'s on the house!"');
+    else {
+        const name = monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true });
+        await publish(`${name} takes ${cost} ${currency(cost, { state, random })} for services rendered!`);
+        if (cost === money) {
+            const purse = heroGoldObject(state);
+            if (purse?.owornmask) await removeWornHeroItem(purse, state);
+        }
+        const payment = detachHeroGold(state, cost);
+        if (!payment) throw new Error('Seduction payment selected an absent purse.');
+        await linkObjectToMonsterInventory(monster, payment, { state });
+        state.context.botl = true;
+    }
+}
+
+async function leaveSeduction({ monster, state, publish, random, rollOne }: SeductionContext): Promise<void> {
+    if (!await reportMonsterTeleportRestriction(monster, { state, publish }))
+        await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
+}

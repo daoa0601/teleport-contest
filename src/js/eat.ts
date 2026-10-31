@@ -1,6 +1,11 @@
 // Native eat.c:doeat(), start_eating(), bite(), eatfood(), and done_eating().
-import { SATIATED, Upolyd } from './const.js';
+import { A_INT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, SATIATED, Upolyd } from './const.js';
 import type { GameState, PlayingGameState } from './game_state.js';
+import type { Monster } from './monster_types.js';
+import type { MessagePublisher } from './pline.js';
+import type { HeroContactAttack } from './monster_action_types.js';
+import type { MonsterDeathHandler } from './monster_death.js';
+import type { rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { FoodMeal, FoodOccupation, PreparedFoodObject } from './occupation_types.js';
 import { applyCorpsePostEffects, applyCorpsePreEffects } from './corpse_eating.js';
@@ -14,9 +19,21 @@ import { selectFoodToEat } from './food_selection.js';
 import { handleFoodAdmission } from './nonfood_eating.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
+import {
+    MONSTER_FLAGS2, MONSTER_NAME, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider,
+    requireMonsterData,
+} from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { canSeeMonster, canSpotMonster } from './display.js';
+import { exerciseWisdom } from './attrib.js';
+import { fleshPetrifies } from './stoning.js';
+import { prepareMonsterPetrification } from './monster_stoning.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishMonsterAttackDeath } from './monster_attack_death.js';
+import { propertyIsActive } from './properties.js';
+import { formatFeltMessage } from './hero_speech.js';
 import { chokeHeroOnFood, currentHungerState, gainHeroNutrition, updateHeroHunger } from './hunger.js';
 import { inventoryItemDescription } from './invent.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { CORPSE, CRAM_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, OBJECT_DELAY, TIN, requireObjectData } from './object_data.js';
 import { foodObjectName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -294,4 +311,137 @@ function corpseSpecies(food: GameObject): number {
     if (food.corpsenm === undefined)
         throw new Error(`Corpse ${food.o_id} has no species`);
     return food.corpsenm;
+}
+
+// C eat.c:eat_brains(), monster mind flayer eating the hero's brain.
+// Called from uhitm.ts (mhitm_ad_drin()'s hero branch).
+export async function eatHeroBrain(
+    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
+    publish: MessagePublisher, rollOne: typeof rnd,
+): Promise<boolean> {
+    rollOne(10);
+    const body = { mnum: heroSpecies(state) };
+    if (monsterIsNoncorporeal(body)) {
+        await publish('Your brain is unharmed.');
+        return false;
+    }
+    await publish('Your brain is eaten!');
+    if (fleshPetrifies(body.mnum)) {
+        if (canSeeMonster(monster))
+            await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
+        const stone = await prepareMonsterPetrification(monster, { publish });
+        if (stone.survived) return false;
+        await finishEnvironmentalMonsterDeath(monster, state, {
+            noCorpse: true, stoneRemains: stone.remains ?? null, publish,
+        });
+        return true;
+    }
+    const attributes = state.u.acurr?.a;
+    if (!attributes) throw new Error('Brain drain requires initialized hero attributes');
+    const minimum = state.urace.attrmin[A_INT];
+    if (attributes[A_INT] <= minimum) {
+        const options = { attribution: {
+            kind: 'death-inflicted-by', killer: 'brainlessness', deathCause: 'killed by brainlessness',
+        } } satisfies Parameters<typeof finishMonsterAttackDeath>[1];
+        if (propertyIsActive('lifeSaving', state) || state.u.lifeSaving) {
+            if (await finishMonsterAttackDeath(monster, options)) {
+                attack.heroDied = true;
+                return false;
+            }
+            await publish('Unfortunately your brain is still gone.');
+        } else await publish('Your last thought fades away.');
+        if (await finishMonsterAttackDeath(monster, options)) {
+            attack.heroDied = true;
+            return false;
+        }
+        attributes[A_INT] = minimum + 2;
+        await publish(formatFeltMessage('like a scarecrow.', state));
+    }
+    exerciseWisdom(false, state);
+    if (monster.mtame && !monster.isminion) {
+        const pet = monster.edog ?? monster.mextra?.edog;
+        if (!pet) throw new Error('A brain-eating pet needs feeding state');
+        pet.hungrytime += rollOne(60);
+        monster.mconf = 0;
+    }
+    return true;
+}
+
+// C eat.c:eat_brains(), monster against monster. Called from uhitm.ts
+// (mhitm_ad_drin()'s monster branch).
+export interface BrainMealContext {
+    state: GameState;
+    visible: boolean;
+    random: typeof rn2;
+    rollOne: typeof rnd;
+    publish: MessagePublisher;
+    finishDeath: MonsterDeathHandler;
+}
+
+export async function eatMonsterBrain(
+    attacker: Monster, defender: Monster, damage: number,
+    { state, visible, random, rollOne, publish, finishDeath }: BrainMealContext,
+): Promise<{ damage: number; hitFlags: number; heroDied: boolean }> {
+    const extraDamage = rollOne(10);
+    if (attacker.mhp <= 0) return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: false };
+    if (monsterIsNoncorporeal(defender)) {
+        if (visible) {
+            const name = possessiveName(monsterName(defender, { state, capitalized: true }));
+            await publish(`${name} brain is unharmed.`);
+        }
+        return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
+    }
+    if (visible && canSpotMonster(defender)) {
+        const name = possessiveName(monsterName(defender, { state, capitalized: true }));
+        await publish(`${name} brain is eaten!`);
+    }
+
+    if (fleshPetrifies(defender.mnum)) {
+        if (visible && canSeeMonster(attacker)) {
+            await publish(`${monsterName(attacker, { state, capitalized: true })} turns to stone!`);
+        }
+        // eat_brains calls monstone directly: no food cure, resistance check,
+        // or golem conversion precedes its life-saving and statue handling.
+        const stone = await prepareMonsterPetrification(attacker, { publish });
+        if (stone.heroDied) return { damage, hitFlags: M_ATTK_MISS, heroDied: true };
+        if (stone.survived) return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
+        const death = await finishDeath(attacker, {
+            noCorpse: true, stoneRemains: stone.remains ?? null, random, publish,
+        });
+        if (death.heroDied) return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: true };
+        if (attacker.mtame && !visible) {
+            await publish('You have a sad thought for a moment, then it passes.');
+        }
+        return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: false };
+    }
+
+    if (monsterIsMindless(defender.mnum)) {
+        if (visible && canSpotMonster(defender)) {
+            await publish(`${monsterName(defender, { state, capitalized: true })} doesn't notice.`);
+        }
+        return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
+    }
+    if (monsterIsRider(defender)) {
+        const death = await finishDeath(attacker, { random, publish });
+        return {
+            damage: damage + extraDamage,
+            hitFlags: attacker.mhp <= 0 ? M_ATTK_AGR_DIED : M_ATTK_HIT,
+            heroDied: !!death.heroDied,
+        };
+    }
+
+    damage += extraDamage;
+    if (damage >= defender.mhp && visible && canSpotMonster(defender)) {
+        const name = possessiveName(monsterName(defender, { state, capitalized: true }));
+        await publish(`${name} last thought fades away...`);
+    }
+    if (attacker.mtame && !attacker.isminion) {
+        const pet = attacker.edog || attacker.mextra?.edog;
+        if (!pet) throw new Error(`Brain-eating pet ${attacker.m_id} has no feeding state`);
+        // Unlike a regular meal, brains do not reset an overdue deadline or
+        // reverse the HP penalty from starvation.
+        pet.hungrytime += rollOne(60);
+        attacker.mconf = 0;
+    }
+    return { damage, hitFlags: M_ATTK_HIT, heroDied: false };
 }
