@@ -19,6 +19,7 @@ import { healHeroLegs } from './hero_legs.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS, } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { CORPSE, EGG } from './object_data.js';
 import { corpseName, killerObjectName, objectMonsterName } from './objnam.js';
 import { heroHasNoLimbs, heroIsPolymorphed, polymonHero, } from './polyself.js';
@@ -83,7 +84,9 @@ export async function applyMonsterStoningAttack(monster, { state = game, random 
     const hallucinating = heroIsHallucinating(state);
     const subject = () => !spotted ? 'It'
         : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-    const target = () => spotted ? subject().replace(/^The /u, 'the ') : 'it';
+    // C mon_nam(magr): the mid-sentence name; a given name stays as typed
+    // instead of being decapitalized from the sentence subject.
+    const target = () => monsterName(monster, { state });
     const deaf = heroIsDeaf(state);
     const hear = async (text) => {
         const message = formatHeardMessage(text, state);
@@ -101,10 +104,7 @@ export async function applyMonsterStoningAttack(monster, { state = game, random 
         await publish(`${subject()} appears to be blowing you a kiss...`);
     }
     else if (!deaf) {
-        const name = target();
-        const possessive = name === 'it' ? 'its'
-            : name.endsWith('s') ? `${name}'` : `${name}'s`;
-        await hear(`${possessive} hissing!`);
+        await hear(`${possessiveName(target())} hissing!`);
     }
     else if (!blind) {
         await publish(`${subject()} seems to grimace.`);
