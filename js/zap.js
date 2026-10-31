@@ -58,7 +58,7 @@ import { dryFountainAt } from './fountain.js';
 import { dissolveBars } from './projectile_bars.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
-import { rn2, rnd } from './rng.js';
+import { rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
@@ -337,7 +337,7 @@ async function freezeLiquidAt(x, y, state, publish) {
                 await resetHeroTrap(true, state);
             }
             else {
-                setHeroTrap(rnd(50) + 19, TT_INFLOOR, state);
+                setHeroTrap(rn1(50, 20), TT_INFLOOR, state);
                 await publish('You are firmly stuck in the cooling rock.');
             }
         }
