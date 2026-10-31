@@ -1569,8 +1569,9 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             ? { attribute: A_STR, fatal: 10 }
             : null;
         if (contactWeapon.otyp === CORPSE && touchPetrifies(contactWeapon.corpsenm)) {
-            const subject = canSpotMonster(monster) ? monsterSentenceSubject(monster) : 'It';
-            await plineWithContinuation(`${subject} hits you with the ${MONSTER_NAME[contactWeapon.corpsenm ?? -1]} corpse.`);
+            // C uhitm.c:4050-4052: Monnam(magr) and the corpse species'
+            // neutral pmname; an unseen attacker already names itself "It".
+            await plineWithContinuation(`${monsterSentenceSubject(monster)} hits you with the ${MONSTER_NAME[contactWeapon.corpsenm ?? -1]} corpse.`);
             if (await startHeroPetrificationFromMonster(monster, state)) {
                 await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
                 return {

@@ -23,7 +23,7 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -44,12 +44,7 @@ const S_PIERCER = 16;
 const PM_TRAPPER = MONSTER_NAME.indexOf('trapper');
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 
-// C hacklib.c:s_suffix().
-function sSuffix(name: string): string {
-    if (name.toLowerCase() === 'it') return `${name}s`;
-    if (name.toLowerCase() === 'you') return `${name}r`;
-    return `${name}${name.endsWith('s') ? "'" : "'s"}`;
-}
+// C mhitu.c:601 uses s_suffix(mon_nam(mtmp)); monster_name.ts owns that port.
 
 export interface HeroHiderRevealOptions {
     state?: GameState;
@@ -134,7 +129,7 @@ export async function revealConcealedHeroToAttacker(
             const helmet = (monster.minvent || monster.inventory || [])
                 .find(object => ((object.owornmask ?? 0) & W_ARMH) !== 0);
             if (helmet && objectIsHardHelmet(helmet)) {
-                await publish(`Your blow glances off ${sSuffix(monsterName(monster, { state }))} helm.`);
+                await publish(`Your blow glances off ${possessiveName(monsterName(monster, { state }))} helm.`);
             } else {
                 calls?.push('rnd(20)');
                 if (3 + findMonsterArmorClass(monster) <= rollOne(20)) {

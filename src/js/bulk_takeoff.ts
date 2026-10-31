@@ -13,10 +13,10 @@ import type { GameState } from './game_state.js';
 import {
     BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
-import { MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
+import { monsterIsHumanoid } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { makePlural } from './object_grammar.js';
-import { objectName } from './objnam.js';
+import { objectMonsterName, objectName } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoLimbs } from './polyself.js';
 import { paranoidQuery } from './query.js';
@@ -177,7 +177,7 @@ export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promi
         }
         const corpse = game.inventory.find(candidate => candidate.otyp === CORPSE && touchPetrifies(candidate.corpsenm));
         if (corpse && !await paranoidQuery(true,
-            `Take off your ${armorSimpleName(object)} despite carrying a dead ${MONSTER_NAME[corpse.corpsenm ?? -1] || 'monster'}?`)) return false;
+            `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`)) return false;
     }
     if (slot === 'uarmf' && game.u.utrap) {
         if (game.u.utraptype === TT_BEARTRAP) {

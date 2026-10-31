@@ -16,7 +16,8 @@ import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { monsterAtPosition } from './monster_location.js';
 import { relocateMonsterTo } from './teleport.js';
-import { MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_SIZE, } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
@@ -45,9 +46,6 @@ function squaredDistanceFromHero(x, y, state) {
 }
 function monsterAt(x, y, state) {
     return state.level ? monsterAtPosition(state.level, x, y) : null;
-}
-function monsterObject(monster) {
-    return monster.name || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
 // C apply.c:can_grapple_location().
 async function chooseTarget(hook, state) {
@@ -91,8 +89,9 @@ async function snagObject(x, y, state) {
     await newsym(x, y);
     return true;
 }
+// C apply.c:3838: "You pull in mon_nam(mtmp)!".
 async function pullTinyMonster(monster, destination, state) {
-    await pline(`You pull in ${monsterObject(monster)}!`);
+    await pline(`You pull in ${monsterName(monster, { state })}!`);
     monster.mundetected = 0;
     await relocateMonsterTo(monster, destination.x, destination.y, { state });
 }

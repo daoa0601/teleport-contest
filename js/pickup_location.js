@@ -5,7 +5,8 @@ import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, P_BASIC, P_RIDING, SINK, 
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
-import { MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
+import { MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm, } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
@@ -15,12 +16,8 @@ const S_EYE = 5;
 const S_LIGHT = 25;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_SALAMANDER = 329;
-function monsterName(monster) {
-    return monster?.name || `the ${MONSTER_NAME[monster?.mnum] || 'monster'}`;
-}
-function possessive(name) {
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
+// C hack.c:3796: s_suffix(mon_nam(u.ustuck)) names the swallower whose
+// empty stomach the hero gropes; monster_name.ts owns both ports.
 function heroStaysAboveLiquid(state) {
     const hero = state.u || {};
     const form = heroMonsterForm(state);
@@ -75,7 +72,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
         if (monsterDigests(monster)) {
             return {
                 messages: [
-                    `You pick up ${possessive(monsterName(monster))} tongue.`,
+                    `You pick up ${possessiveName(monsterName(monster, { state }))} tongue.`,
                     "But it's kind of slimy, so you drop it.",
                 ],
                 spendsTurn: true,
