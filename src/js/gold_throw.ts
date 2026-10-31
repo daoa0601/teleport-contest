@@ -51,6 +51,7 @@ import { hasShopkeeperData } from './shop_types.js';
 import { sellHeroDroppedObject } from './shop_sell.js';
 import { OBJECT_COST } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { objectCombatName } from './objnam.js';
 import { shipObject } from './object_migration.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { requireInitializedGame } from './gstate.js';
@@ -88,14 +89,11 @@ function quantity(object: GameObject | null | undefined): number {
     ));
 }
 
-function goldNoun(gold: GameObject): string {
-    return quantity(gold) === 1 ? 'gold piece' : 'gold pieces';
-}
-
 async function missGold(monster: Monster, gold: GameObject, state: GameState): Promise<void> {
+    const name = objectCombatName(gold, { state });
     const spotted = cansee(monster.mx, monster.my) || canSpotMonster(monster);
     const target = state.flags.verbose !== false && spotted ? monsterName(monster, { state }) : 'it';
-    await pline(`The ${goldNoun(gold)} ${quantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
+    await pline(`The ${name} ${quantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
 }
 
 async function finishShopkeeperCatch(
@@ -175,7 +173,7 @@ export async function resolveGoldMonsterContact({
     }
     if (monster.mcanmove === 0 || monster.mcanmove === false) {
         if (canSeeMonster(monster))
-            await pline(`The ${goldNoun(gold)} harmlessly ${quantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
+            await pline(`The ${objectCombatName(gold, { state })} harmlessly ${quantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
         else await missGold(monster, gold, state);
         return false;
     }
