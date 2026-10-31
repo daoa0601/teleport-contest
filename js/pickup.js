@@ -292,7 +292,9 @@ async function choosePickupObjects(source, objects, count, { autoSelect = true, 
         }
         sections.push({ heading, items: menuItems });
     }
-    await flush_screen(1);
+    // C query_objlist() shows the menu without flushing: pending glyph
+    // buffer updates (e.g. the moveloop boundary's hallucination redraws)
+    // stay invisible until the next real flush_screen().
     const menu = {
         title: count ? `Pick ${count} of what?` : 'Pick up what?',
         sections,
