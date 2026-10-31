@@ -2,9 +2,8 @@
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 
 import { In_hell, Is_rogue_level, Is_waterlevel, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
-import {
-    glyphAt, pline, plineWithContinuation,
-} from './display.js';
+import { glyphAt } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';

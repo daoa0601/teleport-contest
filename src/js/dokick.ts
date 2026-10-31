@@ -10,8 +10,9 @@ import {
 import { rnd, rn2 } from './rng.js';
 import {
     canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible,
-    newsym, pline, plineWithContinuation, show_glyph_cell, unmap_invisible,
+    newsym, show_glyph_cell, unmap_invisible,
 } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { findDrawbridgeAt } from './dbridge.js';

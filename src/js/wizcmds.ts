@@ -25,8 +25,9 @@ import {
 } from './tty_menu.js';
 import {
     bot, canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving,
-    map_trap, pline, plineWithContinuation, unmap_invisible,
+    map_trap, unmap_invisible,
 } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { getLine, paranoidQuery, promptYesNoQuit } from './query.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { visibleCommandKey } from './command_keys.js';

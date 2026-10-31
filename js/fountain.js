@@ -5,7 +5,9 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { A_CON, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, MON_FLOOR, POOL, ROOM, SDOOR, } from './const.js';
 import { heroArmName, monsterArmName, monsterHeadName } from './body_parts.js';
-import { displayLiquidName, displayMessageWindow, flushPendingTopline, glyphAt, newsym, pline, plineWithContinuation, randomDisplayMonsterName, } from './display.js';
+import { displayLiquidName, glyphAt, newsym, randomDisplayMonsterName, } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
+import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame, } from './gstate.js';
 import { washHands } from './dip_water.js';
