@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ICE, IS_LAVA, IS_POOL, ROOM, VIBRATING_SQUARE } from '../js/const.js';
 import { BOULDER } from '../js/object_data.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { generateHellFillerLevel } from '../js/mklev.js';
+import { generateHellFillerLevel } from '../js/mkmaze.js';
 import { countTerrain, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 async function buildHell({ seed = 173, invocation = false } = {}) {

@@ -11,7 +11,7 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { addObjectToContainer } from './object_container.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeBoxLockByMagic } from './box_magic.js';
-import { courtMonsterType } from './mklev.js';
+import { courtMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';

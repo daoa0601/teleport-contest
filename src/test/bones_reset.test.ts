@@ -7,7 +7,8 @@ import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifac
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { createCorpstatAt } from '../js/mkobj.js';
-import { mklev, saveBonesLevel } from '../js/mklev.js';
+import { mklev } from '../js/mklev.js';
+import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { CHEST, CORPSE, FOOD_RATION, SCR_MAIL } from '../js/object_data.js';

@@ -972,15 +972,15 @@ src/js/mirror.ts	useMirror	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	addWayOut	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	addWayOut	rn2	"[""escapeItems.length""]"	constant
 src/js/sp_lev.ts	applyMinesSameRaceMonsterGate	rn2	"[""3""]"	constant
-src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
-src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
-src/js/mklev.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
-src/js/mklev.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
+src/js/shknam.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
+src/js/shknam.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
+src/js/mkroom.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
+src/js/mkroom.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
 src/js/sp_lev.ts	buildSpecialRoom	rn2	"[""100""]"	constant
 src/js/sp_lev.ts	check_room	rn2	"[""3""]"	constant
 src/js/mklev.ts	collectShuffledMonsterCoordinates	rn2	"[""remaining""]"	unproved
-src/js/mklev.ts	courtMonsterType	rn2	"[""3 * level_difficulty()""]"	invariant
-src/js/mklev.ts	courtMonsterType	rn2	"[""60""]"	constant
+src/js/mkroom.ts	courtMonsterType	rn2	"[""3 * level_difficulty()""]"	invariant
+src/js/mkroom.ts	courtMonsterType	rn2	"[""60""]"	constant
 src/js/sp_lev.ts	createLuaDrawbridge	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	createLuaGold	rnd	"[""200""]"	constant
 src/js/sp_lev_lua.ts	createLuaLevelSession/mazeWalk	rn2	"[""directions.length""]"	constant
@@ -996,7 +996,7 @@ src/js/sp_lev.ts	createSpecialRoomDoor	rn2	"[""4""]"	constant
 src/js/sp_lev.ts	createSpecialRoomDoor	rn2	"[""5""]"	constant
 src/js/sp_lev.ts	createSpecialRoomDoor	rn2	"[""5""]"	constant
 src/js/sp_lev.ts	createSpecialRoomDoor	rn2	"[""6""]"	constant
-src/js/mklev.ts	createToptenObject	rn1	"[""lastRole - firstRole + 1"", ""firstRole""]"	constant
+src/js/mkobj.ts	createToptenObject	rn1	"[""lastRole - firstRole + 1"", ""firstRole""]"	constant
 src/js/sp_lev.ts	create_room	rn1	"[""15"", ""3""]"	constant
 src/js/sp_lev.ts	create_room	rn1	"[""3"", ""2""]"	constant
 src/js/sp_lev.ts	create_room	rn1	"[""8"", ""2""]"	constant
@@ -1024,11 +1024,11 @@ src/js/mklev.ts	dosdoor	rn2	"[""5""]"	constant
 src/js/mklev.ts	dosdoor	rn2	"[""5""]"	constant
 src/js/mklev.ts	dosdoor	rn2	"[""5""]"	constant
 src/js/mklev.ts	dosdoor	rn2	"[""6""]"	constant
-src/js/mklev.ts	fillBarracksRoom	rn2	"[""20""]"	constant
-src/js/mklev.ts	fillBarracksRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	fillBeehiveRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	fillCourtRoom	rn1	"[""50 * difficulty"", ""10""]"	invariant
-src/js/mklev.ts	fillCourtRoom	rnd	"[""difficulty""]"	invariant
+src/js/mkroom.ts	fillBarracksRoom	rn2	"[""20""]"	constant
+src/js/mkroom.ts	fillBarracksRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	fillBeehiveRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	fillCourtRoom	rn1	"[""50 * difficulty"", ""10""]"	invariant
+src/js/mkroom.ts	fillCourtRoom	rnd	"[""difficulty""]"	invariant
 src/js/sp_lev.ts	fillEmptySpecialMaze	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	fillEmptySpecialMaze	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"	unproved
@@ -1036,10 +1036,10 @@ src/js/sp_lev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"
 src/js/sp_lev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	unproved
 src/js/sp_lev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	unproved
 src/js/sp_lev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(20 * mapfact / 100)""]"	unproved
-src/js/mklev.ts	fillMorgueRoom	rn2	"[""10""]"	constant
-src/js/mklev.ts	fillMorgueRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	fillMorgueRoom	rn2	"[""5""]"	constant
-src/js/mklev.ts	fillMorgueRoom	rn2	"[""5""]"	constant
+src/js/mkroom.ts	fillMorgueRoom	rn2	"[""10""]"	constant
+src/js/mkroom.ts	fillMorgueRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	fillMorgueRoom	rn2	"[""5""]"	constant
+src/js/mkroom.ts	fillMorgueRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	fillRandomRoomObjects	rn2	"[""3""]"	constant
 src/js/mklev.ts	fillRandomRoomObjects	rn2	"[""5""]"	constant
 src/js/sp_lev.ts	fillSpecialLevel	rn2	"[""2""]"	constant
@@ -1047,10 +1047,10 @@ src/js/sp_lev.ts	fillSpecialLevel	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	fillSpecialLevel	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	fillSpecialSwamp	rn2	"[""3""]"	constant
 src/js/sp_lev.ts	fillVault	rn2	"[""amountRange""]"	unproved
-src/js/mklev.ts	fillZooRoom	rn1	"[""amountRange"", ""10""]"	unproved
-src/js/mklev.ts	fillZooRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	fillZooRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	fillZooRoom	rn2	"[""5""]"	constant
+src/js/mkroom.ts	fillZooRoom	rn1	"[""amountRange"", ""10""]"	unproved
+src/js/mkroom.ts	fillZooRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	fillZooRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	fillZooRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	fill_ordinary_room	rn2	"[""10""]"	constant
 src/js/mklev.ts	fill_ordinary_room	rn2	"[""2""]"	constant
 src/js/mklev.ts	fill_ordinary_room	rn2	"[""2""]"	constant
@@ -1077,24 +1077,24 @@ src/js/mklev.ts	fill_ordinary_room	rn2	"[""x""]"	unproved
 src/js/mklev.ts	finddpos	rn1	"[""x2 - x1 + 1"", ""x1""]"	unproved
 src/js/mklev.ts	finddpos	rn1	"[""y2 - y1 + 1"", ""y1""]"	unproved
 src/js/sp_lev.ts	finishLevelTrapConstruction	rnd	"[""4""]"	constant
-src/js/mklev.ts	fixupMedusa	rn2	"[""2""]"	constant
-src/js/mklev.ts	fixupMedusa	rnd	"[""4""]"	constant
+src/js/mkmaze.ts	fixupMedusa	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	fixupMedusa	rnd	"[""4""]"	constant
 src/js/sp_lev.ts	flipSpecialLevelRandom	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	flipSpecialLevelRandom	rn2	"[""2""]"	constant
-src/js/mklev.ts	generateRandomMaze	rn2	"[""2""]"	constant
-src/js/mklev.ts	generateRandomMaze	rn2	"[""3""]"	constant
-src/js/mklev.ts	generateRandomMaze	rn2	"[""5""]"	constant
+src/js/mkmaze.ts	generateRandomMaze	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	generateRandomMaze	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	generateRandomMaze	rn2	"[""5""]"	constant
 src/js/mklev.ts	generate_stairs_find_room	rn2	"[""candidates.length""]"	guarded
 src/js/mklev.ts	generate_stairs_find_room	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	getRandomTextLine	rn2	"[""fileSize""]"	unproved
 src/js/mklev.ts	getRumor	rn2	"[""2""]"	constant
-src/js/mklev.ts	getShopItem	rnd	"[""100""]"	constant
-src/js/mklev.ts	getbones	rn2	"[""3""]"	constant
-src/js/mklev.ts	makeSwamps	rn2	"[""2""]"	constant
-src/js/mklev.ts	makeSwamps	rn2	"[""4""]"	constant
-src/js/mklev.ts	makeSwamps	rn2	"[""4""]"	constant
-src/js/mklev.ts	makeSwamps	rn2	"[""5""]"	constant
-src/js/mklev.ts	makeSwamps	rn2	"[""level.nroom""]"	unproved
+src/js/shknam.ts	getShopItem	rnd	"[""100""]"	constant
+src/js/bones.ts	getbones	rn2	"[""3""]"	constant
+src/js/mkroom.ts	makeSwamps	rn2	"[""2""]"	constant
+src/js/mkroom.ts	makeSwamps	rn2	"[""4""]"	constant
+src/js/mkroom.ts	makeSwamps	rn2	"[""4""]"	constant
+src/js/mkroom.ts	makeSwamps	rn2	"[""5""]"	constant
+src/js/mkroom.ts	makeSwamps	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	make_niches	rn2	"[""6""]"	constant
 src/js/mklev.ts	make_niches	rn2	"[""6""]"	constant
 src/js/mklev.ts	make_niches	rnd	"[""Math.trunc(level.nroom / 2) + 1""]"	invariant
@@ -1119,35 +1119,35 @@ src/js/mklev.ts	makeniche	rn2	"[""5""]"	constant
 src/js/mklev.ts	makeniche	rn2	"[""5""]"	constant
 src/js/mklev.ts	makeniche	rn2	"[""7""]"	constant
 src/js/mklev.ts	makeniche	rn2	"[""level.nroom""]"	unproved
-src/js/mklev.ts	makerogueghost	rn1	"[""10"", ""25""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""2""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""2""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""2""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""3""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""3""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""3""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""level.nroom""]"	unproved
-src/js/mklev.ts	makerogueghost	rnd	"[""3""]"	constant
-src/js/mklev.ts	makerogueghost	rnd	"[""5""]"	constant
-src/js/mklev.ts	makerogueghost	rnd	"[""5""]"	constant
-src/js/mklev.ts	makerogueghost	rnd	"[""7""]"	constant
-src/js/mklev.ts	makeroguerooms	rn1	"[""22"", ""2""]"	constant
-src/js/mklev.ts	makeroguerooms	rn1	"[""22"", ""2""]"	constant
-src/js/mklev.ts	makeroguerooms	rn1	"[""y === 2 ? 4 : 3"", ""2""]"	constant
-src/js/mklev.ts	makeroguerooms	rn1	"[""y === 2 ? 4 : 3"", ""2""]"	constant
-src/js/mklev.ts	makeroguerooms	rn2	"[""3""]"	constant
-src/js/mklev.ts	makeroguerooms	rn2	"[""3""]"	constant
-src/js/mklev.ts	makeroguerooms	rn2	"[""5""]"	constant
-src/js/mklev.ts	makeroguerooms	rn2	"[""7""]"	constant
-src/js/mklev.ts	makeroguerooms	rnd	"[""(y === 2 ? 5 : 4) - dy + 1""]"	constant
-src/js/mklev.ts	makeroguerooms	rnd	"[""23 - dx + 1""]"	constant
+src/js/extralev.ts	makerogueghost	rn1	"[""10"", ""25""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""2""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""2""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""2""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""3""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""3""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""3""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""4""]"	constant
+src/js/extralev.ts	makerogueghost	rn2	"[""level.nroom""]"	unproved
+src/js/extralev.ts	makerogueghost	rnd	"[""3""]"	constant
+src/js/extralev.ts	makerogueghost	rnd	"[""5""]"	constant
+src/js/extralev.ts	makerogueghost	rnd	"[""5""]"	constant
+src/js/extralev.ts	makerogueghost	rnd	"[""7""]"	constant
+src/js/extralev.ts	makeroguerooms	rn1	"[""22"", ""2""]"	constant
+src/js/extralev.ts	makeroguerooms	rn1	"[""22"", ""2""]"	constant
+src/js/extralev.ts	makeroguerooms	rn1	"[""y === 2 ? 4 : 3"", ""2""]"	constant
+src/js/extralev.ts	makeroguerooms	rn1	"[""y === 2 ? 4 : 3"", ""2""]"	constant
+src/js/extralev.ts	makeroguerooms	rn2	"[""3""]"	constant
+src/js/extralev.ts	makeroguerooms	rn2	"[""3""]"	constant
+src/js/extralev.ts	makeroguerooms	rn2	"[""5""]"	constant
+src/js/extralev.ts	makeroguerooms	rn2	"[""7""]"	constant
+src/js/extralev.ts	makeroguerooms	rnd	"[""(y === 2 ? 5 : 4) - dy + 1""]"	constant
+src/js/extralev.ts	makeroguerooms	rnd	"[""23 - dx + 1""]"	constant
 src/js/mklev.ts	makerooms	rn2	"[""2""]"	constant
 src/js/mklev.ts	maketrap	rn1	"[""5"", ""4""]"	constant
 src/js/mklev.ts	maketrap	rn2	"[""12""]"	constant
@@ -1167,10 +1167,10 @@ src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""8""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""uDepth""]"	guarded
 src/js/mklev.ts	maybePlaceKnoxPortal	rn2	"[""3""]"	constant
 src/js/mklev.ts	maybe_sdoor	rn2	"[""Math.max(2, chance)""]"	constant
-src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxX""]"	constant
-src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxY""]"	constant
-src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hx - room.lx + 1""]"	unproved
-src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hy - room.ly + 1""]"	unproved
+src/js/mkmaze.ts	mazeFloorPoint	rnd	"[""maxX""]"	constant
+src/js/mkmaze.ts	mazeFloorPoint	rnd	"[""maxY""]"	constant
+src/js/mkmaze.ts	medusaRoomPoint	rn2	"[""room.hx - room.lx + 1""]"	unproved
+src/js/mkmaze.ts	medusaRoomPoint	rn2	"[""room.hy - room.ly + 1""]"	unproved
 src/js/mklev.ts	mineralize	rn2	"[""1000""]"	constant
 src/js/mklev.ts	mineralize	rn2	"[""1000""]"	constant
 src/js/mklev.ts	mineralize	rn2	"[""3""]"	constant
@@ -1184,7 +1184,7 @@ src/js/mklev.ts	mkgrave_room	rn2	"[""3""]"	constant
 src/js/mklev.ts	mkgrave_room	rn2	"[""5""]"	constant
 src/js/mklev.ts	mkgrave_room	rnd	"[""20""]"	constant
 src/js/mklev.ts	mkgrave_room	rnd	"[""5""]"	constant
-src/js/mklev.ts	mkshop	rnd	"[""100""]"	constant
+src/js/mkroom.ts	mkshop	rnd	"[""100""]"	constant
 src/js/mklev.ts	mktrap	rn2	"[""5""]"	constant
 src/js/mklev.ts	mktrap	rn2	"[""7""]"	constant
 src/js/mklev.ts	mktrap_victim	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST"", ""PM_ARCHAEOLOGIST""]"	constant
@@ -1195,25 +1195,25 @@ src/js/mklev.ts	mktrap_victim	rn2	"[""25""]"	constant
 src/js/mklev.ts	mktrap_victim	rn2	"[""4""]"	constant
 src/js/mklev.ts	mktrap_victim	rn2	"[""4""]"	constant
 src/js/mklev.ts	mktrap_victim	rn2	"[""5""]"	constant
-src/js/mklev.ts	mkveggy_at	rnd	"[""totalProbability""]"	unproved
-src/js/mklev.ts	morgueMonsterType	rn2	"[""100""]"	constant
-src/js/mklev.ts	morgueMonsterType	rn2	"[""level_difficulty()""]"	invariant
+src/js/shknam.ts	mkveggy_at	rnd	"[""totalProbability""]"	unproved
+src/js/mkroom.ts	morgueMonsterType	rn2	"[""100""]"	constant
+src/js/mkroom.ts	morgueMonsterType	rn2	"[""level_difficulty()""]"	invariant
 src/js/mklev.ts	noncoalignedSpecialAlignment	rn2	"[""2""]"	constant
-src/js/mklev.ts	pickSpecialRoom	rn2	"[""3""]"	constant
-src/js/mklev.ts	pickSpecialRoom	rn2	"[""5""]"	constant
-src/js/mklev.ts	pickSpecialRoom	rn2	"[""rooms.length""]"	unproved
+src/js/mkroom.ts	pickSpecialRoom	rn2	"[""3""]"	constant
+src/js/mkroom.ts	pickSpecialRoom	rn2	"[""5""]"	constant
+src/js/mkroom.ts	pickSpecialRoom	rn2	"[""rooms.length""]"	unproved
 src/js/sp_lev.ts	placeThemedMap	rn2	"[""COLNO - 1 - width""]"	unproved
 src/js/sp_lev.ts	placeThemedMap	rn2	"[""ROWNO - height""]"	unproved
-src/js/mklev.ts	place_lregion	rn1	"[""(hx - lx) + 1"", ""lx""]"	unproved
-src/js/mklev.ts	place_lregion	rn1	"[""(hy - ly) + 1"", ""ly""]"	unproved
+src/js/mkmaze.ts	place_lregion	rn1	"[""(hx - lx) + 1"", ""lx""]"	unproved
+src/js/mkmaze.ts	place_lregion	rn1	"[""(hy - ly) + 1"", ""ly""]"	unproved
 src/js/mklev.ts	place_niche	rn2	"[""2""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn1	"[""10"", ""2""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn1	"[""5"", ""7""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn1	"[""6"", ""7""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn1	"[""6"", ""7""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn1	"[""8"", ""11""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn2	"[""2""]"	constant
-src/js/mklev.ts	populateRandomMaze	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn1	"[""10"", ""2""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn1	"[""5"", ""7""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn1	"[""6"", ""7""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn1	"[""6"", ""7""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn1	"[""8"", ""11""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	populateRandomMaze	rn2	"[""3""]"	constant
 src/js/mklev.ts	randomEngraving	rn2	"[""4""]"	constant
 src/js/sp_lev.ts	randomSpecialDoorMask	rn2	"[""states.length""]"	constant
 src/js/sp_lev.ts	randomSpecialTrapType	rnd	"[""TRAPNUM - 1""]"	constant
@@ -1224,27 +1224,27 @@ src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
 src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
 src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
 src/js/mklev.ts	rogueMiniwalk	rn2	"[""dirs.length""]"	guarded
-src/js/mklev.ts	roguecorr	rn2	"[""dest.dx""]"	unproved
-src/js/mklev.ts	roguecorr	rn2	"[""dest.dy""]"	unproved
-src/js/mklev.ts	roguecorr	rn2	"[""source.dx""]"	unproved
-src/js/mklev.ts	roguecorr	rn2	"[""source.dy""]"	unproved
-src/js/mklev.ts	roguejoin	rn2	"[""x2 - x1 + 1""]"	unproved
-src/js/mklev.ts	roguejoin	rn2	"[""y2 - y1 + 1""]"	unproved
-src/js/mklev.ts	setLevelTerrainLit	rn2	"[""2""]"	constant
-src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
-src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
+src/js/extralev.ts	roguecorr	rn2	"[""dest.dx""]"	unproved
+src/js/extralev.ts	roguecorr	rn2	"[""dest.dy""]"	unproved
+src/js/extralev.ts	roguecorr	rn2	"[""source.dx""]"	unproved
+src/js/extralev.ts	roguecorr	rn2	"[""source.dy""]"	unproved
+src/js/extralev.ts	roguejoin	rn2	"[""x2 - x1 + 1""]"	unproved
+src/js/extralev.ts	roguejoin	rn2	"[""y2 - y1 + 1""]"	unproved
+src/js/mkmaze.ts	setLevelTerrainLit	rn2	"[""2""]"	constant
+src/js/mkroom.ts	shrinePosition	rn2	"[""2""]"	constant
+src/js/mkroom.ts	shrinePosition	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	specialExplicitMonster	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	specialMazeStockPoint	rn1	"[""((COLNO - 1) & ~1) - 3"", ""3""]"	constant
 src/js/sp_lev.ts	specialMazeStockPoint	rn1	"[""((ROWNO - 1) & ~1) - 3"", ""3""]"	constant
 src/js/sp_lev.ts	specialMonsterAt	rn2	"[""2""]"	constant
-src/js/mklev.ts	specialShrinePriest	rn2	"[""2""]"	constant
-src/js/mklev.ts	specialShrinePriest	rn2	"[""3""]"	constant
-src/js/mklev.ts	specialShrinePriest	rn2	"[""8""]"	constant
-src/js/mklev.ts	stockShopRoom	rn2	"[""100""]"	constant
-src/js/mklev.ts	stockShopRoom	rn2	"[""2""]"	constant
-src/js/mklev.ts	stockShopRoom	rn2	"[""5""]"	constant
-src/js/mklev.ts	stockShopRoom	rnd	"[""100""]"	constant
-src/js/mklev.ts	stockShopRoom	rnd	"[""stockPositions.length""]"	guarded
+src/js/priest.ts	specialShrinePriest	rn2	"[""2""]"	constant
+src/js/priest.ts	specialShrinePriest	rn2	"[""3""]"	constant
+src/js/priest.ts	specialShrinePriest	rn2	"[""8""]"	constant
+src/js/shknam.ts	stockShopRoom	rn2	"[""100""]"	constant
+src/js/shknam.ts	stockShopRoom	rn2	"[""2""]"	constant
+src/js/shknam.ts	stockShopRoom	rn2	"[""5""]"	constant
+src/js/shknam.ts	stockShopRoom	rnd	"[""100""]"	constant
+src/js/shknam.ts	stockShopRoom	rnd	"[""stockPositions.length""]"	guarded
 src/js/mklev.ts	summonNastyMonsters	rn2	"[""10""]"	constant
 src/js/mklev.ts	summonNastyMonsters	rn2	"[""In_endgame(game.u.uz) ? 3 : 7""]"	constant
 src/js/mklev.ts	summonNastyMonsters	rnd	"[""4""]"	constant
@@ -1252,8 +1252,8 @@ src/js/mklev.ts	summonNastyMonsters	rnd	"[""outerLimit""]"	unproved
 src/js/mklev.ts	trapVictimObjectBreaks	rn2	"[""100""]"	constant
 src/js/mklev.ts	traptype_rnd	rn2	"[""7""]"	constant
 src/js/mklev.ts	traptype_rnd	rnd	"[""TRAPNUM - 1""]"	constant
-src/js/mklev.ts	vibratingSquarePoint	rn1	"[""xRange"", ""minimum + xMargin + 1""]"	constant
-src/js/mklev.ts	vibratingSquarePoint	rn1	"[""yRange"", ""minimum + yMargin + 1""]"	constant
+src/js/mkmaze.ts	vibratingSquarePoint	rn1	"[""xRange"", ""minimum + xMargin + 1""]"	constant
+src/js/mkmaze.ts	vibratingSquarePoint	rn1	"[""yRange"", ""minimum + yMargin + 1""]"	constant
 src/js/mklev.ts	water_has_kelp	rn2	"[""kelp_moat""]"	unproved
 src/js/mklev.ts	water_has_kelp	rn2	"[""kelp_pool""]"	unproved
 src/js/mkmap.ts	litstate_rnd	rn2	"[""77""]"	constant

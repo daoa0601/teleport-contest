@@ -11,7 +11,7 @@ import {
 import { finishOrdinaryQuit } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { createToptenObject } from '../js/mklev.js';
+import { createToptenObject } from '../js/mkobj.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';

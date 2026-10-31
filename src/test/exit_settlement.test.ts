@@ -8,7 +8,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { bonesLevelExists } from '../js/mklev.js';
+import { bonesLevelExists } from '../js/bones.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER, GOLD_PIECE, POT_HEALING, SACK } from '../js/object_data.js';
 import { loadScoreRecords } from '../js/score_records.js';

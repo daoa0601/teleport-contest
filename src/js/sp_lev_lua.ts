@@ -32,7 +32,8 @@ import { initializeMonsterArmor } from './monworn.js';
 import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer } from './object_timers.js';
 import { SpecialSelection, mapCharacterType } from './selvar.js';
-import { countLevelFeatures, make_grave, makecorridors, mineralize, wallification } from './mklev.js';
+import { countLevelFeatures, make_grave, makecorridors, mineralize } from './mklev.js';
+import { wallification } from './mkmaze.js';
 import { addDoorsToSpecialRoom, buildSpecialRoom, centeredSpecialMap, createLuaAltar, createLuaCorridor, createLuaDoor, createLuaDrawbridge, createLuaEngraving, createLuaExclusion, createLuaFeature, createLuaGold, createLuaMonster, createLuaObject, createLuaRoomRegion, createLuaStair, createLuaTrap, createLuaWallProperty, ensureWaysOut, fillEmptySpecialMaze, fillSpecialLevel, flipLuaRegions, flipSpecialLevelRandom, levelRegionCoordinates, linkSpecialLevelDoors, loadSpecialAsciiMap, luaRoomSpec, luaRoomTable, luaSelectionCoordinates, markSpecialSelectionWallProperty, placeThemedMap, replaceLuaTerrain, setLuaLevelFlags, setSpecialTerrain, solidifyLuaMap, specialMapRows, specialMapSelection, specialMazeWalk, specialNonDiggable, specialRoomContext, specialSelectionNonDiggable, specialSelectionTerrain, wallifyMap } from './sp_lev.js';
 
 // nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_NONAME, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { saveBonesLevel } from '../js/mklev.js';
+import { saveBonesLevel } from '../js/bones.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';

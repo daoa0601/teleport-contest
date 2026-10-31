@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FOUNTAIN, LEVEL_TELEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateMinesEnd } from '../js/mklev.js';
+import { generateMinesEnd } from '../js/mkmaze.js';
 import { FLINT, LUCKSTONE } from '../js/object_data.js';
 import { countTerrain, floorObjects, levelStairs, } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';

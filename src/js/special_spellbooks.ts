@@ -12,7 +12,8 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { makeInvocationArea } from './invocation_area.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { findMonsterNearPosition, morgueMonsterType } from './mklev.js';
+import { findMonsterNearPosition } from './mklev.js';
+import { morgueMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, LR_PORTAL, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, NO_MINVENT, STAIRS } from '../js/const.js';
-import { maketrap, place_lregion } from '../js/mklev.js';
+import { maketrap } from '../js/mklev.js';
+import { place_lregion } from '../js/mkmaze.js';
 import { game } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';

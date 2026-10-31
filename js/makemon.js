@@ -46,7 +46,8 @@ import { maybeGiveDomesticSaddle } from './steed.js';
 import { goodPosition } from './teleport_rules.js';
 import { vision_note_blocker_change } from './vision.js';
 import { objectWeight } from './weight.js';
-import { findMonsterNearPosition, findMonsterNearPositionCore, getShopItem, makemonNear, } from './mklev.js';
+import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear, } from './mklev.js';
+import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;

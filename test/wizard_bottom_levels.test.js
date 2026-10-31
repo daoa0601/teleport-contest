@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BEEHIVE, MAGIC_PORTAL, SQKY_BOARD } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { generateFakeWizardLevel, generateWizard3Level, } from '../js/mklev.js';
+import { generateFakeWizardLevel, generateWizard3Level } from '../js/mkmaze.js';
 import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { isRoom } from '../js/map_types.js';

@@ -4,7 +4,7 @@ import { CLOUD, FOUNTAIN, IS_WALL, ROLLING_BOULDER_TRAP, ROOM, STONE } from '../
 import { placeHeroAtRandomArrival } from '../js/level_change.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { generateBigRoom } from '../js/mklev.js';
+import { generateBigRoom } from '../js/mkmaze.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { countTerrain, floorObjects, levelStairs } from './support/level-state.js';
