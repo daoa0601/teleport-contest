@@ -8,7 +8,7 @@ import {
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { depth, isok } from './hacklib.js';
-import { dig_corridor, wallifyMap } from './mklev.js';
+import { dig_corridor, wallifyMap } from './sp_lev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 import { isRoom } from './map_types.js';

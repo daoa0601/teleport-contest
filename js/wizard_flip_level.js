@@ -2,7 +2,7 @@
 import { docrt } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { flipSpecialLevel, flipSpecialLevelRandom } from './mklev.js';
+import { flipSpecialLevel, flipSpecialLevelRandom } from './sp_lev.js';
 import { yn_function } from './query.js';
 export async function wizFlipLevel() {
     if (game.flags.debug) {

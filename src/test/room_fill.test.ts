@@ -7,7 +7,8 @@ import {
     OROOM, ROOM, ROOMOFFSET, SHARED, SINK, VWALL,
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { fill_ordinary_room, fillSpecialRoom } from '../js/mklev.js';
+import { fill_ordinary_room } from '../js/mklev.js';
+import { fillSpecialRoom } from '../js/sp_lev.js';
 import { mksobj } from '../js/mkobj.js';
 import { level_difficulty } from '../js/dungeon.js';
 import {
