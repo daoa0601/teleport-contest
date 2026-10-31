@@ -3,7 +3,7 @@ import type { DeathHandler } from '../js/end.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_DEX, STONING } from '../js/const.js';
+import { A_DEX, NO_MINVENT, STONING } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { rhack } from '../js/cmd.js';
@@ -11,8 +11,10 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { startHeroPetrification } from '../js/stoning.js';
+import { applyMonsterStoningAttack, startHeroPetrification } from '../js/stoning.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 void test('petrification stops actions as the hero stiffens', async () => {
     await freshHeroConditionRoom();
@@ -43,6 +45,35 @@ void test('petrification stops actions as the hero stiffens', async () => {
     assert.equal(game.u._woundedLegTurns, 0);
     assert.equal(currentAttribute(A_DEX), dexterity);
     assert.ok(messages.includes('You stop eating the food ration.'));
+});
+
+void test('a named stoning attacker hisses under its given name', async () => {
+    await freshObjectRoom();
+    const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
+    cockatrice.mgivenname = 'wide';
+    const messages: string[] = [];
+
+    await applyMonsterStoningAttack(cockatrice, {
+        random: sides => sides === 3 ? 0 : 1,
+        publish: message => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes("You hear wide's hissing!"), messages.join('\n'));
+});
+
+void test('a cancelled stoning attacker coughs under its given name', async () => {
+    await freshObjectRoom();
+    const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
+    cockatrice.mgivenname = 'wide';
+    cockatrice.mcan = 1;
+    const messages: string[] = [];
+
+    await applyMonsterStoningAttack(cockatrice, {
+        random: sides => sides === 3 ? 0 : 1,
+        publish: message => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('You hear a cough from wide!'), messages.join('\n'));
 });
 
 void test('the final petrification turn invokes a stoning death', async () => {
