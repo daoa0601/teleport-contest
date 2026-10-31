@@ -565,11 +565,29 @@ export async function takeFromContainer(container, object, state = game, count =
     container.cknown = true;
     updateContainerWeights(container);
     observeObjectForNaming(carried, { state });
-    const added = { ...carried, quan: addedCount, quantity: addedCount };
-    const merged = addedCount < quantity(carried);
-    const total = merged ? state.flags.verbose === false ? ''
-        : ` (${quantity(carried)} in total).` : '.';
-    const description = `${carried.invlet || '$'} - ${await objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
+    // C prinv()/xprname() formats the surviving stack itself, with only the
+    // removed quantity substituted: the stack keeps its identity, so
+    // doname()'s twoweapon primary still names the hand rather than
+    // degrading a partial stack to "(wielded)".
+    const total = quantity(carried);
+    const merged = addedCount > 0 && addedCount < total;
+    const savedQuantity = carried.quantity;
+    carried.quan = addedCount || total;
+    carried.quantity = carried.quan;
+    let named;
+    try {
+        named = await objectDescription(carried, inventoryPrimaryHandDetail(carried));
+    }
+    finally {
+        carried.quan = total;
+        if (savedQuantity === undefined)
+            delete carried.quantity;
+        else
+            carried.quantity = savedQuantity;
+    }
+    const suffix = merged ? state.flags.verbose === false ? ''
+        : ` (${total} in total).` : '.';
+    const description = `${carried.invlet || '$'} - ${named}${suffix}`;
     return {
         moved: true,
         message: pickupInventoryMessage(description, 'removing', state),
