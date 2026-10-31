@@ -4,7 +4,7 @@
 // native order. Every message is awaited directly, so a --More--
 // suspends the attack at the same source boundary as C and no
 // elemental progress flags survive the call.
-import { M_ATTK_MISS, M_SEEN_FIRE, Upolyd } from './const.js';
+import { M_ATTK_MISS, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, Upolyd } from './const.js';
 import { canSeeMonster, shieldeff } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -190,7 +190,7 @@ export async function mhitmAdCold(call) {
         if (!blind)
             await publish(`${monsterName(mdef, { state, capitalized: true })} is covered in frost!`);
         let damage = call.context.damage;
-        if (monsterHasColdResistance(mdef)) {
+        if (monsterHasColdResistance(mdef) || monsterCombatDefense(mdef, AD_COLD, state)) {
             await shieldeff(mdef.mx, mdef.my, state);
             if (!blind)
                 await publish(`The frost doesn't chill ${monsterName(mdef, { state })}!`);
@@ -223,7 +223,11 @@ export async function mhitmAdCold(call) {
             await publish("You're covered in frost!");
             if (state.u.coldResistance) {
                 await publish("The frost doesn't seem cold!");
+                monstersObserveHeroResistance(M_SEEN_COLD, state);
                 damage = 0;
+            }
+            else {
+                monstersForgetHeroResistance(M_SEEN_COLD, state);
             }
         }
         if (!negated) {
@@ -284,7 +288,7 @@ export async function mhitmAdElec(call) {
         if (!blind)
             await publish(`${monsterName(mdef, { state, capitalized: true })} is zapped!`);
         let damage = call.context.damage;
-        if (monsterHasShockResistance(mdef)) {
+        if (monsterHasShockResistance(mdef) || monsterCombatDefense(mdef, AD_ELEC, state)) {
             if (!blind)
                 await publish(`The zap doesn't shock ${monsterName(mdef, { state })}!`);
             await applyMonsterGolemEffects(mdef, AD_ELEC, damage, { state, publish });
@@ -317,7 +321,11 @@ export async function mhitmAdElec(call) {
             await publish('You get zapped!');
             if (state.u.shockResistance) {
                 await publish("The zap doesn't shock you!");
+                monstersObserveHeroResistance(M_SEEN_ELEC, state);
                 damage = 0;
+            }
+            else {
+                monstersForgetHeroResistance(M_SEEN_ELEC, state);
             }
         }
         if (!negated) {

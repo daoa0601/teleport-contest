@@ -4,13 +4,13 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { mhitmAdCold, mhitmAdElec } from '../js/uhitm.js';
 import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { MM_ANGRY, MM_NOGRP, MSLOW, NO_MINVENT } from '../js/const.js';
+import { M_SEEN_COLD, M_SEEN_ELEC, MM_ANGRY, MM_NOGRP, MSLOW, NO_MINVENT, W_ARM, } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLOAK_OF_PROTECTION, POT_HEALING, WAN_STRIKING } from '../js/object_data.js';
+import { CLOAK_OF_PROTECTION, OBJECT_NAMES, POT_HEALING, WAN_STRIKING, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { AD_COLD, AD_ELEC, AT_BITE, AT_CLAW, AT_TUCH } from '../js/monster_attack_types.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -92,7 +92,7 @@ void test('a negated cold claw keeps its hit line, avoids harm and deals no dama
     const claw = prose.lastIndexOf('The ice troll hits!');
     const avoided = prose.indexOf('You avoid harm.');
     assert.ok(claw >= 0 && avoided > claw, `the cold claw's hit line precedes the negation message:\n${prose}`);
-    assert.ok(!prose.includes('frost'), `a negated claw prints no frost line:\n${prose}`);
+    assert.equal(game.u.uhp, 76, 'the weapon hit and the physical bite each deal their 2d6; the negated cold claw deals none');
 });
 // C uhitm.c:mhitm_ad_cold() mhitu branch: the frost line, the resistance
 // line and the gated inventory destruction keep their native order even
@@ -178,5 +178,103 @@ void test('monster electric contact zaps a resisting defender without wounding i
     assert.ok(prose.includes('The energy vortex gets zapped!'), `the monster branch reads "gets zapped":\n${prose}`);
     assert.ok(prose.includes("The zap doesn't shock the energy vortex!"), prose);
     assert.equal(defender.mhp, hitPoints, 'the shock-resistant defender is not wounded');
+});
+// C uhitm.c:mhitm_ad_cold() mhitu branch: monstseesu(M_SEEN_COLD) runs
+// after the resistance line, so every witnessing monster learns the hero
+// resists cold.
+void test('a resisted cold claw teaches witnessing monsters the hero resists cold', async () => {
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, coldResistance: true } });
+    requirePlayingGame(game);
+    const troll = await createMonsterAt('ice troll', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    troll.mux = game.u.ux;
+    troll.muy = game.u.uy;
+    const { messages } = recordedPager(/ice troll|frost/, 12);
+    await performMonsterHeroAttack(troll, game, {
+        random: () => 0, rollOne: () => 1, rollDice: (count, sides) => count * sides,
+    });
+    await flushPendingTopline();
+    assert.ok(messages.join('\n').includes("The frost doesn't seem cold!"));
+    assert.equal((troll.seen_resistance ?? 0) & M_SEEN_COLD, M_SEEN_COLD, 'monstseesu(M_SEEN_COLD) reaches the attacking troll');
+});
+// C uhitm.c:mhitm_ad_cold() mhitu branch: monstunseesu(M_SEEN_COLD) runs
+// right after the frost line when the hero is not resistant.
+void test('a chilling cold claw makes witnessing monsters forget cold resistance', async () => {
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const troll = await createMonsterAt('ice troll', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    troll.seen_resistance = M_SEEN_COLD;
+    troll.mux = game.u.ux;
+    troll.muy = game.u.uy;
+    const { messages } = recordedPager(/ice troll|frost/, 12);
+    await performMonsterHeroAttack(troll, game, {
+        random: () => 0, rollOne: () => 1, rollDice: (count, sides) => count * sides,
+    });
+    await flushPendingTopline();
+    assert.ok(messages.join('\n').includes("You're covered in frost!"));
+    assert.equal((troll.seen_resistance ?? 0) & M_SEEN_COLD, 0, 'monstunseesu(M_SEEN_COLD) clears the witnessed resistance');
+});
+// C uhitm.c:mhitm_ad_elec() mhitu branch: monstseesu(M_SEEN_ELEC) and
+// monstunseesu(M_SEEN_ELEC) bracket the hero's shock resistance the same
+// way cold's helpers do.
+void test('a grid bug bite updates witnessing monsters about shock resistance', async () => {
+    for (const resistant of [false, true]) {
+        await freshObjectRoom({
+            hero: { uhp: 100, uhpmax: 100, uac: 10, shockResistance: resistant },
+        });
+        requirePlayingGame(game);
+        const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        bug.seen_resistance = M_SEEN_ELEC;
+        bug.mux = game.u.ux;
+        bug.muy = game.u.uy;
+        const { messages } = recordedPager(/grid bug|zap/, 10);
+        await performMonsterHeroAttack(bug, game, {
+            random: () => 0, rollOne: () => 1, rollDice: (count, sides) => count * sides,
+        });
+        await flushPendingTopline();
+        const prose = messages.join('\n');
+        assert.ok(prose.includes('You get zapped!'), prose);
+        assert.equal((bug.seen_resistance ?? 0) & M_SEEN_ELEC, resistant ? M_SEEN_ELEC : 0, `monst${resistant ? 'seesu' : 'unseesu'}(M_SEEN_ELEC) updates the attacking bug`);
+    }
+});
+// C uhitm.c:mhitm_ad_cold() uhitm branch: defended(mdef, AD_COLD) reads
+// the defender's worn dragon armor, not just innate resistance.
+void test("a hero's cold claw cannot chill a defender in white dragon scale mail", async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 11, 10, MM_NOGRP | NO_MINVENT);
+    const mail = await knownObject(WHITE_DRAGON_SCALE_MAIL);
+    mail.owornmask = W_ARM;
+    soldier.minvent = [mail];
+    const messages = [];
+    const publish = async (message) => { messages.push(message); };
+    const result = await mhitmAdCold({
+        magr: 'youmonst',
+        defender: soldier,
+        context: naturalContext([AT_CLAW, AD_COLD, 2, 6], 12, publish),
+    });
+    const prose = messages.join('\n');
+    assert.ok(prose.includes("The frost doesn't chill the soldier!"), `worn white dragon scale mail defends the soldier:\n${prose}`);
+    assert.equal(result.damage, 0, 'defended(mdef, AD_COLD) zeroes the claw damage');
+});
+// C uhitm.c:mhitm_ad_elec() uhitm branch: defended(mdef, AD_ELEC) reads
+// the defender's worn blue dragon armor.
+void test("a hero's electric touch cannot shock a defender in blue dragon scale mail", async () => {
+    await freshObjectRoom();
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 11, 10, MM_NOGRP | NO_MINVENT);
+    const blueDragonScaleMail = OBJECT_NAMES.indexOf('blue dragon scale mail');
+    const mail = await knownObject(blueDragonScaleMail);
+    mail.owornmask = W_ARM;
+    soldier.minvent = [mail];
+    const messages = [];
+    const publish = async (message) => { messages.push(message); };
+    const result = await mhitmAdElec({
+        magr: 'youmonst',
+        defender: soldier,
+        context: naturalContext([AT_TUCH, AD_ELEC, 2, 6], 12, publish),
+    });
+    const prose = messages.join('\n');
+    assert.ok(prose.includes("The zap doesn't shock the soldier!"), `worn blue dragon scale mail defends the soldier:\n${prose}`);
+    assert.equal(result.damage, 0, 'defended(mdef, AD_ELEC) zeroes the touch damage');
 });
 //# sourceMappingURL=uhitm_ad_cold_elec.test.js.map
