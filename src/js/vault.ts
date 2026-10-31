@@ -76,30 +76,173 @@ function vaultRoomAt(x: number, y: number, level: GameMap | null = game.level): 
     return roomno === undefined ? null : roomForRoomno(level, roomno);
 }
 
-// Called once per global turn. Returning true
-// means invault() has suspended before the later engraving-wear roll.
-export async function maintainVaultResidence(state: GameState = game) {
+// C vault.c:invault().  Called once per world turn from allmain.c's
+// once-per-turn maintenance: the countdown, guard construction, and the
+// whole interrogation happen in this one call, before the turn decrements
+// negative multi and before the engraving-wear roll that follows.
+export async function invault(state: GameState = game) {
     requireLiveGame(state);
     const vault = vaultRoomAt(state.u?.ux, state.u?.uy, state.level);
     if (!vault) {
         if (state.u) state.u.uinvault = 0;
-        return false;
+        return;
     }
 
+    // After a couple of guards fail to come back from their trips to the
+    // vault, later guards grow reluctant to turn up at all.
     const deaths = state.mvitals?.[PM_GUARD]?.died ?? 0;
     state.u.uinvault ??= 0;
     if (deaths < 2 || deaths < 50 && !rn2(deaths * deaths))
         state.u.uinvault = (state.u.uinvault || 0) + 1;
-    if (
-        state.u.uinvault < VAULT_GUARD_TIME ||
-        state.u.uinvault % (VAULT_GUARD_TIME / 2) !== 0 ||
-        await findVaultGuard(state) ||
-        state._vaultGuardArrivalPending
-    )
-        return false;
+    if (state.u.uinvault < VAULT_GUARD_TIME
+        || state.u.uinvault % (VAULT_GUARD_TIME / 2) !== 0)
+        return;
+    if (await findVaultGuard(state)) return;
 
-    state._vaultGuardArrivalPending = { vault };
-    return true;
+    const destination = await guardDestination(state);
+    if (!destination) return;
+    const entry = guardEntryToward(destination);
+    if (!entry) return;
+    const original = requireGameLevel(state).at(entry.x, entry.y);
+    if (!original) return;
+
+    const guard = await makemonAt(PM_GUARD, entry.x, entry.y, MM_NOMSG);
+    if (!guard) return;
+    guard.isgd = 1;
+    guard.mpeaceful = 1;
+    setMonsterMalign(guard, state);
+    const heroLevel = state.u.uz;
+    if (!heroLevel) throw new Error('Vault guard arrival requires the hero dungeon location.');
+    const corridor: VaultGuardData = {
+        gdlevel: { ...heroLevel },
+        gddone: 0,
+        ogx: entry.x,
+        ogy: entry.y,
+        gdx: destination.x,
+        gdy: destination.y,
+        vault,
+        warncnt: 0,
+        fcbeg: 0,
+        fcend: 0,
+        fakecorr: [],
+        dropgoldcnt: 0,
+    };
+    guard._egd = corridor;
+    state.u.uinvault = (state.u.uinvault ?? 0) + 1;
+    await resetHeroFaint({ state });
+    const boulders = requireGameLevel(state).objects[entry.x]?.[entry.y]?.filter(object => object.otyp === BOULDER) ?? [];
+    for (const boulder of boulders) await fractureRock(boulder, entry.x, entry.y, { state });
+    if (boulders.length) {
+        const description = `${boulders.length === 1 ? 'a boulder' : 'boulders'} shatter.`;
+        if (heroIsBlind(state)) await publishHeardMessage(description, plineWithContinuation, state);
+        else await plineWithContinuation(formatSeenMessage(description, state));
+    }
+
+    const spotted = canSpotMonster(guard);
+    await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
+    if (spotted) await newsym(guard.mx, guard.my);
+    else await map_invisible(entry.x, entry.y);
+    const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
+    const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
+    if (state.u.uswallow) {
+        if (!deaf) await plineWithContinuation(`"What's going on here?"`);
+        if (!spotted) await plineWithContinuation('The other presence vanishes.');
+        await removeMonsterFromGame(guard);
+        return;
+    }
+    if (M_AP_TYPE(state.u) === M_AP_OBJECT || state.u.uundetected) {
+        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE) {
+            const appearance = state.u.mappearance ?? STRANGE_OBJECT;
+            const disguise = appearance === STRANGE_OBJECT
+                ? 'whatcha-may-callit' : simpleObjectTypeName(appearance, state);
+            await plineWithContinuation(`"Hey!  Who left that ${disguise} in here?"`);
+        }
+        await plineWithContinuation(`Puzzled, ${monsterSubjectPronoun(guard, { state })} turns around and leaves.`);
+        await removeMonsterFromGame(guard);
+        return;
+    }
+    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0
+        || MONSTER_SOUND[state.u.umonnum ?? state.u.umonster ?? 260] === 0 || heroHasInvoluntaryDelay(state)) {
+        await plineWithContinuation(deaf ? `${name()} huffs and turns to leave.`
+            : `"I'll be back when you're ready to speak to me!"`);
+        await removeMonsterFromGame(guard);
+        return;
+    }
+    // C invault() follows stop_occupation() with `if (gm.multi > 0)
+    // { nomul(0); unmul((char *) 0); }`, but that block is unreachable:
+    // this tree's stop_occupation() (allmain.c) already calls nomul(0)
+    // whenever there is an occupation or multi >= 0, zeroing a count
+    // repeat.  stopHeroOccupation() models that reset, and native play
+    // prints no recovery message before the name prompt.
+    await stopHeroOccupation(state);
+    await displayMessageWindow();
+    const response = await readGuardName();
+    const claimedName = lowercaseAscii(response);
+    if (state.u.ualign?.type === 1 && !claimedName.startsWith(lowercaseAscii(state.plname)))
+        adjustHeroAlignment(-1, state);
+    if (['croesus', 'kroisos', 'creosote'].includes(claimedName)) {
+        if (!(state.mvitals?.[286]?.died ?? 0)) {
+            if (!deaf) await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
+            else if (!blind) await plineWithContinuation(`${name()} waves goodbye.`);
+            await removeMonsterFromGame(guard);
+        } else {
+            await angerMonster(guard);
+            if (!deaf) await plineWithContinuation(`"Back from the dead, are you?  I'll remedy that!"`);
+            else if (!blind) await plineWithContinuation(`${name()} mouths something and looks very angry!`);
+            if (!monsterWieldedWeapon(guard)) {
+                guard.weaponCheck = NEED_HTH_WEAPON;
+                await wieldMonsterWeapon(guard, state);
+            }
+        }
+        return;
+    }
+    await plineWithContinuation(deaf ? `${name()} doesn't ${blind ? '' : 'appear to '}recognize you.` : `"I don't know you."`);
+    const gold = heroGoldAmount(state);
+    const stashedGold = hiddenGold(state, true);
+    if (!gold && !stashedGold) {
+        await plineWithContinuation(deaf ? `${name()} stomps${blind ? '' : ' and beckons'}.` : '"Please follow me."');
+    } else {
+        if (!gold) {
+            if (!deaf) await plineWithContinuation('"You have hidden gold."');
+            else if (!blind) await plineWithContinuation(`${name()} glares at you${state.inventory.length ? 'r stuff' : ''}.`);
+        }
+        if (!deaf) {
+            await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
+            await plineWithContinuation('"Please drop that gold and follow me."');
+        } else if (!blind) {
+            const possessive = monsterPossessive(guard, { state, noIt: true });
+            await plineWithContinuation(`${name()} holds out ${possessive} palm and beckons with ${monsterPossessive(guard, { state, noIt: true })} other hand.`);
+        }
+        corridor.dropgoldcnt++;
+    }
+
+    if (!IS_WALL(original.typ)) {
+        const { lx, hx, ly, hy } = vault;
+        const { x, y } = entry;
+        if (x === lx - 1 && y === ly - 1) original.typ = TLCORNER;
+        else if (x === hx + 1 && y === ly - 1) original.typ = TRCORNER;
+        else if (x === lx - 1 && y === hy + 1) original.typ = BLCORNER;
+        else if (x === hx + 1 && y === hy + 1) original.typ = BRCORNER;
+        else if (y === ly - 1 || y === hy + 1) original.typ = HWALL;
+        else if (x === lx - 1 || x === hx + 1) original.typ = VWALL;
+        original.wall_info = 0;
+        setWallStateAt(entry.x, entry.y);
+        setVaultTerrainFlags(original, original.wall_info);
+    }
+    corridor.fakecorr.push({
+        x: entry.x,
+        y: entry.y,
+        typ: original.typ,
+        flags: original.wall_info,
+    });
+    corridor.fcend = 1;
+    corridor.warncnt = 1;
+    stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
+    original.typ = DOOR;
+    setVaultTerrainFlags(original, D_NODOOR);
+    vision_note_blocker_change(entry.x, entry.y);
+    game.vision_full_recalc = 1;
+    game.context.move = 0;
 }
 
 function guardEntryToward(destination: Position) {
@@ -156,159 +299,6 @@ async function readGuardName() {
 // C strcmpi()/strncmpi() preserve characters outside ASCII A-Z.
 function lowercaseAscii(name: string): string {
     return name.replace(/[A-Z]/g, character => character.toLowerCase());
-}
-
-export async function continueVaultGuardArrival(state: GameState = game) {
-    requireLiveGame(state);
-    const pending = state._vaultGuardArrivalPending;
-    if (!pending) return false;
-    state._vaultGuardArrivalPending = null;
-
-    const destination = await guardDestination(state);
-    if (!destination) return false;
-    const entry = guardEntryToward(destination);
-    if (!entry) return false;
-    const original = requireGameLevel(state).at(entry.x, entry.y);
-    if (!original) return false;
-
-    const guard = await makemonAt(PM_GUARD, entry.x, entry.y, MM_NOMSG);
-    if (!guard) return false;
-    guard.isgd = 1;
-    guard.mpeaceful = 1;
-    setMonsterMalign(guard, state);
-    const heroLevel = state.u.uz;
-    if (!heroLevel) throw new Error('Vault guard arrival requires the hero dungeon location.');
-    const corridor: VaultGuardData = {
-        gdlevel: { ...heroLevel },
-        gddone: 0,
-        ogx: entry.x,
-        ogy: entry.y,
-        gdx: destination.x,
-        gdy: destination.y,
-        vault: pending.vault,
-        warncnt: 0,
-        fcbeg: 0,
-        fcend: 0,
-        fakecorr: [],
-        dropgoldcnt: 0,
-    };
-    guard._egd = corridor;
-    state.u.uinvault = (state.u.uinvault ?? 0) + 1;
-    await resetHeroFaint({ state });
-    const boulders = requireGameLevel(state).objects[entry.x]?.[entry.y]?.filter(object => object.otyp === BOULDER) ?? [];
-    for (const boulder of boulders) await fractureRock(boulder, entry.x, entry.y, { state });
-    if (boulders.length) {
-        const description = `${boulders.length === 1 ? 'a boulder' : 'boulders'} shatter.`;
-        if (heroIsBlind(state)) await publishHeardMessage(description, plineWithContinuation, state);
-        else await plineWithContinuation(formatSeenMessage(description, state));
-    }
-
-    const spotted = canSpotMonster(guard);
-    await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
-    if (spotted) await newsym(guard.mx, guard.my);
-    else await map_invisible(entry.x, entry.y);
-    const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
-    const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
-    if (state.u.uswallow) {
-        if (!deaf) await plineWithContinuation(`"What's going on here?"`);
-        if (!spotted) await plineWithContinuation('The other presence vanishes.');
-        await removeMonsterFromGame(guard);
-        return true;
-    }
-    if (M_AP_TYPE(state.u) === M_AP_OBJECT || state.u.uundetected) {
-        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE) {
-            const appearance = state.u.mappearance ?? STRANGE_OBJECT;
-            const disguise = appearance === STRANGE_OBJECT
-                ? 'whatcha-may-callit' : simpleObjectTypeName(appearance, state);
-            await plineWithContinuation(`"Hey!  Who left that ${disguise} in here?"`);
-        }
-        await plineWithContinuation(`Puzzled, ${monsterSubjectPronoun(guard, { state })} turns around and leaves.`);
-        await removeMonsterFromGame(guard);
-        return true;
-    }
-    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0
-        || MONSTER_SOUND[state.u.umonnum ?? state.u.umonster ?? 260] === 0 || heroHasInvoluntaryDelay(state)) {
-        await plineWithContinuation(deaf ? `${name()} huffs and turns to leave.`
-            : `"I'll be back when you're ready to speak to me!"`);
-        await removeMonsterFromGame(guard);
-        return true;
-    }
-    // C invault() follows stop_occupation() with `if (gm.multi > 0)
-    // { nomul(0); unmul((char *) 0); }`, but that block is unreachable:
-    // this tree's stop_occupation() (allmain.c) already calls nomul(0)
-    // whenever there is an occupation or multi >= 0, zeroing a count
-    // repeat.  stopHeroOccupation() models that reset, and native play
-    // prints no recovery message before the name prompt.
-    await stopHeroOccupation(state);
-    await displayMessageWindow();
-    const response = await readGuardName();
-    const claimedName = lowercaseAscii(response);
-    if (state.u.ualign?.type === 1 && !claimedName.startsWith(lowercaseAscii(state.plname)))
-        adjustHeroAlignment(-1, state);
-    if (['croesus', 'kroisos', 'creosote'].includes(claimedName)) {
-        if (!(state.mvitals?.[286]?.died ?? 0)) {
-            if (!deaf) await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
-            else if (!blind) await plineWithContinuation(`${name()} waves goodbye.`);
-            await removeMonsterFromGame(guard);
-        } else {
-            await angerMonster(guard);
-            if (!deaf) await plineWithContinuation(`"Back from the dead, are you?  I'll remedy that!"`);
-            else if (!blind) await plineWithContinuation(`${name()} mouths something and looks very angry!`);
-            if (!monsterWieldedWeapon(guard)) {
-                guard.weaponCheck = NEED_HTH_WEAPON;
-                await wieldMonsterWeapon(guard, state);
-            }
-        }
-        return true;
-    }
-    await plineWithContinuation(deaf ? `${name()} doesn't ${blind ? '' : 'appear to '}recognize you.` : `"I don't know you."`);
-    const gold = heroGoldAmount(state);
-    const stashedGold = hiddenGold(state, true);
-    if (!gold && !stashedGold) {
-        await plineWithContinuation(deaf ? `${name()} stomps${blind ? '' : ' and beckons'}.` : '"Please follow me."');
-    } else {
-        if (!gold) {
-            if (!deaf) await plineWithContinuation('"You have hidden gold."');
-            else if (!blind) await plineWithContinuation(`${name()} glares at you${state.inventory.length ? 'r stuff' : ''}.`);
-        }
-        if (!deaf) {
-            await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
-            await plineWithContinuation('"Please drop that gold and follow me."');
-        } else if (!blind) {
-            const possessive = monsterPossessive(guard, { state, noIt: true });
-            await plineWithContinuation(`${name()} holds out ${possessive} palm and beckons with ${monsterPossessive(guard, { state, noIt: true })} other hand.`);
-        }
-        corridor.dropgoldcnt++;
-    }
-
-    if (!IS_WALL(original.typ)) {
-        const { lx, hx, ly, hy } = pending.vault;
-        const { x, y } = entry;
-        if (x === lx - 1 && y === ly - 1) original.typ = TLCORNER;
-        else if (x === hx + 1 && y === ly - 1) original.typ = TRCORNER;
-        else if (x === lx - 1 && y === hy + 1) original.typ = BLCORNER;
-        else if (x === hx + 1 && y === hy + 1) original.typ = BRCORNER;
-        else if (y === ly - 1 || y === hy + 1) original.typ = HWALL;
-        else if (x === lx - 1 || x === hx + 1) original.typ = VWALL;
-        original.wall_info = 0;
-        setWallStateAt(entry.x, entry.y);
-        setVaultTerrainFlags(original, original.wall_info);
-    }
-    corridor.fakecorr.push({
-        x: entry.x,
-        y: entry.y,
-        typ: original.typ,
-        flags: original.wall_info,
-    });
-    corridor.fcend = 1;
-    corridor.warncnt = 1;
-    stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
-    original.typ = DOOR;
-    setVaultTerrainFlags(original, D_NODOOR);
-    vision_note_blocker_change(entry.x, entry.y);
-    game.vision_full_recalc = 1;
-    game.context.move = 0;
-    return true;
 }
 
 export { moveVaultGuard } from './vault_escort.js';

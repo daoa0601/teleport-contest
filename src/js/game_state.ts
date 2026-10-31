@@ -9,7 +9,7 @@ import type { GameObject } from './object_types.js';
 import type { ObjectPriceQuote } from './object_knowledge.js';
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Shopkeeper } from './shop_types.js';
-import type { Position, Rectangle, Room, Stairway, ActiveSpecialLevel, CachedLevelState, ElementalBubble } from './map_types.js';
+import type { Position, Rectangle, Stairway, ActiveSpecialLevel, CachedLevelState, ElementalBubble } from './map_types.js';
 import type { Dungeon, DungeonBranch, DungeonLocation, SpecialLevelDescriptor, OverviewRecord } from './dungeon_types.js';
 import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
@@ -400,7 +400,6 @@ export interface GameState {
     _lastDemigodAggravation?: number[];
     _lastDemigodNasty?: number[];
     _questExpulsionPending?: { seal: boolean; portal?: boolean } | null;
-    _vaultGuardArrivalPending?: { vault: Room } | null;
     _bubbleTraversalUp?: boolean;
     _heroBubble?: ElementalBubble | null;
     _ballChainRestriction?: number;

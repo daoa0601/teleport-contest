@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
-import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
+import { invault } from '../js/vault.js';
 import type { PromptAnswer } from './support/input-boundaries.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -26,10 +26,9 @@ void test('the guard accepts and echoes names longer than thirty-one characters'
     for (let x = 9; x <= 10; x++)
         for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
-    assert.equal(await maintainVaultResidence(), true);
     const name = 'Alexandria '.repeat(4).trim();
     const input = resetInputState();
-    const arrival = continueVaultGuardArrival();
+    const arrival = invault();
     await input.waitUntilBlocked();
     input.feed(' ');
     await input.waitUntilBlocked();
@@ -60,7 +59,6 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
         game.u.uinvault = 29;
         await pline('You see here 398 gold pieces.');
         const input = resetInputState();
-        assert.equal(await maintainVaultResidence(), true);
 
         const answers: PromptAnswer[] = [
             { prompt: /You see here 398 gold pieces\.--More--/, keys: ' ' },
@@ -76,9 +74,8 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
             );
         }
 
-        const arrived = await answerPrompts(continueVaultGuardArrival(), input, answers);
+        await answerPrompts(invault(), input, answers);
 
-        assert.equal(arrived, true);
         assert.match(game._pending_message, goldLocation === 'none'
             ? /"I don't know you\."  "Please follow me\."/
             : /"Please drop that gold and follow me\."/);
@@ -102,10 +99,9 @@ void test('guard arrival does not redraw warnings before announcing the guard', 
     grantIntrinsicProperty('warning', 'outside');
     const before = glyphAt(14, 12)?.kind;
     game.u.uinvault = 29;
-    assert.equal(await maintainVaultResidence(), true);
     const input = resetInputState();
 
-    const arrival = continueVaultGuardArrival();
+    const arrival = invault();
     await input.waitUntilBlocked();
     const atAnnouncement = glyphAt(14, 12)?.kind;
     input.feed(' \x1b\n' + ' '.repeat(8));
@@ -126,9 +122,8 @@ void test('answering a guard does not change its hallucinated appearance before 
     game.u.uinvault = 29;
     game.u.hallucinationTurns = 20;
     initRng(123n);
-    assert.equal(await maintainVaultResidence(), true);
     const input = resetInputState();
-    const arrival = continueVaultGuardArrival();
+    const arrival = invault();
     await input.waitUntilBlocked();
     input.feed(' ');
     await input.waitUntilBlocked();

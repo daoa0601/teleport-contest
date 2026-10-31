@@ -5,8 +5,8 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    BEAR_TRAP, FIRE_TRAP, MON_ENDGAME_MIGR, NO_MINVENT, PIT, ROOM,
-    ROOMOFFSET, STONE, STRAT_WAITFORU, VAULT,
+    BEAR_TRAP, CORR, FIRE_TRAP, MON_ENDGAME_MIGR, NO_MINVENT, PIT, ROOM,
+    ROOMOFFSET, STONE, STRAT_WAITFORU, VAULT, VWALL,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
@@ -17,7 +17,8 @@ import { updateHeroRoomMembership } from '../js/room.js';
 import { initRng } from '../js/rng.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { maintainVaultResidence } from '../js/vault.js';
+import { invault } from '../js/vault.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { moveMonsterNextToHero } from '../js/teleport.js';
 import { useWhistle } from '../js/whistle.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -95,11 +96,14 @@ void test('a deaf hero feels air rushing past the nose when using a tin whistle'
 });
 
 void test('a cursed ordinary whistle schedules a guard for the next vault turn', async () => {
-    await freshObjectRoom();
+    await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
-    game.level.rooms.push(createRoom({ lx: 7, hx: 16, ly: 6, hy: 14, rtype: VAULT }));
+    game.level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     game.level.nroom = 1;
-    game.level.requireAt(10, 10).roomno = ROOMOFFSET;
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++) game.level.requireAt(x, y).roomno = ROOMOFFSET;
+    game.level.requireAt(16, 10).typ = CORR;
+    game.level.requireAt(11, 10).typ = VWALL;
     updateHeroRoomMembership(game);
     const whistle = await addInventoryObject(TIN_WHISTLE, { cursed: true });
 
@@ -108,7 +112,13 @@ void test('a cursed ordinary whistle schedules a guard for the next vault turn',
     assert.match(game._pending_message, /shrill whistling sound/);
     assert.equal(game.u.uinvault, 29);
     assert.equal(game.level.monsters.length, 0);
-    assert.equal(await maintainVaultResidence(), true);
+    const input = resetInputState();
+    await answerPrompts(invault(), input, [
+        { prompt: /shrill whistling sound/, keys: ' ' },
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
+    ]);
+    assert.equal(game.level.monsters.filter(monster => monster.isgd).length, 1);
 });
 
 for (const form of ['killer bee', 'air elemental']) {

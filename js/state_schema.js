@@ -164,7 +164,6 @@ const transientFields = {
     _kickedObject: true,
     _travelTarget: true,
     _tutorialState: true,
-    _vaultGuardArrivalPending: true,
     _viz_rmax: true,
     _viz_rmin: true,
     active_buf: true,

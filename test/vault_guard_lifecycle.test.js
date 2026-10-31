@@ -12,7 +12,7 @@ import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { sendMonsterToLimbo } from '../js/monster_migration.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
+import { invault } from '../js/vault.js';
 import { setWallStateAt } from '../js/wall_topology.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { moveObject } from '../js/floor_object.js';
@@ -231,12 +231,10 @@ void test('guard arrival preserves the vault wall restriction for restoration', 
             level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
     const input = resetInputState();
-    assert.equal(await maintainVaultResidence(), true);
-    const arrived = await answerPrompts(continueVaultGuardArrival(), input, [
+    await answerPrompts(invault(), input, [
         { prompt: /Suddenly one of the Vault's guards enters![\s\S]*--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
     ]);
-    assert.equal(arrived, true);
     const guard = level.monsters.find(monster => monster.isgd);
     assert.ok(guard);
     assert.equal(wall.typ, DOOR);
@@ -257,7 +255,7 @@ for (const done of [false, true]) {
             for (let y = 9; y <= 10; y++)
                 level.requireAt(x, y).roomno = ROOMOFFSET;
         game.u.uinvault = 29;
-        assert.equal(await maintainVaultResidence(), false);
+        await invault();
         assert.equal(level.monsters.filter(monster => monster.isgd).length, 1);
         assert.equal(guard.mhp, done ? 0 : guard.mhpmax);
         assert.deepEqual([guard.mx, guard.my], [0, 0]);
@@ -275,7 +273,7 @@ void test('a migrating guard returns directly to its unfinished home corridor', 
         for (let y = 9; y <= 10; y++)
             level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
-    assert.equal(await maintainVaultResidence(), false);
+    await invault();
     assert.equal(level.monsters.includes(guard), true);
     assert.equal(game._migratingMonsters.includes(guard), false);
     assert.equal(guard.mstate, MON_FLOOR);
@@ -300,7 +298,7 @@ for (const migrating of [false, true]) {
             await sendMonsterToLimbo(older);
             await sendMonsterToLimbo(newer);
         }
-        assert.equal(await maintainVaultResidence(), false);
+        await invault();
         if (migrating) {
             assert.equal(level.monsters.includes(newer), true);
             assert.equal(level.monsters.includes(older), false);

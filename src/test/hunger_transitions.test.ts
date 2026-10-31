@@ -28,7 +28,7 @@ import { inventoryWeight, weightCapacity } from '../js/weight.js';
 import { startRun } from '../js/runmode.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
+import { invault } from '../js/vault.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -400,8 +400,7 @@ void test('a real vault guard revives the fainted hero before asking for a name'
         }
     };
 
-    assert.equal(await maintainVaultResidence(), true);
-    await continueVaultGuardArrival();
+    await invault();
 
     assert.equal(hungerDuringName, FAINTING);
     assert.equal(game._helplessTurns, 0);
