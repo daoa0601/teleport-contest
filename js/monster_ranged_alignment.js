@@ -2,7 +2,7 @@
 import { BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, Upolyd, isok, } from './const.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { BOULDER, WAN_STRIKING } from './object_data.js';
-import { rn2 } from './rng.js';
+import { recordRandom, rn2 } from './rng.js';
 import { clearPath } from './vision.js';
 const M2_ROCKTHROW = 0x08000000;
 export function monsterLinedUpWithMonster(source, target, state) {
@@ -20,6 +20,12 @@ export function monsterLinedUpWithHero(source, state, random = rn2) {
     // A native monster that has not located the hero has zeroed mux/muy.
     const target = { x: source.mux ?? 0, y: source.muy ?? 0 };
     return linedUp(source, target, state, ignoresBoulders ? 'ignore' : 'chance', random);
+}
+// C mthrowu.c:m_lined_up().  Ranged natural attacks aim at the monster's
+// retained apparent hero coordinate, not necessarily the live hero square.
+// A polymorphed hero's concealment test precedes the geometric line check.
+export function monsterLinedUpWithPerceivedHero(monster, state, random, calls) {
+    return monsterLinedUpWithHero(monster, state, range => recordRandom(random, calls, range));
 }
 function linedUp(source, target, state, boulders, random) {
     const dx = target.x - source.mx;

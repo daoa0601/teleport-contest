@@ -18,12 +18,11 @@ import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { BOULDER } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { goodPosition } from './teleport_rules.js';
 import { trapName } from './trap_name.js';
-import { feelTrap } from './trap.js';
+import { feelTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { rn2 } from './rng.js';
 
 const TIP_UNTRAP_MON = 1 << 2;

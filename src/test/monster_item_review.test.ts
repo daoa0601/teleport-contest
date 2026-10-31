@@ -4,7 +4,8 @@ import { LEVEL_TELEP, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MM_ANGRY, NO_MINVENT, PIT,
 import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { takeMonsterTurn, triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
+import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import { resumeDeferredMovementSpell } from '../js/mcastu.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { lootMonsterContainer } from '../js/monster_container_loot.js';

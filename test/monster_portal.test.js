@@ -1,3 +1,4 @@
+import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAGIC_PORTAL, MIGR_PORTAL, NO_MINVENT } from '../js/const.js';
@@ -5,7 +6,6 @@ import { initializePet } from '../js/dog.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { AMULET_OF_YENDOR, LEASH } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterLearnsTrap } from '../js/trap_knowledge.js';

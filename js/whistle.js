@@ -11,7 +11,7 @@ import { heroCanBlow } from './hero_species.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { EUCALYPTUS_LEAF, MAGIC_WHISTLE } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { unblessObjectState } from './object_state.js';

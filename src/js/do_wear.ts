@@ -15,6 +15,9 @@ import {
 } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
+import { recordRandom } from './rng.js';
+import type { PlayingGameState } from './game_state.js';
+import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies } from './hero_species.js';
 import {
     heroHasNoHands, heroHasNoLimbs, heroIsVerySmall,
@@ -393,4 +396,32 @@ export async function dowear(): Promise<void> {
     }
     if (object.oclass === 3) await putOnArmorObject(object);
     else await putOnAccessoryObject(object);
+}
+
+// C do_wear.c:some_armor(). Torso priority is deterministic; each later
+// occupied slot gets an independent one-in-four replacement opportunity.
+// mhitu.c's disenchantment attack and steal.c's gold-less theft both pick
+// their target through this pass.
+export function selectHeroDisenchantmentTarget(
+    state: PlayingGameState,
+    random: RandomBelow,
+    calls: MonsterCallLog,
+) {
+    let object = state?.uarmc || state?.uarm || state?.uarmu || null;
+    for (const candidate of [state?.uarmh, state?.uarmg, state?.uarmf, state?.uarms]) {
+        if (candidate && (!object || recordRandom(random, calls, 4) === 0)) {
+            object = candidate;
+        }
+    }
+    if (object) return object;
+    const fallback = recordRandom(random, calls, 5);
+    return (
+        [
+            null,
+            state?.uright || state?.u?.uright,
+            state?.uleft || state?.u?.uleft,
+            state?.uamul || state?.u?.uamul,
+            state?.ublindf || state?.u?.ublindf,
+        ][fallback] || null
+    );
 }

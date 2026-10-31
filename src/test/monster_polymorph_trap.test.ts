@@ -1,11 +1,10 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { POLY_TRAP, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {
-    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
-} from '../js/monmove.js';
+
 import {
     IRON_SHOES, KICKING_BOOTS,
 } from '../js/object_data.js';

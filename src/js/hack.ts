@@ -126,6 +126,7 @@ import { checkSlipperyIce } from './fumbling.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { arriveTravel, captureRunmodeDelay, stopRun } from './runmode.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { monsterMayDigLocation } from './mon.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -359,6 +360,25 @@ export function heroBadRock(state: GameState, x: number, y: number) {
     const canPass = !!(flags & M1_WALLWALK)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return cannotTunnel && !canPass;
+}
+
+// C hack.c:bad_rock() for a monster actor. The orthogonal cells around a
+// diagonal move use the species' intrinsic tunnelling/passwall abilities,
+// not the allow flags which were computed for the destination itself.
+export function badRockForMonster(
+    monster: Monster, state: GameState, x: number, y: number,
+) {
+    const loc = state?.level?.at?.(x, y);
+    if (!loc) return true;
+    const pile = state?.level?.objects?.[x]?.[y] || [];
+    if (state?.level?.flags?.sokoban_rules && pile.some((object) => object.otyp === BOULDER))
+        return true;
+    if (!IS_OBSTRUCTED(loc.typ)) return false;
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const mayTunnel = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK) && monsterMayDigLocation(loc);
+    const mayPassWall =
+        !!(flags & M1_WALLWALK) && !(IS_STWALL(loc.typ) && (loc.wall_info ?? 0) & W_NONPASSWALL);
+    return !mayTunnel && !mayPassWall;
 }
 
 export function heroTightDiagonalReason(state = game) {

@@ -1045,6 +1045,16 @@ export function couldsee(x, y) {
         return false;
     return !!((game.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
+// State-aware couldsee() for modules that run against either the live game
+// or a focused unit state. COULD_SEE is bit 0 of the vision buffer. Focused
+// unit states omit the buffer and are treated as unobstructed; live games
+// always carry the current buffer produced by domove()/vision_recalc().
+// Terrain browsing can rebuild it while temporarily lifting engulfment.
+export function couldSeeFromHero(state, x, y) {
+    if (!state?.viz_array)
+        return true;
+    return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
+}
 // C vision.c:vision_init(). Neither work buffer belongs to a previous game.
 export function init_vision_globals() {
     for (let y = 0; y < ROWNO; y++) {

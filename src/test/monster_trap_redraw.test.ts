@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ANTI_MAGIC, ARROW_TRAP, DART_TRAP, NO_MINVENT, ROCKTRAP } from '../js/const.js';
@@ -6,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_MAGM } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

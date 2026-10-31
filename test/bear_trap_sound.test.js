@@ -1,10 +1,10 @@
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeDeaf } from '../js/hero_hearing.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 for (const species of ['owlbear', 'bugbear', 'giant']) {

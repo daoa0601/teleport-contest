@@ -1,9 +1,9 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { VIBRATING_SQUARE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

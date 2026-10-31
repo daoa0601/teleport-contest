@@ -14,7 +14,7 @@ import { insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { mksobj } from './mkobj.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
-import { recordRandom } from './monmove.js';
+import { recordRandom } from './rng.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './monster_migration.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';

@@ -1,11 +1,10 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { ARROW_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {
-    resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
-} from '../js/monmove.js';
+
 import { ARROW } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObjectsAt } from './support/level-state.js';

@@ -1,8 +1,8 @@
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FIRE_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 void test('a concealed clinger triggers a fire trap and takes its damage', async () => {
     const { monster } = await freshMonsterTrapRoom(FIRE_TRAP, {

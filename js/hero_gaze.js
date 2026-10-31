@@ -12,7 +12,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster } from './monster_anger.js';
-import { monstersInFmonOrder } from './monmove.js';
+import { monstersInFmonOrder } from './mon.js';
 import { AD_CONF, AD_FIRE, AT_GAZE, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName, possessiveName } from './monster_name.js';

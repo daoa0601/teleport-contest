@@ -1,8 +1,8 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROCKTRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { ROCK, SADDLE } from '../js/object_data.js';
 import { performMonsterTurn } from '../js/allmain.js';
 import { glyphAt, newsym } from '../js/display.js';

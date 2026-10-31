@@ -3,6 +3,7 @@
 // stream owns hallucinated glyphs and names; it must never perturb the core
 // sequence which controls gameplay.
 
+import type { MonsterCallLog } from './monster_action_types.js';
 import { isaac64_init, isaac64_next_uint64 } from './isaac64.js';
 import type { Isaac64Context } from './isaac64.js';
 import { game } from './gstate.js';
@@ -117,4 +118,29 @@ export function rnz(i: number): number {
     if (_rngLogEnabled) _rngLog.push(`rnz(${i})=${x}`);
     return x;
 }
+
+// Record one core-RNG draw into a monster call log. Monster scheduling
+// shares this wrapper so every recorded decision appends to the same
+// transcript shape regardless of which module draws it.
+export function recordRandom(
+    random: (range: number) => number,
+    calls: MonsterCallLog,
+    range: number,
+) {
+    calls.push(range);
+    return random(range);
+}
+
+// Live monster scheduling needs the action object across tty continuations,
+// but no gameplay branch reads the diagnostic RNG transcript. Keep the
+// append-shaped dependency without allocating or retaining one array per
+// actor. The empty iterator preserves the one continuation which merges a
+// nested action log; there is deliberately nothing to merge in live mode.
+export const DISCARDED_CALL_LOG: MonsterCallLog = Object.freeze({
+    length: 0,
+    push() {
+        return 0;
+    },
+    *[Symbol.iterator]() {},
+});
 

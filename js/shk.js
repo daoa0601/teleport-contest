@@ -20,13 +20,13 @@ import { canSeeMonster, canSenseMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
-import { rn2 } from './rng.js';
+import { recordRandom, rn2 } from './rng.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { publishMonsterWake } from './monster_wake.js';
-import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, } from './const.js';
+import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, } from './const.js';
 import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
 import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
@@ -41,6 +41,16 @@ import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { leaveHeroShop } from './shop_departure.js';
 import { performMonsterTurn } from './allmain.js';
+import { dist2, pointsOnline } from './hacklib.js';
+import { heroIsInvisible } from './hero_invisibility.js';
+import { moveSpecial, specialMoverSeesHero } from './priest.js';
+import { resistConflict } from './mon.js';
+import { beginMonsterHeroAttack } from './monmove.js';
+import { heroIsDisplaced } from './armor.js';
+import { monsterHandName } from './body_parts.js';
+import { diggingTimeToHole } from './hero_digging.js';
+import { shopkeeperRepairsDamage } from './shop_damage.js';
+import { heroHasConflict } from './hero_conflict.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -1389,5 +1399,120 @@ function furniturePresent(room, furniture) {
         }
     }
     return false;
+}
+// C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.
+// Chooses a goal before move_special() selects a square.
+export async function moveShopkeeper(monster, state, random, rollDice, rollOne, calls) {
+    if (!monster.isshk || !hasShopkeeperData(monster))
+        return null;
+    const oldx = monster.mx;
+    const oldy = monster.my;
+    if (shopkeeperInOwnShop(monster, state))
+        await shopkeeperRepairsDamage(monster, state);
+    const eshk = monster.eshk;
+    const heroX = state.u.ux;
+    const heroY = state.u.uy;
+    const distance = dist2(oldx, oldy, heroX, heroY);
+    const home = eshk.shk;
+    const atHome = oldx === home.x && oldy === home.y;
+    const stopped = {
+        oldx,
+        oldy,
+        x: oldx,
+        y: oldy,
+        moved: false,
+        postMoveStatus: MMOVE_NOTHING,
+        movementStage: 'postmov',
+        shopkeeper: true,
+    };
+    if (distance < 3 &&
+        (MONSTER_NAME[monster.mnum] !== 'grid bug' || oldx === heroX || oldy === heroY)) {
+        if (!monster.mpeaceful ||
+            (heroHasConflict(state) && !resistConflict(monster, state, rollOne, calls))) {
+            if (heroIsDisplaced(state)) {
+                await plineWithContinuation(`Your displaced image doesn't fool ${shopkeeperName(monster, { state })}!`);
+            }
+            return {
+                ...stopped,
+                deferredAfterSpecialAttack: true,
+                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
+            };
+        }
+        if (eshk.following) {
+            if ((eshk.customer ?? '').slice(0, PL_NSIZ) !== state.plname.slice(0, PL_NSIZ)) {
+                if (!heroIsDeaf(state) && !shopkeeperIsMuted(monster)) {
+                    await plineWithContinuation(`"${shopGreeting(monster, state)}, ${state.plname}!  I was looking for ${eshk.customer}."`);
+                }
+                eshk.following = false;
+                return stopped;
+            }
+            if (state.moves > (state._shopFollowMessageTurn ?? 0) + 4) {
+                if (!heroIsDeaf(state) && !shopkeeperIsMuted(monster)) {
+                    await plineWithContinuation(`"${shopGreeting(monster, state)}, ${state.plname}!  Didn't you forget to pay?"`);
+                }
+                else {
+                    await plineWithContinuation(`${shopkeeperName(monster, { state, capitalized: true })} holds out ${monsterPossessive(monster, { state, random, noIt: true })} upturned ${monsterHandName(monster.mnum)}.`);
+                }
+                state._shopFollowMessageTurn = state.moves;
+                if (!recordRandom(random, calls, 9)) {
+                    await plineWithContinuation(`${shopkeeperName(monster, { state, capitalized: true })} doesn't like customers who don't pay.`);
+                    rileShopkeeper(monster);
+                }
+            }
+            if (distance < 2)
+                return stopped;
+        }
+    }
+    let goalX = home.x;
+    let goalY = home.y;
+    let approach = 1;
+    let heroOnDoor = false;
+    let avoid = false;
+    const holeTime = eshk.following ? -1 : diggingTimeToHole(state);
+    if (eshk.following || (holeTime >= 0 && holeTime * holeTime <= distance)) {
+        if (distance > 4 && eshk.following && !eshk.billct)
+            return null;
+        goalX = heroX;
+        goalY = heroY;
+    }
+    else if (!monster.mpeaceful) {
+        if (specialMoverSeesHero(monster, state)) {
+            goalX = heroX;
+            goalY = heroY;
+        }
+    }
+    else if (!heroIsInvisible(state) && !state.u.usteed) {
+        heroOnDoor = heroX === eshk.shd.x && heroY === eshk.shd.y;
+        let hasDiggingTool = false;
+        if (heroOnDoor) {
+            const isPick = (object) => object.otyp === PICK_AXE || object.otyp === DWARVISH_MATTOCK;
+            hasDiggingTool =
+                state.inventory.some(isPick) ||
+                    !!((state.u.fast || state.u.veryFast) &&
+                        state.level.objects[heroX]?.[heroY]?.some(isPick));
+            if (atHome && hasDiggingTool)
+                return stopped;
+            avoid = !hasDiggingTool;
+        }
+        else {
+            avoid = state.u.ushops.length > 0 && dist2(heroX, heroY, home.x, home.y) > 8;
+        }
+        if (((!eshk.robbed && !eshk.billct && !eshk.debit) || avoid) &&
+            dist2(oldx, oldy, home.x, home.y) < 3) {
+            if (!hasDiggingTool && !pointsOnline(oldx, oldy, heroX, heroY))
+                return stopped;
+            if (atHome)
+                approach = goalX = goalY = 0;
+        }
+    }
+    const movement = await moveSpecial(monster, state, random, rollDice, rollOne, calls, {
+        inHisShop: shopkeeperInOwnShop(monster, state),
+        approach,
+        heroOnDoor,
+        avoid,
+        goalX,
+        goalY,
+    });
+    return { ...movement, shopkeeper: true };
 }
 //# sourceMappingURL=shk.js.map

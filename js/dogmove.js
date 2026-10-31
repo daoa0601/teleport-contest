@@ -1,6 +1,10 @@
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack } from './allmain.js';
-import { beginMonsterHeroAttack, couldSeeFromHero, DISCARDED_CALL_LOG, mfndpos, monAllowFlags, monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, monsterMayDigLocation, readyMonsterDiggingWeapon, recordRandom, resistConflict, speciesHasWeaponAttack, trapAt, } from './monmove.js';
+import { beginMonsterHeroAttack, monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon, speciesHasWeaponAttack, } from './monmove.js';
+import { mfndpos, monAllowFlags, monsterMayDigLocation, resistConflict, } from './mon.js';
+import { DISCARDED_CALL_LOG, recordRandom } from './rng.js';
+import { couldSeeFromHero } from './vision.js';
+import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor, } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, } from './monster_location.js';
 import { dist2, distmin, isok } from './hacklib.js';

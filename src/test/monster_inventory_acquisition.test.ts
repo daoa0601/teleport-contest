@@ -19,10 +19,8 @@ import { moveloop_core } from '../js/allmain.js';
 import { giveSpecialMonsterObject } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
-import {
-    finishDeferredMonsterMiscItem,
-    takeMonsterTurn,
-} from '../js/monmove.js';
+import { takeMonsterTurn } from '../js/monmove.js';
+import { finishDeferredMonsterMiscItem } from '../js/muse.js';
 import { commitPetPickup } from '../js/dogmove.js';
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,

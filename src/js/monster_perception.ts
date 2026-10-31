@@ -41,6 +41,16 @@ export interface PerceptionRandomRecorder {
 
 export type PerceivedHeroMonster = Monster & { mux: number; muy: number };
 
+// Movement and ranged-attack code asserts the remembered apparent-hero
+// coordinate before using it; makemon() and dochug() establish it first.
+export function requirePerceivedHero(
+    monster: Monster,
+): asserts monster is PerceivedHeroMonster {
+    if (typeof monster.mux !== 'number' || !Number.isFinite(monster.mux)
+        || typeof monster.muy !== 'number' || !Number.isFinite(monster.muy))
+        throw new Error('An active monster must retain its perceived hero position');
+}
+
 type HeroVisibility = (monster: Monster) => boolean;
 
 const M1_WALLWALK = 0x00000008;

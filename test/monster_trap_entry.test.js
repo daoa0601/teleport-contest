@@ -1,3 +1,4 @@
+import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
@@ -6,7 +7,6 @@ import { ANTI_MAGIC, BEAR_TRAP, PIT, ROLLING_BOULDER_TRAP, RUST_TRAP, SPIKED_PIT
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { BOULDER, IRON_SHOES, ORCISH_HELM } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';

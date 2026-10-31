@@ -1,9 +1,10 @@
+import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, TELEP_TRAP } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { vision_recalc } from '../js/vision.js';
 import { teleportMonsterFromTrap } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';

@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, MM_NOGRP, NO_MINVENT } from '../js/const.js';
@@ -6,7 +7,6 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { addTrap } from './support/level-state.js';

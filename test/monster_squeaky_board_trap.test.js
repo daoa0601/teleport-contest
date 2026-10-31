@@ -1,9 +1,9 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { adjustHeroAlignment } from '../js/alignment.js';
 import { SQKY_BOARD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 function monsterOnSqueakyBoard(species = 'giant') {

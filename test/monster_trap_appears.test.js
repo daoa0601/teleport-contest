@@ -1,9 +1,9 @@
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PIT, WEB } from '../js/const.js';
 import { ROCK } from '../js/object_data.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

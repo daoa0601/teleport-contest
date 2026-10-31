@@ -45,7 +45,7 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { monsterResistanceBits } from './monster_resistance.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING, } from './object_data.js';

@@ -17,7 +17,7 @@ import { rnd, rn2 } from './rng.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, } from './teleport_rules.js';
 import { relocateMonsterTo } from './teleport.js';
 import { invWeight, weightCapacity } from './weight.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, } from './trap.js';
 const M1_FLY = 0x00000001;
 const M1_NOEYES = 0x00001000;
 const M1_NOHANDS = 0x00002000;

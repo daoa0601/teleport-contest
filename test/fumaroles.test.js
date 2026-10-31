@@ -1,9 +1,9 @@
+import { fumaroles } from '../js/mkmaze.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { COLNO, LAVAPOOL, ROOM, ROWNO } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { fumaroles } from '../js/monmove.js';
 import { runLevelRegions } from '../js/regions.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';

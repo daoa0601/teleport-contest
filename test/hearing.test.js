@@ -1,3 +1,4 @@
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DELPHI, DOOR, D_CLOSED, LAVAPOOL, NO_MINVENT, OROOM, ROCKTRAP, ROOMOFFSET, ROLLING_BOULDER_TRAP, RUST_TRAP } from '../js/const.js';
@@ -5,7 +6,6 @@ import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, decideMonsterShapeChange } from '../js/monster_polymorph.js';
 import { BOULDER } from '../js/object_data.js';

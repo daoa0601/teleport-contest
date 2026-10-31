@@ -1,3 +1,4 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -5,7 +6,7 @@ import { LANDMINE } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { requireScreenCell } from './support/screen.js';
 

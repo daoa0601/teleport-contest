@@ -74,4 +74,11 @@ export function ingSuffix(verb) {
     }
     return stem + 'ing' + particle;
 }
+// C hack.h:online2() via the onlineu() macro. Two squares are online when
+// they share a row, a column, or a perfect diagonal.
+export function pointsOnline(x0, y0, x1, y1) {
+    const dx = x0 - x1;
+    const dy = y0 - y1;
+    return !dx || !dy || dy === dx || dy === -dx;
+}
 //# sourceMappingURL=hacklib.js.map

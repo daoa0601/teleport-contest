@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { cloneMonster } from './monster_clone.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { objectMaterial } from './object_material.js';
 import { rn2 } from './rng.js';
 const IRON = 11;

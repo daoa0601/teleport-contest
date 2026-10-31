@@ -1,10 +1,10 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { SQKY_BOARD } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { addTrap } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';

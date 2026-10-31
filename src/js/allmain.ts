@@ -43,7 +43,6 @@ import { regenerateHeroHp } from './hero_regeneration.js';
 import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
-import { monsterGainLevelRiseDestination } from './monmove.js';
 import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
@@ -100,7 +99,7 @@ import type { MonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { d, rn2, rnd } from './rng.js';
+import { d, recordRandom, rn2, rnd } from './rng.js';
 import {
     mklev, l_nhcore_init,
     u_on_upstairs,
@@ -162,7 +161,7 @@ import {
     M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL,
     STONE, ZAP_POS,
     M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
-    UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
+    UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS,
     ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
     TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN,
 } from './const.js';
@@ -185,8 +184,7 @@ import { ensureQuestStatus } from './quest.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
-    allocateMonsterMovement,
-    completeHeroAttackSlot, selectHeroItemForTheft,
+    completeHeroAttackSlot,
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
@@ -195,22 +193,28 @@ import {
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
     resumeDeferredHeroReveal,
-    finishDeferredMonsterMiscItem,
     resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport,
     resumeDeferredSpecialAttack,
-    resumeDeferredMonsterTrap,
     resumeDeferredMonsterHideUnder,
     completeMonsterOffensiveAction,
     resumeDeferredPetAttack,
     resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance,
     resolveDeferredMonsterBreath,
-    fumaroles,
     heroEveryturnEffect, runMonsterEveryturnEffects,
     beginMonsterMove, beginMonsterHeroAttack, beginMonsterDochug, runMonsterAction,
-    monstersInFmonOrder,
-    monsterDistressEvents,
 } from './monmove.js';
+import {
+    allocateMonsterMovement,
+    monsterDistressEvents,
+    monstersInFmonOrder,
+} from './mon.js';
+import {
+    finishDeferredMonsterMiscItem,
+    monsterGainLevelRiseDestination,
+} from './muse.js';
+import { fumaroles } from './mkmaze.js';
+import { resumeDeferredMonsterTrap } from './trap.js';
 import { commitPetPickup } from './dogmove.js';
 import {
     applyHeroSpellDamage,
@@ -1395,6 +1399,70 @@ function heroEquipmentSlots() {
     ] as const;
 }
 
+const COIN_CLASS = 12;
+
+// C steal.c:steal().  Inventory stacks are candidates as objects rather than
+// by quantity.  Worn armor and accessories receive five tickets; weapons
+// (including the primary and alternate weapon) still receive one.  Keep
+// selection after an animal's hit message and before removal prose.
+function selectHeroItemForTheft(
+    state: PlayingGameState,
+    random: RandomBelow,
+    calls: MonsterCallLog,
+) {
+    const inventory = state?.inventory || [];
+    const wornObjects = new Set(
+        [
+            state?.uarm,
+            state?.uarmc,
+            state?.uarmh,
+            state?.uarms,
+            state?.uarmg,
+            state?.uarmf,
+            state?.uarmu,
+            state?.uleft,
+            state?.uright,
+            state?.uamul,
+            state?.ublindf,
+            state?.u?.uleft,
+            state?.u?.uright,
+        ].filter(Boolean),
+    );
+    const candidates = [];
+    let total = 0;
+    for (const object of inventory) {
+        if (object === state?.uskin || (object?.oclass ?? object?.class) === COIN_CLASS) continue;
+        // When body armor is present, steal() omits the cloak from this
+        // weighted pass; its later equipment-dependency rewrites remain
+        // separate from candidate weighting.
+        if (state?.uarm && object === state?.uarmc) continue;
+        const wornMask = object?.owornmask ?? 0;
+        const weighted = wornObjects.has(object) || !!(wornMask & (W_ARMOR | W_ACCESSORY));
+        const weight = weighted ? 5 : 1;
+        candidates.push({ object, weight });
+        total += weight;
+    }
+    if (!total) return null;
+    let ticket = recordRandom(random, calls, total);
+    for (const candidate of candidates) {
+        ticket -= candidate.weight;
+        if (ticket < 0) {
+            return theftEquipmentTarget(candidate.object, state);
+        }
+    }
+    return null;
+}
+
+// C steal.c:steal(): rings are taken through gloves, gloves displace the
+// wielded weapon, and body armor defers to the cloak over it.
+function theftEquipmentTarget(object: GameObject, state: PlayingGameState): GameObject {
+    if ((object === state.uleft || object === state.uright) && state.uarmg)
+        object = state.uarmg;
+    if (object === state.uarmg && state.uwep) return state.uwep;
+    if (object === state.uarm && state.uarmc) return state.uarmc;
+    if (object === state.uarmu) return state.uarmc || state.uarm || object;
+    return object;
+}
 // C refs: steal.c:steal()/worn_item_removal(), uhitm.c:mhitm_ad_sedu().
 // Animal hit feedback precedes selection; garment removal can suspend it.
 // Removal prose is split here because urgent_pline() can suspend before the

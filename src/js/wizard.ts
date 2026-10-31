@@ -16,7 +16,7 @@ import { insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { mksobj } from './mkobj.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
-import { recordRandom } from './monmove.js';
+import { recordRandom } from './rng.js';
 import { MONSTER_NAME } from './monster_data.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import {

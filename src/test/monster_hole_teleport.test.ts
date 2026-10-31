@@ -1,10 +1,11 @@
+import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HOLE, TRAPDOOR } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { triggerImmediateMonsterTrap } from '../js/monmove.js';
+
 import { LEASH } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

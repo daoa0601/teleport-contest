@@ -59,7 +59,7 @@ import { heroHasOlfaction } from './polyself.js';
 import { checkSpecialRoom } from './shk.js';
 import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
-import { fumaroles } from './monmove.js';
+import { fumaroles } from './mkmaze.js';
 import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, } from './const.js';
 import { buriedBallToPunishment } from './buried_object.js';

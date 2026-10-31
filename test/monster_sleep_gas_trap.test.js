@@ -1,8 +1,8 @@
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SLP_GAS_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 void test('sleeping gas puts a susceptible visible monster to sleep', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(SLP_GAS_TRAP, {

@@ -19,6 +19,7 @@ import { objectLightRadius } from './light.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { isMoatAt, isPoolAt } from './terrain_properties.js';
 import type { GameMap } from './game.js';
+import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
@@ -1007,6 +1008,16 @@ export function cansee(x: number, y: number): boolean {
 export function couldsee(x: number, y: number): boolean {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO) return false;
     return !!((game.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
+}
+
+// State-aware couldsee() for modules that run against either the live game
+// or a focused unit state. COULD_SEE is bit 0 of the vision buffer. Focused
+// unit states omit the buffer and are treated as unobstructed; live games
+// always carry the current buffer produced by domove()/vision_recalc().
+// Terrain browsing can rebuild it while temporarily lifting engulfment.
+export function couldSeeFromHero(state: GameState, x: number, y: number) {
+    if (!state?.viz_array) return true;
+    return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
 
 // C vision.c:vision_init(). Neither work buffer belongs to a previous game.

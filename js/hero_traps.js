@@ -69,7 +69,7 @@ import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
-import { feelTrap, seeTrap, splashLitObject, waterDamageObject } from './trap.js';
+import { feelTrap, finishImmediateMonsterTrap, seeTrap, splashLitObject, trapTriggeredByFloor, triggerImmediateMonsterTrap, waterDamageObject, } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
@@ -80,8 +80,12 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+<<<<<<< HEAD
 import { finishImmediateMonsterTrap, trapTriggeredByFloor, triggerImmediateMonsterTrap } from './monmove.js';
 import { askTeleportDestination } from './teleport.js';
+=======
+import { askTeleportDestination } from './cmd.js';
+>>>>>>> 3767145a0 (Move non-combat foreign code out of monmove.ts into C-owner modules)
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 const M1_CLING = 0x00000010;
