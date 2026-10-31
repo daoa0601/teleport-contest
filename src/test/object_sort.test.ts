@@ -317,6 +317,27 @@ void test('identical loot remains in its original order and food spe does not ac
     assert.deepEqual(sortObjects([first, second], { mode: lootSortMode() }), [first, second]);
 });
 
+void test('large piles sort weapons by enchantment while preserving the order of equal weapons', async () => {
+    const weapons = [];
+    for (let group = 0; group < 8; group++) {
+        for (const enchantment of [0, 3, -1, 2, 0, 1])
+            weapons.push(await knownObject(DAGGER, { spe: enchantment }));
+    }
+
+    const ordered = sortObjects(weapons, { mode: lootSortMode() });
+
+    assert.equal(ordered.length, 48);
+    assert.equal(new Set(ordered).size, 48, 'Sorting retains every weapon identity');
+    for (let index = 1; index < ordered.length; index++) {
+        const previous = ordered[index - 1], current = ordered[index];
+        assert.ok(previous && current);
+        assert.ok(previous.spe >= current.spe, 'Higher enchantments sort first');
+        if (previous.spe === current.spe)
+            assert.ok(weapons.indexOf(previous) < weapons.indexOf(current),
+                'Equal weapons retain their original pile order');
+    }
+});
+
 void test('globs of the same species sort by size without shrinking them', async () => {
     const large = await knownObject(GLOB_OF_GRAY_OOZE, { globby: true, owt: 600 });
     const small = await knownObject(GLOB_OF_GRAY_OOZE, { globby: true, owt: 20 });

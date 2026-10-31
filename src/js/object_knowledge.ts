@@ -148,7 +148,7 @@ export function recordObjectCall(otyp: number, name: string, state: GameState = 
     state._objectCallNames[otyp] = name;
 }
 
-// C shk.c:record_price_quote().
+// C shk.c:record_price_quote() stores prices without discovering the type.
 export function recordObjectPriceQuote(
     otyp: number,
     price: number,
@@ -156,7 +156,6 @@ export function recordObjectPriceQuote(
     state: GameState = game,
 ): void {
     if (!Number.isInteger(otyp) || otyp < 1 || !Number.isInteger(price) || price < 0) return;
-    rememberType(otyp, state);
     if (!state._objectPriceQuotes) state._objectPriceQuotes = {};
     const quote = state._objectPriceQuotes[otyp] || {};
     const observed = quote[kind];

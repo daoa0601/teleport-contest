@@ -10,6 +10,7 @@ import { isContainer } from './container.js';
 import { isPolearm } from './weapon_type.js';
 import { heroIsBlind } from './senses.js';
 import { touchPetrifies } from './stoning.js';
+import { recorderSort } from './recorder_sort.js';
 const DEFAULT_PACK_ORDER = [12, 5, 2, 3, 7, 9, 10, 8, 4, 11, 6, 13, 14, 15, 16];
 const DEFAULT_LOOT_ORDER = [12, 5, 4, 11, 8, 9, 10, 13, 7, 6, 2, 3, 14, 15, 16];
 const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
@@ -71,17 +72,8 @@ export function sortObjects(objects, { mode = 0, state = game, filter = null, } 
         .map((object, index) => ({ object, index }));
     if (!mode || entries.length < 2)
         return entries.map(entry => entry.object);
-    const byClass = !(mode & SORTLOOT_INUSE)
-        && (mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET;
-    if (byClass) {
-        for (const entry of entries) {
-            if (!heroIsBlind(state))
-                observeObject(entry.object, state);
-            entry.classification = classifyLoot(entry.object, state);
-        }
-    }
-    entries.sort((left, right) => compareLoot(left, right, mode, state));
-    return entries.map(entry => entry.object);
+    return recorderSort(entries, (left, right) => compareLoot(left, right, mode, state))
+        .map(entry => entry.object);
 }
 export function classifyLoot(object, state = game) {
     const oclass = object.oclass || objectClassForType(object.otyp);
@@ -137,10 +129,8 @@ function compareLoot(left, right, mode, state) {
     const a = left.object, b = right.object;
     if (mode & SORTLOOT_INUSE)
         return inUseRating(b, state) - inUseRating(a, state) || left.index - right.index;
-    if (left.classification) {
-        const aClass = left.classification, bClass = right.classification;
-        if (!bClass)
-            throw new Error('Classified loot requires a classification for both entries');
+    if ((mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET) {
+        const aClass = classifyEntry(left, state), bClass = classifyEntry(right, state);
         const difference = aClass.order - bClass.order;
         if (difference)
             return difference;
@@ -179,6 +169,14 @@ function compareLoot(left, right, mode, state) {
             return difference;
     }
     return left.index - right.index;
+}
+function classifyEntry(entry, state) {
+    if (!entry.classification) {
+        if (!heroIsBlind(state))
+            observeObject(entry.object, state);
+        entry.classification = classifyLoot(entry.object, state);
+    }
+    return entry.classification;
 }
 function normalizedLootName(object, state) {
     const name = lootObjectName(object, state);

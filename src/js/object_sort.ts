@@ -25,6 +25,7 @@ import { isContainer } from './container.js';
 import { isPolearm } from './weapon_type.js';
 import { heroIsBlind } from './senses.js';
 import { touchPetrifies } from './stoning.js';
+import { recorderSort } from './recorder_sort.js';
 
 type InventoryOrderState = { flags: Pick<GameFlags, 'inv_order'> };
 
@@ -118,16 +119,8 @@ export function sortObjects(objects: readonly GameObject[], {
         || keepPetrifying && object.otyp === CORPSE && touchPetrifies(object.corpsenm))
         .map((object, index) => ({ object, index }));
     if (!mode || entries.length < 2) return entries.map(entry => entry.object);
-    const byClass = !(mode & SORTLOOT_INUSE)
-        && (mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET;
-    if (byClass) {
-        for (const entry of entries) {
-            if (!heroIsBlind(state)) observeObject(entry.object, state);
-            entry.classification = classifyLoot(entry.object, state);
-        }
-    }
-    entries.sort((left, right) => compareLoot(left, right, mode, state));
-    return entries.map(entry => entry.object);
+    return recorderSort(entries, (left, right) => compareLoot(left, right, mode, state))
+        .map(entry => entry.object);
 }
 
 export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
@@ -177,9 +170,8 @@ function compareLoot(left: LootEntry, right: LootEntry, mode: number, state: Gam
     const a = left.object, b = right.object;
     if (mode & SORTLOOT_INUSE)
         return inUseRating(b, state) - inUseRating(a, state) || left.index - right.index;
-    if (left.classification) {
-        const aClass = left.classification, bClass = right.classification;
-        if (!bClass) throw new Error('Classified loot requires a classification for both entries');
+    if ((mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET) {
+        const aClass = classifyEntry(left, state), bClass = classifyEntry(right, state);
         const difference = aClass.order - bClass.order;
         if (difference) return difference;
         if (!(mode & SORTLOOT_INVLET)) {
@@ -211,6 +203,14 @@ function compareLoot(left: LootEntry, right: LootEntry, mode: number, state: Gam
         if (difference) return difference;
     }
     return left.index - right.index;
+}
+
+function classifyEntry(entry: LootEntry, state: GameState): LootClassification {
+    if (!entry.classification) {
+        if (!heroIsBlind(state)) observeObject(entry.object, state);
+        entry.classification = classifyLoot(entry.object, state);
+    }
+    return entry.classification;
 }
 
 function normalizedLootName(object: GameObject, state: GameState): string {
