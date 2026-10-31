@@ -306,7 +306,7 @@ import { kickDoor } from './kick_door.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR, ROOM, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, SCORR, SDOOR, DOOR, ROOM, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, Is_valley, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -1491,9 +1491,7 @@ export async function travelStairs(up) {
         game.context.move = 0;
         return false;
     }
-    if (!up && game.valley_level?.dnum === game.u.uz.dnum
-        && game.valley_level.dlevel === game.u.uz.dlevel
-        && !game.u.uevent?.gehennom_entered) {
+    if (!up && Is_valley(game.u.uz) && !game.u.uevent?.gehennom_entered) {
         await plineWithContinuation('You are standing at the gate to Gehennom.');
         await plineWithContinuation('Unspeakable cruelty and harm lurk down there.');
         if (await promptYesNo('Are you sure you want to enter?') !== 'y') {
