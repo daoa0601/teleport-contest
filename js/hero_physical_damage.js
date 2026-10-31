@@ -1,8 +1,7 @@
 // Native uhitm.c:hmon_hitmon_dmg_recalc() and weapon.c:weapon_dam_bonus().
 import { P_TWO_WEAPON_COMBAT } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
-import { launcherMatchesAmmo } from './object_properties.js';
+import { isBimanualObject, launcherMatchesAmmo } from './object_properties.js';
 import { useHeroSkill, weaponSkillDamageBonus, weaponSkillType } from './skills.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 // The hmon caller enters this stage only after positive contact damage.
@@ -19,7 +18,7 @@ export async function recalculateHeroPhysicalDamage(damage, object, { mode, twoH
             const magnitude = Math.abs(strength);
             if (twoHits)
                 strength = Math.trunc((3 * magnitude + 2) / 4) * Math.sign(strength);
-            else if (mode === 'melee' && primary && OBJECT_BIMANUAL[primary.otyp])
+            else if (mode === 'melee' && isBimanualObject(primary))
                 strength = Math.trunc((3 * magnitude + 1) / 2) * Math.sign(strength);
             bonus += strength;
         }

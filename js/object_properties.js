@@ -2,7 +2,7 @@
 // C refs: include/obj.h and dothrow.c throwing_weapon().
 import { artifactById } from './artifacts.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
-import { AKLYS, FLINT, LOADSTONE, LUCKSTONE, OBJECT_CHARGED, OBJECT_DIR, OBJECT_NAMES, OBJECT_SUBTYPE, TOUCHSTONE, WAR_HAMMER, } from './object_data.js';
+import { AKLYS, FLINT, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_DIR, OBJECT_NAMES, OBJECT_SUBTYPE, TOUCHSTONE, WAR_HAMMER, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 const WEAPON_CLASS = 2;
@@ -23,6 +23,16 @@ export function isWeaponTool(object) {
     if (!object)
         return false;
     return objectClass(object) === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
+}
+// C include/obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
+// heavy armor also sets, so the weapon-or-tool class guard is what keeps
+// wielded armor from counting as a two-handed weapon.
+export function isBimanualObject(object) {
+    if (!object)
+        return false;
+    const kind = objectClass(object);
+    return (kind === WEAPON_CLASS || kind === TOOL_CLASS)
+        && !!OBJECT_BIMANUAL[object.otyp];
 }
 // C objnam.c:doname() displays charges for wands and charged non-weapon tools.
 export function objectUsesCharges(object) {
