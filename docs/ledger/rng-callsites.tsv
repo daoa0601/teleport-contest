@@ -327,6 +327,7 @@ src/js/eaten_accessory.ts	boundedIncrease	rnd	"[""Math.abs(amount)""]"	guarded
 src/js/eaten_accessory.ts	digestAccessory	d	"[""10"", ""20""]"	constant
 src/js/eaten_accessory.ts	digestAccessory	rn2	"[""object.oclass === 4 ? 3 : 5""]"	constant
 src/js/eaten_accessory.ts	digestAccessory	rnd	"[""100""]"	constant
+src/js/egg.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
 src/js/egg.ts	finishEggHatchTimer	rnd	"[""12""]"	constant
 src/js/egg.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
 src/js/egg.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	unproved
@@ -794,11 +795,8 @@ src/js/mklev.ts	addWayOut	rn2	"[""escapeItems.length""]"	constant
 src/js/mklev.ts	applyMinesSameRaceMonsterGate	rn2	"[""3""]"	constant
 src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
 src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
-src/js/mklev.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
 src/js/mklev.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
 src/js/mklev.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
-src/js/mklev.ts	blessorcurse	rn2	"[""2""]"	constant
-src/js/mklev.ts	blessorcurse	rn2	"[""chance""]"	guarded
 src/js/mklev.ts	buildSpecialRoom	rn2	"[""100""]"	constant
 src/js/mklev.ts	check_room	rn2	"[""3""]"	constant
 src/js/mklev.ts	chooseMimicAppearance	rn2	"[""10""]"	constant
@@ -921,17 +919,6 @@ src/js/mklev.ts	getRumor	rn2	"[""2""]"	constant
 src/js/mklev.ts	getShopItem	rnd	"[""100""]"	constant
 src/js/mklev.ts	getbones	rn2	"[""3""]"	constant
 src/js/mklev.ts	initMonsterGroup	rnd	"[""countRange""]"	guarded
-src/js/mklev.ts	initTool	rn1	"[""18"", ""3""]"	constant
-src/js/mklev.ts	initTool	rn1	"[""21"", ""5""]"	constant
-src/js/mklev.ts	initTool	rn1	"[""5"", ""3""]"	constant
-src/js/mklev.ts	initTool	rn1	"[""5"", ""4""]"	constant
-src/js/mklev.ts	initTool	rn1	"[""500"", ""1000""]"	constant
-src/js/mklev.ts	initTool	rn1	"[""70"", ""30""]"	constant
-src/js/mklev.ts	initTool	rn2	"[""10""]"	constant
-src/js/mklev.ts	initTool	rn2	"[""100""]"	constant
-src/js/mklev.ts	initTool	rn2	"[""2""]"	constant
-src/js/mklev.ts	initTool	rn2	"[""5""]"	constant
-src/js/mklev.ts	initTool	rn2	"[""7""]"	constant
 src/js/mklev.ts	initialMonsterSleepState	rn2	"[""5""]"	constant
 src/js/mklev.ts	makeSwamps	rn2	"[""2""]"	constant
 src/js/mklev.ts	makeSwamps	rn2	"[""4""]"	constant
@@ -1171,68 +1158,16 @@ src/js/mklev.ts	mineralize	rn2	"[""3""]"	constant
 src/js/mklev.ts	mineralize	rnd	"[""2 + Math.trunc(dunLevel / 3)""]"	unproved
 src/js/mklev.ts	mineralize	rnd	"[""goldprob * 3""]"	unproved
 src/js/mklev.ts	mkaltar	rn2	"[""A_LAWFUL + 2""]"	constant
-src/js/mklev.ts	mkboxCnts	rn2	"[""maximum + 1""]"	unproved
-src/js/mklev.ts	mkboxCnts	rnd	"[""100""]"	constant
-src/js/mklev.ts	mkboxCnts	rnd	"[""75""]"	constant
-src/js/mklev.ts	mkboxCnts	rnd	"[""level_difficulty() + 2""]"	invariant
 src/js/mklev.ts	mkclassAligned	rn2	"[""2""]"	constant
 src/js/mklev.ts	mkclassAligned	rn2	"[""9""]"	constant
 src/js/mklev.ts	mkclassAligned	rnd	"[""totalWeight""]"	guarded
 src/js/mklev.ts	mkfount	rn2	"[""7""]"	constant
-src/js/mklev.ts	mkgold	rnd	"[""Math.trunc(30 / Math.max(12 - depthVal, 2))""]"	unproved
-src/js/mklev.ts	mkgold	rnd	"[""level_difficulty() + 2""]"	invariant
 src/js/mklev.ts	mkgrave_room	rn2	"[""10""]"	constant
 src/js/mklev.ts	mkgrave_room	rn2	"[""3""]"	constant
 src/js/mklev.ts	mkgrave_room	rn2	"[""5""]"	constant
 src/js/mklev.ts	mkgrave_room	rnd	"[""20""]"	constant
 src/js/mklev.ts	mkgrave_room	rnd	"[""5""]"	constant
-src/js/mklev.ts	mkobj	rnd	"[""100""]"	constant
-src/js/mklev.ts	mkobj	rnd	"[""total""]"	unproved
-src/js/mklev.ts	mkobjErosions	rn2	"[""100""]"	constant
-src/js/mklev.ts	mkobjErosions	rn2	"[""1000""]"	constant
-src/js/mklev.ts	mkobjErosions	rn2	"[""80""]"	constant
-src/js/mklev.ts	mkobjErosions	rn2	"[""80""]"	constant
-src/js/mklev.ts	mkobjErosions	rn2	"[""9""]"	constant
-src/js/mklev.ts	mkobjErosions	rn2	"[""9""]"	constant
 src/js/mklev.ts	mkshop	rnd	"[""100""]"	constant
-src/js/mklev.ts	mksobj	rn2	"[""2""]"	constant
-src/js/mklev.ts	mksobj_init	rn1	"[""4"", ""3""]"	constant
-src/js/mklev.ts	mksobj_init	rn1	"[""5"", ""objectDirection(otyp, game) === 1 ? 11 : 4""]"	constant
-src/js/mklev.ts	mksobj_init	rn1	"[""6"", ""6""]"	constant
-src/js/mklev.ts	mksobj_init	rn1	"[""6"", ""6""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""10""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""100""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""11""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""11""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""12""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""2""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""2""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""2""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""20 + 10 * artifactExistCount()""]"	guarded
-src/js/mklev.ts	mksobj_init	rn2	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""4""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""40 + 10 * artifactExistCount()""]"	guarded
-src/js/mklev.ts	mksobj_init	rn2	"[""5""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""5""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""6""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""6""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""6""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""9""]"	constant
-src/js/mklev.ts	mksobj_init	rn2	"[""Math.trunc(level_difficulty() / 2) + 10""]"	invariant
-src/js/mklev.ts	mksobj_init	rnd	"[""2""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
-src/js/mklev.ts	mksobj_init	rne	"[""3""]"	constant
 src/js/mklev.ts	mktrap	rn2	"[""5""]"	constant
 src/js/mklev.ts	mktrap	rn2	"[""7""]"	constant
 src/js/mklev.ts	mktrap_victim	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST"", ""PM_ARCHAEOLOGIST""]"	constant
@@ -1273,10 +1208,6 @@ src/js/mklev.ts	randomMonsterPosition	rn2	"[""ROWNO""]"	constant
 src/js/mklev.ts	randomSpecialDoorMask	rn2	"[""states.length""]"	constant
 src/js/mklev.ts	randomSpecialTrapType	rnd	"[""TRAPNUM - 1""]"	constant
 src/js/mklev.ts	replaceLuaTerrain/selection.forEachXMajor argument 1	rn2	"[""100""]"	constant
-src/js/mklev.ts	riderRevivalTime	rn2	"[""3""]"	constant
-src/js/mklev.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
-src/js/mklev.ts	rndClass	rnd	"[""total""]"	unproved
-src/js/mklev.ts	rndmonnumAdj	rn2	"[""SPECIAL_PM""]"	constant
 src/js/mklev.ts	rndmonstAdj	rn2	"[""7""]"	constant
 src/js/mklev.ts	rndmonstReservoir	rn2	"[""totalWeight""]"	unproved
 src/js/mklev.ts	rogueCorrCell	rn2	"[""50""]"	constant
@@ -1304,9 +1235,6 @@ src/js/mklev.ts	specialMonsterAt	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialShrinePriest	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialShrinePriest	rn2	"[""3""]"	constant
 src/js/mklev.ts	specialShrinePriest	rn2	"[""8""]"	constant
-src/js/mklev.ts	startCorpseTimeout	rn1	"[""15"", ""5""]"	constant
-src/js/mklev.ts	startCorpseTimeout	rn2	"[""TROLL_REVIVE_CHANCE""]"	constant
-src/js/mklev.ts	startCorpseTimeout	rnz	"[""rotAdjust""]"	constant
 src/js/mklev.ts	stockShopRoom	rn2	"[""100""]"	constant
 src/js/mklev.ts	stockShopRoom	rn2	"[""2""]"	constant
 src/js/mklev.ts	stockShopRoom	rn2	"[""5""]"	constant
@@ -1328,6 +1256,76 @@ src/js/mkmap.ts	litstate_rnd	rnd	"[""1 + Math.abs(depth(game.u.uz))""]"	constant
 src/js/mkmap.ts	mkmap	rn2	"[""3""]"	constant
 src/js/mkmap.ts	mkmap	rn2	"[""width - 1""]"	constant
 src/js/mkmap.ts	mkmap	rnd	"[""height - 1""]"	constant
+src/js/mkobj.ts	blessorcurse	rn2	"[""2""]"	constant
+src/js/mkobj.ts	blessorcurse	rn2	"[""chance""]"	guarded
+src/js/mkobj.ts	initTool	rn1	"[""18"", ""3""]"	constant
+src/js/mkobj.ts	initTool	rn1	"[""21"", ""5""]"	constant
+src/js/mkobj.ts	initTool	rn1	"[""5"", ""3""]"	constant
+src/js/mkobj.ts	initTool	rn1	"[""5"", ""4""]"	constant
+src/js/mkobj.ts	initTool	rn1	"[""500"", ""1000""]"	constant
+src/js/mkobj.ts	initTool	rn1	"[""70"", ""30""]"	constant
+src/js/mkobj.ts	initTool	rn2	"[""10""]"	constant
+src/js/mkobj.ts	initTool	rn2	"[""100""]"	constant
+src/js/mkobj.ts	initTool	rn2	"[""2""]"	constant
+src/js/mkobj.ts	initTool	rn2	"[""5""]"	constant
+src/js/mkobj.ts	initTool	rn2	"[""7""]"	constant
+src/js/mkobj.ts	mkboxCnts	rn2	"[""maximum + 1""]"	unproved
+src/js/mkobj.ts	mkboxCnts	rnd	"[""100""]"	constant
+src/js/mkobj.ts	mkboxCnts	rnd	"[""75""]"	constant
+src/js/mkobj.ts	mkboxCnts	rnd	"[""level_difficulty() + 2""]"	invariant
+src/js/mkobj.ts	mkgold	rnd	"[""Math.trunc(30 / Math.max(12 - depthVal, 2))""]"	unproved
+src/js/mkobj.ts	mkgold	rnd	"[""level_difficulty() + 2""]"	invariant
+src/js/mkobj.ts	mkobj	rnd	"[""100""]"	constant
+src/js/mkobj.ts	mkobj	rnd	"[""total""]"	unproved
+src/js/mkobj.ts	mkobjErosions	rn2	"[""100""]"	constant
+src/js/mkobj.ts	mkobjErosions	rn2	"[""1000""]"	constant
+src/js/mkobj.ts	mkobjErosions	rn2	"[""80""]"	constant
+src/js/mkobj.ts	mkobjErosions	rn2	"[""80""]"	constant
+src/js/mkobj.ts	mkobjErosions	rn2	"[""9""]"	constant
+src/js/mkobj.ts	mkobjErosions	rn2	"[""9""]"	constant
+src/js/mkobj.ts	mksobj	rn2	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""4"", ""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""5"", ""objectDirection(otyp, game) === 1 ? 11 : 4""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""6"", ""6""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""6"", ""6""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""100""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""11""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""11""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""12""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""20 + 10 * artifactExistCount()""]"	guarded
+src/js/mkobj.ts	mksobj_init	rn2	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""4""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""40 + 10 * artifactExistCount()""]"	guarded
+src/js/mkobj.ts	mksobj_init	rn2	"[""5""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""5""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""6""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""6""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""6""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""9""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""Math.trunc(level_difficulty() / 2) + 10""]"	invariant
+src/js/mkobj.ts	mksobj_init	rnd	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rne	"[""3""]"	constant
+src/js/mkobj.ts	riderRevivalTime	rn2	"[""3""]"	constant
+src/js/mkobj.ts	rndmonnumAdj	rn2	"[""SPECIAL_PM""]"	constant
+src/js/mkobj.ts	startCorpseTimeout	rn1	"[""15"", ""5""]"	constant
+src/js/mkobj.ts	startCorpseTimeout	rn2	"[""TROLL_REVIVE_CHANCE""]"	constant
+src/js/mkobj.ts	startCorpseTimeout	rnz	"[""rotAdjust""]"	constant
 src/js/mkroom.ts	somex	rn1	"[""room.hx - room.lx + 1"", ""room.lx""]"	unproved
 src/js/mkroom.ts	somey	rn1	"[""room.hy - room.ly + 1"", ""room.ly""]"	unproved
 src/js/mon.ts	resolveMonsterLiquid	random	"[""3""]"	constant
@@ -1845,6 +1843,8 @@ src/js/objnam.ts	applyWishQuantity	rn2	"[""5""]"	constant
 src/js/objnam.ts	applyWishQuantity	rnd	"[""6""]"	constant
 src/js/objnam.ts	readObjectName	rn2	"[""artifactExistCount()""]"	unproved
 src/js/objnam.ts	readObjectName	rn2	"[""wishClasses.length""]"	constant
+src/js/objnam.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
+src/js/objnam.ts	rndClass	rnd	"[""total""]"	unproved
 src/js/options.ts	chooseRandomPart	rn2	"[""parts""]"	guarded
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
