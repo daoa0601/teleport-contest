@@ -173,7 +173,11 @@ async function restoreAbility(source: GameObject, state: PlayingGameState) {
 
 // C potion.c:peffect_see_invisible().
 async function seeInvisible(source: GameObject, state: PlayingGameState) {
-    const wasInvisible = heroIsInvisible(state) && !heroIsBlind(state);
+    // C msg = Invisible && !Blind; Invisible is Invis && !See_invisible
+    // (youprop.h), so an invisible hero who already sees invisible is
+    // not told they can see through themselves.
+    const wasInvisible = heroIsInvisible(state) && !propertyIsActive('seeInvisible', state)
+        && !heroIsBlind(state);
     const permanenceChance = 10 - (hasInternalInvisibility(state) ? 3 : 0)
         - (hasIntrinsicProperty('seeInvisible', null, state) || (state.u.seeInvisibleTurns ?? 0) > 0 ? 6 : 0);
     const fruit = fruitName(true, state);
