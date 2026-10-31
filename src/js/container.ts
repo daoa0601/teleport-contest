@@ -134,10 +134,11 @@ export function isContainer(object: Pick<GameObject, 'otyp'> | null | undefined)
 
 const quantity = objectQuantity;
 
-async function objectDescription(object: GameObject, primaryHandDetail: string | null = null): Promise<string> {
+async function objectDescription(object: GameObject, primaryHandDetail: string | null = null,
+    withPrice = false): Promise<string> {
     // objnam.c:doname() names one gold piece "a gold piece" and appends
     // the wield/quiver suffixes, so no local coin formatting is allowed.
-    return await inventoryItemDescription(object, { primaryHandDetail });
+    return await inventoryItemDescription(object, { primaryHandDetail, withPrice });
 }
 
 function className(object: GameObject): string {
@@ -311,7 +312,10 @@ async function selectionSections(objects: readonly GameObject[], useInventoryLet
                     : useInventoryLetters && object.invlet
                         ? object.invlet
                         : String.fromCharCode(97 + nextLetter++),
-                text: await objectDescription(object, inventoryPrimaryHandDetail(object)),
+                // pickup.c:query_objlist() names menu entries with
+                // doname_with_price(), so shop goods inside a floor
+                // container are quoted "for sale".
+                text: await objectDescription(object, inventoryPrimaryHandDetail(object), true),
                 value: object,
             });
         }
