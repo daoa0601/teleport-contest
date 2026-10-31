@@ -187,8 +187,7 @@ import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
     completeHeroAttackSlot,
-    resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
-    resumeDeferredHeroElectricSpecial,
+    resumeDeferredHeroContact,
     resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment,
     resumeDeferredHeroSticking,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
