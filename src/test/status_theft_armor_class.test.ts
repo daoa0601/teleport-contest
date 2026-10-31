@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { findArmorClass, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { bot, flush_screen } from '../js/display.js';

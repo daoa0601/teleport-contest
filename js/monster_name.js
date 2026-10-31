@@ -300,4 +300,7 @@ function monsterPronounGender(monster, { state = game, random = rn2, noIt = fals
         || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
         ? monster.female ? 1 : 0 : 2;
 }
+export function visibleMonsterSubject(monster) {
+    return monsterName(monster, { capitalized: true });
+}
 //# sourceMappingURL=monster_name.js.map

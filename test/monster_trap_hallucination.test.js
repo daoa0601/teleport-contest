@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { FIRE_TRAP, MMOVE_MOVED, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { monsterName } from '../js/monster_name.js';

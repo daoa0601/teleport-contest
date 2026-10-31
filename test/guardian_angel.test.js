@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { MM_EMIN, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NO_MINVENT } from '../js/const.js';
 import { canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

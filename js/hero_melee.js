@@ -1,6 +1,6 @@
 // Hero melee command and ordinary hitum(). Monster forms own their attack slots.
 import { artifactById } from './artifacts.js';
-import { moveMonsterForHeroAttack } from './allmain.js';
+import { moveMonsterForHeroAttack } from './monmove.js';
 import { exerciseAttribute } from './attrib.js';
 import { doublePunch } from './barehand_combat.js';
 import { heroHandName } from './body_parts.js';

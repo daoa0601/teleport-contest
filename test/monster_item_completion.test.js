@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveloop_core, moveMonsterForHeroAttack, performMonsterTurn } from '../js/allmain.js';
+import { moveloop_core } from '../js/allmain.js';
+import { moveMonsterForHeroAttack, performMonsterTurn } from '../js/monmove.js';
 import { LEVEL_TELEP, MFAST, MM_ANGRY, MM_NOWAIT, NO_MINVENT, POLY_TRAP, TELEP_TRAP } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';

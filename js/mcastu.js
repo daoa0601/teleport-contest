@@ -4,18 +4,29 @@
 // dochug(), curse feedback (cursetxt), and the deferred completions of
 // mcast_spell()/mcast_summon_mons() effects after their visible lines have
 // crossed the tty boundary.
-import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_MAGR, MFAST, MM_NOWAIT, MMOVE_DONE, Upolyd, } from './const.js';
+import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, MMOVE_DONE, Upolyd, } from './const.js';
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, monsterIsNonliving, } from './monster_data.js';
+import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, } from './display.js';
+import { requireInitializedGame } from './gstate.js';
 import { currentAttribute } from './attrib.js';
-import { heroHasFreeAction, heroIsDisplaced } from './armor.js';
-import { canSeeMonster, map_invisible, newsym, canSpotMonster, } from './display.js';
+import { clearHeroSliming } from './slime.js';
+import { engravingAt, wipeEngravingAt } from './engrave.js';
+import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, } from './zap.js';
+import { burnHeroArmorByFire } from './trap.js';
+import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
+import { igniteItems } from './light.js';
+import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
+import { flashBurn } from './sight_change.js';
+import { rndcurse } from './throne.js';
+import { touchHeroWithDeath } from './monster_death_touch.js';
 import { plineWithContinuation } from './pline.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { d, rn2, rnd } from './rng.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, } from './monster_data.js';
-import { monstersForgetHeroResistance } from './monster_perception.js';
 import { monsterName as canonicalMonsterName, monsterSpellDeathReason } from './monster_name.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
@@ -619,5 +630,251 @@ export async function resumeDeferredMovementSpell(action, state, random = rn2, r
     movement.movementStage = 'dochug';
     await finishDochugAfterMovement(action.monster, movement, state, random, rollOne, rollDice, action.calls, requireDochugContext(action));
     return effect;
+}
+// mcastu.c:castmu() elemental spells use spell protection and floor effects;
+// they never enter hitmu()'s armor cancellation or contact/passive tail.
+export async function resolveDeferredHeroDirectSpell(action, attack, state, publish, random, rollDice) {
+    const type = attack.damageType;
+    if (type !== AD_FIRE && type !== AD_COLD && type !== AD_MAGM)
+        throw new Error(`Unsupported direct monster spell damage type: ${type}`);
+    attack.deferredSpellEffect = false;
+    const resisted = type === AD_FIRE ? !!state.u.fireResistance
+        : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
+    let damage = resisted ? 0 : (attack.damage ?? 0);
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        await publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
+    }
+    else if (type === AD_MAGM) {
+        // Native replaces its already-halved pre-roll with fresh missile
+        // damage. Half_spell_damage is not applied to this second roll.
+        const count = Math.trunc(action.monster.m_lev / 2) + 1;
+        damage = rollDice(count, 6);
+        action.calls.push(`d(${count},6)`);
+    }
+    const resistance = seenResistanceForDamage(type);
+    if (resisted)
+        monstersObserveHeroResistance(resistance, state);
+    else
+        monstersForgetHeroResistance(resistance, state);
+    if (type === AD_FIRE && clearHeroSliming(state))
+        await publish('The slime that covers you is burned away!');
+    if (type === AD_MAGM) {
+        const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
+        if (engraving) {
+            const wear = rollDice(6, 6);
+            action.calls.push('d(6,6)');
+            wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
+        }
+    }
+    await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic', state.u.ux, state.u.uy, state, {
+        rayNoun: 'spell', heroCaused: false, publish,
+        random: limit => {
+            action.calls.push(`rn2(${limit})`);
+            return random(limit);
+        },
+    });
+    attack.appliedDamage = 0;
+    if (damage && !state.program_state.gameover)
+        applyHeroSpellDamage(attack, damage, state);
+}
+export async function prepareMonsterSpellResistance(attack, state) {
+    if (!attack.spell || !['psi-bolt', 'open-wounds', 'stun-you', 'paralyze', 'confuse-you', 'weaken-you'].includes(attack.spell))
+        return;
+    const resisted = state.u.antimagic
+        || (attack.spell === 'stun-you' || attack.spell === 'paralyze') && heroHasFreeAction(state);
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+    }
+    else if (attack.spell === 'psi-bolt' || attack.spell === 'open-wounds') {
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+}
+export async function resolveDeferredHeroFirePillar(action, heroAttack, publish) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredFirePillar)
+        return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const fireResistant = !!(game.u.fireResistance);
+    if (fireResistant) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_FIRE, game);
+    }
+    else
+        monstersForgetHeroResistance(M_SEEN_FIRE, game);
+    let appliedDamage = fireResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(game))
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+    if (clearHeroSliming(game)) {
+        await publish('The slime that covers you is burned away!');
+    }
+    await burnHeroArmorByFire(game, publish, action.calls, rn2);
+    const items = await destroyFireInventory(originalDamage, {
+        state: game,
+        publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied)
+        return;
+    await igniteItems(game.inventory, {
+        state: game,
+        publish,
+    });
+    await applyRayFloorFeatures('fire', game.u.ux, game.u.uy, game, {
+        rayNoun: 'spell', heroCaused: false, publish,
+    });
+    if (game.program_state.gameover)
+        return;
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredFirePillar = false;
+}
+export async function resolveDeferredHeroLightningSpell(action, heroAttack, publish) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredLightningSpell)
+        return;
+    const reflection = heroReflectionSource(game);
+    if (reflection) {
+        await publish(`It bounces off your ${reflection.noun}.`);
+        discoverHeroReflectionSource(reflection, game);
+    }
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const shockResistant = !!game.u.shockResistance;
+    if (reflection || shockResistant)
+        await shieldeff(game.u.ux, game.u.uy, game);
+    if (reflection) {
+        monstersObserveHeroResistance(M_SEEN_REFL, game);
+        heroAttack.appliedDamage = 0;
+        heroAttack.reflectedLightning = true;
+        heroAttack.deferredLightningSpell = false;
+        return;
+    }
+    if (shockResistant) {
+        monstersForgetHeroResistance(M_SEEN_REFL, game);
+        monstersObserveHeroResistance(M_SEEN_ELEC, game);
+    }
+    else
+        monstersForgetHeroResistance(M_SEEN_ELEC | M_SEEN_REFL, game);
+    let appliedDamage = shockResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(game))
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+    const items = await destroyElectricInventory(originalDamage, {
+        state: game,
+        publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied)
+        return;
+    await applyRayFloorFeatures('lightning', game.u.ux, game.u.uy, game, {
+        rayNoun: 'spell', heroCaused: false, publish,
+    });
+    if (game.program_state.gameover)
+        return;
+    const flashDuration = rnd(100);
+    action.calls.push('rnd(100)');
+    await flashBurn(flashDuration, true, { state: game, publish });
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredLightningSpell = false;
+}
+export async function resolveDeferredHeroInsectSpell(action, heroAttack) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredInsectSpell)
+        return;
+    const result = await summonMonsterInsects(action.monster, game);
+    if (result.message)
+        await plineWithContinuation(result.message);
+    heroAttack.summonedInsects = result.created;
+    heroAttack.deferredInsectSpell = false;
+}
+export async function resolveDeferredHeroDeathTouch(action, heroAttack, publish) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredDeathTouch)
+        return;
+    const u = game.u || {};
+    const monsterLevel = action.monster?.m_lev
+        ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
+    const polymorphed = Upolyd(u);
+    const form = polymorphed ? u.umonnum : null;
+    const nonliving = form !== null && Number.isInteger(form)
+        && monsterIsNonliving(form);
+    const demon = form !== null && Number.isInteger(form)
+        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
+    if (nonliving || demon) {
+        await publish('You seem no deader than before.');
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+    const antimagic = !!u.antimagic;
+    let succeeds = false;
+    if (!antimagic) {
+        const sides = Math.max(1, monsterLevel);
+        const successRoll = rn2(sides);
+        action.calls.push('rn2(' + sides + ')');
+        succeeds = successRoll > 12;
+    }
+    if (!succeeds) {
+        if (antimagic) {
+            await shieldeff(u.ux, u.uy, game);
+            monstersObserveHeroResistance(M_SEEN_MAGR, game);
+        }
+        await publish("Lucky for you, it didn't work!");
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+    if (heroIsHallucinating(game)) {
+        await publish('You have an out of body experience.');
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
+        heroAttack.deferredDeathTouch = false;
+        return;
+    }
+    heroAttack.heroDied = await touchHeroWithDeath(action.monster, game, publish, (count, sides) => {
+        action.calls.push(`d(${count},${sides})`);
+        return d(count, sides);
+    });
+    if (!heroAttack.heroDied)
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
+    heroAttack.deferredDeathTouch = false;
+}
+export async function resolveDeferredHeroDestroyArmor(heroAttack) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredDestroyArmor)
+        return;
+    const antimagic = !!game.u?.antimagic;
+    if (antimagic) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_MAGR, game);
+        await plineWithContinuation('A field of force surrounds you!');
+        heroAttack.deferredDestroyArmor = false;
+        return;
+    }
+    if (!await erodeWornArmor(game))
+        await plineWithContinuation('Your skin itches.');
+    else
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
+    heroAttack.deferredDestroyArmor = false;
+}
+export async function resolveDeferredHeroCurseItems(heroAttack) {
+    if (!heroAttack?.deferredCurseItems)
+        return;
+    heroAttack.cursedInventory = await rndcurse({
+        publish: plineWithContinuation,
+    });
+    heroAttack.deferredCurseItems = false;
+}
+// C mcastu.c:mcast_geyser() discards castmu()'s level-scaled spell pre-roll
+// and rolls a fresh physical 8d6.  Half physical damage applies; half spell
+// damage and elemental resistances do not.
+export function resolveDeferredHeroGeyser(action, heroAttack) {
+    const game = requireInitializedGame();
+    if (!heroAttack?.deferredGeyserSpell)
+        return;
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const appliedDamage = game.u.halfPhysicalDamage
+        ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
+    applyHeroSpellDamage(heroAttack, appliedDamage, game);
+    heroAttack.deferredGeyserSpell = false;
 }
 //# sourceMappingURL=mcastu.js.map

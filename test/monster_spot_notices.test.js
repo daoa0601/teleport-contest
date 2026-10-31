@@ -5,7 +5,8 @@
 // telepathically sensed stays quiet.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { moveMonsterForHeroAttack, performMonsterTurn, restoregamePreamble } from '../js/allmain.js';
+import { restoregamePreamble } from '../js/allmain.js';
+import { moveMonsterForHeroAttack, performMonsterTurn } from '../js/monmove.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { DOOR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, HWALL, MM_NOGRP, NO_MINVENT, TELEP_TRAP, VIBRATING_SQUARE, W_SADDLE } from '../js/const.js';
 import { canSeeMonster, docrt } from '../js/display.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL, WATER } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

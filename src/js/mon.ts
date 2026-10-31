@@ -75,9 +75,24 @@ import { wereChange } from './were.js';
 import { badRockForMonster } from './hack.js';
 import type { MapLocation } from './map_types.js';
 import type {
-    MonsterCallLog, MonsterDistressEvent, MonsterMoveCandidate,
+    MonsterAction, MonsterCallLog, MonsterDistressEvent, MonsterMoveCandidate,
     PublishMonsterMessage, RandomBelow, RollOne,
 } from './monster_action_types.js';
+import type { MonsterGrowth } from './monster_growth.js';
+import { finishMonsterGrowth } from './monster_growth.js';
+import { canSpotMonster } from './display.js';
+import { clearBypasses } from './object_bypass.js';
+import { finishMonsterLiquidDeath } from './monster_death.js';
+import { finishScheduledLevelChange } from './level_change.js';
+import { hasLightSources, vision_recalc } from './vision.js';
+import { interruptOccupationForMonster, monsterSightingBeforeAction } from './monster_threat.js';
+import { moveVaultGuard } from './vault.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
+import { reassessMonsterArmor } from './monworn.js';
+import { NORMAL_SPEED } from './const.js';
+import {
+    presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects,
+} from './monmove.js';
 
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
@@ -880,4 +895,113 @@ export async function mfndpos(
         wantPool = false;
     }
     return positions;
+}
+export async function presentMonsterGrowth(
+    monster: Monster, growth: MonsterGrowth | null | undefined,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (!growth?.changedSpecies || growth.applied) return;
+    if (canSpotMonster(monster))
+        await plineWithContinuation(growth.message);
+    finishMonsterGrowth(monster, growth);
+    await newsym(monster.mx, monster.my);
+    if (growth.genocided)
+        await finishEnvironmentalMonsterDeath(monster, game);
+}
+async function executeMonsterTurns(): Promise<boolean | undefined> {
+    const game = requireInitializedGame();
+    const level = game.level;
+    let somebodyCanMove = false;
+    // C iter_mons_safe() snapshots identities, not their remaining movement.
+    for (const actor of monstersInFmonOrder(level.monsters)) {
+        if (game.level !== level || game.program_state?.gameover)
+            return false;
+        if (game.u.utotype) {
+            somebodyCanMove = false;
+            break;
+        }
+        if (!level.monsters.includes(actor)) continue;
+        // C movemon_singlemon(): parked guards keep removing their corridor
+        // once per world turn, even after death or completion of the escort.
+        if (actor.isgd && !actor.mx && (actor.mstate ?? MON_FLOOR) === MON_FLOOR) {
+            if (game.moves > (actor.mlstmv ?? 0)) {
+                await moveVaultGuard(actor, game, rn2);
+                actor.mlstmv = game.moves;
+            }
+            continue;
+        }
+        if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
+            || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            continue;
+        await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
+        if (actor.movement === undefined)
+            throw new Error(`Monster ${actor.m_id} entered a turn before movement initialization.`);
+        if (actor.movement < NORMAL_SPEED) continue;
+        actor.movement -= NORMAL_SPEED;
+        if (actor.movement >= NORMAL_SPEED) somebodyCanMove = true;
+        // C mon.c:movemon_singlemon() settles deferred visibility before the
+        // actor's liquid checks, equipment changes, and movement decisions.
+        if (game.vision_full_recalc) {
+            await vision_recalc(0);
+        }
+        if (game.context.bypasses) clearBypasses(game);
+        const actorWasOpticallySeen = canSeeMonster(actor);
+        const liquid = await resolveMonsterLiquid(actor, game, {
+            announce: plineWithContinuation,
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        if (liquid?.dead) continue;
+        const equipment = await reassessMonsterArmor(actor, game, { publish: plineWithContinuation });
+        const sightingBefore = monsterSightingBeforeAction(actor, game);
+        game._deferVisibleMonsterContact = true;
+        let action: MonsterAction;
+        try {
+            action = equipment?.consumed ? {
+                monster: actor, calls: [],
+                movement: {
+                    oldx: actor.mx, oldy: actor.my, x: actor.mx, y: actor.my,
+                    moved: false, equipment,
+                },
+            } : await runMonsterAction(actor, game);
+        } finally {
+            game._deferVisibleMonsterContact = false;
+        }
+        const presented = await presentMonsterAction(action, game, actorWasOpticallySeen);
+        if (presented === 'stop') return false;
+        if (presented === 'next-monster') continue;
+        if (action.conflictFight) continue;
+        const { monster, movement } = action;
+        const offensive = movement.heroAttackSequence?.offensive;
+        const attackReturnedDeath = movement.heroAttackResult === 1
+            || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
+        // C monmove.c:dochugw() checks the actor after dochug(), before the
+        // adjacent monster_nearby() check at the occupation boundary.
+        if (!attackReturnedDeath && (monster.mhp ?? 1) > 0)
+            await interruptOccupationForMonster(monster, game, sightingBefore);
+        if (!movement?.moved) continue;
+    }
+    return game.level === level && somebodyCanMove;
+}
+export async function moveMonsters() {
+    const game = requireInitializedGame();
+    const level = game.level;
+    const previousMonsterMoving = game.context.mon_moving;
+    game.context.mon_moving = true;
+    try {
+        const somebodyCanMove = await executeMonsterTurns();
+        // C mon.c:movemon() refreshes moving light sources after the pass.
+        if (hasLightSources()) game.vision_full_recalc = 1;
+        if (game.context.bypasses) clearBypasses(game);
+        purgeDeadMonsters(level);
+        // A monster's action can schedule travel, including removal of
+        // levitation gear above a trap. Finish it before world maintenance
+        // or command input; the departure monsters are now dormant.
+        if (game._scheduledLevelChange) {
+            await finishScheduledLevelChange();
+            return false;
+        }
+        return somebodyCanMove;
+    } finally {
+        game.context.mon_moving = previousMonsterMoving;
+    }
 }

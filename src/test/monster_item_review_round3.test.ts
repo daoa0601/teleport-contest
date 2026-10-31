@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { MM_ANGRY, NO_MINVENT, PIT, PLNMSG_ENVELOPED_IN_GAS } from '../js/const.js';
 import { canSenseMonster } from '../js/display.js';
 import { setTopline } from '../js/pline.js';

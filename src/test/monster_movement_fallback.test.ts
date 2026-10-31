@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { MM_ANGRY, MMOVE_MOVED, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

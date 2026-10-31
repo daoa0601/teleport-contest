@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack, performMonsterHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { DOOR, D_ISOPEN, D_LOCKED, IRONBARS, MMOVE_DONE, MM_NOGRP, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

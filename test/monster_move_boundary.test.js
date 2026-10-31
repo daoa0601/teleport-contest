@@ -1,7 +1,7 @@
 import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { moveMonsterForHeroAttack } from '../js/allmain.js';
+import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { rhack } from '../js/cmd.js';
 import { D_CLOSED, D_ISOPEN, DOOR, DUST, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, NO_MINVENT, PIT, SQKY_BOARD, } from '../js/const.js';
 import { flush_screen } from '../js/display.js';

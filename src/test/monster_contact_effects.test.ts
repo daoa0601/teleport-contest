@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { performMonsterHeroAttack } from '../js/allmain.js';
+import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { currentMulti } from '../js/command_state.js';
 import { CLR_BRIGHT_BLUE } from '../js/terminal.js';
 import { M_SEEN_FIRE, M_SEEN_SLEEP, NO_MINVENT, STONE } from '../js/const.js';

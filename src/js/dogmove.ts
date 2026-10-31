@@ -1,5 +1,11 @@
 import { questMonsterSound } from './role_monsters.js';
-import { performMonsterHeroAttack } from './allmain.js';
+import { performMonsterHeroAttack } from './mhitu.js';
+import { inventoryItemDescription } from './invent.js';
+import { monsterFliesOrFloats } from './terrain_properties.js';
+import { monsterLocomotion } from './monster_locomotion.js';
+import { monsterName } from './monster_name.js';
+import { observeDistantObjectForNaming } from './objnam.js';
+import { verbForSubject } from './object_grammar.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
@@ -146,13 +152,13 @@ import {
     monsterHasStoneResistance,
 } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { clearPath, visibleCellsFrom } from './vision.js';
 import { getTrack } from './track.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { d, rn2, rnd } from './rng.js';
-import { requireLiveGame } from './gstate.js';
+import { requireInitializedGame, requireLiveGame } from './gstate.js';
 
 const DOG_HUNGRY = 300;
 const M1_SEE_INVIS = 0x01000000;
@@ -1258,3 +1264,19 @@ export async function movePet(
     return finishPetMovePlan(monster, state, movePlan, random, rollDice, rollOne, calls);
 }
 
+async function distantMonsterObjectName(object: GameObject): Promise<string> {
+    observeDistantObjectForNaming(object);
+    return await inventoryItemDescription(object);
+}
+export async function reluctantPetMessage(monster: Monster, movement: MonsterMovement): Promise<string> {
+    const game = requireInitializedGame();
+    const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
+    const rememberedObject = game.level?.at(movement.x, movement.y)?.remembered_glyph?.kind === 'object';
+    const top = !heroIsHallucinating(game) && game.level?.flags.hero_memory && rememberedObject
+        ? pile[0] : undefined;
+    const objectName = top ? await distantMonsterObjectName(top) : 'something';
+    const verb = verbForSubject(null, monsterLocomotion(monster.mnum, 'step'));
+    const subject = monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true });
+    const preposition = monsterFliesOrFloats(monster) ? 'over' : 'onto';
+    return `${subject} ${verb} reluctantly ${preposition} ${objectName}.`;
+}

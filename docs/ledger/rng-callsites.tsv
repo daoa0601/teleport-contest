@@ -24,15 +24,15 @@ src/js/allmain.ts	finishInitialTurnMaintenanceRng	rnd	"[""3""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceRng	rnd	"[""4""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""30""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""9000""]"	constant
-src/js/allmain.ts	presentMonsterAction	rn2	"[""5""]"	constant
-src/js/allmain.ts	presentMonsterAttackEffects/random	rn2	"[""range""]"	unproved
-src/js/allmain.ts	presentMonsterCuss/publishMonsterCuss argument 3	rn2	"[""sides""]"	unproved
-src/js/allmain.ts	resolveDeferredHeroDeathTouch	rn2	"[""sides""]"	constant
-src/js/allmain.ts	resolveDeferredHeroDeathTouch/touchHeroWithDeath argument 4	d	"[""count"", ""sides""]"	unproved
-src/js/allmain.ts	resolveDeferredHeroFirePillar	d	"[""8"", ""6""]"	constant
-src/js/allmain.ts	resolveDeferredHeroGeyser	d	"[""8"", ""6""]"	constant
-src/js/allmain.ts	resolveDeferredHeroLightningSpell	d	"[""8"", ""6""]"	constant
-src/js/allmain.ts	resolveDeferredHeroLightningSpell	rnd	"[""100""]"	constant
+src/js/monmove.ts	presentMonsterAction	rn2	"[""5""]"	constant
+src/js/mhitu.ts	presentMonsterAttackEffects/random	rn2	"[""range""]"	unproved
+src/js/monmove.ts	presentMonsterCuss/publishMonsterCuss argument 3	rn2	"[""sides""]"	unproved
+src/js/mcastu.ts	resolveDeferredHeroDeathTouch	rn2	"[""sides""]"	constant
+src/js/mcastu.ts	resolveDeferredHeroDeathTouch/touchHeroWithDeath argument 4	d	"[""count"", ""sides""]"	unproved
+src/js/mcastu.ts	resolveDeferredHeroFirePillar	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	resolveDeferredHeroGeyser	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	resolveDeferredHeroLightningSpell	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	resolveDeferredHeroLightningSpell	rnd	"[""100""]"	constant
 src/js/allmain.ts	rollHeroTeleportitis	rn2	"[""85""]"	constant
 src/js/ambient_sounds.ts	dosounds	rn2	"[""2""]"	constant
 src/js/ambient_sounds.ts	dosounds	rn2	"[""2""]"	constant
