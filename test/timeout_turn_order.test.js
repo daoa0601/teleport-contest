@@ -102,7 +102,8 @@ void test('the sliming countdown announces the turn before the fatal one', async
     input.feed('m.');
     await runTurns(1);
     assert.match(messages.join('\n'), /You are turning into a green slime\./);
-    assert.ok((game.u.slimedTurns ?? 0) >= 0);
+    assert.equal(game.u.slimedTurns, 2, 'The countdown advances by exactly one turn');
+    assert.equal(Boolean(game.program_state.gameover), false, 'The turn before the fatal one does not end the game');
 });
 // C timeout.c:947: run_timers() is the last step of nh_timeout(), after the
 // property countdown, so a due egg hatches on the same turn as -- and after
