@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { AKLYS } from '../js/object_data.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';

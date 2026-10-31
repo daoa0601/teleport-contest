@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import {
     fullyIdentifyObject, identifyPack, inventoryItemDescription,
 } from '../js/invent.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { objectName } from '../js/objnam.js';
 import {

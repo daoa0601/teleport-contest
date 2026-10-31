@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NUTRITION } from './monster_data.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { CORPSE, TIN } from './object_data.js';

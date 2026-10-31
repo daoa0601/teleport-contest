@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, ARROW, CHEST, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, LEASH, LUCKSTONE, MAGIC_LAMP, MEAT_RING, OIL_LAMP, OBJECT_NAMES, POT_OIL, POT_WATER, ROCK, SPE_BLANK_PAPER, SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { createPolymorphMonsterFromPile, do_osshock, obj_unpolyable, poly_obj, polymorphFloorObject, stone_to_flesh_obj, } from '../js/object_polymorph.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 

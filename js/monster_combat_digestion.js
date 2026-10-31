@@ -3,7 +3,7 @@
 import { G_NOCORPSE, M_ATTK_AGR_DIED, M_ATTK_MISS, ismnum } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { requireLiveGame } from './gstate.js';
-import { mksobj, set_corpsenm } from './mklev.js';
+import { mksobj, set_corpsenm } from './mkobj.js';
 import { healMonster } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';

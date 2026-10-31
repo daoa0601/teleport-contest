@@ -8,7 +8,7 @@ import { artifactByName } from './artifacts.js';
 import type { Artifact } from './artifacts.js';
 import { matchWishedFruit } from './fruit.js';
 import { japaneseWishType } from './japanese_item_name.js';
-import { rndClass } from './mklev.js';
+import { rndClass } from './objnam.js';
 import * as objects from './object_data.js';
 import { makeSingular } from './object_grammar.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';

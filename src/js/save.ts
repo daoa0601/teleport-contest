@@ -31,7 +31,7 @@ import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';
 import { restoreLevelRegions } from './regions.js';
-import { oinit } from './mklev.js';
+import { oinit } from './o_init.js';
 import { restoreScheduledLevelChange } from './level_change.js';
 import { recorderRestoredTime } from './calendar.js';
 import { restoreSavedTimers } from './object_timers.js';

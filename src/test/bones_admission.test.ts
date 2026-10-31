@@ -8,7 +8,8 @@ import { DEFUNCT_MONSTER, G_EXTINCT, G_GENOD, MAGIC_PORTAL, NO_MINVENT } from '.
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { maketrap, mklev, mksobj, saveBonesLevel } from '../js/mklev.js';
+import { maketrap, mklev, saveBonesLevel } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

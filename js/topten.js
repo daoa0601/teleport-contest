@@ -4,7 +4,7 @@ import { CORPSTAT_FEMALE, CORPSTAT_MALE } from './const.js';
 import { canSeeMonster } from './display.js';
 import { impossible } from './diagnostics.js';
 import { game, requireLiveGame } from './gstate.js';
-import { set_corpsenm } from './mklev.js';
+import { set_corpsenm } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { roles } from './roles.js';

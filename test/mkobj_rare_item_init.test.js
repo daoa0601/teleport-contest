@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkcorpstat, mksobj, set_corpsenm } from '../js/mklev.js';
+import { mkcorpstat, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { CANDY_BAR, CORPSE, KELP_FROND, LOADSTONE, LUCKSTONE, ROCK, SPE_NOVEL, STATUE, TIN, } from '../js/object_data.js';
 import { MONSTER_BODY_META, MONSTER_NAME } from '../js/monster_data.js';
 import { objectWeight } from '../js/weight.js';

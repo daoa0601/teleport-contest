@@ -16,9 +16,8 @@ import { beginObjectBurn } from '../js/light.js';
 import { punishHero } from '../js/punishment.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { moveloop_core } from '../js/allmain.js';
-import {
-    giveSpecialMonsterObject, makemonAt, mksobj,
-} from '../js/mklev.js';
+import { giveSpecialMonsterObject, makemonAt } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import {
     commitPetPickup,
     finishDeferredMonsterMiscItem,

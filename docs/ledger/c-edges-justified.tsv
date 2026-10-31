@@ -11,8 +11,8 @@ makemon	quest_info	inlined	urole.ldrnum/neminum compared directly (mklev.ts)
 makemon	sgn	inlined	Math.sign
 place_level	pick_level	inlined	impossible picks are removed from the candidate list (dungeon.ts)
 walkfrom	okay	inlined	carveMazeFrom tests the same up/right/down/left moves (maze_terrain.ts)
-mkgold	g_at	inlined	existing gold stack lookup (mklev.ts)
-mkgold	mksobj_at	inlined	mksobj then placeCreatedObject (mklev.ts)
+mkgold	g_at	inlined	existing gold stack lookup (mkobj.ts)
+mkgold	mksobj_at	inlined	mksobj then placeCreatedObject (mkobj.ts)
 mktrap	sobj_at	inlined	boulder check (mklev.ts)
 mktrap	traptype_roguelvl	inlined	same seven-entry table with rn2(7) (mklev.ts)
 makerooms	create_des_coder	inlined	beginLevel(special: false) resets the coder (mklev.ts)
@@ -22,7 +22,7 @@ makelevel	init_dungeons	n/a	only on C's impossible() path
 makelevel	mklev_sanity_check	n/a	sanity_check/debug_fuzzer option only
 makelevel	themerooms_post_level_generate	inlined	post_level_generate and wallification (mklev.ts)
 set_mimic_sym	t_at	inlined	level.traps lookup (mklev.ts)
-init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mklev.ts)
+init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mkobj.ts)
 getbones	compress_bonesfile	n/a	file I/O
 getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it
 dog_goal	cursed_object_at	inlined	cursedAtLocation (monmove.ts)
@@ -197,7 +197,7 @@ make_familiar	pick_familiar_pm	inlined	familiarSpecies in the 100-try loop (fami
 maketrap	choose_trapnote	inlined	squeaky board note roll (mklev.ts)
 maketrap	spot_stop_timers	inlined	pit and hole terrain preparation (mklev.ts)
 mk_trap_statue	makemon	inlined	statue trap block in maketrap (mklev.ts)
-mk_trap_statue	rndmonnum_adj	inlined	rndmonnumAdj(3, 6) (mklev.ts)
+mk_trap_statue	rndmonnum_adj	inlined	mklev.ts calls mkobj.ts:rndmonnumAdj(3, 6)
 makevtele	makeniche	inlined	makeniche(TELEP_TRAP) (mklev.ts)
 mcast_spell	m_cure_self	inlined	'cure-self' branch (monmove.ts)
 mcast_spell	mcast_stun_you	inlined	'stun-you' branch (monmove.ts)
@@ -258,8 +258,8 @@ create_object	can_saddle	inlined	putSaddleOnMonster (steed.ts)
 create_object	artifact_exists	n/a	needs a container freed by burial, which special levels never make
 create_object	describe_level	n/a	impossible() text only
 create_object	def_char_to_objclass	inlined	des.object option parsing (lua/des.ts)
-create_object	mkobj_at	inlined	special-object class helpers (mklev.ts)
-create_object	mksobj_at	inlined	special-object helpers (mklev.ts)
+create_object	mkobj_at	inlined	special-object class helpers (mklev.ts) call mkobj.ts:mkobj_at
+create_object	mksobj_at	inlined	special-object helpers (mklev.ts) call mkobj.ts:mksobj_at
 destroy_drawbridge	spoteffects	inlined	settleEntityAfterCollapse (drawbridge_occupants.ts)
 destroy_drawbridge	do_entity	inlined	handleEntity (drawbridge_occupants.ts)
 destroy_drawbridge	e_died	inlined	killCollapseVictim (drawbridge_occupants.ts)
@@ -575,7 +575,7 @@ make_blinded	is_fainted	inlined	heroIsUnaware message suppression (sight_change.
 make_blinded	strange_feeling	inlined	masked-blindness momentary feeling wording (sight_change.ts)
 make_confused	is_fainted	inlined	heroIsUnaware message suppression (hero_mental_status.ts)
 make_corpse	clear_dknown	inlined	corpses start dknown=false via the merge rule (object_constructor.ts); reveal substitutes 'something' (monmove.ts)
-make_corpse	mksobj_at	inlined	mksobj then placeCreatedObject (mklev.ts, monster_death.ts)
+make_corpse	mksobj_at	inlined	mksobj then placeCreatedObject (mkobj.ts, monster_death.ts)
 make_corpse	obj_nexto	inlined	stack_object merge with neighbors (monster_death.ts)
 make_deaf	is_fainted	inlined	heroIsUnaware message suppression (hero_hearing.ts)
 make_gas_cloud	is_hero_inside_gas_cloud	inlined	regions heroInside test (regions.ts)
@@ -596,7 +596,7 @@ missmm	noises	inlined	monster sound feedback on a miss (monster_combat_messages.
 missmm	pre_mm_attack	inlined	attack bookkeeping before the miss (monster_combat_messages.ts)
 mk_trap_statue	sgn	inlined	Math.sign alignment match for the statue (mklev.ts)
 mklev	reseed_random	n/a	reseed_random is a no-op without a strong OS seed; session seeds are fixed
-mksobj_init	permapoisoned	inlined	nameArtifact poisons fling-poison artifacts (mklev.ts createRandomArtifact)
+mksobj_init	permapoisoned	inlined	nameArtifact poisons fling-poison artifacts (mkobj.ts calls artifacts.ts:createRandomArtifact)
 mkstairs	glyph_to_cmap	n/a	only inside an impossible() diagnostic
 movemon	any_light_source	inlined	hasLightSources forces a vision recalc (allmain.ts)
 movemon	clear_bypasses	inlined	clearBypasses after the pass (allmain.ts)

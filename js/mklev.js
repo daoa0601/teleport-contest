@@ -5,14 +5,16 @@ import { rotCorpse } from './corpse_rot.js';
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
 // Also includes parts of sp_lev.c (create_room).
 // Level construction uses the game's main random-number stream.
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, } from './mkobj.js';
+import { oinit } from './o_init.js';
+import { rndClass } from './objnam.js';
 import { objectMaterial } from './object_material.js';
 import { isRoom } from './map_types.js';
-import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
 import { randomGhostName, roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel } from './gstate.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { lookupNovelTitle, novelTitle } from './novel_titles.js';
+import { lookupNovelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
 import { setWallState } from './wall_topology.js';
@@ -31,7 +33,6 @@ import { randomMonsterRelocation } from './teleport.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
-import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
@@ -50,10 +51,8 @@ import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
 import { luaTableToArray, objectToLuaTable, LuaTable, luaCheckString, luaCheckInteger, luaType, } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
-import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
-import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
-import { attachFigurineTimer } from './figurine_timer.js';
+import { hatchableEggSpecies } from './egg_species.js';
 import { placeCreatedObject, remove_object, stack_object, updateIceObjectTimersAt, } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt, } from './buried_object.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
@@ -67,26 +66,24 @@ import { propagateMonsterSpecies } from './monster_population.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave, } from './bones_object.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { decodeBonesPayload } from './bones_validation.js';
-import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
+import { rn2, rnd, rn1, d } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shop_data.js';
 import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
-import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
+import { depth as depth_of_level, ledgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, TRICKED, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, } from './monster_data.js';
-import { isReviver, isRider, zombieForm, } from './corpse_species.js';
+import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, TRICKED, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, HEALTHY_TIN, CORPSTAT_HISTORIC, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_SUBTYPE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CRYSTAL_BALL, FIGURINE, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, } from './object_data.js';
+import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, } from './monster_data.js';
 import { adjustedMonsterLevel, isHomeElemental, newMonsterHitPoints, } from './monster_hit_points.js';
 import { changeMonsterForm, initialShapechangedBirth, pickNastyShape, shapechangerGender, } from './monster_polymorph.js';
 import { initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
-import { saveMonsterTraits } from './monster_traits.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, terrain_glyph, } from './display.js';
 import { premap_detect } from './detect.js';
@@ -98,7 +95,7 @@ import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { giveMonsterStartingObject } from './monster_starting_inventory.js';
 import { createPlayerMonster } from './mplayer.js';
-import { artifactByName, artifactExistCount, createRandomArtifact, nameArtifact } from './artifacts.js';
+import { artifactByName, nameArtifact } from './artifacts.js';
 import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, unlinkMonsterObject, } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
 import { maybeGiveDomesticSaddle, putSaddleOnMonster } from './steed.js';
@@ -109,12 +106,11 @@ import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
 import { createGasCloudSelection, createPoisonGasCloud, restoreLevelRegions } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
-import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, restoreLevelTimers, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
+import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectsInTimerGraph, restoreLevelTimers, scheduleLevelTimer, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, objectResistsDestruction, } from './object_state.js';
-import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
 import { monsterEmitsLight, vision_note_blocker_change, vision_reset, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
@@ -179,7 +175,6 @@ const HIGH_BOOTS = 165;
 const MUMMY_WRAPPING = 138;
 const TIN_WHISTLE = 245;
 const SPE_LIGHT = 372;
-const POT_OIL = 321;
 const BELL = 255;
 const CANDELABRUM_OF_INVOCATION = 262;
 const BELL_OF_OPENING = 263;
@@ -254,9 +249,7 @@ const PM_VLAD_THE_IMPALER = 228;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD_OF_YENDOR = 285;
 const PM_CROESUS = MONSTER_NAME.indexOf('Croesus');
-const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
-const PM_FAMINE = 313;
 const PM_WIZARD = 343;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
@@ -496,735 +489,6 @@ export async function u_on_downstairs() {
     }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
-// Object probabilities are mutable because gemstone rarity changes with
-// dungeon depth.  This is the level-dependent half of o_init.c.
-let objectProb = OBJECT_PROB.slice();
-export function initializeObjectProbabilities() {
-    objectProb = OBJECT_PROB.slice();
-    setGemProbabilities(0);
-}
-export function oinit() {
-    setGemProbabilities(Math.min(ledgerNo(game.u?.uz), maxLedgerNo()));
-}
-function setGemProbabilities(ledger) {
-    const firstGem = getObjectClassBounds(GEM_CLASS).first;
-    const lastRealGem = 460;
-    let first = firstGem;
-    for (let j = 0; j < 9 - Math.trunc(ledger / 3); j++) {
-        objectProb[first++] = 0;
-    }
-    for (let j = first; j <= lastRealGem; j++) {
-        objectProb[j] = Math.trunc((171 + j - first)
-            / (lastRealGem + 1 - first));
-    }
-}
-// C ref: mkobj.c blessorcurse — rn2(4) BUC selection
-function blessorcurse(otmp, chance = 10) {
-    if (!otmp || otmp.blessed || otmp.cursed)
-        return;
-    if (!rn2(chance)) {
-        if (!rn2(2))
-            otmp.cursed = true;
-        else
-            otmp.blessed = true;
-    }
-}
-// C ref: mkobj.c mksobj — create a specific object.
-export async function mksobj(otyp, init, artif, { zombify = false } = {}) {
-    const definition = getObjectDefinition(otyp);
-    const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);
-    if (init) {
-        await mksobj_init(otmp, artif, definition);
-    }
-    // Fuel is intrinsic to an oil flask even when random initialization is skipped.
-    if (otyp === POT_OIL)
-        otmp.age = MAX_OIL_IN_FLASK;
-    if (otyp === CORPSE || otyp === STATUE || otyp === FIGURINE) {
-        if (otmp.corpsenm == null) {
-            otmp.corpsenm = rndmonnum();
-            if (otyp === CORPSE) {
-                otmp.corpsenm = undeadToCorpse(otmp.corpsenm);
-                if ((game.mvitals?.[otmp.corpsenm]?.mvflags ?? 0) & (G_NOCORPSE | G_GONE)) {
-                    if (!game.urole)
-                        throw new Error('Corpse fallback requires the hero role');
-                    otmp.corpsenm = SPECIAL_PM + 1 + game.urole.mnum;
-                }
-            }
-        }
-        // mkobj.c:mksobj() stores corpse sex in spe. Stack admission and
-        // later revival both read those bits, including for statues/figurines.
-        const species = otmp.corpsenm;
-        if (species === undefined)
-            throw new Error('Body object requires a monster species');
-        const genderFlags = MONSTER_FLAGS2[species] || 0;
-        otmp.spe = genderFlags & 0x40000 ? CORPSTAT_NEUTER
-            : genderFlags & 0x20000 ? CORPSTAT_FEMALE
-                : genderFlags & 0x10000 ? CORPSTAT_MALE
-                    : rn2(2) ? CORPSTAT_FEMALE : CORPSTAT_MALE;
-        if (otyp === CORPSE)
-            startCorpseTimeout(otmp, { zombify });
-    }
-    if (otyp === EGG && (otmp.corpsenm ?? -1) >= 0) {
-        attachEggHatchTimer(otmp);
-    }
-    if (otyp === SPE_NOVEL) {
-        // mkobj.c:mksobj() names every novel after class initialization.
-        // The title index is persistent object identity even when only the
-        // floor glyph is currently visible.
-        otmp.novelidx = -1;
-        const title = novelTitle(otmp);
-        if (title === undefined)
-            throw new Error('Novel title selection requires a title');
-        otmp.oextra = { ...(otmp.oextra || {}), oname: title };
-    }
-    // C mkobj.c:mksobj() computes weight only after type-specific state,
-    // quantities, corpse identity, timers, and generated contents are final.
-    otmp.owt = objectWeight(otmp);
-    return otmp;
-}
-// C ref: objnam.c rnd_class().  Object probabilities are absolute weights
-// within the requested inclusive type range rather than a uniform index.
-export function rndClass(first, last) {
-    if (first >= last)
-        return first === last ? first : 0;
-    let total = 0;
-    for (let otyp = first; otyp <= last; otyp++)
-        total += objectProb[otyp] ?? 0;
-    if (!total)
-        return first + rn2(last - first + 1);
-    let roll = rnd(total);
-    for (let otyp = first; otyp <= last; otyp++) {
-        roll -= objectProb[otyp] ?? 0;
-        if (roll <= 0)
-            return otyp;
-    }
-    return last;
-}
-function bcsign(otmp) {
-    return Number(!!otmp.blessed) - Number(!!otmp.cursed);
-}
-function mayGenerateEroded(otmp) {
-    // C ref: may_generate_eroded(): starting inventory is pristine, while
-    // objects produced by mklev on move zero may still be damaged.
-    if ((game.moves ?? 0) <= 1 && !game.in_mklev)
-        return false;
-    if (otmp.oerodeproof || otmp.oartifact || otmp.otyp === WORM_TOOTH || otmp.otyp === UNICORN_HORN)
-        return false;
-    if (!erosionMatters(otmp))
-        return false;
-    return objectIsVulnerableToErosion(otmp, 'rust')
-        || objectIsVulnerableToErosion(otmp, 'burn')
-        || objectIsVulnerableToErosion(otmp, 'rot')
-        || objectIsVulnerableToErosion(otmp, 'corrosion')
-        || objectIsVulnerableToErosion(otmp, 'crack');
-}
-function mkobjErosions(otmp) {
-    if (!mayGenerateEroded(otmp))
-        return;
-    if (!rn2(100)) {
-        otmp.oerodeproof = true;
-    }
-    else {
-        const primary = !rn2(80);
-        if (primary && (objectIsVulnerableToErosion(otmp, 'burn')
-            || objectIsVulnerableToErosion(otmp, 'rust')
-            || objectIsVulnerableToErosion(otmp, 'crack'))) {
-            let erosion = 1;
-            while (erosion < 3 && !rn2(9))
-                erosion++;
-            otmp.oeroded = erosion;
-        }
-        const secondary = !rn2(80);
-        if (secondary && (objectIsVulnerableToErosion(otmp, 'rot')
-            || objectIsVulnerableToErosion(otmp, 'corrosion'))) {
-            let erosion = 1;
-            while (erosion < 3 && !rn2(9))
-                erosion++;
-            otmp.oeroded2 = erosion;
-        }
-    }
-    if (!rn2(1000))
-        otmp.greased = true;
-}
-// C ref: mkobj.c mksobj_init().  Object state is deliberately small, but
-// every decision is driven by the real object class/type metadata.
-async function mksobj_init(otmp, artif, definition) {
-    const otyp = otmp.otyp;
-    switch (otmp.oclass) {
-        case WEAPON_CLASS:
-            if (isMultiGeneratedWeapon(otmp))
-                otmp.quan = rn1(6, 6);
-            if (!rn2(11)) {
-                otmp.spe = rne(3);
-                otmp.blessed = !!rn2(2);
-            }
-            else if (!rn2(10)) {
-                otmp.cursed = true;
-                otmp.spe = -rne(3);
-            }
-            else {
-                blessorcurse(otmp, 10);
-            }
-            if (isPoisonableObject(otmp))
-                otmp.opoisoned = rn2(100) === 0;
-            if (artif && !rn2(20 + 10 * artifactExistCount()))
-                createRandomArtifact(otmp);
-            break;
-        case ARMOR_CLASS:
-            if (rn2(10)
-                && (otyp === FUMBLE_BOOTS || otyp === LEVITATION_BOOTS
-                    || otyp === HELM_OF_OPPOSITE_ALIGNMENT
-                    || otyp === GAUNTLETS_OF_FUMBLING || !rn2(11))) {
-                otmp.cursed = true;
-                otmp.spe = -rne(3);
-            }
-            else if (!rn2(10)) {
-                otmp.blessed = !!rn2(2);
-                otmp.spe = rne(3);
-            }
-            else {
-                blessorcurse(otmp, 10);
-            }
-            if (artif && !rn2(40 + 10 * artifactExistCount()))
-                createRandomArtifact(otmp);
-            // Native lacquer protects Samurai armor created at startup or
-            // anywhere in the hero's quest, including armor carried by monsters.
-            if (game.urole?.key === 'samurai' && otmp.otyp === SPLINT_MAIL
-                && (game.moves <= 1 || In_quest(game.u.uz))) {
-                otmp.oerodeproof = true;
-                otmp.rknown = true;
-            }
-            break;
-        case RING_CLASS:
-            if (definition.charged) {
-                blessorcurse(otmp, 3);
-                if (rn2(10)) {
-                    if (rn2(10) && bcsign(otmp)) {
-                        otmp.spe = bcsign(otmp) * rne(3);
-                    }
-                    else {
-                        otmp.spe = (rn2(2) ? 1 : -1) * rne(3);
-                    }
-                }
-                if (otmp.spe === 0)
-                    otmp.spe = rn2(4) - rn2(3);
-                if (otmp.spe < 0 && rn2(5))
-                    curseObjectState(otmp);
-            }
-            else if (rn2(10)
-                && (otyp === 194 || otyp === 196 || otyp === 185
-                    || otyp === 184 || !rn2(9))) {
-                otmp.cursed = true;
-            }
-            break;
-        case AMULET_CLASS:
-            if (otyp === AMULET_OF_YENDOR)
-                game.context.made_amulet = true;
-            if (rn2(10) && (otyp === AMULET_OF_STRANGULATION
-                || otyp === AMULET_OF_CHANGE
-                || otyp === AMULET_OF_RESTFUL_SLEEP))
-                otmp.cursed = true;
-            else
-                blessorcurse(otmp, 10);
-            break;
-        case FOOD_CLASS:
-            if (otyp === CORPSE) {
-                let tries = 50;
-                do {
-                    otmp.corpsenm = undeadToCorpse(rndmonnum());
-                } while (((MONSTER_GENO[otmp.corpsenm] ?? 0) & 0x0010)
-                    && --tries > 0);
-                if (!tries)
-                    otmp.corpsenm = 260; // PM_HUMAN fallback
-            }
-            else if (otyp === EGG) {
-                otmp.corpsenm = -1; // NON_PM: generic egg
-                if (!rn2(3)) {
-                    // C ref: mkobj.c EGG initialization. Try up to 200 random
-                    // monsters. Every failed rndmonnum() call still advances the
-                    // gameplay RNG.
-                    for (let tries = 200; tries > 0; tries--) {
-                        const mndx = hatchableEggSpecies(rndmonnum());
-                        if (mndx !== -1 && !eggSpeciesIsDead(mndx)) {
-                            otmp.corpsenm = mndx;
-                            break;
-                        }
-                    }
-                }
-            }
-            else if (otyp === TIN) {
-                otmp.corpsenm = -1;
-                if (rn2(6)) {
-                    // mkobj.c retries up to 200 times until the selected corpse
-                    // has nutrition and is allowed to leave a corpse.
-                    for (let tries = 200; tries > 0; tries--) {
-                        const mndx = undeadToCorpse(rndmonnum());
-                        const nutrition = MONSTER_BODY_META[mndx]?.[1] ?? 0;
-                        if (!nutrition || ((MONSTER_GENO[mndx] ?? 0) & 0x0010))
-                            continue;
-                        otmp.corpsenm = mndx;
-                        setTinVariety(otmp, RANDOM_TIN);
-                        break;
-                    }
-                }
-                else
-                    otmp.spe = 1;
-                blessorcurse(otmp, 10);
-            }
-            else if (otyp >= GLOB_OF_GRAY_OOZE
-                && otyp <= GLOB_OF_BLACK_PUDDING) {
-                // mkobj.c:mksobj_init() constructs globs as one variable-weight
-                // identity and immediately starts their first 23..27-turn timer.
-                otmp.globby = true;
-                otmp.quan = otmp.quantity = 1;
-                otmp.owt = definition.weight;
-                otmp.known = otmp.dknown = true;
-                otmp.corpsenm = 206 + (otyp - GLOB_OF_GRAY_OOZE);
-                scheduleObjectTimer(otmp, OBJECT_TIMER_KIND.SHRINK_GLOB, (game.moves ?? 0) + 23 + rn2(5), game);
-            }
-            else if (otyp === SLIME_MOLD) {
-                const fruit = game.context.current_fruit;
-                if (fruit === undefined)
-                    throw new Error('Slime mold creation requires a current fruit');
-                otmp.spe = fruit;
-                game.flags.made_fruit = true;
-            }
-            else if (otyp === KELP_FROND) {
-                otmp.quan = rnd(2);
-            }
-            else if (otyp === CANDY_BAR) {
-                // C ref: read.c assign_candy_wrapper().  Index zero is the
-                // deliberately-unused blank wrapper.
-                otmp.spe = 1 + rn2(12);
-            }
-            if (otyp !== CORPSE && otyp !== MEAT_RING && otyp !== KELP_FROND
-                && !(otyp >= GLOB_OF_GRAY_OOZE
-                    && otyp <= GLOB_OF_BLACK_PUDDING))
-                if (!rn2(6))
-                    otmp.quan = 2;
-            break;
-        case GEM_CLASS:
-            if (otyp === LOADSTONE)
-                otmp.cursed = true;
-            else if (otyp === ROCK)
-                otmp.quan = rn1(6, 6);
-            else if (otyp !== LUCKSTONE && !rn2(6))
-                otmp.quan = 2;
-            break;
-        case TOOL_CLASS:
-            await initTool(otmp);
-            break;
-        case POTION_CLASS:
-        case SCROLL_CLASS:
-            // MAIL_STRUCTURES: stamped scrolls of mail bypass ordinary random BUC
-            // initialization; readobjnam() marks a wished one via spe afterward.
-            if (otyp !== 364)
-                blessorcurse(otmp, 4);
-            break;
-        case SPBOOK_CLASS:
-            blessorcurse(otmp, 17);
-            break;
-        case WAND_CLASS:
-            if (otyp === 414)
-                otmp.spe = 1;
-            else if (otyp === 415)
-                otmp.spe = rn1(4, 3);
-            else
-                otmp.spe = rn1(5, objectDirection(otyp, game) === 1 ? 11 : 4);
-            blessorcurse(otmp, 17);
-            break;
-        case ROCK_CLASS:
-            if (otyp === STATUE) {
-                otmp.corpsenm = rndmonnum();
-                if ((MONSTER_SIZE[otmp.corpsenm] || 0) >= 1
-                    && rn2(Math.trunc(level_difficulty() / 2) + 10) > 10) {
-                    // Ordinary initialized statues can contain one non-novel
-                    // spellbook.  A Lua `contents` field clears this object only
-                    // after its complete constructor has consumed RNG.
-                    await addToContainer(otmp, await mkobj(SPBOOK_no_NOVEL, false));
-                }
-            }
-            break;
-    }
-    mkobjErosions(otmp);
-}
-async function initTool(otmp) {
-    const otyp = otmp.otyp;
-    if (otyp === TALLOW_CANDLE || otyp === WAX_CANDLE) {
-        otmp.spe = 1;
-        otmp.age = 20 * requireObjectData(OBJECT_COST, otyp);
-        otmp.lamplit = false;
-        otmp.quan = 1 + (rn2(2) ? rn2(7) : 0);
-        blessorcurse(otmp, 5);
-    }
-    else if (otyp === BRASS_LANTERN || otyp === OIL_LAMP) {
-        otmp.spe = 1;
-        otmp.age = rn1(500, 1000);
-        otmp.lamplit = false;
-        blessorcurse(otmp, 5);
-    }
-    else if (otyp === MAGIC_LAMP) {
-        otmp.spe = 1;
-        otmp.lamplit = false;
-        blessorcurse(otmp, 2);
-    }
-    else if (otyp === CHEST || otyp === LARGE_BOX) {
-        otmp.olocked = !!rn2(5);
-        otmp.otrapped = !rn2(10);
-        otmp.tknown = otmp.otrapped && !rn2(100);
-        await mkboxCnts(otmp);
-    }
-    else if (otyp === ICE_BOX || otyp === SACK || otyp === OILSKIN_SACK
-        || otyp === BAG_OF_HOLDING) {
-        await mkboxCnts(otmp);
-    }
-    else if (otyp === EXPENSIVE_CAMERA || otyp === TINNING_KIT
-        || otyp === MAGIC_MARKER) {
-        otmp.spe = rn1(70, 30);
-    }
-    else if (otyp === CAN_OF_GREASE) {
-        otmp.spe = rn1(21, 5);
-        blessorcurse(otmp, 10);
-    }
-    else if (otyp === CRYSTAL_BALL) {
-        otmp.spe = rn1(5, 3);
-        blessorcurse(otmp, 2);
-    }
-    else if (otyp === HORN_OF_PLENTY || otyp === BAG_OF_TRICKS) {
-        otmp.spe = rn1(18, 3);
-    }
-    else if (otyp === FIGURINE) {
-        // C mkobj.c:mksobj_init(): figurines deliberately select from a
-        // harder band than ordinary corpses/statues and reject human forms
-        // through a bounded post-check retry.  Store the chosen identity so
-        // mksobj()'s shared corpse/statue/figurine tail only assigns gender.
-        let tryCount = 0;
-        do {
-            otmp.corpsenm = rndmonnumAdj(5, 10);
-        } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
-            && tryCount++ < 30);
-        blessorcurse(otmp, 4);
-    }
-    else if (otyp === BELL_OF_OPENING) {
-        otmp.spe = 3;
-    }
-    else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
-        || otyp === FROST_HORN || otyp === FIRE_HORN
-        || otyp === DRUM_OF_EARTHQUAKE) {
-        otmp.spe = rn1(5, 4);
-    }
-}
-// C ref: mkobj.c mkbox_cnts().
-async function mkboxCnts(box) {
-    let maximum;
-    if (box.otyp === ICE_BOX)
-        maximum = 20;
-    else if (box.otyp === CHEST)
-        maximum = box.olocked ? 7 : 5;
-    else if (box.otyp === LARGE_BOX)
-        maximum = box.olocked ? 5 : 3;
-    else if (box.otyp === SACK || box.otyp === OILSKIN_SACK) {
-        maximum = ((game.moves ?? 0) <= 1 && !game.in_mklev) ? 0 : 1;
-    }
-    else if (box.otyp === BAG_OF_HOLDING)
-        maximum = 1;
-    else
-        maximum = 0;
-    box.contents = [];
-    const classProbs = [[18, GEM_CLASS], [15, FOOD_CLASS], [18, POTION_CLASS],
-        [18, SCROLL_CLASS], [12, SPBOOK_CLASS], [7, COIN_CLASS],
-        [6, WAND_CLASS], [5, RING_CLASS], [1, AMULET_CLASS]];
-    for (let count = rn2(maximum + 1); count > 0; count--) {
-        let content;
-        if (box.otyp === ICE_BOX) {
-            content = await mksobj(CORPSE, true, false);
-            content.age = 0;
-            stopAllObjectTimers(content);
-        }
-        else {
-            let roll = rnd(100);
-            let objectClass = AMULET_CLASS;
-            for (const [probability, candidate] of classProbs) {
-                roll -= probability;
-                if (roll <= 0) {
-                    objectClass = candidate;
-                    break;
-                }
-            }
-            content = await mkobj(objectClass, false);
-            if (content.oclass === COIN_CLASS) {
-                content.quan = rnd(level_difficulty() + 2) * rnd(75);
-                content.quantity = content.quan;
-                content.owt = objectWeight(content);
-            }
-            else
-                while (content.otyp === ROCK) {
-                    content.otyp = rndClass(DILITHIUM_CRYSTAL, LOADSTONE);
-                    if (content.quan > 2)
-                        content.quan = 1;
-                    content.quantity = content.quan;
-                    content.owt = objectWeight(content);
-                }
-            if (box.otyp === BAG_OF_HOLDING) {
-                if (content.otyp === BAG_OF_HOLDING
-                    || content.otyp === BAG_OF_TRICKS) {
-                    content.otyp = SACK;
-                    content.spe = 0;
-                    content.owt = objectWeight(content);
-                }
-                else {
-                    while (content.otyp === WAN_CANCELLATION) {
-                        content.otyp = rndClass(WAN_LIGHT, WAN_LIGHTNING);
-                        content.owt = objectWeight(content);
-                    }
-                }
-            }
-        }
-        await addToContainer(box, content);
-    }
-}
-async function mksobj_at(otyp, x, y, init, artif) {
-    return placeCreatedObject(await mksobj(otyp, init, artif), x, y);
-}
-export async function mkobj(oclass, artif) {
-    if (oclass === RANDOM_CLASS) {
-        // mkobj.c:mkobj() switches the RANDOM_CLASS reservoir in Gehennom.
-        // Keep that shared constructor policy here; hellfill.lua merely asks
-        // for des.object() and does not own the resulting class weights.
-        const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-        const classProbs = Is_rogue_level(game.u.uz)
-            ? [[12, WEAPON_CLASS], [12, ARMOR_CLASS], [22, FOOD_CLASS],
-                [22, POTION_CLASS], [22, SCROLL_CLASS], [5, WAND_CLASS],
-                [5, RING_CLASS]]
-            : inHell ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
-                [16, FOOD_CLASS], [12, TOOL_CLASS], [10, GEM_CLASS],
-                [1, POTION_CLASS], [1, SCROLL_CLASS], [8, WAND_CLASS],
-                [8, RING_CLASS], [4, AMULET_CLASS]]
-                : [[10, WEAPON_CLASS], [11, ARMOR_CLASS],
-                    [20, FOOD_CLASS], [8, TOOL_CLASS], [7, GEM_CLASS],
-                    [16, POTION_CLASS], [16, SCROLL_CLASS], [4, SPBOOK_CLASS],
-                    [4, WAND_CLASS], [3, RING_CLASS], [1, AMULET_CLASS]];
-        let roll = rnd(100);
-        for (const [probability, cls] of classProbs) {
-            roll -= probability;
-            if (roll <= 0) {
-                oclass = cls;
-                break;
-            }
-        }
-    }
-    const excludeNovel = oclass === SPBOOK_no_NOVEL;
-    const { first, last: classLast } = getObjectClassBounds(excludeNovel ? SPBOOK_CLASS : oclass);
-    const last = excludeNovel ? 407 : classLast; // SPE_BLANK_PAPER
-    let total = 0;
-    for (let i = first; i <= last; i++)
-        total += requireObjectData(objectProb, i);
-    let roll = rnd(total);
-    let otyp = first;
-    while ((roll -= requireObjectData(objectProb, otyp)) > 0)
-        otyp++;
-    return await mksobj(otyp, true, artif);
-}
-async function mkobj_at(oclass, x, y, artif) {
-    return placeCreatedObject(await mkobj(oclass, artif), x, y);
-}
-function coinStackWeight(quantity) {
-    return Math.max(1, Math.trunc((quantity + 50) / 100));
-}
-export async function mkgold(amount, x, y, state = game) {
-    // C ref: mkobj.c mkgold()
-    if (amount <= 0) {
-        // C ref: mkobj.c:2008-2010
-        const depthVal = depth_of_level(game.u?.uz);
-        const mul = rnd(Math.trunc(30 / Math.max(12 - depthVal, 2)));
-        amount = 1 + rnd(level_difficulty() + 2) * mul;
-    }
-    const existing = state.level?.objects?.[x]?.[y]
-        ?.find(object => object.otyp === GOLD_PIECE);
-    if (existing) {
-        existing.quan += amount;
-        existing.quantity = existing.quan;
-        existing.owt = coinStackWeight(existing.quan);
-        return existing;
-    }
-    const gold = await mksobj(GOLD_PIECE, true, false);
-    gold.quan = gold.quantity = amount;
-    gold.owt = coinStackWeight(amount);
-    return placeCreatedObject(gold, x, y, state);
-}
-const PM_LICHEN = 158;
-const PM_LIZARD = 326;
-const UNDEAD_CORPSE_TYPES = new Map([
-    [239, 59], [187, 59], // kobold zombie/mummy -> kobold
-    [242, 44], [190, 44], // dwarf zombie/mummy -> dwarf
-    [240, 165], [188, 165], // gnome zombie/mummy -> gnome
-    [241, 72], [189, 72], // orc zombie/mummy -> orc
-    [243, 264], [191, 264], // elf zombie/mummy -> elf
-    [226, 260], [227, 260], [244, 260], [192, 260],
-    [247, 169], [194, 169], // giant zombie/mummy -> giant
-    [245, 174], [193, 174], // ettin zombie/mummy -> ettin
-]);
-export function undeadToCorpse(mndx) {
-    return UNDEAD_CORPSE_TYPES.get(mndx) ?? mndx;
-}
-function corpseHasNoTimer(mndx) {
-    return mndx === PM_LICHEN || mndx === PM_LIZARD;
-}
-function corpseHasSpecialTiming(mndx) {
-    return corpseHasNoTimer(mndx) || isReviver(mndx);
-}
-export function riderRevivalTime(body, retry = false) {
-    const firstTurn = retry ? 3 : body.corpsenm === PM_DEATH ? 6 : 12;
-    let turn = firstTurn;
-    while (turn < 67 && rn2(3))
-        turn++;
-    return turn;
-}
-// C mkobj.c:start_corpse_timeout(). Troll and Rider corpses can revive;
-// other corpses rot unless their creator requested zombification.
-export function startCorpseTimeout(body, { zombify = false } = {}) {
-    if (!body || corpseHasNoTimer(body.corpsenm))
-        return;
-    const species = body.corpsenm;
-    if (species === undefined)
-        throw new Error('Corpse timer requires a monster species');
-    const rotAdjust = game.in_mklev ? 25 : 10;
-    const currentMove = Math.max(game.moves ?? 1, 1);
-    if (body.age == null)
-        body.age = currentMove;
-    const age = currentMove - body.age;
-    const baseDelay = age > ROT_AGE ? rotAdjust : ROT_AGE - age;
-    let kind = OBJECT_TIMER_KIND.ROT_CORPSE;
-    let delay = baseDelay + rnz(rotAdjust) - rotAdjust;
-    if (species >= PM_DEATH && species <= PM_FAMINE) {
-        kind = OBJECT_TIMER_KIND.REVIVE_MON;
-        delay = riderRevivalTime(body);
-    }
-    else if (MONSTER_SYMBOL[species] === 46) { // S_TROLL
-        for (let turn = 2; turn <= 50; turn++) {
-            if (rn2(TROLL_REVIVE_CHANCE))
-                continue;
-            kind = OBJECT_TIMER_KIND.REVIVE_MON;
-            delay = turn;
-            break;
-        }
-    }
-    else if (zombify && zombieForm(species) !== null
-        && !body.norevive) {
-        kind = OBJECT_TIMER_KIND.ZOMBIFY_MON;
-        delay = rn1(15, 5);
-    }
-    // start_timer() counts from svm.moves itself, which is still 0 while
-    // the first level is built; only the age above uses max(moves, 1).
-    scheduleObjectTimer(body, kind, (game.moves ?? 0) + delay, game);
-}
-function attachEggHatchTimer(egg, remaining = 0) {
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    if (remaining > 0) {
-        scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + remaining, game);
-        return;
-    }
-    // timeout.c attach_egg_hatch_timeout(): reproduce the legacy per-turn
-    // hatch trial beginning at age 151.
-    for (let age = 151; age <= 200; age++) {
-        if (rnd(age) <= 150)
-            continue;
-        scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + age, game);
-        return;
-    }
-}
-export function restartEggHatchTimer(egg) {
-    if (!egg || egg.otyp !== EGG)
-        return null;
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    attachEggHatchTimer(egg);
-    return objectTimers(egg).find(timer => timer.kind === OBJECT_TIMER_KIND.HATCH_EGG) || null;
-}
-export function set_corpsenm(otmp, pm) {
-    if (!otmp)
-        return;
-    const existingEggTimer = otmp.otyp === EGG
-        ? objectTimers(otmp).find(timer => timer.kind === OBJECT_TIMER_KIND.HATCH_EGG)
-        : null;
-    const remainingEggTime = existingEggTimer
-        ? Math.max(0, existingEggTimer.deadline - (game.moves ?? 0))
-        : 0;
-    // set_corpsenm() replaces timers which depend on the object's species.
-    if (otmp.otyp === EGG)
-        stopObjectTimer(otmp, OBJECT_TIMER_KIND.HATCH_EGG);
-    else
-        stopAllObjectTimers(otmp);
-    if (otmp.otyp === CORPSE && otmp.oeaten) {
-        const previous = otmp.corpsenm;
-        const oldNutrition = previous === undefined ? 0 : MONSTER_BODY_META[previous]?.[1] ?? 0;
-        const newNutrition = MONSTER_BODY_META[pm]?.[1] ?? 0;
-        if (oldNutrition <= 0)
-            throw new Error('Partly eaten corpse requires its original nutrition');
-        if (oldNutrition !== newNutrition)
-            otmp.oeaten = Math.trunc(otmp.oeaten * newNutrition / oldNutrition);
-    }
-    otmp.corpsenm = pm;
-    if (otmp.otyp === CORPSE) {
-        startCorpseTimeout(otmp);
-        otmp.owt = objectWeight(otmp);
-    }
-    else if (otmp.otyp === EGG) {
-        if (pm >= 0 && !eggSpeciesIsDead(pm))
-            attachEggHatchTimer(otmp, remainingEggTime);
-    }
-    else {
-        if (otmp.otyp === FIGURINE
-            && (otmp.where === 'inventory' || otmp.where === 'minvent'))
-            attachFigurineTimer(otmp);
-        otmp.owt = objectWeight(otmp);
-    }
-}
-// C mkobj.c:mkcorpstat(). Generation uses an explicit square; live callers
-// may request <0,0>, whose relocation can run floor effects and show messages.
-export async function createCorpstatAt(objtyp, mtmp, pm, x, y, flags, { zombify = false, noRevive = false } = {}) {
-    if (!isok(x, y))
-        throw new RangeError('Corpstat creation needs an explicit map square');
-    const object = await mksobj(objtyp, !!(flags & CORPSTAT_INIT), false, { zombify });
-    placeCreatedObject(object, x, y);
-    return finishCorpstat(object, mtmp, pm, flags, zombify, noRevive);
-}
-export async function mkcorpstat(objtyp, mtmp, pm, x, y, flags, { state = game, zombify = false, noRevive = false } = {}) {
-    requireLiveGame(state);
-    if (x !== 0 || y !== 0)
-        return await createCorpstatAt(objtyp, mtmp, pm, x, y, flags, { zombify, noRevive });
-    const object = await mksobj(objtyp, !!(flags & CORPSTAT_INIT), false, { zombify });
-    await relocateObjectRandomly(object, { state });
-    return finishCorpstat(object, mtmp, pm, flags, zombify, noRevive);
-}
-function finishCorpstat(otmp, mtmp, pm, flags, zombify, noRevive) {
-    // Placement sees mksobj's temporary identity, not the caller's override.
-    otmp.spe = flags & CORPSTAT_SPE_VAL;
-    if (noRevive)
-        otmp.norevive = true;
-    if (mtmp) {
-        otmp.oextra = {
-            ...(otmp.oextra || {}),
-            omonst: saveMonsterTraits(mtmp),
-        };
-        if (pm == null)
-            pm = mtmp.mnum;
-        if (mtmp.mcan && !isRider(pm))
-            otmp.norevive = true;
-    }
-    if (pm != null) {
-        const oldCorpsenm = otmp.corpsenm;
-        otmp.corpsenm = pm;
-        otmp.owt = objectWeight(otmp);
-        if (otmp.otyp === CORPSE
-            && (zombify
-                || corpseHasSpecialTiming(oldCorpsenm)
-                || corpseHasSpecialTiming(pm))) {
-            stopAllObjectTimers(otmp);
-            startCorpseTimeout(otmp, { zombify });
-        }
-    }
-    return otmp;
-}
 // C makemon.c:cmp_init_mongen_order().
 function monsterGenerationOrder() {
     // C makemon.c:init_mongen_order() sorts once, on first use. Alignment
@@ -1409,27 +673,6 @@ function wrongElementalPlaneSpecies(mndx) {
             && !monsterIsWhirly(species);
     }
     return false;
-}
-export function rndmonnum() {
-    return rndmonnumAdj(0, 0);
-}
-// C mkobj.c:rndmonnum_adj(). Object identities still need a species when
-// no level-appropriate living monster can be generated. Its fallback
-// deliberately ignores extinction and genocide, as well as difficulty.
-function rndmonnumAdj(minAdjustment = 0, maxAdjustment = 0) {
-    const selected = rndmonstAdj(minAdjustment, maxAdjustment);
-    if (selected != null)
-        return selected;
-    const G_UNIQ = 0x1000;
-    const G_HELL = 0x0400;
-    const G_NOHELL = 0x0800;
-    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-    const excluded = G_UNIQ | G_NOGEN | (inHell ? G_NOHELL : G_HELL);
-    let species;
-    do {
-        species = rn2(SPECIAL_PM);
-    } while (requireMonsterData(MONSTER_GENO, species) & excluded);
-    return species;
 }
 // C questpgr.c:qt_montype(). The chosen role supplies both species and
 // fallback classes; a genocided preferred species still spends rn2(5).

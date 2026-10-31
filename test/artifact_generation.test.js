@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { artifactByName, artifactExistCount, createRandomArtifact, initializeArtifacts, nameArtifact, uncreateArtifact, } from '../js/artifacts.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { placeCreatedObject } from '../js/floor_object.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { freshObjectRoom } from './support/object-room.js';

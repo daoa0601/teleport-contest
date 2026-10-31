@@ -5,7 +5,7 @@ import { flush_screen, plineWithContinuation } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj, set_corpsenm } from '../js/mklev.js';
+import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { tameMonster } from '../js/monster_taming.js';

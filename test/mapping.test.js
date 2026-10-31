@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { magic_map_background, map_invisible, map_object, map_trap, newsym } from '../js/display.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { cansee } from '../js/vision.js';
 import { CLR_BLACK, NO_COLOR } from '../js/terminal.js';

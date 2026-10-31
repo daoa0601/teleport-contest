@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { mksobj, set_corpsenm } from '../js/mklev.js';
+import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, FIGURINE, STATUE } from '../js/object_data.js';
 import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';

@@ -11,7 +11,7 @@ import {
     detachHeroGold, heroGoldAmount, heroGoldObject,
 } from '../js/hero_gold.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { mkgold } from '../js/mklev.js';
+import { mkgold } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addShopObjectToBill, billForObject } from '../js/shk.js';
 import { buyShopBillItem } from '../js/shop_payment.js';

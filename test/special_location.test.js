@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, ROOM, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { flush_screen } from '../js/display.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { BOULDER } from '../js/object_data.js';

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { WAN_NOTHING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';

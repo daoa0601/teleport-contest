@@ -261,7 +261,9 @@ import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
 import { placeCreatedObject } from './floor_object.js';
-import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { mkgold, mksobj } from './mkobj.js';
+import { rndClass } from './objnam.js';
 import {
     level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt,
     dungeonBuildsUp, sameDungeonLevel,

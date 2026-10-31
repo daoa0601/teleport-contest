@@ -3,7 +3,7 @@
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, G_GENOD, G_NOCORPSE, } from './const.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { game } from './gstate.js';
-import { set_corpsenm } from './mklev.js';
+import { set_corpsenm } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, } from './monster_data.js';
 import { counterWereSpecies } from './monster_species.js';
 import { CORPSE, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALE_MAIL, STATUE, TIN, OBJECT_NAMES, } from './object_data.js';

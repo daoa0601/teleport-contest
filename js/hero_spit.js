@@ -9,7 +9,7 @@ import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.
 import { hurtleHero } from './hero_hurtle.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_DRST, AT_SPIT, } from './monster_attack_types.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, } from './object_breakage.js';

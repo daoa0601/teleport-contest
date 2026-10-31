@@ -9,7 +9,7 @@ import { dragonFormForArmor, heroHasDrainResistance } from './armor.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races } from './roles.js';
 import { objectClassForType } from './object_knowledge.js';

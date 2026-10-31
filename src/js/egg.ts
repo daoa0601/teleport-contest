@@ -66,7 +66,7 @@ import {
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import {
-    OBJECT_TIMER_KIND, scheduleObjectTimer,
+    OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopObjectTimer,
 } from './object_timers.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
@@ -341,4 +341,35 @@ export async function finishEggHatchTimer(
     event.finishPending = false;
     event.finished = true;
     return event;
+}
+
+// C timeout.c:attach_egg_hatch_timeout().
+export function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+    if (remaining > 0) {
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + remaining, game,
+        );
+        return;
+    }
+    // timeout.c attach_egg_hatch_timeout(): reproduce the legacy per-turn
+    // hatch trial beginning at age 151.
+    for (let age = 151; age <= 200; age++) {
+        if (rnd(age) <= 150) continue;
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + age, game,
+        );
+        return;
+    }
+}
+
+// C timeout.c:attach_egg_hatch_timeout(), restarting a typed egg.
+export function restartEggHatchTimer(egg: GameObject | null | undefined) {
+    if (!egg || egg.otyp !== EGG) return null;
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+    attachEggHatchTimer(egg);
+    return objectTimers(egg).find(timer =>
+        timer.kind === OBJECT_TIMER_KIND.HATCH_EGG) || null;
 }

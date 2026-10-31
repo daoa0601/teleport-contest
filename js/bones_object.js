@@ -4,7 +4,7 @@ import { ROOMOFFSET, SHOPBASE } from './const.js';
 import { game } from './gstate.js';
 import { AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL, OBJECT_USES_KNOWN, ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI, } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
-import { set_corpsenm } from './mklev.js';
+import { set_corpsenm } from './mkobj.js';
 import { OBJECT_TIMER_KIND } from './object_timers.js';
 import { curseObjectState } from './object_state.js';
 import { roomForRoomno } from './room.js';

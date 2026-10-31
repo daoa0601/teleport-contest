@@ -16,7 +16,7 @@ import {
     SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import {
     createPolymorphMonsterFromPile, do_osshock, obj_unpolyable,

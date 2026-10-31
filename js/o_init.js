@@ -6,8 +6,8 @@
 // partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
 import { artifactById, artifactInfoLines } from './artifacts.js';
-import { initializeObjectProbabilities } from './mklev.js';
 import { rn2 } from './rng.js';
+import { ledgerNo, maxLedgerNo } from './hacklib.js';
 import { clearMessageWindow, plineWithContinuation } from './display.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE } from './const.js';
 import { yn_function } from './query.js';
@@ -16,7 +16,7 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, 
 import { heroIsBlind } from './senses.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { FLINT, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
+import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
 import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix, } from './object_knowledge.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
@@ -28,6 +28,7 @@ const DISCOVERY_ORDERS = {
     c: 'alphabetical within each class',
     a: 'alphabetical across all classes',
 };
+const GEM_CLASS = 13;
 export function discoverySortDescription() {
     return DISCOVERY_ORDERS[game.flags.discosort ?? 'o'];
 }
@@ -462,5 +463,29 @@ function discoveredArtifacts() {
                 : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
         return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
     });
+}
+// Object probabilities are mutable because gemstone rarity changes with
+// dungeon depth.  This is the level-dependent half of o_init.c.
+export let objectProb = OBJECT_PROB.slice();
+function initializeObjectProbabilities() {
+    objectProb = OBJECT_PROB.slice();
+    setGemProbabilities(0);
+}
+// C o_init.c:oinit().
+export function oinit() {
+    setGemProbabilities(Math.min(ledgerNo(game.u?.uz), maxLedgerNo()));
+}
+// C o_init.c:setgemprobs().
+function setGemProbabilities(ledger) {
+    const firstGem = getObjectClassBounds(GEM_CLASS).first;
+    const lastRealGem = 460;
+    let first = firstGem;
+    for (let j = 0; j < 9 - Math.trunc(ledger / 3); j++) {
+        objectProb[first++] = 0;
+    }
+    for (let j = first; j <= lastRealGem; j++) {
+        objectProb[j] = Math.trunc((171 + j - first)
+            / (lastRealGem + 1 - first));
+    }
 }
 //# sourceMappingURL=o_init.js.map

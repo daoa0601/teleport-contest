@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ALLOW_M, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { startCorpseTimeout } from '../js/mklev.js';
+import { startCorpseTimeout } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { mfndpos } from '../js/monmove.js';
 import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';

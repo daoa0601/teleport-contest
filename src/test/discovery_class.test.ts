@@ -4,7 +4,7 @@ import { artifactByName, discoverArtifact, nameArtifact } from '../js/artifacts.
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { BELL_OF_OPENING, POT_HEALING, WAN_FIRE } from '../js/object_data.js';
 import { recordObjectKnowledge } from '../js/object_knowledge.js';
 import { applyNethackrc } from '../js/options.js';

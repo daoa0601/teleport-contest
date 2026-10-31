@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { dodiscovered } from '../js/o_init.js';

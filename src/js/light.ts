@@ -30,7 +30,8 @@ import {
     plineWithContinuation, displayColorName,
 } from './display.js';
 import { initializePet } from './dog.js';
-import { makemonNear, mksobj } from './mklev.js';
+import { makemonNear } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     monsterDigests, monsterIsWhirly,

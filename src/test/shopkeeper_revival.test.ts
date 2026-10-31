@@ -4,7 +4,7 @@ import { reviveCorpseForHero } from '../js/corpse_revival.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import type { GameObject } from '../js/object_types.js';
 import { unlinkObject } from '../js/object_location.js';

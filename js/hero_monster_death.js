@@ -17,7 +17,7 @@ import { heroIsAmphibious } from './hero_species.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { mkobj } from './mklev.js';
+import { mkobj } from './mkobj.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';

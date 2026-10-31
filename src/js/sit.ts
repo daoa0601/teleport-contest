@@ -22,9 +22,7 @@ import { stack_object } from './floor_object.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import {
-    mksobj, set_corpsenm,
-} from './mklev.js';
+import { mksobj, set_corpsenm } from './mkobj.js';
 import {
     MONSTER_FLAGS1,
     MONSTER_SYMBOL,

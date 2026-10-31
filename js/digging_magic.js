@@ -13,7 +13,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { mayDig } from './hero_digging.js';
 import { expelHero } from './hero_expulsion.js';
 import { liquidForHole } from './hole.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { MONSTER_GENO, monsterDigests, monsterIsWhirly } from './monster_data.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { ROCK } from './object_data.js';

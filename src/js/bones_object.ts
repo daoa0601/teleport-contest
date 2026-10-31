@@ -12,7 +12,7 @@ import {
     WAX_CANDLE, YUMI,
 } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
-import { set_corpsenm } from './mklev.js';
+import { set_corpsenm } from './mkobj.js';
 import { OBJECT_TIMER_KIND } from './object_timers.js';
 import { curseObjectState } from './object_state.js';
 import { roomForRoomno } from './room.js';

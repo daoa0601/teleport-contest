@@ -36,7 +36,7 @@ import {
     releaseMonsterLeash, releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { objectMaterial } from './object_material.js';

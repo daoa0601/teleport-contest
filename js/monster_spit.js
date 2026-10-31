@@ -7,7 +7,7 @@ import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.
 import { requireLiveGame } from './gstate.js';
 import { dist2, distmin } from './hacklib.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { AD_ACID, AD_BLND, AD_DRST } from './monster_attack_types.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterLinedUpWithHero, monsterLinedUpWithMonster } from './monster_ranged_alignment.js';

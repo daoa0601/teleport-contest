@@ -10,7 +10,7 @@ import { requireLiveGame } from './gstate.js';
 import { placeTreeFruit } from './hero_digging.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { inTown, roomsAt } from './room.js';

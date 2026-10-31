@@ -6,7 +6,7 @@ import { G_GENOD, MV_KNOWS_EGG } from '../js/const.js';
 import { finishEggHatchTimer, runClaimedEggHatchTimer, } from '../js/egg.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { EGG } from '../js/object_data.js';

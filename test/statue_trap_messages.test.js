@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { STATUE_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt } from '../js/mklev.js';
+import { createCorpstatAt } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
 import { addTrap } from './support/level-state.js';

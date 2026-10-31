@@ -7,7 +7,7 @@ import { createStaffedShop } from './shop.js';
 import { createRoom } from './topology.js';
 import { addHeroGoldObject } from '../../js/hero_gold.js';
 import { pushKey, pushKeys } from '../../js/input.js';
-import { mksobj } from '../../js/mklev.js';
+import { mksobj } from '../../js/mkobj.js';
 import { GOLD_PIECE } from '../../js/object_data.js';
 import { createMonsterAt } from './monsters.js';
 

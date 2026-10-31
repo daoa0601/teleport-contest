@@ -1,6 +1,7 @@
 // Text shared by read.c and end-of-game xname_flags() disclosure.
 import { wipeoutText } from './engrave.js';
 import { game } from './gstate.js';
+import { rn2 } from './rng.js';
 import { ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, OBJECT_NAMES } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES, } from './readable_object_text.js';
@@ -57,5 +58,10 @@ function inscriptionAt(messages, index) {
     if (message === undefined)
         throw new RangeError(`No readable inscription at index ${index}.`);
     return message;
+}
+// C read.c:assign_candy_wrapper(). Index zero is the blank wrapper.
+export function assignCandyWrapper(object) {
+    if (object.otyp === CANDY_BAR)
+        object.spe = 1 + rn2(CANDY_WRAPPERS.length - 1);
 }
 //# sourceMappingURL=object_inscription.js.map

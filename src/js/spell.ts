@@ -19,7 +19,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { jumpHero } from './jumping.js';
 import { mapVicinity } from './magic_detection.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { deleteObject } from './object_delete.js';
 import { useHeroSkill } from './skills.js';
 import { castChainLightning, castSkilledElementalSpell } from './spell_attack_effects.js';

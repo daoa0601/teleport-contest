@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
-import { mksobj } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { monsterAtPosition } from './monster_location.js';
 import { DART } from './object_data.js';
 import { sellHeroDroppedObject } from './shop_sell.js';

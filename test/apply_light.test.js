@@ -28,7 +28,7 @@ import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject, } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addInventoryItem } from '../js/u_init.js';
 function screen() {
     assert.ok(game.nhDisplay);

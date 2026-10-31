@@ -12,7 +12,7 @@ import { gameLogEvents } from '../js/gamelog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
 import { placeMonsterAt } from '../js/monster_location.js';

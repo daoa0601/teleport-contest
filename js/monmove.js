@@ -117,7 +117,8 @@ import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWAR
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { useMonsterBullwhip } from './monster_bullwhip.js';
-import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
+import { canFallThrough, makemonNear, maketrap, summonNastyMonsters } from './mklev.js';
+import { mksobj } from './mkobj.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';

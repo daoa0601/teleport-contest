@@ -4,7 +4,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { DIAMOND, EMERALD, FLINT, JADE, LOADSTONE, ROCK, RUBY } from '../js/object_data.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem } from '../js/u_init.js';
 import { learnObjectType, observeObject, recordObjectCall } from '../js/object_knowledge.js';
 import { minimalObjectName, objectCombatName, objectName } from '../js/objnam.js';

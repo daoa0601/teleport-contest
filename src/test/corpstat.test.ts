@@ -13,7 +13,7 @@ import {
     isok,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mkcorpstat } from '../js/mklev.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { petrifyMonsterImmediately } from '../js/monster_stoning.js';
 import { placeMonsterAt } from '../js/monster_location.js';

@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitMonsterWithKickedObject } from '../js/hero_ranged_attack.js';
 import { resetInputState } from '../js/input.js';
-import { mksobj } from '../js/mklev.js';
+import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { APPLE, BANANA, CARROT, CORPSE, CREAM_PIE, RING_MAIL, TRIPE_RATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

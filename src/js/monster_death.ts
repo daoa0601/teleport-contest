@@ -23,9 +23,8 @@ import { removeMonsterWormBody } from './monster_worm.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { meldNearbyFloorGlobs } from './glob.js';
-import {
-    mkcorpstat, mkgold, mksobj, undeadToCorpse,
-} from './mklev.js';
+import { mkcorpstat, mkgold, mksobj } from './mkobj.js';
+import { undeadToCorpse } from './mon.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { releaseMonsterInventory } from './monster_drop.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
