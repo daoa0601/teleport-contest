@@ -50,7 +50,7 @@ import type { Monster } from './monster_types.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
 import type { DisplayGlyph } from './display.js';
 import type { MessagePublisher } from './pline.js';
-import { costlySpot } from './shk.js';
+import { costlySpot, shopkeeperCatch } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
@@ -58,7 +58,6 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
-import { shopkeeperCatch } from './shop_damage.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import {

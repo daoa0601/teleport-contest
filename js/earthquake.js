@@ -31,7 +31,7 @@ import { setHeroTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage } from './shk.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;

@@ -50,7 +50,6 @@ import { corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } f
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
-import { makeShopkeeperHappy, makeShoppersHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { depth, possessiveName } from './hacklib.js';
@@ -62,7 +61,7 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
 import { tryMonsterTrapEscape } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
-import { setShopResidency } from './shk.js';
+import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.js';
 import { placeObject } from './floor_object.js';
 import { insideWizardTower } from './dungeon.js';
 

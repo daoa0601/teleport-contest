@@ -16,7 +16,7 @@ import { triggerMonsterDoorTrap } from './monmove.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { inTown, roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage } from './shk.js';
 import { vision_note_blocker_change } from './vision.js';
 export async function digMonsterTunnel(monster, state, { random = rn2, rollOne = rnd, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);

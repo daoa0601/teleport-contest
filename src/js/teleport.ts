@@ -40,8 +40,7 @@ import {
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 
-import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue } from './shk.js';
-import { makeAngryShopkeeper } from './shop_damage.js';
+import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper } from './shk.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';

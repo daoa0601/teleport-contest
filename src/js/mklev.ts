@@ -42,7 +42,6 @@ import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './flo
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './buried_object.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { addShopDamage, fixShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
 import { ageStoresFuel } from './container.js';
@@ -96,7 +95,7 @@ import {
 import { addObjectToMonsterInventory } from './steal.js';
 import { setupElementalBubbles } from './elemental.js';
 import { insideRoom, roomsAt } from './room.js';
-import { insideShopRoomAt } from './shk.js';
+import { insideShopRoomAt, addShopDamage, fixShopDamage } from './shk.js';
 import {
     PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey,
     somexyspace,

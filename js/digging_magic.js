@@ -25,7 +25,7 @@ import { captureRayTraversalFrame } from './ray.js';
 import { inTown, roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { addShopDamage, payForShopDamage } from './shop_damage.js';
+import { addShopDamage, payForShopDamage } from './shk.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { CLR_WHITE } from './terminal.js';

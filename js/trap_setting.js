@@ -20,8 +20,7 @@ import { promptYesNo } from './query.js';
 import { roomsAt } from './room.js';
 import { rnl } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { billDummyObject, objectOwnershipPrefix, findObjectOwner, shopkeeperIsMuted } from './shk.js';
-import { addShopDamage } from './shop_damage.js';
+import { billDummyObject, objectOwnershipPrefix, findObjectOwner, shopkeeperIsMuted, addShopDamage } from './shk.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap_name.js';
 // C apply.c:reset_trapset().

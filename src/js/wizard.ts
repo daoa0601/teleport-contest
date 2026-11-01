@@ -3,6 +3,7 @@ import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { monsterName } from './do_name.js';
 import type { GameState, PlayingGameState } from './game_state.js';
+import type { ShopGameState } from './shop_types.js';
 import type { Monster } from './monster_types.js';
 import { displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -40,10 +41,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
-import {
-    healMonster, monsterIndexByName, speciesWasGenocided,
-} from './mon.js';
-import { mnearto } from './shop_damage.js';
+import { healMonster, monsterIndexByName, speciesWasGenocided, mnearto } from './mon.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
@@ -432,7 +430,7 @@ export async function retreatCovetousMonster(
         const expelled = await expelHero(monster, { state, random, rollOne });
         if (expelled.died) return 'blocked';
     }
-    const stairs = chooseRetreatStairs(monster, state);
+    const stairs = chooseStairs(!!(monster.m_id % 2), state);
     monster.mavenge = 1;
     const amulet = (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
     const staysInTower = insideWizardTower(healingX, healingY, state)
@@ -460,9 +458,12 @@ export async function retreatCovetousMonster(
     return 'harass';
 }
 
-function chooseRetreatStairs(monster: Monster, state: PlayingGameState): Stairway | null {
-    const forward = !!(monster.m_id % 2);
-    const up = dungeonBuildsUp(state.u.uz, state) ? forward : !forward;
+// C wizard.c:choose_stairs(): a flee spot for covetous monsters or a rally
+// point for guardians (Kops). C prefers stairs, then a ladder, in the travel
+// direction; then a branch stairway in any direction; then stairs or a
+// ladder in the other direction. Null when only a portal reaches the level.
+export function chooseStairs(dir: boolean, state: PlayingGameState | ShopGameState): Stairway | null {
+    const up = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
     const stairs: Stairway[] = [];
     for (let stair = state.stairs; stair; stair = stair.next) stairs.push(stair);
     return stairs.find(stair => !stair.isladder && stair.up === up)

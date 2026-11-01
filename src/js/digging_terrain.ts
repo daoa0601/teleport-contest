@@ -28,9 +28,7 @@ import {
     TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE,
     W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok,
 } from './const.js';
-import {
-    addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig,
-} from './shop_damage.js';
+import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig } from './shk.js';
 import { canSeeMonster, displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';

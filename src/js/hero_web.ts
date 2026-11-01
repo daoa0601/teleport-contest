@@ -34,7 +34,7 @@ import {
 import { heroMonsterForm } from './polyself.js';
 import { yn_function } from './query.js';
 import { roomsAt } from './room.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage } from './shk.js';
 
 const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
 const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');

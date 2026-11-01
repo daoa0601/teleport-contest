@@ -21,7 +21,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { roomsAt } from './room.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage } from './shk.js';
 import { stopHeroOccupation } from './occupation.js';
 import { impossible } from './diagnostics.js';
 

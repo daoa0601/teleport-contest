@@ -43,6 +43,10 @@ export async function pline_mon(monster, message) {
 export async function pline(msg) {
     await plineWithContinuation(msg);
 }
+// C pline.c:verbalize(): the message goes out wrapped in quotes.
+export async function verbalize(message) {
+    await pline(`"${message}"`);
+}
 // C pline.c:vpline(). Await the window port before recording the last message.
 export async function plineWithContinuation(msg, { noRepeat = false, urgent = false, overrideMessageType = false, position, } = {}) {
     const location = position ?? game.iflags.messageLocation;

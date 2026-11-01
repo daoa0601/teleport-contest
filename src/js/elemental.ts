@@ -18,7 +18,7 @@ import { CmapSymbol } from './glyph_numbers.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearMonsterWormFromMap } from './worm.js';
-import { mnearto } from './shop_damage.js';
+import { mnearto } from './mon.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero } from './teleport.js';
 import {
     block_point, recalc_block_point, unblock_point, vision_recalc,
