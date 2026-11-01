@@ -184,7 +184,7 @@ export function couldPoleMonster(weapon: GameObject | null | undefined, { state 
 }
 
 // C obj.h u_wield_art(ART_SNICKERSNEE), via the same id lookup
-// weapon_type.js uses for is_pole().
+// object_properties.js uses for is_pole().
 function isArtifactSnickersnee(object: GameObject) {
     return artifactById(object?.oartifact)?.name === 'Snickersnee';
 }

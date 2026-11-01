@@ -136,7 +136,7 @@ export function couldPoleMonster(weapon, { state = game } = {}) {
     return distance <= max && distance >= min;
 }
 // C obj.h u_wield_art(ART_SNICKERSNEE), via the same id lookup
-// weapon_type.js uses for is_pole().
+// object_properties.js uses for is_pole().
 function isArtifactSnickersnee(object) {
     return artifactById(object?.oartifact)?.name === 'Snickersnee';
 }

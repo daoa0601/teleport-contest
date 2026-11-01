@@ -471,7 +471,7 @@ export function returningWeaponRangeSquared(object: WeaponCandidate): number | n
     return object?.otyp === AKLYS ? AKLYS_LIM * AKLYS_LIM : null;
 }
 
-// weapon_damage.js — Shared physical weapon die, enchantment, and erosion.
+// Shared physical weapon die, enchantment, and erosion.
 // C refs: weapon.c:dmgval(), weapon.c:dbon().
 
 export interface PhysicalWeaponDamageOptions {
