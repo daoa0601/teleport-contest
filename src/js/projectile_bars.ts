@@ -15,8 +15,8 @@ import type { GameState } from './game_state.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
-import type { ObjectBreakResult } from './object_breakage.js';
+import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
+import type { ObjectBreakResult } from './dothrow.js';
 import {
     BOULDER, CORPSE, CREDIT_CARD,
     ENORMOUS_MEATBALL, HEAVY_IRON_BALL,
@@ -25,7 +25,7 @@ import {
     STATUE, TALLOW_CANDLE, TIN_WHISTLE,
     WAR_HAMMER, WAX_CANDLE, requireObjectData,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { splitObjectStack } from './object_stack.js';
 import { harmlessMissile } from './projectile.js';
 import type { GameObject } from './object_types.js';

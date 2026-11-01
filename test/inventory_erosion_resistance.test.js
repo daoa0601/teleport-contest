@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { erodeObject } from '../js/object_erosion.js';
+import { erodeObject } from '../js/trap.js';
 import { CLUB } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { ensureQuestStatus } from '../js/quest.js';

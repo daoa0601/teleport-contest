@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, CHEST, CLUB, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

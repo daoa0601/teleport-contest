@@ -1799,40 +1799,40 @@ src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""4""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions/shuffle	rn2	"[""high - current + 1""]"	unproved
-src/js/object_erosion.ts	erodeArmor	random	"[""5""]"	constant
-src/js/object_erosion.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
-src/js/object_erosion.ts	erodeObject	luckRandom	"[""4""]"	constant
-src/js/object_erosion.ts	inventoryResists	random	"[""100""]"	constant
-src/js/object_erosion.ts	inventoryResists	random	"[""100""]"	constant
-src/js/object_erosion.ts	protectWithGrease	random	"[""2""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""2""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""20""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""20""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""3""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""3""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""3""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""3""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""messages.length""]"	constant
-src/js/object_kick.ts	kickFloorObject	random	"[""object.olocked ? 5 : 3""]"	constant
-src/js/object_kick.ts	kickFloorObject	rollOne	"[""3""]"	constant
-src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
-src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
-src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
-src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
-src/js/object_migration.ts	impactDrop	random	"[""object.otyp === BOULDER ? 30 : 3""]"	constant
-src/js/object_migration.ts	shipObject	random	"[""3""]"	constant
-src/js/object_polymorph.ts	createPolymorphMonsterFromPile	rn2	"[""remaining + 1""]"	guarded
-src/js/object_polymorph.ts	do_osshock	rn2	"[""luck + 45""]"	unproved
-src/js/object_polymorph.ts	do_osshock	rnd	"[""quantity > LARGEST_INT ? 30000 : quantity - 1""]"	guarded
-src/js/object_polymorph.ts	finishReplacementType	rn2	"[""1000""]"	constant
-src/js/object_polymorph.ts	finishReplacementType	rn2	"[""7""]"	constant
-src/js/object_polymorph.ts	finishReplacementType	rn2	"[""target.spestudied""]"	unproved
-src/js/object_polymorph.ts	finishReplacementType	rnd	"[""4""]"	constant
-src/js/object_polymorph.ts	golemForMaterial	rn2	"[""2""]"	constant
-src/js/object_polymorph.ts	makeHeroLaidEgg	rn2	"[""MONSTER_NAME.length""]"	constant
-src/js/object_polymorph.ts	obj_shudders	rn2	"[""odds""]"	unproved
-src/js/object_release.ts	crysknifeReversions	rn2	"[""10""]"	constant
-src/js/object_state.ts	objectResistsDestruction	random	"[""100""]"	constant
+src/js/trap.ts	erodeArmor	random	"[""5""]"	constant
+src/js/trap.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
+src/js/trap.ts	erodeObject	luckRandom	"[""4""]"	constant
+src/js/trap.ts	inventoryResists	random	"[""100""]"	constant
+src/js/trap.ts	inventoryResists	random	"[""100""]"	constant
+src/js/trap.ts	protectWithGrease	random	"[""2""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""2""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""20""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""20""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""3""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""3""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""3""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""3""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""messages.length""]"	constant
+src/js/dokick.ts	kickFloorObject	random	"[""object.olocked ? 5 : 3""]"	constant
+src/js/dokick.ts	kickFloorObject	rollOne	"[""3""]"	constant
+src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
+src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
+src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
+src/js/dokick.ts	kickRange	rollOne	"[""3""]"	constant
+src/js/dokick.ts	impactDrop	random	"[""object.otyp === BOULDER ? 30 : 3""]"	constant
+src/js/dokick.ts	shipObject	random	"[""3""]"	constant
+src/js/zap.ts	createPolymorphMonsterFromPile	rn2	"[""remaining + 1""]"	guarded
+src/js/zap.ts	do_osshock	rn2	"[""luck + 45""]"	unproved
+src/js/zap.ts	do_osshock	rnd	"[""quantity > LARGEST_INT ? 30000 : quantity - 1""]"	guarded
+src/js/zap.ts	finishReplacementType	rn2	"[""1000""]"	constant
+src/js/zap.ts	finishReplacementType	rn2	"[""7""]"	constant
+src/js/zap.ts	finishReplacementType	rn2	"[""target.spestudied""]"	unproved
+src/js/zap.ts	finishReplacementType	rnd	"[""4""]"	constant
+src/js/zap.ts	golemForMaterial	rn2	"[""2""]"	constant
+src/js/zap.ts	makeHeroLaidEgg	rn2	"[""MONSTER_NAME.length""]"	constant
+src/js/zap.ts	obj_shudders	rn2	"[""odds""]"	unproved
+src/js/do.ts	crysknifeReversions	rn2	"[""10""]"	constant
+src/js/zap.ts	objectResistsDestruction	random	"[""100""]"	constant
 src/js/objnam.ts	applyWishEnchantment	rn2	"[""10""]"	constant
 src/js/objnam.ts	applyWishEnchantment	rnd	"[""5""]"	constant
 src/js/objnam.ts	applyWishQuantity	rn2	"[""5""]"	constant

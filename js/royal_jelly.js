@@ -1,7 +1,7 @@
 // Applying and eating royal jelly.
 // C refs: apply.c use_royal_jelly(), eat.c fpostfx().
 import { gainHeroStrength, } from './attrib.js';
-import { POISONING } from './const.js';
+import { POISONING, OBJECT_TIMER_KIND } from './const.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -9,8 +9,8 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { healHeroLegs } from './hero_legs.js';
 import { restartEggHatchTimer } from './egg.js';
 import { EGG, LUMP_OF_ROYAL_JELLY } from './object_data.js';
-import { deleteObject } from './object_delete.js';
-import { OBJECT_TIMER_KIND, objectTimers, stopObjectTimer, } from './object_timers.js';
+import { deleteObject } from './shk.js';
+import { objectTimers, stopObjectTimer } from './timeout.js';
 import { definiteObjectAction, ownedObjectName } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { releaseWeaponSlots } from './wield.js';

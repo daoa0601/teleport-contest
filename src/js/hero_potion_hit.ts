@@ -8,7 +8,6 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { tryCallObjectType } from './object_call.js';
 import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
-import { deleteObject } from './object_delete.js';
 import {
     applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, randomBottleName,
 } from './potion.js';
@@ -16,7 +15,7 @@ import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
-import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsFromBill } from './shk.js';
+import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsFromBill, deleteObject } from './shk.js';
 import { cansee } from './vision.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';

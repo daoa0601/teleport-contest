@@ -1,6 +1,6 @@
 // C mthrowu.c:thitu(). Polearms and thrown weapons share this hit rule.
 
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
 import { plineWithContinuation } from './pline.js';

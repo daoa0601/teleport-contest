@@ -4,7 +4,7 @@ import { canSeeMonster, canSenseMonster } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { makemonAt } from './makemon.js';
-import { consumeObjectCharge } from './object_charge.js';
+import { consumeObjectCharge } from './invent.js';
 import { BAG_OF_TRICKS } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { rn2, rnd } from './rng.js';

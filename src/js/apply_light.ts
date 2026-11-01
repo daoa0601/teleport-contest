@@ -11,7 +11,7 @@ import { makePlural } from './object_grammar.js';
 import { inventoryItemDescription } from './invent.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { addInventoryItem } from './u_init.js';
 import { learnObjectType } from './object_knowledge.js';

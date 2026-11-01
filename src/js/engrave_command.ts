@@ -58,7 +58,7 @@ import { goodPosition } from './teleport_rules.js';
 import { altarWrath } from './pray.js';
 import { randomEngraving } from './mklev.js';
 import { monsterName } from './do_name.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { impossible } from './diagnostics.js';

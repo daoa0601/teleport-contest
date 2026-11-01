@@ -14,10 +14,7 @@ import {
     CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK,
     WORM_TOOTH, WAN_DIGGING,
 } from '../js/object_data.js';
-import {
-    addCreatedObjectToContainer, addObjectToContainer,
-} from '../js/object_container.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
 import {
     addShopObjectToBill, billedPickupQuote, chargeAlteredUnpaidObject, checkSpecialRoom,
     getCostOfShopItem, settleThrownShopObject, splitObjectBill,

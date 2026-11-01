@@ -10,7 +10,7 @@ import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { findMonsterDefensiveItem, lootMonsterContainer, prepareMonsterItemUse, useMonsterDefensiveItem, } from '../js/muse.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_YENDOR, BUGLE, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';

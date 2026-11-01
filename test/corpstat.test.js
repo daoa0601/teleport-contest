@@ -8,7 +8,7 @@ import { petrifyMonsterImmediately } from '../js/trap.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';
-import { relocateObjectRandomly } from '../js/object_teleport.js';
+import { relocateObjectRandomly } from '../js/teleport.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

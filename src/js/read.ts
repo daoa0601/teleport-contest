@@ -53,7 +53,7 @@ import {
     SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, YELLOW_DRAGON_SCALES,
     requireObjectData,
 } from './object_data.js';
-import { blessObjectState, curseObject, curseObjectState, uncurseObjectState } from './object_state.js';
+import { blessObjectState, curseObject, curseObjectState, uncurseObjectState } from './mkobj.js';
 import { ownedObjectAction } from './objnam.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';

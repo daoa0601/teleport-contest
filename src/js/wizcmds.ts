@@ -66,7 +66,7 @@ import { mapMagicLevel } from './detect.js';
 import { dungeonDepth } from './hacklib.js';
 import { specialDisplayName } from './dungeon.js';
 import { addInventoryItem } from './u_init.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { recordObjectEncounter, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
@@ -106,8 +106,6 @@ import {
 import { maybeResetPick } from './lock_context.js';
 import { mklev } from './mklev.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { deallocateObject } from './object_delete.js';
-import { unlinkObject } from './object_location.js';
 import { checkSpecialRoom, setPaidShopkeeper } from './shk.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { vision_reset_new_level } from './vision.js';

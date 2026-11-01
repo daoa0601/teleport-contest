@@ -33,7 +33,7 @@ import { revealMonsterAppearance } from './mon.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { consumeObjectCharge } from './object_charge.js';
+import { consumeObjectCharge } from './invent.js';
 import { CRYSTAL_BALL } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

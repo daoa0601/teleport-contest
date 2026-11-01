@@ -9,7 +9,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterName } from '../js/do_name.js';
 import { beginMonsterHeroAttack } from '../js/mhitu.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, POT_FULL_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';

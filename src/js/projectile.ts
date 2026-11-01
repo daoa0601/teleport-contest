@@ -8,7 +8,7 @@ import {
 } from './object_data.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { rn2, rnl } from './rng.js';
 
 import type { GameObject } from './object_types.js';

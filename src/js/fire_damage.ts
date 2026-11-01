@@ -10,9 +10,9 @@ import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
-import { delobj } from './object_delete.js';
-import { objectResistsDestruction } from './object_state.js';
-import { erodeObject } from './object_erosion.js';
+import { delobj } from './invent.js';
+import { objectResistsDestruction } from './zap.js';
+import { erodeObject } from './trap.js';
 import { objectClassForType } from './object_knowledge.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import {

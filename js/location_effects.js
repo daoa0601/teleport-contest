@@ -2,7 +2,7 @@
 import { bot } from './botl.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
+import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit, LEVEL_TIMER_KIND } from './const.js';
 import { applyHeroLiquidEffects } from './hack.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
 import { levitationIsPurelyTimed, propertyIsActive } from './properties.js';
@@ -12,7 +12,7 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
+import { levelTimers } from './timeout.js';
 import { isIceAt } from './terrain_properties.js';
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
 import { roomsAt } from './room.js';

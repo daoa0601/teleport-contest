@@ -17,7 +17,7 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { EUCALYPTUS_LEAF, MAGIC_WHISTLE } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
-import { unblessObjectState } from './object_state.js';
+import { unblessObjectState } from './mkobj.js';
 import { ownedObjectName } from './objnam.js';
 import { objectQuantity } from './object_stack.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';

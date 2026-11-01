@@ -1,6 +1,6 @@
 // Anti-magic trap effects.
 // C ref: trap.c trapeffect_anti_magic().
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { finishMonsterKilled } from './mon.js';
 import { heroHasHalfSpellDamage } from './zap.js';

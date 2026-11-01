@@ -28,7 +28,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import {
     FLINT, LEASH, OBJECT_NAMES, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { tryCallObjectType } from './object_call.js';

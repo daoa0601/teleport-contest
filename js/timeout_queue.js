@@ -1,7 +1,8 @@
 // C timeout.c:wiz_timeout_queue() — the #timeout debug listing: current
 // time, the timer queue, every timed intrinsic, and the hero/level counters
 // that share this status surface.
-import { OBJECT_TIMER_KIND, queuedTimers } from './object_timers.js';
+import { queuedTimers } from './timeout.js';
+import { OBJECT_TIMER_KIND } from './const.js';
 import { propertyTimeout } from './properties.js';
 import { showDisclosureOverlay } from './windows.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';

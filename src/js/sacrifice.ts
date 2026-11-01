@@ -46,7 +46,7 @@ import { simpleObjectNameWithArticle } from './objnam.js';
 import { learnObjectType, recordObjectEncounter } from './object_knowledge.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { objectQuantity } from './object_stack.js';
-import { uncurseObjectState } from './object_state.js';
+import { uncurseObjectState } from './mkobj.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';

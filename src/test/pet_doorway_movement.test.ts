@@ -5,7 +5,7 @@ import { DOOR, DART_TRAP, D_CLOSED, D_ISOPEN, D_LOCKED, MM_NOGRP, NO_MINVENT, PA
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { DAGGER, LONG_SWORD, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

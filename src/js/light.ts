@@ -16,21 +16,18 @@ import { requireInitializedHero } from './hero_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
-import type { DueObjectTimer } from './object_timers.js';
+import type { DueObjectTimer } from './timeout.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import {
-    CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG,
-    NO_MINVENT, PLNMSG_OBJ_GLOWS,
-} from './const.js';
+import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { makemonNear } from './mklev.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, deallocateObject } from './mkobj.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import {
     monsterDigests, monsterIsWhirly,
@@ -39,10 +36,7 @@ import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL,
     GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
-import {
-    OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer,
-    stopObjectTimer,
-} from './object_timers.js';
+import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
@@ -50,14 +44,11 @@ import { learnObjectType } from './object_knowledge.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix } from './shk.js';
+import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { getObjectLocation } from './object_location.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { deallocateObject, deleteObject } from './object_delete.js';
-import { blessObjectState, curseObjectState, objectResistsDestruction,
-    unblessObjectState, uncurseObjectState } from './object_state.js';
+import { objectResistsDestruction, getObjectLocation } from './zap.js';
 import { ownedObjectAction } from './objnam.js';
 import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
 

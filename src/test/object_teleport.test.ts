@@ -6,11 +6,10 @@ import {
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { mksobj, set_corpsenm } from '../js/mkobj.js';
+import { mksobj, set_corpsenm, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BOULDER, CHEST, CORPSE, DAGGER, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { placeCreatedObject } from '../js/floor_object.js';
-import { relocateObjectRandomly } from '../js/object_teleport.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { relocateObjectRandomly } from '../js/teleport.js';
 import { initRng } from '../js/rng.js';
 import { addShopObjectToBill, costlySpot } from '../js/shk.js';
 import { knownObject } from './support/game-objects.js';

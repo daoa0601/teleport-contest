@@ -23,7 +23,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight, mon
 import { monsterName } from './do_name.js';
 import { tryUnarmedStagger } from './dothrow.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, YA, YUMI } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
 import { heroIsBlind } from './senses.js';
 import { dryTowel } from './towel.js';

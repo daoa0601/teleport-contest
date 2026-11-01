@@ -73,7 +73,7 @@ import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWe
 import { weaponHitBonus } from './weapon.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
-import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import {
     applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect,
     applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
@@ -87,13 +87,12 @@ import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { updateMonsterRegions } from './regions.js';
 import { recordHeroKillConduct } from './end.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objnam.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
-import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
-import { drainObjectEnchantment } from './object_state.js';
+import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import {

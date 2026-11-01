@@ -6,23 +6,22 @@
 // partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
 import { artifactById, artifactInfoLines } from './artifacts.js';
+import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './hacklib.js';
 import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
-import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE } from './const.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { yn_function } from './query.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { heroIsBlind } from './senses.js';
-import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
-import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix, } from './object_knowledge.js';
+import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData } from './object_data.js';
+import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix } from './object_knowledge.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
 import { classifyLoot, inventoryClassOrder } from './object_sort.js';
-import { MENU_ITEMFLAGS_SELECTED } from './const.js';
 const DISCOVERY_ORDERS = {
     o: 'by order of discovery within each class',
     s: 'sortloot order (by class with some sub-class groupings)',
@@ -488,5 +487,14 @@ function setGemProbabilities(ledger) {
         objectProb[j] = Math.trunc((171 + j - first)
             / (lastRealGem + 1 - first));
     }
+}
+// Per-game object material after unidentified object classes are shuffled.
+// C refs: o_init.c shuffle() and objects[].oc_material.
+export function objectMaterial(objectOrType, state = game) {
+    const type = typeof objectOrType === 'number'
+        ? objectOrType : objectOrType?.otyp;
+    if (type === undefined)
+        return 0;
+    return state.objectMaterials?.[type] ?? OBJECT_MATERIAL[type] ?? 0;
 }
 //# sourceMappingURL=o_init.js.map

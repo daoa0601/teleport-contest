@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { countLevelFeatures } from './mklev.js';
 import { LONG_SWORD } from './object_data.js';
-import { blessObjectState, curseObject } from './object_state.js';
+import { blessObjectState, curseObject } from './mkobj.js';
 import { inTown } from './room.js';
 import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';

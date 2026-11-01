@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POOL } from '../js/const.js';
 import { landFloorObject } from '../js/floor_effects.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 import { IRON_CHAIN } from '../js/object_data.js';
 import { cansee } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';

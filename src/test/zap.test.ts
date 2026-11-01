@@ -2,7 +2,7 @@ import { objectTypeKnown } from '../js/shk.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
-import { W_ARM } from '../js/const.js';
+import { W_ARM, LEVEL_TIMER_KIND } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
 import { requireScreenRow } from './support/screen.js';
@@ -28,9 +28,7 @@ import {
     WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION,
     WAN_SLEEP, WAN_STASIS, WAN_WISHING, WAN_DEATH, WAN_COLD,
 } from '../js/object_data.js';
-import {
-    LEVEL_TIMER_KIND, scheduleLevelTimer,
-} from '../js/object_timers.js';
+import { scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';

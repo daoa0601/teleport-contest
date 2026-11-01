@@ -9,7 +9,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { rnd } from './rng.js';
 
 export interface SpecialContactDamageOptions {

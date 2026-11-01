@@ -4,10 +4,7 @@ import { rotCorpse } from './corpse_rot.js';
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
 import { setMonsterGivenName, monsterName } from './do_name.js';
-import {
-    RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
-    PIT, PLNMSG_OBJ_GLOWS, ROOM,
-} from './const.js';
+import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, OBJECT_TIMER_KIND } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -16,7 +13,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
-import { deleteObject, delobjCore } from './object_delete.js';
+import { delobjCore } from './invent.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonNear, maketrap } from './mklev.js';
@@ -29,12 +26,10 @@ import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance } from './mon.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
-import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue } from './shk.js';
+import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue, deleteObject } from './shk.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
-import {
-    OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers,
-} from './object_timers.js';
+import { objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers } from './timeout.js';
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
@@ -44,7 +39,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position, Trap } from './map_types.js';
-import type { DueObjectTimer } from './object_timers.js';
+import type { DueObjectTimer } from './timeout.js';
 import { restoreMonsterTraits } from './zap.js';
 
 type CorpseObject = GameObject & { corpsenm: number };

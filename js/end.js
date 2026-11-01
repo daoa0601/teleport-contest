@@ -8,7 +8,7 @@ import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
-import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, } from './const.js';
+import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, isok } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
@@ -21,32 +21,29 @@ import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
 import { canSpotMonster, flush_screen } from './display.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip, } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip } from './tty_topline.js';
 import { vision_recalc } from './vision.js';
-import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit } from './shk.js';
+import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, deleteObject } from './shk.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
 import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
-import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow, } from './windows.js';
+import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow } from './windows.js';
 import { artifactById } from './artifacts.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
+import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { d, rn2 } from './rng.js';
 import { mksobj } from './mkobj.js';
-import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { definiteName, objectName, simpleObjectName, observeObjectForNaming } from './objnam.js';
+import { definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, } from './const.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
 import { objectDescription } from './object_description.js';
@@ -59,11 +56,14 @@ import { payVaultGuardOnExit } from './vault_exit.js';
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { paranoidQuery, promptChoice, promptYesNo } from './query.js';
-import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster, } from './death_remains.js';
+import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster } from './death_remains.js';
 import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import { requireInitializedHero } from './hero_types.js';
 import { collectLevelFollowers } from './dog.js';
 import { adjustedMonsterLevel } from './makemon.js';
+import { restoreBallAndChainPlacement } from './ball.js';
+import { placeObjectSynchronously, stack_object } from './floor_object.js';
+import { isAccessibleAt } from './terrain_properties.js';
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 const AMULET_CLASS = 5;
 const GEM_CLASS = 13;
@@ -1791,6 +1791,47 @@ export async function containerContents(list, identified, allContainers, reportE
         }
         if (!allContainers)
             break;
+    }
+}
+// C end.c:done_object_cleanup(), shared by terminal outcomes and saves.
+export async function doneObjectCleanup() {
+    await finishInUseInventory(true);
+    const flightFields = ['_thrownObject', '_kickedObject'];
+    if (flightFields.some(field => game[field]?.where === 'free')) {
+        const { ux, uy } = game.u;
+        let ox = ux + (game.u.dx ?? 0);
+        let oy = uy + (game.u.dy ?? 0);
+        if (!isok(ox, oy) || !isAccessibleAt(ox, oy)) {
+            ox = ux;
+            oy = uy;
+        }
+        // Native bypasses flooreffects: finish cleanup rather than trigger
+        // further destruction, falls, or contact effects from a projectile.
+        for (const field of flightFields) {
+            const object = game[field];
+            if (object?.where !== 'free')
+                continue;
+            placeObjectSynchronously(object, ox, oy);
+            await stack_object(object);
+            game[field] = null;
+        }
+    }
+    const chain = game.uchain || game.u.uchain;
+    if (chain?.where === 'free')
+        await restoreBallAndChainPlacement(-1);
+}
+// C restore.c:inven_inuse(). Announce before consuming, so a pager still
+// shows the in-use stack until its message is acknowledged.
+export async function finishInUseInventory(quietly) {
+    for (const object of [...game.inventory]) {
+        if (!object.in_use)
+            continue;
+        if (!quietly) {
+            const noun = objectName(object);
+            const name = object.quan === 1 ? noun : pluralizeObjectNoun(object, noun);
+            await plineWithContinuation(`Finishing off ${name}...`);
+        }
+        await consumeInventoryItem(object);
     }
 }
 //# sourceMappingURL=end.js.map

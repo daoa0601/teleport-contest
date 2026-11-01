@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { shopStocksObject } from '../js/shknam.js';
 import { shopGetPrice, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition, shopOfferForObject } from '../js/shk.js';
 import { MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, } from '../js/monster_data.js';
-import { addCreatedObjectToContainer, addObjectToContainer, } from '../js/object_container.js';
+import { addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
 import { floorObject, knownObject, uninitializedObject, } from './support/game-objects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';

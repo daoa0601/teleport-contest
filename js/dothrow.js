@@ -1,46 +1,45 @@
 // dothrow.js — Throw and fire command front ends.
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
-import { game, requirePlayingGame } from './gstate.js';
+import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { beginCommandResult, commandResultCancelled, setMulti } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { currentAttribute } from './attrib.js';
-import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING } from './object_data.js';
-import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
-import { artifactById } from './artifacts.js';
+import { currentAttribute, changeHeroLuck } from './attrib.js';
+import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
+import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings } from './monster_data.js';
+import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
 import { exceedsActionCapacity } from './weight.js';
 import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
-import { isWeldedPrimary, setQuiverObject } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, } from './const.js';
+import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { weaponHitBonus } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, } from './objnam.js';
-import { inventoryItemDescription } from './invent.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName } from './objnam.js';
+import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectClassForType } from './object_knowledge.js';
 import { applyPolearm, applyTool } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
 import { couldPoleMonster } from './polearm.js';
-import { doquiverCore } from './wield.js';
 import { promptDirection } from './tty_prompts.js';
 import { rejoinObjectStack } from './object_stack.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
-import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
+import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster } from './mon.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { makePlural } from './object_grammar.js';
-import { heroHandName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
+import { heroHandName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { dryTowel } from './towel.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
-import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, } from './potion.js';
+import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { hitFloorWithObject } from './object_drop.js';
@@ -49,23 +48,29 @@ import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
-import { angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, } from './mon.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
 import { goodPosition } from './teleport_rules.js';
-import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
-import { rn2, rnd } from './rng.js';
+import { rn2, rnd, d, rnl } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
 import { isPoolAt } from './terrain_properties.js';
-import { artifactToHitBonus } from './artifacts.js';
-import { P_PICK_AXE, P_SPEAR } from './const.js';
-import { monsterHatesBlessings } from './monster_data.js';
-import { HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
+import { armorSimpleName } from './armor.js';
+import { objectMaterial } from './o_init.js';
+import { publishHeardMessage } from './hero_speech.js';
+import { releaseCameraDemon } from './camera.js';
+import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
+import { explodeLitOilPotion } from './fire_explosion.js';
+import { objectDescription } from './object_description.js';
+import { makemonAt } from './makemon.js';
+import { objectResistsDestruction } from './zap.js';
+import { costlySpot, settleThrownShopObject, stolenValue, makeAngryShopkeeper, insideShopRoomAt } from './shk.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 const M2_ROCKTHROW = 0x08000000;
 // C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
 const WEAPON_CLASS = 2;
@@ -883,5 +888,179 @@ export function rangedTargetHitBonus(object, defender, { state = game, defenderN
         bonus += weaponHitBonus(object, defender, { state, random, rollOne });
     }
     return bonus;
+}
+const ARMOR_CLASS = 3;
+const WAND_CLASS = 11;
+const GLASS = 19;
+const BREAKABLE_TYPES = new Set([
+    EXPENSIVE_CAMERA,
+    EGG,
+    CREAM_PIE,
+    MELON,
+    ACID_VENOM,
+    BLINDING_VENOM,
+]);
+export function objectBreaksOnImpact(object, random = rn2) {
+    const glassArmor = object.oclass === ARMOR_CLASS
+        && objectMaterial(object.otyp) === GLASS;
+    const ordinaryResistance = glassArmor ? 90 : 1;
+    if (objectResistsDestruction(object, ordinaryResistance, 99, random))
+        return false;
+    const glassObject = objectMaterial(object.otyp) === GLASS
+        && !object.oartifact && !object.artifact
+        && object.oclass !== GEM_CLASS;
+    return glassObject || object.oclass === POTION_CLASS
+        || BREAKABLE_TYPES.has(object.otyp);
+}
+async function publishBreakMessage(object, visible, publish, state) {
+    if ([EGG, MELON].includes(object.otyp)) {
+        await publish('Splat!');
+        return;
+    }
+    if (object.otyp === CREAM_PIE) {
+        if (visible)
+            await publish('What a mess!');
+        return;
+    }
+    if ([ACID_VENOM, BLINDING_VENOM].includes(object.otyp)) {
+        await publish('Splash!');
+        return;
+    }
+    if (!visible) {
+        await publishHeardMessage('something shatter!', publish, state);
+        return;
+    }
+    const quantity = object.quan ?? object.quantity ?? 1;
+    // C breakmsg(): glass and crystal wands share the default case.
+    const intoPieces = object.oclass === WAND_CLASS
+        || [LENSES, MIRROR, CRYSTAL_BALL, EXPENSIVE_CAMERA].includes(object.otyp)
+        ? ' into a thousand pieces' : '';
+    observeObjectForNaming(object, { state });
+    const description = await objectDescription(object, { state });
+    const subject = description.charAt(0).toUpperCase() + description.slice(1);
+    await publish(`${subject} ${quantity === 1 ? 'shatters' : 'shatter'}${intoPieces}!`);
+}
+async function crackGlassArmor(object, x, y, publish, luckRandom, state) {
+    const result = await erodeObject(object, 'crack', {
+        state, publish, luckRandom, destroy: true, grease: false, verbose: true,
+        position: { x, y }, displayName: armorSimpleName(object, state),
+    });
+    return result === 'destroyed';
+}
+async function applyPotionBreakEffect(object, x, y, state, publish) {
+    if (object.otyp === POT_OIL && object.lamplit)
+        return false;
+    const nearby = Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 1;
+    if (!nearby)
+        return false;
+    const profile = heroPotionVaporProfile(state);
+    if (object.otyp !== POT_WATER && !state.u?.halfGasDamage) {
+        if (!profile.breathless)
+            await publish('You smell a peculiar odor...');
+        else if (profile.hasEyes) {
+            // C dothrow.c breakobj(): the eye name follows the current form's
+            // anatomy, pluralized by eyecount() and tensed by vtense().
+            const eye = heroEyeName(state);
+            const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+            await publish(`Your ${eyes} ${verbForSubject(eyes, 'water')}.`);
+        }
+    }
+    await applySupportedPotionVapor({ state, potion: object, publish });
+    return true;
+}
+async function settleBrokenShopObject(object, x, y, fromInventory, state, publish) {
+    if (fromInventory || object.unpaid) {
+        if ((state.u.ushops?.length ?? 0) || object.unpaid)
+            await settleThrownShopObject(object, x, y, state, publish, { broken: true });
+        return;
+    }
+    const spot = !object.no_charge && costlySpot(x, y, state);
+    if (!spot)
+        return;
+    const { resident, roomno } = spot;
+    const shop = resident.eshk;
+    if (!shop)
+        throw new Error('A costly shop square has no shopkeeper account.');
+    const sequence = state._heroActionSeq ?? 0;
+    if (sequence !== shop.break_seq)
+        shop.seq_peaceful = resident.mpeaceful;
+    const loss = await stolenValue(object, x, y, shop.seq_peaceful, {
+        silent: false, state, publish,
+    });
+    if (loss > 0 && sequence !== shop.break_seq
+        && (roomno !== state.u.ushops?.[0]
+            || !insideShopRoomAt(state, state.u.ux, state.u.uy)))
+        await makeAngryShopkeeper(resident, state);
+    shop.break_seq = sequence;
+}
+export async function breakFloorObject(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
+    requireLiveGame(state);
+    if (!objectBreaksOnImpact(object, random)) {
+        return { destroyed: false, observed: false };
+    }
+    return breakObjectAtLocation(object, {
+        x, y, fromInventory, inView, state, heroCaused, publish, random, luckRandom, rollDice,
+        summonMonster,
+    });
+}
+export async function breakObjectAtLocation(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, showBreakMessage = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
+    requireLiveGame(state);
+    const visible = !heroIsBlind(state)
+        && (inView ?? (fromInventory || cansee(x, y)));
+    const audible = !heroIsDeaf(state);
+    const glassArmor = object.oclass === ARMOR_CLASS
+        && objectMaterial(object.otyp) === GLASS;
+    if (glassArmor) {
+        const destroyed = await crackGlassArmor(object, x, y, publish, luckRandom, state);
+        if (destroyed)
+            await newsym(x, y);
+        return { destroyed, observed: destroyed && (visible || audible) };
+    }
+    if (showBreakMessage)
+        await publishBreakMessage(object, visible, publish, state);
+    if (heroCaused && object.otyp === MIRROR) {
+        changeHeroLuck(-2, state);
+    }
+    const cameraDemon = object.otyp === EXPENSIVE_CAMERA
+        ? await releaseCameraDemon(object, x, y, {
+            state, publish, random, summonMonster,
+        }) : null;
+    if (object.oclass === POTION_CLASS) {
+        // The blast from burning oil must not ignite or destroy the same
+        // potion again while breakage is still finishing.
+        object.in_use = true;
+        await applyPotionBreakEffect(object, x, y, state, publish);
+        if (state.program_state?.gameover)
+            return { destroyed: false, observed: visible || audible };
+    }
+    const oilExplosion = object.otyp === POT_OIL && object.lamplit;
+    const eggExplosion = isPyroliskEgg(object);
+    if (heroCaused)
+        applyHeroEggLuckPenalty(object, state);
+    if (oilExplosion) {
+        // Blast credit follows the active turn, independently of breakage.
+        const explosion = await explodeLitOilPotion(object, x, y, {
+            state, heroCaused: !state.context.mon_moving, publish, random, rollDice,
+        });
+        if (explosion.heroDied)
+            return { destroyed: false, observed: visible || audible, heroDied: true };
+    }
+    if (heroCaused)
+        await settleBrokenShopObject(object, x, y, fromInventory, state, publish);
+    // Fracture callers replace the stone object after breakobj settles its cost.
+    if (object.otyp === BOULDER || object.otyp === STATUE)
+        return { destroyed: false, observed: false };
+    // breakobj() leaves any redraw of the square to its caller.
+    await delobj(object, state, random);
+    if (eggExplosion) {
+        await explodePyroliskEggAt(x, y, {
+            state, heroCaused: !state.context.mon_moving, publish, random, rollDice,
+        });
+    }
+    return {
+        destroyed: true,
+        observed: visible || audible,
+        cameraDemon,
+    };
 }
 //# sourceMappingURL=dothrow.js.map

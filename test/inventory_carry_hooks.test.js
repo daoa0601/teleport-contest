@@ -5,7 +5,7 @@ import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, LOST_THROWN } from '../js/const
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, DAGGER, SACK, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';

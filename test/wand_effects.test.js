@@ -8,7 +8,7 @@ import { ARROW_TRAP, DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDG
 import { map_invisible } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { buryObject } from '../js/buried_object.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { resetInputState } from '../js/input.js';

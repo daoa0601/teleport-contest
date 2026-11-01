@@ -16,7 +16,7 @@ import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { BOULDER } from './object_data.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { resetHeroTrap } from './terrain_movement.js';

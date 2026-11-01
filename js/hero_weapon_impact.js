@@ -13,7 +13,7 @@ import { hurtleMonster } from './dothrow.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { isLauncherAmmunition, isMissileObject } from './object_properties.js';
-import { objectResistsDestruction } from './object_state.js';
+import { objectResistsDestruction } from './zap.js';
 import { ownedObjectName } from './objnam.js';
 import { d, rn2, rnl } from './rng.js';
 import { ensureHeroSkills } from './skills.js';

@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { moveObject } from '../js/floor_object.js';
 import { resetInputState } from '../js/input.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';

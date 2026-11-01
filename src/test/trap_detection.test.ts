@@ -14,7 +14,7 @@ import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { APPLE, CHEST, GOLD_PIECE, LARGE_BOX, SACK } from '../js/object_data.js';
 import { detectTraps } from '../js/detect.js';
 import { addInventoryObject, floorObject, uninitializedObject } from './support/game-objects.js';

@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { getObjectClassBounds, OBJECT_MATERIAL } from '../js/object_data.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectMaterial } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

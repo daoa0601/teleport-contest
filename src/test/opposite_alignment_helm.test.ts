@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
-import { uncurseObjectState } from '../js/object_state.js';
+import { uncurseObjectState } from '../js/mkobj.js';
 import type { GameObject } from '../js/object_types.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { setPrimaryWeapon } from '../js/wield.js';

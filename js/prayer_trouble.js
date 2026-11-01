@@ -25,7 +25,7 @@ import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, BOULDER, FUMBLE_BOOTS, G
 import { isBimanualObject } from './object_properties.js';
 import { makePlural } from './object_grammar.js';
 import { ownedObjectAction } from './objnam.js';
-import { uncurseObjectState } from './object_state.js';
+import { uncurseObjectState } from './mkobj.js';
 import { heroHasNoHands, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { hasIntrinsicProperty, refreshProperty } from './properties.js';
 import { unpunishHero } from './punishment.js';

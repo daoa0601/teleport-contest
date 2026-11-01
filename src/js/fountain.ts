@@ -31,7 +31,7 @@ import {
     applyFountainNymphActor, applyFountainSnakeActors, resolveDippedSensationFate,
 } from './fountain_effects.js';
 import { countLevelFeatures, deleteFloorTrap, makemonNear, splitHeroMonsterForm } from './mklev.js';
-import { mkgold, mksobj } from './mkobj.js';
+import { mkgold, mksobj, curseObject, uncurseObjectState } from './mkobj.js';
 import { placeCreatedObject } from './floor_object.js';
 import { rndClass } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards } from './mon.js';
@@ -50,7 +50,6 @@ import { rnd, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, waterDamageChain, waterDamageObject } from './trap.js';
 import { cansee, clearAreaCells, couldsee } from './vision.js';
-import { curseObject, uncurseObjectState } from './object_state.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { floatingAbove } from './levitation_commands.js';
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';

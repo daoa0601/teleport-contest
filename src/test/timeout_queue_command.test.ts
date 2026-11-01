@@ -5,10 +5,8 @@ import { resetInputState } from '../js/input.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { flush_screen } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
-    scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers,
-} from '../js/object_timers.js';
+import { scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
+import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from '../js/const.js';
 import { runExtendedCommand } from './support/commands.js';
 import { corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

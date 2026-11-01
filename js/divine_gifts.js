@@ -16,16 +16,15 @@ import { LL_ARTIFACT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './ga
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { mkobj, mksobj } from './mkobj.js';
+import { mkobj, mksobj, blessObjectState, uncurseObjectState } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT, LONG_SWORD, MAGIC_MARKER, getObjectClassBounds, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, SPE_BLANK_PAPER, requireObjectData, } from './object_data.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './object_knowledge.js';
-import { blessObjectState, uncurseObjectState } from './object_state.js';
 import { objectName, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from './properties.js';
 import { rn1, rn2 } from './rng.js';

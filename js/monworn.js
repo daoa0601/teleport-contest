@@ -1,8 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
-import { bypassObject } from './object_bypass.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
 import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName } from './objnam.js';
@@ -28,10 +27,10 @@ import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REF
 import { isBimanualObject } from './object_properties.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP, } from './const.js';
 import { placeObject } from './floor_object.js';
-import { objectNoLongerHeld } from './object_release.js';
-import { deleteObject } from './object_delete.js';
+import { objectNoLongerHeld } from './do.js';
+import { deleteObject } from './shk.js';
 import { unlinkMonsterObject } from './mkobj.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;

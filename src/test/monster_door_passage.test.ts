@@ -15,7 +15,7 @@ import { resolveMonsterDoorPassage, shiftMonsterForDoor, monsterCanFog, monsterC
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import {
     AMULET_OF_LIFE_SAVING, CREDIT_CARD, DAGGER, LOCK_PICK, MACE, ROCK, SACK, SKELETON_KEY,
 } from '../js/object_data.js';

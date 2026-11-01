@@ -1,42 +1,46 @@
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
-import { createObjectBase } from './object_constructor.js';
-import { game, requireLiveGame } from './gstate.js';
+import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION } from './object_data.js';
+import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
 import { novelTitle } from './novel_titles.js';
 import { setTinVariety } from './tin.js';
-import { relocateObjectRandomly } from './object_teleport.js';
+import { relocateObjectRandomly } from './teleport.js';
 import { nextIdent } from './ident.js';
-import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
+import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
-import { attachFigurineTimer } from './figurine_timer.js';
-import { placeCreatedObject } from './floor_object.js';
+import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
+import { placeCreatedObject, remove_object } from './floor_object.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
-import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, } from './const.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, } from './object_data.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
+import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, ALTAR, OBJECT_TIMER_KIND } from './const.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { forgetTempleEntry } from './priest.js';
-import { copyPetData, copyShopkeeperData } from './mon.js';
+import { copyPetData, copyShopkeeperData, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
-import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, } from './object_timers.js';
+import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph } from './timeout.js';
 import { objectWeight } from './weight.js';
-import { curseObjectState } from './object_state.js';
-import { isMultiGeneratedWeapon, isPoisonableObject } from './object_properties.js';
+import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
-import { addCreatedObjectToContainer } from './object_container.js';
 import { objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
-import { rndClass } from './objnam.js';
-import { undeadToCorpse } from './mon.js';
+import { rndClass, ownedObjectName } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './object_inscription.js';
 import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
-import { assertCreatedObject } from './object_release.js';
-import { deleteObject } from './object_delete.js';
+import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld } from './do.js';
+import { deleteObject } from './shk.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { heroHandName } from './body_parts.js';
+import { shipObject } from './dokick.js';
+import { updateCarriedLuck, freeInventoryObject } from './hero_inventory.js';
+import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
+import { dropObjectAtHero } from './object_drop.js';
+import { bookCursed } from './spellbook_study.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -56,6 +60,91 @@ const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const M2_HUMAN = 0x00000008;
+function updateBlessingEffects(object, state) {
+    if (object && state.inventory.includes(object))
+        updateCarriedLuck(object, state);
+    if (object?.otyp === BAG_OF_HOLDING)
+        object.owt = objectWeight(object);
+}
+function stopFigurineTransformation(object) {
+    if (object.otyp === FIGURINE && object.timed)
+        stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
+}
+export function blessObjectState(object, state = game) {
+    if (!object || object.oclass === COIN_CLASS)
+        return false;
+    const changed = !object.blessed || !!object.cursed;
+    object.blessed = true;
+    object.cursed = false;
+    object.buc = 'blessed';
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
+    return changed;
+}
+export function unblessObjectState(object, state = game) {
+    if (!object)
+        return false;
+    const changed = !!object.blessed;
+    object.blessed = false;
+    object.buc = object.cursed ? 'cursed' : 'uncursed';
+    updateBlessingEffects(object, state);
+    return changed;
+}
+export function curseObjectState(object, state = game) {
+    if (!object || object.oclass === COIN_CLASS)
+        return false;
+    const changed = !object.cursed || !!object.blessed;
+    object.blessed = false;
+    object.cursed = true;
+    object.buc = 'cursed';
+    if (object === (state.uwep || state.u.uwep) && isBimanualObject(object))
+        resetBulkTakeoff(state);
+    updateBlessingEffects(object, state);
+    if (object.otyp === FIGURINE
+        && (object.where === 'inventory' || object.where === 'minvent'))
+        attachCursedFigurineTimer(object, state);
+    return changed;
+}
+// Live gameplay curses can interrupt an active study through its real input
+// boundary. Constructors and bones retain the atomic state initializer.
+export async function curseObject(object, { state = game } = {}) {
+    const wasCursed = !!object?.cursed;
+    const oldLight = objectLightRadius(object, state);
+    const changed = curseObjectState(object, state);
+    if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
+        await dropCursedAlternateWeapon(object, state);
+    if (object && changed && !wasCursed && object.oclass === 10)
+        await bookCursed(object, { state });
+    if (object?.lamplit)
+        await adjustObjectLightAfterBlessing(object, oldLight, state);
+    return changed;
+}
+// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
+// then handle shipping and altar contact before placing the dropped weapon.
+async function dropCursedAlternateWeapon(object, state) {
+    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
+    await freeInventoryObject(object, state);
+    if (!state.u.uswallow) {
+        const initialized = requireInitializedGame(state);
+        if (await shipObject(object, state.u.ux, state.u.uy, {
+            state: initialized, publish: plineWithContinuation,
+        }))
+            return;
+        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
+            await landObjectOnAltar(object, { state });
+    }
+    await dropObjectAtHero(object, { state });
+}
+export function uncurseObjectState(object, state = game) {
+    if (!object)
+        return false;
+    const changed = !!object.cursed;
+    object.cursed = false;
+    object.buc = object.blessed ? 'blessed' : 'uncursed';
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
+    return changed;
+}
 // C mkobj.c:blessorcurse().
 function blessorcurse(otmp, chance = 10) {
     if (!otmp || otmp.blessed || otmp.cursed)
@@ -894,5 +983,267 @@ export async function discardMonsterInventory(monster, uncreateArtifacts, state 
         discarded.push(object);
     }
     return discarded;
+}
+export function unlinkObject(object, state = game) {
+    if (object.where === 'floor') {
+        remove_object(object, state);
+    }
+    else if (object.where === 'contained') {
+        let parent = object.container?.contents?.includes(object)
+            ? object.container
+            : objectsInTimerGraph(state).find((candidate) => candidate !== object && candidate.contents?.includes(object));
+        if (parent?.contents)
+            parent.contents = parent.contents.filter((item) => item !== object);
+        const updated = new Set();
+        while (parent && !updated.has(parent)) {
+            updated.add(parent);
+            parent.owt = objectWeight(parent);
+            parent = parent.container ?? undefined;
+        }
+    }
+    else if (object.where === 'inventory') {
+        state.inventory = state.inventory.filter((item) => item !== object);
+    }
+    else if (object.where === 'buried') {
+        if (!state.level?.buriedObjects)
+            throw new Error(`Buried object ${object.o_id} has no burial list`);
+        state.level.buriedObjects = state.level.buriedObjects.filter((item) => item !== object);
+    }
+    else if (object.where === 'onbill') {
+        if (!state.billObjects)
+            throw new Error(`Billed object ${object.o_id} has no bill list`);
+        state.billObjects = state.billObjects.filter((item) => item !== object);
+    }
+    else if (object.where === 'migrating') {
+        if (!state.migratingObjects)
+            throw new Error(`Migrating object ${object.o_id} has no migration list`);
+        state.migratingObjects = state.migratingObjects.filter((item) => item !== object);
+    }
+    else if (object.where === 'minvent') {
+        const carrier = object.ocarry;
+        if (!carrier)
+            throw new Error(`Monster-carried object ${object.o_id} has no owner`);
+        unlinkMonsterObject(carrier, object);
+    }
+    object.where = 'free';
+    object.buried = false;
+    object.container = null;
+    object.ocarry = null;
+    delete object.carrierMid;
+    return object;
+}
+// The chain that holds an object, for linking a neighbor beside it. Free
+// objects have none.
+function ownerChain(object, state) {
+    switch (object.where) {
+        case 'free':
+            return null;
+        case 'inventory':
+            return state.inventory;
+        case 'floor':
+            return state.level?.objects[object.ox]?.[object.oy];
+        case 'contained':
+            return (object.container ?? objectsInTimerGraph(state).find((candidate) => candidate.contents?.includes(object)))?.contents;
+        case 'minvent': {
+            const owner = object.ocarry;
+            if (!owner)
+                throw new Error(`Monster-carried object ${object.o_id} has no owner`);
+            return owner.minvent || owner.inventory;
+        }
+        case 'buried':
+            return state.level?.buriedObjects;
+        case 'migrating':
+            return state.migratingObjects;
+        case 'onbill':
+            return state.billObjects;
+        case 'gone':
+            throw new Error(`Object ${object.o_id} is gone`);
+    }
+}
+// C mkobj.c:splitobj() links the new piece right after the original in
+// whatever chain owns it (nobj, and nexthere on the floor), so the piece
+// stays where the original is until a caller extracts it.
+export function linkObjectAfter(object, next, state = game) {
+    if (object.where === 'free')
+        return;
+    const chain = ownerChain(object, state);
+    const index = chain?.indexOf(object) ?? -1;
+    if (!chain || index < 0)
+        throw new Error(`Object ${object.o_id} is missing from its ${object.where} chain`);
+    chain.splice(index + 1, 0, next);
+}
+// C mkobj.c:unsplitobj() only searches carried, monster-carried, and
+// contained chains; both halves must share one.
+export function sharesUnsplitChain(parent, child, state = game) {
+    if (child.where !== 'inventory' && child.where !== 'minvent' && child.where !== 'contained')
+        return false;
+    return !!ownerChain(child, state)?.includes(parent);
+}
+// C mkobj.c:replace_object(). Keep the owner's order without pickup,
+// dropping, merging, or transferring the old object's timers.
+export function replaceObject(object, replacement, state = game) {
+    if (replacement.where !== 'free')
+        throw new Error('object replacement requires a free new object');
+    const where = object.where;
+    let chain;
+    switch (where) {
+        case 'free':
+            break;
+        case 'inventory':
+            chain = state.inventory;
+            break;
+        case 'floor':
+            if (!state.level)
+                throw new Error('Floor object replacement requires a level');
+            chain = state.level.objects[object.ox]?.[object.oy] ?? undefined;
+            replacement.ox = object.ox;
+            replacement.oy = object.oy;
+            if (object._fobjOrder !== undefined)
+                replacement._fobjOrder = object._fobjOrder;
+            else
+                delete replacement._fobjOrder;
+            break;
+        case 'contained': {
+            const owner = object.container ||
+                objectsInTimerGraph(state).find((candidate) => candidate.contents?.includes(object));
+            chain = owner?.contents;
+            replacement.container = owner ?? null;
+            break;
+        }
+        case 'minvent': {
+            const owner = object.ocarry;
+            if (!owner)
+                throw new Error(`Monster-carried object ${object.o_id} has no owner`);
+            chain = owner.minvent || owner.inventory;
+            replacement.ocarry = owner;
+            replacement.carrierMid = owner.m_id;
+            break;
+        }
+        case 'buried':
+        case 'gone':
+        case 'migrating':
+        case 'onbill':
+        default:
+            throw new Error(`replace_object: unsupported object position ${where}`);
+    }
+    if (where !== 'free') {
+        const index = chain?.indexOf(object) ?? -1;
+        if (!chain || index < 0)
+            throw new Error(`replace_object: object missing from ${where}`);
+        chain[index] = replacement;
+    }
+    replacement.where = where;
+    object.where = 'free';
+    object.container = null;
+    object.ocarry = null;
+    delete object.carrierMid;
+}
+// C mkobj.c:dealloc_obj(). Billing, inventory release and meal cleanup
+// belong to callers; raw absorption must not perform obfree() bookkeeping.
+export function deallocateObject(object, state = game) {
+    requireLiveGame(state);
+    if (object.where === 'gone')
+        return false;
+    if (object.where !== 'free' || object.contents?.length)
+        throw new Error('dealloc_obj requires a free object without contents');
+    if (object.timed)
+        stopObjectTimers(object, state);
+    if (objectShedsLight(object))
+        state.vision_full_recalc = 1;
+    const latest = state.context.objsplit;
+    if (latest && (object.o_id === latest.parent_oid || object.o_id === latest.child_oid)) {
+        latest.parent_oid = latest.child_oid = 0;
+    }
+    object.where = 'gone';
+    object.container = null;
+    object.ocarry = null;
+    object.ox = 0;
+    object.oy = 0;
+    object.lamplit = false;
+    object.buried = false;
+    delete object.carrierMid;
+    return true;
+}
+// C mkobj.c:mksobj(): zeroobj, identity, age, and unknow_object().
+// Identity allocation belongs to the caller; initializing these fields draws
+// no random numbers and does not run class-specific creation effects.
+// C mkobj.c:clear_dknown().
+export function createObjectBase(otyp, objectId, currentTurn) {
+    const definition = getObjectDefinition(otyp);
+    const oclass = definition.oclass;
+    const pudding = otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
+    const dknown = pudding || !DESCRIPTION_UNKNOWN_CLASSES.has(oclass)
+        && !(otyp >= ELVEN_SHIELD && otyp <= ORCISH_SHIELD)
+        && otyp !== SHIELD_OF_REFLECTION && !definition.merge;
+    return {
+        otyp,
+        oclass,
+        o_id: objectId,
+        ox: 0,
+        oy: 0,
+        quan: 1,
+        where: 'free',
+        age: Math.max(currentTurn, 1),
+        owt: definition.weight,
+        dknown,
+        known: !definition.usesKnown,
+        cursed: false,
+        blessed: false,
+        olocked: false,
+        spe: 0,
+        recharged: 0,
+        artifact: false,
+    };
+}
+// Object ownership inside containers.
+// C ref: mkobj.c:add_to_container().
+function assertFreeObject(object) {
+    if (object.where !== 'free')
+        throw new Error(`add_to_container requires a free object, got ${object.where}`);
+}
+function containerStack(container, object, state) {
+    container.contents ||= [];
+    return container.contents.find(candidate => mergable(candidate, object, state));
+}
+function linkContainerObject(container, object) {
+    object.where = 'contained';
+    object.container = container;
+    // C add_to_container() leaves ox/oy untouched, so an object taken from
+    // the floor keeps its last square while inside the container.
+    (container.contents ||= []).unshift(object);
+    return object;
+}
+// C add_to_container(): the IMMEDIATE container's state decides the
+// release - an inventory- or monster-held container keeps the addition
+// held; any other container first releases the object. The release is
+// async because it can charge a free incoming unpaid crysknife before
+// the link.
+export async function addObjectToContainer(container, object, state = game) {
+    requireLiveGame(state);
+    if (!container || !object)
+        return object;
+    assertFreeObject(object);
+    if (container.where !== 'inventory' && container.where !== 'minvent') {
+        await objectNoLongerHeld(object, state);
+    }
+    const existing = containerStack(container, object, state);
+    return existing ? await mergeObjectStacks(existing, object, state)
+        : linkContainerObject(container, object);
+}
+// Constructor graphs cannot own a display continuation. The merge boundary
+// also verifies that no billed or worn object reaches this synchronous path.
+export async function addCreatedObjectToContainer(container, object, state = game) {
+    if (!container || !object)
+        return object;
+    assertFreeObject(object);
+    if (container.where !== 'inventory' && container.where !== 'minvent') {
+        createdObjectNoLongerHeld(object, state);
+    }
+    else {
+        assertCreatedObject(object, state);
+    }
+    const existing = containerStack(container, object, state);
+    return existing ? await mergeCreatedObjectStacks(existing, object, state)
+        : linkContainerObject(container, object);
 }
 //# sourceMappingURL=mkobj.js.map

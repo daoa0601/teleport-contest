@@ -3,12 +3,11 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { createObjectBase } from './object_constructor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { splitObjectStack } from './object_stack.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject, createObjectBase } from './mkobj.js';
 import { nextIdent } from './ident.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
 const COIN_CLASS = 12;

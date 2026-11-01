@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, SACK } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { buyShopBillItem, itemizedShopBill } from '../js/shk.js';

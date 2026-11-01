@@ -10,11 +10,10 @@ import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './g
 import { impossible } from './diagnostics.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
-import {
-    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu,
-} from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
@@ -28,30 +27,19 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_mons
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash } from './leash_apply.js';
 import { rn2, rnd } from './rng.js';
-import {
-    GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR,
-    RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame,
-    Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, Is_astralevel,
-    MON_ENDGAME_MIGR, MON_OBLITERATE, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE,
-} from './const.js';
+import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsRider } from './monster_data.js';
-import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
+import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
 import { spendHeroNutrition } from './hunger.js';
-import {
-    beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain,
-} from './ball.js';
-
+import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
-
-import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper } from './shk.js';
+import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
-import {
-    findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted,
-} from './teleport_rules.js';
+import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
@@ -64,23 +52,28 @@ import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import type { gotoLevel as changeLevel } from './level_change.js';
 import { makeStunned } from './hero_mental_status.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { deleteTrap } from './trap.js';
-import { endVoluntaryMultiTurn } from './hack.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
-import { seeTrap, tryMonsterTrapEscape } from './trap.js';
+import { deleteTrap, seeTrap, tryMonsterTrapEscape } from './trap.js';
+import { endVoluntaryMultiTurn } from './hack.js';import { fillPitWithBoulderAt } from './pit_fill.js';
 import { learnObjectType } from './object_knowledge.js';
-
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Position, Rectangle, Trap } from './map_types.js';
+import type { Position, Rectangle, Trap, ArrivalRegion } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
-import type { MessagePublisher } from './pline.js';
 import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from './monster_action_types.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
+import { reviveCorpseImmediately } from './corpse_revival.js';
+import { isRider } from './corpse_species.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { placeObject } from './floor_object.js';
+import { unlinkObject } from './mkobj.js';
+import { roomsAt } from './room.js';
+
+
+
 
 type RandomBelow = (limit: number) => number;
 type LevelGameState = GameState & { level: GameMap };
@@ -1421,4 +1414,81 @@ export async function activateMagicPortal(
         arrival: leavingTutorial ? 'stairs' : 'portal',
     }], gotoLevel ?? undefined, preMessage);
     game.context.move = 1;
+}
+
+// Random object relocation, including floor effects and shop ownership.
+// C teleport.c:rloco() and goodpos(..., NULL, 0).
+
+export async function relocateObjectRandomly(object: GameObject, {
+    state = game, publish = plineWithContinuation, random = rn2,
+}: {
+    state?: GameState;
+    publish?: MessagePublisher;
+    random?: (limit: number) => number;
+} = {}): Promise<boolean> {
+    requireLiveGame(state);
+    if (object.otyp === CORPSE && isRider(object.corpsenm)) {
+        const revival = await reviveCorpseImmediately(object, state);
+        if (!revival) throw new Error('Corpse revival returned no result for a Rider corpse');
+        for (const message of revival.messages) await publish(message);
+        if (revival.monster) return false;
+    }
+    unlinkObject(object, state);
+    const oldx = object.ox, oldy = object.oy;
+    const region = requireGameLevel(state).downTeleportRegion;
+    const { x, y } = relocationPosition(oldx, oldy, region, state, random);
+    const result = await applyFloorEffects(object, x, y, { state, publish, random });
+    if (result.finished) {
+        if (oldx !== 0 || oldy !== 0) await newsym(oldx, oldy);
+        return false;
+    }
+    if (oldx !== 0 || oldy !== 0) {
+        await settleRelocatedObject(object, oldx, oldy, x, y, state, publish);
+        await newsym(oldx, oldy);
+    }
+    await placeObject(object, x, y, state);
+    await newsym(x, y);
+    return true;
+}
+function relocationPosition(
+    oldx: number, oldy: number, region: ArrivalRegion | null | undefined,
+    state: GameState, random: (limit: number) => number,
+): Position {
+    const fallRegion = oldx === 0 && region?.lx ? region : null;
+    for (let attempt = 0; ; attempt++) {
+        const x = random(COLNO - 3) + 2;
+        const y = random(ROWNO);
+        // Native uses the final candidate after exhausting its position search.
+        if (attempt === 3999) return { x, y };
+        if (!goodPosition(x, y, null, { state, random })) continue;
+        if (fallRegion && (!inside(fallRegion, x, y)
+            || (fallRegion.exclude?.lx && inside(fallRegion.exclude, x, y)))) continue;
+        if (region?.exclude?.lx
+            && insideWizardTower(x, y, state)
+                !== insideWizardTower(oldx, oldy, state)) continue;
+        return { x, y };
+    }
+}
+async function settleRelocatedObject(
+    object: GameObject, oldx: number, oldy: number, x: number, y: number,
+    state: GameState, publish: MessagePublisher,
+): Promise<void> {
+    const level = requireGameLevel(state);
+    const owner = findObjectOwner(object, oldx, oldy, state);
+    if (!owner || !(costlySpot(oldx, oldy, state)
+        || (object.unpaid && costlyAdjacent(owner, oldx, oldy, state)))) return;
+    const heroRoom = roomsAt(level, state.u.ux, state.u.uy, SHOPBASE)[0];
+    const oldRoom = roomsAt(level, oldx, oldy)[0];
+    const heroInShop = heroRoom
+        && roomsAt(level, owner.mx, owner.my).includes(heroRoom);
+    const sameShop = oldRoom && roomsAt(level, x, y).includes(oldRoom);
+    if (heroInShop && sameShop && costlySpot(x, y, state)) {
+        if (object.unpaid)
+            removeObjectAndContentsFromBill(object, state, { resident: owner });
+    } else if (heroInShop && sameShop && costlyAdjacent(owner, x, y, state)) {
+        if (!object.unpaid)
+            await addShopObjectToBill(object, state, { ininv: false, publish });
+    } else {
+        await stolenValue(object, oldx, oldy, false, { silent: false, state, publish });
+    }
 }

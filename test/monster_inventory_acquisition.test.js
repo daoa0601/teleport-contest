@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { W_ARMF, W_WEP, MM_ANGRY, LOST_STOLEN, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, } from '../js/const.js';
+import { W_ARMF, W_WEP, MM_ANGRY, LOST_STOLEN, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, OBJECT_TIMER_KIND } from '../js/const.js';
 import { petDroppableObject, initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -20,7 +20,7 @@ import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, OIL_LAMP, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_STRIKING, } from '../js/object_data.js';
-import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';
+import { claimNextDueObjectTimer, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';

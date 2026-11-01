@@ -1,10 +1,10 @@
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import {
     moveMonsterNextToHero, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel,
     relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap,
 } from './teleport.js';
-import { noticeMonster } from './hack.js';
+import { noticeMonster, disturbBuriedZombies } from './hack.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import type { Monster } from './monster_types.js';
 import { impossible, panic } from './diagnostics.js';
@@ -127,7 +127,6 @@ import { displayMessageWindow } from './tty_topline.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
-import { delobj } from './object_delete.js';
 import {
     vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero,
     vision_note_blocker_change,
@@ -244,7 +243,7 @@ import { rndmonstAdj, growMonster } from './makemon.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { ceilingName } from './terrain_name.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, delobj } from './invent.js';
 import { learnWand } from './zap.js';
 import {
     advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects,
@@ -260,7 +259,6 @@ import {
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { stopHeroOccupation } from './occupation.js';
 import { diggingTimeToHole } from './hero_digging.js';
-import { disturbBuriedZombies } from './object_impact.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
 import { migrateMonsterOffLevel } from './dog.js';
 

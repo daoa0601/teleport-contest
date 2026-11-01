@@ -4,7 +4,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { EGG, POT_OIL } from '../js/object_data.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { floorObject } from './support/game-objects.js';

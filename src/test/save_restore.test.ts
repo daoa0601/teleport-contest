@@ -1,6 +1,6 @@
 import { createMonsterAt } from './support/monsters.js';
 import { knownObject } from './support/game-objects.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

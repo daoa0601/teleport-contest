@@ -17,7 +17,7 @@ import {
 import { objectClassDescription } from './object_description_details.js';
 import { objectDescriptionPrice } from './object_description_price.js';
 import { heldObjectDescription, primaryHandDescriptionDetail, wornObjectDescription } from './object_equipment_description.js';
-import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
+import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isWeaponTool } from './object_properties.js';
 import { corpseName, objectHasPersonalName, objectName, pluralizeObjectNoun } from './objnam.js';

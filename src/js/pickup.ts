@@ -54,18 +54,15 @@ import { roomsAt } from './room.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
-import { unlinkMonsterObject } from './mkobj.js';
+import { unlinkMonsterObject, addObjectToContainer, unlinkObject } from './mkobj.js';
 import { touchArtifactByHero } from './artifacts.js';
 import {
     BAG_OF_HOLDING, BAG_OF_TRICKS, CAN_OF_GREASE, CORPSE, CRAM_RATION, FOOD_RATION,
     GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP,
     OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, STATUE, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
-import { consumeObjectCharge } from './object_charge.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { addObjectToContainer } from './object_container.js';
-import { unlinkObject } from './object_location.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
@@ -74,7 +71,7 @@ import { surfaceName } from './terrain_name.js';
 import { exceedsActionCapacity, nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, consumeObjectCharge } from './invent.js';
 import {
     isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject, useContainer,
 } from './container.js';

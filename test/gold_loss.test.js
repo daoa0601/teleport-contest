@@ -9,7 +9,7 @@ import { THRONE } from '../js/const.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { heroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throneSitEffect } from '../js/throne.js';

@@ -2,7 +2,7 @@
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
-import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
+import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './terrain_properties.js';
 import { remove_object } from './floor_object.js';
@@ -11,7 +11,7 @@ import { findMonsterNearPosition, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject } from './mkobj.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, } from './object_timers.js';
+import { scheduleObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { monsterName } from './do_name.js';

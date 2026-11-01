@@ -26,7 +26,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { CORPSE, OBJECT_NAMES, STATUE } from './object_data.js';
-import { blessObjectState, curseObject } from './object_state.js';
+import { blessObjectState, curseObject } from './mkobj.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { fixPrayerTrouble, worstPrayerTrouble } from './prayer_trouble.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

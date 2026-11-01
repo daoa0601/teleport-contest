@@ -2,7 +2,7 @@
 // C refs: dothrow.c:autoquiver()/throwing_weapon(), obj.h ammo predicates,
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import {
     P_BOW, P_CROSSBOW, P_DAGGER, P_SLING,
 } from './const.js';

@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { curseObject, uncurseObjectState } from '../js/object_state.js';
+import { curseObject, uncurseObjectState } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { FIGURINE } from '../js/object_data.js';
-import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('cursing a carried figurine starts transformation, and uncursing stops it', async () => {

@@ -19,7 +19,7 @@ import { objectIsUnpaid } from './shk.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';
 import { dropRingIntoSink } from './ring_sink.js';
-import { shipObject } from './object_migration.js';
+import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 const RING_CLASS = 4;

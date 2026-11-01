@@ -23,18 +23,15 @@ import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
-import {
-    delobj, deleteObjectContents,
-} from './object_delete.js';
-import { getObjectLocation } from './object_location.js';
+import { delobj } from './invent.js';
 import { definiteName, definiteObjectAction, objectCombatName } from './objnam.js';
 import { poisonHero } from './poison.js';
 import { unpunishHero } from './punishment.js';
 import { createPoisonGasCloud } from './regions.js';
 import { d, rn2 } from './rng.js';
-import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper } from './shk.js';
+import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteObjectContents } from './shk.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { destroyElectricInventory } from './zap.js';
+import { destroyElectricInventory, getObjectLocation } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 type RandomBelow = (limit: number) => number;

@@ -15,7 +15,7 @@ import {
     OBJECT_WEIGHT, RIN_SLOW_DIGESTION, ROCK, SACK, SCR_IDENTIFY,
     SCR_SCARE_MONSTER, STATUE, TIN,
 } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

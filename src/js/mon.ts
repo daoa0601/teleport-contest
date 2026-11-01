@@ -5,7 +5,7 @@ import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, req
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
-import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses } from './worn.js';
 import type {
     MonsterRelocation, MonsterAction, MonsterCallLog, MonsterDistressEvent, MonsterMoveCandidate,
     PublishMonsterMessage, RandomBelow, RollOne,
@@ -19,7 +19,7 @@ import {
     presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject,
     setMonsterApparentHeroPosition,
 } from './monmove.js';
-import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP } from './const.js';
+import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, OBJECT_TIMER_KIND } from './const.js';
 import { dryFountainAt } from './fountain.js';
 import {
     canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster, monsterKillLineVisible,
@@ -38,7 +38,6 @@ import {
     monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses,
 } from './monster_data.js';
 import { monsterName, namelessMonsterName, setMonsterGivenName, formatMonsterName } from './do_name.js';
-import { disturbBuriedZombies } from './object_impact.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
@@ -53,7 +52,7 @@ import {
     OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER,
     SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from './object_data.js';
-import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer } from './object_timers.js';
+import { objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { dealWithMonsterOvercrowding, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
@@ -80,10 +79,8 @@ import {
 } from './monworn.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
-import { delobj } from './object_delete.js';
-import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
 import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
@@ -112,7 +109,7 @@ import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './p
 import { roomsAt } from './room.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRockForMonster } from './hack.js';
+import { badRockForMonster, disturbBuriedZombies } from './hack.js';
 import type { MapLocation } from './map_types.js';
 import type { MonsterGrowth } from './makemon.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -124,7 +121,6 @@ import { releaseHeroFromMonster, expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { MonsterMigrationOptions, MonsterMigrationResult } from './dog.js';
-import { bypassObject, clearBypasses } from './object_bypass.js';
 import { finishScheduledLevelChange } from './level_change.js';
 import { moveVaultGuard } from './vault.js';
 import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
@@ -133,7 +129,7 @@ import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './buried_object.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { meldNearbyFloorGlobs } from './glob.js';
-import { mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject } from './mkobj.js';
+import { mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer } from './mkobj.js';
 import { preventMonsterDeath, lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import type { DamageType } from './monster_attack_types.js';
 import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
@@ -148,15 +144,14 @@ import { prepareVaultGuardDeath } from './vault_guard.js';
 import { armorThiefGone } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { ShopGameState } from './shop_types.js';
-import { objectResistsDestruction } from './object_state.js';
+import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './light.js';
-import { addObjectToContainer } from './object_container.js';
 import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './corpse_intrinsics.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import type { GameMap } from './game.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, delobj } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';

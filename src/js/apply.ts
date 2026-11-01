@@ -78,18 +78,13 @@ import { useTinOpener } from './tin.js';
 import { useMagicMarker } from './write.js';
 import { useUnicornHorn } from './unicorn_horn.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { inventoryCommandLetter } from './invent.js';
+import { inventoryCommandLetter, delobj } from './invent.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { currentAttribute } from './attrib.js';
 import { heroHandName, heroHeadName } from './body_parts.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import {
-    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST,
-    A_STR, DIGCHECK_FAILED, DIGCHECK_FAIL_BOULDER, EXPL_FIERY, EXPL_FROSTY,
-    EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, NO_KILLER_PREFIX,
-    PARANOID_BREAKWAND, PIT, ROOM, SHOPBASE, isok, xdir, ydir,
-} from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, A_STR, DIGCHECK_FAILED, DIGCHECK_FAIL_BOULDER, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, NO_KILLER_PREFIX, PARANOID_BREAKWAND, PIT, ROOM, SHOPBASE, isok, xdir, ydir, LEVEL_TIMER_KIND } from './const.js';
 import { digActualHole, digCheck, liquidFlow } from './digging_terrain.js';
 import { watchDigging } from './digging_watch.js';
 import { bot } from './botl.js';
@@ -106,7 +101,6 @@ import {
 } from './immediate_zap.js';
 import { canDigDown } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { delobj } from './object_delete.js';
 import {
     BOULDER, OBJECT_DESCRIPTIONS,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,
@@ -116,8 +110,8 @@ import {
     WAN_UNDEAD_TURNING, WAN_WISHING,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { unlinkObject } from './object_location.js';
-import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
+import { unlinkObject } from './mkobj.js';
+import { stopLevelTimer } from './timeout.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { paranoidQuery } from './query.js';

@@ -7,7 +7,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { getobj } from './inventory_prompt.js';
-import { consumeObjectCharge } from './object_charge.js';
+import { consumeObjectCharge } from './invent.js';
 import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { definiteObjectAction, objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';

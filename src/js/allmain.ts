@@ -35,7 +35,7 @@ import type {
     HeroAttack, HeroAttackSequence, HeroAttackSlot, HeroContactAttack, HeroSpellAttack, MonsterAction,
     MonsterMovement, MonsterMovementAction, MonsterCallLog, RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
-import { clearBypasses } from './object_bypass.js';
+import { clearBypasses } from './worn.js';
 import { clearSplitObjects } from './object_stack.js';
 import {
     A_CURRENT, A_ORIGINAL, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM,
@@ -62,7 +62,6 @@ import {
     heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination,
 } from './teleport.js';
 import { runDueTimers } from './timer_effects.js';
-import { finishInUseInventory } from './object_cleanup.js';
 import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
 import { monsterName } from './do_name.js';
@@ -77,9 +76,7 @@ import {
     MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
-import {
-    finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath,
-} from './end.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, finishInUseInventory } from './end.js';
 import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
 import { touchPetrifies } from './stoning.js';
@@ -94,7 +91,7 @@ import {
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { openHoldingTrap } from './trap.js';
+import { openHoldingTrap, erodeArmor, erodeAttackingWeapon } from './trap.js';
 import {
     AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK,
 } from './monster_attack_types.js';
@@ -112,7 +109,7 @@ import {
 import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -174,7 +171,6 @@ import {
 import { fumaroles } from './mkmaze.js';
 import { petrifyMonsterImmediately, resumeDeferredMonsterTrap, burnHeroArmorByFire } from './trap.js';
 import { commitPetPickup } from './dogmove.js';
-import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';

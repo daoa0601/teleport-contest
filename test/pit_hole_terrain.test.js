@@ -1,14 +1,14 @@
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, DB_EAST, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, D_LOCKED, FOUNTAIN, HOLE, HWALL, ICE, PIT, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SPIKED_PIT, STONE, TRAPDOOR, W_NONDIGGABLE, } from '../js/const.js';
+import { CORR, DB_EAST, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, D_LOCKED, FOUNTAIN, HOLE, HWALL, ICE, PIT, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SPIKED_PIT, STONE, TRAPDOOR, W_NONDIGGABLE, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from '../js/const.js';
 import { addBuriedObject } from '../js/buried_object.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { updateIceObjectTimersAt } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { countLevelFeatures, maketrap } from '../js/mklev.js';
 import { DAGGER } from '../js/object_data.js';
-import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, levelTimers, objectTimers, scheduleLevelTimer, scheduleObjectTimer, } from '../js/object_timers.js';
+import { levelTimers, objectTimers, scheduleLevelTimer, scheduleObjectTimer } from '../js/timeout.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { corpseObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { restoregamePreamble } from '../js/allmain.js';
-import { ICE, MOAT } from '../js/const.js';
+import { ICE, MOAT, LEVEL_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
+import { scheduleLevelTimer } from '../js/timeout.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

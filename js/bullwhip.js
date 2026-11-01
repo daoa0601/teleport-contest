@@ -9,7 +9,7 @@ import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './displa
 import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './mimic.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
-import { objectNoLongerHeld } from './object_release.js';
+import { objectNoLongerHeld } from './do.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';

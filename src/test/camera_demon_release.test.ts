@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';

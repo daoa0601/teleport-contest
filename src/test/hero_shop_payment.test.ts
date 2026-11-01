@@ -7,7 +7,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { planInput, withMessagePages } from './support/planned-input.js';

@@ -14,8 +14,8 @@ import {
     EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LUMP_OF_ROYAL_JELLY, MEATBALL,
     MEAT_RING, MEAT_STICK, RIN_SLOW_DIGESTION, SLIME_MOLD, TIN, TRIPE_RATION,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
-import { objectResistsDestruction } from './object_state.js';
+import { objectMaterial } from './o_init.js';
+import { objectResistsDestruction } from './zap.js';
 import { fleshPetrifies } from './stoning.js';
 import type { GameState } from './game_state.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';

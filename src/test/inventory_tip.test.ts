@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, CRYSKNIFE, DAGGER, HORN_OF_PLENTY, SACK, WAN_CANCELLATION, WORM_TOOTH } from '../js/object_data.js';
 import { objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';

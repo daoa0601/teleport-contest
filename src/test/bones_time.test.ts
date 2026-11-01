@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ICE } from '../js/const.js';
+import { ICE, LEVEL_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ICE_BOX, OIL_LAMP } from '../js/object_data.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { beginObjectBurn } from '../js/light.js';
-import { LEVEL_TIMER_KIND, objectTimers, scheduleLevelTimer, stopAllObjectTimers } from '../js/object_timers.js';
+import { objectTimers, scheduleLevelTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { init_objects } from '../js/o_init.js';
 import { corpseObject, floorObject } from './support/game-objects.js';
 import { placeCreatedObject } from '../js/floor_object.js';

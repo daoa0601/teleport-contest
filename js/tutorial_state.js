@@ -6,7 +6,7 @@ import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { syncBlindness } from './senses.js';
 import { assignInventoryLetter } from './u_init.js';
 import { findArmorClass } from './armor.js';

@@ -1,9 +1,7 @@
 // C apply.c:use_stethoscope() and its_dead().
 import { armorSlotFor } from './armor.js';
 import { heroHandName } from './body_parts.js';
-import {
-    CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok,
-} from './const.js';
+import { CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok, OBJECT_TIMER_KIND } from './const.js';
 import { convertSecretDoor } from './detect.js';
 import { canSpotMonster, feel_newsym, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -20,7 +18,7 @@ import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterStatusLine } from './insight.js';
 import { CORPSE, LENSES, SLIME_MOLD, STATUE } from './object_data.js';
-import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
+import { objectTimers } from './timeout.js';
 import { minimalObjectName, objectMonsterName, simpleObjectTypeName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';
 import { rn2 } from './rng.js';

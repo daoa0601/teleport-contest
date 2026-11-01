@@ -5,7 +5,7 @@ import { finishHeroHelplessness } from './allmain.js';
 import type { MessagePublisher } from './pline.js';
 import { nearCapacity } from './weight.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { WornPropertySlot } from './property_types.js';

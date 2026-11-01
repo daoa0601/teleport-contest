@@ -28,7 +28,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './steed.js';
 import { makePlural } from './object_grammar.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, CORNUTHAUM, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, LEASH, LOADSTONE, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, POT_WATER, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, YELLOW_DRAGON_SCALES, requireObjectData, } from './object_data.js';
-import { blessObjectState, curseObject, curseObjectState, uncurseObjectState } from './object_state.js';
+import { blessObjectState, curseObject, curseObjectState, uncurseObjectState } from './mkobj.js';
 import { ownedObjectAction } from './objnam.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';

@@ -9,7 +9,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_YENDOR, FOOD_RATION, LEASH, SACK } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';

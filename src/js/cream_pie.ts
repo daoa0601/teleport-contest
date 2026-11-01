@@ -18,8 +18,8 @@ import {
 import { makeBlinded } from './sight_change.js';
 import { releaseWeaponSlots } from './wield.js';
 import { splitObjectStack } from './object_stack.js';
-import { unlinkObject } from './object_location.js';
-import { delobj } from './object_delete.js';
+import { unlinkObject } from './mkobj.js';
+import { delobj } from './invent.js';
 import type { GameObject } from './object_types.js';
 
 function splitOnePie(stack: GameObject) {

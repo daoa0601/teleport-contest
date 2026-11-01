@@ -60,7 +60,7 @@ import {
 import { plineWithContinuation } from './pline.js';
 import { d, rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import {
     monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt,
@@ -92,7 +92,7 @@ import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } fro
 import { heroHandName } from './body_parts.js';
 import { placeObjectSynchronously, sweepFloorPile } from './floor_object.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { forgetObjectKnowledge } from './mkobj.js';
+import { forgetObjectKnowledge, unlinkObject, addObjectToContainer } from './mkobj.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './object_drop.js';
@@ -103,8 +103,6 @@ import {
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { monsterCanCarryObject } from './mon.js';
-import { addObjectToContainer } from './object_container.js';
-import { unlinkObject } from './object_location.js';
 import { objectWeight } from './weight.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
@@ -129,11 +127,10 @@ import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, 
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { tryCallObjectType } from './object_call.js';
-import { deleteObject } from './object_delete.js';
 import { splitObjectStack } from './object_stack.js';
 import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough, maketrap } from './mklev.js';
-import { shopkeeperInOwnShop, addShopDamage } from './shk.js';
+import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { isAccessibleAt, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';

@@ -14,14 +14,11 @@ import { bot } from './botl.js';
 import { redrawMap, newsym, canSpotMonster, map_invisible } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
-import {
-    ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
-    MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON,
-} from './const.js';
+import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND } from './const.js';
 import { makemonAt } from './makemon.js';
 import { vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
-import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
+import { stopLevelTimer } from './timeout.js';
 import { findVaultGuard, setVaultTerrainFlags } from './vault_guard.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';

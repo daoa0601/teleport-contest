@@ -5,7 +5,8 @@ import { mkgold, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { EGG, GOLD_PIECE, ICE_BOX } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { game } from '../js/gstate.js';
-import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 // C mkobj.c:mkgold() grows an existing floor stack in place.

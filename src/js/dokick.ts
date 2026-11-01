@@ -1,35 +1,27 @@
 // The kick command and its damage helpers.
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb().
 
-import {
-    A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED,
-    DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE,
-    LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, isok,
-    Is_airlevel, Is_waterlevel,
-} from './const.js';
+import { A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, isok, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, W_ARMF, ZAP_POS, is_hole } from './const.js';
 import { rnd, rn2 } from './rng.js';
-import {
-    canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible,
-    newsym, show_glyph_cell, unmap_invisible,
-} from './display.js';
+import { canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
+import type { MessagePublisher } from './pline.js';
+import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
+import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } from './attrib.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
-import { askTeleportDestination } from './teleport.js';
+import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { revealMonsterAppearance } from './mon.js';
 import { monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
@@ -39,56 +31,63 @@ import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { promptDirection } from './tty_prompts.js';
 import { commandResultCancelled } from './cmd.js';
 import { monsterAtPosition } from './steed.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { isPoolAt } from './terrain_properties.js';
-import { captureThrownObjectFlight } from './thrown_object.js';
-import { killerObjectName } from './objnam.js';
+import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { isPoolAt, isIceAt } from './terrain_properties.js';
+import { captureThrownObjectFlight, type ProjectileFlightCapture, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
+import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName } from './objnam.js';
 import { disturbGrave } from './grave.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { mksobj } from './mkobj.js';
-import { placeCreatedObject } from './floor_object.js';
-import { vision_recalc, vision_reset } from './vision.js';
-import { BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, EGG, KICKING_BOOTS, MIRROR, ROCK } from './object_data.js';
-import { convertSecretDoor } from './detect.js';
+import { mksobj, unlinkObject } from './mkobj.js';
+import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';
+import { vision_recalc, vision_reset, cansee, couldsee } from './vision.js';
+import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS } from './object_data.js';
+import { convertSecretDoor, findTrap } from './detect.js';
 import { kickDoor } from './kick_door.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
-import { kickFloorObject } from './object_kick.js';
 import type { Monster } from './monster_types.js';
-import type { GameObject } from './object_types.js';
-import { angerAttackedMonster } from './mon.js';
-import { maybeMnexto } from './mon.js';
-import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './pline.js';
-import { requirePlayingGame } from './gstate.js';
-import {
-    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
-} from './monster_data.js';
+import type { GameState, PlayingGameState } from './game_state.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
-import { couldsee } from './vision.js';
-import {
-    findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted,
-} from './teleport_rules.js';
-import { invWeight, objectWeight, weightCapacity } from './weight.js';
-import { objectMaterial } from './object_material.js';
-import { isContainer } from './container.js';
-import { eggHasMonsterSpecies } from './egg_impact.js';
-import { deleteObject } from './object_delete.js';
-import { objectResistsDestruction } from './object_state.js';
-import { formatHeardMessage } from './hero_speech.js';
-import { costlySpot, insideShopRoomAt, makeAngryShopkeeper, stolenValue } from './shk.js';
-import { roomsAt } from './room.js';
-import { shopkeeperName } from './shknam.js';
-import { currency } from './currency.js';
-import { SHOPBASE } from './const.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
+import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { invWeight, weightCapacity, objectWeight } from './weight.js';
 import { specialContactDamage } from './contact_damage.js';
-import {
-    finishImmediateMonsterTrap, triggerImmediateMonsterTrap,
-} from './trap.js';
-import { W_ARMF } from './const.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
+import { artifactById } from './artifacts.js';
+import { heroFootName, heroLegName } from './body_parts.js';
+import { triggerChestTrap } from './chest_trap.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { splitObjectStack } from './object_stack.js';
+import { impactDisturbsZombies } from './hack.js';
+import { breakChestLock } from './lock.js';
+import type { GameObject, ObjectMigration } from './object_types.js';
+import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
+import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
+import { breakFloorObject } from './dothrow.js';
+import { inventoryItemDescription, delobj } from './invent.js';
+import { objectDescription } from './object_description.js';
+import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper } from './shk.js';
+import { containedGold } from './gold.js';
+import { roomsAt } from './room.js';
+import { resolveImmediatePetrification, touchPetrifies, heroResistsStoning } from './stoning.js';
+import { activateStatueTrapAt } from './statue_trap.js';
+import { resolveGoldMonsterContact } from './gold_throw.js';
+import { scatterFloorObjects } from './scatter.js';
+import { objectMaterial } from './o_init.js';
+import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
+import type { DungeonLocation } from './dungeon_types.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { isContainer } from './container.js';
+import { maybeResetPick } from './lock_context.js';
+import { onQuestStart, okToQuest } from './quest.js';
+import { makePlural } from './object_grammar.js';
+import { surfaceName } from './terrain_name.js';
+import { currency } from './currency.js';
+import { shopkeeperName } from './shknam.js';
+import { eggHasMonsterSpecies } from './egg_impact.js';
+import { objectResistsDestruction } from './zap.js';
 
 // C dokick.c:kick_ouch().
 async function kickOuch(x: number, y: number, objectName = '') {
@@ -797,3 +796,673 @@ export async function containerImpactDamage(
         container.owt = objectWeight(container);
     await settleDestroyedShopCharges({ loss, x, y, publish, state });
 }
+
+// Moving a floor object with the kick command.
+// C refs: dokick.c really_kick_object() and zap.c bhit(KICKED_WEAPON).
+
+export interface KickObjectOptions {
+    state?: GameState;
+    dx?: number;
+    dy?: number;
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    rollOne?: typeof rnd;
+    captureFlight?: ProjectileFlightCapture | null;
+}
+function trapAt(state: GameState, x: number, y: number) {
+    return state.level?.traps?.find(trap =>
+        trap.tx === x && trap.ty === y) || null;
+}
+function closedDoor(location: MapLocation | null | undefined) {
+    return location?.typ === DOOR
+        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
+}
+function quantity(object: GameObject) {
+    return object.quan ?? object.quantity ?? 1;
+}
+function unitWeight(object: GameObject) {
+    if (quantity(object) === 1) return objectWeight(object);
+    return objectWeight({ ...object, quan: 1, quantity: 1 });
+}
+function kickRange(
+    object: GameObject, state: GameState, dx: number, dy: number, martial: boolean,
+    rollOne: typeof rnd,
+) {
+    let slide = false;
+    let range = Math.trunc(currentStrength(state) / 2)
+        - Math.trunc((object.oclass === 12 ? objectWeight(object) : unitWeight(object)) / 40);
+    if (martial) range += rollOne(3);
+    if (isPoolAt(object.ox, object.oy, state)) {
+        range = Math.trunc(range / 3) + 1;
+    } else if (Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz)) {
+        range += rollOne(3);
+    } else {
+        if (isIceAt(object.ox, object.oy, state)) { range += rollOne(3); slide = true; }
+        if (object.greased) { range += rollOne(3); slide = true; }
+    }
+    if (artifactById(object.oartifact ?? 0, state)?.name === 'Mjollnir')
+        range = 1;
+    const nextX = object.ox + dx;
+    const nextY = object.oy + dy;
+    const next = state.level?.at?.(nextX, nextY);
+    if (!isok(nextX, nextY) || !next || !ZAP_POS(next.typ) || closedDoor(next))
+        range = 1;
+    return { range, slide };
+}
+export async function kickFloorObject(x: number, y: number, {
+    state = game,
+    dx = state.u?.dx ?? 0,
+    dy = state.u?.dy ?? 0,
+    publish = plineWithContinuation,
+    random = rn2,
+    rollOne = rnd,
+    captureFlight = null,
+}: KickObjectOptions = {}) {
+    const object = state.level?.objects?.[x]?.[y]?.[0];
+    if (!object) return false;
+    if (object.otyp === BOULDER || object === state.uball || object === state.u.uball
+        || object === state.uchain || object === state.u.uchain) return false;
+    const trap = trapAt(state, x, y);
+    const passesWalls = state.u.passesWalls;
+    if (trap && ((is_pit(trap.ttyp) && !passesWalls)
+        || trap.ttyp === WEB)) {
+        if (!trap.tseen) await findTrap(trap);
+        await publish(`You can't kick something that's in a ${
+            heroIsHallucinating(state) ? 'tizzy' : trap.ttyp === WEB ? 'web' : 'pit'}!`);
+        return true;
+    }
+    if (trap?.ttyp === STATUE_TRAP) {
+        await activateStatueTrapAt(x, y, { state });
+        return true;
+    }
+    if ((state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0)
+        && random(3) === 0) {
+        await publish('Your clumsy kick missed.');
+        return true;
+    }
+    if (!(state.uarmf || state.u.uarmf) && object.otyp === CORPSE
+        && touchPetrifies(object.corpsenm) && !heroResistsStoning(state)) {
+        await publish(`You kick ${corpseName(object, { definite: true })} with your bare ${makePlural(heroFootName(state))}.`);
+        const result = await resolveImmediatePetrification({ state, publish,
+            killer: `kicking ${killerObjectName(object, state)} barefoot` });
+        if (result.died || state.program_state.gameover) return true;
+    }
+    const martial = heroHasMartialKick(state);
+    const { range, slide } = kickRange(object, state, dx, dy, martial, rollOne);
+    const owner = findObjectOwner(object, x, y, state);
+    let costly = !!owner && !!(costlySpot(x, y, state)
+        || costlyAdjacent(owner, x, y, state) && object.unpaid);
+    const isGold = object.oclass === 12;
+    observeObjectForNaming(object, { state });
+    await publish(`You kick ${await objectDescription(isGold ? object
+        : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
+    const source = state.level?.at(x, y);
+    const heroSquare = state.level?.at(state.u.ux, state.u.uy);
+    if (source && (IS_OBSTRUCTED(source.typ) || closedDoor(source))) {
+        const stuck = !martial && random(20) > currentAttribute(A_DEX, state)
+            || heroSquare && (IS_OBSTRUCTED(heroSquare.typ) || closedDoor(heroSquare));
+        const subject = heroIsBlind(state) ? 'It'
+            : `The ${objectCombatName(object, { state })}`;
+        const plural = !heroIsBlind(state) && objectNameIsPlural(object, state);
+        if (stuck) {
+            await publish(`${subject} ${plural ? "don't" : "doesn't"} come loose.`);
+            return random(3) === 0 || martial;
+        }
+        await publish(`${subject} ${plural ? 'come' : 'comes'} loose.`);
+        remove_object(object, state);
+        await newsym(x, y);
+        const shop = roomsAt(state.level, x, y, SHOPBASE)[0];
+        if (costly && (!costlySpot(state.u.ux, state.u.uy, state)
+            || shop === undefined || !state.u.urooms?.includes(shop))) {
+            if (object.no_charge) object.no_charge = false;
+            else await addShopObjectToBill(object, state, { ininv: false, publish });
+        }
+        const effects = await applyFloorEffects(object, state.u.ux, state.u.uy, { state, publish, random, verb: 'fall' });
+        if (!effects.finished) {
+            await placeObject(object, state.u.ux, state.u.uy, state);
+            impactDisturbsZombies(object, true, state);
+            await stack_object(object, state);
+        }
+        await newsym(state.u.ux, state.u.uy);
+        return true;
+    }
+    const box = object.otyp === CHEST || object.otyp === LARGE_BOX;
+    if (box) {
+        const trapped = object.otrapped;
+        if (range < 2) await publish('THUD!');
+        await containerImpactDamage(object, x, y, { state, publish, random, fromInventory: false });
+        const opens = random(object.olocked ? 5 : 3) === 0
+            || martial && random(2) === 0;
+        if (opens) {
+            if (object.olocked) {
+                await publish('You break open the lock!');
+                await breakChestLock(object, false, state);
+            } else {
+                await publish('The lid slams open, then falls shut.');
+                object.lknown = true;
+            }
+            if (trapped) await triggerChestTrap(object, { state, publish, random, bodyPart: heroLegName(state) });
+            return true;
+        }
+        if (range < 2) return true;
+    }
+    const { destroyed } = await breakFloorObject(object, {
+        state,
+        publish,
+        random,
+    });
+    // A fatal vapor or oil blast ends the action even though the bottle
+    // itself reports not destroyed.
+    if (destroyed || state.program_state?.gameover) return true;
+    if (range < 2) {
+        if (!box) await publish('Thump!');
+        return random(3) === 0 || martial;
+    }
+    if (object.oclass === 12 && quantity(object) > 1) {
+        if (random(20) !== 0) {
+            if (!heroIsDeaf(state)) await publish('Thwwpingg!');
+            const messages = ['scatter the coins', 'knock coins all over the place',
+                'send coins flying in all directions'];
+            await publish(`You ${messages[random(messages.length)]}!`);
+            await scatterFloorObjects(x, y, rollOne(3), {
+                state, onlyObject: object, mayDestroy: false, mayFracture: false,
+                mayHitHero: true, mayHitMonsters: true, heroCaused: true,
+                publish, random, rollOne,
+            });
+            await newsym(x, y);
+            return true;
+        }
+        if (quantity(object) > 300) {
+            await publish('Thump!');
+            return random(3) === 0 || martial;
+        }
+    }
+    const moving = object.oclass !== 12 && quantity(object) > 1
+        ? splitObjectStack(object, 1, state)
+        : object;
+    if (!moving) throw new Error('A kicked stack must yield an object.');
+    if (slide && !heroIsBlind(state)) {
+        const name = await inventoryItemDescription(moving);
+        await publish(`Whee!  ${name.charAt(0).toUpperCase() + name.slice(1)} ${
+            quantity(moving) === 1 ? 'slides' : 'slide'} across the ${surfaceName(x, y, state)}.`);
+    }
+    remove_object(moving, state);
+    state._kickedObject = moving;
+    try {
+        await snuffThrownCandle(moving, state, publish);
+        await newsym(x, y);
+        const flight = await flyKickedObject({
+            state,
+            object: moving,
+            dx,
+            dy,
+            range,
+            captureFlight,
+            publish,
+            random,
+        });
+        if (flight.destroyed || flight.migrated) return true;
+        if (flight.contact?.isshk && moving.where === 'minvent'
+            && moving.ocarry === flight.contact)
+            return true; /* really_kick_object(): the alert shk caught it */
+        if (flight.contact) {
+            if (isGold) {
+                if (await resolveGoldMonsterContact({ state, monster: flight.contact, gold: moving,
+                    wakeMonster: actor => wakeAttackedMonster(actor),
+                    angerMonster: actor => angerAttackedMonster(actor) })) return true;
+            } else {
+                const contact = await hitMonsterWithKickedObject(
+                    flight.contact, moving, { state, target: { x: flight.x, y: flight.y } },
+                );
+                if (contact.heroDied || contact.consumed) return true;
+            }
+        }
+        const destinationShop = roomsAt(state.level, flight.x, flight.y, SHOPBASE)[0];
+        const sourceShop = roomsAt(state.level, x, y, SHOPBASE)[0];
+        if (costly && owner && (!costlySpot(flight.x, flight.y, state) || sourceShop !== destinationShop)) {
+            if (isGold) await costlyGold(x, y, quantity(moving), { state, publish });
+            else await stolenValue(moving, x, y, !!owner.mpeaceful, { state, publish, silent: false });
+            costly = false;
+        }
+        const effects = await applyFloorEffects(moving, flight.x, flight.y, { state, publish, random, verb: 'fall' });
+        if (effects.finished) return true;
+        if (costly && owner) {
+            if (moving.unpaid) removeObjectAndContentsFromBill(moving, state, { resident: owner });
+            const gold = containedGold(moving, true);
+            if (gold > 0) await donateGold(gold, owner, { selling: false, publish });
+        }
+        await placeObject(moving, flight.x, flight.y, state);
+        impactDisturbsZombies(moving, true, state);
+        await stack_object(moving, state);
+        await newsym(flight.x, flight.y);
+        return true;
+    } finally {
+        if (state._kickedObject === moving) state._kickedObject = null;
+    }
+}
+
+const COIN_CLASS = 12;
+type RandomBelow = (limit: number) => number;
+interface MigrationGate {
+    arrival: number;
+    destination: DungeonLocation;
+    text: string;
+}
+interface PileImpact {
+    count: number;
+    chainThere: boolean;
+}
+interface MigrationOptions {
+    state?: PlayingGameState;
+    publish?: MessagePublisher;
+    random?: RandomBelow;
+}
+interface ImpactOptions extends MigrationOptions {
+    destinationLevel?: number;
+}
+interface ShippingOptions extends MigrationOptions {
+    shopFloorObject?: boolean;
+}
+interface DeliveryOptions {
+    nearHero?: boolean;
+    publish?: MessagePublisher;
+    random?: RandomBelow;
+    rollOne?: (sides: number) => number;
+}
+function sameLevel(first: DungeonLocation | null | undefined, second: DungeonLocation | null | undefined): boolean {
+    return !!first && !!second
+        && first.dnum === second.dnum
+        && first.dlevel === second.dlevel;
+}
+function stairwayAt(state: PlayingGameState, x: number, y: number): Stairway | null {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y) return stair;
+    }
+    return null;
+}
+function nextLevel(state: PlayingGameState): DungeonLocation {
+    const current = state.u?.uz || { dnum: 0, dlevel: 1 };
+    return { ...current, dlevel: (current.dlevel ?? 1) + 1 };
+}
+function onBottomLevel(state: PlayingGameState): boolean {
+    const current = state.u?.uz;
+    const dungeon = state.dungeons?.[current?.dnum];
+    return !!current && !!dungeon
+        && current.dlevel === dungeon.num_dunlevs;
+}
+function inEndgame(state: PlayingGameState): boolean {
+    const current = state.u?.uz;
+    return !!current && !!state.astral_level
+        && current.dnum === state.astral_level.dnum;
+}
+function onStronghold(state: PlayingGameState): boolean {
+    return sameLevel(state.u?.uz, state.stronghold_level);
+}
+function trapDestination(state: PlayingGameState): DungeonLocation | null {
+    if (onStronghold(state)) return state.valley_level || null;
+    if (inEndgame(state) || onBottomLevel(state)) return null;
+    return nextLevel(state);
+}
+function downwardGate(state: PlayingGameState, x: number, y: number): MigrationGate | null {
+    if (onQuestStart(state) && !okToQuest(state)) return null;
+    const stair = stairwayAt(state, x, y);
+    if (stair && !stair.up) {
+        const destination = stair.tolev || nextLevel(state);
+        if (stair.isladder) {
+            return {
+                arrival: MIGR_LADDER_UP,
+                destination,
+                text: 'down the ladder',
+            };
+        }
+        return {
+            arrival: destination.dnum === state.u?.uz?.dnum
+                ? MIGR_STAIRS_UP : MIGR_SSTAIRS,
+            destination,
+            text: 'down the stairs',
+        };
+    }
+    const trap = trapAt(state, x, y);
+    if (!trap || !trap.tseen || !is_hole(trap.ttyp))
+        return null;
+    const destination = trapDestination(state);
+    if (!destination) return null;
+    return {
+        arrival: MIGR_RANDOM,
+        destination,
+        text: trap.ttyp === TRAPDOOR
+            ? 'through the trap door' : 'through the hole',
+    };
+}
+function transitSubject(object: GameObject, state: PlayingGameState): string {
+    const subject = object.otyp === CORPSE ? corpseName(object, { definite: true })
+        : `the ${objectCombatName(object, { state })}`;
+    return subject.charAt(0).toUpperCase() + subject.slice(1);
+}
+// C cansee() reads only the vision array.  A hero blinded by polymorph keeps
+// the old sight until the next vision_recalc(), so the shed equipment's
+// transit messages still show.
+function squareIsVisible(state: PlayingGameState, x: number, y: number): boolean {
+    if (state === game) return cansee(x, y);
+    return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
+}
+function pileAt(state: PlayingGameState, x: number, y: number): GameObject[] {
+    return state.level?.objects?.[x]?.[y] || [];
+}
+function pileImpact(state: PlayingGameState, object: GameObject | null, x: number, y: number): PileImpact {
+    let count = 0;
+    let chainThere = false;
+    for (const candidate of pileAt(state, x, y)) {
+        if (candidate === state.uchain || candidate === state.u?.uchain) {
+            chainThere = true;
+        } else if (candidate !== object) {
+            count += quantity(candidate);
+        }
+    }
+    return { count, chainThere };
+}
+function addToMigration(object: GameObject, gate: MigrationGate, state: PlayingGameState): void {
+    object.no_charge = false;
+    if (isContainer(object)) maybeResetPick(object, state);
+    object.where = 'migrating';
+    object.migration = {
+        destination: { ...gate.destination },
+        source: { ...(state.u?.uz || { dnum: 0, dlevel: 1 }) },
+        arrival: gate.arrival,
+    };
+    object.ox = gate.destination.dnum;
+    object.oy = gate.destination.dlevel;
+    state.migratingObjects ||= [];
+    state.migratingObjects.unshift(object);
+}
+async function publishTransitMessage(
+    object: GameObject, gate: MigrationGate, stays: boolean, impact: PileImpact,
+    publish: MessagePublisher, state: PlayingGameState,
+): Promise<void> {
+    const plural = objectNameIsPlural(object, state);
+    if (!impact.count && !impact.chainThere) {
+        if (!stays)
+            await publish(`${transitSubject(object, state)} ${plural ? 'fall' : 'falls'} ${gate.text}.`);
+        return;
+    }
+    const verb = impact.count ? (plural ? 'hit' : 'hits')
+        : (plural ? 'rattle' : 'rattles');
+    const target = impact.count
+        ? `${impact.count === 1 ? 'another' : 'other'} object${
+            impact.count === 1 ? '' : 's'}`
+        : 'your chain';
+    const fall = stays ? '.'
+        : ` and ${plural ? 'fall' : 'falls'} ${gate.text}.`;
+    await publish(`${transitSubject(object, state)} ${verb} ${target}${fall}`);
+}
+async function breaksInTransit(object: GameObject, state: PlayingGameState, publish: MessagePublisher, random: RandomBelow): Promise<boolean> {
+    const { objectBreaksOnImpact } = await import('./dothrow.js');
+    if (!objectBreaksOnImpact(object, random)) return false;
+    if (object.otyp === MIRROR)
+        changeHeroLuck(-2, state);
+    if (object.otyp === EGG && object.spe
+        && object.corpsenm !== undefined && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
+        changeHeroLuck(-Math.min(quantity(object), 5), state);
+    }
+    const crash = objectMaterial(object.otyp) === GLASS
+        || object.otyp === EXPENSIVE_CAMERA;
+    await publishHeardMessage(`a muffled ${crash ? 'crash' : 'splat'}.`, publish, state);
+    await deleteObject(object, state);
+    return true;
+}
+export async function impactDrop(
+    missile: GameObject | null,
+    x: number,
+    y: number,
+    {
+        state = requireInitializedGame(),
+        publish = async () => {},
+        random = rn2,
+        destinationLevel = 0,
+    }: ImpactOptions = {},
+): Promise<number> {
+    const gate = downwardGate(state, x, y);
+    if (!gate) return 0;
+    if (destinationLevel) {
+        gate.arrival = MIGR_WITH_HERO;
+        gate.destination = { ...gate.destination, dlevel: destinationLevel };
+    }
+    const pile = [...pileAt(state, x, y)];
+    const shop = costlySpot(x, y, state);
+    const owner = shop?.resident;
+    const debit = owner?.eshk.debit ?? 0;
+    const robbed = owner?.eshk.robbed ?? 0;
+    const angry = owner && !owner.mpeaceful;
+    let price = 0;
+    const total = pile.reduce((count, object) =>
+        count + (object === missile ? 0 : quantity(object)), 0);
+    let fallen = 0;
+    for (const object of pile) {
+        if (object === missile
+            || object === state.uball || object === state.u?.uball
+            || object === state.uchain || object === state.u?.uchain) continue;
+        if (missile?.otyp === ROCK && object.otyp === BOULDER) continue;
+        if (random(object.otyp === BOULDER ? 30 : 3) !== 0) continue;
+        remove_object(object, state);
+        if (shop) {
+            const sameShop = !!costlySpot(state.u.ux, state.u.uy, state)
+                && state.u.urooms.includes(shop.roomno);
+            price += await stolenValue(object, x, y, sameShop, { state, publish, silent: true });
+            if (object.contents?.length) pickedContainer(object);
+            if (object.oclass !== COIN_CLASS) object.no_charge = false;
+        }
+        addToMigration(object, gate, state);
+        fallen += quantity(object);
+    }
+    if (fallen && squareIsVisible(state, x, y)) {
+        const all = fallen === total;
+        const what = fallen === 1 ? 'object falls' : 'objects fall';
+        if (missile) {
+            const article = all ? 'the '
+                : fallen === 1 ? 'an' : '';
+            await publish(`From the impact, ${article}other ${what}.`);
+        } else {
+            const subject = all
+                ? (fallen === 1
+                    ? 'The adjacent object' : 'All the adjacent objects')
+                : (fallen === 1
+                    ? 'One of the adjacent objects'
+                    : 'Some of the adjacent objects');
+            await publish(`${subject} ${fallen === 1
+                ? 'falls' : 'fall'} ${gate.text}.`);
+        }
+    }
+    if (owner && price > 0) {
+        if ((owner.eshk.robbed ?? 0) > robbed) {
+            await publish(`You removed ${price} ${currency(price)} worth of goods!`);
+            if (squareIsVisible(state, owner.mx, owner.my)) {
+                owner.eshk.customer ||= state.plname || 'player';
+                await publish(angry ? `${shopkeeperName(owner, { state, capitalized: true })} is infuriated!`
+                    : `"${state.plname || 'player'}, you are a thief!"`);
+            } else await publishHeardMessage('a scream, "Thief!"', publish, state);
+            hotPursuitShopkeeper(owner, state);
+            await angerWatchGuards(false, { state, publish });
+        } else if ((owner.eshk.debit ?? 0) > debit) {
+            const amount = (owner.eshk.debit ?? 0) - debit;
+            await publish(`You owe ${shopkeeperName(owner, { state })} ${amount} ${currency(amount)} for goods lost.`);
+        }
+    }
+    return fallen;
+}
+export async function shipObject(
+    object: GameObject | null,
+    x: number,
+    y: number,
+    {
+        state = requireInitializedGame(),
+        publish = async () => {},
+        random = rn2,
+        shopFloorObject = false,
+    }: ShippingOptions = {},
+): Promise<boolean> {
+    if (!object) return false;
+    const gate = downwardGate(state, x, y);
+    if (!gate) return false;
+    const attached = object === state.uball || object === state.u?.uball
+        || object === state.uchain || object === state.u?.uchain;
+    const stays = attached
+        || (gate.arrival !== MIGR_LADDER_UP && random(3) !== 0);
+    const unpaid = objectIsUnpaid(object);
+    const container = !!object.contents?.length;
+    const impact = pileImpact(state, object, x, y);
+    const hole = gate.arrival === MIGR_RANDOM;
+    if (object.otyp === BOULDER && hole) {
+        if (impact.count) {
+            await impactDrop(object, x, y, { state, publish, random });
+        }
+        return false;
+    }
+    if (squareIsVisible(state, x, y)) {
+        await publishTransitMessage(object, gate, stays, impact, publish, state);
+    }
+    if (stays) {
+        if (impact.count) {
+            await impactDrop(object, x, y, { state, publish, random });
+            await maybeUnhideAt(x, y, state);
+        }
+        return false;
+    }
+    if (unpaid || shopFloorObject) {
+        if (unpaid) {
+            await stolenValue(object, state.u.ux, state.u.uy, true, {
+                state, publish, silent: false,
+            });
+        } else {
+            const { ox, oy } = object;
+            const room = roomsAt(state.level, ox, oy, SHOPBASE)[0];
+            const sameShop = !!costlySpot(state.u.ux, state.u.uy, state)
+                && room !== undefined && state.u.urooms.includes(room);
+            await stolenValue(object, ox, oy, sameShop, {
+                state, publish, silent: false,
+            });
+        }
+        if (container) pickedContainer(object);
+        if (object.oclass !== COIN_CLASS) object.no_charge = false;
+    }
+    if (object.owornmask) {
+        await removeWornHeroItem(object, state);
+        if (state.program_state.gameover) return true;
+    }
+    if (await breaksInTransit(object, state, publish, random)) return true;
+    addToMigration(object, gate, state);
+    if (object.otyp === BOULDER) object.otrapped = false;
+    if (impact.count) {
+        await impactDrop(object, x, y, { state, publish, random });
+        await newsym(x, y);
+    }
+    return true;
+}
+function arrivalStairway(state: PlayingGameState, migration: ObjectMigration, ladder: boolean): Stairway | null {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (sameLevel(stair.tolev, migration.source)
+            && !!stair.isladder === ladder) return stair;
+    }
+    return null;
+}
+async function breaksOnArrival(object: GameObject, state: PlayingGameState, x: number, y: number,
+    random: RandomBelow, noBreak: boolean, withHero: boolean, publish: MessagePublisher,
+): Promise<boolean> {
+    const location = state.level.at(x, y);
+    if (noBreak || (location !== null && IS_SOFT(location.typ))) return false;
+    const { objectBreaksOnImpact, breakFloorObject } = await import('./dothrow.js');
+    if (withHero) {
+        const result = await breakFloorObject(object, { state, x, y, publish, random, heroCaused: false });
+        return result.destroyed || !!state.program_state.gameover;
+    }
+    if (!objectBreaksOnImpact(object, random)) return false;
+    await delobj(object, state);
+    return true;
+}
+async function deliverAtRandomPosition(
+    object: GameObject, state: PlayingGameState, random: RandomBelow, publish: MessagePublisher, noBreak: boolean,
+): Promise<void> {
+    object.ox = object.oy = 0;
+    if (!await relocateObjectRandomly(object, { state, random, publish })
+        || noBreak) return;
+    const { objectBreaksOnImpact } = await import('./dothrow.js');
+    if (objectBreaksOnImpact(object, random)) await delobj(object, state);
+}
+async function deliverAtPassage(
+    object: GameObject, migration: ObjectMigration, state: PlayingGameState, position: Position,
+    publish: MessagePublisher, random: RandomBelow, rollOne: (sides: number) => number, noBreak: boolean,
+): Promise<void> {
+    const arrival = migration.arrival & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
+    await placeObject(object, position.x, position.y, state);
+    if (await breaksOnArrival(
+        object, state, position.x, position.y, random, noBreak,
+        arrival === MIGR_WITH_HERO, publish,
+    )) return;
+    const landed = await stack_object(object, state);
+    // The pinned C tests this mask before removing migration flags. Its
+    // stair and ladder codes share a bit with MIGR_WITH_HERO too.
+    if (migration.arrival & MIGR_WITH_HERO) {
+        await newsym(position.x, position.y);
+        return;
+    }
+    const { scatterFloorObjects } = await import('./scatter.js');
+    await scatterFloorObjects(position.x, position.y, rollOne(2), {
+        state,
+        onlyObject: landed,
+        mayDestroy: false,
+        mayFracture: false,
+        mayHitHero: false,
+        mayHitMonsters: false,
+        publish,
+        random,
+        rollOne,
+    });
+}
+export async function deliverMigratingObjects(
+    state: PlayingGameState = requireInitializedGame(),
+    {
+        nearHero = false,
+        publish = async () => {},
+        random = rn2,
+        rollOne = rnd,
+    }: DeliveryOptions = {},
+): Promise<number> {
+    let delivered = 0;
+    let position: Position | null = null;
+    for (const object of [...(state.migratingObjects || [])]) {
+        const migration = object.migration;
+        if (!migration || !sameLevel(migration.destination, state.u?.uz))
+            continue;
+        if (migration.arrival & MIGR_TO_SPECIES) continue;
+        const arrival = migration.arrival
+            & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
+        if (nearHero !== (arrival === MIGR_WITH_HERO)) continue;
+        unlinkObject(object, state);
+        object.owornmask = 0;
+        delete object.migration;
+        let passage: Stairway | Position | null = null;
+        if ([MIGR_STAIRS_UP, MIGR_SSTAIRS].includes(arrival))
+            passage = arrivalStairway(state, migration, false);
+        else if (arrival === MIGR_LADDER_UP)
+            passage = arrivalStairway(state, migration, true);
+        else if (arrival === MIGR_WITH_HERO) {
+            passage = { x: state.u.ux, y: state.u.uy };
+        }
+        else position = null;
+        if (passage) position = 'sx' in passage ? { x: passage.sx, y: passage.sy } : passage;
+        const noBreak = !!(migration.arrival & MIGR_NOBREAK);
+        if (position) {
+            await deliverAtPassage(
+                object, migration, state,
+                position,
+                publish, random, rollOne, noBreak,
+            );
+        } else {
+            await deliverAtRandomPosition(
+                object, state, random, publish, noBreak,
+            );
+        }
+        delivered++;
+    }
+    return delivered;
+}
+

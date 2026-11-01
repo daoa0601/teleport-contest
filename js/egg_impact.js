@@ -6,7 +6,7 @@ import { createFireExplosion } from './fire_explosion.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { EGG, ROCK } from './object_data.js';
-import { stopAllObjectTimers } from './object_timers.js';
+import { stopAllObjectTimers } from './timeout.js';
 import { d } from './rng.js';
 import { objectWeight } from './weight.js';
 const GEM_CLASS = 13;

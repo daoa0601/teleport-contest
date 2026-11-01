@@ -21,7 +21,7 @@ import { heroHeadName } from './body_parts.js';
 import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { rn1, rn2, rnd } from './rng.js';

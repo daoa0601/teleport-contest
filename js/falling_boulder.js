@@ -19,7 +19,7 @@ import { monsterObjectPronoun } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, ROCK } from './object_data.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { inventoryItemDescription } from './invent.js';
 import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn1 } from './rng.js';

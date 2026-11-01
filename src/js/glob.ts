@@ -4,10 +4,9 @@
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { isok } from './const.js';
+import { isok, OBJECT_TIMER_KIND } from './const.js';
 import { isIceAt } from './terrain_properties.js';
-import { deallocateObject } from './object_delete.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject, deallocateObject } from './mkobj.js';
 import { game, requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './mon.js';
@@ -17,9 +16,7 @@ import {
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { absorbGlob, mergable } from './object_merge.js';
-import {
-    OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer,
-} from './object_timers.js';
+import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -31,7 +28,7 @@ import type { GameObject, ObjectTimer } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { DueObjectTimer } from './object_timers.js';
+import type { DueObjectTimer } from './timeout.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
 
 type RandomBelow = (limit: number) => number;

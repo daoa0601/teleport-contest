@@ -3,7 +3,7 @@
 // m_initinv, set_mimic_sym, create_critters.
 import { armorBonus } from './armor.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, } from './const.js';
+import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -19,7 +19,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { beginObjectBurn } from './light.js';
-import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, } from './mkobj.js';
+import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, addCreatedObjectToContainer } from './mkobj.js';
 import { occupied } from './mkroom.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
@@ -36,9 +36,8 @@ import { monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, plac
 import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem } from './muse.js';
-import { addCreatedObjectToContainer } from './object_container.js';
-import { deleteObject } from './object_delete.js';
-import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { deleteObject } from './shk.js';
+import { stopObjectTimer } from './timeout.js';
 import { rndClass } from './objnam.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
 import { registerQuestLeader } from './quest.js';

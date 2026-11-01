@@ -5,7 +5,7 @@ import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from 
 import { addFruit } from './fruit.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makemonAt } from './makemon.js';
-import { mkobj, mksobj } from './mkobj.js';
+import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -14,7 +14,6 @@ import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJE
 import { rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
 import { randomTypeByDescription } from './objnam.js';
-import { deallocateObject } from './object_delete.js';
 import { migrateMonsterOffLevel } from './dog.js';
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');

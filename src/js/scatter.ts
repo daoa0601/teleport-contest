@@ -11,7 +11,7 @@ import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { PotionHitOptions } from './potion.js';
@@ -49,13 +49,12 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
-import { breakFloorObject } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { observeObject } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
-import { shipObject } from './object_migration.js';
+import { objectMaterial } from './o_init.js';
+import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile } from './projectile.js';
 import { touchPetrifies } from './stoning.js';
@@ -66,7 +65,7 @@ import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { rangedTargetHitBonus } from './dothrow.js';
+import { rangedTargetHitBonus, breakFloorObject } from './dothrow.js';
 
 export interface ScatterOptions {
     state?: GameState;

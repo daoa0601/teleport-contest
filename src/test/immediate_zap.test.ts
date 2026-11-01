@@ -1,4 +1,4 @@
-import { clearBypasses } from '../js/object_bypass.js';
+import { clearBypasses } from '../js/worn.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -12,7 +12,7 @@ import {
     hitFloorPileWithWand, hitMonsterWithWand,
     hitObjectWithWand,
 } from '../js/immediate_zap.js';
-import { cancelObjectMagic } from '../js/object_cancellation.js';
+import { cancelObjectMagic } from '../js/zap.js';
 import {
     CHEST, CORPSE, DAGGER, OBJECT_NAMES, POT_FRUIT_JUICE, POT_SICKNESS,
     SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, WAN_CANCELLATION, WAN_MAKE_INVISIBLE,

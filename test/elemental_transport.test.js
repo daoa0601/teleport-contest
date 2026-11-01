@@ -17,7 +17,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { punishHero } from '../js/punishment.js';
 import { moveObject } from '../js/floor_object.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 import { pushKeys } from '../js/input.js';
 async function waterPlane() {
     const active = freshSpecialLevel({ prototype: 'water', seed: 1907, depth: 2 });

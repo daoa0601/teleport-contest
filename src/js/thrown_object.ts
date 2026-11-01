@@ -2,7 +2,7 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
@@ -32,7 +32,7 @@ import {
 } from './const.js';
 import { monsterName } from './do_name.js';
 import { artifactById } from './artifacts.js';
-import { heroMoveBlockedBetween } from './hack.js';
+import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './dokick.js';
 import { currentAttribute } from './attrib.js';
@@ -56,20 +56,19 @@ import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
-import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './object_properties.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
+import { breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import {
     BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, 
     OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectIsVulnerableToErosion } from './object_erosion.js';
+import { objectIsVulnerableToErosion } from './trap.js';
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
-import { shipObject } from './object_migration.js';
+import { shipObject } from './dokick.js';
 import { splitObjectStack } from './object_stack.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
@@ -78,7 +77,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
-import { objectNoLongerHeld } from './object_release.js';
+import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';

@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { carriedGold } from '../js/gold.js';
 import { AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

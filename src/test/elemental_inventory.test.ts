@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { wearHeroAccessory } from '../js/accessory.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
-import { PIT } from '../js/const.js';
+import { PIT, OBJECT_TIMER_KIND } from '../js/const.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -22,7 +22,7 @@ import {
     OBJECT_NAMES, POT_HEALING, POT_SPEED, RIN_PROTECTION, SCR_IDENTIFY,
     SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_COLD,
 } from '../js/object_data.js';
-import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { destroyLavaInventory } from '../js/trap.js';
 import {

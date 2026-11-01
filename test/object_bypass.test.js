@@ -1,4 +1,4 @@
-import { clearBypasses } from '../js/object_bypass.js';
+import { clearBypasses } from '../js/worn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';

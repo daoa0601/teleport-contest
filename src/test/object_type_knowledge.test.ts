@@ -9,7 +9,7 @@ import { fullyIdentifyObject, inventoryItemDescription, objectNeedsFullIdentific
 import { transformMagicLampToOilLamp } from '../js/light.js';
 import { mksobj } from '../js/mkobj.js';
 import { applyMonsterPassiveToObject } from '../js/uhitm.js';
-import { cancelObjectMagic } from '../js/object_cancellation.js';
+import { cancelObjectMagic } from '../js/zap.js';
 import { CLUB, LEATHER_ARMOR, MAGIC_LAMP, OIL_LAMP, POT_HEALING, POT_WATER } from '../js/object_data.js';
 import { recordObjectCall, recordObjectKnowledge } from '../js/object_knowledge.js';
 import { objectName } from '../js/objnam.js';

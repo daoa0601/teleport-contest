@@ -18,11 +18,11 @@ import {
     ELVEN_SHORT_SWORD, ELVEN_SPEAR, OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, WORM_TOOTH, getObjectClassBounds, requireObjectData,
 } from './object_data.js';
-import { erosionMatters } from './object_erosion.js';
+import { erosionMatters } from './trap.js';
 import { learnObjectType, objectClassForType } from './object_knowledge.js';
 import { ownedObjectAction } from './objnam.js';
 import { isWeaponTool } from './object_properties.js';
-import { uncurseObjectState } from './object_state.js';
+import { uncurseObjectState } from './mkobj.js';
 import { rn2, rnd } from './rng.js';
 import { strangeFeeling } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

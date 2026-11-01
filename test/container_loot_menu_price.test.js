@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { CHEST, CLUB } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

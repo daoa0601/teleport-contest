@@ -6,7 +6,7 @@ import { MONSTER_ALIGNMENT, monsterIsUnicorn } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { definiteName, objectName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';

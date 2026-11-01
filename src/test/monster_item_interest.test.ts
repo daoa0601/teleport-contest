@@ -10,7 +10,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterSearchesForItem } from '../js/muse.js';
 import { monsterWantsFloorObject } from '../js/monmove.js';
 import { setMonsterSpecies } from '../js/mondata.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BAG_OF_HOLDING, BAG_OF_TRICKS,
     BOULDER, CORPSE, DAGGER, EGG, EXPENSIVE_CAMERA, FIRE_HORN, GOLD_PIECE,
@@ -22,7 +22,7 @@ import {
 } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
 import { objectClassForType } from '../js/object_knowledge.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectMaterial } from '../js/o_init.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';

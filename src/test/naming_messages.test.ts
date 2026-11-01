@@ -29,9 +29,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName, monsterName } from '../js/do_name.js';
 import { tryKickReel } from '../js/dokick.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { hurtleMonster } from '../js/dothrow.js';
+import { hurtleMonster, breakFloorObject } from '../js/dothrow.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap, tryMonsterTrapEscape } from '../js/trap.js';
-import { breakFloorObject } from '../js/object_breakage.js';
 import {
     AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE,
     GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE,

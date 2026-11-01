@@ -26,9 +26,7 @@ import { MONSTER_ATTACKS } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_DRST, AT_SPIT,
 } from './monster_attack_types.js';
-import {
-    breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact,
-} from './object_breakage.js';
+import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import {
     ACID_VENOM, BLINDING_VENOM,
 } from './object_data.js';

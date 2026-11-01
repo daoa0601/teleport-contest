@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { MENU_TRADITIONAL } from '../js/const.js';
 import { CHEST, CLUB } from '../js/object_data.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { enableRngLog, getRngLog } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';

@@ -5,7 +5,7 @@ import { requireInitializedGame, requireLiveGame } from './gstate.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { finishSpecialRoamer } from './sp_lev.js';
 import { makemonAt, giveMonsterStartingObject } from './makemon.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, blessObjectState } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
 import { monsterName } from './do_name.js';
@@ -18,7 +18,6 @@ import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, OBJECT_NAMES } from './object_data.js';
-import { blessObjectState } from './object_state.js';
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 const PM_ANGEL = MONSTER_NAME.indexOf('Angel');
 // C minion.c:lose_guardian_angel(). A guardian has minion data, not pet data.

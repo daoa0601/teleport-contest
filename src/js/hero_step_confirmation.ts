@@ -1,7 +1,7 @@
 import { heroLocomotion } from './hero_locomotion.js';
 // C hack.c:avoid_trap_andor_region()/u_locomotion() and
 // trap.c:immune_to_trap()/into_vs_onto(), for hero movement.
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import {
     BEAR_TRAP, HOLE, In_endgame, In_sokoban, Is_earthlevel, LANDMINE,
     LEVEL_TELEP, MAGIC_PORTAL, PARANOID_CONFIRM, PARANOID_TRAP, PIT,

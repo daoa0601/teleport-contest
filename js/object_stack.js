@@ -3,12 +3,12 @@
 import { game } from './gstate.js';
 import { nextObjectId } from './ident.js';
 import { mergeObjectStacks } from './object_merge.js';
-import { copyObjectTimers } from './object_timers.js';
+import { copyObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { objectWeight } from './weight.js';
 import { splitObjectBill } from './shk.js';
-import { linkObjectAfter, sharesUnsplitChain } from './object_location.js';
+import { linkObjectAfter, sharesUnsplitChain } from './mkobj.js';
 export function objectQuantity(object) {
     if (!object)
         return 0;

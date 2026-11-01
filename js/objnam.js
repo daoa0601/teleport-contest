@@ -1,16 +1,14 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
-import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel } from './gstate.js';
-import { objectProb } from './o_init.js';
+import { objectProb, objectMaterial } from './o_init.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
-import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
+import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents } from './shk.js';
 import { rn2, rnd } from './rng.js';
-import { mkobj, mksobj, set_corpsenm } from './mkobj.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, } from './const.js';
+import { mkobj, mksobj, set_corpsenm, unlinkObject } from './mkobj.js';
+import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
-import { deleteObject, deleteObjectContents } from './object_delete.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { parseTinPreparation, setTinVariety, tinDetails } from './tin.js';
@@ -24,7 +22,6 @@ import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular,
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
-import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
@@ -32,7 +29,7 @@ import * as objects from './object_data.js';
 import { nameToMonster, resolveMonsterNamePrefix, } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
 import { EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
-import { OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, scheduleObjectTimer, stopLevelTimer, } from './object_timers.js';
+import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { consumeRemainingFood, foodNutrition } from './food_lifecycle.js';
 import { placeCreatedObject } from './floor_object.js';
 import { beginObjectBurn } from './light.js';
@@ -51,7 +48,7 @@ import { waterbodyName } from './terrain_name.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { deleteTrap, trapName, waterDamageObject } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
-import { startMeltIceTimer } from './zap.js';
+import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import { lookupNovelTitle } from './novel_titles.js';
 export { japaneseItemName } from './japanese_item_name.js';
 const STRANGE_OBJECT = 0;

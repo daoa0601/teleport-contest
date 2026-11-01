@@ -8,9 +8,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { CORPSE } from '../js/object_data.js';
-import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

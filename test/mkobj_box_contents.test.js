@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mksobj } from '../js/mkobj.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, CHEST, CORPSE, ICE_BOX, LARGE_BOX, OILSKIN_SACK, SACK, WAN_CANCELLATION, } from '../js/object_data.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C mkobj.c:mkbox_cnts(): a box's contents are drawn after its lock state,
 // with per-type ceilings (locked chests 7 / unlocked 5, large boxes 5 / 3,

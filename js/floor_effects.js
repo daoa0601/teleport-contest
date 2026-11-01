@@ -8,12 +8,12 @@ import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from 
 import { map_background, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { meldLandingGlob } from './glob.js';
-import { breakObjectAtLocation } from './object_breakage.js';
-import { deleteObject } from './object_delete.js';
+import { breakObjectAtLocation } from './dothrow.js';
+import { deleteObject } from './shk.js';
 import { BOULDER, POT_OIL } from './object_data.js';
 import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural, } from './objnam.js';
-import { shipObject } from './object_migration.js';
-import { objectResistsDestruction } from './object_state.js';
+import { shipObject } from './dokick.js';
+import { objectResistsDestruction } from './zap.js';
 import { applyBoulderPitEffects } from './pit_fill.js';
 import { rnl, rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';

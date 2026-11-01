@@ -45,7 +45,7 @@ import { makemonNear } from './mklev.js';
 import { courtMonsterType } from './mkroom.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
 import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
-import { curseObject, unblessObjectState } from './object_state.js';
+import { curseObject, unblessObjectState } from './mkobj.js';
 import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty,
     removePermanentIntrinsicProperty,

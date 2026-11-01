@@ -1,5 +1,5 @@
 import { seeTrap } from './trap.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
@@ -14,13 +14,12 @@ import { heroIsHallucinating } from './senses.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
-import { poly_obj } from './object_polymorph.js';
 import { deleteTrap } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { changeMonsterForm } from './mon.js';
 import { rn2 } from './rng.js';
 import { heroHasArtifactDefense } from './artifacts.js';
-import { monsterResistsEffect } from './zap.js';
+import { monsterResistsEffect, poly_obj } from './zap.js';
 
 const IRON = 11;
 const WAND_CLASS = 12;

@@ -17,7 +17,6 @@ import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './do_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
-import { cancelObjectMagic } from './object_cancellation.js';
 import {
     BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT,
     SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY,
@@ -27,11 +26,7 @@ import {
 } from './object_data.js';
 import { singularObjectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import {
-    createPolymorphMonsterFromPile, polymorphFloorObject, stone_to_flesh_obj,
-} from './object_polymorph.js';
-import { drainObjectEnchantment } from './object_state.js';
-import { relocateObjectRandomly } from './object_teleport.js';
+import { relocateObjectRandomly } from './teleport.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { unpunishHero } from './punishment.js';
@@ -39,8 +34,7 @@ import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { turnObjectWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import { learnWand, probeObject } from './zap.js';
-
+import { learnWand, probeObject, drainObjectEnchantment, cancelObjectMagic, createPolymorphMonsterFromPile, polymorphFloorObject, stone_to_flesh_obj } from './zap.js';
 export { hitMonsterWithWand } from './immediate_monster_magic.js';
 
 const WAN_OPENING = OBJECT_NAMES.indexOf('opening');

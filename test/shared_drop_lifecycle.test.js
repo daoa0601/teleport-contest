@@ -14,7 +14,7 @@ import { startHeroDigging, continueHeroDigging } from '../js/hero_digging.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { applyInventoryObject, dropInventoryObject, kickDirection } from './support/commands.js';
 import { createStaffedShop } from './support/shop.js';

@@ -1,7 +1,7 @@
 // Monster weapon selection and wielded state.
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
-import { bypassObject } from './object_bypass.js';
+import { bypassObject } from './worn.js';
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, } from './const.js';
 import { definiteObjectAction, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
@@ -40,7 +40,7 @@ import { heroSpecies } from './hero_species.js';
 import { GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_WEIGHT, } from './object_data.js';
 import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
 import { isPoolAt } from './terrain_properties.js';
 import { artifactToHitBonus } from './artifacts.js';

@@ -6,7 +6,7 @@ import test from 'node:test';
 // sends a breaking wand "into a thousand pieces".
 
 import { game } from '../js/gstate.js';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { WAN_STRIKING } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -8,9 +8,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     DAGGER, EGG, LUMP_OF_ROYAL_JELLY,
 } from '../js/object_data.js';
-import {
-    OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers,
-} from '../js/object_timers.js';
+import { objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { useRoyalJelly } from '../js/royal_jelly.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';

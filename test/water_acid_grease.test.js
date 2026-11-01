@@ -3,7 +3,7 @@ import test from 'node:test';
 import { POOL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { POT_ACID, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { dropInventoryObject, runExtendedCommand } from './support/commands.js';

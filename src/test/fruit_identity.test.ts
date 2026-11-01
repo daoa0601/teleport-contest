@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
 import { M_AP_OBJECT, M_AP_TYPE, NO_MINVENT } from '../js/const.js';
-import { deleteObject } from '../js/object_delete.js';
+import { deleteObject } from '../js/shk.js';
 import { mergable } from '../js/object_merge.js';
 import {
     addFruit, changePreferredFruit, fruitFromIndex, fruitFromName, fruitName, initializeFruitRegistry,
@@ -15,11 +15,10 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { runSegment } from '../js/jsmain.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
-import { mksobj } from '../js/mkobj.js';
+import { mksobj, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { objectAtMonsterDescription } from '../js/pager.js';
 import { objectName, readObjectName } from '../js/objnam.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { FORTUNE_COOKIE, LARGE_BOX, SLIME_MOLD } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

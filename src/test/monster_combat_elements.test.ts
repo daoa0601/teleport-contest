@@ -1,7 +1,7 @@
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { M_ATTK_DEF_DIED, MM_NOGRP, MSLOW, NO_MINVENT, STRAT_HEAL, STRAT_WAITFORU, W_ARM, W_ARMC, W_WEP } from '../js/const.js';
+import { M_ATTK_DEF_DIED, MM_NOGRP, MSLOW, NO_MINVENT, STRAT_HEAL, STRAT_WAITFORU, W_ARM, W_ARMC, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -12,7 +12,7 @@ import {
     CHAIN_MAIL, CLOAK_OF_PROTECTION, CORPSE, DAGGER, LEATHER_ARMOR,
     OIL_LAMP, POT_HEALING, POT_OIL, SCR_BLANK_PAPER, WAN_FIRE,
 } from '../js/object_data.js';
-import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

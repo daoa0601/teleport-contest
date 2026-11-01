@@ -5,7 +5,7 @@ import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ACH_INVK, ACH_NOVL } from '../js/achievements.js';
-import { FIRE_TRAP, MOAT, NO_MINVENT, ROOM, STAIRS, VIBRATING_SQUARE } from '../js/const.js';
+import { FIRE_TRAP, MOAT, NO_MINVENT, ROOM, STAIRS, VIBRATING_SQUARE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { level_difficulty } from '../js/dungeon.js';
@@ -19,7 +19,7 @@ import {
 } from '../js/object_data.js';
 import { readBookOfDead, readNovel } from '../js/special_spellbooks.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { objectTimers, OBJECT_TIMER_KIND, stopAllObjectTimers } from '../js/object_timers.js';
+import { objectTimers, stopAllObjectTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';

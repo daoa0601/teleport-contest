@@ -2,8 +2,7 @@
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
-import { bypassObject } from './object_bypass.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
 import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName } from './objnam.js';
@@ -44,11 +43,11 @@ import {
     W_WEP,
 } from './const.js';
 import { placeObject } from './floor_object.js';
-import { objectNoLongerHeld } from './object_release.js';
-import { deleteObject } from './object_delete.js';
+import { objectNoLongerHeld } from './do.js';
+import { deleteObject } from './shk.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import type { PropertyName } from './property_types.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 
 type MonsterArmorSlot = keyof typeof SLOT_MASK;

@@ -1,4 +1,4 @@
-import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 // C do_wear.c:menu_remarm(); pickup.c:query_category()/allow_category();
 // invent.c:ggetobj()/askchain(). The window API owns rendering and input.
 import { MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';

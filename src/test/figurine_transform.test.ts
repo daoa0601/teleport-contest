@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE } from '../js/const.js';
+import { COLNO, G_GENOD, POOL, ROOM, ROWNO, STONE, OBJECT_TIMER_KIND } from '../js/const.js';
 import {
     finishFigurineTimer, runClaimedFigurineTimer,
 } from '../js/figurine.js';
@@ -10,15 +10,12 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { Monster } from '../js/monster_types.js';
 import type { GameObject } from '../js/object_types.js';
 import { finishInventoryRemoval } from '../js/hero_inventory.js';
-import { unlinkObject } from '../js/object_location.js';
 import { pushKey } from '../js/input.js';
-import { mksobj } from '../js/mkobj.js';
+import { mksobj, unlinkObject } from '../js/mkobj.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { dropMonsterObject } from '../js/steal.js';
 import { FIGURINE } from '../js/object_data.js';
-import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc } from '../js/vision.js';

@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { W_WEP } from '../js/const.js';
+import { W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { SACK } from '../js/object_data.js';
-import { addObjectToContainer } from '../js/object_container.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopAllObjectTimers } from '../js/object_timers.js';
+import { addObjectToContainer } from '../js/mkobj.js';
+import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { nearCapacity } from '../js/weight.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';

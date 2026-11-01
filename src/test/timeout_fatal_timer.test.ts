@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { ICE, ICED_POOL, POOL } from '../js/const.js';
+import { ICE, ICED_POOL, POOL, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, scheduleLevelTimer, scheduleObjectTimer,
-} from '../js/object_timers.js';
+import { scheduleLevelTimer, scheduleObjectTimer } from '../js/timeout.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
