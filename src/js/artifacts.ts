@@ -274,7 +274,8 @@ export function artifactWarningMask(
         : 0;
 }
 
-// C artifact.c:glow_color(). The glow color of an artifact's invocation.
+// C artifact.c:glow_color(). The warning-glow color for Sting, Orcrist, and
+// Grimtooth, as Sting_effects names it in the start-glowing message.
 export function artifactGlowColor(object: GameObject, state: GameState = game): string {
     const artifact = artifactById(object.oartifact, state);
     if (!artifact) throw new Error('Artifact glow requires a known artifact');
