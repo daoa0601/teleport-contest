@@ -53,11 +53,10 @@ import { hasShopkeeperData } from './shop_types.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { isAccessibleAt, monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt, } from './terrain_properties.js';
 import { insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth } from './dungeon.js';
-import { movePet, pullLeashedPetCloser, monsterCouldReachItem, finishMonsterEating, commitPetPickup, reluctantPetMessage, } from './dogmove.js';
+import { movePet, monsterCouldReachItem, finishMonsterEating, } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor, } from './mhitm.js';
 import { chooseMonsterSpell, heroCanSeeInvisible, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, movementSpellSelections, resumeDeferredMovementSpell, } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem, } from './mthrowu.js';
-import { finishPetEating } from './pet_eating.js';
 import { wakeMonstersNearWithMessages, publishMonsterWake } from './monster_wake.js';
 import { finishMonsterWebTrap } from './web_trap.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, } from './weapon.js';
@@ -1084,7 +1083,6 @@ export async function moveMonsterAggress(monster, x, y, state, random, rollDice,
         return { postMoveStatus: MMOVE_DONE };
     const attack = await beginMonsterMeleeAttack(monster, defender, state, random, rollDice, rollOne, calls, 'movement', { x, y });
     return {
-        attack,
         heroDied: !!attack.heroDied,
         postMoveStatus: monsterAttackStopsAggressor(attack) || monster.dead || monster.mhp <= 0 ? MMOVE_DIED : MMOVE_DONE,
     };
@@ -1271,7 +1269,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             && dist2(monster.mx, monster.my, monster.mgoal.x, monster.mgoal.y) <= 2) {
             const attack = await beginMonsterMeleeAttack(monster, intruder, state, random, rollDice, rollOne, calls, null, monster.mgoal);
             return {
-                oldx, oldy, x: monster.mx, y: monster.my, moved: false, attack,
+                oldx, oldy, x: monster.mx, y: monster.my, moved: false,
                 heroDied: !!attack.heroDied,
                 postMoveStatus: monsterAttackStopsAggressor(attack) ? MMOVE_DIED : MMOVE_MOVED,
                 movementStage: 'postmov',
@@ -1884,11 +1882,7 @@ function movementHasEnded(movement) {
         movement.postMoveStatus === MMOVE_DIED);
 }
 export async function completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, dochugContext, { trapAlreadyHandled = false } = {}) {
-    if (movement.deferredAfterPetAttack ||
-        movement.deferredPetEating ||
-        movement.deferredPetMove ||
-        movement.deferredPetReluctance ||
-        movement.deferredAfterSpecialAttack)
+    if (movement.deferredAfterSpecialAttack)
         return movement;
     if (monster.dead ||
         monster.mhp <= 0 ||
@@ -2429,9 +2423,7 @@ export async function moveMonsterAfterTrap(monster, state, random, rollDice, rol
                 movement = await moveHostile(monster, state, random, rollDice, rollOne, calls, postMoveCapabilities);
         }
         movement.postMoveCapabilities = postMoveCapabilities;
-        if (movement.deferredPetMove ||
-            movement.deferredPetEating ||
-            movement.deferredAfterRestrictedTenguTeleport)
+        if (movement.deferredAfterRestrictedTenguTeleport)
             return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
         await completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, dochugContext);
         return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
@@ -2501,67 +2493,6 @@ export async function resumeDeferredMonsterHideUnder(action, state, random = rn2
         await afterShopkeeperMove(action.monster, state);
     }
     await finishDochugAfterMovement(action.monster, movement, state, random, rollOne, rollDice, action.calls, action.dochugContext);
-    return action;
-}
-export async function resumeDeferredPetReluctance(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    const movement = action.movement;
-    if (!movement.deferredPetReluctance)
-        return action;
-    delete movement.deferredPetReluctance;
-    await completeMovedMonsterAction(action.monster, movement, state, random, rollDice, rollOne, action.calls, action.dochugContext);
-    return action;
-}
-export async function resumeDeferredPetAttack(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    const movement = action.movement;
-    if (!movement.deferredAfterPetAttack)
-        return action;
-    delete movement.deferredAfterPetAttack;
-    if (action.monster.dead || action.monster.mhp <= 0) {
-        movement.postMoveStatus = MMOVE_DIED;
-        return action;
-    }
-    await completeMovedMonsterAction(action.monster, movement, state, random, rollDice, rollOne, action.calls, action.dochugContext);
-    return action;
-}
-// Resume dog_move() after dog_invent() has committed and tty has had the
-// chance to acknowledge its pickup/drop message.  C remains inside the same
-// actor transaction here: dog_goal(), destination choice, postmov(), the
-// second distfleeck(), and any ranged action all occur after that boundary.
-export async function resumeDeferredPetMove(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    if (!action?.movement?.deferredPetMove)
-        return action;
-    const monster = action.monster;
-    const calls = action.calls;
-    const movement = await movePet(monster, state, random, rollDice, rollOne, calls, true);
-    if (action.movement.postMoveCapabilities)
-        movement.postMoveCapabilities = action.movement.postMoveCapabilities;
-    action.movement = movement;
-    await completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, action.dochugContext);
-    return action;
-}
-// Resume dog_eat() after its visible line has crossed tty.  The object is
-// still on the destination square while the older topline owns --More--.
-export async function resumeDeferredPetEating(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    const movement = action?.movement;
-    if (!movement?.deferredPetEating)
-        return action;
-    const monster = action.monster;
-    const meal = movement.petMeal;
-    if (!meal)
-        throw new Error('A deferred pet meal must retain its food');
-    const calls = action.calls;
-    await finishPetEating(monster, meal, state, random, calls);
-    delete movement.deferredPetEating;
-    delete movement.petMeal;
-    if (monster.dead || monster.mhp <= 0)
-        movement.postMoveStatus = MMOVE_DIED;
-    else if (!movement.moved && monsterHasMapPosition(monster, state)) {
-        await pullLeashedPetCloser(monster, state, random, calls);
-        movement.x = monster.mx;
-        movement.y = monster.my;
-        movement.moved = movement.x !== movement.oldx || movement.y !== movement.oldy;
-    }
-    await completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, action.dochugContext);
     return action;
 }
 export async function runMonsterAction(monster, state, random = rn2, rollDice = d, rollOne = rnd) {
@@ -2742,9 +2673,6 @@ async function presentMonsterHiding(action) {
 // Trap, door, tunneling, and hiding feedback belongs to postmov(), before
 // returning to either dochug() or the hero's out-of-sequence movement caller.
 export async function presentMonsterPostMove(action, game) {
-    // dog_move() finishes mattacku() before m_move() enters postmov().
-    if (action.movement.deferredAfterPetAttack)
-        return false;
     let movement = action.movement;
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.
@@ -2778,55 +2706,6 @@ export async function presentMonsterPostMove(action, game) {
         await newsym(movement.x, movement.y);
     await presentMonsterHiding(action);
     return !!game.program_state.gameover || !!movement.heroDied;
-}
-export async function presentMonsterPickups(action, game) {
-    const monster = action.monster;
-    let movement = action.movement;
-    if (movement?.pickedUp
-        && cansee(movement.oldx, movement.oldy)) {
-        observeDistantObjectForNaming(movement.pickedUp);
-        const name = await inventoryItemDescription(movement.pickedUp);
-        if (game.flags.verbose !== false) {
-            await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
-        }
-    }
-    if (movement)
-        await commitPetPickup(monster, movement, game);
-}
-async function presentPetMovementPrelude(action, game, actorWasOpticallySeen) {
-    const monster = action.monster;
-    let movement = action.movement;
-    if (movement?.deferredPetMove) {
-        if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
-            observeDistantObjectForNaming(movement.pickedUp);
-            const name = await inventoryItemDescription(movement.pickedUp);
-            if (game.flags.verbose !== false) {
-                await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
-            }
-        }
-        await commitPetPickup(monster, movement, game);
-        // dog_invent() returns to the same dog_move() transaction after
-        // its pickup/drop pline.  A following visible mattackm() must
-        // remain deferred too: its hit line can fill tty's topline before
-        // damage, death prose, and growth RNG are committed.
-        game._deferVisibleMonsterContact = true;
-        try {
-            await resumeDeferredPetMove(action, game);
-        }
-        finally {
-            game._deferVisibleMonsterContact = false;
-        }
-        movement = action.movement;
-    }
-    if (movement?.deferredPetEating) {
-        await resumeDeferredPetEating(action, game);
-        movement = action.movement;
-    }
-    if (movement.deferredPetReluctance) {
-        if (actorWasOpticallySeen || canSeeMonster(monster))
-            await plineWithContinuation(await reluctantPetMessage(monster, movement));
-        await resumeDeferredPetReluctance(action, game);
-    }
 }
 async function presentMonsterMoveMessage(action, game) {
     const movement = action.movement;
@@ -2875,18 +2754,11 @@ export async function moveMonsterForHeroAttack(monster, state = requireInitializ
     }
     await resumeTrappedMonster(action);
     await presentRestrictedMonsterTeleport(action, state, wasSeen);
-    await presentPetMovementPrelude(action, state, wasSeen);
     let heroDied = await presentMonsterPostMove(action, state);
     if (!heroDied)
         heroDied = (await presentMonsterAttackEffects(action, state)).heroDied;
-    if (!heroDied && action.movement.deferredAfterPetAttack) {
-        await resumeDeferredPetAttack(action, state);
-        heroDied = await presentMonsterPostMove(action, state);
-    }
-    if (!heroDied) {
-        await presentMonsterPickups(action, state);
+    if (!heroDied)
         await presentMonsterMoveMessage(action, state);
-    }
     const status = action.movement.postMoveStatus;
     if (status === undefined)
         throw new Error('Monster movement completed without its native movement result.');
@@ -2946,19 +2818,11 @@ export async function presentMonsterAction(action, game, actorWasOpticallySeen) 
         await resumeDeferredMovementSpell(action, game);
         movement = action.movement;
     }
-    await presentPetMovementPrelude(action, game, actorWasOpticallySeen);
-    movement = action.movement;
     if (await presentMonsterPostMove(action, game))
         return 'stop';
-    movement = action.movement;
     const attackEffects = await presentMonsterAttackEffects(action, game);
     if (attackEffects.heroDied)
         return 'stop';
-    if (action.movement.deferredAfterPetAttack) {
-        await resumeDeferredPetAttack(action, game);
-        if (await presentMonsterPostMove(action, game))
-            return 'stop';
-    }
     movement = action.movement;
     // monmove.c:dochug() performs the vile-monster emotional attack only
     // after the complete standard attack set. Item use returns earlier,
@@ -2989,7 +2853,6 @@ export async function presentMonsterAction(action, game, actorWasOpticallySeen) 
         movement.deferredCuss = false;
         await presentMonsterCuss(action);
     }
-    await presentMonsterPickups(action, game);
     movement = action.movement;
     if (movement?.usedMisc?.kind === 'polymorph-trap'
         || movement?.usedMisc?.kind === 'wand-polymorph' || movement?.usedMisc?.kind === 'potion-polymorph')

@@ -39,7 +39,7 @@ import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
-import { completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPickups, presentMonsterPostMove, requirePerceivedHero, } from './monmove.js';
+import { completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPostMove, requirePerceivedHero, } from './monmove.js';
 import { attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, resolveMonsterSpitAtHero, } from './mthrowu.js';
 import { beginDeferredHeroCloneWizard, finishDeferredHeroCloneWizard, chooseMonsterSpell, resolveDeferredHeroAggravation, resolveDeferredHeroCurseItems, resolveDeferredHeroDeathTouch, resolveDeferredHeroDestroyArmor, resolveDeferredHeroDirectSpell, resolveDeferredHeroFirePillar, resolveDeferredHeroGeyser, resolveDeferredHeroHasteSelf, resolveDeferredHeroInsectSpell, resolveDeferredHeroLightningSpell, resolveDeferredHeroSummonMonsters, resumeDeferredHeroSpell, rollDeferredHeroSpellDamage, prepareMonsterSpellResistance, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay, } from './mcastu.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
@@ -868,7 +868,6 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
         movement = action.movement;
         if (await presentMonsterPostMove(action, game))
             return { heroDied: true };
-        await presentMonsterPickups(action, game);
         movement = action.movement;
     } while (!game.program_state?.gameover);
     if (game.program_state?.gameover)

@@ -183,24 +183,11 @@ export interface MonsterMoveCandidate extends Position {
     info: number;
 }
 
+// dogmove.c:dog_invent()'s relobj() drop, reported on the movement record.
 export interface PetInventoryAction {
     dropped?: GameObject[];
-    pickedUp?: GameObject;
-    // dog_invent() prints "picks up" while the object is still on the
-    // floor; extraction and mpickobj() follow that message.
-    pickupPending?: boolean;
-    petMeal?: PetMeal;
 }
 
-export interface PetMovePlan {
-    oldx: number;
-    oldy: number;
-    nix: number;
-    niy: number;
-    selectedInfo: number;
-    reluctant: boolean;
-    inventoryAction: PetInventoryAction | null;
-}
 
 export interface MonsterSpell {
     key: MonsterSpellName;
@@ -570,11 +557,9 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     forcedTrapBungle?: boolean;
     escapingTrap?: boolean;
     reluctant?: boolean;
-    attack?: MonsterCombatResult;
     usedDefense?: MonsterOffensiveResult;
     usedMisc?: MonsterMiscItem;
     trap?: MonsterTrapEvent | null;
-    petMovePlan?: PetMovePlan;
     equipment?: Awaited<ReturnType<typeof reassessMonsterArmor>>;
     spellCast?: MovementSpellCast;
     spellEffect?: MonsterSpellEffect;
@@ -587,13 +572,9 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     deferredAfterHideUnder?: boolean;
     deferredAfterMonsterTrap?: boolean;
     deferredAfterMovementSpell?: boolean;
-    deferredAfterPetAttack?: boolean;
     deferredAfterRestrictedTenguTeleport?: boolean;
     deferredAfterSpecialAttack?: boolean;
     deferredCovetousRelocation?: boolean;
-    deferredPetEating?: boolean;
-    deferredPetMove?: boolean;
-    deferredPetReluctance?: boolean;
     deferredCuss?: boolean;
 }
 

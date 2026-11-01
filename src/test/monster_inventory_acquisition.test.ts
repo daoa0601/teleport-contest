@@ -287,11 +287,8 @@ void test('pet mpickobj ownership survives the complete pickup and release cycle
             range => Math.max(1, range),
         );
 
-        assert.strictEqual(pickup.movement.pickedUp, dagger);
         // dog_invent() announces the pickup while the dagger is still on the
-        // floor; the turn's presentation then extracts it and runs mpickobj().
-        assert.equal(floorObjectsAt(game.level, pet.mx, pet.my).includes(dagger), true);
-        await commitPetPickup(pet, pickup.movement, game);
+        // floor, then extracts it and runs mpickobj() inside the same turn.
         assertMonsterOwns(pet, dagger);
         assert.equal(floorObjectsAt(game.level, pet.mx, pet.my).includes(dagger), false);
 

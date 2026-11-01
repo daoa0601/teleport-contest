@@ -130,7 +130,6 @@ for (const defenderKind of ['covered cobra', 'disguised mimic'] as const) {
 
         const ready = await takeMonsterTurn(captain, game);
 
-        assert.equal(ready.movement.attack?.kind, 'monster-wield');
         assert.equal(captain.mw, horn);
         assert.equal(horn.where, 'minvent');
         assert.equal(defender.mhp, health, 'readying the weapon cannot damage the defender');

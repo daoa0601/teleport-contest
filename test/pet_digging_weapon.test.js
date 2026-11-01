@@ -35,7 +35,6 @@ for (const obstacle of ['rock', 'tree']) {
         assert.deepEqual([dwarf.mx, dwarf.my], [14, 10], 'readying a tool uses this move');
         assert.ok(dwarf.mw === tool, 'the pet must ready the tool for this obstacle');
         assert.equal(apple.where, 'floor');
-        assert.equal(action.movement.petMeal, undefined, 'eating waits until the pet enters the food square');
     });
 }
 //# sourceMappingURL=pet_digging_weapon.test.js.map
