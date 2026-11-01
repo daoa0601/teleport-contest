@@ -4,7 +4,7 @@ import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import {
-    A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level,
+    A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IN_SIGHT, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level,
     LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, ROLLING_BOULDER_TRAP, SHOPBASE, STONE, TELEP_TRAP,
     TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok,
 } from './const.js';
@@ -47,7 +47,7 @@ import { reviveNastyAt } from './revive_nasty.js';
 import { surfaceName } from './terrain_name.js';
 import { feelTrap, seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { cansee, vision_recalc } from './vision.js';
+import { cansee } from './vision.js';
 import { invWeight } from './weight.js';
 
 const M2_ROCKTHROW = 0x08000000;
@@ -245,11 +245,13 @@ async function pushIntoTrap(boulder: GameObject, trap: Trap, sx: number, sy: num
     }
     if (is_pit(trap.ttyp)) {
         remove_object(boulder);
-        // Removing a boulder queues a full vision update in this port.
-        // Finish that update before native's temporary IN_SIGHT override.
-        if (!heroIsBlind(game) && game.vision_full_recalc) await vision_recalc(0);
+        // C hack.c:moverock_core() case PIT sets the IN_SIGHT kludge while
+        // the full recalc queued by remove_object() (recalc_block_point for
+        // the boulder) is still pending. The first pline() inside
+        // flooreffects() flushes that recalc, which recomputes the vision
+        // buffers and can clear this bit again before the later messages.
         const row = game.viz_array?.[ry];
-        if (!heroIsBlind(game) && row) row[rx] = (row[rx] ?? 0) | 2;
+        if (!heroIsBlind(game) && row) row[rx] = (row[rx] ?? 0) | IN_SIGHT;
         const result = await applyFloorEffects(boulder, rx, ry, { verb: 'fall' });
         if (game.program_state.gameover) return 'handled';
         if (!result.finished) await placeObject(boulder, rx, ry);
