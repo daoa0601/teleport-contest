@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { useMonsterMindBlast } from '../js/monster_mind_blast.js';
+import { useMonsterMindBlast } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

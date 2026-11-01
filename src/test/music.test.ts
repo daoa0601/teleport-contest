@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { mksobj } from '../js/mkobj.js';
-import { monsterIsScaredAt } from '../js/monster_fear.js';
+import { monsterIsScaredAt } from '../js/monmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { playInstrument } from '../js/music.js';
 import { initRng } from '../js/rng.js';

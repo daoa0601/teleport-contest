@@ -18,7 +18,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver,
     monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import { monsterHasAcidResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';

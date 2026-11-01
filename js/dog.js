@@ -19,7 +19,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterHasNoHands, monsterIsVerySmall, 
 import { CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { redrawMonsterWorm } from './monster_worm.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './monster_alignment.js';
 const M2_DOMESTIC = 0x00400000;
 const M1_ANIMAL = 0x00040000;

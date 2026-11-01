@@ -4,7 +4,7 @@ import { A_CON, A_STR, M_ATTK_DEF_DIED, M_ATTK_HIT, RLOC_MSG, Upolyd } from './c
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { heroSpecies } from './hero_species.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import { isWeaponTool } from './object_properties.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';

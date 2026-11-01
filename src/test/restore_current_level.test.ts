@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { restoregamePreamble } from '../js/allmain.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { hideMonsterUnder } from '../js/monster_hiding.js';
+import { hideMonsterUnder } from '../js/mon.js';
 import { remove_object } from '../js/floor_object.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

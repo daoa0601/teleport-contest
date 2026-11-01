@@ -17,7 +17,7 @@ import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { releaseObjectLeash } from './monster_leash.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { shopkeeperName } from './monster_name.js';
 import { costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';

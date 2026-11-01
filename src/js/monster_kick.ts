@@ -2,7 +2,7 @@
 // C refs: dokick.c:kick_monster() and kickdmg().
 
 import { monsterName } from './monster_name.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';

@@ -97,7 +97,7 @@ import { angerMonster } from './monster_anger.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { monsterResistsSleep } from './monster_sleep.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import {
     completeMovedMonsterAction, moveMonsterAfterTrap, requireMovementCapabilities,
 } from './monmove.js';

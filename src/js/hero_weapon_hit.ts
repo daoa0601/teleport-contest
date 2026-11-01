@@ -6,7 +6,7 @@ import type { AttackTuple } from './monster_action_types.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { rnd, rn2 } from './rng.js';
 import { monsterSpeciesSticks } from './monster_data.js';
 import { showHeroMeleeMiss } from './hero_attack_accuracy.js';

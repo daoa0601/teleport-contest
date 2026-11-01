@@ -5,7 +5,7 @@ import { NO_MINVENT, POOL } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { hideMonsterUnder } from '../js/monster_hiding.js';
+import { hideMonsterUnder } from '../js/mon.js';
 import { TOWEL } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

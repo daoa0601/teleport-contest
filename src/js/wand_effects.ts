@@ -41,7 +41,7 @@ import { lightDamage, lightRoom } from './light.js';
 import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
 import { createCritters } from './makemon.js';
 import { mksobj } from './mkobj.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import {
     OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, objectDirection,

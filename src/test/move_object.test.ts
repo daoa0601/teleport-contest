@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import {
     moveObject, placeCreatedObject,
 } from '../js/floor_object.js';
-import { maybeUnhideAt } from '../js/monster_hiding.js';
+import { maybeUnhideAt } from '../js/mon.js';
 import { CHEST } from '../js/object_data.js';
 import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { placeMonsterAt } from '../js/monster_location.js';

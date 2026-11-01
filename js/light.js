@@ -38,7 +38,7 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { blessObjectState, curseObjectState, objectResistsDestruction, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { ownedObjectAction } from './objnam.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
 ]);

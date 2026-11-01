@@ -7,7 +7,7 @@ import { applyFloorEffects } from '../js/floor_effects.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { placeObject, remove_object } from '../js/floor_object.js';
-import { maybeUnhideAt } from '../js/monster_hiding.js';
+import { maybeUnhideAt } from '../js/mon.js';
 import {
     BELL_OF_OPENING,
     BOULDER,

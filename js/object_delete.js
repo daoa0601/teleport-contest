@@ -10,7 +10,7 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { objectResistsDestruction } from './object_state.js';
 import { reconcileObjectDeletionBill, objectPriceAdjustment } from './shk.js';
 import { releaseObjectLeash } from './monster_leash.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { objectWeight } from './weight.js';
 import { bookDisappears } from './spellbook_study.js';
 import { rn2 } from './rng.js';

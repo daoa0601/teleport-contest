@@ -17,7 +17,7 @@ import { heroPolyGender, heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { paralyzeMonster } from './mon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterPossessive, monsterReflexiveAction, monsterSubjectPronoun, possessiveName, } from './monster_name.js';

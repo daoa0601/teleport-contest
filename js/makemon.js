@@ -19,7 +19,7 @@ import { finishMonsterBirth } from './monster_birth.js';
 import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
 import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, requireMonsterData, } from './monster_data.js';
 import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
-import { hideMonsterUnder } from './monster_hiding.js';
+import { hideMonsterUnder } from './mon.js';
 import { adjustedMonsterLevel, isHomeElemental, newMonsterHitPoints, } from './monster_hit_points.js';
 import { addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, } from './monster_inventory.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';

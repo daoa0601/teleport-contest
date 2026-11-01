@@ -7,7 +7,7 @@ import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
-import { hideHeroUnder } from './monster_hiding.js';
+import { hideHeroUnder } from './mon.js';
 export async function useUpFloorObject(object, count, { state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

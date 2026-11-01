@@ -30,7 +30,7 @@ import { lightDamage, lightRoom } from './light.js';
 import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
 import { createCritters } from './makemon.js';
 import { mksobj } from './mkobj.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, objectDirection, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CANCELLATION, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_WISHING, } from './object_data.js';
 import { armorUsesPairGrammar, makePlural } from './object_grammar.js';

@@ -14,7 +14,7 @@ import { lightHitsGremlin } from './light.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { seeMonsterCloseup } from './monster_observation.js';

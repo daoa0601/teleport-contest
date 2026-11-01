@@ -13,7 +13,7 @@ import { monsterName, namelessMonsterName, possessiveName } from './monster_name
 import { makePetWary } from './dog.js';
 import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampire, } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { triggerMonsterDoorTrap } from './monster_door_trap.js';
+import { triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
 import { rn2, rnd } from './rng.js';

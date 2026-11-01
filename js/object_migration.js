@@ -13,7 +13,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
 import { maybeResetPick } from './lock_context.js';
 import { unlinkObject } from './object_location.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { hotPursuitShopkeeper } from './shop_damage.js';
 import { shopkeeperName } from './monster_name.js';

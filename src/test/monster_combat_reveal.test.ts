@@ -13,7 +13,7 @@ import {
     canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss,
 } from '../js/monster_combat_messages.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { hideMonsterUnder } from '../js/monster_hiding.js';
+import { hideMonsterUnder } from '../js/mon.js';
 import { beginMonsterMealMimicry } from '../js/monster_meal_mimicry.js';
 import { APPLE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

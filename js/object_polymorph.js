@@ -23,7 +23,7 @@ import { wearHeroAccessory } from './accessory.js';
 import { isEyewear, wearEyewear } from './eyewear.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './weapon_slots.js';
 import { releaseObjectLeash } from './monster_leash.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { monsterName, shopkeeperName } from './monster_name.js';
 import { addShopObjectToBill, costlySpot, shopkeeperInOwnShop, } from './shk.js';
 import { containedBuyCost, stolenValue } from './shop_loss.js';

@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { monsterHasKey } from '../js/monster_movement_traits.js';
+import { monsterHasKey } from '../js/monmove.js';
 import type { Monster } from '../js/monster_types.js';
 
 import { CLOVE_OF_GARLIC, CREDIT_CARD, LOCK_PICK, PICK_AXE, SCR_SCARE_MONSTER, SKELETON_KEY } from '../js/object_data.js';

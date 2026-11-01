@@ -1,4 +1,4 @@
-import type { MonsterHideUnder } from './monster_hiding.js';
+import type { MonsterHideUnder } from './mon.js';
 import type { PetMeal } from './pet_eating.js';
 import type { MonsterFormChange } from './monster_polymorph.js';
 import type { WereChange } from './were.js';

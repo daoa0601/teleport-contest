@@ -15,7 +15,7 @@ import { coordinateDescription } from './pager_lists.js';
 import { getLine } from './query.js';
 import { pickFormFromClass } from './polyself.js';
 import { setMonsterGivenName } from './monster_given_name.js';
-import { hideMonsterUnder } from './monster_hiding.js';
+import { hideMonsterUnder } from './mon.js';
 import { monsterCanBeLeashed, releaseMonsterLeashWithFeedback, } from './monster_leash.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
@@ -26,8 +26,7 @@ import { adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, } from '
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
-import { monsterIsScaredAt } from './monster_fear.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { setMimicAppearance } from './makemon.js';

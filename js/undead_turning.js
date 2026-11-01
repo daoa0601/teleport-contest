@@ -10,7 +10,7 @@ import { reviveCorpseByMagic } from './corpse_revival.js';
 import { makeStunned } from './hero_mental_status.js';
 import { game } from './gstate.js';
 import { restartEggHatchTimer } from './egg.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterIsUndead, monsterIsVampireShifter, monsterIsNonliving, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
 import { namelessMonsterName, monsterName } from './monster_name.js';
 import { ownedObjectName } from './objnam.js';

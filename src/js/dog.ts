@@ -31,7 +31,7 @@ import {
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { redrawMonsterWorm } from './monster_worm.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import type { Monster, PetData } from './monster_types.js';
 import type { GameObject } from './object_types.js';

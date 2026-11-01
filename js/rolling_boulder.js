@@ -33,7 +33,7 @@ import { observeObject } from './object_knowledge.js';
 import { shipObject } from './object_migration.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import { killerObjectName, objectCombatName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';

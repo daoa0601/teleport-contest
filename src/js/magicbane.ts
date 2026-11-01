@@ -13,7 +13,7 @@ import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { probeMonster } from './magic_probe.js';
 import { cancelMonster } from './monster_cancellation.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { monsterResistsEffect } from './monster_resistance.js';

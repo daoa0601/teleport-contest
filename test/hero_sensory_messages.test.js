@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { resolveMonsterDoorPassage } from '../js/monster_door_passage.js';
+import { resolveMonsterDoorPassage } from '../js/monmove.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { finishWallPassageTimeout } from '../js/timeout_warnings.js';

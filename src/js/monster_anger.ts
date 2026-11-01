@@ -17,7 +17,7 @@ import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { publishMonsterWake, wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterName } from './monster_name.js';
 import { stopRun } from './runmode.js';
@@ -35,7 +35,7 @@ import { ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { rn2, rnd } from './rng.js';
 import { hotPursuitShopkeeper } from './shop_damage.js';
 import { couldsee } from './vision.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { monsterIsScaredAt } from './monmove.js';
 
 const M1_MINDLESS = 0x00010000;
 const M1_HUMANOID = 0x00020000;

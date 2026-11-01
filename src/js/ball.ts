@@ -7,7 +7,7 @@ import { isPoolAt } from './terrain_properties.js';
 
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { cls, displayLiquidName, map_object, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import {

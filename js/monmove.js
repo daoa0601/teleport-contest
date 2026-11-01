@@ -1,4 +1,4 @@
-import { publishHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { noticeMonster } from './monster_notices.js';
@@ -13,20 +13,45 @@ import { M_SEEN_REFL } from './const.js';
 import { seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 import { heroIsHallucinating } from './senses.js';
-import { useMonsterMindBlast } from './monster_mind_blast.js';
+import { loseHeroHp } from './hero_damage.js';
+import { propertyIsActive } from './properties.js';
+import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { monsterHasNoAttacks, monsterHasNoLimbs, monsterIsAmorphous, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, } from './monster_data.js';
+import { canSenseMonster } from './display.js';
 import { monsterIsMindFlayer } from './monster_data.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { monsterSearchesForItem, selectMonsterOffensiveItem, useMonsterOffensiveItem } from './muse.js';
-import { searchMonsterItems } from './monster_item_search.js';
+import { monsterHasMagicKey } from './monster_key.js';
+import { monsterCouldReachItem } from './monster_item_reach.js';
+import { monsterCanTouchObject } from './monster_carry.js';
+import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
+import { consumeMonsterObject, growAfterFood, monsterCanOpenDoor, monsterCanUnlockDoor } from './mon.js';
+import { monsterCorrodesBars } from './mondata.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
-import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
+import { questMonsterSound } from './role_monsters.js';
+import { fractureRock } from './rock_breakage.js';
+import { billDummyObject, costlySpot } from './shk.js';
+import { monsterAlignmentType } from './monster_alignment.js';
+import { engravingAt, hasCompletedEngraving } from './engrave.js';
+import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { heroIsUnaware } from './hero_sleep.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { makePlural } from './object_grammar.js';
+import { dissolveBars } from './projectile_bars.js';
+import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { delobj } from './object_delete.js';
+import { vision_recalc } from './vision.js';
+import { requireGameLevel } from './gstate.js';
+import { A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit } from './const.js';
+import { SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD } from './object_data.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
-import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterCorrodesBars, } from './monster_movement_traits.js';
-import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
+import { attemptMonsterRestrap, beginMonsterHideUnder, hideMonsterUnder, maybeUnhideAt, finishMonsterHideUnder, } from './mon.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
 import { checkQuestMonsterStatus, talkQuestCharacter } from './quest.js';
@@ -44,7 +69,8 @@ import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPercei
 import { finishMonsterEating } from './monster_eating.js';
 import { finishPetEating } from './pet_eating.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
-import { attemptMonsterRestrap, beginMonsterHideUnder, canMonsterHideUnderObjectAt, hideMonsterUnder, maybeUnhideAt, } from './monster_hiding.js';
+import { wakeMonster } from './monster_anger.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { finishMonsterWebTrap } from './web_trap.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, wieldMonsterWeapon, } from './monster_weapon.js';
 import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
@@ -57,7 +83,6 @@ import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './mon
 import { heroIsDisplaced } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { checkMonsterHeroRange } from './monster_flee.js';
 import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous_target.js';
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import { monsterName as canonicalMonsterName, monsterPossessive, shopkeeperName, } from './monster_name.js';
@@ -95,7 +120,6 @@ import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { dismountHero } from './steed.js';
 import { DISMOUNT_THROWN } from './const.js';
-import { breakMonsterBoulder, monsterCanBreakBoulder } from './monster_boulder.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween, } from './monster_worm.js';
 import { displaceMonster, monsterDisplacementFlags } from './monster_displacement.js';
 import { retouchEquipment } from './hero_retouch.js';
@@ -144,7 +168,6 @@ import { consumeMonsterItem } from './mthrowu.js';
 import { ceilingName } from './terrain_name.js';
 import { commitPetPickup, reluctantPetMessage } from './dogmove.js';
 import { finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination } from './muse.js';
-import { finishMonsterHideUnder } from './monster_hiding.js';
 import { inventoryItemDescription } from './invent.js';
 import { learnWand } from './wand_charge.js';
 import { monsterName, possessiveName, visibleMonsterSubject } from './monster_name.js';
@@ -171,7 +194,6 @@ import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
-import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
 export const NORMAL_SPEED = 12;
@@ -276,6 +298,539 @@ export function requireDochugContext(action) {
 }
 export function speciesHasWeaponAttack(mnum) {
     return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === AT_WEAP);
+}
+const THREAT_DISTANCE = (BOLT_LIM + 1) * (BOLT_LIM + 1);
+const M2_MINION = 0x00001000;
+const S_VAMPIRE = 48;
+const G_UNIQ = 0x1000;
+const PM_ANGEL = MONSTER_NAME.indexOf('Angel');
+const PM_MINOTAUR = 177;
+const PM_DEATH = 311;
+const PM_PESTILENCE = 312;
+const PM_FAMINE = 313;
+const M1_METALLIVORE = 0x80000000;
+const SEARCH_RADIUS = 5;
+const M2_MERC = 0x200;
+const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
+const PM_VROCK = MONSTER_NAME.indexOf('vrock');
+const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
+// C monmove.c:mb_trapped(). A remotely struck door has the same effect as
+// a door opened by its occupant; the explosion precedes damage and death.
+export async function triggerMonsterDoorTrap(monster, visible, { state = game, publish = plineWithContinuation, rollOne = rnd, random = rn2, } = {}) {
+    requireLiveGame(state);
+    if (state.flags.verbose) {
+        const dx = monster.mx - state.u.ux, dy = monster.my - state.u.uy;
+        const seen = visible && !heroIsUnaware(state);
+        const message = seen
+            ? 'KABOOM!!  You see a door explode.'
+            : !heroIsDeaf(state)
+                ? formatHeardMessage(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, state)
+                : null;
+        if (message)
+            await publish(message, seen ? { position: { x: monster.mx, y: monster.my } } : {});
+    }
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, 49, state, publish);
+    monster.mstun = 1;
+    const damage = rollOne(15);
+    monster.mhp -= damage;
+    if (monster.mhp <= 0) {
+        const death = await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
+        if (!death.survived || death.heroDied)
+            return { killed: !death.survived, heroDied: !!death.heroDied, damage, death };
+    }
+    monsterLearnsTrap(monster, { ttyp: TRAPPED_DOOR });
+    return { killed: false, heroDied: !!state.program_state.gameover, damage, death: null };
+}
+// C monmove.c:monhaskey().
+export function monsterHasKey(monster, forUnlocking) {
+    return (monster.minvent ?? []).some(object => object.otyp === SKELETON_KEY
+        || object.otyp === LOCK_PICK || forUnlocking && object.otyp === CREDIT_CARD);
+}
+// C monmove.c:m_can_break_boulder() and m_break_boulder().
+export function monsterCanBreakBoulder(monster) {
+    return !!(monsterIsRider(monster)
+        || !monster.mspec_used && (monster.isshk || monster.ispriest
+            || questMonsterSound(monster.mnum) === MS_LEADER));
+}
+export async function breakMonsterBoulder(monster, x, y, state = game, { random = rn2, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    if (!monsterCanBreakBoulder(monster))
+        return;
+    const boulder = requireGameLevel(state).objects[x]?.[y]
+        ?.find(object => object.otyp === BOULDER);
+    if (!boulder)
+        return;
+    if (!monsterIsRider(monster)) {
+        const distance = (monster.mx - state.u.ux) ** 2
+            + (monster.my - state.u.uy) ** 2;
+        if (!heroIsDeaf(state) && distance < 16) {
+            await publish(`${monsterName(monster, { capitalized: true, state })} mutters ${monster.ispriest ? 'a prayer' : 'an incantation'}.`);
+        }
+        monster.mspec_used = (monster.mspec_used ?? 0) + 10 + random(20);
+    }
+    if (cansee(x, y))
+        await publish('The boulder falls apart.');
+    if (boulder.unpaid)
+        await billDummyObject(boulder, state);
+    await fractureRock(boulder, x, y, { state, random, publish });
+}
+// C dochugw() skips canspotmon() when the hero has no occupation.
+export function monsterSightingBeforeAction(monster, state) {
+    return { seen: !!state._occupation && canSpotMonster(monster), x: monster.mx, y: monster.my };
+}
+export async function interruptOccupationForMonster(monster, state, before = null) {
+    if (!state._occupation)
+        return;
+    // Hallucination distorts what the hero knows about peacefulness and attacks.
+    if (!heroIsHallucinating(state)
+        && (monster.mpeaceful || monsterHasNoAttacks(monster.mnum)))
+        return;
+    const heroDistance = (x, y) => (x - state.u.ux) ** 2 + (y - state.u.uy) ** 2;
+    if (heroDistance(monster.mx, monster.my) > THREAT_DISTANCE)
+        return;
+    if (before?.seen && couldsee(before.x, before.y)
+        && heroDistance(before.x, before.y) <= THREAT_DISTANCE)
+        return;
+    if (!canSpotMonster(monster) || !couldsee(monster.mx, monster.my)
+        || !monster.mcanmove
+        || monsterIsScaredAt(monster, state, state.u.ux, state.u.uy))
+        return;
+    await stopHeroOccupation(state);
+}
+export function monsterIsScaredAt(monster, state, x, y) {
+    const auditoryScare = x === 0 && y === 0;
+    if (monster?.iswiz || monster?.mnum === PM_ANGEL
+        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(monster?.mnum)
+        || (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MINION)
+            && monsterAlignmentType(monster) === A_LAWFUL))
+        return false;
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
+    if (!auditoryScare && (symbol === S_HUMAN
+        || ((MONSTER_GENO[monster?.mnum] ?? 0) & G_UNIQ)))
+        return false;
+    if ((monster.isshk && shopkeeperInOwnShop(monster, state))
+        || (monster.ispriest && priestIsInOwnTemple(monster, state)))
+        return false;
+    if (auditoryScare)
+        return true;
+    if (state?.level?.at?.(x, y)?.typ === ALTAR
+        && (symbol === S_VAMPIRE || monsterIsVampireShifter(monster)))
+        return true;
+    const pile = state?.level?.objects?.[x]?.[y] || [];
+    if (pile.some(object => object.otyp === SCR_SCARE_MONSTER))
+        return true;
+    const engraving = engravingAt(x, y, state?.level);
+    if (!engraving || !hasCompletedEngraving('Elbereth', x, y, state))
+        return false;
+    const protectsSquare = state?.u?.ux === x && state?.u?.uy === y
+        || (heroIsDisplaced(state)
+            && monster?.mux === x && monster?.muy === y)
+        || (engraving.guardobjects && pile.length > 0);
+    if (!protectsSquare)
+        return false;
+    const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
+        ?.flags?.hellish;
+    const endgame = !!state?.u?.uz && !!state?.astral_level
+        && state.u.uz.dnum === state.astral_level.dnum;
+    return !(monster?.isshk || monster?.isgd
+        || monster?.mcansee === false || monster?.mcansee === 0
+        || monster?.mpeaceful || monster?.mnum === PM_MINOTAUR
+        || inHell || endgame);
+}
+// C monmove.c:bee_eat_jelly(). A living queen leaves the meal untouched.
+export async function feedBeeRoyalJelly(monster, object, state) {
+    const queensGenocided = !!((state.mvitals?.[PM_QUEEN_BEE]?.mvflags ?? 0) & G_GENOD);
+    if (!queensGenocided && state.level?.monsters.some(candidate => candidate.mnum === PM_QUEEN_BEE && !candidate.dead && candidate.mhp > 0))
+        return false;
+    const delay = object.blessed ? 3 : object.cursed ? 7 : 5;
+    if (object.quan > 1) {
+        const portion = splitObjectStack(object, 1, state);
+        if (!portion)
+            throw new Error('A bee could not split one lump of royal jelly');
+        object = portion;
+    }
+    if (canSeeMonster(monster))
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} eats ${simpleObjectNameWithArticle(object, state)}.`);
+    await delobj(object, state);
+    monster.m_lev = Math.max(monster.m_lev ?? 0, (MONSTER_LEVEL[PM_QUEEN_BEE] ?? 0) - 1);
+    await growAfterFood(monster, state);
+    if (!monster.dead && monster.mhp > 0) {
+        monster.mfrozen = delay;
+        monster.mcanmove = 0;
+    }
+    return true;
+}
+// C monmove.c:gelcube_digests(). Engulfed organic inventory costs a later
+// action to digest, even when the cube resisted eating it off the floor.
+export async function digestGelatinousCubeInventory(monster, state, options = {}) {
+    if (monster.meating)
+        return false;
+    const object = monster.minvent?.find(candidate => objectMaterial(candidate, state) <= 8
+        && !candidate.oartifact && !isLevelPrize(candidate, state));
+    if (!object)
+        return false;
+    // eaten_stat(0, object) always returns at least one turn.
+    monster.meating = 1;
+    if (!await removeObjectFromMonsterInventory(monster, object, state, { publish: options.publish ?? plineWithContinuation }))
+        throw new Error(`Cube could not release its meal ${object.o_id}`);
+    await consumeMonsterObject(monster, object, state, options);
+    return true;
+}
+// C monmove.c:flees_light() (macro). Gremlins flee from lit artifacts.
+function fleesLight(monster, state) {
+    const weapon = state.uwep || state.u.uwep;
+    const armor = state.uarm || state.u.uarm;
+    return !!(monster.mnum === PM_GREMLIN
+        && ((weapon?.lamplit && artifactEmitsLight(weapon))
+            || (armor?.lamplit && artifactEmitsLight(armor)))
+        && monster.mcansee && couldsee(monster.mx, monster.my));
+}
+// A monster beginning to flee.
+// C ref: monmove.c monflee(), release_hero(), and flees_light().
+export async function makeMonsterFlee(monster, { state = game, turns = 0, first = false, announce = true, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    requireLiveGame(state);
+    if (monster.mhp <= 0)
+        return { heroDied: false };
+    if (await releaseMonsterHold(monster, { state, publish, random, rollOne }))
+        return { heroDied: true };
+    const canStart = !first || !monster.mflee;
+    if (canStart) {
+        if (turns === 0) {
+            monster.mfleetim = 0;
+        }
+        else if (!monster.mflee || monster.mfleetim) {
+            const total = turns + (monster.mfleetim ?? 0);
+            monster.mfleetim = Math.min(total === 1 ? 2 : total, 127);
+        }
+        if (!monster.mflee && announce
+            && canSeeMonster(monster)
+            && M_AP_TYPE(monster) !== M_AP_FURNITURE
+            && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+            await announceFlight(monster, state, publish, random);
+        }
+        if (monster.mnum === PM_VROCK && !monster.mspec_used) {
+            monster.mspec_used = 75 + random(25);
+            await createPoisonGasCloud(state, monster.mx, monster.my, 5, 8, random, publish);
+        }
+        monster.mflee = 1;
+    }
+    monster.mtrack = [];
+    return { heroDied: false };
+}
+async function announceFlight(monster, state, publish, random) {
+    if (!monster.mcanmove || !MONSTER_MOVE[monster.mnum]) {
+        const name = monsterName(monster, {
+            adjective: 'immobile', capitalized: true, state,
+        });
+        await publish(`${name} seems to flinch.`);
+    }
+    else if (fleesLight(monster, state)) {
+        if (heroIsUnaware(state)) {
+            await publish(`${monsterName(monster, { capitalized: true, state })} is frightened.`);
+        }
+        else if (random(10) || heroIsDeaf(state)) {
+            const weapon = state.uwep || state.u.uwep;
+            const armor = state.uarm || state.u.uarm;
+            let source;
+            if (weapon && artifactEmitsLight(weapon)) {
+                const artifact = artifactById(weapon.oartifact, state);
+                if (!artifact)
+                    throw new Error('A glowing artifact weapon has no artifact definition');
+                source = artifact.name.replace(/^The /, 'the ');
+            }
+            else {
+                if (!armor)
+                    throw new Error('A monster fled equipment light without its source');
+                source = ownedObjectName(armor, state, { capitalized: false });
+            }
+            const name = monsterName(monster, { capitalized: true, state });
+            await publish(`${name} flees from the painful light of ${source}.`);
+        }
+        else {
+            await publish('"Bright light!"');
+        }
+    }
+    else {
+        await publish(`${monsterName(monster, { capitalized: true, state })} turns to flee.`);
+    }
+}
+// C monmove.c:distfleeck(). The range is measured before fleeing can release
+// or expel the hero, and remains the caller's range for this attack phase.
+export async function checkMonsterHeroRange(monster, { state = game, random = rn2, rollOne = rnd, } = {}) {
+    const braveGremlin = random(5) === 0;
+    const targetX = monster.mux ?? state.u.ux;
+    const targetY = monster.muy ?? state.u.uy;
+    const dx = monster.mx - targetX, dy = monster.my - targetY;
+    const inRange = dx * dx + dy * dy <= BOLT_LIM * BOLT_LIM;
+    const nearby = inRange && Math.abs(dx) <= 1 && Math.abs(dy) <= 1
+        && !(monster.mnum === PM_GRID_BUG && dx && dy);
+    const seesHero = monster.mcansee
+        && (!heroIsInvisible(state)
+            || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS));
+    const scary = monsterIsScaredAt(monster, state, seesHero ? state.u.ux : targetX, seesHero ? state.u.uy : targetY);
+    const scared = nearby && (scary
+        || (fleesLight(monster, state) && !braveGremlin)
+        || (!monster.mpeaceful && inHeroSanctuary(monster, 0, 0, state)));
+    let heroDied = false;
+    if (scared) {
+        const turns = rollOne(random(7) ? 10 : 100);
+        ({ heroDied } = await makeMonsterFlee(monster, {
+            state, turns, first: true, random, rollOne,
+        }));
+    }
+    return { inRange, nearby, scared, heroDied };
+}
+// C monmove.c:mind_blast(). Psychic attacks precede ordinary movement.
+export async function useMonsterMindBlast(monster, state, { resistsConflict, random = rn2, rollOne = rnd, publish = plineWithContinuation, }) {
+    if (canSeeMonster(monster))
+        await publish(`${monsterName(monster, { state, capitalized: true })} concentrates.`);
+    if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) > BOLT_LIM * BOLT_LIM) {
+        await publish('You sense a faint wave of psychic energy.');
+        return false;
+    }
+    await publish('A wave of psychic energy pours over you!');
+    if (monster.mpeaceful && (!heroHasConflict(state) || resistsConflict())) {
+        await publish('It feels quite soothing.');
+    }
+    else if (!state.u.invulnerable) {
+        const sensed = canSenseMonster(monster);
+        const telepathic = !!state.u.telepathy || propertyIsActive('telepathy', state);
+        if (sensed || (telepathic && random(2) !== 0) || random(10) === 0) {
+            await revealHeroToPsychicBlast(state);
+            await publish(`It locks on to your ${sensed ? 'telepathy' : telepathic ? 'latent telepathy' : 'mind'}!`);
+            let damage = rollOne(15);
+            if (heroHasHalfSpellDamage(state))
+                damage = Math.trunc((damage + 1) / 2);
+            if (await loseHeroHp(damage, 'psychic blast', { state, publish }))
+                return true;
+        }
+    }
+    // makemon() prepends to fmon; level.monsters appends new monsters.
+    for (const target of Array.from(state.level.monsters).reverse()) {
+        if (target.dead || target.mhp <= 0 || target === monster
+            || !!target.mpeaceful === !!monster.mpeaceful || monsterIsMindless(target.mnum))
+            continue;
+        if (!((monsterIsTelepathic(target.mnum) && (random(2) !== 0 || target.mblinded))
+            || random(10) === 0))
+            continue;
+        await wakeMonster(target);
+        if (cansee(target.mx, target.my))
+            await publish(`It locks on to ${monsterName(target, { state })}.`);
+        target.mhp -= rollOne(15);
+        if (target.mhp <= 0) {
+            const death = await finishMonsterKilled(target, state, { damageType: AD_DRIN, publish, random });
+            if (death.heroDied)
+                return true;
+        }
+    }
+    return false;
+}
+async function revealHeroToPsychicBlast(state) {
+    if (state.u.uundetected) {
+        state.u.uundetected = false;
+        await newsym(state.u.ux, state.u.uy);
+    }
+    else if (state.u.m_ap_type && state.u.m_ap_type !== M_AP_MONSTER) {
+        state.u.m_ap_type = M_AP_NOTHING;
+        state.u.mappearance = 0;
+        await newsym(state.u.ux, state.u.uy);
+    }
+}
+// C monmove.c:m_search_items().
+export function searchMonsterItems(monster, state, { goal: initialGoal, approach: initialApproach, random, calls = [], }) {
+    requireLiveGame(state);
+    const { mx, my, mux, muy } = monster;
+    if (typeof mux !== 'number' || typeof muy !== 'number'
+        || !Number.isFinite(mux) || !Number.isFinite(muy))
+        throw new Error('An item search requires the monster perceived hero position');
+    const heroGoal = { x: mux, y: muy };
+    let goal = { ...initialGoal };
+    let approach = initialApproach;
+    let radius = SEARCH_RADIUS;
+    if (!monster.mpeaceful && distmin(mx, my, mux, muy) < SEARCH_RADIUS)
+        radius--;
+    if (!monster.mpeaceful && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MERC))
+        radius = 1;
+    let skipSearch = false;
+    if (roomsAt(state.level, mx, my, SHOPBASE).length) {
+        const shopRoll = random(25);
+        calls.push('rn2(25)');
+        skipSearch = shopRoll !== 0 || !!monster.isshk;
+    }
+    if (!skipSearch) {
+        const maxX = Math.min(COLNO - 1, mx + radius);
+        const maxY = Math.min(ROWNO - 1, my + radius);
+        const minX = Math.max(1, mx - radius);
+        const minY = Math.max(0, my - radius);
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                const pile = state.level.objects[x]?.[y];
+                if (!pile?.length || radius < distmin(mx, my, x, y)
+                    || !monsterCouldReachItem(monster, x, y, state))
+                    continue;
+                if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL) && cansee(x, y))
+                    continue;
+                const occupant = monsterAtPosition(state.level, x, y);
+                if (occupant && (occupant.msleeping || !occupant.mcanmove || occupant.mundetected
+                    || (occupant.mappearance && !occupant.iswiz) || !MONSTER_MOVE[occupant.mnum]))
+                    continue;
+                if (monsterIsScaredAt(monster, state, x, y))
+                    continue;
+                const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+                if (trap && monsterKnowsTrap(monster, trap)) {
+                    if (goal.x === x && goal.y === y)
+                        goal = heroGoal;
+                    continue;
+                }
+                if (!clearPath(mx, my, x, y))
+                    continue;
+                const costly = costlySpot(x, y, state) !== null;
+                for (const object of pile) {
+                    if (object.otyp === ROCK || isLevelPrize(object, state) || (costly && !object.no_charge))
+                        continue;
+                    if (((monsterWantsFloorObject(monster, object, state)
+                        && monsterCanCarryObject(monster, object, state, random))
+                        || monsterWouldConsumeItem(monster, object, state, random, calls))
+                        && monsterCanTouchObject(monster, object, state)) {
+                        radius = distmin(mx, my, x, y);
+                        goal = { x: object.ox, y: object.oy };
+                        if (goal.x === mx && goal.y === my)
+                            return { goal, approach, underfoot: object };
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (radius < SEARCH_RADIUS && approach === -1) {
+        if (distmin(mx, my, mux, muy) <= 3)
+            goal = heroGoal;
+        else
+            approach = 1;
+    }
+    return { goal, approach, underfoot: null };
+}
+export async function shiftMonsterForDoor(monster, state, { previousPosition, wasSeen, wasSpotted, publish = plineWithContinuation, }) {
+    requireLiveGame(state);
+    const destination = { x: monster.mx, y: monster.my };
+    const door = state.level.requireAt(destination.x, destination.y);
+    if (monsterIsAmorphous(monster) || door.typ !== DOOR
+        || !(door.doormask & (D_CLOSED | D_LOCKED)) || !monsterCanFog(monster, state))
+        return { died: false, heroDied: false };
+    if (wasSeen || wasSpotted) {
+        await placeMonsterOnMap(monster, previousPosition.x, previousPosition.y);
+        await newsym(destination.x, destination.y);
+        await newsym(previousPosition.x, previousPosition.y);
+    }
+    const change = await changeMonsterForm(monster, PM_FOG_CLOUD, state, {
+        showMessage: wasSeen, publish, creditHero: false,
+    });
+    await displayMessageWindow();
+    const died = !!monster.dead || monster.mhp <= 0;
+    const heroDied = !!change?.heroDied || !!state.program_state.gameover;
+    if (!died && (wasSeen || wasSpotted)) {
+        await placeMonsterOnMap(monster, destination.x, destination.y);
+        await newsym(previousPosition.x, previousPosition.y);
+        await newsym(destination.x, destination.y);
+    }
+    return { died, heroDied };
+}
+export async function resolveMonsterDoorPassage(monster, state, { canOpen, canUnlock, canTunnel, wasDoorVisible, random = rn2, rollOne = rnd, publish = plineWithContinuation, }) {
+    requireLiveGame(state);
+    const { mx: x, my: y } = monster;
+    const location = state.level.requireAt(x, y);
+    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    if (location.typ === IRONBARS) {
+        if (!(location.wall_info & W_NONDIGGABLE)
+            && (monsterCorrodesBars(monster) || body & M1_METALLIVORE)) {
+            if (canSeeMonster(monster))
+                await publish(`${monsterName(monster, { state, capitalized: true })} eats through the iron bars.`);
+            await dissolveBars(x, y, state);
+            return { status: 'done', heroDied: !!state.program_state.gameover };
+        }
+        if (state.flags.verbose && canSeeMonster(monster)) {
+            const verb = makePlural(monsterLocomotion(monster.mnum, 'pass'));
+            const passage = body & M1_WALLWALK ? 'through' : 'between';
+            await publish(`${monsterName(monster, { state, capitalized: true })} ${verb} ${passage} the iron bars.`, { noRepeat: true });
+        }
+        return { status: 'continue', heroDied: false };
+    }
+    if (location.typ !== DOOR || body & M1_WALLWALK || canTunnel)
+        return { status: 'continue', heroDied: false };
+    let trapped = !!(location.doormask & D_TRAPPED);
+    if (trapped && monsterHasMagicKey(monster, state)) {
+        location.doormask &= ~D_TRAPPED;
+        trapped = false;
+    }
+    const closed = !!(location.doormask & (D_LOCKED | D_CLOSED));
+    if (closed && monsterIsAmorphous(monster)) {
+        if (state.flags.verbose && canSeeMonster(monster)) {
+            const verb = monster.mnum === PM_FOG_CLOUD || MONSTER_SYMBOL[monster.mnum] === S_LIGHT
+                ? 'flows' : 'oozes';
+            await publish(`${monsterName(monster, { state, capitalized: true, article: 'your' })} ${verb} under the door.`);
+        }
+        return { status: 'continue', heroDied: false };
+    }
+    let action;
+    let mask;
+    if (location.doormask & D_LOCKED && canUnlock) {
+        action = 'unlock';
+        mask = trapped ? D_NODOOR : D_ISOPEN;
+    }
+    else if (location.doormask === D_CLOSED && canOpen) {
+        action = 'open';
+        mask = D_ISOPEN;
+    }
+    else if (closed) {
+        action = 'break';
+        mask = trapped || (location.doormask & D_LOCKED && random(2) === 0)
+            ? D_NODOOR : D_BROKEN;
+    }
+    else
+        return { status: 'continue', heroDied: false };
+    location.doormask = mask;
+    await newsym(x, y);
+    vision_note_blocker_change(x, y);
+    await vision_recalc(0);
+    const seesDoor = wasDoorVisible || cansee(x, y);
+    if (trapped) {
+        const trap = await triggerMonsterDoorTrap(monster, seesDoor, { state, random, rollOne, publish });
+        if (trap.killed || trap.heroDied)
+            return { status: trap.killed ? 'died' : 'continue', heroDied: trap.heroDied };
+    }
+    else if (state.flags.verbose) {
+        const actorAction = action === 'unlock' ? 'unlocks and opens'
+            : action === 'open' ? 'opens' : 'smashes down';
+        const doorAction = action === 'unlock' ? 'unlock and open'
+            : action === 'open' ? 'open' : 'crash open';
+        const message = seesDoor && canSpotMonster(monster)
+            ? `${monsterName(monster, { state, capitalized: true })} ${actorAction} a door.`
+            : seesDoor ? formatSeenMessage(`a door ${doorAction}.`, state)
+                : !heroIsDeaf(state) ? formatHeardMessage(`a door ${doorAction}.`, state) : null;
+        if (message)
+            await publish(message);
+    }
+    if (action === 'break' && roomsAt(state.level, x, y, SHOPBASE).length)
+        addShopDamage(x, y, 0, state);
+    return { status: 'continue', heroDied: false };
+}
+// C monmove.c:can_hide_under_obj().
+export function canMonsterHideUnderObjectAt(state, x, y) {
+    const pile = state.level?.objects[x]?.[y] ?? [];
+    if (pile[0]?.where !== 'floor')
+        return false;
+    const trap = state.level?.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap && !is_pit(trap.ttyp))
+        return false;
+    let coins = 0;
+    for (const object of pile) {
+        if (object.oclass !== COIN_CLASS)
+            return true;
+        coins += object.quan;
+        if (coins >= 10)
+            return true;
+    }
+    return false;
 }
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
 // diggable destination while unarmed, but it must spend this action readying

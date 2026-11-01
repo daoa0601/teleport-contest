@@ -26,7 +26,7 @@ import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './o
 import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroCanReachFloor, heroEscapedShaft, heroTeetersAtPit } from './floor_reach.js';
-import { hideHeroUnder } from './monster_hiding.js';
+import { hideHeroUnder } from './mon.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
 import { pickupLocationProblem } from './pickup_location.js';

@@ -12,7 +12,7 @@ import { vision_note_blocker_change } from './vision.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 // Corpse rot and revival take twice as long while the body is on ice.
 export function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
     if (!body || body.otyp !== CORPSE)

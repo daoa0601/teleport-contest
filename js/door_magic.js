@@ -13,7 +13,7 @@ import { monsterName, possessiveName } from './monster_name.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { triggerMonsterDoorTrap } from './monster_door_trap.js';
+import { triggerMonsterDoorTrap } from './monmove.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';

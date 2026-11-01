@@ -5,7 +5,7 @@ import { clearMessageWindow } from '../js/tty_topline.js';
 import { pline_dir, pline_mon, pline_xy, plineWithContinuation, set_msg_xy } from '../js/pline.js';
 import { applyNethackrc } from '../js/options.js';
 import { game } from '../js/gstate.js';
-import { triggerMonsterDoorTrap } from '../js/monster_door_trap.js';
+import { triggerMonsterDoorTrap } from '../js/monmove.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 

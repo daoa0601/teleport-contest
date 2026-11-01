@@ -23,7 +23,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
-import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
+import { hideHeroUnder, maybeUnhideAt } from './mon.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';

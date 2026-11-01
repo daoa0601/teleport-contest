@@ -10,7 +10,11 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import type { MonsterDeathResult, MonsterLiquidDeathResult } from './monster_death.js';
 import type { MonsterRelocation } from './monster_action_types.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import {
+    canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee,
+    monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt,
+    monsterSightingBeforeAction,
+} from './monmove.js';
 import {
     ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK,
     ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL,
@@ -20,22 +24,29 @@ import {
     TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW,
     STRAT_WAITFORU, WATER, isok,
+    COULD_SEE, IN_SIGHT, MGIVENNAME, M_AP_TYPE, PLNMSG_HIDE_UNDER, ROOM,
+    Is_rogue_level, is_pit,
 } from './const.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { splitMonster } from './monster_clone.js';
 import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterIsNoncorporeal, monsterIsWhirly, monsterYoungerForm,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
+    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterHasNoHands, monsterIsHuman, monsterIsNoncorporeal, monsterIsRider,
+    monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter,
+    monsterIsVerySmall, monsterIsWhirly, monsterYoungerForm,
 } from './monster_data.js';
+import { monsterLocomotion } from './monster_locomotion.js';
 import { changeMonsterForm, decideMonsterShapeChange } from './monster_polymorph.js';
 import { monsterName } from './monster_name.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import {
-    AXE, BATTLE_AXE, BOULDER, CLOVE_OF_GARLIC, DWARVISH_MATTOCK, EGG, PICK_AXE,
+    AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE,
+    DWARVISH_MATTOCK, EGG, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT,
+    PICK_AXE, TIN,
 } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
@@ -46,6 +57,40 @@ import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { monsterTrapIsHarmless, trapAt, waterDamageChain } from './trap.js';
+import { formatSeenMessage } from './hero_speech.js';
+import { canSenseMonster } from './display.js';
+import { requireGameLevel, requireLiveGame } from './gstate.js';
+import { setMimicAppearance } from './makemon.js';
+import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasStoneResistance } from './monster_resistance.js';
+import {
+    objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle,
+} from './objnam.js';
+import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
+import { levelHasCeiling } from './terrain_properties.js';
+import { thawObject } from './container.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { placeObject } from './floor_object.js';
+import { AD_POLY } from './monster_attack_types.js';
+import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
+import { growMonster } from './monster_growth.js';
+import {
+    addObjectToMonsterInventory, removeObjectFromMonsterInventory,
+} from './monster_inventory.js';
+import { isLevelPrize } from './level_prize.js';
+import { objectMaterial } from './object_material.js';
+import { beginMonsterMealMimicry } from './monster_meal_mimicry.js';
+import { possessiveName } from './monster_name.js';
+import { prepareMonsterPetrification, turnGolemToStone } from './monster_stoning.js';
+import { delobj } from './object_delete.js';
+import { unlinkObject } from './object_location.js';
+import { splitObjectStack } from './object_stack.js';
+import { unpunishHero } from './punishment.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
+import { surfaceName } from './terrain_name.js';
+import { dist2 } from './hacklib.js';
+import { heroSpecies } from './hero_species.js';
+import { monsterTeleportRestricted } from './teleport_rules.js';
 import { cansee } from './vision.js';
 import { AD_COLD, AD_ELEC, AD_FIRE, AT_NONE } from './monster_attack_types.js';
 import { adjustMonsterSpeed, mcalcmove, monsterSpeedMessage } from './monster_speed.js';
@@ -55,11 +100,10 @@ import { heroHasConflict } from './hero_conflict.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel } from './dungeon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { monsterCorrodesBars, monsterMovementBaseFlags } from './monster_movement_traits.js';
+import { monsterCorrodesBars, monsterPassesBars } from './mondata.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterDisplacementFlags } from './monster_displacement.js';
-import { monsterIsScaredAt } from './monster_fear.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './armor.js';
 import { monsterCanFog, requirePerceivedHero } from './monster_perception.js';
@@ -85,7 +129,6 @@ import { clearBypasses } from './object_bypass.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishScheduledLevelChange } from './level_change.js';
 import { hasLightSources, vision_recalc } from './vision.js';
-import { interruptOccupationForMonster, monsterSightingBeforeAction } from './monster_threat.js';
 import { moveVaultGuard } from './vault.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { reassessMonsterArmor } from './monworn.js';
@@ -644,6 +687,200 @@ export function resistConflict(
     return roll > resistChance;
 }
 
+// Native mon.c:mon_allowflags(). Conflict resistance belongs to the moving
+// caller (monAllowFlags below); these helpers compute the body-based bits.
+const M1_TUNNEL = 0x00000020;
+const M1_UNSOLID = 0x00100000;
+const M1_METALLIVORE = 0x80000000;
+const M2_MINION = 0x00001000;
+const M2_GIANT = 0x00002000;
+const M2_ROCKTHROW = 0x08000000;
+const S_GHOST = 54;
+const MZ_LARGE = 3;
+const PM_MINOTAUR = MONSTER_NAME.indexOf('minotaur');
+
+export function monsterMovementBaseFlags(monster: Monster, state: GameState = game): number {
+    let flags = monster.mtame
+        ? ALLOW_M | ALLOW_TRAPS | ALLOW_SANCT | ALLOW_SSM
+        : monster.mpeaceful ? ALLOW_SANCT | ALLOW_SSM : ALLOW_U;
+    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const kind = MONSTER_FLAGS2[monster.mnum] ?? 0;
+    if (monster.isshk) flags |= ALLOW_SSM;
+    if (monster.ispriest) flags |= ALLOW_SSM | ALLOW_SANCT;
+    if (body & M1_WALLWALK) flags |= ALLOW_ROCK | ALLOW_WALL;
+    if (kind & M2_ROCKTHROW || monsterCanBreakBoulder(monster)) flags |= ALLOW_ROCK;
+    if (monsterCanTunnel(monster, state)) flags |= ALLOW_DIG;
+    if (kind & M2_GIANT) flags |= BUSTDOOR;
+    if (monsterCanOpenDoor(monster)) flags |= OPENDOOR;
+    if (monsterCanUnlockDoor(monster)) flags |= UNLOCKDOOR;
+    if (monsterPassesBars(monster)
+        && (monster !== state.u.ustuck || carriedHeroPassesBars(state))) flags |= ALLOW_BARS;
+    if (kind & M2_MINION || monsterIsRider(monster)) flags |= ALLOW_SANCT;
+    if (monsterIsUnicorn(monster.mnum) && !monsterTeleportRestricted(monster, state)) flags |= NOTONL;
+    if (monsterIsHuman(monster.mnum) || monster.mnum === PM_MINOTAUR) flags |= ALLOW_SSM;
+    if (monsterIsUndead(monster.mnum) && MONSTER_SYMBOL[monster.mnum] !== S_GHOST
+        || monsterIsVampireShifter(monster)) flags |= NOGARLIC;
+    return flags;
+}
+
+export function monsterCanOpenDoor(monster: Monster): boolean {
+    return !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
+}
+
+export function monsterCanUnlockDoor(monster: Monster): boolean {
+    return monsterCanOpenDoor(monster) && monsterHasKey(monster, true)
+        || !!monster.iswiz || monsterIsRider(monster);
+}
+
+export function monsterCanTunnel(monster: Monster, state: GameState = game): boolean {
+    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    if (!(body & M1_TUNNEL) || Is_rogue_level(state.u.uz, state)) return false;
+    if (!(body & M1_NEEDPICK) || monster.mpeaceful && !heroHasConflict(state)) return true;
+    const { mux: targetX, muy: targetY } = monster;
+    if (targetX === undefined || targetY === undefined)
+        throw new Error('A tunneling monster needs its perceived hero position.');
+    return dist2(monster.mx, monster.my, targetX, targetY) > 8;
+}
+
+function carriedHeroPassesBars(state: GameState): boolean {
+    const species = heroSpecies(state);
+    return monsterIsUnsolid({ mnum: species }) || monsterIsVerySmall(species);
+}
+
+// Effects of a monster consuming an object. C refs: mon.c m_consume_obj()
+// and meatbox().
+const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
+const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
+const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+const PM_NURSE = MONSTER_NAME.indexOf('nurse');
+const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
+const M1_NOEYES = 0x00001000;
+const M2_SHAPESHIFTER = 0x00004000;
+const MIMIC_SPECIES = new Set(['small mimic', 'large mimic', 'giant mimic'].map(name => MONSTER_NAME.indexOf(name)));
+
+export interface MonsterConsumptionOptions {
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    rollOne?: typeof rnd;
+    rollDice?: typeof d;
+}
+
+function polymorphFood(object: GameObject): boolean {
+    if (![CORPSE, EGG, TIN].includes(object.otyp)
+        || object.corpsenm === undefined || object.corpsenm < 0) return false;
+    return !!((MONSTER_FLAGS2[object.corpsenm] ?? 0) & M2_SHAPESHIFTER)
+        || !!MONSTER_ATTACKS[object.corpsenm]?.some(([, damage]) => damage === AD_POLY);
+}
+
+async function emptyEatenContainer(
+    monster: Monster, object: GameObject, state: GameState, publish: MessagePublisher, random: typeof rn2,
+): Promise<void> {
+    const x = monster.mx, y = monster.my;
+    if (!object.contents?.length || !isok(x, y)) return;
+    const cube = monster.mnum === PM_GELATINOUS_CUBE;
+    if (!cube && cansee(x, y)) {
+        observeDistantObjectForNaming(object, state);
+        const container = possessiveName(capitalizedDefiniteName(objectName(object, state), state));
+        await publish(`${container} contents spill out onto the ${surfaceName(x, y, state)}.`);
+    }
+    for (const content of [...object.contents]) {
+        unlinkObject(content, state);
+        if (object.otyp === ICE_BOX) thawObject(content, state);
+        if (cube) await addObjectToMonsterInventory(monster, content, state);
+        else {
+            const landing = await applyFloorEffects(content, x, y, { state, publish, random });
+            if (landing.heroDied) return;
+            if (!landing.finished) await placeObject(content, x, y, state);
+        }
+        if (state.program_state.gameover) return;
+    }
+}
+
+export async function growAfterFood(
+    monster: Monster, state: GameState, {
+        publish = plineWithContinuation, random = rn2, rollOne = rnd,
+    }: MonsterConsumptionOptions = {},
+): Promise<void> {
+    const growth = growMonster(monster, { state, random, rollOne });
+    if (!growth.changedSpecies) return;
+    if (canSpotMonster(monster)) await publish(growth.message);
+    finishMonsterGrowth(monster, growth);
+    await newsym(monster.mx, monster.my);
+    if (growth.genocided)
+        await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
+}
+
+function foodSpecies(object: GameObject): number | null {
+    return [CORPSE, EGG, TIN].includes(object.otyp)
+        && object.corpsenm !== undefined && object.corpsenm >= 0
+        ? object.corpsenm : null;
+}
+
+export async function consumeMonsterObject(
+    monster: Monster, object: GameObject, state: GameState = game,
+    { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d }: MonsterConsumptionOptions = {},
+): Promise<void> {
+    const level = state.level;
+    const isPet = !!monster.mtame;
+    if (!isPet && monster.mhp < monster.mhpmax)
+        healMonster(monster, OBJECT_WEIGHT[object.otyp] ?? 0, 0);
+    await emptyEatenContainer(monster, object, state, publish, random);
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (object === (state.uball || state.u.uball)) {
+        await unpunishHero(state);
+        await delobj(object, state);
+        return;
+    }
+    if (object === (state.uchain || state.u.uchain)) {
+        await unpunishHero(state);
+        return;
+    }
+
+    const species = foodSpecies(object);
+    const corpse = object.otyp === CORPSE ? species : null;
+    const slime = object.otyp === GLOB_OF_GREEN_SLIME;
+    const poly = polymorphFood(object);
+    const grows = species === PM_WRAITH;
+    const heals = species === PM_NURSE;
+    const curesEyes = object.otyp === CARROT;
+    const petrifies = species !== null && fleshPetrifies(species);
+    const mimic = corpse !== null && MIMIC_SPECIES.has(corpse);
+    const visible = canSeeMonster(monster);
+    await delobj(object, state);
+    if (state.program_state.gameover) return;
+
+    if (poly || slime) {
+        const change = await changeMonsterForm(monster, slime ? PM_GREEN_SLIME : null, state, { showMessage: visible, publish });
+        if (change?.heroDied || state.program_state.gameover || monster.migrating || state.level !== level) return;
+    }
+    if (grows && (!isPet || (monster.m_lev ?? 0) < (MONSTER_LEVEL[monster.mnum] ?? 0) + 15))
+        await growAfterFood(monster, state, { publish, random, rollOne });
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (petrifies) {
+        const stoneForm = await turnGolemToStone(monster, publish);
+        if (stoneForm?.heroDied) return;
+        if (!stoneForm && !monsterHasStoneResistance(monster)) {
+            if (visible) await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
+            const stoning = await prepareMonsterPetrification(monster, { publish });
+            if (stoning.heroDied) return;
+            if (!stoning.survived)
+                await finishEnvironmentalMonsterDeath(monster, state, {
+                    noCorpse: true, stoneRemains: stoning.remains ?? null, publish, random, rollDice,
+                });
+        }
+    }
+    if (state.program_state.gameover || monster.migrating || state.level !== level) return;
+    if (heals) healMonster(monster, monster.mhpmax, 0);
+    if ((curesEyes || heals) && !monster.mcansee) {
+        monster.mcansee = 1;
+        monster.mblinded = 0;
+        if (canSeeMonster(monster) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES))
+            await publish(`${monsterName(monster, { state, capitalized: true })} can see again.`);
+    }
+    if (isPet && mimic) await beginMonsterMealMimicry(monster, state);
+    if (corpse !== null) await grantMonsterCorpseIntrinsic(monster, corpse, state);
+}
+
 // C mon.c:mon_allowflags().
 export function monAllowFlags(
     monster: Monster, state: PlayingGameState,
@@ -895,6 +1132,168 @@ export async function mfndpos(
         wantPool = false;
     }
     return positions;
+}
+
+// Shared hiding decisions. C refs: mon.c restrap(), hideunder(), and
+// maybe_unhide_at(); monmove.c can_hide_under_obj() lives in monmove.ts.
+const M1_FLY = 0x1;
+const M1_CONCEAL = 0x80, M1_HIDE = 0x100, M1_NOLIMBS = 0x6000;
+const S_EYE = 5, S_MIMIC = 13, S_LIGHT = 25;
+
+export interface MonsterHideUnder {
+    undetected: boolean;
+    oldUndetected: boolean;
+    message: string | null;
+}
+
+interface HidingActor {
+    species: number;
+    x: number;
+    y: number;
+    held: boolean;
+    trapped: boolean;
+    tame: boolean;
+    stoneResistant: boolean;
+}
+
+interface HidingPlace { undetected: boolean; cover: GameObject | null; water: boolean }
+
+export async function attemptMonsterRestrap(
+    monster: Monster, state: GameState = game,
+    { random = rn2, calls }: { random?: RandomBelow; calls?: MonsterCallLog } = {},
+): Promise<boolean> {
+    requireLiveGame(state);
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    if (!(flags & M1_HIDE) || monster.mcan || M_AP_TYPE(monster)
+        || ((state.viz_array?.[monster.my]?.[monster.mx] ?? 0) & IN_SIGHT)) return false;
+    calls?.push(3);
+    if (random(3) !== 0 || state.u.ustuck === monster) return false;
+    const level = requireGameLevel(state);
+    const trap = level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my);
+    if (monster.mtrapped && trap && !is_pit(trap.ttyp)) return false;
+    const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
+    const ceilingHider = !!((flags & M1_CLING) && !mimic) || !!(flags & M1_FLY);
+    if (ceilingHider && !levelHasCeiling(state)) return false;
+    const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
+    if (canSenseMonster(monster) && adjacent) return false;
+    if (mimic) {
+        if (monster.msleeping || monster.mfrozen) return false;
+        await setMimicAppearance(monster);
+        return true;
+    }
+    if (level.at(monster.mx, monster.my)?.typ !== ROOM) return false;
+    monster.mundetected = 1;
+    return true;
+}
+
+// Capture names while the creature is visible, then change its hidden state.
+// The caller publishes this message before repainting, so a pending More keeps
+// the pre-concealment screen until the player acknowledges the earlier line.
+export function beginMonsterHideUnder(monster: Monster, state: GameState = game): MonsterHideUnder {
+    requireLiveGame(state);
+    const seen = !state.in_mklev && canSeeMonster(monster);
+    const place = hidingPlace(monsterHidingActor(monster, state), state);
+    let message: string | null = null;
+    if (seen) {
+        const cover = place.water ? 'the water'
+            : place.cover ? simpleObjectNameWithArticle(place.cover, state) : null;
+        const subject = monsterName(monster, {
+            state, article: monster.mtame ? 'your' : 'the',
+            suppressSaddle: !!MGIVENNAME(monster) || monster === state.u.usteed,
+        });
+        if (place.undetected && cover) {
+            const verb = place.water ? 'dive' : monsterLocomotion(monster.mnum, 'hide');
+            message = formatSeenMessage(`${subject} ${verb} under ${cover}.`, state);
+        }
+    }
+    const oldUndetected = !!monster.mundetected;
+    monster.mundetected = place.undetected ? 1 : 0;
+    return { undetected: place.undetected, oldUndetected, message };
+}
+
+export async function finishMonsterHideUnder(
+    monster: Monster, concealment: MonsterHideUnder, state: GameState = game,
+): Promise<void> {
+    if (concealment.message) {
+        await plineWithContinuation(concealment.message);
+        state._lastPlineKind = PLNMSG_HIDE_UNDER;
+        state.last_hider = monster.m_id;
+    }
+    if (concealment.undetected !== concealment.oldUndetected) await newsym(monster.mx, monster.my);
+}
+
+export async function hideMonsterUnder(monster: Monster, state: GameState = game): Promise<boolean> {
+    const concealment = beginMonsterHideUnder(monster, state);
+    await finishMonsterHideUnder(monster, concealment, state);
+    return concealment.undetected;
+}
+
+// C mon.c:hideunder(&youmonst) reassesses cover without announcing hero hiding.
+export async function hideHeroUnder(state: GameState = game): Promise<boolean> {
+    requireLiveGame(state);
+    const oldUndetected = !!state.u.uundetected;
+    const { undetected } = hidingPlace(heroHidingActor(state), state);
+    state.u.uundetected = undetected ? 1 : 0;
+    if (undetected !== oldUndetected) await newsym(state.u.ux, state.u.uy);
+    return undetected;
+}
+
+export async function maybeUnhideAt(x: number, y: number, state: GameState = game): Promise<void> {
+    const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
+        && !candidate.dead && candidate.mx === x && candidate.my === y);
+    const isHero = !monster && state.u.ux === x && state.u.uy === y;
+    if (!monster && !isHero) return;
+    if (!(monster ? monster.mundetected : state.u.uundetected)) return;
+    const actor = monster ? monsterHidingActor(monster, state) : heroHidingActor(state);
+    const hidesUnder = !!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL);
+    const eel = MONSTER_SYMBOL[actor.species] === S_EEL;
+    const exposed = hidesUnder && (actor.trapped || !canMonsterHideUnderObjectAt(state, x, y))
+        || eel && !isPoolAt(x, y, state);
+    if (!exposed) return;
+    const hidden = hidingPlace(actor, state).undetected;
+    if (monster) monster.mundetected = hidden ? 1 : 0;
+    else state.u.uundetected = hidden ? 1 : 0;
+    if (!hidden) await newsym(x, y);
+}
+
+function heroHidingActor(state: GameState): HidingActor {
+    return {
+        species: heroSpecies(state), x: state.u.ux, y: state.u.uy,
+        held: false, trapped: !!state.u.utrap, tame: false,
+        stoneResistant: heroResistsStoning(state),
+    };
+}
+
+function monsterHidingActor(monster: Monster, state: GameState): HidingActor {
+    return {
+        species: monster.mnum, x: monster.mx, y: monster.my,
+        held: state.u.ustuck === monster, trapped: !!monster.mtrapped,
+        tame: !!monster.mtame, stoneResistant: monsterHasStoneResistance(monster),
+    };
+}
+
+function hidingPlace(actor: HidingActor, state: GameState): HidingPlace {
+    const { x, y } = actor;
+    const nowhere: HidingPlace = { undetected: false, cover: null, water: false };
+    if (actor.held || actor.trapped) return nowhere;
+    const level = requireGameLevel(state);
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap && !is_pit(trap.ttyp)) return nowhere;
+    if (MONSTER_SYMBOL[actor.species] === S_EEL) {
+        const heroUnderwater = !!(state.underwater || state.u.uinwater);
+        const inLineOfSight = !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
+        const hidden = isPoolAt(x, y, state) && !levelIsWaterLevel(state)
+            && (!heroUnderwater || !inLineOfSight);
+        return { undetected: hidden, cover: null, water: true };
+    }
+    if (!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL)
+        || !canMonsterHideUnderObjectAt(state, x, y)
+        || isPoolAt(x, y, state) || isLavaAt(x, y, state)) return nowhere;
+    const pile = level.objects[x]?.[y] ?? [];
+    if (actor.tame && pile.some(object => object.cursed)) return nowhere;
+    const petrifyingOnly = !actor.stoneResistant
+        && pile.every(object => object.otyp === CORPSE && touchPetrifies(object.corpsenm));
+    return { undetected: !petrifyingOnly, cover: pile[0] ?? null, water: false };
 }
 export async function presentMonsterGrowth(
     monster: Monster, growth: MonsterGrowth | null | undefined,

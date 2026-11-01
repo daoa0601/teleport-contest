@@ -12,7 +12,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { isLevelPrize } from './level_prize.js';
 import { mksobj } from './mkobj.js';
-import { consumeMonsterObject } from './monster_consumption.js';
+import { consumeMonsterObject } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsSlimeproof, speciesEatsCorpses } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName } from './monster_name.js';

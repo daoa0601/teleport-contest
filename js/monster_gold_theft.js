@@ -7,7 +7,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_SYMBOL, monsterIsSlithy } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { GOLD_PIECE } from './object_data.js';

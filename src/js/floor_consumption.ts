@@ -7,7 +7,7 @@ import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
-import { hideHeroUnder } from './monster_hiding.js';
+import { hideHeroUnder } from './mon.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

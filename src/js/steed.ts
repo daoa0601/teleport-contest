@@ -49,7 +49,7 @@ import { heroHandName } from './body_parts.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { heroCanOoze } from './monster_perception.js';
-import { monsterPassesBars } from './monster_movement_traits.js';
+import { monsterPassesBars } from './mondata.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';

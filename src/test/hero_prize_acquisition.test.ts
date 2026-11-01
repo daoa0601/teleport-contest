@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { isLevelPrize } from '../js/level_prize.js';
 import { generateMinesEnd } from '../js/mkmaze.js';
-import { searchMonsterItems } from '../js/monster_item_search.js';
+import { searchMonsterItems } from '../js/monmove.js';
 import { AMULET_OF_REFLECTION, BAG_OF_HOLDING, LUCKSTONE } from '../js/object_data.js';
 import { observeObject } from '../js/object_knowledge.js';
 import { addPickedInventoryObject, pickupAtHero } from '../js/pickup.js';

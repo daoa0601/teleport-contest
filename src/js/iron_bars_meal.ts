@@ -16,7 +16,7 @@ import { clearDiggingContext, ensureDiggingContext, mayDig } from './hero_diggin
 import { spendHeroNutrition } from './hunger.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterCorrodesBars, monsterPassesBars } from './monster_movement_traits.js';
+import { monsterCorrodesBars, monsterPassesBars } from './mondata.js';
 import { BOULDER, HEAVY_IRON_BALL, OBJECT_WEIGHT, requireObjectData } from './object_data.js';
 import { delobj } from './object_delete.js';
 import { dissolveBars } from './projectile_bars.js';

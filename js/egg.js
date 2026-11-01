@@ -8,7 +8,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { tameMonster } from './monster_taming.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
-import { hideMonsterUnder } from './monster_hiding.js';
+import { hideMonsterUnder } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { game } from './gstate.js';
 import { makemonNear } from './mklev.js';

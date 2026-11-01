@@ -5,7 +5,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import { nomul } from './command_state.js';
 import { artifactById } from './artifacts.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { heroIsPunished } from './ball.js';
 import {
     BEAR_TRAP,
