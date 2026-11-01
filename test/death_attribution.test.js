@@ -8,7 +8,7 @@ import { useHeroGaze } from '../js/hero_gaze.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { finishMonsterAttackDeath } from '../js/end.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { respondMedusa } from '../js/monster_gaze.js';
 import { setMonsterGivenName } from '../js/do_name.js';

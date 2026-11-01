@@ -14,7 +14,7 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
-import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { CORPSE } from './object_data.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { mergable } from './object_merge.js';

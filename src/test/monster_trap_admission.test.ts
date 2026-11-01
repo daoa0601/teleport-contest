@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 
 import { setMonsterGivenName } from '../js/do_name.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { openFallingTrap } from '../js/trap_magic.js';

@@ -24,7 +24,7 @@ import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { couldSeeFromHero, cansee, clearPath, visibleCellsFrom } from './vision.js';
 import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
-import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin, isok } from './hacklib.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
@@ -34,14 +34,13 @@ import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.j
 import { petDroppableObject } from './dog.js';
 import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating } from './pet_eating.js';
-import { releaseMonsterInventory } from './steal.js';
+import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
 import { splitObjectStack } from './object_stack.js';
 import { isLevelPrize } from './level_prize.js';
 import {
     BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, SCR_MAIL, TRIPE_RATION, requireObjectData,
 } from './object_data.js';
-import { dismountHero } from './steed.js';
 import { loseGuardianAngel } from './guardian_angel.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './regions.js';
@@ -59,8 +58,7 @@ import {
 import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
-import { addObjectToMonsterInventory } from './steal.js';
-import { wieldMonsterWeapon } from './monster_weapon.js';
+import { wieldMonsterWeapon } from './weapon.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { releaseMonsterLeash } from './leash_apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';

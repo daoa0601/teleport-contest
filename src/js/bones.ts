@@ -8,9 +8,7 @@
 
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
-import {
-    COLNO, HOLE, In_quest, MAGIC_PORTAL, ROWNO, STONE, TRICKED,
-} from './const.js';
+import { COLNO, HOLE, In_quest, MAGIC_PORTAL, ROWNO, STONE, TRICKED } from './const.js';
 import { GameMap } from './game.js';
 import { game } from './gstate.js';
 import { pline } from './pline.js';
@@ -20,16 +18,14 @@ import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath, scoreDeathCause } from './end.js';
 import { levelAllowsBones } from './bones_admission.js';
-import {
-    prepareBonesObjectForRestore, prepareBonesObjectForSave,
-} from './bones_object.js';
+import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { purgeDeadMonsters } from './mon.js';
 import { restoreLevelChains } from './level_restore.js';
-import { restoreLevelPetHistory } from './monster_restore.js';
+import { restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
 import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelRegions } from './regions.js';
 import { fixShopDamage } from './shop_damage.js';
@@ -37,15 +33,13 @@ import { restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
-import {
-    restoreMonsterWormHeads, validMonsterWormBodies,
-} from './monster_worm.js';
 import { restoreMonsterInventoryOwnership } from './mkobj.js';
+
 import { ageStoresFuel } from './container.js';
 import { specialLevelAt } from './dungeon.js';
 import { ICE_BOX, SLIME_MOLD } from './object_data.js';
 import type { GameObject } from './object_types.js';
-import type { Monster, } from './monster_types.js';
+import type { Monster } from './monster_types.js';
 import type { Fruit } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 const BONES_VERSION = 20;

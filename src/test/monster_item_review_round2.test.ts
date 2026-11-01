@@ -1,21 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { M_AP_OBJECT, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STRAT_WAITFORU, STRAT_CLOSE, TELEP_TRAP, LEVEL_TELEP, W_ARMF } from '../js/const.js';
+import {
+    M_AP_OBJECT, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STRAT_WAITFORU, STRAT_CLOSE, TELEP_TRAP, LEVEL_TELEP,
+    W_ARMF,
+} from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterHeroAttack, completeHeroAttackSlot } from '../js/mhitu.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import {
-    finishDeferredMonsterMiscItem,
-    prepareMonsterItemUse,
-    useMonsterDefensiveItem,
-} from '../js/muse.js';
-import { rollDeferredHeroSpellDamage } from '../js/mcastu.js';
+import { finishDeferredMonsterMiscItem, prepareMonsterItemUse, useMonsterDefensiveItem } from '../js/muse.js';
+import { rollDeferredHeroSpellDamage, summonMonsterInsects } from '../js/mcastu.js';
 import type { MonsterCallLog } from '../js/monster_action_types.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { summonMonsterInsects } from '../js/monster_spell_insects.js';
 import { IRON_SHOES, KICKING_BOOTS, SPEED_BOOTS, LEASH, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

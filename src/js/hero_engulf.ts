@@ -13,7 +13,7 @@ import type { MapLocation } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroContactAttack } from './monster_action_types.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
-import type { finishMonsterAttackDeath } from './monster_attack_death.js';
+import type { finishMonsterAttackDeath } from './end.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
@@ -36,7 +36,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import { expelHero } from './hero_expulsion.js';
-import { infectHeroWithMonsterDisease } from './monster_disease.js';
+import { infectHeroWithMonsterDisease } from './mhitu.js';
 import { resetOccupations } from './occupation_reset.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

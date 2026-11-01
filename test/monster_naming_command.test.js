@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

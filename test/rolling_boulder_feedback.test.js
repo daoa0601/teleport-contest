@@ -1,10 +1,10 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { BOULDER, CORPSE, WORM_TOOTH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { launchRollingBoulder } from '../js/rolling_boulder.js';

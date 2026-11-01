@@ -2,7 +2,7 @@
 // C refs: fountain.c drinkfountain()/dipfountain()/dowatersnakes()/
 // dowaterdemon()/dowaternymph()/dofindgem()/dogushforth()/dryup() and
 // sit.c dosit().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { A_CON, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, MON_FLOOR, POOL, ROOM, SDOOR, } from './const.js';
 import { heroArmName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { displayLiquidName, glyphAt, newsym, randomDisplayMonsterName, } from './display.js';

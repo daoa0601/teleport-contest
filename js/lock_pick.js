@@ -13,7 +13,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { resetPick } from './lock_context.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';

@@ -11,9 +11,9 @@ import { flush_screen, map_invisible, newsym, show_glyph_cell } from '../js/disp
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { nameToMonster } from '../js/mondata.js';
-import { setMonsterSpecies } from '../js/monster_species.js';
+import { setMonsterSpecies } from '../js/mondata.js';
 import { changeHeroSex } from '../js/hero_species.js';
 import { CORPSE, POT_HEALING, POT_SPEED, STATUE } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';

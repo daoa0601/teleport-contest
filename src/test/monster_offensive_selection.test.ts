@@ -2,25 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
 import {
-    ALTAR, AM_SHRINE, Align2amask, D_CLOSED, DOOR, M_SEEN_ACID, M_SEEN_COLD,
-    M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP,
-    MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
-    ROOM, ROOMOFFSET, STONE, TELEP_TRAP, TEMPLE, W_ARMH,
+    ALTAR, AM_SHRINE, Align2amask, D_CLOSED, DOOR, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL,
+    M_SEEN_SLEEP, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, ROOM, ROOMOFFSET, STONE, TELEP_TRAP, TEMPLE,
+    W_ARMH,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { selectMonsterOffensiveItem } from '../js/muse.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import {
-    CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET,
-    LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION,
-    POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER,
-    WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP,
-    WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
+    CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID,
+    POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER,
+    WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION,
+    WAN_UNDEAD_TURNING,
 } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';
 import { applyPotionEffect } from '../js/potion_effects.js';

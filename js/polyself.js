@@ -40,8 +40,7 @@ import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, resolveMonsterClass } from './mondata.js';
-import { counterWereSpecies } from './monster_species.js';
-import { isWereMonster, wereBeastForSpecies } from './were.js';
+import { counterWereSpecies, isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
 import { setSlipperyHands } from './towel.js';
 import { races } from './roles.js';

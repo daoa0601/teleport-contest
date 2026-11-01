@@ -1,5 +1,5 @@
 import { validSavedObject } from './object_validation.js';
-import { validSavedMonster, validSavedMonsterTraits } from './monster_validation.js';
+import { validSavedMonster, validSavedMonsterTraits } from './save.js';
 import { validSavedRoom } from './map_validation.js';
 export function createSavedEntityChecks() {
     const context = {

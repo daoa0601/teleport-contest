@@ -48,7 +48,7 @@ import { identifyTrap } from './pager_traps.js';
 import { GETOBJ_SUGGEST } from './const.js';
 import { monsterName } from './do_name.js';
 import { attackHostileMonster } from './hero_melee.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { beginCommandResult, clearCannedCommands, commandResultCancelled, commandResultFailed, endVoluntaryMultiTurn, resetCommandVariables, setMulti } from './command_state.js';

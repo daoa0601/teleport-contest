@@ -12,7 +12,7 @@ import { hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand, } from '..
 import { cancelObjectMagic } from '../js/object_cancellation.js';
 import { CHEST, CORPSE, DAGGER, OBJECT_NAMES, POT_FRUIT_JUICE, POT_SICKNESS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterStatusLine } from '../js/monster_status.js';
+import { monsterStatusLine } from '../js/insight.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { probeObjectChain } from '../js/magic_probe.js';
 import { chargedWand, floorObject, knownObject, unopenedCatBox } from './support/game-objects.js';

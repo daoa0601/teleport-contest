@@ -6,7 +6,7 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_MAGM } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

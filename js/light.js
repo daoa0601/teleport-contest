@@ -1,7 +1,7 @@
 // Object light and burn timers.
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 import { formatSeenMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { loseHeroHp } from './hero_damage.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

@@ -2,9 +2,7 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 
-import {
-    hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
-} from './hero_thrown_egg_pie_venom.js';
+import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { flush_screen } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { definiteObjectAction } from './objnam.js';
@@ -18,36 +16,24 @@ import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import type { FinishKillWithObject } from './hero_ranged_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition } from './steed.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { delobj } from './object_delete.js';
-import {
-    AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE,
-} from './object_data.js';
-import {
-    MONSTER_SYMBOL, monsterDigests, monsterIsAnimal,
-    monsterIsWhirly,
-} from './monster_data.js';
-import {
-    isThrowingWeapon, launcherMatchesAmmo,
-} from './object_properties.js';
+import { AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE } from './object_data.js';
+import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
+import { isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { rnd } from './rng.js';
-import {
-    hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES,
-} from './potion_hit.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES } from './potion_hit.js';
 import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
 import {
-    detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget,
-    snuffThrownCandle,
+    detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget, snuffThrownCandle,
 } from './thrown_object.js';
-import {
-    applyLowStaminaThrow, applyThrowSlip,
-} from './throw_state.js';
+import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 
 interface SwallowedThrowOptions {
     state?: GameState;

@@ -18,7 +18,7 @@ import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYP
 import { objectMaterial } from './object_material.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';

@@ -16,7 +16,7 @@ import { heroSpecies } from './hero_species.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, monsterHasNoHands, monsterIsVerySmall, requireMonsterData, } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { makePlural } from './object_grammar.js';

@@ -38,7 +38,7 @@ import {
     unmap_invisible, swallowed,
 } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { splitMonster } from './monster_clone.js';
+import { splitMonster } from './potion.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman,
@@ -49,12 +49,12 @@ import {
     monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses,
 } from './monster_data.js';
 import { monsterFormChangeName } from './monster_name.js';
-import { monsterName } from './do_name.js';
+import { monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
 import {
     monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
     monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster,
-    resolveMonsterClass, monsterHasPoisonResistance,
+    resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies,
 } from './mondata.js';
 import {
     AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE,
@@ -74,8 +74,10 @@ import { fireDamageChain } from './fire_damage.js';
 import { monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, monsterWearsGloves } from './trap.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMonsterHitPoints } from './makemon.js';
-import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName } from './objnam.js';
+import {
+    monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap,
+} from './steed.js';
 import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
 import { thawObject } from './container.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
@@ -85,9 +87,10 @@ import {
 } from './monster_attack_types.js';
 import {
     removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterClothingAfterPolymorph,
-    checkMonsterGearNextTurn, findMonsterArmorClass,
+    checkMonsterGearNextTurn, findMonsterArmorClass, applyMonsterEquipmentProperties,
+    clearMonsterCarriedObjectState,
 } from './monworn.js';
-import { addObjectToMonsterInventory, dropSpecialMonsterObjects } from './steal.js';
+import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './object_material.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
@@ -106,11 +109,11 @@ import { currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { isReviver, isZombieMaker, zombieForm, isRider } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty } from './dungeon.js';
-import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import {
     wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments,
     removeMonsterWormBody,
-} from './monster_worm.js';
+} from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt } from './regions.js';
@@ -145,16 +148,14 @@ import { SHOP_TYPES } from './shop_data.js';
 import { buryObject } from './buried_object.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { meldNearbyFloorGlobs } from './glob.js';
-import { mkcorpstat, mkgold, mksobj } from './mkobj.js';
+import { mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import { preventMonsterDeath, lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import type { DamageType } from './monster_attack_types.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
-import { restoreMonsterTrueSpecies, setMonsterSpecies } from './monster_species.js';
 import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { objectWeight } from './weight.js';
-import { adjustRiderAfterSteedPolymorph, dismountHero } from './steed.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';
 import type { MonsterAttack } from './data_types.js';
@@ -187,11 +188,7 @@ import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
 import { respondMedusa } from './monster_gaze.js';
 import type { MonsterGazeOptions } from './monster_gaze.js';
-import { applyMonsterEquipmentProperties, clearMonsterCarriedObjectState } from './monworn.js';
-import { discardMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './leash_apply.js';
-import { namelessMonsterName, setMonsterGivenName } from './do_name.js';
-import { releaseMonsterInventory } from './steal.js';
 
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
@@ -4370,4 +4367,30 @@ export async function seeMonsterCloseup(
 function speciesVitals(state: GameState, species: number): MonsterVital {
     const vitals = state.mvitals || (state.mvitals = []);
     return vitals[species] ?? (vitals[species] = { mvflags: 0, born: 0, died: 0 });
+}
+
+// ---------------------------------------------------------------------------
+// C mon.c:mondead() restores a shapechanger's true species before its
+// remains are described.
+// ---------------------------------------------------------------------------
+
+const HUMAN_WERE_SPECIES = new Map([
+    [15, 262], // werejackal, human werejackal
+    [21, 263], // werewolf, human werewolf
+    [91, 261], // wererat, human wererat
+]);
+
+export function restoreMonsterTrueSpecies(monster: Monster) {
+    const storedSpecies = monster.cham !== undefined
+        && Number.isInteger(monster.cham) && monster.cham >= 0
+        ? monster.cham : null;
+    const trueSpecies = storedSpecies
+        ?? HUMAN_WERE_SPECIES.get(monster.mnum);
+    if (trueSpecies === undefined || !Number.isInteger(trueSpecies) || trueSpecies < 0)
+        return null;
+
+    const oldSpecies = monster.mnum;
+    setMonsterSpecies(monster, trueSpecies);
+    if (storedSpecies !== null) monster.cham = NON_PM;
+    return { oldSpecies, trueSpecies };
 }

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE, } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';

@@ -23,7 +23,7 @@ import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonster
 import { lightRoom } from './light.js';
 import { canDigDown } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { delobj } from './object_delete.js';
 import { BOULDER, OBJECT_DESCRIPTIONS, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { makePlural } from './object_grammar.js';

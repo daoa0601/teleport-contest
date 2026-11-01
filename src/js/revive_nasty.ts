@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import type { Monster } from './monster_types.js';
 import { CORPSE } from './object_data.js';
 import { relocateMonsterTo } from './teleport.js';

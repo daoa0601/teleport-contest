@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';

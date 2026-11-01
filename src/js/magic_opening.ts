@@ -1,7 +1,7 @@
 import type { GameState } from './game_state.js';
 import { requirePlayingGame } from './gstate.js';
 // C detect.c:openit()/openone(). Each opened feature keeps its normal owner.
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
     BOLT_LIM, DOOR, SDOOR, SCORR, D_CLOSED, D_LOCKED, D_TRAPPED,

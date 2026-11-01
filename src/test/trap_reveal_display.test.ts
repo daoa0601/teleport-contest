@@ -7,7 +7,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 
 import { ROCK } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';

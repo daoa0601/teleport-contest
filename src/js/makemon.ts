@@ -12,13 +12,20 @@ import {
     MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT,
     M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR,
     SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO,
-    isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD,
+    isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG,
 } from './const.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
+import { plineWithContinuation } from './pline.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { visibleRegionAt } from './regions.js';
+import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
+import { objectAtMonsterDescription } from './pager.js';
 import { level_difficulty, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies } from './egg_species.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { beginObjectBurn } from './light.js';
@@ -28,8 +35,8 @@ import {
 } from './mkobj.js';
 import { occupied } from './mkroom.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
-import { finishMonsterBirth } from './monster_birth.js';
 import { ensureMinionData } from './minion.js';
+import { tameMonster } from './dog.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
@@ -39,9 +46,7 @@ import {
 } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
-import { monsterSubjectPronoun } from './mondata.js';
-import { setMonsterSpecies } from './monster_species.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
 import {
     OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION,
     CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM,
@@ -56,13 +61,15 @@ import {
 } from './object_data.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState } from './monster_types.js';
+import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState, PetData } from './monster_types.js';
 
 import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
-import { initializeMonsterWormBody } from './monster_worm.js';
+import {
+    monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, placeMonsterOnMap, maybeGiveDomesticSaddle,
+} from './steed.js';
+import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem } from './muse.js';
 import { addCreatedObjectToContainer } from './object_container.js';
@@ -75,16 +82,14 @@ import { createParticularMonster } from './read_creation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { inTown, roomForIndex } from './room.js';
-import { maybeGiveDomesticSaddle } from './steed.js';
 import { goodPosition } from './teleport_rules.js';
-import { block_point, visionCellBlocksLight } from './vision.js';
 import { objectWeight } from './weight.js';
 import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear } from './mklev.js';
 import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
-import { setMonsterApparentHeroPosition } from './monmove.js';
+import { shopkeeperName } from './shknam.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -2218,4 +2223,177 @@ export function allocateMonsterBirthExtensions(monster: Monster, flags: number):
             warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
         };
     }
+}
+
+// ---------------------------------------------------------------------------
+// Runtime completion of a monster birth.
+// C refs: makemon.c:makemon(), pager.c:mhidden_description(), dochugw(FALSE).
+// ---------------------------------------------------------------------------
+
+export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 0, state: GameState = game): Promise<T> {
+    requireLiveGame(state);
+    if (monsterEmitsLight(monster.mnum)) state.vision_full_recalc = 1;
+    if (state.in_mklev) return monster;
+
+    await newsym(monster.mx, monster.my);
+    if (!(flags & MM_NOMSG)) {
+        const appearance = M_AP_TYPE(monster);
+        let exclaim = !(flags & MM_NOEXCLAM);
+        let subject = null;
+        if ((canSeeMonster(monster)
+            && (appearance === M_AP_NOTHING || appearance === M_AP_MONSTER))
+            || canSenseMonster(monster)) {
+            subject = monsterName(monster, { article: 'a', capitalized: true, state });
+            if (appearance === M_AP_MONSTER) exclaim = true;
+        } else if (canSeeMonster(monster)) {
+            const description = await disguisedBirthName(monster, state);
+            subject = description.charAt(0).toUpperCase() + description.slice(1);
+        }
+        if (subject) {
+            const dx = monster.mx - state.u.ux, dy = monster.my - state.u.uy;
+            const near = Math.abs(dx) <= 1 && Math.abs(dy) <= 1 ? ' next to you'
+                : dx * dx + dy * dy <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
+            await plineWithContinuation(`${subject}${exclaim ? ' suddenly' : ''} ${
+                verbForSubject(subject, 'appear')}${near}${exclaim ? '!' : '.'}`, {
+                noRepeat: true, position: { x: monster.mx, y: monster.my },
+            });
+        }
+    }
+    await interruptOccupationForMonster(monster, state);
+    return monster;
+}
+
+async function disguisedBirthName(monster: Monster, state: GameState): Promise<string> {
+    const appearance = M_AP_TYPE(monster);
+    let name;
+    if (appearance === M_AP_FURNITURE) {
+        const symbol = monster.mappearance === undefined
+            ? undefined : MAP_SYMBOLS[monster.mappearance];
+        if (!symbol) throw new Error('mimic furniture appearance has no map symbol');
+        name = withIndefiniteArticle(symbol.name);
+    } else if (appearance === M_AP_OBJECT) {
+        name = await objectAtMonsterDescription(monster, state);
+    } else {
+        name = 'something';
+    }
+    const region = visibleRegionAt(state, monster.mx, monster.my);
+    const range = Math.max(state.u.xray_range ?? 1, 1);
+    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+    if (region && distance <= range * (range + 1))
+        name += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
+    return name;
+}
+
+// ---------------------------------------------------------------------------
+// C makemon.c:clone_mon(). Monster cloning.
+// ---------------------------------------------------------------------------
+
+export interface CloneOptions {
+    monsterMoving?: boolean;
+    random?: (limit: number) => number;
+    position?: Position;
+}
+
+function copyPetState(monster: Monster, clone: Monster): void {
+    const source = monster.edog || monster.mextra?.edog;
+    if (!source) return;
+    const edog: PetData = {
+        ...source,
+        ogoal: source.ogoal ? { ...source.ogoal } : source.ogoal,
+    };
+    clone.edog = edog;
+    clone.mextra = { ...(clone.mextra || {}), edog };
+}
+
+export async function cloneMonster(
+    monster: Monster | null | undefined,
+    state: GameState = game,
+    { monsterMoving = !!state.context.mon_moving, random = rn2, position }: CloneOptions = {},
+): Promise<Monster | null> {
+    if (!monster || (monster.mhp ?? 0) <= 1) return null;
+    if ((state.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_EXTINCT)
+        return null;
+
+    const level = requireGameLevel(state);
+    let destination = position ?? { x: monster.mx, y: monster.my };
+    if (!isok(destination.x, destination.y)) return null;
+    if (monsterAtPosition(level, destination.x, destination.y)) {
+        const nearby = findMonsterNearPosition(
+            monster.mnum, destination.x, destination.y, { state },
+        );
+        if (!nearby || monsterAtPosition(level, nearby.x, nearby.y)) return null;
+        destination = nearby;
+    }
+
+    const inventory: GameObject[] = [];
+    const clone: Monster = {
+        ...monster,
+        m_id: nextIdent(state),
+        mx: destination.x,
+        my: destination.y,
+        mundetected: 0,
+        mtrapped: 0,
+        mcloned: 1,
+        mleashed: 0,
+        isshk: 0,
+        isgd: 0,
+        ispriest: 0,
+        minvent: inventory,
+        inventory,
+        hasInventory: false,
+        mtrack: [],
+    };
+    delete clone.mextra;
+    delete clone.wormDetachedSegments;
+    delete clone.edog;
+    delete clone.emin;
+    delete clone.epri;
+    delete clone.eshk;
+    delete clone._egd;
+    delete clone.mcorpsenm;
+    if (monster.mextra?.mgivenname)
+        clone.mextra = { mgivenname: monster.mextra.mgivenname };
+    if (monster.isshk && !monster.mgivenname && !monster.mextra?.mgivenname)
+        clone.name = shopkeeperName(monster, { state });
+    clone.mhpmax = monster.mhpmax;
+    clone.mhp = Math.trunc(monster.mhp / 2);
+    monster.mhp -= clone.mhp;
+
+    await placeMonsterOnMap(clone, destination.x, destination.y);
+    // cutworm replaces the copied body after cloning. During taming, the
+    // copied worm number still refers to the parent's retained segments.
+    level.monsters.push(clone);
+    if (monsterEmitsLight(clone.mnum)) state.vision_full_recalc = 1;
+
+    if (!monsterMoving && monster.mpeaceful) {
+        const attitudeRange = Math.max(2 + (state.u?.uluck ?? 0), 2);
+        if ((monster.mtame ?? 0) > 0) {
+            clone.mtame = random(attitudeRange) ? monster.mtame ?? 0 : 0;
+        } else {
+            clone.mpeaceful = random(attitudeRange) ? 1 : 0;
+        }
+    }
+
+    if (clone.isminion) {
+        const minion = monster.emin ?? monster.mextra?.emin;
+        if (!minion) throw new Error(`Cloning minion ${monster.m_id} requires its alignment state.`);
+        if (!state.u.ualign) throw new Error('Cloning a minion requires the hero alignment.');
+        clone.emin = {
+            ...minion,
+            renegade: (minion.min_align !== state.u.ualign.type) !== !clone.mpeaceful,
+        };
+        clone.mextra = { ...clone.mextra, emin: clone.emin };
+    } else if ((clone.mtame ?? 0) > 0) {
+        clone.mtame = 0;
+        clone.pet = false;
+        if (await tameMonster(clone, null, { state })) copyPetState(monster, clone);
+    } else {
+        clone.pet = false;
+        delete clone.edog;
+        if (clone.mextra) delete clone.mextra.edog;
+    }
+
+    setMonsterMalign(clone, state);
+    if (state === game) await newsym(clone.mx, clone.my);
+    return clone;
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL, W_ARMC } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { applyHeroNaturalPolymorph } from '../js/hero_natural_polymorph.js';

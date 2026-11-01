@@ -47,7 +47,8 @@ import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { cloneMonster, splitMonster } from './monster_clone.js';
+import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
+import { splitMonster } from './potion.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { cansee } from './vision.js';
 import {
@@ -56,20 +57,19 @@ import {
     prepareMonsterPetrification, resistConflict, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject,
     turnGolemToStone,
 } from './mon.js';
-import { staggerVerb } from './monster_hurtle.js';
-import {
-    exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
-} from './monster_location.js';
+import { staggerVerb } from './dothrow.js';
 import { monsterName as canonicalMonsterName, monsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
+import {
+    exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
+} from './steed.js';
 import {
     monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, monsterHasAcidResistance,
     monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
 } from './mondata.js';
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
-import {
-    monsterWieldedWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon,
-} from './monster_weapon.js';
+import { swingMonsterWeapon } from './mhitu.js';
+import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
@@ -84,7 +84,7 @@ import {
 import { monsterReflectionSource } from './ray.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
 import { finishMonsterEating } from './dogmove.js';
-import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
+import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { updateMonsterRegions } from './regions.js';
 import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './object_material.js';
@@ -106,7 +106,6 @@ import {
 } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport_rules.js';
-import { finishMonsterGrowth, growMonster } from './makemon.js';
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;

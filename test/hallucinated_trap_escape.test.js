@@ -7,7 +7,7 @@ import { makeHallucinated } from '../js/hero_mental_status.js';
 import { BOULDER } from '../js/object_data.js';
 import { fillPitWithBoulderAt } from '../js/pit_fill.js';
 import { initRng } from '../js/rng.js';
-import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
+import { tryMonsterTrapEscape } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 void test('a hallucinating hero sees monsters pull free of varying imaginary traps', async () => {

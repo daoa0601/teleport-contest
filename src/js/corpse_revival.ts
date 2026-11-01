@@ -25,7 +25,7 @@ import { riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMon
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName,
 } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';

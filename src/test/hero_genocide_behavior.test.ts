@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';

@@ -15,4 +15,4 @@ export function heroHasMagicKey(state = game) {
 export function monsterHasMagicKey(monster, state = game) {
     return (monster.minvent || []).some(object => isMonsterMagicKey(monster, object, state));
 }
-//# sourceMappingURL=monster_key.js.map
+//# sourceMappingURL=artifact.js.map

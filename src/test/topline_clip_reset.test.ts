@@ -5,7 +5,7 @@ import { pline } from '../js/pline.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
-import { waitForCurrentMonsterMore } from '../js/monster_attack_death.js';
+import { waitForCurrentMonsterMore } from '../js/end.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

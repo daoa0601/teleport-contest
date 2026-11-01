@@ -1,7 +1,7 @@
 // Hero pick-axe/axe digging occupation.
 // C refs: dig.c dig_typ(), use_pick_axe2() digging branches, dig(),
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';

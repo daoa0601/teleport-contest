@@ -2,7 +2,7 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 import { objectMaterial } from './object_material.js';
-import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';

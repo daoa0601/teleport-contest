@@ -42,7 +42,7 @@ import { linkObjectToMonsterInventory, mksobj } from './mkobj.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects } from './steal.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { detachMonsterFromLevel, removeMonsterFromGame } from './mon.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
 import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';

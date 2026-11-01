@@ -9,7 +9,7 @@ import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterSearchesForItem } from '../js/muse.js';
 import { monsterWantsFloorObject } from '../js/monmove.js';
-import { setMonsterSpecies } from '../js/monster_species.js';
+import { setMonsterSpecies } from '../js/mondata.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BAG_OF_HOLDING, BAG_OF_TRICKS,

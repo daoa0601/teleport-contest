@@ -13,7 +13,7 @@ import { nhgetch, resetInputState } from '../js/input.js';
 import { promptKey, readDirectionKey } from '../js/tty_prompts.js';
 import { DART } from '../js/object_data.js';
 import { NO_MINVENT } from '../js/const.js';
-import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { finishMonsterAttackDeath } from '../js/end.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

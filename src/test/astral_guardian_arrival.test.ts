@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { MONSTER_NAME, monsterIsPlayerMonster } from '../js/monster_data.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from '../js/object_data.js';
-import { selectHandToHandWeapon } from '../js/monster_weapon.js';
+import { selectHandToHandWeapon } from '../js/weapon.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { flush_screen } from '../js/display.js';
 import { startLuaCore } from './support/lua-game.js';

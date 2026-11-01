@@ -29,7 +29,7 @@ import { useHeroSkill } from './skills.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { promptDirection } from './tty_prompts.js';
 import { commandResultCancelled } from './command_state.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isPoolAt } from './terrain_properties.js';
 import { captureThrownObjectFlight } from './thrown_object.js';

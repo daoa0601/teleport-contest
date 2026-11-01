@@ -9,7 +9,7 @@ import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

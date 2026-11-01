@@ -59,12 +59,21 @@ import { heroLegName, monsterLegName } from './body_parts.js';
 import { fingersOrGloves } from './dip_water.js';
 import { surfaceName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
+import { STRAT_WAITMASK } from './const.js';
+import { monsterAlignmentType } from './monster_alignment.js';
+import { MONSTER_NAME, MONSTER_SIZE, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
+import { wormSegmentIndexAt } from './worm.js';
+import { findMonsterArmorClass } from './monworn.js';
+import { visibleRegionAt } from './regions.js';
+import { monsterHiddenConditions } from './pager.js';
 import {
     blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
 } from './senses.js';
 import type { PropertyName } from './property_types.js';
 import type { GameObject } from './object_types.js';
 import type { TextPage } from './windows.js';
+import type { GameState } from './game_state.js';
+import type { Monster } from './monster_types.js';
 
 export interface EnlightenmentOptions { basic?: boolean; magic?: boolean }
 
@@ -724,4 +733,92 @@ export async function doVanquished() {
 export async function doGenocided() {
     await listGenocided(game.iflags.menu_requested ? 'a' : 'y');
     game.context.move = 0;
+}
+
+// ---------------------------------------------------------------------------
+// Monster status text used by stethoscopes and probing magic.
+// C ref: insight.c mstatusline().
+// ---------------------------------------------------------------------------
+
+const SIZE_NAMES = new Map([
+    [0, 'tiny'], [1, 'small'], [2, 'medium'], [3, 'large'],
+    [4, 'huge'], [7, 'gigantic'],
+]);
+
+interface StatusLineOptions {
+    state?: GameState;
+    x?: number;
+    y?: number;
+}
+
+export async function monsterStatusLine(monster: Monster, {
+    state = game, x = monster.mx, y = monster.my,
+}: StatusLineOptions = {}): Promise<string> {
+    const alignment = monsterAlignmentType(monster);
+    const alignmentName = alignment === -128 ? 'unaligned'
+        : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+    const sizeName = SIZE_NAMES.get(MONSTER_SIZE[monster.mnum] ?? -1) || 'unknown size';
+    const conditions: string[] = [];
+    if (monster.mtame) {
+        let tame = 'tame';
+        if (state.flags.debug) {
+            const pet = monster.edog || monster.mextra?.edog;
+            let details = '';
+            if (!monster.isminion) {
+                if (!pet) throw new Error(`Pet ${monster.m_id} has no pet state`);
+                details = `; hungry ${pet.hungrytime}; apport ${pet.apport}`;
+            }
+            tame += ` (${monster.mtame}${details})`;
+        }
+        conditions.push(tame);
+    }
+    else if (monster.mpeaceful) conditions.push('peaceful');
+    if (MONSTER_NAME[monster.mnum] === 'long worm') {
+        const count = (monster.wormno ? monster.wormSegments?.length ?? 0 : 0) + 1;
+        const index = wormSegmentIndexAt(monster, x, y, state);
+        const suffix = index % 100 >= 11 && index % 100 <= 13 ? 'th'
+            : ['', 'st', 'nd', 'rd'][index % 10] || 'th';
+        conditions.push(count === 1 ? 'single segment' : `${index}${suffix} of ${count} segments`);
+    }
+    if (monster.cham !== undefined && monster.cham >= 0 && monster.cham !== monster.mnum)
+        conditions.push('shapechanger');
+    if (monster.meating) conditions.push('eating');
+    // Native gates this on the probed square, even though the hidden
+    // description itself uses the head square for a long worm.
+    if (monster.mundetected || monster.m_ap_type || visibleRegionAt(state, x, y))
+        conditions.push(...await monsterHiddenConditions(monster, state));
+    if (monster.mcan) conditions.push('cancelled');
+    if (monster.mconf) conditions.push('confused');
+    if (monster.mblinded || !monster.mcansee) conditions.push('blind');
+    if (monster.mstun) conditions.push('stunned');
+    if (monster.msleeping) conditions.push('asleep');
+    else if (monster.mfrozen || !monster.mcanmove) conditions.push("can't move");
+    else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) conditions.push('meditating');
+    if (monster.mflee) conditions.push('scared');
+    if (monster.mtrapped) conditions.push('trapped');
+    if (monster.mspeed) conditions.push(monster.mspeed === 2 ? 'fast'
+        : monster.mspeed === 1 ? 'slow' : '[? speed]');
+    if (monster.minvis) conditions.push('invisible');
+    if (monster === state.u.ustuck) {
+        if (state.u.uswallow) conditions.push(monsterDigests(monster) ? 'digesting you'
+            : monsterIsAnimal(monster) && !monsterEnfolds(monster) ? 'swallowing you' : 'engulfing you');
+        else conditions.push(heroFormSticks(state) ? 'held by you' : 'holding you');
+    }
+    if (monster === state.u.usteed) {
+        conditions.push('carrying you');
+        if ((state.u._woundedLegTurns ?? 0) > 0 || state.u._woundedLegSide) {
+            const leg = monsterLegName(monster.mnum);
+            conditions.push(`injured ${state.u._woundedLegSide === 'both' ? makePlural(leg) : leg}`);
+        }
+    }
+    if (monster.mleashed) conditions.push('leashed');
+    const conditionText = conditions.length ? `, ${conditions.join(', ')}` : '';
+    const armorClass = findMonsterArmorClass(monster);
+    const name = monsterName(monster, {
+        state, article: 'your', suppressIt: true, suppressInvisible: true,
+        suppressSaddle: false,
+    });
+    const identity = `${name} (${alignmentName}, ${sizeName})`;
+    const health = `Level ${monster.m_lev ?? 0}  HP ${monster.mhp}(${monster.mhpmax})`;
+    return `Status of ${identity}:  ${health}  AC ${armorClass}${conditionText}.`;
 }

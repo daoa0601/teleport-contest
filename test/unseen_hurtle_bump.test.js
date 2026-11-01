@@ -4,7 +4,7 @@ import test from 'node:test';
 // Some_Monnam(), so a hero who cannot see it learns only "Someone".
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';

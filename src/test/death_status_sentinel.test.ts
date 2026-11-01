@@ -4,7 +4,7 @@ import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { finishMonsterAttackDeath } from '../js/end.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

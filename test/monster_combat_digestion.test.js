@@ -10,7 +10,7 @@ import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mh
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

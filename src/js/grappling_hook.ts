@@ -19,7 +19,7 @@ import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { findMonsterNearPosition } from './mklev.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { relocateMonsterTo } from './teleport.js';
 import {
     MONSTER_FLAGS2, MONSTER_SIZE,

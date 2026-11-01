@@ -7,7 +7,7 @@ import { expelHero } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
 import { continuePicking, pickLock } from '../js/lock_pick.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';

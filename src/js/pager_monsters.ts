@@ -1,10 +1,9 @@
 // C pager.c:self_lookat(), look_at_monster(), monhealthdescr(). Native
 // monhealthdescr() is disabled, so wounded creatures have no health prefix.
 import {
-    BEAR_TRAP, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL,
-    MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS,
-    MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL,
-    TT_INFLOOR, TT_LAVA, WEB, is_pit,
+    BEAR_TRAP, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
+    MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, WEB,
+    is_pit,
 } from './const.js';
 import { displayLiquidName, glyphAt, howMonsterSeen } from './display.js';
 import { game } from './gstate.js';
@@ -12,11 +11,10 @@ import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
-    monsterDigests, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterTypeName,
 } from './monster_data.js';
 import { distantMonsterName, monsterName } from './do_name.js';
-import { monsterHiddenConditions } from './monster_status.js';
+import { monsterHiddenConditions } from './pager.js';
 import type { Monster } from './monster_types.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';

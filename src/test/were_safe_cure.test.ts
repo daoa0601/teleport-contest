@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { POT_WATER, SCR_SCARE_MONSTER } from '../js/object_data.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
 import { setHeroLycanthropy } from '../js/were.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

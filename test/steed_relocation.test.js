@@ -4,7 +4,7 @@ import { DISMOUNT_BONES, DISMOUNT_GENERIC, DISMOUNT_KNOCKED, DISMOUNT_POLY } fro
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 import { dismountHero, doride } from '../js/steed.js';
 import { moveHeroByTeleport, relocateMonsterTo } from '../js/teleport.js';

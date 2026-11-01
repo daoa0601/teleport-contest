@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { initializePet } from '../js/dog.js';
 import type { RoleKey } from '../js/roles.js';
 import test from 'node:test';

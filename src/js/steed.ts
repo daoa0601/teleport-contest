@@ -4,24 +4,23 @@ import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 
-import { monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
 import {
-    BOTH_SIDES, RLOC_ERR, RLOC_NOMSG,
-    D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
-    DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
-    DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
-    M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT,
-    TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
-    W_SADDLE, isok,
+    BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
+    DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS,
+    IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR,
+    NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT,
+    TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok,
 } from './const.js';
+import { impossible } from './diagnostics.js';
+import { depth, endgameLevelName } from './hacklib.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import type { Monster } from './monster_types.js';
+import type { Monster, MonsterPosition } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DirectionVector } from './const.js';
-import { levitationAtWill, refreshMovementProperties } from './properties.js';
+import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
 import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -29,8 +28,8 @@ import { finishMonsterKilled } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterCanBeSaddled, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled,
+    monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './leash_apply.js';
@@ -40,28 +39,24 @@ import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
 import { objectMaterial } from './object_material.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterReflexiveAction } from './do_name.js';
-import { monsterSubjectPronoun } from './mondata.js';
+import { monsterSubjectPronoun, monsterPassesBars } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroHandName } from './body_parts.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHandName, heroLegName } from './body_parts.js';
+import { heroHasFreeHand, isPolearm } from './weapon_type.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
-import { monsterPassesBars } from './mondata.js';
-import { wormCrossesBetween } from './monster_worm.js';
+import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { propertyIsActive } from './properties.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
-import { heroLegName } from './body_parts.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
@@ -69,16 +64,14 @@ import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import {
-    blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason,
+    blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects,
 } from './hack.js';
-import { applyHeroLocationEffects } from './hack.js';
 import { heroCouldMoveOntoBoulder } from './boulder_push.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { commandResultCancelled } from './command_state.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
-import { isPolearm } from './weapon_type.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCanOoze } from './monmove.js';
 
@@ -999,4 +992,145 @@ export async function strikeSteed({
     await announce(`${name} gallops!`);
     hero.ugallop = (hero.ugallop ?? 0) + random(20) + 30;
     return { struck: true, galloped: true };
+}
+
+// ---------------------------------------------------------------------------
+// C steed.c:place_monster(). Map placement and list membership are separate:
+// callers own the level/migration list, and placement resets every mstate bit.
+// ---------------------------------------------------------------------------
+
+// C place_monster() diagnoses invalid placements before changing the map.
+export async function placeMonsterOnMap(monster: Monster, x: number, y: number, state = game): Promise<void> {
+    const levelName = placementLevelName(state);
+    const monsterState = (monster.mstate ?? MON_FLOOR).toString(16);
+    if (!isok(x, y) && (x !== 0 || y !== 0 || !monster.isgd)) {
+        const name = placementMonsterName(monster, true, state);
+        await impossible(`trying to place ${name} at <${x},${y}>`
+            + ` mstate:${monsterState} on ${levelName}`, { state });
+        x = y = 0;
+    }
+    if (monster === state.u.usteed && !state._steedDismounting
+        || monster.mhp <= 0 && !(monster.isgd && x === 0 && y === 0)) {
+        const name = monster === state.u.usteed ? 'steed' : 'defunct monster';
+        await impossible(`placing ${name} onto map, mstate:${monsterState}, on ${levelName}?`, { state });
+        return;
+    }
+    const other = state.level && monsterAtPosition(state.level, x, y, state);
+    if (other) {
+        const name = placementMonsterName(monster, false, state);
+        const otherName = other === monster ? 'itself' : placementMonsterName(other, true, state);
+        const otherState = (other.mstate ?? MON_FLOOR).toString(16);
+        await impossible(`placing ${name} over ${otherName} at <${x},${y}>,`
+            + ` mstates:${otherState} ${monsterState} on ${levelName}?`, { state });
+    }
+    placeMonsterAt(monster, x, y, state);
+}
+
+// C minimal_monnam(): diagnostics describe the real species and attitude,
+// independently of the hero's sight, hallucination, or the monster's name.
+function placementMonsterName(monster: Monster, checkLocation: boolean, state: GameState): string {
+    if (checkLocation && monster.mnum === MONSTER_NAME.indexOf('long worm') && monster.mx
+        && state.level && monsterAtPosition(state.level, monster.mx, monster.my, state) !== monster)
+        return `${monsterTypeName(MONSTER_NAME.indexOf('long worm tail'), !!monster.female)} <${monster.mx},${monster.my}>`;
+    const attitude = monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : '';
+    const shape = monster.cham !== undefined && monster.cham !== NON_PM
+        ? `{${monsterTypeName(monster.cham, !!monster.female)}}` : '';
+    return `${attitude}${monsterTypeName(monster.mnum, !!monster.female)} <${monster.mx},${monster.my}>${shape}`;
+}
+
+// C botl.c:describe_level(buf, 0), including its padded dungeon depth.
+function placementLevelName(state: GameState): string {
+    const location = state.u.uz;
+    if (Is_knox_level(location)) return state.dungeons[location?.dnum ?? 0]?.dname ?? '';
+    if (In_quest(location)) return `Home ${location?.dlevel ?? 1}`;
+    if (In_endgame(location)) return endgameLevelName(location).replace('Plane of ', '');
+    return `${state._tutorialActive ? 'Tutorial' : 'Dlvl'}:${String(depth(location, state.dungeons)).padEnd(2)}`;
+}
+
+// Commit a map-slot assignment. The monster chain retains an overwritten
+// occupant, but moving the new occupant away must leave an empty square.
+export function placeMonsterAt(monster: MonsterPosition, x: number, y: number, state = game): void {
+    const other = state.level && monsterAtPosition(state.level, x, y, state);
+    if (other && other !== monster) clearMonsterMapSquare(other, x, y);
+    monster.mx = x;
+    monster.my = y;
+    monster.mstate = MON_FLOOR;
+    monster.headOnMap = true;
+}
+
+// C remove_monster() clears the square, even when the caller's monster
+// was overwritten there. It leaves both coordinates and mstate alone.
+export function removeMonsterFromMapAt(x: number, y: number, state = game): void {
+    const occupant = state.level && monsterAtPosition(state.level, x, y, state);
+    if (occupant) clearMonsterMapSquare(occupant, x, y);
+}
+
+function clearMonsterMapSquare(monster: MonsterPosition, x: number, y: number): void {
+    if (monster.mx === x && monster.my === y) monster.headOnMap = false;
+    for (const segments of [monster.wormSegments, monster.wormDetachedSegments]) {
+        for (const segment of segments ?? []) {
+            if (segment.x === x && segment.y === y) segment.onMap = false;
+        }
+    }
+}
+
+// Occupancy ends at unlink/off-map placement, not at zero hit points.
+export function monsterAtPosition<T extends MonsterPosition>(
+    level: { monsters: readonly T[] }, x: number, y: number, state: GameState = game,
+): T | null {
+    return level.monsters.find(monster =>
+        monsterHasMapPosition(monster, state)
+        && monsterOccupiesPosition(monster, x, y)) || null;
+}
+
+// C m_at(): the live occupant of a square, ignoring one actor and skipping
+// the dead. Movement destination scans and item-use proximity share this.
+export function monsterAt(
+    state: GameState, x: number, y: number, ignore: Monster | null = null,
+): Monster | null {
+    return state?.level?.monsters?.find(
+        (monster) =>
+            monsterHasMapPosition(monster, state) &&
+            monster !== ignore &&
+            (monster.mhp ?? 1) > 0 &&
+            monster.mx === x &&
+            monster.my === y,
+    ) || null;
+}
+
+// remove_monster() clears the mounted actor's map slot, without unlinking
+// it from fmon or changing mstate. Its coordinates still follow the hero.
+export function monsterHasMapPosition(
+    monster: MonsterPosition | null | undefined,
+    state: { u?: { usteed?: MonsterPosition | null };
+        _monsterEngulf?: GameState['_monsterEngulf'] } = game,
+): boolean {
+    if (!monster || monster === state.u?.usteed
+        || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) return false;
+    const engulf = state._monsterEngulf;
+    return !engulf || monster !== (engulf.defenderExposed ? engulf.attacker : engulf.defender);
+}
+
+// C mdamagem() makes the dying defender the mapped actor before monkilled().
+// Both actors remain in fmon throughout the temporary engulf overlap.
+export function exposeEngulfedDefenderForDeath(
+    attacker: MonsterPosition, defender: MonsterPosition, state: GameState = game,
+): void {
+    const engulf = state._monsterEngulf;
+    if (engulf?.attacker === attacker && engulf.defender === defender
+        && state.level && monsterAtPosition(state.level, defender.mx, defender.my, state) === attacker) {
+        attacker.headOnMap = false;
+        defender.headOnMap = true;
+        engulf.defenderExposed = true;
+    }
+}
+
+export function monsterOccupiesPosition(
+    monster: MonsterPosition | null | undefined, x: number, y: number,
+): boolean {
+    return !!monster && (
+        (monster.headOnMap !== false && monster.mx === x && monster.my === y)
+        || !!monster.wormSegments?.some(segment => segment.onMap !== false && segment.x !== 0 && segment.x === x && segment.y === y)
+        || !!monster.wormDetachedSegments?.some(segment => segment.onMap !== false && segment.x !== 0 && segment.x === x && segment.y === y)
+    );
 }

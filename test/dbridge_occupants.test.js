@@ -4,7 +4,7 @@ import { DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, NO_MIN
 import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { switchHeroTerrain } from '../js/terrain_movement.js';
 import { addTrap } from './support/level-state.js';

@@ -33,7 +33,7 @@ import {
 import { lightRoom } from './light.js';
 import { canDigDown } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { delobj } from './object_delete.js';
 import {
     BOULDER, OBJECT_DESCRIPTIONS, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER,

@@ -3,7 +3,7 @@ import type { MonsterAttack } from './data_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterCallLog } from './monster_action_types.js';
-import type { finishMonsterAttackDeath } from './monster_attack_death.js';
+import type { finishMonsterAttackDeath } from './end.js';
 // Active monster gazes. Native mhitu.c gazemu() and mon.c m_respond_medusa().
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { BOLT_LIM, KILLED_BY, M_ATTK_MISS, M_ATTK_AGR_DIED, M_SEEN_FIRE, STONING } from './const.js';

@@ -1,5 +1,5 @@
 import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

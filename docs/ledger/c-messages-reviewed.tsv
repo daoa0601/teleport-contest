@@ -152,10 +152,10 @@ insight.c	attributes_enlightenment	protected from cold	composed	src/js/enlighten
 insight.c	attributes_enlightenment	protected from disintegration	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
 insight.c	attributes_enlightenment	protected from electric shocks	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
 insight.c	attributes_enlightenment	protected from fire	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
-insight.c	mstatusline	, carrying you	composed	src/js/monster_status.ts:monsterStatusLine; The steed case pushes carrying you plus the wounded-leg detail into the comma-joined conditions.
-insight.c	mstatusline	, digesting you	composed	src/js/monster_status.ts:monsterStatusLine; The swallowed-hero case pushes digesting you / swallowing you / engulfing you into the comma-joined conditions.
-insight.c	mstatusline	, shapechanger	composed	src/js/monster_status.ts:monsterStatusLine; The cham-not-form case pushes shapechanger into the comma-joined conditions.
-insight.c	mstatusline	, single segment	composed	src/js/monster_status.ts:monsterStatusLine; Worm feedback pushes single segment or `${index}${suffix} of ${count} segments` into the comma-joined conditions.
+insight.c	mstatusline	, carrying you	composed	src/js/insight.ts:monsterStatusLine; The steed case pushes carrying you plus the wounded-leg detail into the comma-joined conditions.
+insight.c	mstatusline	, digesting you	composed	src/js/insight.ts:monsterStatusLine; The swallowed-hero case pushes digesting you / swallowing you / engulfing you into the comma-joined conditions.
+insight.c	mstatusline	, shapechanger	composed	src/js/insight.ts:monsterStatusLine; The cham-not-form case pushes shapechanger into the comma-joined conditions.
+insight.c	mstatusline	, single segment	composed	src/js/insight.ts:monsterStatusLine; Worm feedback pushes single segment or `${index}${suffix} of ${count} segments` into the comma-joined conditions.
 insight.c	show_conduct	have not violated	composed	src/js/insight.ts:currentConductLines; Native enlght_line() contracts have not to haven't; the port displays You haven't violated any of the special Sokoban rules.
 insight.c	show_conduct	have not wished	composed	src/js/insight.ts:wishConductLines; Native enlght_line() contracts have not to haven't; the port displays You haven't wished for any artifacts in current conduct and did not wish in final conduct.
 insight.c	size_str	unknown size (	dead	Every mons[] entry uses MZ_TINY..MZ_GIGANTIC (monsters.h), all covered by size_str()'s switch; the default row cannot print for any real monster or the hero's form.
@@ -204,8 +204,8 @@ mhitu.c	passiveum	is mildly warm.	composed	src/js/hero_form_passive.ts:applyHero
 mhitu.c	passiveum	is slightly tingled.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	passiveum	is suddenly very cold!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	passiveum	is suddenly very hot!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
-mhitu.c	wildmiss	displaced image...	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image...	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
 mklev.c	generate_stairs	generate_stairs: failed to find a room! (	diagnostic	panic() when stair placement finds no room; developer diagnostic.
 mklev.c	mkinvk_check_wall	x > 0 && x < COLNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mkinvk_check_wall	y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
@@ -328,7 +328,7 @@ pager.c	doidtrap	That is a trapped	composed	src/js/pager_traps.ts:identifyTrap; 
 pager.c	look_engrs	(engraving with	composed	src/js/pager_lists.ts:lookListEntries; The engraving rows strip the quoted prefix the way strsubst()("(engraving with ", "") does; suffix.slice(6) removes the same " with ".
 pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects engravings and the optional nearby suffix.
 pager.c	look_traps	No traps seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects traps and the optional nearby suffix.
-pager.c	mhidden_description	, masquerading as	composed	src/js/monster_status.ts:monsterHiddenConditions; The M_AP_MONSTER disguise is described as masquerading as plus the indefinite species name, joined with the leading comma.
+pager.c	mhidden_description	, masquerading as	composed	src/js/pager.ts:monsterHiddenConditions; The M_AP_MONSTER disguise is described as masquerading as plus the indefinite species name, joined with the leading comma.
 pickup.c	query_category	*pick_list != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pickup.c	query_category	Auto-select every item being worn or wielded	dead	The only WORN_TYPES caller is menu_remarm(), which omits CHOOSE_ALL; the do_worn arm of the CHOOSE_ALL menu is unreachable.
 pickup.c	query_objlist	pick yourself up!	dead	fake_hero_object is included only for look-here with PICK_NONE, so it cannot be returned as a selected object.

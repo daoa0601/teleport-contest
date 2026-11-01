@@ -1,7 +1,9 @@
 import type { ArmorCompletion } from './command_types.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
+import {
+    noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, sinkHeroIntoLava,
+} from './hack.js';
 import { dolookaround } from './lookaround.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './pline.js';
@@ -61,11 +63,9 @@ import { consumeMonsterItem, resolveDeferredMonsterBreath } from './mthrowu.js';
 import {
     heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination,
 } from './teleport.js';
-import { monsterAtPosition } from './monster_location.js';
-import { restoreMonsterCover } from './monster_hiding.js';
 import { runDueTimers } from './timer_effects.js';
 import { finishInUseInventory } from './object_cleanup.js';
-import { askKeepRestoredSave } from './save.js';
+import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, dist2, dungeonDepth } from './hacklib.js';
@@ -73,7 +73,7 @@ import {
     monsterSpellDeathReason, touchHeroWithDeath, applyHeroSpellDamage, beginDeferredHeroCloneWizard,
     finishDeferredHeroCloneWizard, resolveDeferredHeroAggravation, resolveDeferredHeroHasteSelf,
     resolveDeferredHeroSummonMonsters, resumeDeferredHeroSpell, resumeDeferredMovementSpell,
-    rollDeferredHeroSpellDamage,
+    rollDeferredHeroSpellDamage, resolveMonsterMagicRay, summonMonsterInsects,
 } from './mcastu.js';
 import {
     monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
@@ -82,13 +82,13 @@ import {
 import { resolveMonsterWeaponContact, tryKnockback, resolveMonsterContactEffect } from './uhitm.js';
 import { applyArtifactHit } from './artifact_hit.js';
 import {
-    finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore,
-} from './monster_attack_death.js';
-import { monsterMissMessage } from './monster_miss.js';
-import {
     MONSTER_GENO, monsterIsAnimal, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE,
     MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
+import { monsterAtPosition } from './steed.js';
+import {
+    finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath,
+} from './end.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
 import { touchPetrifies } from './stoning.js';
@@ -104,10 +104,10 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap } from './trap_magic.js';
-import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
 import {
     AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK,
 } from './monster_attack_types.js';
+import type { MonsterAttackDeathOptions, FinishHeroDeathOptions } from './end.js';
 import { findArtifact } from './artifacts.js';
 import {
     observeBucForNaming, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType,
@@ -132,8 +132,6 @@ import { d, rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { mklev, l_nhcore_init, u_on_upstairs } from './mklev.js';
 import { makemonAt, finishMonsterGrowth } from './makemon.js';
-import { summonMonsterInsects } from './monster_spell_insects.js';
-import { applyHeroLiquidEffects, continueRun, sinkHeroIntoLava } from './hack.js';
 import { continueCountedCommand, getLine, promptYesNo, rhack } from './cmd.js';
 import { finishArmorRemoval } from './do_wear.js';
 import { clearRepeatCommand } from './command_repeat.js';
@@ -149,8 +147,6 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { rndcurse } from './throne.js';
 import { stopRun, captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
-import { resolveMonsterMagicRay } from './monster_magic_ray.js';
-import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import {
     canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, randomDisplayMonsterName, see_monsters,
@@ -182,7 +178,7 @@ import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
     completeHeroAttackSlot, resumeDeferredHeroContact, resumeDeferredHeroSticking, resumeDeferredHeroEngulf,
-    resumeDeferredHeroReveal, beginMonsterHeroAttack,
+    resumeDeferredHeroReveal, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion,
 } from './mhitu.js';
 import {
     finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, presentMonsterQuaff as publishMonsterQuaff,
@@ -192,7 +188,7 @@ import { fumaroles } from './mkmaze.js';
 import { petrifyMonsterImmediately, resumeDeferredMonsterTrap, burnHeroArmorByFire } from './trap.js';
 import { commitPetPickup } from './dogmove.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
@@ -202,8 +198,6 @@ import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import { nearCapacity } from './weight.js';
-import { finishHeroDeath } from './end.js';
-import type { FinishHeroDeathOptions } from './end.js';
 import { runLevelRegions } from './regions.js';
 import { invault, moveVaultGuard } from './vault.js';
 import { automaticSearch, revealWarnedMonsters } from './detect.js';

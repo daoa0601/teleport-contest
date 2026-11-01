@@ -11,7 +11,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
 import { hideMonsterUnder } from './mon.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

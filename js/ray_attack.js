@@ -32,7 +32,7 @@ import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, } from './monster_attack_types.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH, WAN_MAGIC_MISSILE, WAN_LIGHTNING, } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';

@@ -14,9 +14,9 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './he
 import { resolveHeroObjectContact } from './hero_object_contact.js';
 import { recalculateHeroPhysicalDamage } from './hero_physical_damage.js';
 import {
-    captureHeroPhysicalObjectName, captureUnpoisonedPhysicalObjectName,
-    showHeroHarmlessStoneHit, showHeroPhysicalHit, showHeroPhysicalLight,
-    showHeroPhysicalPoisonWoreOff, showHeroPhysicalSilver, showHeroShadeMiss,
+    captureHeroPhysicalObjectName, captureUnpoisonedPhysicalObjectName, showHeroHarmlessStoneHit,
+    showHeroPhysicalHit, showHeroPhysicalLight, showHeroPhysicalPoisonWoreOff, showHeroPhysicalSilver,
+    showHeroShadeMiss,
 } from './hero_physical_messages.js';
 import { heroSpecies } from './hero_species.js';
 import { prepareHeroWeaponContact } from './hero_weapon_contact.js';
@@ -24,11 +24,11 @@ import { resolveHeroJoust, rollHeroJoust, tryHeroPuddingSplit } from './hero_wea
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { tryKnockback } from './uhitm.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight,
-    monsterHatesSilver, monsterIsShade, monsterIsUnsolid, requireMonsterData,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight, monsterHatesSilver, monsterIsShade,
+    monsterIsUnsolid, requireMonsterData,
 } from './monster_data.js';
-import { tryUnarmedStagger } from './monster_hurtle.js';
 import { monsterName } from './do_name.js';
+import { tryUnarmedStagger } from './dothrow.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, YA, YUMI } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';

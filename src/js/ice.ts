@@ -16,7 +16,7 @@ import { finishMonsterLiquidDeath, resolveMonsterLiquid } from './mon.js';
 import type { MonsterLiquidDeathResult } from './mon.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';

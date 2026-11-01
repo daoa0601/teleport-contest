@@ -7,7 +7,7 @@ import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { displayedTrapDescription, quotedEngraving } from './pager_features.js';
 import { lookAtMonster } from './pager_monsters.js';
 import { DEC_TO_UNICODE } from './terminal.js';

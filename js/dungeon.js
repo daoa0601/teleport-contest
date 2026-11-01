@@ -17,7 +17,7 @@ import { updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { roomForIndex } from './room.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { heroIsBlind } from './senses.js';

@@ -9,7 +9,7 @@ import { map_location, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { deleteEngravingAt } from './engrave.js';
 import { releaseMonsterInventory } from './steal.js';
-import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { cansee, couldsee, unset_seenv, vision_note_blocker_change } from './vision.js';

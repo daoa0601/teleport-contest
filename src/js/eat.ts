@@ -29,7 +29,7 @@ import { possessiveName } from './hacklib.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { exerciseWisdom } from './attrib.js';
 import { fleshPetrifies } from './stoning.js';
-import { finishMonsterAttackDeath } from './monster_attack_death.js';
+import { finishMonsterAttackDeath } from './end.js';
 import { propertyIsActive } from './properties.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { chokeHeroOnFood, currentHungerState, gainHeroNutrition, updateHeroHunger } from './hunger.js';

@@ -1,10 +1,25 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 
-import { In_hell, Is_rogue_level, Is_waterlevel, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
+import {
+    In_hell, Is_rogue_level, Is_waterlevel, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+} from './const.js';
 import { glyphAt } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { game } from './gstate.js';
+import { game, requireGameLevel } from './gstate.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { objectAtMapDescription } from './map_object_description.js';
+import {
+    MONSTER_FLAGS1, MONSTER_SYMBOL, monsterTypeName,
+} from './monster_data.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { visibleRegionAt } from './regions.js';
+import { isPoolAt } from './terrain_properties.js';
+import { surfaceName } from './terrain_name.js';
+import type { GameState } from './game_state.js';
+import type { Monster } from './monster_types.js';
+import type { GlyphMetadata } from './display.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNo } from './query.js';
@@ -13,7 +28,7 @@ import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.
 import type { PageLocalMultiSelectItem } from './windows.js';
 import { showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
@@ -237,4 +252,57 @@ export async function dohelp(): Promise<void> {
         if (file) await displayHelpFile(file);
     }
     game.context.move = 0;
+}
+
+// ---------------------------------------------------------------------------
+// C pager.c:mhidden_description(). Probing reveals an alternate monster
+// identity; farlook only describes furniture, objects, hiding, and regions.
+// ---------------------------------------------------------------------------
+
+export async function monsterHiddenConditions(
+    monster: Monster, state: GameState,
+    { showAlternateMonster = true }: { showAlternateMonster?: boolean } = {},
+): Promise<string[]> {
+    const conditions: string[] = [];
+    const appearance = M_AP_TYPE(monster);
+    const x = monster.mx, y = monster.my;
+    if (appearance === M_AP_FURNITURE) {
+        const symbol = MAP_SYMBOLS[monster.mappearance ?? -1];
+        if (!symbol) throw new Error(`Monster ${monster.m_id} has no furniture disguise`);
+        conditions.push(`mimicking ${withIndefiniteArticle(symbol.name)}`);
+    } else if (appearance === M_AP_OBJECT) {
+        conditions.push(`mimicking ${await objectAtMonsterDescription(monster, state)}`);
+    } else if (appearance === M_AP_MONSTER && showAlternateMonster) {
+        if (monster.mappearance === undefined)
+            throw new Error(`Monster ${monster.m_id} has no disguise species`);
+        const form = monsterTypeName(monster.mappearance, monster.female);
+        conditions.push(`masquerading as ${withIndefiniteArticle(form)}`);
+    } else if (!appearance && monster.mundetected) {
+        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+        if (flags & 0x80) {
+            conditions.push(`hiding under ${await objectAtMonsterDescription(monster, state)}`);
+        } else if (flags & 0x100) {
+            const ceiling = (flags & 0x10) && MONSTER_SYMBOL[monster.mnum] !== 13
+                || (flags & 1);
+            conditions.push(`hiding on the ${ceiling ? 'ceiling' : surfaceName(x, y, state)}`);
+        } else {
+            const water = MONSTER_SYMBOL[monster.mnum] === 57 && isPoolAt(x, y, state);
+            conditions.push(`hiding${water ? ' in murky water' : ''}`);
+        }
+    }
+    const region = visibleRegionAt(state, x, y);
+    if (region)
+        conditions.push(`in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`);
+    return conditions;
+}
+
+export async function objectAtMonsterDescription(
+    monster: Monster, state: GameState = game,
+    { glyph = null }: { glyph?: GlyphMetadata | null } = {},
+): Promise<string> {
+    const level = requireGameLevel(state);
+    glyph ??= level.flags.hero_memory
+        ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
+        : glyphAt(monster.mx, monster.my, state);
+    return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
 }

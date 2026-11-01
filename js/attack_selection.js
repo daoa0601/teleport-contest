@@ -6,7 +6,7 @@ import { requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { AD_ACID, AD_COLD, AD_DISE, AD_DREN, AD_ELEC, AD_FAMN, AD_FIRE, AD_PEST, AD_PHYS, AD_POLY, AD_STCK, AD_STUN, AT_CLAW, AT_ENGL, AT_HUGS, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterIsShade } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { CORPSE } from './object_data.js';
 import { touchPetrifies } from './stoning.js';
 import { isHomeElemental } from './makemon.js';

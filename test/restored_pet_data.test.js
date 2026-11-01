@@ -6,7 +6,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
-import { monsterStatusLine } from '../js/monster_status.js';
+import { monsterStatusLine } from '../js/insight.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';

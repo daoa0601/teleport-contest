@@ -5,7 +5,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { changeDoorByMagic } from '../js/door_magic.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { requireGameDisplay, requireGameLevel, game } from '../js/gstate.js';
 import {
     DOOR, SDOOR, STONE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED,

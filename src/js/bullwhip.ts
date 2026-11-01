@@ -1,26 +1,19 @@
 // Applying a bullwhip.
 // C ref: apply.c use_whip().
 
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition, strikeSteed } from './steed.js';
 import { currentAttribute } from './attrib.js';
 import {
-    definiteName, objectCombatName, observeObjectForNaming, ownedObjectName,
-    singularObjectName,
+    definiteName, objectCombatName, observeObjectForNaming, ownedObjectName, singularObjectName,
 } from './objnam.js';
+import { heroFootName, heroHandName, monsterHandName } from './body_parts.js';
 import {
-    heroFootName, heroHandName, monsterHandName,
-} from './body_parts.js';
-import {
-    A_DEX, IS_FURNITURE,
-    IS_WATERWALL, Is_airlevel, Is_waterlevel,
-    LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok,
+    A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok,
 } from './const.js';
 import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './mimic.js';
-import {
-    placeObject, remove_object, stack_object,
-} from './floor_object.js';
+import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
@@ -31,17 +24,13 @@ import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { unlinkMonsterObject } from './mkobj.js';
-import { unwieldMonsterWeapon } from './monster_weapon.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
-import {
-    BOULDER, CORPSE, OBJECT_BIMANUAL,
-} from './object_data.js';
+import { unwieldMonsterWeapon, monsterWieldedWeapon } from './weapon.js';
+import { BOULDER, CORPSE, OBJECT_BIMANUAL } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { monsterName as describeMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive } from './mondata.js';
 import { rnl, rn2, rnd } from './rng.js';
-import { strikeSteed } from './steed.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { heroIsBlind } from './senses.js';

@@ -6,7 +6,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid,
     monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
     monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS,
-    monsterIsVampireShifter,
+    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
@@ -22,7 +22,7 @@ import {
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import type { ArtifactDefense } from './data_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -724,4 +724,21 @@ export function monsterPronounGender(monster: Monster, { state = game, random = 
         || ((MONSTER_GENO[monster.mnum] ?? 0) & PRONOUN_G_UNIQ)
         || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_PNAME)
         ? monster.female ? 1 : 0 : 2;
+}
+
+// C mondata.c:set_mon_data(). Change a monster's species without
+// rebuilding the monster.
+export function setMonsterSpecies(monster: Monster, mnum: number): Monster {
+    const oldSpeed = MONSTER_MOVE[monster.mnum] ?? monster.mmove ?? 0;
+    const newSpeed = MONSTER_MOVE[mnum] ?? monster.mmove ?? 0;
+    if (monster.movement && newSpeed < oldSpeed && oldSpeed > 0) {
+        monster.movement = Math.trunc(
+            monster.movement * newSpeed / oldSpeed,
+        );
+    }
+    monster.mnum = mnum;
+    monster.mmove = newSpeed;
+    monster.symbol = monsterClassSymbol(mnum);
+    monster.color = requireMonsterData(MONSTER_COLOR, mnum);
+    return monster;
 }

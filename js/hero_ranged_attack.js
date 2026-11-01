@@ -11,7 +11,7 @@ import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL } from './monster_data.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
-import { cutWorm } from './monster_worm.js';
+import { cutWorm } from './worm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOOMERANG, BOULDER, ELVEN_BOW, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_SUBTYPE, YUMI, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';

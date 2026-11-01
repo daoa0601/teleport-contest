@@ -19,10 +19,10 @@ import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';
 import { createCritters } from './makemon.js';
-import { withMonsterNoticesBlocked } from './monster_notices.js';
+import { withMonsterNoticesBlocked } from './hack.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { makePlural } from './object_grammar.js';
 import {
     LEASH, LOADSTONE, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES,

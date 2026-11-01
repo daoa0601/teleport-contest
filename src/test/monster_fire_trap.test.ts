@@ -1,5 +1,5 @@
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import type { TrapMonsterOptions } from './support/monster-traps.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

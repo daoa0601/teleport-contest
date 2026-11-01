@@ -11,7 +11,7 @@ import {
     MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME,
     MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall,
 } from './monster_data.js';
-import { counterWereSpecies } from './monster_species.js';
+import { counterWereSpecies } from './were.js';
 import {
     CORPSE, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALE_MAIL,
     STATUE, TIN, OBJECT_NAMES,

@@ -22,11 +22,11 @@ import {
     AD_WRAP, AT_BOOM, AT_NONE, AT_WEAP,
 } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
-import { staggerVerb } from './monster_hurtle.js';
+import { staggerVerb } from './dothrow.js';
 import { passiveDamage } from './uhitm.js';
 import { petrifyMonsterAttacker } from './mhitm.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';
 import { drainObjectEnchantment } from './object_state.js';

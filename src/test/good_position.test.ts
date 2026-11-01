@@ -12,7 +12,7 @@ import {
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { placeMonsterWormTailRandomly } from '../js/monster_worm.js';
+import { placeMonsterWormTailRandomly } from '../js/worm.js';
 import { BOULDER, DIAMOND, SCR_SCARE_MONSTER, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { relocateObjectRandomly } from '../js/object_teleport.js';
 import { initRng } from '../js/rng.js';

@@ -12,7 +12,7 @@ import {
 } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';

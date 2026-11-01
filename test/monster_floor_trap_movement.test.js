@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DART_TRAP, RUST_TRAP, NO_MINVENT, ROLLING_BOULDER_TRAP, MMOVE_DIED, MMOVE_MOVED } from '../js/const.js';

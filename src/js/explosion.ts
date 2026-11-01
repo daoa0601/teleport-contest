@@ -28,12 +28,11 @@ import {
     AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL,
 } from './monster_attack_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter,
-    monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
+import { monsterAtPosition } from './steed.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP } from './object_data.js';
 import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';

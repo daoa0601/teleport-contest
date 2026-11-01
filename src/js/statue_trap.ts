@@ -29,7 +29,7 @@ import {
 } from './monster_data.js';
 import { changeMonsterForm, restoreMonsterShape } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { heroFormHidesUnderObjects } from './polyself.js';

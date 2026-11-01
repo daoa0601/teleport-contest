@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { monstersInFmonOrder } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

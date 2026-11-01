@@ -4,7 +4,7 @@ import { COLNO, LAVAPOOL, ROOM, ROWNO, STONE, W_NONPASSWALL } from '../js/const.
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createMonsterAt } from './support/monsters.js';

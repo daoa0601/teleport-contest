@@ -2,35 +2,36 @@
 // C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
 
 import { currentAttribute } from './attrib.js';
-import { A_CHA, DISMOUNT_THROWN, W_ARMS } from './const.js';
+import {
+    A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY,
+    MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS,
+    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU,
+    MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG,
+    ROWNO, STRAT_ARRIVE, STRAT_WAITFORU,
+} from './const.js';
 import { heroEyeName, heroHasEyes } from './body_parts.js';
-import { canSpotMonster, newsym } from './display.js';
+import { canSpotMonster, newsym, canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { publishMonsterYelp, publishMonsterGrowl } from './ambient_sounds.js';
-import { releaseMonsterLeashWithFeedback } from './leash_apply.js';
+import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './ambient_sounds.js';
+import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './leash_apply.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './do_name.js';
-import { dismountHero } from './steed.js';
-import { cansee } from './vision.js';
+import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
+import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
-    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall,
-    monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall, monsterTypeName,
 } from './monster_data.js';
 import {
-    CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE,
-    RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN,
+    CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN,
 } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
-import {
-    initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody,
-} from './monster_worm.js';
+import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import type { Monster, MonsterLevel, PetData } from './monster_types.js';
@@ -38,51 +39,32 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Trap } from './map_types.js';
-import { requireGameLevel, requirePlayingGame } from './gstate.js';
-import {
-    COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS,
-    MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP,
-    MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS,
-    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO,
-    MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU,
-    MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
-    NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU,
-} from './const.js';
-import { canSeeMonster } from './display.js';
 import { levelFollower } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { sessionIsNight } from './ambient_sounds.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { AT_WEAP } from './monster_attack_types.js';
-import { wieldMonsterWeapon } from './monster_weapon.js';
-import {
-    corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun,
-} from './objnam.js';
+import { wieldMonsterWeapon } from './weapon.js';
+import { corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { makeShopkeeperHappy, makeShoppersHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { detachMonsterFromLevel, healMonster, restoreMonsterShape } from './mon.js';
-import { depth } from './hacklib.js';
-import { monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
+import { detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
+import { depth, possessiveName } from './hacklib.js';
 import { dropSpecialMonsterObjects } from './steal.js';
-import { releaseMonsterLeash } from './leash_apply.js';
-import { monsterEmitsLight, vision_recalc } from './vision.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { somexy } from './mkroom.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
-import { tryMonsterTrapEscape } from './monster_trap_escape.js';
+import { tryMonsterTrapEscape } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { setShopResidency } from './shk.js';
-import { possessiveName } from './hacklib.js';
 import { placeObject } from './floor_object.js';
 import { insideWizardTower } from './dungeon.js';
-import { sendMonsterToLimbo } from './mon.js';
 
 const M2_DOMESTIC = 0x00400000;
 const M1_ANIMAL = 0x00040000;

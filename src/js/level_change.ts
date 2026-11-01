@@ -7,14 +7,14 @@ import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
 import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelChains } from './level_restore.js';
-import { restoreLevelPetHistory, restoreObjectPetHistory } from './monster_restore.js';
+import { restoreLevelPetHistory, restoreObjectPetHistory } from './save.js';
 import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
@@ -24,14 +24,15 @@ import { flush_screen, docrt, newsym, reglyphSymbolSet } from './display.js';
 import { bot, checkGoldSymbol } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
-import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices } from './monster_notices.js';
+import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices } from './hack.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
-import { restoreMonsterCover, hideMonsterOnRestore } from './monster_hiding.js';
-import { restoreMonsterWormHeads } from './monster_worm.js';
+import {
+    restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads,
+} from './save.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
 import { place_lregion } from './mkmaze.js';

@@ -1,7 +1,7 @@
 // Occupants caught by a moving drawbridge.
 // C ref: dbridge.c do_entity(), e_missed(), e_jumps(), e_survives_at().
 
-import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { drawbridgeWallPosition, findDrawbridgeAt } from './dbridge.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';

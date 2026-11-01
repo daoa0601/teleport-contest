@@ -1,6 +1,6 @@
 // Monster-name and monster-class lookup.
 // C ref: mondata.c name_to_mon() and name_to_monclass().
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX, } from './monster_attack_types.js';
 import { dragonFormForArmor } from './armor.js';
 import { artifactById } from './artifacts.js';
@@ -8,7 +8,7 @@ import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SE
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
@@ -650,5 +650,19 @@ export function monsterPronounGender(monster, { state = game, random = rn2, noIt
         || ((MONSTER_GENO[monster.mnum] ?? 0) & PRONOUN_G_UNIQ)
         || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_PNAME)
         ? monster.female ? 1 : 0 : 2;
+}
+// C mondata.c:set_mon_data(). Change a monster's species without
+// rebuilding the monster.
+export function setMonsterSpecies(monster, mnum) {
+    const oldSpeed = MONSTER_MOVE[monster.mnum] ?? monster.mmove ?? 0;
+    const newSpeed = MONSTER_MOVE[mnum] ?? monster.mmove ?? 0;
+    if (monster.movement && newSpeed < oldSpeed && oldSpeed > 0) {
+        monster.movement = Math.trunc(monster.movement * newSpeed / oldSpeed);
+    }
+    monster.mnum = mnum;
+    monster.mmove = newSpeed;
+    monster.symbol = monsterClassSymbol(mnum);
+    monster.color = requireMonsterData(MONSTER_COLOR, mnum);
+    return monster;
 }
 //# sourceMappingURL=mondata.js.map

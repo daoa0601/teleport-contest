@@ -26,7 +26,7 @@ import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
-import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { checkSpecialRoom, shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsDisplaced } from './armor.js';

@@ -8,7 +8,7 @@ import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DIAMOND, RIN_TELEPORT_CONTROL } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { randomMonsterRelocation } from '../js/teleport.js';

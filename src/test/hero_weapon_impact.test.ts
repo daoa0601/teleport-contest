@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL, P_BASIC, P_EXPERT,
-    P_ISRESTRICTED, P_LANCE, P_TWO_WEAPON_COMBAT, STONE,
+    MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL, P_BASIC, P_EXPERT, P_ISRESTRICTED, P_LANCE, P_TWO_WEAPON_COMBAT,
+    STONE,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
@@ -11,7 +11,7 @@ import { gameLogEvents } from '../js/gamelog.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/hero_weapon_impact.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
 import { objectMaterial } from '../js/object_material.js';
 import { initRng } from '../js/rng.js';

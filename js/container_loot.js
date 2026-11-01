@@ -11,7 +11,7 @@ import { isContainer, useContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
 import { showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { monsterSaddle } from './steed.js';
 import { monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';

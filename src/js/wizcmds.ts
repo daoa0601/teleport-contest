@@ -4,9 +4,9 @@
 // wiz_map()/wiz_identify()/wiz_show_nhuuid().
 
 import {
-    A_WIS, DIED, In_endgame, Invocation_lev, Is_airlevel, Is_earthlevel, Is_firelevel,
-    Is_knox_level, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT,
-    MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, NHW_MENU, PICK_ANY, POLY_CONTROLLED,
+    A_WIS, DIED, In_endgame, Invocation_lev, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_waterlevel,
+    KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, NHW_MENU,
+    PICK_ANY, POLY_CONTROLLED,
 } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -14,25 +14,26 @@ import { requireInitializedHero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type {
-    DungeonBranch, DungeonLocation, SpecialLevelDescriptor,
-} from './dungeon_types.js';
+import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './dungeon_types.js';
 import type { TextMenuEntry } from './windows.js';
-import { ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay } from './windows.js';
 import {
-    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
-    tty_select_menu, tty_start_menu,
+    ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay,
+} from './windows.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import {
-    canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving,
-    map_trap, unmap_invisible,
+    canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible,
 } from './display.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, paranoidQuery, promptYesNoQuit } from './query.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { visibleCommandKey } from './command_keys.js';
-import { inventoryCommandLetter } from './invent.js';
+import {
+    inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail,
+    objectNeedsFullIdentification,
+} from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
 import { setMulti } from './command_state.js';
@@ -40,8 +41,8 @@ import { makeWish } from './wish.js';
 import { polymorphHero } from './polyself.js';
 import { createParticularMonster } from './read_creation.js';
 import { findit } from './detect.js';
-import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterIsNonliving } from './monster_data.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './mon.js';
 import { finishHeroDeath } from './end.js';
@@ -49,14 +50,14 @@ import {
     finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
 } from './hero_monster_death.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { hurtleMonster } from './monster_hurtle.js';
+import { hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { withMonsterNoticesBlocked } from './monster_notices.js';
+import { withMonsterNoticesBlocked } from './hack.js';
 import { mapMagicLevel } from './magic_mapping.js';
 import { dungeonDepth } from './hacklib.js';
 import { specialDisplayName } from './dungeon.js';
@@ -64,10 +65,6 @@ import { addInventoryItem } from './u_init.js';
 import { mksobj } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { recordObjectEncounter, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import {
-    fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail,
-    objectNeedsFullIdentification,
-} from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';

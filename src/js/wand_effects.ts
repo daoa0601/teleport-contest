@@ -42,7 +42,7 @@ import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
 import { createCritters } from './makemon.js';
 import { mksobj } from './mkobj.js';
 import { maybeUnhideAt } from './mon.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import {
     OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, objectDirection,
     SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE,

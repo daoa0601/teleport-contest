@@ -18,7 +18,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import { expelHero } from './hero_expulsion.js';
-import { infectHeroWithMonsterDisease } from './monster_disease.js';
+import { infectHeroWithMonsterDisease } from './mhitu.js';
 import { resetOccupations } from './occupation_reset.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

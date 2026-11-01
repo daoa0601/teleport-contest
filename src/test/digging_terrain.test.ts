@@ -19,7 +19,7 @@ import {
     spotChecks,
 } from '../js/digging_terrain.js';
 import { game } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CLUB, CORPSE, GOLD_PIECE, LEASH } from '../js/object_data.js';
 import { fireDamageObject } from '../js/fire_damage.js';

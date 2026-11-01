@@ -1,13 +1,6 @@
 // C dog.c:pick_familiar_pm() and make_familiar().
 import {
-    G_EXTINCT,
-    MM_EDOG,
-    MM_FEMALE,
-    MM_IGNOREWATER,
-    MM_MALE,
-    MM_NOMSG,
-    NEED_HTH_WEAPON,
-    NO_MINVENT,
+    G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NEED_HTH_WEAPON, NO_MINVENT,
 } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -25,7 +18,7 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
-import { wieldMonsterWeapon } from './monster_weapon.js';
+import { wieldMonsterWeapon } from './weapon.js';
 import { ensureHeroSkills } from './skills.js';
 import { rn2 } from './rng.js';
 

@@ -1,8 +1,7 @@
 // Applied mirrors. C apply.c:use_mirror(), beautiful(); zap.c:bhit(INVIS_BEAM).
 
 import {
-    A_CHA, COLNO, MAXULEV, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS,
-    RLOC_MSG, Upolyd, WEAK, isok,
+    A_CHA, COLNO, MAXULEV, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, RLOC_MSG, Upolyd, WEAK, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
@@ -21,16 +20,15 @@ import { heroPolyGender, heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { paralyzeMonster } from './mon.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
-    monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter,
-    monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsHumanoid,
+    monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterReflexiveAction } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
+import { monsterAtPosition } from './steed.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { learnObjectType } from './object_knowledge.js';
 import { minimalObjectName } from './objnam.js';

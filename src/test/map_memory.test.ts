@@ -10,7 +10,7 @@ import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { recordMappedOverviewState } from '../js/dungeon.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

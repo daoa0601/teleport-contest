@@ -34,7 +34,7 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
-import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
 import { BOULDER, GOLD_PIECE } from './object_data.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { fractureRock } from './rock_breakage.js';

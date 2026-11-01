@@ -23,7 +23,7 @@ import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation } from './pline.js';
 import { requireInitializedGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap } from './trap_lifecycle.js';

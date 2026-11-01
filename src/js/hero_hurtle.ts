@@ -6,22 +6,15 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
+import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
-    beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
-} from './ball.js';
-import {
-    D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
-    IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY,
-    MAGIC_PORTAL, TREE,
-    TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
-    VIBRATING_SQUARE, W_NONPASSWALL,
+    D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY,
+    MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL,
     is_hole, is_pit, isok,
 } from './const.js';
-import {
-    canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible, newsym,
-} from './display.js';
+import { canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { heroTestMove } from './hack.js';
+import { heroTestMove, blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason } from './hack.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -29,26 +22,21 @@ import type { Monster } from './monster_types.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { LevelChangeOptions } from './level_change.js';
-import type { HurtleDeathHandler } from './monster_hurtle.js';
+import type { HurtleDeathHandler } from './dothrow.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { endHeroVolley } from './hero_multishot.js';
-import {
-    blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
-} from './hack.js';
 import { triggerHeroTrap, type HeroTrapOptions } from './hero_traps.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { petrifyMonsterFromContact } from './trap.js';
-import {
-    MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { loseHeroHp } from './hero_damage.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { updateHeroRegions } from './regions.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
 import { monsterObjectPronoun } from './mondata.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
 import { checkSpecialRoom } from './shk.js';

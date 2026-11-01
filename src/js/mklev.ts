@@ -23,13 +23,13 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
 import { setWallState } from './wall_topology.js';
-import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
+import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { pickNastyShape } from './wizard.js';
 import { restoreLevelChains } from './level_restore.js';
-import { restoreLevelPetHistory } from './monster_restore.js';
+import { restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -83,7 +83,7 @@ import {
     MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2,
     MONSTER_SYMBOL, MONSTER_NAME,
 } from './monster_data.js';
-import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
+
 import { setMonsterMalign } from './monster_alignment.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, terrain_glyph } from './display.js';

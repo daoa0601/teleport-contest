@@ -9,7 +9,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { STATUE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

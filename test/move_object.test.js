@@ -6,7 +6,7 @@ import { moveObject, placeCreatedObject, } from '../js/floor_object.js';
 import { maybeUnhideAt } from '../js/mon.js';
 import { CHEST } from '../js/object_data.js';
 import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from '../js/monster_data.js';

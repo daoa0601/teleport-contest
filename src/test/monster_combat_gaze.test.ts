@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { AT_GAZE } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage, resolveMonsterCombatGaze } from '../js/mhitm.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';

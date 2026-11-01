@@ -45,8 +45,8 @@ import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
 import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2 } from './monster_attack_types.js';
+import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import {
@@ -54,8 +54,8 @@ import {
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter,
 } from './monster_data.js';
 import { unlinkObject } from './object_location.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition } from './steed.js';
 import {
     monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance,
     monsterHasPoisonResistance, monsterHasStoneResistance,
@@ -65,7 +65,7 @@ import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
-} from './monster_weapon.js';
+} from './weapon.js';
 import { delobj, deleteObject } from './object_delete.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_PROPERTY,

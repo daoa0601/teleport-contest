@@ -1,26 +1,20 @@
-import { changeMonsterForm, mfndpos } from '../js/mon.js';
+import { changeMonsterForm, mfndpos, monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/mon.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import {
-    DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED,
-    G_GENOD, IRONBARS, NO_MINVENT, ROOM, W_AMUL, W_NONDIGGABLE,
+    DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, G_GENOD, IRONBARS, NO_MINVENT, ROOM, W_AMUL,
+    W_NONDIGGABLE,
 } from '../js/const.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 
-import {
-    resolveMonsterDoorPassage,
-    shiftMonsterForDoor,
-    monsterCanFog,
-    monsterCanOoze,
-} from '../js/monmove.js';
+import { resolveMonsterDoorPassage, shiftMonsterForDoor, monsterCanFog, monsterCanOoze } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
-import { monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/mon.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import {
     AMULET_OF_LIFE_SAVING, CREDIT_CARD, DAGGER, LOCK_PICK, MACE, ROCK, SACK, SKELETON_KEY,

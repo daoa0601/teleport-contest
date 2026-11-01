@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { IRONBARS, NO_MINVENT, W_NONPASSWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

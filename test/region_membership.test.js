@@ -9,7 +9,7 @@ import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.
 import { relocateMonsterTo } from '../js/teleport.js';
 import { displaceMonster } from '../js/mhitm.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

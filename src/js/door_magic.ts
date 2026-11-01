@@ -1,23 +1,20 @@
 import { resetPick } from './lock_context.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import { requirePlayingGame } from './gstate.js';
+import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
-import { game, requireLiveGame } from './gstate.js';
 import {
-    DOOR, SDOOR, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED,
-    M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SHOPBASE, Is_rogue_level,
+    DOOR, SDOOR, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_FURNITURE, M_AP_OBJECT,
+    M_AP_TYPE, SHOPBASE, Is_rogue_level,
 } from './const.js';
-import {
-    WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT,
-} from './object_data.js';
+import { WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT } from './object_data.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
+import { monsterAtPosition } from './steed.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';

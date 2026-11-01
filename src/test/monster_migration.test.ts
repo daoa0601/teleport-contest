@@ -15,7 +15,7 @@ import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { resurrectWizard } from '../js/wizard.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { initRng } from '../js/rng.js';

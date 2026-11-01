@@ -17,10 +17,11 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_BODY_META } from './monster_data.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
-import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
+import {
+    beginMonsterPitTrap, finishMonsterPitTrap, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap,
+} from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';

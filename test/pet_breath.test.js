@@ -14,7 +14,7 @@ import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { performPetRangedAttack } from '../js/dogmove.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT
     | NO_MINVENT;

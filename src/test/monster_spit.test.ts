@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeDeaf } from '../js/hero_hearing.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { AT_SPIT } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { resolveMonsterCombatSpit, resolveMonsterSpitAtHero } from '../js/mthrowu.js';

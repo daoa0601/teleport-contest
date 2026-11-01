@@ -12,8 +12,8 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
-import { advanceMonsterWormBody } from '../js/monster_worm.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
+import { advanceMonsterWormBody } from '../js/worm.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, OBJECT_NAMES, TWO_HANDED_SWORD,
     WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE,

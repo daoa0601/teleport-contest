@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 
 import { WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

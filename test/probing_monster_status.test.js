@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
-import { monsterStatusLine } from '../js/monster_status.js';
+import { monsterStatusLine } from '../js/insight.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('probing reports permanent monster blindness without a countdown', async () => {

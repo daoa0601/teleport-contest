@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +14,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { installPagerInput } from './support/pager-input.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';

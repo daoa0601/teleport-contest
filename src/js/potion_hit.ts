@@ -34,7 +34,7 @@ import {
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { splitMonster as splitMonsterActor } from './monster_clone.js';
+import { splitMonster as splitMonsterActor } from './potion.js';
 import { tryCallObjectType } from './object_call.js';
 import {
     recordObjectEncounter, recordObjectKnowledge,
@@ -61,7 +61,7 @@ import {
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
-import { redrawMonsterWormSegments } from './monster_worm.js';
+import { redrawMonsterWormSegments } from './worm.js';
 import {
     blessObjectState, curseObjectState, unblessObjectState,
     uncurseObjectState,
