@@ -12,7 +12,7 @@ import { costlyAdjacent, costlySpot, findObjectOwner } from './shk.js';
 import {
     createdObjectNoLongerHeld, objectNoLongerHeld, objectNoLongerHeldSynchronously,
 } from './object_release.js';
-import { vision_note_blocker_change } from './vision.js';
+import { block_point, vision_note_blocker_change } from './vision.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import {
@@ -111,12 +111,17 @@ function linkFloorObject(object: GameObject, x: number, y: number, state: GameSt
     object._fobjOrder = state._fobjSerial;
     const column = level.objects[x] ||= [];
     const pile = column[y] ||= [];
+    // C mkobj.c:place_object() reads the pile top before linking, and a
+    // boulder only joins the vision blocker table when that top is not
+    // already a boulder: stacking a second boulder changes nothing for
+    // sight, so the deferred vision recalc must not be requested either.
+    const pileTopWasBoulder = pile[0]?.otyp === BOULDER;
     let index = 0;
     if (object.otyp !== BOULDER)
         while (pile[index]?.otyp === BOULDER) index++;
     pile.splice(index, 0, object);
-    if (object.otyp === BOULDER && state === game)
-        vision_note_blocker_change(x, y);
+    if (object.otyp === BOULDER && !pileTopWasBoulder && state === game)
+        block_point(x, y);
     if (object.no_charge && !costlySpot(x, y, state)
         && !costlyAdjacent(findObjectOwner(object, x, y, state), x, y, state))
         object.no_charge = false;
