@@ -57,7 +57,7 @@ void test('a movement cure-self spell heals inside its own turn transaction', as
     if (!movement?.spellCast)
         assert.fail('The wounded shaman should cast cure-self');
     assert.equal(movement.spellCast.spell, 'cure-self');
-    const presented = await presentMonsterAction(action, game, canSeeMonster(shaman));
+    const presented = await presentMonsterAction(action, game);
     assert.equal(presented, 'check-occupation');
     assert.equal(movement.postMoveStatus, MMOVE_DONE, 'the successful spell bypasses m_move()');
     assert.ok(movement.x === movement.oldx && movement.y === movement.oldy, 'the caster never moved');
