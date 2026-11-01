@@ -11,7 +11,7 @@ import { verbForSubject } from './object_grammar.js';
 import { canSeeMonster, displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 import { learnObjectType } from './object_knowledge.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';

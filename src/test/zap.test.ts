@@ -37,7 +37,7 @@ import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import {
     zapRayWithObject,
 } from '../js/zap.js';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import {
     addInventoryObject, chargedWand, floorObject, knownObject,
 } from './support/game-objects.js';

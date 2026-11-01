@@ -7,7 +7,7 @@ import { climbOutOfPit } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
 import { TT_PIT, W_CHAIN } from '../js/const.js';
 import { IRON_CHAIN, WAN_PROBING } from '../js/object_data.js';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import { chargedWand, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';

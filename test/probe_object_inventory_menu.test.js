@@ -6,7 +6,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { probeObject } from '../js/magic_probe.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { DIAMOND, SACK, WAN_PROBING } from '../js/object_data.js';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 for (const location of ['container', 'buried']) {

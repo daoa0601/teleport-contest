@@ -21,7 +21,7 @@ import {
 } from './properties.js';
 import { onQuestStart } from './quest.js';
 import { rn1, rnd } from './rng.js';
-import { applyRemoveCurseSpell } from './scroll_effects.js';
+import { applyRemoveCurseSpell } from './read.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { tameMonster } from './dog.js';

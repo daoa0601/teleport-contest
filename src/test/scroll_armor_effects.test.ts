@@ -24,7 +24,7 @@ import {
 import { pickupAtHero } from '../js/pickup.js';
 import { propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { applyArmorScrollEffect } from '../js/scroll_armor_effects.js';
+import { applyArmorScrollEffect } from '../js/read.js';
 import { unpaidObjectCost, itemizedShopBill } from '../js/shk.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject, addInventoryWeapon, floorObject } from './support/game-objects.js';

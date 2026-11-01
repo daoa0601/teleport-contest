@@ -24,7 +24,7 @@ import { initRng } from '../js/rng.js';
 import { heroTeleportRestricted } from '../js/teleport_rules.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { zapRayWithObject, } from '../js/zap.js';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import { addInventoryObject, chargedWand, floorObject, knownObject, } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

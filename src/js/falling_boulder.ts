@@ -10,7 +10,7 @@ import { finishHeroDeath as defaultHeroDeath } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { ScrollEffectOptions } from './scroll_effects.js';
+import type { ScrollEffectOptions } from './read.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';

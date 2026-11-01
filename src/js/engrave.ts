@@ -1,20 +1,24 @@
-// engrave.js — Shared engraving storage, wear, and reading.
-// C refs: engrave.c make_engr_at(), wipe_engr_at(), read_engr_at();
-//         hack.c maybe_smudge_engr().
+// engrave.js — Shared engraving storage, wear, relocation, and reading.
+// C refs: engrave.c make_engr_at(), wipe_engr_at(), read_engr_at(),
+//         rloc_engr(); hack.c maybe_smudge_engr().
 
 import { formatSeenMessage } from './hero_speech.js';
 import { game } from './gstate.js';
-import type { GameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { Engraving } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';
-import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE } from './const.js';
+import {
+    BUFSZ, COLNO, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE, ROWNO,
+} from './const.js';
+import { newsym } from './display.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './terrain_properties.js';
 import { sanitizeBonesName } from './bones_name.js';
+import { goodPosition } from './teleport_rules.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
 
@@ -281,6 +285,18 @@ export function maybeSmudgeEngravings(x1: number, y1: number, x2: number, y2: nu
     const arrival = engravingAt(x2, y2);
     if ((x2 !== x1 || y2 !== y1) && arrival && arrival.engr_type !== HEADSTONE) {
         wipeEngravingAt(x2, y2, rnd(5), false);
+    }
+}
+
+// C engrave.c:rloc_engr(). Engravings need an ordinary, unoccupied floor.
+export async function relocateEngraving(engraving: Engraving, state: PlayingGameState) {
+    for (let tries = 200; tries > 0; tries--) {
+        const x = 2 + rn2(COLNO - 3), y = rn2(ROWNO);
+        if (engravingAt(x, y, state.level) || !goodPosition(x, y, null, { state })) continue;
+        engraving.x = x;
+        engraving.y = y;
+        await newsym(x, y);
+        return;
     }
 }
 

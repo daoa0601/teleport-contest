@@ -22,8 +22,8 @@ import { spellCategory, spellSkillType } from './spell_school.js';
 import { selectSpellToCast, selectWizardSpell, viewKnownSpells } from './spell_menu.js';
 import { castCureBlindness, castCureSickness, castProtection } from './spell_misc_effects.js';
 import { applyPotionSpell } from './spell_potion_effects.js';
-import { applyScrollEffects } from './scroll_effects.js';
-import { applyWandEffect } from './wand_effects.js';
+import { applyScrollEffects } from './read.js';
+import { applyWandEffect } from './zap.js';
 import { CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
 export function knownSpell(otyp, state = game) {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);

@@ -93,6 +93,7 @@ import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, 
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { blessObjectState, curseObject, curseObjectState, unblessObjectState, uncurseObjectState } from './object_state.js';
 import type { GameObject } from './object_types.js';
+import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import { definiteName, definiteObjectAction, objectAction, objectCombatName, objectName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -2505,4 +2506,28 @@ export async function splitMonster(
     if (canSpotMonster(monster))
         await publish(`${monsterName(monster, { state, capitalized: true })} multiplies${reason}!`);
     return clone;
+}
+
+// C potion.c:strange_feeling(). Detection already owns its result message;
+// both paths finish through the same object naming and single-use boundary.
+export async function strangeFeeling(source: GameObject | null, text: string | null, {
+    state = game,
+}: Pick<ScrollEffectOptions, 'state'> = {}): Promise<ScrollEffectResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const message = state.flags.beginner || !text
+        ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`
+        : text;
+    await plineWithContinuation(message);
+    return finishStrangeFeeling(source, { state });
+}
+
+export async function finishStrangeFeeling(source: GameObject | null, {
+    state = game,
+}: Pick<ScrollEffectOptions, 'state'> = {}): Promise<ScrollEffectResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (source?.dknown) await tryCallObjectType(source, state);
+    if (source) await consumeInventoryItem(source, state);
+    return { known: false, consumed: !!source, heroDied: !!state.program_state.gameover };
 }

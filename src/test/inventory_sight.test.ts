@@ -16,7 +16,7 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { learnUnseenInventory } from '../js/hero_inventory.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { CLUB, SACK } from '../js/object_data.js';
-import { removeCurseEffect } from '../js/scroll_effects.js';
+import { removeCurseEffect } from '../js/read.js';
 import { makeWish } from '../js/wish.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

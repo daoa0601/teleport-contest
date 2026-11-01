@@ -25,7 +25,7 @@ import { resolveMonsterImmediateWand } from '../js/muse.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { applyAreaScrollEffect } from '../js/scroll_area_effects.js';
+import { applyAreaScrollEffect } from '../js/read.js';
 import { dosit } from '../js/sit.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { carriedGold, readyGold } from './support/gold-arena.js';

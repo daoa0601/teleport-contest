@@ -117,7 +117,7 @@ import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { ceilingName } from './terrain_name.js';
 import { inventoryItemDescription } from './invent.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 import { advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects, } from './mhitu.js';
 import { beginMonsterPitTrap, finishDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap, } from './trap.js';
 import { tryCallObjectType } from './object_call.js';

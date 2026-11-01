@@ -40,7 +40,7 @@ import { surfaceName } from './terrain_name.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
 import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 import { cancelMonster, makeMonsterInvisible, polymorphMonsterFromMagic, monsterResistsEffect, affectMonsterSpeed, } from './zap.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterHasDrainResistance } from './mondata.js';

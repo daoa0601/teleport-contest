@@ -28,8 +28,8 @@ import { spellCategory, spellSkillType } from './spell_school.js';
 import { selectSpellToCast, selectWizardSpell, viewKnownSpells } from './spell_menu.js';
 import { castCureBlindness, castCureSickness, castProtection } from './spell_misc_effects.js';
 import { applyPotionSpell } from './spell_potion_effects.js';
-import { applyScrollEffects } from './scroll_effects.js';
-import { applyWandEffect } from './wand_effects.js';
+import { applyScrollEffects } from './read.js';
+import { applyWandEffect } from './zap.js';
 import {
     CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR,

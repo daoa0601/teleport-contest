@@ -12,7 +12,7 @@ import { advanceMonsterWormBody } from '../js/worm.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, OBJECT_NAMES, TWO_HANDED_SWORD, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { breakWand } from '../js/wand_break.js';
+import { breakWand } from '../js/apply.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

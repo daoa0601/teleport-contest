@@ -30,7 +30,7 @@ import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { turnObjectWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 export { hitMonsterWithWand } from './immediate_monster_magic.js';
 const WAN_OPENING = OBJECT_NAMES.indexOf('opening');
 const WAN_LOCKING = OBJECT_NAMES.indexOf('locking');

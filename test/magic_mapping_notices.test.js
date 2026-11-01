@@ -4,7 +4,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { noticeAllMonsters } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_MAGIC_MAPPING } from '../js/object_data.js';
-import { applyScrollEffects } from '../js/scroll_effects.js';
+import { applyScrollEffects } from '../js/read.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
