@@ -1,6 +1,6 @@
 // Applying keys, picks and cards. C lock.c:pick_lock(), picklock(), autokey().
 import { artifactById } from './artifacts.js';
-import { touchArtifactByHero } from './artifact_touch.js';
+import { touchArtifactByHero } from './artifacts.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';

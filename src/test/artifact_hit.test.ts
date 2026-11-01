@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { applyArtifactHit } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifacts.js';
 import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';

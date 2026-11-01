@@ -9,7 +9,7 @@ import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
-import { heroHasMagicKey } from './artifact.js';
+import { heroHasMagicKey } from './artifacts.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';

@@ -2,7 +2,7 @@ import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName } from '../js/artifacts.js';
-import { invokeArtifactPower } from '../js/artifact_invoke.js';
+import { invokeArtifactPower } from '../js/artifacts.js';
 import { LANDMINE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

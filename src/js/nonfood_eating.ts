@@ -5,7 +5,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { NonfoodMeal } from './occupation_types.js';
 
-import { touchArtifactByHero } from './artifact_touch.js';
+import { touchArtifactByHero } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_WIS, GD_EATGOLD, SATIATED, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';

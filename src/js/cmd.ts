@@ -4,7 +4,7 @@ import { doname } from './do_name.js';
 import { doannotate, doDungeonOverview } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
 import { doloot } from './pickup.js';
-import { doinvoke } from './artifact_invoke.js';
+import { doinvoke } from './artifacts.js';
 import { doChronicle, doGenocided, doVanquished } from './insight.js';
 import { doturn } from './pray.js';
 import { dipInto, dodip } from './potion.js';

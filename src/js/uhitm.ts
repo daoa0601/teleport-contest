@@ -22,7 +22,7 @@
 
 import { armorSimpleName, heroHasDrainResistance, heroHasFreeAction } from './armor.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute,
 } from './attrib.js';

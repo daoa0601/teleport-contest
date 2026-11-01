@@ -21,7 +21,7 @@ import { d, rn2, rnd, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { monsterSearchesForItem, selectMonsterOffensiveItem, useMonsterOffensiveItem, useMonsterBullwhip, lootMonsterContainer, prepareMonsterItemUse, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster, finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, findMonsterDefensiveItem, useMonsterDefensiveItem, useMonsterMiscItem, } from './muse.js';
-import { monsterHasMagicKey } from './artifact.js';
+import { monsterHasMagicKey } from './artifacts.js';
 import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';

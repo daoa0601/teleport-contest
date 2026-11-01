@@ -19,7 +19,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning } from './armor.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
 import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';

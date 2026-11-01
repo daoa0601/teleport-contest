@@ -3,7 +3,7 @@
 
 import { armorOffMessage } from './armor.js';
 import { W_TOOL } from './const.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { setWornArtifactProperties } from './artifacts.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { pline, plineWithContinuation } from './pline.js';

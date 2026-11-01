@@ -1,5 +1,5 @@
 // Native uhitm.c:hmon(). Callers own accuracy, flight, turns, and passives.
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { barehandSkill, prepareHeroBarehandContact } from './barehand_combat.js';
 import { confuseTouchedMonster } from './confusing_touch.js';

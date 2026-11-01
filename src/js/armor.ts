@@ -35,7 +35,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { setWornArtifactProperties } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import {
     AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION,

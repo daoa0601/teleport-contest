@@ -2,7 +2,7 @@
 // artifact-touch, encumbrance, and floor owners as ordinary hero actions.
 import { game, requireLiveGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { touchArtifactByHero } from './artifact_touch.js';
+import { touchArtifactByHero } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 import { placeObject } from './floor_object.js';
 import { freeInventoryObject } from './hero_inventory.js';

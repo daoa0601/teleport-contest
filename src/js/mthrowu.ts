@@ -6,7 +6,7 @@
 
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import {
     applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness,
@@ -1206,7 +1206,6 @@ export async function attackHeroWithPolearm(monster: Monster, weapon: GameObject
     const result = await hitHeroWithObject(weapon, damage, accuracy, { state, publish, rollOne });
     if (!result.died) await stopHeroOccupation(state, publish);
 }
-
 
 // C mthrowu.c:m_throw() and thrwmu() end in a throw at the hero.
 export async function throwMonsterWeaponAtHero(

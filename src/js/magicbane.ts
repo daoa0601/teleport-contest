@@ -16,7 +16,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
-import type { ArtifactHitDefender, ArtifactHitResult } from './artifact_hit.js';
+import type { ArtifactHitDefender, ArtifactHitResult } from './artifacts.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

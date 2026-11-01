@@ -17,7 +17,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { isIceAt, isPoolAt, isPoolOrLavaAt, terrainCoversObjectsAt } from './terrain_properties.js';
 import { heroWarnsOfMonster } from './hero_species.js';
-import { artifactWarningFeedback } from './artifact_warning.js';
+import { artifactWarningFeedback } from './artifacts.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { describeMapLocation } from './lookaround.js';
 import { glyphToCmapSymbol } from './getpos.js';

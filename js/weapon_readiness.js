@@ -1,5 +1,5 @@
 // C wield.c:ready_weapon(), cant_wield_corpse(), and empty_handed().
-import { speakArtifact } from './artifact_speech.js';
+import { speakArtifact } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import { P_SABER, P_SHORT_SWORD } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';

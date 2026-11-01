@@ -5,7 +5,7 @@
 // breamu(), blocking_terrain(), linedup() and m_lined_up().
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';

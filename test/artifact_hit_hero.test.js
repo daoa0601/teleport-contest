@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
-import { applyArtifactHit } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifacts.js';
 import { currentMulti } from '../js/command_state.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

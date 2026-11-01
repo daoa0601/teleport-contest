@@ -11,7 +11,7 @@ import { useMirror } from './mirror.js';
 import { useCamera } from './camera.js';
 import { useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
-import { speakArtifact } from './artifact_speech.js';
+import { speakArtifact } from './artifacts.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';

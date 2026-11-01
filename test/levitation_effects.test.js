@@ -7,7 +7,7 @@ import { gotoLevel } from '../js/level_change.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty } from '../js/properties.js';
 import { artifactByName } from '../js/artifacts.js';
-import { artifactInvokeIsActive, deactivateArtifactProperty, invokeArtifactPower, } from '../js/artifact_invoke.js';
+import { artifactInvokeIsActive, deactivateArtifactProperty, invokeArtifactPower, } from '../js/artifacts.js';
 import { applyLevitationPotion } from '../js/levitation_potion.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { FEDORA, ORCISH_HELM, POT_LEVITATION, } from '../js/object_data.js';

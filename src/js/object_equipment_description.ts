@@ -2,7 +2,7 @@
 
 import { pendingArmorAction } from './command_state.js';
 import { artifactEmitsLight, artifactGlowColor } from './artifacts.js';
-import { artifactGlowVerb, wieldedArtifactWarns } from './artifact_warning.js';
+import { artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import {
     P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING,

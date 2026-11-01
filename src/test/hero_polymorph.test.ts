@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
-import { touchArtifactByHero } from '../js/artifact_touch.js';
+import { touchArtifactByHero } from '../js/artifacts.js';
 import {
     A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB,
 } from '../js/const.js';

@@ -3,9 +3,9 @@
 import { W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP, } from './const.js';
 import { game } from './gstate.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import { recalculateTelepathyRange, setWornArtifactProperties } from './artifact_properties.js';
+import { recalculateTelepathyRange } from './worn.js';
+import { setWornArtifactProperties, setArtifactWarningWielded } from './artifacts.js';
 import { makeHallucinated } from './hero_mental_status.js';
-import { setArtifactWarningWielded } from './artifact_warning.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './pline.js';
 import { heroIsBlind } from './senses.js';

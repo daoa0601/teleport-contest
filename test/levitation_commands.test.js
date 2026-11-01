@@ -8,7 +8,7 @@ import { grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty, hasInv
 import { descendFromLevitation } from '../js/levitation_commands.js';
 import { applyLevitationPotion } from '../js/levitation_potion.js';
 import { artifactByName } from '../js/artifacts.js';
-import { invokeArtifactPower } from '../js/artifact_invoke.js';
+import { invokeArtifactPower } from '../js/artifacts.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

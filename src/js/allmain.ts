@@ -53,7 +53,7 @@ import {
     setMulti,
 } from './command_state.js';
 import { dosounds, sessionIsNight } from './ambient_sounds.js';
-import { warnWithMasterKey } from './artifact_warning.js';
+import { warnWithMasterKey, applyArtifactHit } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
@@ -73,7 +73,6 @@ import {
     monsterLocomotion,
 } from './mondata.js';
 import { resolveMonsterWeaponContact, tryKnockback, resolveMonsterContactEffect } from './uhitm.js';
-import { applyArtifactHit } from './artifact_hit.js';
 import {
     MONSTER_GENO, monsterIsAnimal, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE,
     MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,

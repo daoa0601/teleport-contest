@@ -8,7 +8,7 @@ import { bot } from './botl.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { touchArtifactByHero } from './artifact_touch.js';
+import { touchArtifactByHero } from './artifacts.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { nomul } from './command_state.js';

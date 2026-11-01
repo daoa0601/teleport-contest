@@ -51,7 +51,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning } from './armor.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
 import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import type { ArtifactDefenseQuery } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -2458,7 +2458,6 @@ async function completeHeroContactTail(
     if (attack.passive.heroDied) attack.heroDied = true;
 }
 
-
 export async function completeHeroAttackSlot(
     action: MonsterMovementAction,
     state: PlayingGameState,
@@ -2519,7 +2518,6 @@ export async function completeHeroAttackSlot(
         state._deferVisibleMonsterContact = previousDeferral;
     }
 }
-
 
 // C mhitu.c:mpoisons_subj(). The noun for a poisoning monster's attack
 // method; uhitm.c's effect branches compose it into their reasons.
