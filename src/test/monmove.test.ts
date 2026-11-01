@@ -4,7 +4,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { takeMonsterTurn, runMonsterAction } from '../js/monmove.js';
-import { resolveDeferredMonsterBreath } from '../js/mthrowu.js';
 import { allocateMonsterMovement, finishMonsterLiquidDeath, mcalcmove, mfndpos, naturalMonsterSpeed } from '../js/mon.js';
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, MMOVE_DONE, POOL, ROOM, WATER, W_WEP,
@@ -177,13 +176,8 @@ void test('a monster fire blast makes a shifted vampire rise', async () => {
     );
 
     assert.ok(action.movement, 'The caster has a movement action');
-    const breath = action.movement.heroAttackSequence?.current;
-    assert.ok(breath?.kind === 'hero-breath', 'The dragon uses its breath slot');
-    await resolveDeferredMonsterBreath(
-        action, breath.breath, game, async () => {},
-        () => 1, (count, sides) => count * sides, () => 1,
-    );
-
+    // C mhitu.c:875 — breamu() runs its whole transaction inside the
+    // monster's turn; the fire ray has already risen the vampire leader.
     assert.equal(wolf.mnum, vampireLeader);
     assert.equal(wolf.mhp > 0, true);
     assert.equal(level.monsters.includes(wolf), true);

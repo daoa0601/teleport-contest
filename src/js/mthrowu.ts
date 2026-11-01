@@ -107,7 +107,7 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type {
-    AttackTuple, HeroBreath, MonsterCallLog, MonsterMovementAction, PublishMonsterMessage, RandomBelow, RollDice,
+    AttackTuple, MonsterCallLog, MonsterMovementAction, PublishMonsterMessage, RandomBelow, RollDice,
     RollOne,
 } from './monster_action_types.js';
 import type {
@@ -1022,44 +1022,73 @@ export async function resolveMonsterCombatBreath(
     return { nativeResult: M_ATTK_HIT, heroDied: false };
 }
 
-// Finish breamm()'s deferred hero-target ray in the same actor transaction
-// across ray message input.
-export async function resolveDeferredMonsterBreath(
-    action: MonsterMovementAction,
-    breath: HeroBreath,
-    state: PlayingGameState,
-    emitMessage: PublishMonsterMessage,
-    random: RandomBelow = rn2,
-    rollDice: RollDice = d,
-    rollOne: RollOne = rnd,
-) {
-    if (!breath?.launched || !breath.deferredRay) return breath || null;
-    if (breath.damageType < AD_MAGM || breath.damageType > AD_SPC2) {
-        await impossible(`Breath weapon ${breath.damageType - 1} used`, { state });
-        breath.deferredRay = false;
-        breath.finished = true;
-        return breath;
+export interface MonsterBreathResult {
+    nativeResult: number;
+    heroDied: boolean;
+}
+
+// C mthrowu.c:breamu() -> breamm() with &gy.youmonst as the target
+// (mthrowu.c:1275-1278, 1093-1155). The mattacku() AT_BREA case awaits
+// this one transaction: m_lined_up(), the mcan cough, the seen-resistance
+// and recharge gates, the breath line, dobuzz(), nomul(0) and the
+// recharge, sleep and pet-hunger tail all run in C order here.
+export async function resolveMonsterBreathAtHero(
+    monster: Monster,
+    attack: AttackTuple,
+    {
+        state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation,
+    }: MonsterCombatBreathOptions,
+): Promise<MonsterBreathResult> {
+    let damageType: number = attack[1];
+    const dice = attack[2];
+    if (damageType === AD_RBRE) damageType = 1 + random(8);
+    if (!monsterLinedUpWithHero(monster, state, random))
+        return { nativeResult: M_ATTK_HIT, heroDied: false };
+    if (monster.mcan) {
+        // C mthrowu.c:1101-1108: a cancelled breather only coughs.
+        if (!heroIsDeaf(state)) {
+            if (canSeeMonster(monster))
+                await publish(`${monsterName(monster, { state, capitalized: true })} coughs.`);
+            else await publishHeardMessage('a cough.', publish, state);
+        }
+        return { nativeResult: M_ATTK_MISS, heroDied: false };
     }
-    const monster = action.monster;
-    const publish = emitMessage || plineWithContinuation;
+    // C mthrowu.c:1110-1113: skip a hero the monster has seen resist the
+    // element, or that reflects at bow range.
+    if ((monster.seen_resistance || 0) & (seenResistanceForDamage(damageType) | M_SEEN_REFL))
+        return { nativeResult: M_ATTK_HIT, heroDied: false };
+    // C mthrowu.c:1114-1115: a recharging monster, or a two-in-three lull,
+    // spends the slot without a message.
+    if ((monster.mspec_used ?? 0) || random(3) === 0)
+        return { nativeResult: M_ATTK_MISS, heroDied: false };
+    if (damageType < AD_MAGM || damageType > AD_SPC2) {
+        await impossible(`Breath weapon ${damageType - 1} used`, { state });
+        return { nativeResult: M_ATTK_HIT, heroDied: !!state.program_state.gameover };
+    }
     if (canSeeMonster(monster)) {
         const weapon = heroIsHallucinating(state)
-            ? displayRayName(breath.damageType, 'breath', { state, random }).replace(
+            ? displayRayName(damageType, 'breath', { state, random }).replace(
                   /^blast of /,
                   '',
               )
-            : breathWeaponName(breath.damageType);
+            : breathWeaponName(damageType);
         await publish(
             `${monsterName(monster, { state, capitalized: true })} breathes ${weapon}!`,
         );
     }
+    // dobuzz() follows the line m_lined_up() retained towards the hero's
+    // remembered square; gt.tbx/tby are that delta's signs.
+    const targetX = isFiniteNumber(monster.mux) ? monster.mux : (state?.u?.ux ?? monster.mx);
+    const targetY = isFiniteNumber(monster.muy) ? monster.muy : (state?.u?.uy ?? monster.my);
+    const dx = Math.sign(targetX - monster.mx);
+    const dy = Math.sign(targetY - monster.my);
     const direction = [
         ['y', 'k', 'u'],
         ['h', null, 'l'],
         ['b', 'j', 'n'],
-    ][breath.dy + 1]?.[breath.dx + 1];
+    ][dy + 1]?.[dx + 1];
     if (!direction) throw new Error('A launched breath needs a nonzero unit direction');
-    const result = await castNativeRay(-(20 + breath.damageType - 1), breath.dice, direction, {
+    const result = await castNativeRay(-(20 + damageType - 1), dice, direction, {
         state,
         sourceMonster: monster,
         originX: monster.mx,
@@ -1071,17 +1100,19 @@ export async function resolveDeferredMonsterBreath(
         sayHit: true,
         sayMiss: true,
     });
-    breath.heroDied = result.heroDied;
-    if (result.heroDied) return breath;
+    if (result.heroDied) return { nativeResult: M_ATTK_HIT, heroDied: true };
+    // C mthrowu.c:1128: nomul(0) — a breath never spends the hero's next
+    // movement ration.
     endVoluntaryMultiTurn(state);
+    // C mthrowu.c:1131-1133: breath runs out sometimes; a monster whose
+    // target fell asleep keeps its charge.
     if (!random(3)) monster.mspec_used = 8 + random(18);
-    if (breath.damageType === AD_SLEE && !state.u.sleepResistance)
+    if (damageType === AD_SLEE && !state.u.sleepResistance)
         monster.mspec_used = (monster.mspec_used || 0) + rollOne(20);
+    // C mthrowu.c:1138-1144: a pet grows hungrier; minions do not.
     if (monster.mtame && !monster.isminion && monster.edog && monster.edog.hungrytime >= 10)
         monster.edog.hungrytime -= 10;
-    breath.deferredRay = false;
-    breath.finished = true;
-    return breath;
+    return { nativeResult: M_ATTK_HIT, heroDied: false };
 }
 
 // C mthrowu.c:thrwmu(). Readies the launcher, then throws the selected
@@ -1176,70 +1207,6 @@ export async function attackHeroWithPolearm(monster: Monster, weapon: GameObject
     if (!result.died) await stopHeroOccupation(state, publish);
 }
 
-// C mthrowu.c:breamu(). Rolls the breath type, applies the cough, known-
-// resistance, and recharge gates, and hands the slot a deferred ray.
-export function maybeBreatheAtHero(
-    monster: Monster,
-    attack: AttackTuple,
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-): HeroBreath {
-    let damageType: number = attack[1];
-    const dice = attack[2];
-    const sides = attack[3];
-    if (damageType === AD_RBRE) damageType = 1 + recordRandom(random, calls, 8);
-    if (!monsterLinedUpWithPerceivedHero(monster, state, random, calls))
-        return { launched: false, nativeResult: M_ATTK_HIT };
-    if (monster.mcan) {
-        return {
-            attempted: true,
-            launched: false,
-            nativeResult: M_ATTK_MISS,
-            cough: true,
-            damageType,
-            dice,
-            sides,
-        };
-    }
-    if ((monster.seen_resistance || 0) & (seenResistanceForDamage(damageType) | M_SEEN_REFL))
-        return {
-            attempted: true,
-            launched: false,
-            nativeResult: M_ATTK_HIT,
-            damageType,
-            dice,
-            sides,
-        };
-    if ((monster.mspec_used ?? 0) || recordRandom(random, calls, 3) === 0) {
-        return {
-            attempted: true,
-            launched: false,
-            nativeResult: M_ATTK_MISS,
-            damageType,
-            dice,
-            sides,
-        };
-    }
-
-    const targetX = isFiniteNumber(monster.mux) ? monster.mux : (state?.u?.ux ?? monster.mx);
-    const targetY = isFiniteNumber(monster.muy) ? monster.muy : (state?.u?.uy ?? monster.my);
-    return {
-        attempted: true,
-        launched: true,
-        nativeResult: M_ATTK_HIT,
-        deferredRay: true,
-        damageType,
-        dice,
-        sides,
-        targetX,
-        targetY,
-        x: monster.mx,
-        y: monster.my,
-        dx: Math.sign(targetX - monster.mx),
-        dy: Math.sign(targetY - monster.my),
-    };
-}
 
 // C mthrowu.c:m_throw() and thrwmu() end in a throw at the hero.
 export async function throwMonsterWeaponAtHero(

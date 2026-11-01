@@ -8,14 +8,14 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type {
-    HeroContactAttack, MonsterAction, MonsterCallLog, RandomBelow,
+    MonsterCallLog, RandomBelow,
 } from './monster_action_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
 import {
-    M_ATTK_AGR_DONE, M_ATTK_AGR_DIED, LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM,
+    LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM,
     TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_WEAPONS,
     LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE,
 } from './const.js';
@@ -28,7 +28,7 @@ import {
     monsterCanEngulf, monsterIsAnimal, monsterIsSlithy, monsterTypeName,
 } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
-import { AD_SEDU, AD_SITM, AD_SSEX } from './monster_attack_types.js';
+import { AD_SITM } from './monster_attack_types.js';
 import {
     BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_BIMANUAL, OBJECT_NAMES,
     AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
@@ -40,7 +40,7 @@ import {
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
 } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
@@ -183,79 +183,68 @@ function theftEquipmentTarget(object: GameObject, state: PlayingGameState): Game
     if (object === state.uarmu) return state.uarmc || state.uarm || object;
     return object;
 }
-// C refs: steal.c:steal()/worn_item_removal(), uhitm.c:mhitm_ad_sedu().
-// Animal hit feedback precedes selection; garment removal can suspend it.
-// Removal prose is split here because urgent_pline() can suspend before the
-// no-teleport check, fleeing state, and the rest of movemon().
-export async function resolveDeferredHeroItemTheft(
-    action: MonsterAction, monster: Monster, attack: HeroContactAttack, random: RandomBelow,
-): Promise<boolean> {
+// C steal.c:steal() (steal.c:343-613), the hero as the victim. C
+// uhitm.c:mhitm_ad_sedu() awaits this whole transaction inline: the
+// monnear() gate, the naked-hero prose, the weighted selection, curse
+// stickiness and glove/armor retargeting, the worn-item removal —
+// including the charmed multi-turn doff that returns with stealarm()
+// pending — the urgent theft line and the petrifying corpse handover.
+// The mhitm_ad_sedu() tail (teleport, flight, mhm flags) stays with its
+// C owner in uhitm.ts.
+export type HeroTheftResult =
+    | { outcome: 'too-far' }
+    | { outcome: 'busy' }
+    | { outcome: 'gone' }
+    | { outcome: 'hero-died' }
+    | { outcome: 'nothing-to-steal' }
+    | { outcome: 'refused'; fled: boolean }
+    | { outcome: 'armor-removal' }
+    | { outcome: 'vanished' }
+    | { outcome: 'petrified' }
+    | { outcome: 'stole'; stolenName: string | null };
+
+export async function stealFromHero(
+    monster: Monster,
+    random: RandomBelow,
+    calls: MonsterCallLog,
+): Promise<HeroTheftResult> {
     const game = requireInitializedGame();
-    if (!attack?.deferredItemTheft) return false;
-    attack.deferredItemTheft = false;
     const animal = monsterIsAnimal(monster);
     const wasPunished = !!game.uball;
     const draw = (limit: number): number => {
-        action.calls.push(`rn2(${limit})`);
+        calls.push(`rn2(${limit})`);
         return random(limit);
     };
-    if (!animal && MONSTER_ATTACKS[heroSpecies(game)]?.some(
-        attack => attack[1] === AD_SEDU || attack[1] === AD_SSEX,
-    )) {
-        const subject = monsterName(monster, { state: game, capitalized: true });
-        await plineWithContinuation(`${subject} ${heroIsDeaf(game)
-            ? "says something but you can't hear it"
-            : (monster.minvent || monster.inventory || []).length ? 'brags about the goods some dungeon explorer provided'
-                : 'makes some remarks about how difficult theft is lately'}.`);
-        if (!await reportMonsterTeleportRestriction(monster, { state: game }))
-            await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
-        attack.attackerDone = true;
-        attack.contactDone = true;
-        attack.nativeResult = M_ATTK_AGR_DONE;
-        return true;
-    }
-    if (monster.mcan) {
-        if (animal) return false;
-        if (!heroIsBlind(game)) {
-            const subject = monsterName(monster, { state: game,
-                capitalized: true, adjective: 'plain' });
-            await plineWithContinuation(`${subject} tries to ${game.flags.female
-                ? 'charm' : 'seduce'} you, but you seem ${game.flags.female
-                ? 'unaffected' : 'uninterested'}.`);
-        }
-        if (draw(3)) {
-            if (!await reportMonsterTeleportRestriction(monster, { state: game }))
-                await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
-            attack.attackerDone = true;
-            attack.contactDone = true;
-            attack.nativeResult = M_ATTK_AGR_DONE;
-        }
-        return false;
-    }
-    if (dist2(monster.mx, monster.my, game.u.ux, game.u.uy) > 2) return false;
+    if (dist2(monster.mx, monster.my, game.u.ux, game.u.uy) > 2)
+        return { outcome: 'too-far' };
     const seenBeforeRemoval = canSpotMonster(monster);
-    // C steal() keeps Some_Monnam() from before any removal; an unseen thief
-    // named by a hallucinating hero takes a random someone/something.
+    // C steal.c:367-372: stealing worn gear might blind the hero or drop
+    // them into liquid; keep Some_Monnam() from before any removal. An
+    // unseen thief is "Someone" for nymphs, "Something" for monkeys.
     let subject = monsterName(monster, { state: game, capitalized: true, augmentIt: true });
     const meal = game.context.victual;
     if (game._occupation?.key === 'eat-food' && meal && meal.usedtime >= meal.reqtime) {
         await stopHeroOccupation(game);
-        if (game.program_state.gameover) return true;
+        if (game.program_state.gameover) return { outcome: 'hero-died' };
     }
     const adornment = !animal && !game.uarmg
         ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
         : null;
-    let object = adornment ?? selectHeroItemForTheft(game, random, action.calls);
+    let object = adornment ?? selectHeroItemForTheft(game, random, calls);
     const throwsRocks = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x08000000);
     let retriedBoulder = false;
     while (object) {
+        // C steal.c:474-475: gs.stealoid holds the armor this same thief
+        // is already removing; a second claw leaves it alone.
         if (game._armorTheft?.object === object)
-            return false;
+            return { outcome: 'busy' };
         if (object.otyp !== BOULDER || throwsRocks || retriedBoulder) break;
         retriedBoulder = true;
-        object = selectHeroItemForTheft(game, random, action.calls);
+        object = selectHeroItemForTheft(game, random, calls);
     }
     if (!object) {
+        // C steal.c:381-405: not even a thousand men in armor can strip a
+        // naked man. steal() returns 1 so mhitm_ad_sedu() lets it flee.
         if (!animal && game.uchain && draw(4)) {
             await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${
                 await wornTheftObjectDescription(game.uchain)}.`);
@@ -268,10 +257,9 @@ export async function resolveDeferredHeroItemTheft(
             : game.inventory.some(item => item.oclass === 12)
                 ? `${subject} tries to rob you, but isn't interested in gold.`
                 : `${subject} tries to rob you, but there is nothing to steal!`);
-        await retreatAfterItemTheft(action, monster, attack, animal);
-        return true;
+        return { outcome: 'nothing-to-steal' };
     }
-    if (!game.inventory.includes(object)) return false;
+    if (!game.inventory.includes(object)) return { outcome: 'gone' };
 
     const equipmentSlots = heroEquipmentSlots();
     const occupiedSlots = equipmentSlots.filter(slot => game[slot] === object);
@@ -286,15 +274,17 @@ export async function resolveDeferredHeroItemTheft(
     const wasWorn = occupiedSlots.length > 0
         || object.worn || weaponMask !== 0;
     const wornArmor = occupiedSlots.some(slot => slot.startsWith('uarm'));
-    const refuse = async (): Promise<boolean> => {
+    // C steal.c:446-467 cant_take: the preface line, then the one roll
+    // that decides whether the thief stays (steal() returns 0) or flees.
+    const refuse = async (): Promise<{ outcome: 'refused'; fled: boolean }> => {
         const verbs = ['steal', 'snatch', 'grab', 'take'];
         const name = wornArmor ? `your ${armorSimpleName(object, game)}`
             : ownedObjectName(object, game, { capitalized: false });
         await plineWithContinuation(`${subject} tries to ${verbs[draw(4)]} ${name} but gives up.`);
-        if (draw(Math.trunc(game.inventory.filter(item => item.oclass !== 12).length / 5) + 2) === 0) {
-            await retreatAfterItemTheft(action, monster, attack, animal);
-        }
-        return false;
+        return {
+            outcome: 'refused',
+            fled: draw(Math.trunc(game.inventory.filter(item => item.oclass !== 12).length / 5) + 2) === 0,
+        };
     };
     if (object.otyp === BOULDER && !throwsRocks) return refuse();
     if (animal) {
@@ -365,9 +355,11 @@ export async function resolveDeferredHeroItemTheft(
                 object.cursed = cursed;
             }
             if ((game._helplessTurns ?? 0) > 0) {
+                // C steal.c:547-551: steal() returns 0 with ga.afternmv =
+                // stealarm and the armor's transfer still pending.
                 game._armorTheft = { thief: monster, object };
                 game._afterMove = { kind: 'steal' };
-                return false;
+                return { outcome: 'armor-removal' };
             }
         }
     }
@@ -386,10 +378,8 @@ export async function resolveDeferredHeroItemTheft(
     }
     if (removalItem !== object) await removeWornHeroItem(removalItem, game);
     await removeWornHeroItem(object, game);
-    if (game.program_state?.gameover || !game.inventory.includes(object)) {
-        attack.theftResolved = true;
-        return true;
-    }
+    if (game.program_state?.gameover || !game.inventory.includes(object))
+        return { outcome: 'vanished' };
     // steal() refreshes its cached name when removing worn gear restores
     // sight. The later retreat message in mhitm_ad_sedu() names the thief too.
     if (!seenBeforeRemoval && (wornArmor || wasAccessory) && canSpotMonster(monster))
@@ -402,10 +392,8 @@ export async function resolveDeferredHeroItemTheft(
         removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
     unlinkObject(object, game);
     await finishInventoryRemoval(object, game);
-    if (game.program_state?.gameover) {
-        attack.theftResolved = true;
-        return true;
-    }
+    if (game.program_state?.gameover)
+        return { outcome: 'vanished' };
     observeObjectForNaming(object);
     const stolenObjectDescription = await inventoryItemDescription(object);
     const thief = charmed || (game._lastPlineKind === PLNMSG_MON_TAKES_OFF_ITEM
@@ -419,6 +407,8 @@ export async function resolveDeferredHeroItemTheft(
     object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(monster, object, game);
     if (couldPetrify && !((monster.misc_worn_check ?? 0) & W_ARMG)) {
+        // C steal.c:605-608: minstapetrify() runs inside steal(); its
+        // M_ATTK_AGR_DIED belongs to mhitm_ad_sedu()'s -1 case.
         await petrifyMonsterImmediately(monster, {
             creditHero: true,
             finishDeath: (target, death = {}) => finishHeroMonsterKill(
@@ -426,39 +416,11 @@ export async function resolveDeferredHeroItemTheft(
                 { ...death, showKillMessage: false, recordConduct: false },
             ),
         });
-        attack.nativeResult = M_ATTK_AGR_DIED;
-        attack.contactDone = true;
-        return true;
+        return { outcome: 'petrified' };
     }
-
-    // steal() returns zero while an involuntary delay is still active.
-    // The thief can keep attacking and must stay for any pending armor.
-    attack.theftResolved = true;
-    if (heroHasInvoluntaryDelay(game)) return true;
-    await retreatAfterItemTheft(action, monster, attack, animal, stolenName);
-    return true;
-}
-
-async function retreatAfterItemTheft(
-    action: MonsterAction, monster: Monster, attack: HeroContactAttack,
-    animal: boolean, stolenName?: string,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (animal) {
-        if (stolenName && canSeeMonster(monster))
-            await plineWithContinuation(`${monsterName(monster, { state: game,
-                capitalized: true })} tries to run away with ${stolenName}.`);
-    } else if (!await reportMonsterTeleportRestriction(monster, { state: game })) {
-        const relocation = await randomMonsterRelocation(monster, {
-            calls: action.calls, flags: RLOC_MSG,
-        });
-        if (relocation && 'died' in relocation && relocation.died) return;
-    }
-    const flight = await makeMonsterFlee(monster, { announce: false });
-    if (flight.heroDied) return;
-    attack.attackerDone = true;
-    attack.contactDone = true;
-    attack.nativeResult = M_ATTK_AGR_DONE;
+    // C steal.c:611-612: steal() returns 0 while an involuntary delay is
+    // still active; the thief can keep attacking and stays for its armor.
+    return { outcome: 'stole', stolenName };
 }
 
 // C steal.c:stealarm(). The armor is already unworn; transfer

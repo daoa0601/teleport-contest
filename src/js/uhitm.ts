@@ -43,7 +43,7 @@ import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { eatHeroBrain, eatMonsterBrain } from './eat.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
@@ -77,14 +77,16 @@ import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import {
     AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX, AD_DRIN, AD_DREN,
     AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PHYS, AD_PEST,
-    AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SGLD, AD_SLEE, AD_SLIM, AD_SLOW, AD_SSEX, AD_STCK, AD_STON,
+    AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SLEE, AD_SLIM, AD_SLOW, AD_SSEX,
+    AD_STCK, AD_STON,
     AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE,
     AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE,
-    MONSTER_SYMBOL, monsterHasHead, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof,
-    monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterTypeName, requireMonsterData,
+    MONSTER_SYMBOL, monsterHasHead, monsterIsAnimal, monsterIsNonliving, monsterIsRider, monsterIsShade,
+    monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterTypeName,
+    requireMonsterData,
 } from './monster_data.js';
 import {
     monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance,
@@ -99,7 +101,7 @@ import { monsterIsHelpless, monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
-import { stealHeroQuestObject, stealHeroGold } from './steal.js';
+import { stealHeroQuestObject, stealHeroGold, stealFromHero } from './steal.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import {
     infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction,
@@ -970,6 +972,139 @@ export async function mhitmAdLegs(call: MhitmAdLegsCall): Promise<MhitmAdStatusR
         const { attacker, defender, context } = call;
         if (attacker.mcan) return statusContinueResult(0);
         return await context.applyPhysical();
+    }
+}
+
+// C uhitm.c:mhitm_ad_sedu() mhitu branch's flight tail (uhitm.c:4675-4688):
+// rloc() away from the scene, the animal's run-away line, monflee() and
+// the mhm.done / M_ATTK_AGR_DONE that ends hitmu()'s slot.
+async function retreatAfterTheft(
+    monster: Monster,
+    attack: HeroContactAttack,
+    animal: boolean,
+    stolenName: string | undefined,
+    calls: MonsterCallLog,
+): Promise<void> {
+    const game = requireInitializedGame();
+    if (animal) {
+        if (stolenName && canSeeMonster(monster))
+            await plineWithContinuation(`${monsterName(monster, { state: game,
+                capitalized: true })} tries to run away with ${stolenName}.`);
+    } else if (!await reportMonsterTeleportRestriction(monster, { state: game })) {
+        const relocation = await randomMonsterRelocation(monster, {
+            calls, flags: RLOC_MSG,
+        });
+        if (relocation && 'died' in relocation && relocation.died) return;
+    }
+    const flight = await makeMonsterFlee(monster, { announce: false });
+    if (flight.heroDied) return;
+    attack.attackerDone = true;
+    attack.contactDone = true;
+    attack.nativeResult = M_ATTK_AGR_DONE;
+}
+
+export interface HeroDefenderSeduContext {
+    state: PlayingGameState;
+    attacker: Monster;
+    /** The mhitm_data port for hitmu()'s current slot. */
+    attack: HeroContactAttack;
+    /** Precomposed mhitu.c:hitmsg() line; animals publish it here. */
+    hitMessage: string | null;
+    publish: MessagePublisher;
+    random: typeof rn2;
+    calls: MonsterCallLog;
+}
+
+// One call of mhitm_adtyping(… AD_SITM / AD_SEDU …), hero defender.
+export interface MhitmAdSeduCall {
+    mdef: 'youmonst';
+    context: HeroDefenderSeduContext;
+}
+
+export interface MhitmAdSeduResult {
+    /** True when this branch's plines may own the sequence pager. */
+    pagerOwned: boolean;
+}
+
+// C uhitm.c:mhitm_ad_sedu(), mhitu branch (uhitm.c:4631-4690).
+export async function mhitmAdSedu(call: MhitmAdSeduCall): Promise<MhitmAdSeduResult> {
+    const { state, attacker, attack, hitMessage, publish, random, calls } = call.context;
+    const draw = (limit: number): number => {
+        calls.push(`rn2(${limit})`);
+        return random(limit);
+    };
+    const animal = monsterIsAnimal(attacker);
+    if (animal) {
+        // C uhitm.c:4637-4642: hitmsg() precedes everything for animals;
+        // a cancelled animal stops before steal().
+        if (hitMessage) await publish(hitMessage);
+        if (attacker.mcan) return { pagerOwned: false };
+    } else if (MONSTER_ATTACKS[heroSpecies(state)]?.some(
+        attack => attack[1] === AD_SEDU || attack[1] === AD_SSEX,
+    )) {
+        // C uhitm.c:4642-4656: a seductive hero only hears the thief's
+        // remarks, and the thief leaves.
+        const subject = monsterName(attacker, { state, capitalized: true });
+        await plineWithContinuation(`${subject} ${heroIsDeaf(state)
+            ? "says something but you can't hear it"
+            : (attacker.minvent || attacker.inventory || []).length ? 'brags about the goods some dungeon explorer provided'
+                : 'makes some remarks about how difficult theft is lately'}.`);
+        if (!await reportMonsterTeleportRestriction(attacker, { state }))
+            await randomMonsterRelocation(attacker, { calls, flags: RLOC_MSG });
+        attack.attackerDone = true;
+        attack.contactDone = true;
+        attack.nativeResult = M_ATTK_AGR_DONE;
+        return { pagerOwned: true };
+    } else if (attacker.mcan) {
+        // C uhitm.c:4656-4669: a cancelled seducer fails to charm, then
+        // usually teleports away.
+        if (!heroIsBlind(state)) {
+            const subject = monsterName(attacker, { state,
+                capitalized: true, adjective: 'plain' });
+            await plineWithContinuation(`${subject} tries to ${state.flags.female
+                ? 'charm' : 'seduce'} you, but you seem ${state.flags.female
+                ? 'unaffected' : 'uninterested'}.`);
+        }
+        if (draw(3)) {
+            if (!await reportMonsterTeleportRestriction(attacker, { state }))
+                await randomMonsterRelocation(attacker, { calls, flags: RLOC_MSG });
+            attack.attackerDone = true;
+            attack.contactDone = true;
+            attack.nativeResult = M_ATTK_AGR_DONE;
+        }
+        return { pagerOwned: false };
+    }
+    const theft = await stealFromHero(attacker, random, calls);
+    switch (theft.outcome) {
+        // C uhitm.c:4672-4674: steal() returned -1 — the thief touched a
+        // petrifying corpse; hitmu() reports the aggressor's death.
+        case 'petrified':
+            attack.nativeResult = M_ATTK_AGR_DIED;
+            attack.contactDone = true;
+            return { pagerOwned: true };
+        // C uhitm.c:4675-4688: steal() returned 1 — leave the scene.
+        case 'nothing-to-steal':
+            await retreatAfterTheft(attacker, attack, animal, undefined, calls);
+            return { pagerOwned: true };
+        case 'refused':
+            if (theft.fled) await retreatAfterTheft(attacker, attack, animal, undefined, calls);
+            return { pagerOwned: false };
+        case 'stole':
+            // C steal.c:611-612: an involuntary delay keeps the thief in
+            // place; steal() returned 0 and mhitm_ad_sedu() returns quietly.
+            if (heroHasInvoluntaryDelay(state)) return { pagerOwned: true };
+            await retreatAfterTheft(attacker, attack, animal, theft.stolenName ?? undefined, calls);
+            return { pagerOwned: true };
+        // C uhitm.c:4670-4671: every remaining outcome is steal() == 0
+        // without a flight tail; hitmu() simply continues.
+        case 'hero-died':
+            return { pagerOwned: true };
+        case 'too-far':
+        case 'busy':
+        case 'gone':
+        case 'armor-removal':
+        case 'vanished':
+            return { pagerOwned: false };
     }
 }
 

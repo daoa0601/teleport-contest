@@ -2,7 +2,7 @@
 // hitmu()/mdamageu() damage and resume machinery, and slot presentation.
 // C ref: mhitu.c.
 
-import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -79,13 +79,13 @@ import {
     requirePerceivedHero,
 } from './monmove.js';
 import {
-    attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, resolveMonsterSpitAtHero,
+    attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero,
 } from './mthrowu.js';
 import {
     castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS,
     monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay,
 } from './mcastu.js';
-import { resolveDeferredHeroItemTheft, addObjectToMonsterInventory } from './steal.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, startHeroSliming } from './slime.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt } from './trap.js';
@@ -119,7 +119,8 @@ import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import {
-    mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdStun,
+    mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdSedu,
+    mhitmAdStun,
     nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect,
     resolveMonsterWeaponContact, resolvePhysicalHeroHug, tryKnockback,
 } from './uhitm.js';
@@ -325,20 +326,12 @@ export async function presentMonsterAttackEffects(
                         continue;
                     }
                     if (heroAttack.kind === 'hero-breath') {
-                        const breath = heroAttack.breath;
-                        if (breath.cough && !heroIsDeaf(game)) {
-                            if (canSeeMonster(monster))
-                                await publishSlotMessage(`${monsterName(monster, { capitalized: true })} coughs.`);
-                            else await publishHeardMessage('a cough.', publishSlotMessage);
-                        }
-                        if (breath.launched) {
-                            // C mthrowu.c:breamm() ends with dobuzz() and
-                            // nomul(0), both inside the resolver; the breath
-                            // neither stops the hero's occupation nor spends
-                            // the hero's next movement ration.
-                            await resolveDeferredMonsterBreath(action, breath, game, publishSlotMessage);
-                            if (game.program_state?.gameover) return { heroDied: true };
-                        }
+                        // C mhitu.c:875 — breamu() already ran its whole
+                        // transaction in the begin phase, like AT_SPIT; the
+                        // breath neither stops the hero's occupation nor
+                        // spends the hero's next movement ration.
+                        if (heroAttack.breath.heroDied || game.program_state?.gameover)
+                            return { heroDied: true };
                         previousHeroAttack = heroAttack;
                         heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                         continue;
@@ -531,9 +524,9 @@ export async function presentMonsterAttackEffects(
                     heroAttack.specialMessage = artifact.specialMessage;
                     if (!artifact.damage) heroAttack.poison = null;
                 }
-                // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs project
-                // hitmsg() themselves from uhitm.ts, so one of those slots
-                // composes its hit line there instead of here.
+                // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs/sedu
+                // project hitmsg() themselves from uhitm.ts, so one of
+                // those slots composes its hit line there instead of here.
                 const message = heroAttack.effect === 'fire-natural'
                     || heroAttack.effect === 'cold-natural'
                     || heroAttack.effect === 'electric-natural'
@@ -542,6 +535,7 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'enchantment-natural'
                     || heroAttack.effect === 'stun-natural'
                     || heroAttack.effect === 'leg-natural'
+                    || heroAttack.effect === 'item-theft'
                     ? null
                     : await monsterAttackMessage(
                         monster, heroAttack, previousHeroAttack, random,
@@ -582,14 +576,30 @@ export async function presentMonsterAttackEffects(
                         }
                     }
                 }
-                if (heroAttack.deferredItemTheft) {
-                    const theftPager = await resolveDeferredHeroItemTheft(
-                        action, monster, heroAttack, random,
+                if (heroAttack.effect === 'item-theft') {
+                    // C uhitm.c:mhitm_ad_sedu() mhitu branch (uhitm.c:
+                    // 4631-4690): hitmsg() for animals, the brags and
+                    // seduction gates and steal() run as one awaited
+                    // transaction here. hitmu() reaches knockback after
+                    // every steal() result, including refusal and armor
+                    // removal still in progress (mhitu.c:1196-1199).
+                    const hitMessage = await monsterAttackMessage(
+                        monster, heroAttack, previousHeroAttack, random,
                     );
+                    const theft = await mhitmAdSedu({
+                        mdef: 'youmonst',
+                        context: {
+                            state: game,
+                            attacker: monster,
+                            attack: heroAttack,
+                            hitMessage,
+                            publish: publishEquipmentMessage,
+                            random,
+                            calls: action.calls,
+                        },
+                    });
                     if (game.program_state.gameover) return { heroDied: true };
-                    paging.pagerOwned ||= theftPager;
-                    // hitmu() reaches knockback after every steal() result,
-                    // including refusal and armor removal still in progress.
+                    paging.pagerOwned ||= theft.pagerOwned;
                     await tryKnockback(monster, game.u, heroAttack, {
                         state: game, random, hit: heroAttack.hit,
                         weaponUsed: !!monsterWieldedWeapon(monster),
@@ -1312,7 +1322,13 @@ async function beginHeroAttackSlot(
         (MONSTER_NAME[monster.mnum] === 'grid bug' && dx !== 0 && dy !== 0);
     if (attackType === AT_BREA) {
         if (!distant) return null;
-        const breath = maybeBreatheAtHero(monster, effectiveAttack, state, random, calls);
+        // C mhitu.c:875-877: sum[i] = breamu(mtmp, mattk) runs the whole
+        // breath transaction, exactly like the AT_SPIT case above.
+        const publish = monsterAttackMessagePublisher(sequence.paging);
+        const breath = await resolveMonsterBreathAtHero(monster, effectiveAttack, {
+            state, random: range => recordRandom(random, calls, range),
+            rollOne, rollDice, publish,
+        });
         return { kind: 'hero-breath', breath, nativeResult: breath.nativeResult };
     }
     if (attackType === AT_SPIT) {
@@ -2053,7 +2069,6 @@ async function beginHeroAttackSlot(
             attackType,
             damageType,
             effect: 'item-theft',
-            deferredItemTheft: true,
         };
     } else if (hit && damageType === AD_LEGS) {
         return {
