@@ -2508,9 +2508,12 @@ async function completeHeroContactTail(
         await applyMonsterStoningAttack(action.monster, { state, random, publish })
     ) {
         // C uhitm.c:mhitm_ad_ston() mhitu branch: a successful do_stone_u()
-        // sets mhm.done, so hitmu() returns before mhitm_knockback() and
-        // stop_occupation().
+        // sets mhm.done, but mhitu.c:hitmu() still runs mhitm_knockback()
+        // before it returns on mhm.done.
         attack.contactDone = true;
+        const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
+        if (knockback.defenderLeftLevel) attack.attackerDone = true;
+        if (knockback.defenderDied) attack.heroDied = true;
         return;
     }
     if (attack.poison) {
