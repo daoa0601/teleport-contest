@@ -1908,3 +1908,6 @@ mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed stat
 missmu	map_invisible	inlined	the attack transaction maps an unseen attacker before projecting its contact line (mhitu.ts:484-497)
 missmu	stop_occupation	inlined	stopHeroOccupation runs after the whole contact transaction, passiveum included (mhitu.ts:919-933)
 monshoot	sgn	inlined	dx/dy are Math.sign(target - source) (mthrowu.ts launchVolley); sgn(x) is -1/0/1 just like Math.sign on these small deltas
+move_into_trap	into_vs_onto	inlined	the preposition list is inlined at untrap.ts:517-518; through try_disarm's reachable kinds (bear trap, web, landmine, squeaky board, dart/arrow) it matches into_vs_onto() exactly, and hero_step_confirmation.ts:54 has the full list for hack.c's caller
+move_into_trap	sgn	inlined	dx/dy are computed directly and only tested for diagonal vs cardinal (untrap.ts:980-985)
+move_into_trap	test_move	inlined	blocksMove plus blocksDiagonalDoor cover test_move(TEST_MOVE)'s passable-terrain and diagonal door tests (untrap.ts:983-986)

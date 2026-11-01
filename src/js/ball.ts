@@ -780,6 +780,8 @@ export async function beginBallAndChainRedraw(state: GameState = game): Promise<
     return plan;
 }
 
+// C ball.c:move_bc(): place the dragged ball and chain at their planned
+// coordinates; beginBallAndChainMove above is drag_ball().
 export async function finishBallAndChainMove(plan: BallMovePlan | null, state: GameState = game): Promise<void> {
     requireLiveGame(state);
     if (!plan || plan.blocked) return;
