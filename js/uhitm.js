@@ -889,15 +889,17 @@ export async function mhitmAdSedu(call) {
                 return { pagerOwned: true };
             await retreatAfterTheft(attacker, attack, animal, theft.stolenName ?? undefined, calls);
             return { pagerOwned: true };
-        // C uhitm.c:4670-4671: every remaining outcome is steal() == 0
-        // without a flight tail; hitmu() simply continues.
+        // C uhitm.c:4670-4671: the remaining outcomes are steal() == 0
+        // without a flight tail; hitmu() simply continues. 'vanished'
+        // keeps the pager claim the old resolver made: its removal prose
+        // and the gameover guard both returned true there.
         case 'hero-died':
+        case 'vanished':
             return { pagerOwned: true };
         case 'too-far':
         case 'busy':
         case 'gone':
         case 'armor-removal':
-        case 'vanished':
             return { pagerOwned: false };
     }
 }
