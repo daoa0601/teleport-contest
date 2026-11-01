@@ -38,13 +38,10 @@ void test('a dragon completes its whole breath transaction inside the monster tu
         'dobuzz() runs inside the turn; the fire ray already damaged the hero');
 });
 
-// Order pin for the uhitm.c:mhitm_ad_sedu() mhitu branch after PR 537's
-// shape. The theft change is a pure code motion, so this order is identical
-// before and after the refactor by design; the fails-before coverage lives
-// in the breath test above.
-// C uhitm.c:4637-4641, 4675-4688; mhitu.c:939-944: an animal announces
-// hitmsg() first, then steal() takes the item, the thief flees with it, and
-// the M_ATTK_AGR_DONE result ends the attack set before the monkey's bite.
+// C uhitm.c:mhitm_ad_sedu() mhitu branch: an animal announces hitmsg()
+// first, steal() takes the carried item, the thief runs off with it, and
+// the M_ATTK_AGR_DONE result ends the attack set before the monkey's bite
+// slot runs (uhitm.c:4637-4641, 4675-4688; mhitu.c:939-944).
 void test('a thieving monkey announces the hit, steals once and flees', async () => {
     await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
