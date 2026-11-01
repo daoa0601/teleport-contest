@@ -34,7 +34,7 @@ import { ownedObjectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { CORPSE, EGG } from './object_data.js';
 import { rnd } from './rng.js';
-import { adjustSpellDamage } from './spell_damage.js';
+import { adjustSpellDamage } from './zap.js';
 import { cansee } from './vision.js';
 import { monsterResistsEffect } from './zap.js';
 

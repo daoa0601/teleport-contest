@@ -6,8 +6,8 @@ import { planInventoryOrder } from './object_sort.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { decodeOptionEscapes } from './option_escapes.js';
-import { parseStatusHl1, replayStatusHiliteOperations } from './status_hilite_parse.js';
-import { resetStatusHilites } from './status_hilites.js';
+import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
+import { resetStatusHilites } from './botl.js';
 export function textOptionValue(name) {
     switch (name) {
         case 'pile_limit': return String(game.flags.pile_limit ?? 5);

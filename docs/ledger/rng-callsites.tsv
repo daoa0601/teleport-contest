@@ -2185,19 +2185,19 @@ src/js/special_spellbooks.ts	invokeBook	d	"[""2"", ""6""]"	constant
 src/js/special_spellbooks.ts	makeUndeadNear	rnd	"[""5""]"	constant
 src/js/special_spellbooks.ts	raiseDead	rn2	"[""3""]"	constant
 src/js/special_spellbooks.ts	readBookOfDead	rn2	"[""messages.length""]"	constant
-src/js/spell_attack_effects.ts	castChainLightning	rn2Display	"[""6""]"	constant
-src/js/spell_attack_effects.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
-src/js/spell_attack_effects.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
-src/js/spell_attack_effects.ts	castSkilledElementalSpell	rnd	"[""8""]"	constant
-src/js/spell_casting_rules.ts	backfireForgottenSpell	rn2	"[""10""]"	constant
-src/js/spell_casting_rules.ts	checkSpellCast	rnd	"[""100""]"	constant
-src/js/spell_casting_rules.ts	checkSpellCast	rnd	"[""2 * energy""]"	unproved
-src/js/spell_casting_rules.ts	checkSpellCast	rnd	"[""energy""]"	unproved
-src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
-src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
-src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length - index""]"	unproved
-src/js/spell_memory.ts	loseHeroSpellMemory	rnd	"[""forgotten""]"	unproved
-src/js/spell_memory.ts	loseHeroSpellMemory	rnl	"[""7""]"	constant
+src/js/spell.ts	castChainLightning	rn2Display	"[""6""]"	constant
+src/js/spell.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
+src/js/spell.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
+src/js/spell.ts	castSkilledElementalSpell	rnd	"[""8""]"	constant
+src/js/spell.ts	backfireForgottenSpell	rn2	"[""10""]"	constant
+src/js/spell.ts	checkSpellCast	rnd	"[""100""]"	constant
+src/js/spell.ts	checkSpellCast	rnd	"[""2 * energy""]"	unproved
+src/js/spell.ts	checkSpellCast	rnd	"[""energy""]"	unproved
+src/js/spell.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
+src/js/spell.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
+src/js/spell.ts	loseHeroSpellMemory	rn2	"[""spells.length - index""]"	unproved
+src/js/spell.ts	loseHeroSpellMemory	rnd	"[""forgotten""]"	unproved
+src/js/spell.ts	loseHeroSpellMemory	rnl	"[""7""]"	constant
 src/js/spellbook_study.ts	confusedBook	rn2	"[""3""]"	constant
 src/js/spellbook_study.ts	continueSpellbookStudy	rn2	"[""2""]"	constant
 src/js/spellbook_study.ts	continueSpellbookStudy	rn2	"[""studied""]"	guarded

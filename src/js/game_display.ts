@@ -10,8 +10,8 @@
 //   // display.setCell, display.readKey etc. all delegate to terminal
 
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
-import type { StatusLine2Fields } from './status_layout.js';
-import { StatusHighlights } from './status_highlighting.js';
+import type { StatusLine2Fields } from './botl.js';
+import { StatusHighlights } from './botl.js';
 import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 

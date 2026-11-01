@@ -1,6 +1,7 @@
 // Source-owned new-game initialization before mklev().
 // C refs: allmain.c:newgame(), o_init.c:init_objects(), role.c:role_init(),
 // dungeon.c:init_dungeons(), u_init.c:u_init_misc().
+import { SPE_LIGHT } from './object_data.js';
 import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
@@ -36,6 +37,13 @@ function questMonsterGender(species) {
     if (flags & M2_MALE)
         return 0;
     return rn2(100) < 50 ? 1 : 0;
+}
+// C role.c:role_init() (line 2088) gives a Cleric's light spell the clerical
+// school: objects[SPE_LIGHT].oc_skill = P_CLERIC_SPELL for Role_if(PM_CLERIC).
+// The generated object table stays immutable so a later non-Priest keeps
+// divination, so the override is applied where the school is read.
+export function roleInitClericLightSchool(otyp, state) {
+    return otyp === SPE_LIGHT && state.urole?.key === 'priest';
 }
 // This is the part of newgame() that runs before level creation. Role
 // inventory and starting attributes run from u_init.js after mklev().

@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { startHeroSickness } from '../js/hero_illness.js';
 import { pushKeys } from '../js/input.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';
-import { castCureSickness } from '../js/spell_misc_effects.js';
+import { castCureSickness } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('curing sickness and sliming removes both displayed conditions', async () => {

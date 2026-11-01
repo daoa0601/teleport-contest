@@ -16,9 +16,7 @@ import {
     WAN_DEATH, WAN_NOTHING,
 } from '../js/object_data.js';
 import { castSpell, forceLearnSpell } from '../js/spell.js';
-import { currentSpellKnowledge } from '../js/spell_casting_rules.js';
-import { spellSkillType } from '../js/spell_school.js';
-import { advanceSpellProtection } from '../js/spell_misc_effects.js';
+import { currentSpellKnowledge, spellSkillType, advanceSpellProtection } from '../js/spell.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { rhack } from '../js/cmd.js';
 import { backfireWand } from '../js/zap.js';

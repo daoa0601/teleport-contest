@@ -3,7 +3,7 @@ import test from 'node:test';
 import { W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_QUIVER, W_SWAPWEP, W_WEP, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AXE, BOOMERANG, CROSSBOW, CROSSBOW_BOLT, DAGGER, DART, DILITHIUM_CRYSTAL, ELVEN_ARROW, ELVEN_BOOTS, FEDORA, FLINT, HAWAIIAN_SHIRT, HELMET, KATANA, LEATHER_ARMOR, LEATHER_GLOVES, LONG_SWORD, OBJECT_NAMES, PICK_AXE, ROBE, ROCK, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_LIGHT, SPE_PROTECTION, TIN_OPENER, TOWEL, TWO_HANDED_SWORD, UNICORN_HORN, } from '../js/object_data.js';
-import { currentSpellKnowledge } from '../js/spell_casting_rules.js';
+import { currentSpellKnowledge } from '../js/spell.js';
 import { useStartingItem } from '../js/starting_equipment.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -6,7 +6,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import {
     A_CON, A_MAX, A_STR, ROOM,
 } from './const.js';

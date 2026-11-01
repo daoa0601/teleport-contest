@@ -14,7 +14,7 @@ import { watchDigging } from './digging_watch.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { loseHeroHp } from './hero_damage.js';
 import { propertyIsActive } from './properties.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { monsterHasNoAttacks, monsterHasNoLimbs, monsterIsAmorphous, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsMindFlayer, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAnimal, monsterIsCovetous, monsterIsMindless, monsterIsNoncorporeal, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, MONSTER_HAS_WEAPON_ATTACK, speciesEatsCorpses, MONSTER_SOUND, MONSTER_DIFFICULTY, } from './monster_data.js';
 import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { d, rn2, rnd, rnl } from './rng.js';

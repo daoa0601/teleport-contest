@@ -9,7 +9,7 @@
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
-import { StatusHighlights } from './status_highlighting.js';
+import { StatusHighlights } from './botl.js';
 export class GameDisplay {
     terminal;
     mapFrameCells = new Set();

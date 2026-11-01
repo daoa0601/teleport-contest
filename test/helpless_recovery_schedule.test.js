@@ -11,7 +11,7 @@ import { HOLE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { dopray } from '../js/pray.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { statusConditionBit } from '../js/status_conditions.js';
+import { statusConditionBit } from '../js/botl.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

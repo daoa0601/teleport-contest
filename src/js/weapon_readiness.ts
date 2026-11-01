@@ -14,7 +14,7 @@ import { AKLYS, BATTLE_AXE, CORPSE, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './ob
 import { makePlural } from './object_grammar.js';
 import { corpseName, killerObjectName, objectCombatName, observeObjectForNaming } from './objnam.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
-import { statusConditionEnabled } from './status_conditions.js';
+import { statusConditionEnabled } from './botl.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { announceWeaponWeld, explainTwoWeaponEnd } from './weapon_feedback.js';
 import { setPrimaryWeapon } from './weapon_slots.js';

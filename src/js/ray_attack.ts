@@ -3,7 +3,7 @@
 
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { finishMonsterKilled, healMonster, wakeMonster } from './mon.js';
-import { adjustSpellDamage } from './spell_damage.js';
+import { adjustSpellDamage } from './zap.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './mon.js';
 import { heroFormSticks } from './hero_species.js';

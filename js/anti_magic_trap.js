@@ -3,7 +3,7 @@
 import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { finishMonsterKilled } from './mon.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { W_ACCESSORY, W_ARMF, W_ARMOR, W_WEP } from './const.js';
 import { newsym } from './display.js';

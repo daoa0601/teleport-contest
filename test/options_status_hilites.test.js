@@ -8,7 +8,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { applyNethackrc, toggleBooleanOptionPrefix } from '../js/options.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { statusHiliteMenu } from '../js/status_hilites.js';
+import { statusHiliteMenu } from '../js/botl.js';
 import { cansee } from '../js/vision.js';
 import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
 import { CLR_RED, CLR_GREEN, ATR_BOLD, NO_COLOR } from '../js/terminal.js';

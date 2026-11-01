@@ -70,7 +70,7 @@ import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
 import { d, rn2, rnd } from './rng.js';

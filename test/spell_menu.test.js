@@ -13,7 +13,7 @@ import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_DIG, SPE_FIREBALL, SPE_FORCE_B
 import { applyNethackrc, doOptions } from '../js/options.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { selectSpellToCast, viewKnownSpells } from '../js/spell_menu.js';
+import { selectSpellToCast, viewKnownSpells } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { trainSpellSkill } from './support/spells.js';
 import { ATR_INVERSE, ATR_NONE } from '../js/terminal.js';

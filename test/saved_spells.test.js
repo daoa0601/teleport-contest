@@ -6,7 +6,7 @@ import { CLUB, OBJECT_NAMES, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FORCE_BO
 import { saveGame, restoreGame } from '../js/save.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { selectSpellToCast } from '../js/spell_menu.js';
+import { selectSpellToCast } from '../js/spell.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [description, type] of [

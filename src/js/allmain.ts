@@ -23,7 +23,6 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand } from './zap.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeStunned } from './hero_mental_status.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { finishMealMimicry } from './meal_mimic.js';
 import { finishHeroDigestion } from './hero_combat_engulf.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
@@ -160,7 +159,7 @@ import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName 
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { igniteItems } from './light.js';
-import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory } from './zap.js';
+import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
 import { aligns, nativeRoleAt } from './roles.js';

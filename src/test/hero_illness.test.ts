@@ -18,7 +18,7 @@ import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/unicorn_horn.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
-import { statusConditions } from '../js/status_conditions.js';
+import { statusConditions } from '../js/botl.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import {
     addInventoryObject, addInventoryWeapon,

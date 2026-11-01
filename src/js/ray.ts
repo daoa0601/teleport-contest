@@ -2,7 +2,7 @@
 // C refs: zap.c dobuzz(), bounce_dir(), zap_hit(), and muse.c mon_reflects().
 
 import { artifactById } from './artifacts.js';
-import { liveSpellSkill } from './spell_casting_rules.js';
+import { liveSpellSkill } from './spell.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterAtPosition } from './steed.js';

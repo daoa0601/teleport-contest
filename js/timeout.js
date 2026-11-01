@@ -14,7 +14,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeBlinded } from './sight_change.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { makeDeaf } from './hero_hearing.js';
-import { advanceSpellProtection } from './spell_misc_effects.js';
+import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { requireInitializedGame } from './gstate.js';

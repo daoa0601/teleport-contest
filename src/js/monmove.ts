@@ -53,7 +53,7 @@ import { watchDigging } from './digging_watch.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { loseHeroHp } from './hero_damage.js';
 import { propertyIsActive } from './properties.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import {
     monsterHasNoAttacks, monsterHasNoLimbs, monsterIsAmorphous, monsterIsRider, monsterIsSlithy,
     monsterIsTelepathic, monsterIsMindFlayer, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,

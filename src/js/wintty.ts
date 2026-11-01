@@ -4,9 +4,14 @@
 
 import { game } from './gstate.js';
 import { clipToplineToColumn, decodeMixedTopline } from './tty_topline.js';
-import { COLNO, ROWNO, HI_ZAP } from './const.js';
-import { NO_COLOR, ATR_INVERSE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';
-import { ATR_BLINK } from './terminal_attributes.js';
+import { COLNO, ROWNO, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
+    BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS,
+    CLR_MAX, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE,
+    HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE } from './const.js';
+import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';
+import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
+import { statusConditionBit } from './botl.js';
+import type { ConditionText, StatusFieldSpan, StatusLine2Fields, StatusStyle } from './botl.js';
 import { ROGUE_SYMSETS, shownSymbolSet } from './display.js';
 import type { MapLocation } from './map_types.js';
 import type { GameDisplay } from './game_display.js';
@@ -183,7 +188,132 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
     }
 }
 
+// ── wintty.c:make_things_fit() — shrinking the second status row ──
+
+export interface StatusLine2Layout {
+    text: string;
+    spans: readonly StatusFieldSpan[];
+    capacityBlank: boolean;
+    levelPrefixChanged: boolean;
+}
+
+const capacityText: readonly (readonly string[])[] = [
+    ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'],
+    ['', 'Burden', 'Stress', 'Strain', 'Overtax', 'Overload'],
+    ['', 'Brd', 'Strs', 'Strn', 'Ovtx', 'Ovld'],
+];
+
+// wintty.c:make_things_fit() tries all condition abbreviations, then both
+// encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
+// C wintty.c:shrink_enc().
+// C wintty.c:shrink_dlvl().
+// C wintty.c:set_condition_length().
+export function renderStatusLine2(
+    fields: StatusLine2Fields,
+    columns: number,
+    capacityBlank = false,
+    levelPrefixChanged = false,
+): StatusLine2Layout {
+    const attempts: readonly (readonly [0 | 1 | 2, 0 | 1 | 2, boolean])[] = [
+        [0, 0, false], [1, 0, false], [2, 0, false],
+        [2, 1, false], [2, 2, false], [2, 2, true],
+    ];
+    let line = '';
+    let spans: StatusFieldSpan[] = [];
+    let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
+    // shrink_dlvl(0) restores Dlvl, even when the original label was Tutorial.
+    const fullLocation = levelPrefixChanged
+        ? fields.location.replace(/^[^:]+:/, 'Dlvl:') : fields.location;
+    let prefixChanged = levelPrefixChanged;
+    for (const [conditionSize, capacitySize, shortLevel] of attempts) {
+        const location = shortLevel ? fullLocation.replace(/^[^:]+:/, 'Dl:') : fullLocation;
+        if (location !== fullLocation) prefixChanged = true;
+        line = '';
+        spans = [];
+        const append = (text: string, field: number, condition?: number) => {
+            const start = line.length;
+            line += text;
+            spans.push({ field, start, end: line.length, ...(condition !== undefined ? { condition } : {}) });
+        };
+        const appendSeparated = (text: string, field: number) => { line += ' '; append(text, field); };
+        append(location, BL_LEVELDESC);
+        appendSeparated(fields.gold, BL_GOLD);
+        line += ' ';
+        append(`HP:${fields.health.hitpoints}`, BL_HP);
+        append(`(${fields.health.maximumHitpoints})`, BL_HPMAX);
+        appendSeparated(`Pw:${fields.health.power}`, BL_ENE);
+        append(`(${fields.health.maximumPower})`, BL_ENEMAX);
+        appendSeparated(`AC:${fields.health.armorClass}`, BL_AC);
+        const [level, experience] = fields.experience.split('/');
+        appendSeparated(level ?? '', fields.experience.startsWith('HD:') ? BL_HD : BL_XP);
+        if (experience !== undefined) { line += '/'; append(experience, BL_EXP); }
+        if (fields.moves !== null) appendSeparated(`T:${fields.moves}`, BL_TIME);
+        if (fields.hunger) appendSeparated(fields.hunger, BL_HUNGER);
+        const load = capacityText[capacitySize]?.[fields.capacity] ?? '';
+        // shrink_enc() leaves a blank even for an unencumbered hero.
+        // Restoring the full label on later flushes preserves that blank.
+        if (fields.capacity === 0 && capacitySize > 0) emptyCapacitySpace = true;
+        if (load || emptyCapacitySpace) appendSeparated(load, BL_CAP);
+        for (const condition of fields.conditions) {
+            line += ' ';
+            append(condition[conditionSize], BL_CONDITION, statusConditionBit(condition));
+        }
+        for (const equipment of fields.equipment) appendSeparated(equipment.text, equipment.field);
+        if (fields.version) {
+            // The last field is right justified, with its leading separator
+            // still counted by make_things_fit().
+            const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
+            line += ' '.repeat(gap);
+            append(fields.version, BL_VERS);
+        }
+        if (line.length <= columns - 1)
+            return { text: line, spans, capacityBlank: emptyCapacitySpace, levelPrefixChanged: prefixChanged };
+    }
+    return {
+        text: line.slice(0, Math.max(0, columns - 1)),
+        spans,
+        capacityBlank: emptyCapacitySpace,
+        levelPrefixChanged: prefixChanged,
+    };
+}
+
+// ── wintty.c:render_status() BL_TITLE branch — the hitpoint bar ──
+// wintty.c:render_status()'s BL_TITLE branch.  The tty draws the bar's
+// colour and attribute from the title cell's stored style
+// (StatusHighlights.barStyle), so this builds only the bracketed text;
+// wintty.c:5212-5213 repads a critical title's trailing space pairs with
+// dashes.
+// C botl.c:repad_with_dashes().
+export function hitpointBar(title: string, critical: boolean): string {
+    let text = title.slice(0, 30).padEnd(30);
+    if (critical) {
+        // repad_with_dashes() changes only trailing pairs of spaces.
+        let end = text.length;
+        while (end >= 2 && text.slice(end - 2, end) === '  ') {
+            text = text.slice(0, end - 1) + '-' + text.slice(end);
+            end -= 2;
+        }
+    }
+    return `[${text}]`;
+}
+
+// ── wintty.c:condattr()/condcolor() ──
+// C wintty.c:condattr().
+// C wintty.c:condcolor().
+export function conditionStyle(mask: number, masks: readonly number[]): StatusStyle {
+    let color = NO_COLOR, attr = 0;
+    for (let index = 0; index < CLR_MAX; index++) {
+        if (mask & (masks[index] ?? 0)) { color = index; break; }
+    }
+    for (const [index, bit] of [[HL_ATTCLR_BOLD, ATR_BOLD], [HL_ATTCLR_DIM, TERMINAL_DIM],
+        [HL_ATTCLR_ITALIC, TERMINAL_ITALIC], [HL_ATTCLR_ULINE, ATR_UNDERLINE],
+        [HL_ATTCLR_BLINK, ATR_BLINK], [HL_ATTCLR_INVERSE, ATR_INVERSE]] as const)
+        if (mask & (masks[index] ?? 0)) attr |= bit;
+    return { color, attr };
+}
+
 // ── Build screen output ──
+
 export function _buildScreenOutput() {
     const display = game?.nhDisplay;
     if (!display) return;

@@ -10,7 +10,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { heroHasArtifactDefense } from './artifacts.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { disintegrateWornArmor } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {

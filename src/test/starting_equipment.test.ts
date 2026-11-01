@@ -14,7 +14,7 @@ import {
     SPE_BLANK_PAPER, SPE_LIGHT, SPE_PROTECTION, TIN_OPENER, TOWEL,
     TWO_HANDED_SWORD, UNICORN_HORN,
 } from '../js/object_data.js';
-import { currentSpellKnowledge } from '../js/spell_casting_rules.js';
+import { currentSpellKnowledge } from '../js/spell.js';
 import { useStartingItem } from '../js/starting_equipment.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -86,7 +86,7 @@ import { applyHeroGolemEffects, heroHasProtectionFromShapeChangers, heroIsUnchan
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { poisonHero } from './poison.js';
 import { drainHeroWeaponSkills } from './skills.js';
-import { loseHeroSpellMemory } from './spell_memory.js';
+import { loseHeroSpellMemory } from './spell.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { burnAwayHeroSlime } from './slime.js';

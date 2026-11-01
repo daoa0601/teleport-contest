@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { clearStatusHilites, resetStatusHilites } from '../js/status_hilites.js';
+import { clearStatusHilites, resetStatusHilites } from '../js/botl.js';
 import { addExperience } from '../js/exper.js';
 import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_EXP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, GT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, CLR_GREEN, CLR_BLUE, NO_COLOR } from '../js/terminal.js';

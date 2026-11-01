@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { SPE_LIGHT, SPE_PROTECTION } from '../js/object_data.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { castSpell, forceLearnSpell } from '../js/spell.js';
-import { viewKnownSpells } from '../js/spell_menu.js';
+import { viewKnownSpells } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { trainSpellSkill } from './support/spells.js';
 

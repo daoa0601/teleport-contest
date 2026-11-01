@@ -11,7 +11,7 @@ import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';
 import { rn2 } from './rng.js';
-import { spellSkillType } from './spell_school.js';
+import { spellSkillType } from './spell.js';
 export const SKILL_NAMES = [
     'no skill',
     'dagger', 'knife', 'axe', 'pick-axe', 'short sword', 'broadsword',
