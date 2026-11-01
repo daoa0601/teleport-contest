@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { getHungry } from '../js/hunger.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { POT_BLINDNESS, POT_BOOZE, POT_PARALYSIS } from '../js/object_data.js';
-import { applySupportedPotionVapor } from '../js/potion_hit.js';
+import { applySupportedPotionVapor } from '../js/potion.js';
 import { heroCanControlPolymorph, polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { pushKey, resetInputState } from '../js/input.js';

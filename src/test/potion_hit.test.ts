@@ -16,7 +16,7 @@ import {
 } from '../js/object_data.js';
 import {
     applySupportedPotionVapor, hitMonsterWithSupportedPotion,
-} from '../js/potion_hit.js';
+} from '../js/potion.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { pushKey, pushKeys } from '../js/input.js';

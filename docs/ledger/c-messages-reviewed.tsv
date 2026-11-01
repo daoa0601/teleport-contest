@@ -338,13 +338,13 @@ pline.c	impossible	Alternatively, contact local support:	dead	Native unreachable
 polyself.c	break_armor	is pulled apart!	composed	src/js/polyself.ts:changeArmorForHeroForm; An alchemy smock selects knot and is pulled apart around the simple armor name.
 polyself.c	dohide	fountain is not deep enough to hide in.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
 polyself.c	dohide	to hide in here.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
-potion.c	dodip	What do you want to dip into? [abdeghjkmnpqstvwyzBCEFHIKLNOQRTUWXZ#-# or ?*]	dead	sizeof operand that only reserves short_oname() room for the object name; never printed. The port encodes the same reserve as DIP_PROMPT_RESERVE in src/js/potion_dip.ts:184.
-potion.c	dodip	into the sink?	composed	src/js/potion_dip.ts:dip; Composes `Dip ${target} into the ${source}?` with source 'sink', like the native Sprintf before y_n().
+potion.c	dodip	What do you want to dip into? [abdeghjkmnpqstvwyzBCEFHIKLNOQRTUWXZ#-# or ?*]	dead	sizeof operand that only reserves short_oname() room for the object name; never printed. The port encodes the same reserve as DIP_PROMPT_RESERVE in src/js/potion.ts:2098.
+potion.c	dodip	into the sink?	composed	src/js/potion.ts:dip; Composes `Dip ${target} into the ${source}?` with source 'sink', like the native Sprintf before y_n().
 potion.c	dodrink	Drink from the fountain?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
 potion.c	dodrink	Drink from the sink?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
-potion.c	peffect_sickness	contaminated tap water	composed	src/js/potion_body_effects.ts:drinkSickness; Template `contaminated ${fromsink ? 'tap water' : 'potion'}` with the mildly prefix; the killer buffer is passed to loseHeroHp.
+potion.c	peffect_sickness	contaminated tap water	composed	src/js/potion.ts:drinkSickness; Template `contaminated ${fromsink ? 'tap water' : 'potion'}` with the mildly prefix; the killer buffer is passed to loseHeroHp.
 potion.c	potion_dip	Something happens.	dead	The whole message block is guarded by !Blind; newbuf is always filled by clears or turns plus the color before its empty-buffer fallback.
-potion.c	potion_dip	with an oily sheen.	composed	src/js/potion_item_dip.ts:dipInOil; Visible undamaged gear selects gleam or gleams with an oily sheen.
+potion.c	potion_dip	with an oily sheen.	composed	src/js/potion.ts:dipInOil; Visible undamaged gear selects gleam or gleams with an oily sheen.
 potion.c	potionhit	propelled potion	composed	src/js/hero_potion_hit.ts:hitHeroWithThrownPotion; src/js/hero_object_hit.ts:hitHeroWithObject passes source propelled for scattered potions; the hit helper formats the killer as `${source} potion`.
 potion.c	split_mon	mon->mhpmax >= mon->mhp	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pray.c	god_zaps_you	disintegrates into a pile of dust!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.

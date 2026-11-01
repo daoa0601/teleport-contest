@@ -1923,73 +1923,73 @@ src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""5""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""500""]"	constant
-src/js/potion_body_effects.ts	drinkAcid	d	"[""source.cursed ? 2 : 1"", ""source.blessed ? 4 : 8""]"	constant
-src/js/potion_body_effects.ts	drinkOil	d	"[""vulnerable ? 4 : 2"", ""4""]"	constant
-src/js/potion_body_effects.ts	drinkPolymorph	rn2	"[""15""]"	constant
-src/js/potion_body_effects.ts	drinkSickness	rn1	"[""4"", ""3""]"	constant
-src/js/potion_body_effects.ts	drinkSickness	rn2	"[""2""]"	constant
-src/js/potion_body_effects.ts	drinkSickness	rn2	"[""A_MAX""]"	constant
-src/js/potion_body_effects.ts	drinkSickness	rnd	"[""10""]"	constant
-src/js/potion_body_effects.ts	drinkWater	d	"[""2"", ""6""]"	constant
-src/js/potion_body_effects.ts	drinkWater	d	"[""2"", ""6""]"	constant
-src/js/potion_body_effects.ts	drinkWater	d	"[""2"", ""6""]"	constant
-src/js/potion_body_effects.ts	drinkWater	rnd	"[""10""]"	constant
-src/js/potion_effects.ts	applyPotionEffect	d	"[""4 + 2 * blessing"", ""4""]"	constant
-src/js/potion_effects.ts	applyPotionEffect	d	"[""4 + 2 * blessing"", ""8""]"	constant
-src/js/potion_effects.ts	applyPotionEffect	d	"[""source.blessed ? 3 : source.cursed ? 1 : 2"", ""6""]"	constant
-src/js/potion_effects.ts	applyPotionEffect	rn1	"[""10"", ""100 + 60 * blessing""]"	constant
-src/js/potion_effects.ts	monsterDetection	rn1	"[""40"", ""21""]"	constant
-src/js/potion_effects.ts	monsterDetection	rn2	"[""100""]"	constant
-src/js/potion_effects.ts	seeInvisible	rn1	"[""100"", ""750""]"	constant
-src/js/potion_effects.ts	seeInvisible	rn2	"[""permanenceChance""]"	constant
-src/js/potion_hit.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
-src/js/potion_hit.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
-src/js/potion_hit.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
-src/js/potion_hit.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	d	"[""1"", ""6""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	d	"[""2"", ""6""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	d	"[""2"", ""6""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	d	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	rn2	"[""32""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	rn2	"[""32""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	rnd	"[""12""]"	constant
-src/js/potion_hit.ts	applySupportedDirectEffect	rnd	"[""25""]"	constant
-src/js/potion_hit.ts	hitMonsterWithSupportedPotion	rn2	"[""5""]"	constant
-src/js/potion_hit.ts	hitMonsterWithSupportedPotion	rn2	"[""Math.trunc((1 + currentAttribute(A_DEX, state)) / 2)""]"	invariant
-src/js/potion_hit.ts	monsterResistsPotion	rn2	"[""resistanceRange""]"	unproved
-src/js/potion_hit.ts	potionHitsSaddle	rn2	"[""10""]"	constant
-src/js/potion_hit.ts	potionHitsSaddle	rn2	"[""3""]"	constant
-src/js/potion_hit.ts	potionHitsSaddle	rnl	"[""10""]"	constant
-src/js/potion_hit.ts	potionHitsSaddle	rnl	"[""10""]"	constant
-src/js/potion_hit.ts	randomBottleName	select	"[""names.length""]"	unproved
-src/js/potion_hit.ts	restoreBaseAttributes	rn2	"[""6""]"	constant
-src/js/potion_item_dip.ts	dipInOil	d	"[""2"", ""10""]"	constant
-src/js/potion_item_dip.ts	fillLamp	d	"[""6"", ""6""]"	constant
-src/js/potion_mental_effects.ts	applyPotionMentalEffect	rn1	"[""200"", ""250 - 125 * blessing(source)""]"	constant
-src/js/potion_mental_effects.ts	applyPotionMentalEffect	rn1	"[""7"", ""16 - 8 * blessing(source)""]"	constant
-src/js/potion_mental_effects.ts	applyPotionMentalEffect	rn2	"[""A_MAX""]"	constant
-src/js/potion_mental_effects.ts	boozeEffect	d	"[""2 + (state.u.uhs || 0)"", ""8""]"	unproved
-src/js/potion_mental_effects.ts	boozeEffect	rnd	"[""15""]"	constant
-src/js/potion_mental_effects.ts	hallucinationEffect	rn1	"[""200"", ""600 - 300 * blessing(source)""]"	constant
-src/js/potion_mental_effects.ts	hallucinationEffect	rn2	"[""3""]"	constant
-src/js/potion_mental_effects.ts	hallucinationEffect	rn2	"[""6""]"	constant
-src/js/potion_mental_effects.ts	paralysisEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
-src/js/potion_mental_effects.ts	sleepingEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
-src/js/potion_mixing.ts	mixPotions	rnd	"[""8""]"	constant
-src/js/potion_mixing.ts	mixPotions	rnd	"[""9""]"	constant
-src/js/potion_mixing.ts	mixPotions	rnd	"[""Math.min(count, 8) - 2""]"	guarded
-src/js/potion_mixing.ts	mixPotions	rnd	"[""count - 6""]"	unproved
-src/js/potion_mixing.ts	mixtureExplodes	rn2	"[""game.uarmc?.otyp === ALCHEMY_SMOCK ? 30 : 10""]"	constant
-src/js/potion_mixing.ts	mixtureType	rn2	"[""3""]"	constant
-src/js/potion_mixing.ts	mixtureType	rn2	"[""3""]"	constant
-src/js/potion_occupants.ts	releaseDjinni	rn2	"[""4""]"	constant
-src/js/potion_occupants.ts	releaseDjinni	rn2	"[""5""]"	constant
-src/js/potion_occupants.ts	releaseDjinni	rnd	"[""4""]"	constant
-src/js/potion_occupants.ts	releasePotionOccupant	rn2	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
-src/js/potion_throw.ts	resolveMapPotionThrow	rn2	"[""3""]"	constant
-src/js/potion_throw.ts	resolveMapPotionThrow	rn2	"[""6""]"	constant
-src/js/potion_throw.ts	resolveMapPotionThrow	rnd	"[""20""]"	constant
-src/js/potion_throw.ts	resolveMapPotionThrow	rnd	"[""25""]"	constant
+src/js/potion.ts	drinkAcid	d	"[""source.cursed ? 2 : 1"", ""source.blessed ? 4 : 8""]"	constant
+src/js/potion.ts	drinkOil	d	"[""vulnerable ? 4 : 2"", ""4""]"	constant
+src/js/potion.ts	drinkPolymorph	rn2	"[""15""]"	constant
+src/js/potion.ts	drinkSickness	rn1	"[""4"", ""3""]"	constant
+src/js/potion.ts	drinkSickness	rn2	"[""2""]"	constant
+src/js/potion.ts	drinkSickness	rn2	"[""A_MAX""]"	constant
+src/js/potion.ts	drinkSickness	rnd	"[""10""]"	constant
+src/js/potion.ts	drinkWater	d	"[""2"", ""6""]"	constant
+src/js/potion.ts	drinkWater	d	"[""2"", ""6""]"	constant
+src/js/potion.ts	drinkWater	d	"[""2"", ""6""]"	constant
+src/js/potion.ts	drinkWater	rnd	"[""10""]"	constant
+src/js/potion.ts	applyPotionEffect	d	"[""4 + 2 * blessing"", ""4""]"	constant
+src/js/potion.ts	applyPotionEffect	d	"[""4 + 2 * blessing"", ""8""]"	constant
+src/js/potion.ts	applyPotionEffect	d	"[""source.blessed ? 3 : source.cursed ? 1 : 2"", ""6""]"	constant
+src/js/potion.ts	applyPotionEffect	rn1	"[""10"", ""100 + 60 * blessing""]"	constant
+src/js/potion.ts	monsterDetection	rn1	"[""40"", ""21""]"	constant
+src/js/potion.ts	monsterDetection	rn2	"[""100""]"	constant
+src/js/potion.ts	seeInvisible	rn1	"[""100"", ""750""]"	constant
+src/js/potion.ts	seeInvisible	rn2	"[""permanenceChance""]"	constant
+src/js/potion.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
+src/js/potion.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
+src/js/potion.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
+src/js/potion.ts	applyPotionVaporEffect	rnd	"[""5""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	d	"[""1"", ""6""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	d	"[""2"", ""6""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	d	"[""2"", ""6""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	d	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	rn2	"[""32""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	rn2	"[""32""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	rnd	"[""12""]"	constant
+src/js/potion.ts	applySupportedDirectEffect	rnd	"[""25""]"	constant
+src/js/potion.ts	hitMonsterWithSupportedPotion	rn2	"[""5""]"	constant
+src/js/potion.ts	hitMonsterWithSupportedPotion	rn2	"[""Math.trunc((1 + currentAttribute(A_DEX, state)) / 2)""]"	invariant
+src/js/potion.ts	monsterResistsPotion	rn2	"[""resistanceRange""]"	unproved
+src/js/potion.ts	potionHitsSaddle	rn2	"[""10""]"	constant
+src/js/potion.ts	potionHitsSaddle	rn2	"[""3""]"	constant
+src/js/potion.ts	potionHitsSaddle	rnl	"[""10""]"	constant
+src/js/potion.ts	potionHitsSaddle	rnl	"[""10""]"	constant
+src/js/potion.ts	randomBottleName	select	"[""names.length""]"	unproved
+src/js/potion.ts	restoreBaseAttributes	rn2	"[""6""]"	constant
+src/js/potion.ts	dipInOil	d	"[""2"", ""10""]"	constant
+src/js/potion.ts	fillLamp	d	"[""6"", ""6""]"	constant
+src/js/potion.ts	applyPotionMentalEffect	rn1	"[""200"", ""250 - 125 * blessing(source)""]"	constant
+src/js/potion.ts	applyPotionMentalEffect	rn1	"[""7"", ""16 - 8 * blessing(source)""]"	constant
+src/js/potion.ts	applyPotionMentalEffect	rn2	"[""A_MAX""]"	constant
+src/js/potion.ts	boozeEffect	d	"[""2 + (state.u.uhs || 0)"", ""8""]"	unproved
+src/js/potion.ts	boozeEffect	rnd	"[""15""]"	constant
+src/js/potion.ts	hallucinationEffect	rn1	"[""200"", ""600 - 300 * blessing(source)""]"	constant
+src/js/potion.ts	hallucinationEffect	rn2	"[""3""]"	constant
+src/js/potion.ts	hallucinationEffect	rn2	"[""6""]"	constant
+src/js/potion.ts	paralysisEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
+src/js/potion.ts	sleepingEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
+src/js/potion.ts	mixPotions	rnd	"[""8""]"	constant
+src/js/potion.ts	mixPotions	rnd	"[""9""]"	constant
+src/js/potion.ts	mixPotions	rnd	"[""Math.min(count, 8) - 2""]"	guarded
+src/js/potion.ts	mixPotions	rnd	"[""count - 6""]"	unproved
+src/js/potion.ts	mixtureExplodes	rn2	"[""game.uarmc?.otyp === ALCHEMY_SMOCK ? 30 : 10""]"	constant
+src/js/potion.ts	mixtureType	rn2	"[""3""]"	constant
+src/js/potion.ts	mixtureType	rn2	"[""3""]"	constant
+src/js/potion.ts	releaseDjinni	rn2	"[""4""]"	constant
+src/js/potion.ts	releaseDjinni	rn2	"[""5""]"	constant
+src/js/potion.ts	releaseDjinni	rnd	"[""4""]"	constant
+src/js/potion.ts	releasePotionOccupant	rn2	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
+src/js/dothrow.ts	resolveMapPotionThrow	rn2	"[""3""]"	constant
+src/js/dothrow.ts	resolveMapPotionThrow	rn2	"[""6""]"	constant
+src/js/dothrow.ts	resolveMapPotionThrow	rnd	"[""20""]"	constant
+src/js/dothrow.ts	resolveMapPotionThrow	rnd	"[""25""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""20""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""4""]"	constant
 src/js/pray.ts	altarWrath	rn2	"[""luck + 6""]"	guarded

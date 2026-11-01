@@ -24,7 +24,7 @@ import { observeObject } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { corpseName, objectName, pluralizeObjectNoun } from './objnam.js';
-import { hitMonsterWithSupportedPotion } from './potion_hit.js';
+import { hitMonsterWithSupportedPotion } from './potion.js';
 import { d, rnd, rn2 } from './rng.js';
 import { carriedObjectOwner } from './shk.js';
 import { touchPetrifies } from './stoning.js';

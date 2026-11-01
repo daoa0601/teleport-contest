@@ -6,6 +6,9 @@ import {
 } from './const.js';
 import { isEyewear } from './eyewear.js';
 import { game } from './gstate.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { objectName, ownedObjectName } from './objnam.js';
+import { objectOwnershipPrefix } from './shk.js';
 import type { GameState } from './game_state.js';
 import type { InventoryClassification } from './inventory_prompt.js';
 import { MEAT_RING } from './object_data.js';
@@ -42,6 +45,32 @@ function equipmentIsCovered(object: GameObject, knownCursedOnly: boolean, state:
     if (object === state.uarmu) return blocks(state.uarmc) || blocks(state.uarm);
     if (object === state.uleft || object === state.uright) return blocks(state.uarmg);
     return false;
+}
+
+// C do_wear.c:inaccessible_equipment(..., FALSE).
+export function coveringEquipment(object: GameObject): GameObject[] {
+    if (!object.owornmask) return [];
+    const { uarm, uarmc, uarmu, uarmg, uleft, uright } = game;
+    if (object === uarm) return uarmc ? [uarmc] : [];
+    if (object === uarmu) return [uarmc, uarm].filter(item => item != null);
+    if (object === uleft || object === uright) return uarmg ? [uarmg] : [];
+    return [];
+}
+
+export async function reportCoveredEquipment(object: GameObject): Promise<boolean> {
+    const covering = coveringEquipment(object);
+    const first = covering[0];
+    if (!first) return false;
+    const second = covering[1];
+    const sameOwner = second !== undefined
+        && objectOwnershipPrefix(first, game, { capitalized: false })
+            === objectOwnershipPrefix(second, game, { capitalized: false });
+    const name = covering.map((item, index) => {
+        return index > 0 && sameOwner ? objectName(item)
+            : ownedObjectName(item, game, { capitalized: false });
+    }).join(' and ');
+    await pline(`You need to take off ${name} to dip ${ownedObjectName(object, game, { capitalized: false })}.`);
+    return true;
 }
 
 export function accessibleEquipment(accessory: boolean, state: GameState = game): GameObject[] {

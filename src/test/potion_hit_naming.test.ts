@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { POT_ACID, POT_HEALING, POT_WATER } from '../js/object_data.js';
-import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';

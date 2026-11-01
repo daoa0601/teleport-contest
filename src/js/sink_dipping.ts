@@ -18,7 +18,7 @@ import { POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL,
     POT_OIL, POT_POLYMORPH, POT_WATER } from './object_data.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { objectQuantity } from './object_stack.js';
-import { applySupportedPotionVapor, heroPotionVaporProfile } from './potion_hit.js';
+import { applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
 import { polymorphSink } from './ring_sink.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

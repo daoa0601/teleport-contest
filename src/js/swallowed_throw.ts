@@ -27,7 +27,7 @@ import { AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE } from './objec
 import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
 import { isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { rnd } from './rng.js';
-import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES } from './potion_hit.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES } from './potion.js';
 import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
 import {

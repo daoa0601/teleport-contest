@@ -3,6 +3,9 @@ import { armorWearDecision } from './armor_wear.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST, W_ACCESSORY, W_ARMOR, } from './const.js';
 import { isEyewear } from './eyewear.js';
 import { game } from './gstate.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { objectName, ownedObjectName } from './objnam.js';
+import { objectOwnershipPrefix } from './shk.js';
 import { MEAT_RING } from './object_data.js';
 // C do_wear.c:equip_ok().
 // C do_wear.c:puton_ok().
@@ -35,6 +38,35 @@ function equipmentIsCovered(object, knownCursedOnly, state) {
     if (object === state.uleft || object === state.uright)
         return blocks(state.uarmg);
     return false;
+}
+// C do_wear.c:inaccessible_equipment(..., FALSE).
+export function coveringEquipment(object) {
+    if (!object.owornmask)
+        return [];
+    const { uarm, uarmc, uarmu, uarmg, uleft, uright } = game;
+    if (object === uarm)
+        return uarmc ? [uarmc] : [];
+    if (object === uarmu)
+        return [uarmc, uarm].filter(item => item != null);
+    if (object === uleft || object === uright)
+        return uarmg ? [uarmg] : [];
+    return [];
+}
+export async function reportCoveredEquipment(object) {
+    const covering = coveringEquipment(object);
+    const first = covering[0];
+    if (!first)
+        return false;
+    const second = covering[1];
+    const sameOwner = second !== undefined
+        && objectOwnershipPrefix(first, game, { capitalized: false })
+            === objectOwnershipPrefix(second, game, { capitalized: false });
+    const name = covering.map((item, index) => {
+        return index > 0 && sameOwner ? objectName(item)
+            : ownedObjectName(item, game, { capitalized: false });
+    }).join(' and ');
+    await pline(`You need to take off ${name} to dip ${ownedObjectName(object, game, { capitalized: false })}.`);
+    return true;
 }
 export function accessibleEquipment(accessory, state = game) {
     const objects = accessory

@@ -61,7 +61,7 @@ import { objectResistsDestruction } from './object_state.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer,
 } from './object_timers.js';
-import { applySupportedPotionVapor } from './potion_hit.js';
+import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';

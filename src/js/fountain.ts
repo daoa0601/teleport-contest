@@ -41,7 +41,7 @@ import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { level_difficulty } from './dungeon.js';
-import { grantMonsterWish } from './potion_occupants.js';
+import { grantMonsterWish } from './potion.js';
 import { BOULDER, DILITHIUM_CRYSTAL, LUCKSTONE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { promptYesNo } from './query.js';

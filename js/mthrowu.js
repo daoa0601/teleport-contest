@@ -58,7 +58,7 @@ import { definiteName, definiteObjectAction, objectCombatName, objectHasPersonal
 import { stopHeroOccupation } from './occupation.js';
 import { heroHasNoHands } from './polyself.js';
 import { poisonHero } from './poison.js';
-import { hitMonsterWithSupportedPotion } from './potion_hit.js';
+import { hitMonsterWithSupportedPotion } from './potion.js';
 import { shouldMulchMissile } from './projectile.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType } from './magic_types.js';

@@ -7,7 +7,7 @@ import { doloot } from './pickup.js';
 import { doinvoke } from './artifact_invoke.js';
 import { doChronicle, doGenocided, doVanquished } from './insight.js';
 import { doturn } from './pray.js';
-import { dipInto, dodip } from './potion_dip.js';
+import { dipInto, dodip } from './potion.js';
 import { doclose, doopen } from './lock.js';
 import { moveIntoFailedUntrap } from './untrap.js';
 import { askTeleportDestination, teleportAtWillCommand } from './teleport.js';

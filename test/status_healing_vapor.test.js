@@ -5,7 +5,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { POT_FULL_HEALING } from '../js/object_data.js';
-import { applySupportedPotionVapor } from '../js/potion_hit.js';
+import { applySupportedPotionVapor } from '../js/potion.js';
 import { syncBlindness, syncDeafness } from '../js/senses.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
