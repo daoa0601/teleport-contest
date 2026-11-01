@@ -1,2 +1,0 @@
-// C shk.c:block_door()/block_entry(): diagonal passage at shop entrances.
-
