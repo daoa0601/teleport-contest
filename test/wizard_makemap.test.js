@@ -14,7 +14,7 @@ import { init_objects } from '../js/o_init.js';
 import { AMULET_OF_YENDOR, LEASH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { cansee } from '../js/vision.js';
-import { wizMakeMap } from '../js/wizard_makemap.js';
+import { wizMakeMap } from '../js/wizcmds.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

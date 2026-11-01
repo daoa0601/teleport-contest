@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { M_AP_FURNITURE, M_AP_OBJECT, MM_NOGRP, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
-import { farlookLocationDescription } from '../js/pager_description.js';
+import { farlookLocationDescription } from '../js/pager.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { CHEST } from '../js/object_data.js';

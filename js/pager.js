@@ -1,32 +1,48 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
-import { In_hell, Is_rogue_level, Is_waterlevel, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, } from './const.js';
-import { glyphAt } from './display.js';
+import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, COLNO, CORR, D_BROKEN, D_TRAPPED, def_warnsyms, DOOR, GRAVE, HOLE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
+import { canSpotHeroSelf, cmapSymbolAppearance, displayLiquidName, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, randomDisplayMonsterName, swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterTypeName, } from './monster_data.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';
 import { isPoolAt } from './terrain_properties.js';
-import { surfaceName } from './terrain_name.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
+import { trapName } from './trap.js';
+import { iceDescriptionAt } from './dungeon_feature.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNo } from './query.js';
 import { visibleCommandKey } from './command_keys.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
-import { showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
+import { decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { singularObjectName } from './objnam.js';
-import { farlookDescribesHero, farlookLocationDescription, lookatDescription, screenDescription, } from './pager_description.js';
-import { monsterSeenDescription, offerMonsterSupplement } from './pager_monsters.js';
-import { showLookList } from './pager_lists.js';
-import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
+import { warningSymbols } from './warning_symbols.js';
+import { BOULDER } from './object_data.js';
+import { okToQuest, onQuestStart } from './quest.js';
+import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { distantMonsterName, monsterName } from './do_name.js';
+import { dist2 } from './hacklib.js';
+import { heroIsPunished } from './ball.js';
+import { propertyIsActive } from './properties.js';
+import { cansee, couldsee } from './vision.js';
+import { findDrawbridgeAt } from './dbridge.js';
+import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { DEC_TO_UNICODE } from './terminal.js';
+import { detectedTrapDisguise } from './detect.js';
+import { promptDirection, readDirectionKey, restoreCommandMap } from './tty_prompts.js';
+import { commandResultCancelled } from './command_state.js';
+import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { HELP_FILES } from './help_files.js';
 import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { showExtendedCommandList } from './extended_commands.js';
 import { option_help } from './options.js';
@@ -297,5 +313,751 @@ export async function objectAtMonsterDescription(monster, state = game, { glyph 
         ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
         : glyphAt(monster.mx, monster.my, state);
     return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
+}
+// ---------------------------------------------------------------------------
+// C pager.c:self_lookat(), look_at_monster(), monhealthdescr(). Native
+// monhealthdescr() is disabled, so wounded creatures have no health prefix.
+// ---------------------------------------------------------------------------
+const COYOTE_NAMES = [
+    'Carnivorous Vulgaris', 'Road-Runnerus Digestus', 'Eatibus Anythingus',
+    'Famishus-Famishus', 'Eatibus Almost Anythingus', 'Eatius Birdius',
+    'Famishius Fantasticus', 'Eternalii Famishiis', 'Famishus Vulgarus',
+    'Famishius Vulgaris Ingeniusi', 'Eatius-Slobbius', 'Hardheadipus Oedipus',
+    'Carnivorous Slobbius', 'Hard-Headipus Ravenus', 'Evereadii Eatibus',
+    'Apetitius Giganticus', 'Hungrii Flea-Bagius', 'Overconfidentii Vulgaris',
+    'Caninus Nervous Rex', 'Grotesques Appetitus', 'Nemesis Ridiculii',
+];
+export async function lookAtMonster(monster, x, y) {
+    const accurate = !heroIsHallucinating();
+    const coyote = accurate && MONSTER_NAME[monster.mnum] === 'coyote';
+    const name = coyote ? `${monsterName(monster, { article: 'none', called: true, suppressSaddle: false })} - ${monster.mcan ? 'Canis latrans' : COYOTE_NAMES[monster.m_id % COYOTE_NAMES.length]}`
+        : distantMonsterName(monster);
+    const tail = monster.mx !== x || monster.my !== y;
+    const prefix = tail ? monster.isshk && accurate ? 'tail of ' : 'tail of a ' : '';
+    let description = prefix + (accurate && monster.mtame ? 'tame '
+        : accurate && monster.mpeaceful ? 'peaceful ' : '') + name;
+    if (game.u.ustuck === monster) {
+        // C pager.c:445: monster detection browses with u.uswallow cleared
+        // and iflags.save_uswallow set, so a detected engulfer still
+        // reports ", swallowing you" or ", engulfing you".
+        const swallowed = !!game.u.uswallow || !!game.iflags.save_uswallow;
+        description += swallowed
+            ? monsterDigests(monster) ? ', swallowing you' : ', engulfing you'
+            : heroFormSticks() ? ', being held' : ', holding you';
+    }
+    if (monster.mfrozen)
+        description += ", can't move (paralyzed or sleeping or busy)";
+    else if (monster.msleeping)
+        description += ', asleep';
+    else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK)
+        description += ', meditating';
+    if (monster.mleashed)
+        description += ', leashed to you';
+    const trap = game.level?.traps.find(t => t.tx === monster.mx && t.ty === monster.my);
+    if (monster.mtrapped && cansee(monster.mx, monster.my) && trap
+        && (trap.ttyp === BEAR_TRAP || is_pit(trap.ttyp) || trap.ttyp === WEB)) {
+        description += `, trapped in ${withIndefiniteArticle(trapName(trap.ttyp))}`;
+        trap.tseen = true;
+    }
+    if (monster.mundetected || monster.m_ap_type || visibleRegionAt(game, x, y)) {
+        const hidden = await monsterHiddenConditions(monster, game, { showAlternateMonster: false });
+        if (hidden.length)
+            description += `, ${hidden.join(', ')}`;
+    }
+    return description;
+}
+export function monsterSeenDescription(monster) {
+    const seen = howMonsterSeen(monster);
+    if (!seen || seen === MONSEEN_NORMAL)
+        return '';
+    const senses = [
+        [MONSEEN_NORMAL, 'normal vision'], [MONSEEN_SEEINVIS, 'see invisible'],
+        [MONSEEN_INFRAVIS, 'infravision'], [MONSEEN_TELEPAT, 'telepathy'],
+        [MONSEEN_XRAYVIS, 'astral vision'], [MONSEEN_DETECT, 'monster detection'],
+    ];
+    const descriptions = senses.filter(([bit]) => seen & bit).map(([, text]) => text);
+    if (seen & MONSEEN_WARNMON) {
+        if (heroIsHallucinating())
+            descriptions.push('paranoid delusion');
+        else {
+            const mask = (game.context.warntype?.obj ?? 0) | (game.context.warntype?.polyd ?? 0);
+            const speciesFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+            const category = [[0x08, 'human'], [0x10, 'elf'], [0x80, 'orc'], [0x100, 'demon']];
+            const name = category.find(([bit]) => mask & speciesFlags & bit)?.[1]
+                ?? monsterTypeName(monster.mnum, monster.female);
+            descriptions.push(`warned of ${makePlural(name)}`);
+        }
+    }
+    return descriptions.join(', ');
+}
+export async function selfLookDetails() {
+    const hero = game.u;
+    let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your', suppressSaddle: true })}` : '';
+    const species = heroSpecies();
+    const appearance = (hero.m_ap_type ?? 0) & 3;
+    if (appearance === M_AP_FURNITURE) {
+        const name = MAP_SYMBOLS[hero.mappearance ?? -1]?.name;
+        if (name)
+            result += `, mimicking ${withIndefiniteArticle(name)}`;
+    }
+    else if (appearance === M_AP_OBJECT) {
+        result += `, mimicking ${await objectAtMapDescription(hero.ux, hero.uy, glyphAt(hero.ux, hero.uy), game, 'hidden')}`;
+    }
+    else if (!appearance && hero.uundetected) {
+        const flags = MONSTER_FLAGS1[species] ?? 0;
+        if (flags & 0x80)
+            result += ', hiding under something';
+        else if (flags & 0x100) {
+            const ceiling = !!(flags & 0x10) && MONSTER_SYMBOL[species] !== 13 || !!(flags & 1);
+            result += `, hiding on the ${ceiling ? 'ceiling' : surfaceName(hero.ux, hero.uy)}`;
+        }
+        else
+            result += `, hiding${MONSTER_SYMBOL[species] === 57 && isPoolAt(hero.ux, hero.uy) ? ' in murky water' : ''}`;
+    }
+    const region = visibleRegionAt(game, hero.ux, hero.uy);
+    if (region)
+        result += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
+    return result;
+}
+export function selfTrapDescription() {
+    const hero = game.u;
+    if (!hero.utrap)
+        return '';
+    if (hero.utraptype === TT_BURIEDBALL)
+        return ', tethered to something buried';
+    if (hero.utraptype === TT_LAVA)
+        return `, sinking into ${displayLiquidName('lava')}`;
+    if (hero.utraptype === TT_INFLOOR)
+        return `, stuck in the ${surfaceName(hero.ux, hero.uy)}`;
+    const trap = game.level?.traps.find(t => t.tx === hero.ux && t.ty === hero.uy);
+    return `, trapped${trap ? ` in ${withIndefiniteArticle(trapName(trap.ttyp))}` : ''}`;
+}
+// C pager.c:do_supplemental_info(). The native without-asking branch does
+// not set yes_to_moreinfo, so verbose look does not open this extra window.
+export async function offerMonsterSupplement(monster, name, withoutAsking) {
+    if (withoutAsking || heroIsHallucinating() || !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x80))
+        return;
+    if (!name || name.length >= 255)
+        return;
+    const gangIndex = name.toLowerCase().indexOf(' of ');
+    const fence = name.toLowerCase().includes(' the fence');
+    if (gangIndex < 0 && !fence)
+        return;
+    if (await promptYesNo(`More info about "${name}"?`, 'n') !== 'y')
+        return;
+    const lines = gangIndex >= 0 ? [
+        `${name} is a member of a marauding horde of orcs`,
+        'rumored to have brutally attacked and plundered',
+        'the ordinarily sheltered town that is located ',
+        'deep within The Gnomish Mines.', '',
+        'The members of that vicious horde proudly and ',
+        'defiantly acclaim their allegiance to their',
+        `leader ${name.slice(gangIndex + 4)} in their names.`,
+    ] : [
+        `"${name}" is the common dungeon name of`,
+        'a nefarious orc who is known to acquire property',
+        'from thieves and sell it off for profit.', '',
+        'The perpetrator was last seen hanging around the',
+        'stairs leading to the Gnomish Mines.',
+    ];
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+}
+// ---------------------------------------------------------------------------
+// C pager.c:lookat() and trap_description(). Describe the displayed glyph;
+// the current square is consulted only where the native glyph needs context.
+// ---------------------------------------------------------------------------
+// Looking never reads an engraving: report its saved text, even when the
+// live inscription has since been scuffed or replaced.
+export function quotedEngraving(x, y, name, force = false) {
+    const engraving = game.level?.engravings?.find(e => e.x === x && e.y === y);
+    const headstone = name === 'grave';
+    if (!engraving || !force && name !== 'engraving' && !headstone)
+        return '';
+    return engraving.eread ? ` with ${headstone ? 'headstone reading' : 'remembered text'}: "${engraving.rememberedText}"`
+        : ` ${headstone ? 'whose headstone' : 'that'} you haven't read`;
+}
+export function lookGlyphAt(x, y) {
+    const glyph = glyphAt(x, y);
+    const mode = game.iflags.terrainmode;
+    if (!mode || !glyph)
+        return glyph;
+    const omitted = glyph.kind === 'monster' && !(mode & TER_MON)
+        || glyph.kind === 'object' && !(mode & TER_OBJ);
+    if (!omitted)
+        return glyph;
+    const location = game.level?.at(x, y);
+    return location ? terrain_glyph(location, x, y) : null;
+}
+// C do_screen_description() uses alternate wording while clairvoyance's
+// temporary monster detection is active, and whenever the hero is blind.
+export function unseenCreatureDescription() {
+    return heroIsBlind(game) || game.u.clairvoyanceDetection
+        ? 'unseen creature' : 'remembered, unseen, creature';
+}
+export function mapFeatureDescription(x, y, glyph) {
+    if (glyph.kind === 'trap')
+        return displayedTrapDescription(glyph.trapType, x, y);
+    if (glyph.kind === 'invisible')
+        return unseenCreatureDescription();
+    if (glyph.kind === 'engraving')
+        return 'engraving';
+    if (glyph.kind === 'effect' && glyph.glyph !== undefined) {
+        if (glyph.glyph >= GlyphOffset.zap && glyph.glyph < GlyphOffset.cmapC)
+            return '';
+        if (glyph.glyph >= GlyphOffset.cmapC && glyph.glyph < GlyphOffset.swallow) {
+            if (glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud))
+                return 'poison cloud';
+            if (glyph.glyph === cmapToGlyph(CmapSymbol.goodpos))
+                return 'valid position';
+            return '';
+        }
+    }
+    if (glyph.kind !== 'terrain')
+        return 'unexplored area';
+    const location = game.level?.at(x, y);
+    if (!location)
+        return 'unexplored area';
+    if (glyph.terrainName === 'altar') {
+        // pray.c:altarmask_at() gives the disguise priority over terrain.
+        const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+        const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
+            && monster.mappearance === CmapSymbol.altar
+            ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
+            : location.typ === ALTAR ? location.flags : 0;
+        const alignment = Amask2align(mask);
+        const distant = Is_astralevel(game.u.uz) && !adjacentToHero(x, y)
+            && !!(mask & AM_SANCTUM);
+        const name = distant ? 'aligned' : alignment === A_NONE ? 'unaligned'
+            : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+        return `${name} ${mask & AM_SANCTUM ? 'high ' : ''}altar`;
+    }
+    if (glyph.glyph === cmapToGlyph(CmapSymbol.ndoor) || glyph.terrainName === 'doorway') {
+        if (findDrawbridgeAt(x, y))
+            return 'open drawbridge portcullis';
+        return (location.doormask & ~D_TRAPPED) === D_BROKEN ? 'broken door' : 'doorway';
+    }
+    if (glyph.glyph === cmapToGlyph(CmapSymbol.cloud))
+        return Is_airlevel(game.u.uz) ? 'cloudy area' : 'fog/vapor cloud';
+    if ([CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice]
+        .some(symbol => glyph.glyph === cmapToGlyph(symbol)))
+        return waterbodyName(x, y);
+    if (glyph.glyph === cmapToGlyph(CmapSymbol.stone)) {
+        if (!location.seenv)
+            return 'unexplored';
+        if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
+            return adjacentToHero(x, y) ? 'land' : 'unknown';
+        if (location.typ === STONE || location.typ === SCORR)
+            return 'stone';
+    }
+    return glyph.terrainName;
+}
+// C pager.c:trap_description().
+export function displayedTrapDescription(type, x, y) {
+    return detectedTrapDisguise(type, x, y) ?? trapName(type);
+}
+function adjacentToHero(x, y) {
+    return Math.abs(x - game.u.ux) <= 1 && Math.abs(y - game.u.uy) <= 1;
+}
+// ---------------------------------------------------------------------------
+// C pager.c:do_screen_description(), add_cmap_descr(), append_str().
+// ---------------------------------------------------------------------------
+// encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
+const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
+export function screenDescription(x, y, description) {
+    const glyph = lookGlyphAt(x, y);
+    const location = game.level?.at(x, y);
+    const appearance = location?.disp_glyph
+        ? { ch: location.disp_ch, dec: location.disp_decgfx }
+        : location?.remembered_glyph;
+    if (!glyph || !appearance)
+        return { text: description, count: 0, firstMatch: '', needsDetail: false };
+    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
+    const prefix = `${symbol}        `;
+    const submerged = (game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz);
+    const distant = Math.abs(x - game.u.ux) > 1 || Math.abs(y - game.u.uy) > 1;
+    const detectionOnly = ((game.iflags.terrainmode ?? 0) & (TER_DETECT | TER_MAP)) === TER_DETECT;
+    if ((game.u.uswallow || submerged) && distant
+        || detectionOnly && glyph.glyph === cmapToGlyph(CmapSymbol.stone))
+        return { text: prefix + 'unreconnoitered', count: 1, firstMatch: 'unreconnoitered', needsDetail: false };
+    const meanings = [];
+    let count = 0, firstMatch = '', needLook = false, hitTrap = false, skippedVenom = false;
+    const append = (text, name, counted = true) => {
+        if (meanings.join(' or ').toLowerCase().includes(text.toLowerCase()))
+            return;
+        if (!meanings.length)
+            firstMatch = name;
+        meanings.push(text);
+        if (counted)
+            count++;
+    };
+    const sameSymbol = (candidate) => candidate.ch === appearance.ch && !!candidate.dec === !!appearance.dec;
+    if (Array.from({ length: 8 }, (_, index) => swallowSymbolAppearance(index)).some(sameSymbol)) {
+        append('the interior of a monster', 'the interior of a monster');
+        needLook = true;
+    }
+    const terrainmode = game.iflags.terrainmode ?? 0;
+    if (!terrainmode || terrainmode & TER_MON) {
+        for (let index = 1; index < MONSTER_CLASS_SYMBOLS.length; index++) {
+            const name = MONSTER_CLASS_EXPLAIN[index];
+            if (!name || name === 'invisible monster' || !sameSymbol({ ch: monsterClassSymbol(index) }))
+                continue;
+            append(withIndefiniteArticle(name), name);
+            needLook = true;
+        }
+        if (sameSymbol({ ch: monsterClassSymbol(MONSTER_CLASS_SYMBOLS.indexOf('@')) })
+            && x === game.u.ux && y === game.u.uy
+            && !Upolyd(game.u) && game.urace
+            && !['human', 'elf'].includes(game.urace.name))
+            append('you', 'you');
+    }
+    if (!terrainmode || terrainmode & TER_OBJ) {
+        // pager.c matches ROCK_CLASS against the BOULDER override when one
+        // is set for this level's symset (ov_rogue_syms on the Rogue level),
+        // else the default rock symbol.
+        const boulderSymbol = (Is_rogue_level(game.u.uz)
+            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[14] || '';
+        for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
+            const statue = index === 14 && glyph.kind === 'object' && glyph.statueGlyph;
+            const boulder = index === 14 && sameSymbol({ ch: boulderSymbol });
+            if (index === 14 ? !statue && !boulder : !sameSymbol({ ch: objectClassSymbol(index) }))
+                continue;
+            const name = index === 14 ? boulder ? 'boulder' : 'statue'
+                : OBJECT_CLASS_EXPLAIN[index];
+            if (!name)
+                continue;
+            needLook = true;
+            if (index === 17) {
+                skippedVenom = true;
+                continue;
+            }
+            append(withIndefiniteArticle(name), name);
+        }
+    }
+    if (sameSymbol({ ch: 'I' })) {
+        const name = unseenCreatureDescription();
+        append(withIndefiniteArticle(name), name);
+    }
+    if (glyph.kind === 'nothing' || sameSymbol({ ch: ' ' }))
+        append('the dark part of a room', 'the dark part of a room');
+    if (glyph.kind === 'unexplored' || sameSymbol({ ch: ' ' }))
+        append(submerged ? 'land' : 'unexplored', submerged ? 'land' : 'unexplored');
+    for (let order = 0; order <= CmapSymbol.goodpos; order++) {
+        const index = order === CmapSymbol.lava ? CmapSymbol.water
+            : order === CmapSymbol.lavawall ? CmapSymbol.lava
+                : order === CmapSymbol.water ? CmapSymbol.lavawall : order;
+        const definition = MAP_SYMBOLS[index];
+        const trapType = index - CmapSymbol.arrowTrap + 1;
+        const trap = trapType > 0 && trapType < TRAP_EXPLANATIONS.length;
+        let name = definition?.name ?? (trap ? TRAP_EXPLANATIONS[trapType]
+            : index === CmapSymbol.poisoncloud ? 'poison cloud'
+                : index === CmapSymbol.goodpos ? 'valid position' : '');
+        if (!name)
+            continue;
+        const candidate = index === CmapSymbol.darkroom
+            ? game.flags.dark_room !== false && game.flags.color !== false
+                ? cmapSymbolAppearance(CmapSymbol.room) : { ch: ' ', dec: false }
+            : definition ? cmapSymbolAppearance(index) : { ch: trap ? trapType === WEB ? '"'
+                    : trapType === VIBRATING_SQUARE ? '~' : '^' : index === CmapSymbol.poisoncloud ? '#' : '$', dec: false };
+        if (!sameSymbol(candidate))
+            continue;
+        if (index === CmapSymbol.darkroom && glyph.kind === 'nothing')
+            continue;
+        if (hitTrap && trap || count >= 3 && index >= CmapSymbol.vodbridge && index <= CmapSymbol.hcdbridge)
+            continue;
+        if (trapType === VIBRATING_SQUARE && count && !In_hell(game.u.uz)
+            && !(glyph.kind === 'trap' && glyph.trapType === VIBRATING_SQUARE))
+            continue;
+        if (index === CmapSymbol.pool)
+            name = 'pool';
+        else if (index === CmapSymbol.water)
+            name = Is_waterlevel(game.u.uz) ? 'limitless water' : 'wall of water';
+        else if (index === CmapSymbol.lava)
+            name = 'lava';
+        const liquid = [CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice].includes(index);
+        const article = name.includes(' of a room') ? `the ${name}`
+            : liquid || index === CmapSymbol.stone || name === 'air' ? name : withIndefiniteArticle(name);
+        append(!count && trap && trapType !== VIBRATING_SQUARE ? 'a trap' : article, name);
+        if (trap && trapType !== VIBRATING_SQUARE)
+            hitTrap = true;
+        if (index === CmapSymbol.pool) {
+            const currentLevel = game.u.uz;
+            const here = (level) => !!level && !!currentLevel && level.dnum === currentLevel.dnum && level.dlevel === currentLevel.dlevel;
+            const moat = here(game.medusa_level) ? 'shallow sea' : here(game.juiblex_level) ? 'swamp'
+                : game.urole?.key === 'samurai' && onQuestStart(game) ? 'pond' : 'moat';
+            append(moat === 'pond' ? 'a pond' : moat, moat, false);
+        }
+        if (index === CmapSymbol.altar || trap || index === CmapSymbol.engroom || index === CmapSymbol.engrcorr
+            || index === CmapSymbol.grave || liquid && heroIsHallucinating(game))
+            needLook = true;
+    }
+    for (const warning of warningSymbols().slice(1)) {
+        if (!sameSymbol({ ch: warning.ch }))
+            continue;
+        append(warning.desc, warning.desc);
+        if (game.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
+            meanings[meanings.length - 1] += ' co-located with a boulder';
+        break;
+    }
+    if (skippedVenom && count < 2)
+        append('a splash of venom', 'splash of venom');
+    let text = count > 4 ? 'can be many things' : meanings.join(' or ');
+    const needsDetail = count > 1 || needLook;
+    if (needsDetail) {
+        firstMatch = description || firstMatch;
+        if (firstMatch) {
+            text += ` (${firstMatch}${quotedEngraving(x, y, firstMatch)})`;
+            count = 1;
+        }
+    }
+    const literal = text.slice(0, BUFSZ - 1 - ENCODED_LOOK_PREFIX_LENGTH);
+    return { text: prefix + decodeMixedLiteral(literal), count, firstMatch, needsDetail };
+}
+// C pager.c:lookat() gives the sensed hero priority over the map glyph.
+// Terrain-only inspection deliberately omits that self description.
+export function farlookDescribesHero(x, y) {
+    return x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
+}
+// C pager.c:lookat(): the detailed description of the displayed glyph at
+// (x, y), from do_screen_description()'s second pass and getpos describes.
+export async function farlookLocationDescription(x, y) {
+    // Detection temporarily removes swallowing. Native lookat() compares
+    // the engulfer's glyph before deciding that this square describes us,
+    // even when the terrain mode will subsequently omit monsters.
+    const engulfer = x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && game.iflags.save_uswallow ? game.u.ustuck : null;
+    const describesEngulfer = engulfer
+        && glyphAt(x, y)?.glyph === transientMonsterGlyph(engulfer).glyph;
+    if (!describesEngulfer && farlookDescribesHero(x, y))
+        return lookatDescription(x, y);
+    if (game.u.uswallow && game.u.ustuck)
+        return `interior of ${monsterName(game.u.ustuck)}`;
+    const glyph = lookGlyphAt(x, y);
+    if (!glyph || glyph.kind === 'unexplored') {
+        if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
+            return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
+        return 'unexplored area';
+    }
+    if (glyph?.kind === 'warning') {
+        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
+        const warning = def_warnsyms[index];
+        if (!warning)
+            throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
+        return warning.desc;
+    }
+    if (glyph?.kind === 'nothing' || glyph?.kind === 'terrain'
+        && glyph.terrainName === 'dark part of a room')
+        return 'dark part of a room';
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+    if (monster && glyph?.kind === 'monster') {
+        return lookAtMonster(monster, x, y);
+    }
+    if (glyph.kind === 'object')
+        return objectAtMapDescription(x, y, glyph);
+    // Hallucinated statues project monster glyphs without a live monster.
+    if (glyph?.kind === 'monster' && heroIsHallucinating(game))
+        return randomDisplayMonsterName();
+    const description = mapFeatureDescription(x, y, glyph);
+    if (description === 'ice')
+        return iceDescriptionAt(x, y);
+    if (description === 'staircase down' && onQuestStart(game) && !okToQuest(game))
+        return 'blocked staircase down';
+    return description;
+}
+// C pager.c:lookat() and self_lookat(): the hero's own square as getpos
+// autodescribe, travel menus, and the look lists present it.
+export async function lookatDescription(x, y) {
+    if (x === game.u?.ux && y === game.u?.uy) {
+        const species = game.u.umonnum;
+        const polymorphName = heroIsPolymorphed(game) && species !== undefined
+            ? monsterTypeName(species, !!game.u.mfemale) : '';
+        const race = game.urace?.adj || game.urace?.name || 'human';
+        const role = game.urole?.name;
+        const roleName = game.flags.female && role?.f ? role.f : role?.m;
+        const form = polymorphName
+            || `${race} ${(roleName || 'adventurer').toLowerCase()}`;
+        const punishment = heroIsPunished()
+            ? ', chained to a heavy iron ball' : '';
+        const blind = heroIsBlind(game);
+        const telepathy = unblindTelepathyRange() >= 0;
+        const detection = heroDetectsMonsters(game);
+        const invisible = propertyIsActive('invisible', game);
+        // self_lookat() includes invisibility while blind only when sensed.
+        const prefix = invisible && (!blind || telepathy || detection)
+            ? 'invisible ' : '';
+        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
+        const unseen = invisible && !game.u.seeInvisible
+            && (game.u.seeInvisibleTurns ?? 0) === 0;
+        // lookat() treats touch while blind or swallowed as normal vision.
+        if (blind || game.u.uswallow || !(unseen || game.u.uundetected))
+            return description;
+        const senses = [
+            game.u.infravision ? 'infravision' : '',
+            telepathy ? 'telepathy' : '',
+            detection ? 'monster detection' : '',
+        ].filter(sense => sense.length > 0);
+        return senses.length > 0
+            ? `${description} [seen: ${senses.join(', ')}]` : description;
+    }
+    const loc = game.level?.at(x, y);
+    if (!loc)
+        return 'unexplored area';
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'warning' || glyph?.kind === 'nothing' || glyph?.kind === 'monster')
+        return farlookLocationDescription(x, y);
+    if (loc.typ === TREE && loc.remembered_glyph)
+        return 'tree';
+    if (!loc.remembered_glyph && !cansee(x, y))
+        return 'unexplored area';
+    // C pager.c:do_screen_description() describes the displayed glyph, not
+    // the terrain below it.  A visible (or still remembered) pile therefore
+    // owns farlook before the room/corridor fallback.
+    return await farlookLocationDescription(x, y) || 'unexplored area';
+}
+export async function showLookList(kind, nearby, describeHero) {
+    if (!game.level)
+        return;
+    const mode = game.iflags.getpos_coords === 'n' ? 'm' : game.iflags.getpos_coords ?? 'm';
+    const entries = lookListEntries(kind, nearby, mode, describeHero);
+    const first = await entries.next();
+    if (first.done) {
+        if (kind === 'monsters' || kind === 'objects')
+            await pline(`No ${kind} are currently shown ${nearby ? 'nearby' : 'on the map'}.`);
+        else
+            await pline(`No ${kind} seen or remembered${nearby ? ' nearby' : ''}.`);
+        return;
+    }
+    const firstLine = first.value;
+    async function* content() {
+        yield listHeading(kind, nearby, mode);
+        yield '    ';
+        yield firstLine;
+        yield* entries;
+    }
+    await displayPagerText(content());
+}
+async function* lookListEntries(kind, nearby, mode, describeHero) {
+    const level = game.level;
+    if (!level)
+        return;
+    const lowX = nearby ? Math.max(1, game.u.ux - BOLT_LIM) : 1;
+    const highX = nearby ? Math.min(COLNO - 1, game.u.ux + BOLT_LIM) : COLNO - 1;
+    const lowY = nearby ? Math.max(0, game.u.uy - BOLT_LIM) : 0;
+    const highY = nearby ? Math.min(ROWNO - 1, game.u.uy + BOLT_LIM) : ROWNO - 1;
+    for (let y = lowY; y <= highY; y++) {
+        for (let x = lowX; x <= highX; x++) {
+            const glyph = glyphAt(x, y);
+            if (!glyph)
+                continue;
+            const covering = coveringSymbolAt(x, y);
+            let symbol = mapSymbolAt(x, y), description = '';
+            let obscured = false;
+            if (kind === 'monsters') {
+                if (glyph.kind === 'monster') {
+                    if (x === game.u.ux && y === game.u.uy && canSpotHeroSelf())
+                        description = (await describeHero()).split(' [seen: ')[0] ?? '';
+                    else {
+                        const monster = monsterAtPosition(level, x, y);
+                        if (monster)
+                            description = await lookAtMonster(monster, x, y);
+                    }
+                }
+                else if (glyph.kind === 'invisible')
+                    description = 'remembered, unseen, creature';
+                else if (glyph.kind === 'warning') {
+                    const warning = def_warnsyms[(glyph.glyph ?? -1) - GlyphOffset.warning];
+                    if (warning)
+                        description = warning.desc;
+                }
+            }
+            else if (kind === 'objects') {
+                if (glyph.kind === 'object')
+                    description = await objectAtMapDescription(x, y, glyph);
+            }
+            else if (kind === 'traps') {
+                if (glyph.kind === 'trap')
+                    description = displayedTrapDescription(glyph.trapType, x, y);
+                else {
+                    const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
+                    if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
+                        description = trapName(trap.ttyp);
+                        obscured = true;
+                        symbol = transientTrapGlyph(trap).ch;
+                    }
+                }
+            }
+            else {
+                const location = level.at(x, y);
+                const engraving = level.engravings?.find(e => e.x === x && e.y === y);
+                if (!location?.seenv || !engraving)
+                    continue;
+                const headstone = location.lastseentyp === GRAVE;
+                const suffix = quotedEngraving(x, y, headstone ? 'grave' : 'engraving', true);
+                description = ' ' + (headstone ? suffix.replace(/^ (with |whose )/, '')
+                    : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`);
+                const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
+                if (!shown) {
+                    obscured = true;
+                    symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
+                }
+            }
+            if (!description)
+                continue;
+            let coordinates = coordinateDescription(x, y, mode);
+            if (mode === 'm' && y < 10 && (kind === 'monsters' || kind === 'objects'))
+                coordinates += ' ';
+            const prefix = mode === 's' ? coordinates : coordinates.padStart(mode === 'm' ? 8 : 12);
+            // Each encoded native glyph uses nine more bytes than its visible character.
+            const limit = BUFSZ - 1 - 9 * (obscured ? 2 : 1);
+            const rowPrefix = `${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}`;
+            const literal = description + (obscured ? ', obscured by ' : '');
+            const remaining = limit - rowPrefix.length;
+            // Truncate the native buffer before decoding, and keep rendered
+            // glyph symbols out of the literal backslash handling.
+            yield rowPrefix + decodeMixedLiteral(literal.slice(0, remaining))
+                + (obscured ? covering.slice(0, Math.max(0, remaining - literal.length)) : '');
+        }
+    }
+}
+function listHeading(kind, nearby, mode) {
+    if (kind === 'traps' || kind === 'engravings')
+        return nearby ? `Nearby seen or remembered ${kind}:` : `Seen or remembered ${kind} on this level:`;
+    if (!nearby)
+        return `All ${kind} currently shown on the map:`;
+    const name = kind.charAt(0).toUpperCase() + kind.slice(1);
+    return `${name} currently shown near ${mode === 'c' ? canSpotHeroSelf() ? 'you' : 'your position' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
+}
+export function coordinateDescription(x, y, mode) {
+    if (mode === 'n')
+        return '';
+    if (mode === 'm')
+        return `<${x},${y}>`;
+    if (mode === 's')
+        return `[${String(y + 2).padStart(2, '0')},${String(x).padStart(2, '0')}]`;
+    const dx = x - game.u.ux, dy = y - game.u.uy;
+    if (!dx && !dy)
+        return '(here)';
+    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1)
+        return `(${dy ? dy > 0 ? 'south' : 'north' : ''}${dx ? dx > 0 ? 'east' : 'west' : ''})`;
+    const full = mode === 'f';
+    const parts = [dy ? `${Math.abs(dy)}${dy > 0 ? full ? 'south' : 's' : full ? 'north' : 'n'}` : '',
+        dx ? `${Math.abs(dx)}${dx > 0 ? full ? 'east' : 'e' : full ? 'west' : 'w'}` : ''].filter(Boolean);
+    return `(${parts.join(',')})`;
+}
+function mapSymbolAt(x, y) {
+    const location = game.level?.at(x, y);
+    if (!location)
+        return ' ';
+    return location.disp_decgfx ? DEC_TO_UNICODE[location.disp_ch] ?? location.disp_ch : location.disp_ch;
+}
+// The "obscured by" clause decodes the covering glyph into its raw native
+// symbol byte (windows.c decode_mixed()) and prints it mid-line, outside
+// the DECgraphics shift. A DEC symbol byte never survives the captured
+// screen, so only plain ASCII symbols appear there.
+function coveringSymbolAt(x, y) {
+    const location = game.level?.at(x, y);
+    if (!location)
+        return ' ';
+    return location.disp_decgfx ? '' : location.disp_ch;
+}
+// ---------------------------------------------------------------------------
+// C pager.c:doidtrap(). Identifying a known trap never spends a turn.
+// ---------------------------------------------------------------------------
+export async function identifyTrap() {
+    game.context.move = 0;
+    const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });
+    if (!direction) {
+        // pager.c:doidtrap() returns ECMD_CANCEL when getdir() is declined;
+        // the rhack seam clears the queues after the command.
+        commandResultCancelled();
+        return;
+    }
+    const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;
+    const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'trap' && [BEAR_TRAP, TRAPPED_CHEST, TRAPPED_DOOR].includes(glyph.trapType)) {
+        const disguise = detectedTrapDisguise(glyph.trapType, x, y);
+        if (disguise) {
+            await pline(`That is a ${disguise}.`);
+            return;
+        }
+    }
+    const trap = game.level?.traps.find(t => t.tx === x && t.ty === y && t.tseen);
+    if (trap && !(direction.dz && (direction.dz < 0 ? is_hole(trap.ttyp) : trap.ttyp === ROCKTRAP))) {
+        const made = !trap.madeby_u ? '' : trap.ttyp === WEB ? ' woven'
+            : trap.ttyp === HOLE || trap.ttyp === PIT ? ' dug' : ' set';
+        await pline(`That is ${withIndefiniteArticle(trapName(trap.ttyp))}${made}${trap.madeby_u ? ' by you' : ''}.`);
+    }
+    else
+        await pline("I can't see a trap there.");
+}
+// ---------------------------------------------------------------------------
+// C pager.c:dispfile_*, docontact(), domenucontrols().
+// ---------------------------------------------------------------------------
+export async function displayHelpFile(name, keyHelp = false) {
+    clearMessageWindow();
+    const lines = HELP_FILES.get(name);
+    if (!lines) {
+        await pline(`Cannot open "${name}".`);
+        return;
+    }
+    // tty_display_file expands tabs before putstr; whatdoes_help instead
+    // discards comments and the leading indentation in KEYHELP.
+    const content = keyHelp ? lines.filter(line => !line.startsWith('#')).map(line => line.replace(/^[ \t]+/, ''))
+        : lines.map(expandTabs);
+    if (content.length)
+        await displayPagerText(content);
+    game.context.move = 0;
+}
+// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
+// stays on the bottom row even when the text fits on a short last page.
+export async function displayPagerText(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await restoreCommandMap();
+}
+function expandTabs(line) {
+    let text = '';
+    for (const ch of line)
+        text += ch === '\t' ? ' '.repeat(8 - text.length % 8) : ch;
+    return text;
+}
+export async function contactHelp() {
+    await displayPagerText([
+        'To contact the NetHack development team directly,',
+        "see the 'Contact' form on our website or email <devteam@nethack.org>.",
+        '',
+        'For more information on NetHack, or to report a bug,',
+        'visit our website "https://www.nethack.org/".',
+    ]);
+}
+// C pager.c:setopt_cmd().
+export function setOptionsCommand() {
+    const bindings = game.commandBindings;
+    const full = bindings.keyForCommand('optionsfull');
+    if (full)
+        return `'${visibleCommandKey(full)}'`;
+    const prefix = bindings.keyForCommand('reqmenu');
+    const options = bindings.keyForCommand('options');
+    return `'#optionsfull' or '${prefix ? visibleCommandKey(prefix) : '#reqmenu'} ${options ? visibleCommandKey(options) : '#options'}'`;
+}
+// C pager.c:domenucontrols().
+export async function menuControlsHelp() {
+    const key = (command) => visibleCommandKey(game.commandBindings.menuKey(command));
+    const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
+    const goTo = (key, name) => wholeAndPage('', key, name);
+    await displayPagerText([
+        'Menu control keys:', '',
+        '           Whole  Current', '            Menu   Page',
+        wholeAndPage('Select', key('.'), key(',')), wholeAndPage('Invert', key('@'), key('~')),
+        wholeAndPage('Deselect', key('-'), key('\\')), '',
+        wholeAndPage('Go to', key('>'), 'Next page'), goTo(key('<'), 'Previous page'),
+        goTo(key('^'), 'First page'), goTo(key('|'), 'Last page'), '',
+        wholeAndPage('Search', key(':'), 'Exter a target string and invert all matching entries'), '',
+        '   Other   Return   Accept current choice(s) and dismiss menu',
+        '           Enter    Same as Return',
+        '           Space    If not on last page, advance one page;',
+        '                    when on last page, treat like Return',
+        '           Escape   Cancel menu without making any choice(s)',
+    ]);
 }
 //# sourceMappingURL=pager.js.map

@@ -98,7 +98,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
 import { getLine } from './query.js';
-import { coordinateDescription } from './pager_lists.js';
+import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { heroLocomotion } from './hero_locomotion.js';

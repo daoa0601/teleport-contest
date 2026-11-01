@@ -324,10 +324,10 @@ pager.c	checkfile	? Seek error on 'data' file!	dead	Native unreachable with an i
 pager.c	checkfile	Cannot open 'data' file!	dead	Native unreachable with an intact install: the branch needs dlb_fopen(DATAFILE) to fail, and the recorder ships a readable nhdat. The port embeds the data file.
 pager.c	docontact	To contact local support,	dead	pager.c:docontact() needs sysopt.support for this variant; pinned install/games/lib/nethackdir/sysconf leaves SUPPORT commented out.
 pager.c	docontact	To contact local support, contact	dead	pager.c:docontact() needs sysopt.fmtd_wizard_list for this variant; cfgfiles.c:cnf_line_WIZARDS() only formats a list when WIZARDS is nonempty and not *, while the pinned sysconf sets WIZARDS=*.
-pager.c	doidtrap	That is a trapped	composed	src/js/pager_traps.ts:identifyTrap; detectedTrapDisguise supplies trapped chest or trapped door after That is a.
-pager.c	look_engrs	(engraving with	composed	src/js/pager_lists.ts:lookListEntries; The engraving rows strip the quoted prefix the way strsubst()("(engraving with ", "") does; suffix.slice(6) removes the same " with ".
-pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects engravings and the optional nearby suffix.
-pager.c	look_traps	No traps seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects traps and the optional nearby suffix.
+pager.c	doidtrap	That is a trapped	composed	src/js/pager.ts:identifyTrap; detectedTrapDisguise (detect.ts) supplies trapped chest or trapped door after That is a.
+pager.c	look_engrs	(engraving with	composed	src/js/pager.ts:lookListEntries; The engraving rows strip the quoted prefix the way strsubst()("(engraving with ", "") does; suffix.slice(6) removes the same " with ".
+pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager.ts:showLookList; Selects engravings and the optional nearby suffix.
+pager.c	look_traps	No traps seen or remembered	composed	src/js/pager.ts:showLookList; Selects traps and the optional nearby suffix.
 pager.c	mhidden_description	, masquerading as	composed	src/js/pager.ts:monsterHiddenConditions; The M_AP_MONSTER disguise is described as masquerading as plus the indefinite species name, joined with the leading comma.
 pickup.c	query_category	*pick_list != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pickup.c	query_category	Auto-select every item being worn or wielded	dead	The only WORN_TYPES caller is menu_remarm(), which omits CHOOSE_ALL; the do_worn arm of the CHOOSE_ALL menu is unreachable.

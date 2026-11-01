@@ -2,7 +2,7 @@
 import { game } from './gstate.js';
 import { flush_screen } from './display.js';
 import { vision_recalc } from './vision.js';
-import { coordinateDescription } from './pager_lists.js';
+import { coordinateDescription } from './pager.js';
 import { messageTypeFor } from './message_types.js';
 import { truncatePlineMessage, truncateRawMessage } from './pline_text.js';
 import { displayMessageWindow, rememberToplines, replaceTopline, updateTopline, } from './tty_topline.js';

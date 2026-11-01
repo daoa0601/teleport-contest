@@ -12,7 +12,7 @@ import { addMessageTypeRule } from './message_types.js';
 import type { MessageType, MessageTypeRule } from './message_types.js';
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuColoringRule, MenuStyle } from './flags.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
-import { displayHelpFile, displayPagerText } from './pager_help.js';
+import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';

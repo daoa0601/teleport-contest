@@ -3,9 +3,10 @@
 import {
     CORR, DOOR, D_BROKEN,
     D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, IS_OBSTRUCTED, IS_TREE,
-    IS_WALL, ROOM, SCORR, SDOOR, SHOPBASE, W_NONDIGGABLE,
+    IS_WALL, ROOM, SCORR, SDOOR, SHOPBASE, W_NONDIGGABLE, isok,
 } from './const.js';
 import { convertSecretDoor } from './detect.js';
+import { buryFloorObjectsAt } from './buried_object.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -13,7 +14,7 @@ import type { MessagePublisher } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { placeCreatedObject } from './floor_object.js';
 import type { PlayingGameState } from './game_state.js';
-import { requireLiveGame } from './gstate.js';
+import { requireLiveGame, game, requirePlayingGame } from './gstate.js';
 import { placeTreeFruit } from './hero_digging.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -100,4 +101,25 @@ export async function digMonsterTunnel(monster: Monster, state: PlayingGameState
     if (!level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
         vision_note_blocker_change(x, y);
     return { died: false, heroDied: false };
+}
+
+// C dig.c:wiz_debug_cmd_bury(). Counts floor objects, including rocks which
+// disappear into the ground rather than joining the buried-object list.
+export async function wizBury(): Promise<void> {
+    requirePlayingGame(game);
+    const level = game.level;
+    let before = 0, after = 0;
+    for (let x = game.u.ux - 1; x <= game.u.ux + 1; x++) {
+        for (let y = game.u.uy - 1; y <= game.u.uy + 1; y++) {
+            if (!isok(x, y)) continue;
+            before += level.objects[x]?.[y]?.length ?? 0;
+            await buryFloorObjectsAt(x, y);
+            after += level.objects[x]?.[y]?.length ?? 0;
+        }
+    }
+    const buried = before - after;
+    await plineWithContinuation(before === 0 ? 'No objects here or adjacent to bury.'
+        : buried === 0 ? 'No objects buried.'
+            : `${buried} object${buried === 1 ? '' : 's'} buried.`);
+    game.context.move = 0;
 }

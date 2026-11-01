@@ -17,7 +17,7 @@ import {
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
-import { randomTypeByDescription } from './wish_lookup.js';
+import { randomTypeByDescription } from './objnam.js';
 import { deallocateObject } from './object_delete.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

@@ -6,7 +6,7 @@ import { terrain_glyph } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
-import { mapFeatureDescription } from '../js/pager_features.js';
+import { mapFeatureDescription } from '../js/pager.js';
 import { initRng } from '../js/rng.js';
 import { roomBindings } from './support/themed-room-bindings.js';
 

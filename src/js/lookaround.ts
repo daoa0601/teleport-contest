@@ -16,7 +16,7 @@ import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { farlookLocationDescription, screenDescription } from './pager_description.js';
+import { farlookLocationDescription, screenDescription } from './pager.js';
 import type { Selection } from './selvar.js';
 import {
     selection_floodfill, selection_getbounds, selection_getpoint,

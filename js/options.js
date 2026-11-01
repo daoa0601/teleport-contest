@@ -6,7 +6,7 @@ import { findAlignment, findGender, findRace, findRole, randomCharacterOption } 
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
-import { displayHelpFile, displayPagerText } from './pager_help.js';
+import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
 import { classifyStatusTerrain } from './hack.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { lookAtMonster } from '../js/pager_monsters.js';
+import { lookAtMonster } from '../js/pager.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a named cancelled coyote retains its species before its Latin alias', async () => {

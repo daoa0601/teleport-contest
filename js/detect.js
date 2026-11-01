@@ -331,6 +331,27 @@ async function findHiddenMonster(monster, viaWarning) {
     }
     return 1;
 }
+// C detect.c:trapped_chest_at()/trapped_door_at() identify the projection,
+// not whether a visible box or door still has its trap armed.
+export function detectedTrapDisguise(type, x, y) {
+    if (glyphAt(x, y)?.kind !== 'trap')
+        return null;
+    if (type === TRAPPED_CHEST && (!heroIsHallucinating() || rn2(20) === 0)) {
+        const level = game.level;
+        const boxes = level?.objects[x]?.[y] ?? [];
+        const here = x === game.u.ux && y === game.u.uy;
+        const carried = here ? [...game.inventory, ...game.u.usteed?.minvent ?? []] : [];
+        const monster = level ? monsterAtPosition(level, x, y) : null;
+        const isBox = (object) => object.otyp === CHEST || object.otyp === LARGE_BOX;
+        if (boxes.some(isBox) || [...carried, ...monster?.minvent ?? []]
+            .some(object => isBox(object) && object.otrapped))
+            return 'trapped chest';
+    }
+    if (type === TRAPPED_DOOR && (!heroIsHallucinating() || rn2(20) === 0)
+        && game.level?.at(x, y)?.typ === DOOR)
+        return 'trapped door';
+    return null;
+}
 // C detect.c:sense_trap(). A hallucinating hero remembers a fabricated
 // object glyph, while the real trap remains discovered and unchanged.
 async function senseDetectedTrap(trap) {

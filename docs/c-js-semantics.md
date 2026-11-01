@@ -84,7 +84,7 @@ gameplay changes.
 | `o_init.c:doclassdisco` (1108) | `discovered_cmp`, as above | Yes; the same equal-name case within one class. | `o_init.ts:classDiscoveries`: the same stable sort. |
 | `shk.c:make_itemized_bill` (1661) | `sortbill_cmp`: used-up first, descending cost, then bill index | Yes; separate hero-owned containers with equally priced unpaid contents both have bill index -1. Ordinary bill indices distinguish other entries; used/intact halves sort separately. The wrapper retains bill traversal order for equal container entries. | `shop_payment.ts:itemizedShopBill`: stable `Array.sort` by used status, price, and bill index. |
 | `spell.c:sortspells` (1969) | `spell_cmp`: casting slot, or selected level/skill keys followed by case-insensitive spell name | No in normal play; each learned spell type appears once and spell names are distinct. Maintain-current mode returns before sorting. | `spell_menu.ts:compareSpells`: `Array.sort` by the same keys; maintain-current bypasses sorting. |
-| `wizcmds.c:list_migrating_mons` (1584) | `migrsort_cmp`: destination dungeon, level, then monster ID | No; monster IDs are unique. Wizard-only path excluded. | `wizard_migration.ts:listMigratingMonsters`: `Array.sort` by destination and monster ID. |
+| `wizcmds.c:list_migrating_mons` (1584) | `migrsort_cmp`: destination dungeon, level, then monster ID | No; monster IDs are unique. Wizard-only path excluded. | `wizcmds.ts:listMigratingMonsters`: `Array.sort` by destination and monster ID. |
 
 ### Host measurement and the ration menu
 
