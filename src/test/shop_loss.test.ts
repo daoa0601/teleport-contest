@@ -1,4 +1,4 @@
-import { monsterGoldAmount } from '../js/shop_money.js';
+import { monsterGoldAmount } from '../js/hero_gold.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -6,11 +6,9 @@ import assert from 'node:assert/strict';
 import { ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { DAGGER } from '../js/object_data.js';
-import {
-    chargeDestroyedShopContent, settleDestroyedShopCharges, stolenValue,
-} from '../js/shop_loss.js';
+import { chargeDestroyedShopContent, settleDestroyedShopCharges } from '../js/container_impact.js';
 import { SACK } from '../js/object_data.js';
-import { shopObjectUnitCost } from '../js/shk.js';
+import { shopObjectUnitCost, stolenValue } from '../js/shk.js';
 import { flush_screen } from '../js/display.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

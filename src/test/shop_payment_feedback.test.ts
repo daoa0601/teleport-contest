@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { deleteObject } from '../js/object_delete.js';
 import { DAGGER, SACK } from '../js/object_data.js';
-import { buyShopBillItem, itemizedShopBill } from '../js/shop_payment.js';
+import { buyShopBillItem, itemizedShopBill } from '../js/shk.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

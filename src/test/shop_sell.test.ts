@@ -1,4 +1,3 @@
-import { monsterGoldAmount } from '../js/shop_money.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, { type TestContext } from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -7,20 +6,15 @@ import assert from 'node:assert/strict';
 
 import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
 import {
     CORPSE, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, OBJECT_COST, OBJECT_NAMES,
     POT_FRUIT_JUICE, SACK, TIN,
 } from '../js/object_data.js';
 import { HUNGRY, WEAK } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
-import {
-    SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDroppedObject,
-    setSellDisposition, shopOfferForObject,
-} from '../js/shop_sell.js';
 import { shopStocksObject } from '../js/shknam.js';
-import type { SellDisposition } from '../js/shop_sell.js';
-import { shopGetPrice } from '../js/shop_loss.js';
+import { shopGetPrice, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition, shopOfferForObject, type SellDisposition } from '../js/shk.js';
 import {
     MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION,
 } from '../js/monster_data.js';

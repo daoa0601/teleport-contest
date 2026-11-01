@@ -5,7 +5,7 @@ import { addFruit } from '../js/fruit.js';
 import { readObjectName } from '../js/objnam.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addShopDamage, shopkeeperRepairsDamage } from '../js/shop_damage.js';
+import { addShopDamage, shopkeeperRepairsDamage } from '../js/shk.js';
 import { hasShopkeeperData } from '../js/shop_types.js';
 import { initRng } from '../js/rng.js';
 import { detectTraps } from '../js/trap_detection.js';

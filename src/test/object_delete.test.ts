@@ -13,8 +13,7 @@ import { deleteObject, delobj } from '../js/object_delete.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { addShopObjectToBill } from '../js/shk.js';
-import { itemizedShopBill } from '../js/shop_payment.js';
+import { addShopObjectToBill, itemizedShopBill } from '../js/shk.js';
 import {
     AMULET_OF_YENDOR, MAGIC_LAMP, OIL_LAMP, OBJECT_NAMES,
 } from '../js/object_data.js';
