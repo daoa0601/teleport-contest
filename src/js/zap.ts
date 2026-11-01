@@ -1066,6 +1066,8 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     return rangeChange;
 }
 
+// C zap.c:zap_over_floor() for ray and wand spots; mcastu.c reaches it
+// through mon_spell_hits_spot() for monster fire and lightning spells.
 export async function applyRayFloorFeatures(
     kind: RayFloorKind, x: number, y: number, state: GameState = game,
     { rayNoun = 'bolt', random = rn2, heroCaused = true,

@@ -1903,3 +1903,5 @@ vpline	alloc	n/a	memory allocation for the accessiblemsg coordinate prefix; plin
 vpline	dumplogmsg	n/a	DUMPLOG_CORE dump-file message log; the replay grader writes no dump log
 vpline	execplinehandler	n/a	MSGHANDLER fork/exec of a user message handler; an operating-system feature with no grader effect (c-js-semantics lists it out of scope)
 vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (tty_topline.ts), the putstr(WIN_MESSAGE) owner
+mcast_stun_you	make_stunned	inlined	the stun timeout write, the 0<->nonzero botl flag, and the status transition are inline (mcastu.ts:484-486); set_itimeout replaces the timeout, matching duration over stunnedTurns
+mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed state and the caller prints the burn-away message (mcastu.ts:563-565); slime.ts burnAwayHeroSlime is the shared timeout.c owner
