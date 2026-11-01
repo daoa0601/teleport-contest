@@ -1932,3 +1932,6 @@ tty_status_update	critically_low_hp	inlined	the hitpoint bar samples criticallyL
 tty_status_update	stat_cap_indx	inlined	the capacity index is read directly from nearCapacity() (botl.ts:118 and wintty.ts's shrink path); stat_cap_indx() was a window-port callback for that value
 do_loot_cont	cmdq_add_ec	inlined	the queued #force is game._cannedCommands.push({kind:'command',name:'force'}) (pickup.ts:616-619), the port's CQ_CANNED queue
 mbhit	sgn	inlined	dx/dy are Math.sign of the mux/muy deltas (muse.ts resolveMonsterImmediateWand)
+zap_map	is_db_wall	inlined	the portcullis test is originalType === DBWALL inline (zap.ts zapDrawbridge)
+zap_updown	is_db_wall	inlined	the portcullis test is level.requireAt(x,y).typ === DBWALL inline (zap.ts zapVertically and strikeOrLockVertically)
+zap_updown	mksobj_at	inlined	mksobj() plus placeCreatedObject() create and place the dislodged rock (zap.ts strikeOrLockVertically), which is what mksobj_at() composes

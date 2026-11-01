@@ -556,6 +556,7 @@ async function probeVertically(source: GameObject, x: number, y: number, state: 
     if (!found) await plineWithContinuation('Your probe reveals nothing.');
 }
 
+// C invent.c:display_binventory(): objects beneath the probed surface.
 async function displayBuriedInventory(x: number, y: number, state: PlayingGameState) {
     const pile = state.level.objects[x]?.[y] || [];
     let underwhat = 'here', count = 0;
@@ -629,6 +630,7 @@ export async function zapMapAt(x: number, y: number, source: GameObject, { state
     if (learned) learnWand(source, { state });
 }
 
+// C zap.c:maybe_explode_trap(): cancellation striking a magic trap.
 async function cancelMagicTrap(x: number, y: number, source: GameObject, state: PlayingGameState) {
     if (![WAN_CANCELLATION, SPE_CANCELLATION].includes(source.otyp)) return false;
     const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
