@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { applyMonsterContactPassive } from '../js/monster_contact_passive.js';
+import { applyMonsterContactPassive } from '../js/mhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

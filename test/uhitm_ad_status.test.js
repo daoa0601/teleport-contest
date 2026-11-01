@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, } from '../js/uhitm.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

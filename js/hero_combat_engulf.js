@@ -19,7 +19,7 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS, } from './monster_attack_types.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAnimal, monsterIsRider, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { resolveMonsterCorpseChance } from './monster_death.js';
-import { drainMonsterEnergy } from './monster_energy.js';
+import { drainMonsterEnergy } from './mhitm.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';

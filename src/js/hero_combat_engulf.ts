@@ -31,7 +31,7 @@ import {
     monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData,
 } from './monster_data.js';
 import { resolveMonsterCorpseChance } from './monster_death.js';
-import { drainMonsterEnergy } from './monster_energy.js';
+import { drainMonsterEnergy } from './mhitm.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';

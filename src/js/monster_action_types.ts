@@ -18,7 +18,7 @@ import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_of
 import type { AttackMethod, DamageType, AT_EXPL, AT_GAZE, AT_ENGL, AT_WEAP, AT_BREA, AT_SPIT } from './monster_attack_types.js';
 import type { HeroMonsterWeaponVolley } from './monster_projectile_types.js';
 import type { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import type { applyMonsterContactPassive } from './monster_contact_passive.js';
+import type { applyMonsterContactPassive } from './mhitm.js';
 import type { MonsterBearTrapEvent } from './bear_trap.js';
 import type { MonsterFireTrapEvent } from './fire_trap.js';
 import type { MonsterLandMineEvent } from './landmine_trap.js';

@@ -43,7 +43,7 @@ import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec,
     mhitmAdFire, mhitmAdLegs, mhitmAdStun, physicalDamage,
 } from './uhitm.js';
-import { drainMonsterEnergy } from './monster_energy.js';
+import { drainMonsterEnergy } from './mhitm.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {

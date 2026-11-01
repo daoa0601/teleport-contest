@@ -27,7 +27,7 @@ import { heroCanBeBlindedByContact, monsterResistsBlindingLight } from './blindi
 import { heroLegName } from './body_parts.js';
 import { A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, FAINTED, G_NOCORPSE, Is_airlevel, Is_waterlevel, isok, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MSLOW, NON_PM, POOL, RLOC_MSG, RLOC_NOMSG, STRAT_WAITFORU, STONING, Upolyd, WATER, W_AMUL, W_ARMH, W_SADDLE, } from './const.js';
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, shieldeff } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff } from './display.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -49,10 +49,10 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { splitMonster } from './monster_clone.js';
-import { rejectMonsterShadeContact, showMonsterArtifactFallbackHit } from './monster_combat_messages.js';
+import { showMonsterArtifactFallbackHit } from './mhitm.js';
 import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { drainMonsterEnergy } from './monster_energy.js';
+import { drainMonsterEnergy } from './mhitm.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
 import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
@@ -116,7 +116,9 @@ import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { objectCanTouchShade } from './hero_object_contact.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { cansee } from './vision.js';
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster) {
@@ -1792,6 +1794,22 @@ export async function resolvePhysicalHeroHug(monster, damage, state, random, pub
     // A failed capture still deals the rolled hug damage. Another holder
     // prevents capture and crushing prose, but does not protect against it.
     return damage;
+}
+export async function rejectMonsterShadeContact(aggressor, defender, weapon, { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d, thrown = false }) {
+    if (!monsterIsShade(defender)
+        || weapon && rollPhysicalWeaponDamage(weapon, defender, { state, rollOne, rollDice }) !== 0)
+        return false;
+    if (visible && (cansee(defender.mx, defender.my) || canSenseMonster(defender))) {
+        const what = !weapon || objectCanTouchShade(weapon, state) ? 'attack' : objectCombatName(weapon, { state });
+        const target = monsterName(defender, { state });
+        const subject = thrown ? capitalizedDefiniteName(what, state)
+            : `${possessiveName(monsterName(aggressor, { state, capitalized: true }))} ${what}`;
+        await publish(`${subject} ${verbForSubject(what, 'pass')} harmlessly through ${target}.`);
+        if (!canSpotMonster(defender))
+            await map_invisible(defender.mx, defender.my);
+    }
+    defender.msleeping = 0;
+    return true;
 }
 const PM_PURPLE_WORM = MONSTER_NAME.indexOf('purple worm');
 const PM_SHRIEKER = MONSTER_NAME.indexOf('shrieker');

@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_CURS, AD_DETH, AD_DISE, AD_DREN, AD_DRIN, AD_DRLI, AD_FAMN, AD_PEST, AT_ENGL, AT_TENT, AT_TUCH, } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';

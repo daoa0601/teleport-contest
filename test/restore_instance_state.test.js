@@ -15,7 +15,7 @@ import { updateHeroHunger } from '../js/hunger.js';
 import { rndmonstAdj } from '../js/makemon.js';
 import { beginMealMimicry } from '../js/meal_mimic.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
-import { reportMonsterCombatNoise } from '../js/monster_combat_messages.js';
+import { reportMonsterCombatNoise } from '../js/mhitm.js';
 import { BOULDER, CLUB, DAGGER, GOLD_PIECE, STETHOSCOPE } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { initRng } from '../js/rng.js';
