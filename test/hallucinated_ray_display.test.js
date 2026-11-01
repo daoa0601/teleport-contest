@@ -1,17 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
+import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterName } from '../js/monster_name.js';
-import { OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { pushKeys } from '../js/input.js';
 import { castNativeRay } from '../js/ray_attack.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
-import { floorObjectsAt } from './support/level-state.js';
 const MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 void test('each hallucinated ray hit uses the next perceived monster identity', async () => {
     await freshObjectRoom({
@@ -58,27 +57,36 @@ void test('a hallucinated Rider gets a fresh identity in each resurrection messa
     assert.equal(rider.mhp, 100);
     assert.equal(!!game.program_state.gameover, false);
 });
-// C zap.c dobuzz(): a disintegration hit evaluates disintegrate_mon()'s
-// flash_str() argument before the call, so a hallucinating hero draws one
-// hallucinated blast name first and the victim's gear-melting roll lands
-// after it. With seed 26 that shifted roll spares the carried food ration.
-void test('a disintegrating breath names its ray before the victim melts', async () => {
-    const level = await freshObjectRoom({
+// C zap.c dobuzz()/disintegrate_mon(): one flash_str() draw names the ray
+// for the whole disintegration; the life-saving hit() message reuses that
+// same name instead of drawing again.
+void test('a life-saved disintegration victim is named by one blast draw', async () => {
+    await freshObjectRoom({
         right: 30, flags: { verbose: true }, hero: { hallucinationTurns: 20 },
     });
     const breather = await createMonsterAt('black dragon', 8, 7, MONSTER_FLAGS);
     const victim = await createMonsterAt('orc', 12, 7, MONSTER_FLAGS);
-    const ration = await knownObject(OBJECT_NAMES.indexOf('food ration'));
-    await addObjectToMonsterInventory(victim, ration);
-    initRng(26n);
+    await equipMonsterObject(victim, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+    await createMonsterAt('silver dragon', 14, 7, MONSTER_FLAGS);
+    pushKeys(' '.repeat(40));
+    let blastDraws = 0;
     const messages = [];
     await castNativeRay(-24, 6, 'l', {
         state: game, sourceMonster: breather, originX: 8, originY: 7,
         publish: message => { messages.push(message); },
+        random: limit => {
+            if (limit === 96)
+                return Math.min(blastDraws++, 2);
+            if (limit === 20)
+                return 19;
+            return 1;
+        },
     });
-    assert.ok((victim.mhp ?? 0) <= 0, 'the breath disintegrates the orc');
-    assert.ok(messages.some(message => / is disintegrated!$/.test(message)), messages.join(' | '));
-    assert.ok(floorObjectsAt(level, 12, 7).some(object => object === ration), 'the ration rolls after the hallucinated blast is named and survives');
+    // The amulet message spends the single draw ("asteroids"); the silver
+    // dragon's reflection line, drawn second, names "beads".
+    assert.ok(messages.some(message => /^The blast of asteroids hits /.test(message)), messages.join(' | '));
+    assert.ok(messages.some(message => /^The blast of beads hits /.test(message)), messages.join(' | '));
+    assert.equal(messages.some(message => /^The blast of bubbles (hits|misses) /.test(message)), false, messages.join(' | '));
 });
 void test("a hero's own disintegration hit spends the blast name the mirror then shows", async () => {
     await freshObjectRoom({
