@@ -272,6 +272,8 @@ export function attributeChangeMessage(attribute: number, result: AttributeChang
     return formatFeltMessage(`${emphasis}${word}!`, state);
 }
 
+// C attrib.c:exercise(): accumulate attribute exercise, then report
+// encumbrance when Strength or Constitution can change.
 export async function exerciseAttribute(attribute: number, improving: boolean, state: GameState = game): Promise<void> {
     if (!accumulateAttributeExercise(attribute, improving, state)) return;
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))

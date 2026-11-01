@@ -24,6 +24,7 @@ interface HeroDamageOptions {
     killerFormat?: KillerFormat;
 }
 
+// C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
 export async function loseHeroHp(amount: number, killer: string, {
     state = game,
     publish = plineWithContinuation,
