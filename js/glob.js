@@ -9,7 +9,7 @@ import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { game, requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { reconcileObjectDeletionBill } from './shk.js';
 import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, } from './object_data.js';
 import { makePlural } from './object_grammar.js';

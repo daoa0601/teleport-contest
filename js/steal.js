@@ -38,7 +38,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster, state) {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });

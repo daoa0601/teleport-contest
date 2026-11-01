@@ -1386,7 +1386,7 @@ src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""25""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""3""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""4""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""6""]"	constant
-src/js/monster_boulder.ts	breakMonsterBoulder	random	"[""20""]"	constant
+src/js/monmove.ts	breakMonsterBoulder	random	"[""20""]"	constant
 src/js/monster_brain_attack.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
 src/js/monster_brain_attack.ts	eatMonsterBrain	rollOne	"[""60""]"	constant
 src/js/monster_brain_attack.ts	resolveMonsterBrainAttack	random	"[""8""]"	constant
@@ -1490,15 +1490,15 @@ src/js/muse.ts	useMonsterDefensiveItem	rollDice	"[""6 + 2 * sign"", ""choice.kin
 src/js/muse.ts	useMonsterDefensiveItem	rollOne	"[""4""]"	constant
 src/js/monster_disease.ts	infectHeroWithMonsterDisease	random	"[""currentAttribute(A_CON, state)""]"	invariant
 src/js/monster_displacement.ts	displaceMonster	random	"[""7""]"	constant
-src/js/monster_door_passage.ts	resolveMonsterDoorPassage	random	"[""2""]"	constant
-src/js/monster_door_trap.ts	triggerMonsterDoorTrap	rollOne	"[""15""]"	constant
+src/js/monmove.ts	resolveMonsterDoorPassage	random	"[""2""]"	constant
+src/js/monmove.ts	triggerMonsterDoorTrap	rollOne	"[""15""]"	constant
 src/js/monster_energy.ts	drainMonsterEnergy	rollDice	"[""2"", ""2""]"	constant
 src/js/monster_explosion.ts	rollAttackDamage	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/monster_explosion.ts	rollAttackDamage	rollDice	"[""level + 1"", ""sides""]"	invariant
-src/js/monster_flee.ts	checkMonsterHeroRange	random	"[""5""]"	constant
-src/js/monster_flee.ts	checkMonsterHeroRange	random	"[""7""]"	constant
-src/js/monster_flee.ts	checkMonsterHeroRange	rollOne	"[""random(7) ? 10 : 100""]"	constant
-src/js/monster_flee.ts	makeMonsterFlee	random	"[""25""]"	constant
+src/js/monmove.ts	checkMonsterHeroRange	random	"[""5""]"	constant
+src/js/monmove.ts	checkMonsterHeroRange	random	"[""7""]"	constant
+src/js/monmove.ts	checkMonsterHeroRange	rollOne	"[""random(7) ? 10 : 100""]"	constant
+src/js/monmove.ts	makeMonsterFlee	random	"[""25""]"	constant
 src/js/monster_floor_consumption.ts	eatMetal	rollOne	"[""25""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
@@ -1536,7 +1536,7 @@ src/js/monster_hero_brain.ts	drainHeroBrain	rollOne	"[""2""]"	constant
 src/js/monster_hero_brain.ts	drainHeroBrain	rollOne	"[""2""]"	constant
 src/js/monster_hero_brain.ts	eatHeroBrain	rollOne	"[""10""]"	constant
 src/js/monster_hero_brain.ts	eatHeroBrain	rollOne	"[""60""]"	constant
-src/js/monster_hiding.ts	attemptMonsterRestrap	random	"[""3""]"	constant
+src/js/mon.ts	attemptMonsterRestrap	random	"[""3""]"	constant
 src/js/monster_hit_points.ts	monsterHitPointsPerLevel	randomBelow	"[""5""]"	constant
 src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
 src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
@@ -1575,12 +1575,12 @@ src/js/monster_migration.ts	monsterArrive	rn1	"[""region.hy - region.ly + 1"", "
 src/js/monster_migration.ts	monsterArrive	rn2	"[""denominator""]"	constant
 src/js/monster_migration.ts	wanderLocale	rn1	"[""highX - lowX"", ""lowX""]"	unproved
 src/js/monster_migration.ts	wanderLocale	rn1	"[""highY - lowY"", ""lowY""]"	unproved
-src/js/monster_mind_blast.ts	useMonsterMindBlast	random	"[""10""]"	constant
-src/js/monster_mind_blast.ts	useMonsterMindBlast	random	"[""10""]"	constant
-src/js/monster_mind_blast.ts	useMonsterMindBlast	random	"[""2""]"	constant
-src/js/monster_mind_blast.ts	useMonsterMindBlast	random	"[""2""]"	constant
-src/js/monster_mind_blast.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
-src/js/monster_mind_blast.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	random	"[""10""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	random	"[""10""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	random	"[""2""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	random	"[""2""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
+src/js/monmove.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
 src/js/monster_name.ts	formatMonsterName	rn2	"[""2""]"	constant
 src/js/monster_name.ts	monsterPronounGender	random	"[""4""]"	constant
 src/js/monster_name.ts	shopkeeperName	rn2	"[""RANDOM_SHOP_TYPES.length""]"	unproved

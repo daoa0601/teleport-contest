@@ -108,7 +108,7 @@ import {
     requireMonsterData,
 } from './monster_data.js';
 import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
-import { hideMonsterUnder } from './monster_hiding.js';
+import { hideMonsterUnder } from './mon.js';
 import {
     adjustedMonsterLevel,
     isHomeElemental,

@@ -7,7 +7,7 @@ import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { angerMonster } from '../js/monster_anger.js';
-import { makeMonsterFlee } from '../js/monster_flee.js';
+import { makeMonsterFlee } from '../js/monmove.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';

@@ -8,7 +8,7 @@ import type { MessagePublisher } from './pline.js';
 import { heroLegName } from './body_parts.js';
 import { doStorms } from './storms.js';
 import { rewindEngravingsForSave } from './engrave.js';
-import { finishMonsterHideUnder } from './monster_hiding.js';
+import { finishMonsterHideUnder } from './mon.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
@@ -83,9 +83,9 @@ import { finishScheduledLevelChange } from './level_change.js';
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
-import { interruptOccupationForMonster, monsterSightingBeforeAction } from './monster_threat.js';
+import { interruptOccupationForMonster, monsterSightingBeforeAction } from './monmove.js';
 import { fixShopDamage } from './shop_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './weapon_slots.js';

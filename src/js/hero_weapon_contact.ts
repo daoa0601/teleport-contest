@@ -9,7 +9,7 @@ import {
     MONSTER_SYMBOL, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal,
     monsterIsShade, monsterIsWhirly,
 } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';

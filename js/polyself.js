@@ -62,7 +62,7 @@ import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { handleRidingAfterFormChange } from './steed.js';
-import { hideHeroUnder } from './monster_hiding.js';
+import { hideHeroUnder } from './mon.js';
 import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { expelHero, releaseHeroGrip, } from './hero_expulsion.js';

@@ -21,7 +21,7 @@ import { foodWord } from './hunger.js';
 import { consumeInventoryItem } from './invent.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsUndead, requireMonsterData, } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { APPLE, CARROT, CLOVE_OF_GARLIC, CRAM_RATION, EGG, EUCALYPTUS_LEAF, FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, OBJECT_NAMES, PEAR, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TRIPE_RATION, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { foodObjectName } from './objnam.js';

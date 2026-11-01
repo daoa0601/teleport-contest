@@ -25,7 +25,7 @@ import {
     monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter,
     monsterTypeName,
 } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import {

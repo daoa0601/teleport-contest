@@ -12,7 +12,7 @@ import { placeTreeFruit } from './hero_digging.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mkobj.js';
-import { triggerMonsterDoorTrap } from './monster_door_trap.js';
+import { triggerMonsterDoorTrap } from './monmove.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { inTown, roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';

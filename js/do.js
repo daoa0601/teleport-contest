@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { monsterIsScaredAt } from './monmove.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';

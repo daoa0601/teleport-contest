@@ -19,7 +19,7 @@ import { objectQuantity, splitObjectStack } from './object_stack.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopObjectTimer,
 } from './object_timers.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 
 // Corpse rot and revival take twice as long while the body is on ice.
 export function updateCorpseIceTimer(

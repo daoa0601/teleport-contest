@@ -22,7 +22,7 @@ import { createCritters } from './makemon.js';
 import { withMonsterNoticesBlocked } from './monster_notices.js';
 import { angerMonster } from './monster_anger.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { tameMonster } from './monster_taming.js';

@@ -6,7 +6,7 @@ import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { checkMonsterHeroRange } from '../js/monster_flee.js';
+import { checkMonsterHeroRange } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';

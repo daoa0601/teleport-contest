@@ -2,8 +2,11 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 
 import {
-    MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    SPECIAL_PM, monsterIsVerySmall, monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
+import { AD_CORR, AD_RUST } from './monster_attack_types.js';
+import type { Monster } from './monster_types.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
 
@@ -252,4 +255,25 @@ export function resolveMonsterClass(value: string): MonsterClassMatch {
     }
     const mnum = nameToMonster(wanted);
     return { monsterClass: mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0), mnum };
+}
+
+// C mondata.c:passes_bars(). Rust monsters and some puddings destroy bars;
+// postmov (monmove.c) reuses the same corrosion test for its iron-bars meal.
+const M1_WALLWALK = 0x00000008;
+const M1_AMORPHOUS = 0x00000004;
+const M1_UNSOLID = 0x00100000;
+const M1_METALLIVORE = 0x80000000;
+const M1_SLITHY = 0x00080000;
+const MZ_LARGE = 3;
+
+export function monsterPassesBars(monster: Pick<Monster, 'mnum'>): boolean {
+    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    return !!(body & (M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))
+        || monsterIsWhirly(monster)
+        || monsterIsVerySmall(monster.mnum) || monsterCorrodesBars(monster)
+        || !!(body & M1_SLITHY) && (MONSTER_SIZE[monster.mnum] ?? MZ_LARGE) < MZ_LARGE;
+}
+
+export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
+    return (MONSTER_ATTACKS[monster.mnum] ?? []).some(([, damage]) => damage === AD_RUST || damage === AD_CORR);
 }

@@ -19,7 +19,7 @@ import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_NAME, monsterIsUndead, monsterIsVampireShifter, requireMonsterData,
 } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monstersInFmonOrder } from './mon.js';
 import { tameMonster } from './monster_taming.js';
 import { novelTitle } from './novel_titles.js';

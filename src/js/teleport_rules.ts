@@ -9,7 +9,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import type { MonsterFearProbe } from './monster_fear.js';
+import type { MonsterFearProbe } from './monmove.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
 import {
@@ -24,7 +24,7 @@ import {
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { hasCompletedEngraving } from './engrave.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { monsterIsScaredAt } from './monmove.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterInAir } from './terrain_properties.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasWaterWalking } from './armor.js';

@@ -7,7 +7,7 @@ import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { heroSpecies } from './hero_species.js';
 import type { HeroContactAttack } from './monster_action_types.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
 import { isWeaponTool } from './object_properties.js';

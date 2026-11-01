@@ -19,7 +19,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { rndClass } from './objnam.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerWatchGuards } from './monster_anger.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';

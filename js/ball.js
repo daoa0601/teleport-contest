@@ -6,7 +6,7 @@ import { isPoolAt } from './terrain_properties.js';
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { cls, displayLiquidName, map_object, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { moveObject, placeObjectSynchronously, remove_object, } from './floor_object.js';

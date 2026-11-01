@@ -4,7 +4,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import { nomul } from './command_state.js';
 import { artifactById } from './artifacts.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import { heroIsPunished } from './ball.js';
 import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LANDMINE, LAVAWALL, N_DIRS_Z, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, newsym } from './display.js';

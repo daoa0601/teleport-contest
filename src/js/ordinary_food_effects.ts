@@ -28,7 +28,7 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL,
     monsterIsUndead, requireMonsterData,
 } from './monster_data.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import {
     APPLE, CARROT, CLOVE_OF_GARLIC, CRAM_RATION, EGG, EUCALYPTUS_LEAF,
     FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY,

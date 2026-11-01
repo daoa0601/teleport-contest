@@ -58,7 +58,7 @@ import { deallocateObject, deleteObject } from './object_delete.js';
 import { blessObjectState, curseObjectState, objectResistsDestruction,
     unblessObjectState, uncurseObjectState } from './object_state.js';
 import { ownedObjectAction } from './objnam.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;

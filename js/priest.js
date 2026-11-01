@@ -25,7 +25,7 @@ import { A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMO
 import { roomForRoomno, roomsAt } from './room.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { mfndpos, monAllowFlags, resistConflict } from './mon.js';
-import { breakMonsterBoulder } from './monster_boulder.js';
+import { breakMonsterBoulder } from './monmove.js';
 import { moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';

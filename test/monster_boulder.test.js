@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { breakMonsterBoulder } from '../js/monster_boulder.js';
+import { breakMonsterBoulder } from '../js/monmove.js';
 import { BOULDER, ROCK } from '../js/object_data.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { floorObject } from './support/game-objects.js';

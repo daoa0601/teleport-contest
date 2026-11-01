@@ -281,11 +281,11 @@ mon.c	sanity_check_single_mon	saddle not worn	diagnostic	Sanity-check complaint 
 mon.c	sanity_check_single_mon	something strange	diagnostic	Sanity-check complaint text (mon_sanity_check family); developer diagnostic.
 monmove.c	m_move	IndexOk(chi, mfp.info)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 monmove.c	monflee	[its imagination?]	dead	flees_light() (monmove.c:450) requires artifact light on uwep or uarm, so the lsrc fallback can never print; the port throws an invariant error on the same impossible combination.
-monmove.c	postmov	a door crash open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
-monmove.c	postmov	a door unlock and open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
-monmove.c	postmov	opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
-monmove.c	postmov	smashes down a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
-monmove.c	postmov	unlocks and opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	a door crash open.	composed	src/js/monmove.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	a door unlock and open.	composed	src/js/monmove.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	opens a door.	composed	src/js/monmove.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	smashes down a door.	composed	src/js/monmove.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	unlocks and opens a door.	composed	src/js/monmove.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/muse.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
 muse.c	use_defensive	escapes down the ladder!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	escapes downstairs!	composed	src/js/muse.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.

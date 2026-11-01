@@ -8,7 +8,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { makeMonsterFlee } from '../js/monster_flee.js';
+import { makeMonsterFlee } from '../js/monmove.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import { AMULET_OF_LIFE_SAVING, CLOVE_OF_GARLIC, DAGGER, OBJECT_NAMES, PICK_AXE, } from '../js/object_data.js';

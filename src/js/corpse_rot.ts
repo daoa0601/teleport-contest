@@ -7,7 +7,7 @@ import { finishInventoryRemoval } from './hero_inventory.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterAtPosition } from './monster_location.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { hideHeroUnder } from './monster_hiding.js';
+import { hideHeroUnder } from './mon.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { corpseName } from './objnam.js';
 import { deleteObject } from './object_delete.js';

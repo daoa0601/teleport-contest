@@ -9,7 +9,7 @@ import { monsterIsHelpless } from './monster_sleep.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName as canonicalMonsterName, possessiveName } from './monster_name.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { monsterIsScaredAt } from './monmove.js';
 import { monsterWieldedWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon, } from './monster_weapon.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { selectAttack } from './attack_selection.js';

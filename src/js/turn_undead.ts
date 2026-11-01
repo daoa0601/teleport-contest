@@ -28,7 +28,7 @@ import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { aggravateMonsters } from './monster_anger.js';
-import { makeMonsterFlee } from './monster_flee.js';
+import { makeMonsterFlee } from './monmove.js';
 import {
     MONSTER_FLAGS2, MONSTER_SYMBOL,
     monsterIsUndead,

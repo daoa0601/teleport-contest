@@ -8,7 +8,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { hideMonsterUnder } from '../js/monster_hiding.js';
+import { hideMonsterUnder } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { runMonsterAction, takeMonsterTurn } from '../js/monmove.js';
 import { DAGGER, RIN_CONFLICT, ROCK, UNICORN_HORN } from '../js/object_data.js';

@@ -10,7 +10,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { interruptOccupationForMonster } from './monster_threat.js';
+import { interruptOccupationForMonster } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';

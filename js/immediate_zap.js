@@ -12,7 +12,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
 import { game } from './gstate.js';
 import { probeObject } from './magic_probe.js';
-import { maybeUnhideAt } from './monster_hiding.js';
+import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
