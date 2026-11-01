@@ -280,8 +280,9 @@ export async function exerciseAttribute(attribute: number, improving: boolean, s
         await reportHeroEncumbrance(state);
 }
 
-// Wisdom exercise never calls encumber_msg(). Knowledge and identification
-// can therefore use the same accumulation rule without an input boundary.
+// C attrib.c:exercise() for Wisdom: exercise never calls encumber_msg().
+// Knowledge and identification can therefore use the same accumulation
+// rule without an input boundary.
 export function exerciseWisdom(improving = true, state: GameState = game): void {
     accumulateAttributeExercise(A_WIS, improving, state);
 }

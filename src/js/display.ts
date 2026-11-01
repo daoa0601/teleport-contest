@@ -129,6 +129,7 @@ const HALLUCINATED_LIQUIDS = [
     'vinegar', 'creosote',
 ];
 
+// C do_name.c:hliquid(): the hallucinated liquid name.
 export function displayLiquidName(fallback: string, state: GameState = game) {
     if ((!heroIsHallucinating(state) || state.program_state.gameover) && fallback)
         return fallback;
