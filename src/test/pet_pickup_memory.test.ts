@@ -20,7 +20,7 @@ void test('completing a visible pet pickup removes the object from remembered te
     const potion = await floorObject(POT_HEALING, 12, 10);
     await newsym(12, 10);
 
-    await commitPetPickup(dog, { pickedUp: potion, pickupPending: true }, game);
+    await commitPetPickup(dog, potion, game);
     assert.ok(dog.minvent.includes(potion), 'the pet must pick up the visible potion');
     await makeBlinded(5, { talk: false });
     await flush_screen(1);

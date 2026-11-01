@@ -7,7 +7,7 @@ import { takeMonsterTurn, runMonsterAction } from '../js/monmove.js';
 import { resolveDeferredMonsterBreath } from '../js/mthrowu.js';
 import { allocateMonsterMovement, finishMonsterLiquidDeath, mcalcmove, mfndpos, naturalMonsterSpeed } from '../js/mon.js';
 import {
-    FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
+    FOUNTAIN, IRONBARS, LAVAPOOL, MMOVE_DONE, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -113,12 +113,9 @@ void test('a tame red dragon bites and claws an adjacent enemy', async () => {
         () => 1,
     );
 
-    const attack = action.movement?.attack;
-    assert.ok(attack?.kind === 'monster-attack', 'The pet makes a melee attack');
-    assert.deepEqual(
-        attack.results.map(attack => attack.type),
-        ['bite', 'claw', 'claw'],
-    );
+    // The dragon's full attack set (bite, claw, claw) lands at maximum dice
+    // inside dog_move(); the spent turn reports MMOVE_DONE.
+    assert.equal(action.movement.postMoveStatus, MMOVE_DONE);
     assert.equal(goblin.mhp, 68);
 });
 

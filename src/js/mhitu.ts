@@ -73,7 +73,7 @@ import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
 import { d, rn2, rnd } from './rng.js';
 import {
-    completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPickups, presentMonsterPostMove,
+    completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPostMove,
     requirePerceivedHero,
 } from './monmove.js';
 import {
@@ -949,7 +949,6 @@ export async function presentMonsterAttackEffects(
         movement = action.movement;
         if (await presentMonsterPostMove(action, game))
             return { heroDied: true };
-        await presentMonsterPickups(action, game);
         movement = action.movement;
     } while (!game.program_state?.gameover);
     if (game.program_state?.gameover) return { heroDied: true };

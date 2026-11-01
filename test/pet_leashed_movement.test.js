@@ -4,7 +4,7 @@ import { DART_TRAP, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginMonsterMove, resumeDeferredPetEating } from '../js/monmove.js';
+import { beginMonsterMove } from '../js/monmove.js';
 import { DAGGER, LEASH, TRIPE_RATION } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
@@ -43,8 +43,7 @@ void test('a leashed pet finishes its meal before the leash draws it beside the 
     const { dog } = await leashDog(13);
     requirePlayingGame(game);
     const food = await floorObject(TRIPE_RATION, 13, 10);
-    const action = await beginMonsterMove(dog, game);
-    await resumeDeferredPetEating(action, game);
+    await beginMonsterMove(dog, game);
     assert.equal(food.where, 'gone');
     assert.deepEqual([dog.mx, dog.my], [11, 10]);
     assert.equal(dog.mleashed, 1);

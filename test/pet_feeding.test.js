@@ -13,7 +13,7 @@ import { mksobj } from '../js/mkobj.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { getObjectLocation } from '../js/object_location.js';
-import { resumeDeferredPetEating, resumeDeferredPetMove, runMonsterAction } from '../js/monmove.js';
+import { runMonsterAction } from '../js/monmove.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -45,7 +45,6 @@ void test('a pet eating at its square restores its hunger deadline and maximum H
     const tripe = await floorObject(TRIPE_RATION, 11, 10, { quan: 3 });
     const action = await runMonsterAction(pet, game);
     assert.ok(action.movement);
-    await resumeDeferredPetEating(action, game);
     assert.equal(pet.edog.hungrytime, 1300); // Small dog gets 6 times 200.
     assert.equal(pet.edog.mhpmax_penalty, 0);
     assert.equal(pet.mhpmax, 12);
@@ -64,9 +63,7 @@ void test('a moving pet consumes food only after its eating message crosses the 
     const food = await floorObject(TRIPE_RATION, 11, 10);
     const input = resetInputState();
     await plineWithContinuation('The previous message fills the top line before your pet can finish eating.');
-    const action = await runMonsterAction(pet, game);
-    assert.ok(action.movement);
-    const feeding = resumeDeferredPetEating(action, game);
+    const feeding = runMonsterAction(pet, game);
     await input.waitUntilBlocked();
     assert.equal(food.where, 'floor');
     assert.equal(pet.mx, 11);
@@ -100,7 +97,6 @@ void test('a blind carnivore eats a carrot and regains sight', async () => {
     installPagerInput(input, { expected: /eats an uncursed carrot|can see again/, limit: 1 });
     const action = await runMonsterAction(pet, game);
     assert.ok(action.movement);
-    await resumeDeferredPetEating(action, game);
     assert.equal(pet.mcansee, 1);
     assert.equal(pet.mblinded, 0);
     assert.equal(carrot.where, 'gone');
@@ -192,7 +188,6 @@ for (const terrain of [POOL, LAVAPOOL]) {
         installPagerInput(input, { expected: /vampire bat/, limit: 1 });
         const action = await runMonsterAction(pet, game);
         assert.ok(action.movement);
-        await resumeDeferredPetEating(action, game);
         assert.equal(food.where, 'floor');
         assert.equal(pet.meating ?? 0, 0);
     });
@@ -212,7 +207,6 @@ void test('a salamander can retrieve food from lava without eating it', async ()
     for (let attempt = 0; attempt < 8 && food.where === 'floor'; attempt++) {
         const action = await runMonsterAction(pet, game);
         assert.ok(action.movement);
-        await resumeDeferredPetMove(action, game);
     }
     assert.equal(food.where, 'minvent', `Food was not retrieved from lava; pet is at ${pet.mx},${pet.my}`);
     assert.ok(pet.minvent?.includes(food));
@@ -226,7 +220,6 @@ void test('a rock-throwing pet reaches food underneath a boulder', async () => {
     await floorObject(BOULDER, 11, 10);
     const action = await runMonsterAction(pet, game);
     assert.ok(action.movement);
-    await resumeDeferredPetEating(action, game);
     assert.equal(food.where, 'gone');
     assert.equal(pet.meating, 2);
 });
@@ -240,7 +233,6 @@ void test('a tame minion follows its hero without eating nearby food', async () 
     const food = await floorObject(TRIPE_RATION, 11, 10);
     const action = await runMonsterAction(angel, game);
     assert.ok(action.movement);
-    await resumeDeferredPetEating(action, game);
     assert.equal(food.where, 'floor');
     assert.equal(angel.meating ?? 0, 0);
 });
@@ -264,7 +256,6 @@ void test('a pet names newly generated food after seeing it without relying on a
     placeCreatedObject(food, pet.mx, pet.my);
     const action = await runMonsterAction(pet, game);
     assert.ok(action.movement);
-    await resumeDeferredPetEating(action, game);
     assert.equal(await visibleMessage(), 'Your little dog eats a tripe ration.');
 });
 //# sourceMappingURL=pet_feeding.test.js.map

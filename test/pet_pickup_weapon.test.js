@@ -5,7 +5,6 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterMove } from '../js/monmove.js';
-import { commitPetPickup } from '../js/dogmove.js';
 import { DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -19,8 +18,7 @@ void test('a weapon-using pet readies a fetched weapon before it can drop it', a
     const dagger = await floorObject(DAGGER, 11, 10);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
-    const action = await beginMonsterMove(goblin, game, () => 0, count => count, () => 1);
-    await commitPetPickup(goblin, action.movement, game);
+    await beginMonsterMove(goblin, game, () => 0, count => count, () => 1);
     assert.equal(dagger.where, 'minvent');
     assert.ok(goblin.mw === dagger, 'the pet must wield the weapon it fetched');
 });

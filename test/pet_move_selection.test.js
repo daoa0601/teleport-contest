@@ -41,7 +41,7 @@ void test('a pet standing on a tripe ration starts eating it', async () => {
     assert.equal(movement.moved, false);
     assert.equal(dog.mx, 13);
     assert.equal(dog.my, 10);
-    assert.equal(movement.deferredPetEating, true);
-    assert.equal(movement.petMeal?.object, tripe);
+    assert.equal(tripe.where, 'gone');
+    assert.equal(dog.meating, 2);
 });
 //# sourceMappingURL=pet_move_selection.test.js.map

@@ -116,8 +116,7 @@ import { loseHeroExperience } from './exper.js';
 import {
     makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, resumeDeferredCovetousRelocation,
     resumeDeferredRestrictedTenguTeleport, resumeDeferredSpecialAttack, resumeDeferredMonsterHideUnder,
-    completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove,
-    resumeDeferredPetReluctance, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove,
+    completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove,
     beginMonsterDochug, runMonsterAction,
 } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
