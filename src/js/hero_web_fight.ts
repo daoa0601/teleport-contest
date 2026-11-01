@@ -12,7 +12,7 @@ import { rn2 } from './rng.js';
 import {
     P_ISRESTRICTED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, WEB,
 } from './const.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { ensureHeroSkills, useHeroSkill, weaponSkillType } from './skills.js';
 import { isBlade } from './weapon_type.js';
 import { weaponDescription } from './weapon_description.js';

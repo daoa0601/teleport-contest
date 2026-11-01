@@ -15,7 +15,7 @@ import { requireInitializedGame } from './gstate.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';

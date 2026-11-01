@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
 // Downward digging: viability checks and the terrain a finished dig creates.
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
@@ -7,7 +7,6 @@ import { trapName } from './trap_name.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -50,7 +49,6 @@ export interface DigHoleOptions {
 }
 interface DiggingOptions { state?: GameState }
 
-import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
 import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';

@@ -64,7 +64,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
@@ -893,7 +893,6 @@ export function countContents(container: GameObject, { quantity = false, everyth
     }
     return count;
 }
-
 
 // C invent.c:doperminv(). The recorder's tty port is built without
 // TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is

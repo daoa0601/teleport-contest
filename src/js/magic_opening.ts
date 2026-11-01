@@ -18,7 +18,7 @@ import { expelHero } from './hero_expulsion.js';
 import { revealSecretDoor, revealSecretCorridor } from './detect.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { openHoldingTrap, openFallingTrap } from './trap_magic.js';
+import { openHoldingTrap, openFallingTrap } from './trap.js';
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 
 export async function openit(state: GameState = game) {

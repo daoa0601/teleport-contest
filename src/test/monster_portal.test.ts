@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 
 import { AMULET_OF_YENDOR, LEASH } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterLearnsTrap } from '../js/mondata.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

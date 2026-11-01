@@ -106,7 +106,7 @@ import {
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './regions.js';
-import { monsterKnowsTrap } from './trap_knowledge.js';
+import { monsterKnowsTrap } from './mondata.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { roomsAt } from './room.js';
@@ -2474,7 +2474,6 @@ export async function mnearto(
 }
 
 // ---------------------------------------------------------- shk anger state
-
 
 // C mon.c:dmonsfree(), called after movement and before saving a level.
 // A dead guard stays linked while its temporary corridor needs cleanup.

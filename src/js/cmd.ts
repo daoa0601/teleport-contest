@@ -164,7 +164,7 @@ import { dosacrifice } from './sacrifice.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
 import { heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
-import { continueTrapSetting } from './trap_setting.js';
+import { continueTrapSetting } from './apply.js';
 import { isPick } from './weapon_type.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { continueHeroDigging } from './hero_digging.js';
@@ -187,7 +187,6 @@ import { COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPI
 type DirectionKey = 'h' | 'l' | 'j' | 'k' | 'y' | 'u' | 'b' | 'n';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
-
 
 function isMovementKey(ch: string): ch is DirectionKey {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
@@ -633,7 +632,6 @@ interface CommandActionOptions {
     cannedCommand?: CannedCommand | null;
 }
 
-
 // C cmd.c:dotoggleoption(): without a binding parameter the command only
 // points the player at the options menu; with one it is
 // toggle_bool_option(param).
@@ -898,7 +896,6 @@ async function readCommand(): Promise<void> {
     const result = await doread();
     if (result.cancelled) commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
 }
-
 
 // C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
 // being held or swallowed prevents even an attempt to use the floor below.
@@ -1793,7 +1790,6 @@ async function doversion(): Promise<void> {
     else await pline(NATIVE_VERSION);
     game.context.move = 0;
 }
-
 
 function droppedObjectDescription(object: GameObject): string {
     const quantity = objectQuantity(object);

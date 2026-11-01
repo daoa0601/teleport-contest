@@ -44,7 +44,7 @@ import { buriedBallToPunishment } from './buried_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap, tryMonsterTrapEscape } from './trap.js';

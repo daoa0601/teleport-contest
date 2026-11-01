@@ -3,7 +3,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating, heroIsBlind } from './senses.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { setMonsterGivenName, monsterName } from './do_name.js';
 import { adjustHeroAlignment } from './alignment.js';
 import {

@@ -5,7 +5,7 @@ import { displayLiquidName } from './display.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 export function knownRunTrap(x, y, state) {
     return state.level?.traps.find(trap => trap.tx === x && trap.ty === y
         && trap.tseen && trap.ttyp !== VIBRATING_SQUARE);

@@ -30,7 +30,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { impossible } from './diagnostics.js';
 import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 import { angerMonster, angerWatchGuards } from './mon.js';

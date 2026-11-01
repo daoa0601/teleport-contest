@@ -107,8 +107,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { moveMonsterNextToHero } from './teleport.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { trapName } from './trap_name.js';
+import { deleteTrap, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
@@ -116,7 +115,6 @@ const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
 const M2_PNAME = 0x00080000;
-
 
 // Object class codes used by the sale and naming paths; C objclass.h.
 const WEAPON_CLASS = 2;
@@ -653,7 +651,6 @@ export function splitObjectBill(original: GameObject, split: GameObject, state: 
     });
     keeper.eshk.billct = keeper.eshk.bill.length;
 }
-
 
 // C add_to_billobjs(): only bookkeeping survives; active use, bypass,
 // and live timers cannot follow an object onto the used-up bill chain.
@@ -2038,7 +2035,6 @@ export function finishShopkeeperDeparture(keeper: Shopkeeper, state: GameState =
     }
 }
 
-
 // C shk.c shk_fixes_damage(): one repair attempt during the keeper's move.
 export async function shopkeeperRepairsDamage(
     keeper: Shopkeeper, state: GameState = game,
@@ -2694,7 +2690,6 @@ async function callKops(keeper: Shopkeeper, nearShop: boolean, state: ShopGameSt
     if (state.program_state.gameover) return;
     await makeKops({ x: keeper.mx, y: keeper.my }, state);
 }
-
 
 async function makeKops(origin: Position, state: ShopGameState): Promise<void> {
     let position = origin;

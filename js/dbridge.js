@@ -1,7 +1,7 @@
 // Drawbridge location and movement.
 // C ref: dbridge.c find_drawbridge(), open_drawbridge(), close_drawbridge().
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, IS_WALL, Is_stronghold, LAVAPOOL, MOAT, ROOM, W_NONDIGGABLE, isok, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { displayLiquidName, newsym } from './display.js';

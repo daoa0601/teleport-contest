@@ -21,7 +21,7 @@ import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
 import { isPoolAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { cansee } from './vision.js';
 import { promptYesNo } from './query.js';
 import { showDisclosureOverlay } from './windows.js';

@@ -46,7 +46,7 @@ import { castSpell, knownSpell } from './spell.js';
 import { stuckSteed } from './steed.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { moveHeroByTeleport } from './teleport.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { cansee } from './vision.js';
 import { nearCapacity } from './weight.js';
 

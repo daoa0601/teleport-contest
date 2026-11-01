@@ -40,7 +40,7 @@ import { simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { heroLegName, monsterLegName } from './body_parts.js';
 import { fingersOrGloves } from './dip_water.js';
 import { surfaceName } from './terrain_name.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { STRAT_WAITMASK } from './const.js';
 import { monsterAlignmentType } from './priest.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterEnfolds, monsterIsAnimal } from './monster_data.js';

@@ -60,7 +60,7 @@ import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { finishStrangeFeeling, strangeFeeling } from './potion.js';
 import { askTeleportDestination, teleportHero } from './teleport.js';
 import { levelTeleport } from './level_teleport.js';
-import { detectTraps } from './trap_detection.js';
+import { detectTraps } from './detect.js';
 import { d, rn2, rn1, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';

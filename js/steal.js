@@ -29,7 +29,7 @@ import { dist2 } from './hacklib.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { roomsAt } from './room.js';
-import { openHoldingTrap } from './trap_magic.js';
+import { openHoldingTrap } from './trap.js';
 import { armorSimpleName, stopDonning } from './armor.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';

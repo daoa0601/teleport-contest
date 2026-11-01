@@ -159,9 +159,13 @@ import { mksobj } from './mkobj.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { trapName } from './trap_name.js';
-import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
+import {
+    deleteTrap,
+    trapName,
+    closeHoldingTrap,
+    openFallingTrap,
+    openHoldingTrap,
+} from './trap.js';
 import { makeWish } from './wish.js';
 
 export interface FloorBurnOptions {
@@ -807,7 +811,6 @@ async function traceImmediateZap(source: GameObject, range: number, state: Playi
     if (shopDoor) await payForShopDamage('destroy', { state });
 }
 
-
 function floorObjectBurns(object: GameObject) {
     return object?.otyp === GLOB_OF_GREEN_SLIME
         || object?.oclass === SCROLL_CLASS
@@ -1208,7 +1211,6 @@ export function monsterHasElementalResistance(monster: Monster, mask: number): b
 }
 
 export { hitMonsterWithRay, zapRayWithObject };
-
 
 function destroyable(object: GameObject, damageType: InventoryDamageType | null | undefined) {
     if (!object || object.artifact || object.oartifact) return false;

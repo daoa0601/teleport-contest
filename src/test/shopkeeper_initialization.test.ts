@@ -8,7 +8,7 @@ import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
 import { GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { roomBindings } from './support/themed-room-bindings.js';
 
 async function generateHardwareShops(t: TestContext) {

@@ -28,7 +28,7 @@ import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { exceedsActionCapacity } from './weight.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';

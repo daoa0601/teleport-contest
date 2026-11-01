@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { addShopDamage, shopkeeperRepairsDamage } from '../js/shk.js';
 import { hasShopkeeperData } from '../js/shop_types.js';
 import { initRng } from '../js/rng.js';
-import { detectTraps } from '../js/trap_detection.js';
+import { detectTraps } from '../js/detect.js';
 import { vision_recalc } from '../js/vision.js';
 import { createStaffedShop } from './support/shop.js';
 import { installPagerInput } from './support/pager-input.js';

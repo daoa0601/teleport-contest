@@ -47,7 +47,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';

@@ -52,7 +52,7 @@ import { OBJECT_DELAY, ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BI
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { openHoldingTrap } from './trap_magic.js';
+import { openHoldingTrap } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK, } from './monster_attack_types.js';
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';

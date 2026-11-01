@@ -12,7 +12,7 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { mfndpos } from '../js/mon.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterLearnsTrap } from '../js/mondata.js';
 import { initTrack } from '../js/track.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

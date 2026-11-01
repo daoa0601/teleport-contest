@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
 // Downward digging: viability checks and the terrain a finished dig creates.
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
@@ -6,7 +6,6 @@ import { trapName } from './trap_name.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_LAWFUL, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
@@ -18,7 +17,6 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { levelAtDepth } from './dungeon.js';
 import { depth } from './hacklib.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
 import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';

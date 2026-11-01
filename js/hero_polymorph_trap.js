@@ -13,7 +13,7 @@ import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
 import { poly_obj } from './object_polymorph.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { changeMonsterForm } from './mon.js';
 import { rn2 } from './rng.js';

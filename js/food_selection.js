@@ -21,7 +21,7 @@ import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { exceedsActionCapacity } from './weight.js';
 const FOOD_CLASS = 7, COIN_CLASS = 12;
 const IRON = 11, MITHRIL = 17, WOOD = 8, LIQUID = 1, PLASTIC = 18;

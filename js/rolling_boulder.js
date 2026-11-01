@@ -41,7 +41,7 @@ import { fractureRock } from './rock_breakage.js';
 import { d, rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';

@@ -26,7 +26,7 @@ import type { PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
@@ -828,7 +828,6 @@ export function bound_digging(): void {
                 loc.wall_info |= W_NONPASSWALL;
         }
 }
-
 
 // C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
 // fire striking water leaves harmless steam. Called from goto_level() when

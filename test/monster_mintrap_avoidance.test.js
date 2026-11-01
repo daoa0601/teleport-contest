@@ -4,7 +4,7 @@
 // directly with scripted draws and checks the world: whether the trap
 // springs, whether the monster is caught, and what it learned.
 import { triggerMonsterTrap } from '../js/trap.js';
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { DART_TRAP } from '../js/const.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';

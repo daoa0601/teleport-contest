@@ -10,7 +10,7 @@ import type { MessagePublisher } from './pline.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './do_name.js';
 import {

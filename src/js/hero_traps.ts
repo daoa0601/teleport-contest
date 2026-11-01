@@ -10,7 +10,8 @@ import { surfaceName } from './terrain_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, makeTrapMissile, trapName } from './trap.js';
+import { monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
@@ -99,7 +100,6 @@ import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -122,8 +122,6 @@ import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
 import { woundHeroLegs } from './hero_legs.js';
-import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
-import { trapName } from './trap_name.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';

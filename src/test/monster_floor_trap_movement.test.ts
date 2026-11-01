@@ -8,7 +8,7 @@ import { maketrap } from '../js/mklev.js';
 import { beginMonsterMove } from '../js/monmove.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

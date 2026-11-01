@@ -134,7 +134,7 @@ import { dosacrifice } from './sacrifice.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
 import { heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
-import { continueTrapSetting } from './trap_setting.js';
+import { continueTrapSetting } from './apply.js';
 import { isPick } from './weapon_type.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { continueHeroDigging } from './hero_digging.js';

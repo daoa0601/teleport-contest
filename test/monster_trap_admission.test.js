@@ -9,7 +9,7 @@ import { setMonsterGivenName } from '../js/do_name.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { openFallingTrap } from '../js/trap_magic.js';
+import { openFallingTrap } from '../js/trap.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { requireScreenCell } from './support/screen.js';

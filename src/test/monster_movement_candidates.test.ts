@@ -12,7 +12,7 @@ import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js'
 import { createPoisonGasCloud, createSteamCloud } from '../js/regions.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
-import { monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterLearnsTrap } from '../js/mondata.js';
 import { setTrack } from '../js/track.js';
 import { addTrap } from './support/level-state.js';
 import { knownObject } from './support/game-objects.js';
@@ -156,7 +156,6 @@ void test('Rogue-level doorways forbid diagonal movement even without a door', a
     assert.equal(await canStep(goblin, 11, 10), true);
 });
 
-
 void test('poison resistance alone does not make a monster willing to enter poison gas', async () => {
     await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
@@ -189,7 +188,6 @@ void test('a long worm body blocks crossing between its head and the next segmen
     goblin.mconf = 1;
     assert.equal(await canStep(goblin, 11, 11), true, 'the worm does not prevent attacking across its body');
 });
-
 
 for (const [trapName, type, resistant, vulnerable] of [
     ['bear trap', BEAR_TRAP, 'ochre jelly', 'bugbear'],

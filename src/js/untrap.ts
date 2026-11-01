@@ -1,10 +1,9 @@
-import { trapName } from './trap_name.js';
+import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { vision_note_blocker_change } from './vision.js';
 import { roomsAt } from './room.js';
 import { SHOPBASE } from './const.js';
@@ -38,7 +37,6 @@ import type { Monster } from './monster_types.js';
 import type { Trap, MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DirectionSelection } from './tty_prompts.js';
-import { convertTrapToObject } from './trap_object.js';
 import { blocksDiagonalDoor, blocksMove, heroBadRock } from './hack.js';
 import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';

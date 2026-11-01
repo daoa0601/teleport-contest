@@ -22,8 +22,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
 import { objectName } from './objnam.js';
 import { isPoolAt } from './terrain_properties.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { convertTrapToObject } from './trap_object.js';
+import { deleteTrap, convertTrapToObject } from './trap.js';
 import { cansee, vision_recalc } from './vision.js';
 
 interface MeltIceOptions {

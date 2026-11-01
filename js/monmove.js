@@ -50,7 +50,8 @@ import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js'
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
+import { trapName } from './trap.js';
 import { isAccessibleAt, monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt, } from './terrain_properties.js';
 import { insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { movePet, monsterCouldReachItem, finishMonsterEating, } from './dogmove.js';
@@ -62,7 +63,6 @@ import { finishMonsterWebTrap } from './web_trap.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
-import { trapName } from './trap_name.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';

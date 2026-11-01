@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.

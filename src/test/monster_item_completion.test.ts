@@ -13,7 +13,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import { POT_FULL_HEALING, WAN_MAKE_INVISIBLE, WAN_SPEED_MONSTER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

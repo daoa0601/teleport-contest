@@ -15,7 +15,7 @@ import { isRoom } from './map_types.js';
 import type { GameState, Fruit } from './game_state.js';
 import type { DungeonBranch, DungeonLocation } from './dungeon_types.js';
 import type { DueObjectTimer } from './object_timers.js';
-import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
+import { deleteTrap, finishSokobanIfSolved } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance } from './makemon.js';
@@ -126,7 +126,6 @@ import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
 import { beginLuaThemerooms, callLuaThemerooms, generateLuaSpecialLevel, themerooms_generate } from './sp_lev_lua.js';
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 
-
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
@@ -135,130 +134,6 @@ import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './
 // room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
 // level (extralev.c) in extralev.ts. Level construction uses the game's
 // main random-number stream.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Object/class constants (normally from objects.js, not in contest template)
 export const RANDOM_CLASS = 0;

@@ -21,7 +21,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { goodPosition } from './teleport_rules.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { feelTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { rn2 } from './rng.js';
 

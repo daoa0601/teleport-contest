@@ -10,7 +10,7 @@ import { rhack } from '../js/cmd.js';
 import { nomul } from '../js/command_state.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { openit } from '../js/magic_opening.js';
-import { openHoldingTrap, closeHoldingTrap, openFallingTrap } from '../js/trap_magic.js';
+import { openHoldingTrap, closeHoldingTrap, openFallingTrap } from '../js/trap.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { flashGlyphAt, flush_screen, transientTrapGlyph } from '../js/display.js';
