@@ -54,7 +54,7 @@ for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]] as const) {
         context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 1, 12) });
         await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
-        game.datetime = `20000110${hour}0000`;
+        game.datetime = `20000710${hour}0000`;
         const wraith = await createMonsterAt('wraith', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         wraith.m_lev = 30;
         wraith.mux = game.u.ux;
@@ -67,28 +67,30 @@ for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]] as const) {
     });
 }
 
-for (const [currentMonth, datetime, damage] of [
-    [6, '20020115000000', 6],
-    [6, '20020115010000', 12],
-    [0, '20020715230000', 12],
-    [0, '20020715000000', 6],
+for (const [datetime, damage] of [
+    ['20020115000000', 6],
+    ['20020115010000', 12],
+    ['20020715000000', 12],
+    ['20020715230000', 6],
 ] as const) {
-    void test(`wraith damage at ${datetime} follows the recorder clock inherited in month ${currentMonth + 1}`, async context => {
-        context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, currentMonth, 1, 12) });
-        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
-        requirePlayingGame(game);
-        game.datetime = datetime;
-        const wraith = await createMonsterAt('wraith', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
-        wraith.m_lev = 30;
-        wraith.mux = game.u.ux;
-        wraith.muy = game.u.uy;
+    for (const currentMonth of [0, 6]) {
+        void test(`wraith damage at ${datetime} follows the recorder's daylight clock when replayed in month ${currentMonth + 1}`, async context => {
+            context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, currentMonth, 1, 12) });
+            await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+            requirePlayingGame(game);
+            game.datetime = datetime;
+            const wraith = await createMonsterAt('wraith', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+            wraith.m_lev = 30;
+            wraith.mux = game.u.ux;
+            wraith.muy = game.u.uy;
 
-        const attack = await beginMonsterHeroAttack(wraith, game,
-            range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+            const attack = await beginMonsterHeroAttack(wraith, game,
+                range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
 
-        assert.equal(attack.heroAttackSequence?.current?.damage, damage,
-            'the second damage roll applies only at midnight after local-time conversion');
-    });
+            assert.equal(attack.heroAttackSequence?.current?.damage, damage,
+                'the second damage roll applies only at midnight after local-time conversion');
+        });
+    }
 }
 
 for (const [hour, stolen] of [['05', true], ['06', false], ['21', false], ['22', true]] as const) {
@@ -96,7 +98,7 @@ for (const [hour, stolen] of [['05', true], ['06', false], ['21', false], ['22',
         context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 1, 12) });
         await freshObjectRoom();
         requirePlayingGame(game);
-        game.datetime = `20000110${hour}0000`;
+        game.datetime = `20000710${hour}0000`;
         const gremlin = await createMonsterAt('gremlin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         grantIntrinsicProperty('fireResistance', 'outside');
         grantIntrinsicProperty('poisonResistance', 'outside');
