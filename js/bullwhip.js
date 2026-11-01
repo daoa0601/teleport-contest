@@ -20,8 +20,9 @@ import { heroSpecies } from './hero_species.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon, monsterWieldedWeapon } from './weapon.js';
-import { BOULDER, CORPSE, OBJECT_BIMANUAL } from './object_data.js';
+import { BOULDER, CORPSE } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { isBimanualObject } from './object_properties.js';
 import { monsterName as describeMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive } from './mondata.js';
@@ -55,7 +56,8 @@ function quantityOf(object) {
 // C apply.c:3099/3253/3025: mon_nam(mtmp) for the pit anchor, the flick
 // message, and a mistaken steed whip; formatMonsterName() is its port.
 function isTwoHanded(object) {
-    return !!(object?.bimanual || OBJECT_BIMANUAL[object?.otyp]);
+    // C apply.c:3161 uses bimanual(otmp) on the monster's wielded weapon.
+    return isBimanualObject(object);
 }
 function heroIsFumbling(state) {
     return propertyIsActive('fumbling', state);

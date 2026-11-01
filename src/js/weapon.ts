@@ -39,6 +39,7 @@ import {
 import { makePlural } from './object_grammar.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
+import { isBimanualObject } from './object_properties.js';
 import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
 import { isPolearm, type WeaponCandidate } from './object_properties.js';
@@ -176,6 +177,8 @@ export function selectMonsterRangedWeapon(
         const twoHands = (flags2 & M2_STRONG)
             && !((monster.misc_worn_check ?? 0) & W_ARMS);
         for (const type of POLEARM_PREFERENCE) {
+            // C weapon.c:574 reads objects[pwep[i]].oc_bimanual raw on the
+            // otyp table; the class guard does not apply to table entries.
             if (OBJECT_BIMANUAL[type] && !twoHands) continue;
             const polearm = selectMonsterWeaponOfType(monster, type, state);
             if (polearm && (polearm === current || !cannotSwitch))
@@ -255,6 +258,8 @@ export function selectHandToHandWeapon(
     for (const object of inventory) {
         if (object.oclass === WEAPON_CLASS && object.oartifact
             && monsterCanTouchArtifact(monster, object, state)
+            // C weapon.c:717 reads oc_bimanual raw for the artifact (already
+            // restricted to WEAPON_CLASS by the loop guard above).
             && (canUseBothHands || !OBJECT_BIMANUAL[object.otyp])) return object;
     }
 
@@ -268,6 +273,7 @@ export function selectHandToHandWeapon(
     }
 
     for (const type of HAND_TO_HAND_WEAPONS) {
+        // C weapon.c:733 reads objects[hwep[i]].oc_bimanual raw on the table.
         if (OBJECT_BIMANUAL[type] && !canUseBothHands) continue;
         if (type === CORPSE && !((monster.misc_worn_check ?? 0) & W_ARMG)
             && !monsterHasStoneResistance(monster)) continue;
@@ -392,8 +398,10 @@ function weaponForCurrentAction(monster: Monster, state: GameState): GameObject 
 }
 
 function wieldingHand(monster: Monster, weapon: GameObject): string {
+    // C weapon.c:mon_wield_item() checks bimanual() at both the welded
+    // message (866) and the welds-itself message (910).
     const hand = monsterHandName(monster.mnum);
-    return OBJECT_BIMANUAL[weapon.otyp] ? makePlural(hand) : hand;
+    return isBimanualObject(weapon) ? makePlural(hand) : hand;
 }
 
 function monsterPossessive(monster: Monster, state: GameState): string {

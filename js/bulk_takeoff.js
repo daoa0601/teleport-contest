@@ -6,8 +6,9 @@ import { TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_
 import { plineWithContinuation as pline } from './pline.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
-import { BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';
+import { BATTLE_AXE, CORPSE, LENSES, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';
 import { monsterIsHumanoid } from './monster_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { heroSpecies } from './hero_species.js';
 import { makePlural } from './object_grammar.js';
 import { objectMonsterName, objectName } from './objnam.js';
@@ -156,7 +157,7 @@ export async function canSelectOff(object, slot) {
         }
         const welded = checkWeldedWeapon(weapon);
         const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
-        if (welded && (slot === primary || !!weapon && !!OBJECT_BIMANUAL[weapon.otyp])) {
+        if (welded && (slot === primary || isBimanualObject(weapon))) {
             await pline(`You cannot free a weapon ${heroHandName(game)} to remove the ring.`);
             return false;
         }
@@ -192,7 +193,7 @@ export async function canSelectOff(object, slot) {
     }
     if (slot === 'uarm' || slot === 'uarmu') {
         const obstacle = cloak?.cursed ? cloak : slot === 'uarmu' && suit?.cursed ? suit
-            : checkWeldedWeapon(weapon) && weapon && OBJECT_BIMANUAL[weapon.otyp] ? weapon : null;
+            : checkWeldedWeapon(weapon) && isBimanualObject(weapon) ? weapon : null;
         if (obstacle) {
             const action = obstacle === cloak ? `remove your ${armorSimpleName(obstacle)}`
                 : obstacle === suit ? 'remove your suit' : `release your ${weaponNoun(obstacle)}`;

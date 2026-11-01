@@ -37,8 +37,9 @@ import { canFallThrough, splitHeroMonsterForm, } from './mklev.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
-import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL, CORPSE, OBJECT_NAMES, ROCK, SADDLE, } from './object_data.js';
+import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, CORPSE, OBJECT_NAMES, ROCK, SADDLE, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
+import { isBimanualObject } from './object_properties.js';
 import { unlinkObject } from './object_location.js';
 import { impactDrop } from './object_migration.js';
 import { heroPassesWalls } from './hero_species.js';
@@ -1102,7 +1103,7 @@ async function triggerRustTrap(trap) {
             let weapon = null;
             if (hero.twoweap)
                 weapon = secondary;
-            else if (primary && OBJECT_BIMANUAL[primary.otyp])
+            else if (isBimanualObject(primary))
                 weapon = primary;
             await wetHeroObject(weapon);
             const gloves = heroObject('uarmg');

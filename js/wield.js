@@ -17,7 +17,7 @@ import { getobj } from './inventory_prompt.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { addInventoryItem } from './u_init.js';
-import { isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import { isWetTowel } from './object_properties.js';
 import { stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
@@ -27,7 +27,7 @@ import { objectClassForType } from './object_knowledge.js';
 import { promptYesNoQuit } from './query.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
 import { artifactById } from './artifacts.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
 import { rn2 } from './rng.js';
 import { isAmmunition, isMissileObject, isPolearm } from './object_properties.js';
 import { objectHasPersonalName, objectName, ownedObjectAction } from './objnam.js';
@@ -453,7 +453,7 @@ export async function refuseWeldedPrimary(state = game) {
         return false;
     weapon.bknown = true;
     const hand = heroHandName(state);
-    const hands = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(hand) : hand;
+    const hands = isBimanualObject(weapon) ? makePlural(hand) : hand;
     await plineWithContinuation(`${ownedObjectAction(weapon, 'are', state)} welded to your ${hands}!`);
     return true;
 }
@@ -465,7 +465,7 @@ export async function announceWeaponWeld(object, state = game) {
     const subject = quantity === 1 ? noun : `${quantity} ${makePlural(noun)}`;
     const side = state.u.rightHanded === false ? 'left' : 'right';
     const hand = heroHandName(state);
-    const hands = OBJECT_BIMANUAL[object.otyp]
+    const hands = isBimanualObject(object)
         ? makePlural(hand) : `dominant ${side} ${hand}`;
     await plineWithContinuation(`${article}${subject} ${quantity === 1 ? 'welds itself' : 'weld themselves'} to your ${hands}!`);
     object.bknown = true;
@@ -475,7 +475,7 @@ export async function explainTwoWeaponEnd(wasTwoWeapon, state = game) {
     if (!wasTwoWeapon || state.u.twoweap || !weapon
         || state.flags?.verbose === false)
         return;
-    const suitable = isTwoWeaponObject(weapon) && !OBJECT_BIMANUAL[weapon.otyp];
+    const suitable = isTwoWeaponObject(weapon) && !isBimanualObject(weapon);
     await plineWithContinuation(suitable
         ? 'You are no longer using two weapons at once.'
         : 'You can no longer wield two weapons at once.');
@@ -516,7 +516,7 @@ async function readySelectedWeapon(weapon, state) {
         });
         return 'time';
     }
-    if ((state.uarms || state.u.uarms) && OBJECT_BIMANUAL[weapon.otyp]) {
+    if ((state.uarms || state.u.uarms) && isBimanualObject(weapon)) {
         const skill = OBJECT_SUBTYPE[weapon.otyp] ?? 0;
         const kind = weapon.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
             ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon';

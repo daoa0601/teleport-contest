@@ -44,10 +44,11 @@ import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import {
-    APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, OBJECT_BIMANUAL, ORANGE, PEAR,
+    APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, ORANGE, PEAR,
     STATUE,
 } from './object_data.js';
 import { definiteName, objectName, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
+import { isBimanualObject } from './object_properties.js';
 import {
     heroMonsterForm, heroIsFlying,
 } from './polyself.js';
@@ -115,9 +116,9 @@ function pickCanReach(tool: GameObject, x: number, y: number, state: GameState):
     if ((state.u.utrap ?? 0) > 0 && state.u.utraptype === TT_PIT) {
         if (targetInPit)
             return pitsAreConjoined(trap, trapAt(state.u.ux, state.u.uy, state));
-        return !!OBJECT_BIMANUAL[tool.otyp];
+        return isBimanualObject(tool);
     }
-    if (OBJECT_BIMANUAL[tool.otyp] || heroIsFlying(state)) return true;
+    if (isBimanualObject(tool) || heroIsFlying(state)) return true;
     return !targetInPit;
 }
 

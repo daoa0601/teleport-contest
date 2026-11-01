@@ -14,8 +14,8 @@ import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
 import { artifactById } from './artifacts.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
-import { isMissileObject, isWeaponTool } from './object_properties.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { isBimanualObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { willWeld } from './wield.js';
 const RUBOUTS = new Map([
     ['A', '^'],
@@ -330,6 +330,6 @@ export function heroHasFreeHand(state) {
     // freehand() calls welded() before checking the other hand or shield.
     weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
-    return !OBJECT_BIMANUAL[weapon.otyp] && !shield?.cursed;
+    return !isBimanualObject(weapon) && !shield?.cursed;
 }
 //# sourceMappingURL=engrave.js.map

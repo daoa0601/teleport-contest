@@ -1,7 +1,7 @@
 // C u_init.c:ini_inv_use_obj(), after starting-item discovery.
 import { armorSlotFor, wearHeroArmor } from './armor.js';
-import { FLINT, OBJECT_BIMANUAL, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
-import { isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
+import { FLINT, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
+import { isBimanualObject, isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
 import { learnInitialSpell } from './spell.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './wield.js';
 const WEAPON_CLASS = 2;
@@ -13,7 +13,7 @@ export async function useStartingItem(item, state) {
     if (item.oclass === ARMOR_CLASS) {
         const slot = armorSlotFor(item.otyp);
         if (slot && !state[slot] && !state.u[slot]
-            && !(slot === 'uarms' && weapon && OBJECT_BIMANUAL[weapon.otyp])) {
+            && !(slot === 'uarms' && weapon && isBimanualObject(weapon))) {
             if (slot === 'uarms')
                 setTwoWeaponCombat(false, state);
             wearHeroArmor(item, state);
@@ -25,7 +25,7 @@ export async function useStartingItem(item, state) {
             if (!state.uquiver && !state.u.uquiver)
                 await setQuiverObject(item, state);
         }
-        else if (!weapon && (!shield || !OBJECT_BIMANUAL[item.otyp])) {
+        else if (!weapon && (!shield || !isBimanualObject(item))) {
             await setPrimaryWeapon(item, state);
         }
         else if (!state.uswapwep && !state.u.uswapwep) {

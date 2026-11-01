@@ -41,9 +41,10 @@ import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { setMonsterMalign } from './makemon.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';
 import { MONSTER_SIZE } from './monster_data.js';
-import { ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE, LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL, } from './object_data.js';
+import { ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE, LARGE_BOX, CHEST, POT_OIL, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { isBimanualObject } from './object_properties.js';
 import { heroHasNoHands, } from './polyself.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { promptYesNoQuit } from './query.js';
@@ -99,7 +100,7 @@ function possessiveTrap(trap) {
 }
 function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
-    return isWeldedPrimary(weapon, state) && !!weapon && !!OBJECT_BIMANUAL[weapon.otyp];
+    return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
 }
 export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) {
     if (nearCapacity(state) >= HVY_ENCUMBER)

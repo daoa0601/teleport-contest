@@ -13,9 +13,10 @@ import { game, requireLiveGame } from './gstate.js';
 import { setWornArtifactProperties } from './artifacts.js';
 import {
     AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
-    AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES,
+    AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, OBJECT_NAMES,
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { showInvisibilityMessage } from './hero_invisibility.js';
@@ -91,7 +92,7 @@ export function ringRemovalObstacle(
     const weapon = state.uwep;
     const primaryRing = state.u.rightHanded === false ? state.uleft : state.uright;
     if (weapon && isWeldedPrimary(weapon, state)
-        && (ring === primaryRing || OBJECT_BIMANUAL[weapon.otyp])) return weapon;
+        && (ring === primaryRing || isBimanualObject(weapon))) return weapon;
     if (state.uarmg?.cursed) return state.uarmg;
     if (ring.cursed) return ring;
     return state.uarmg && (state.u.glibTurns ?? 0) > 0 ? state.uarmg : null;

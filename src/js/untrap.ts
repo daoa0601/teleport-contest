@@ -62,10 +62,11 @@ import { MONSTER_SIZE } from './monster_data.js';
 
 import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
-    LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL,
+    LARGE_BOX, CHEST, POT_OIL,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
+import { isBimanualObject } from './object_properties.js';
 import {
     heroHasNoHands,
 } from './polyself.js';
@@ -185,7 +186,7 @@ function possessiveTrap(trap: Trap): string {
 
 function weldedTwoHandedWeapon(state: GameState): boolean {
     const weapon = state.uwep || state.u?.uwep;
-    return isWeldedPrimary(weapon, state) && !!weapon && !!OBJECT_BIMANUAL[weapon.otyp];
+    return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
 }
 
 export function untrapAbilityProblem(state: GameState = game, { checkFloor = false } = {}): string | null {

@@ -37,13 +37,12 @@ import {
     AKLYS,
     HEAVY_IRON_BALL,
     IRON_CHAIN,
-    OBJECT_BIMANUAL,
     OBJECT_DIR,
     OBJECT_SUBTYPE,
     TIN_OPENER,
     TOWEL,
 } from './object_data.js';
-import { isMissileObject, isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { willWeld } from './wield.js';
 import type { GameObject } from './object_types.js';
 
@@ -404,5 +403,5 @@ export function heroHasFreeHand(state: GameState): boolean {
     // freehand() calls welded() before checking the other hand or shield.
     weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
-    return !OBJECT_BIMANUAL[weapon.otyp] && !shield?.cursed;
+    return !isBimanualObject(weapon) && !shield?.cursed;
 }

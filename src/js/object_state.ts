@@ -7,7 +7,7 @@
 
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
+    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -16,6 +16,7 @@ import type { GameState } from './game_state.js';
 import { rn2 } from './rng.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
 import { objectWeight } from './weight.js';
+import { isBimanualObject } from './object_properties.js';
 import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
 import type { AttributeIndex } from './attrib.js';
@@ -126,7 +127,7 @@ export function curseObjectState(object: GameObject | null | undefined, state: G
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
-    if (object === (state.uwep || state.u.uwep) && OBJECT_BIMANUAL[object.otyp])
+    if (object === (state.uwep || state.u.uwep) && isBimanualObject(object))
         resetBulkTakeoff(state);
     updateBlessingEffects(object, state);
     if (object.otyp === FIGURINE

@@ -3,7 +3,7 @@
 import { G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
-import { AMULET_OF_UNCHANGING, BOULDER, CHEST, CORPSE, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_LAMP, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, SPE_NOVEL, OBJECT_BIMANUAL, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, POT_WATER, ROCK, SPE_BLANK_PAPER, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, } from './object_data.js';
+import { AMULET_OF_UNCHANGING, BOULDER, CHEST, CORPSE, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_LAMP, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, SPE_NOVEL, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, POT_WATER, ROCK, SPE_BLANK_PAPER, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, } from './object_data.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { makemonAt } from './makemon.js';
 import { mkobj, mksobj, set_corpsenm } from './mkobj.js';
@@ -15,7 +15,7 @@ import { objectWeight } from './weight.js';
 import { delobj, deleteObjectContents, stopObjectTimers } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
-import { isPoisonableObject } from './object_properties.js';
+import { isBimanualObject, isPoisonableObject } from './object_properties.js';
 import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
@@ -296,20 +296,20 @@ function finishReplacementType(source, target, id, state) {
     }
 }
 async function replaceWornItem(old, replacement, mask, state) {
-    const twoHanded = !!OBJECT_BIMANUAL[old.otyp];
+    const twoHanded = isBimanualObject(old);
     const twoWeapons = !!state.u.twoweap;
     const oldArmorSlot = armorSlotFor(old.otyp);
     await removeWornHeroItem(old, state);
     if (state.program_state.gameover)
         return replacement;
     if (mask & W_WEP) {
-        if (twoHanded || !OBJECT_BIMANUAL[replacement.otyp] || !state.uarms)
+        if (twoHanded || !isBimanualObject(replacement) || !state.uarms)
             await setPrimaryWeapon(replacement, state);
-        if (twoWeapons && state.uwep && !OBJECT_BIMANUAL[state.uwep.otyp])
+        if (twoWeapons && state.uwep && !isBimanualObject(state.uwep))
             setTwoWeaponCombat(true, state);
     }
     else if (mask & W_SWAPWEP) {
-        if (twoHanded || !OBJECT_BIMANUAL[replacement.otyp])
+        if (twoHanded || !isBimanualObject(replacement))
             await setSecondaryWeapon(replacement, state);
         if (twoWeapons && state.uswapwep)
             setTwoWeaponCombat(true, state);

@@ -8,11 +8,11 @@ import {
     MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount,
     monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
-import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
+import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_NAMES } from './object_data.js';
 import { isSword } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { isFlimsyObject } from './object_properties.js';
+import { isBimanualObject, isFlimsyObject } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';
 import { surfaceName } from './terrain_name.js';
@@ -39,7 +39,7 @@ export function armorWearDecision(object: GameObject, state: GameState = game): 
     }
     if ((object.owornmask ?? 0) & W_ARMOR) return refuse('You are already wearing that!');
     if (isWeldedPrimary(weapon, state)) checkedWeldedWeapon = weapon;
-    if (checkedWeldedWeapon && OBJECT_BIMANUAL[checkedWeldedWeapon.otyp]
+    if (checkedWeldedWeapon && isBimanualObject(checkedWeldedWeapon)
         && (slot === 'uarm' || slot === 'uarmu'))
         return refuse(`You cannot do that while holding your ${isSword(checkedWeldedWeapon) ? 'sword' : 'weapon'}.`);
     if (!slot) return refuse("You can't wear that!");
@@ -60,7 +60,7 @@ export function armorWearDecision(object: GameObject, state: GameState = game): 
         break;
     }
     case 'uarms':
-        if (weapon && OBJECT_BIMANUAL[weapon.otyp])
+        if (weapon && isBimanualObject(weapon))
             return refuse(`You cannot wear a shield while wielding a two-handed ${isSword(weapon) ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon'}.`);
         if (state.u.twoweap) return refuse('You cannot wear a shield while wielding two weapons.');
         break;

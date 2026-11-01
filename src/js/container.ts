@@ -43,9 +43,10 @@ import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
     BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
     ICE_BOX,
-    LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
+    LARGE_BOX, LEASH, LOADSTONE, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
     TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE,
 } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { unlinkObject } from './object_location.js';
 import {
     objectQuantity, rejoinObjectStack, splitObjectStack,
@@ -516,7 +517,7 @@ function rejectedPutMessage(container: GameObject, object: GameObject, state: Ga
         observeObjectForNaming(object, { state });
         const hand = heroHandName(state);
         return `${ownedObjectAction(object, 'are', state)} welded to your ${
-            OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand}!`;
+            isBimanualObject(object) ? makePlural(hand) : hand}!`;
     }
     return null;
 }

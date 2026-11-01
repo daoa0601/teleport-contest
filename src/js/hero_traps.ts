@@ -68,10 +68,11 @@ import {
     monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly,
 } from './monster_data.js';
 import {
-    ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL,
+    ARROW, BOULDER, DART, HEAVY_IRON_BALL,
     CORPSE, OBJECT_NAMES, ROCK, SADDLE,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
+import { isBimanualObject } from './object_properties.js';
 import { unlinkObject } from './object_location.js';
 import { impactDrop } from './object_migration.js';
 import { heroPassesWalls } from './hero_species.js';
@@ -1220,7 +1221,7 @@ async function triggerRustTrap(trap: Trap) {
             const secondary = heroObject('uswapwep');
             let weapon = null;
             if (hero.twoweap) weapon = secondary;
-            else if (primary && OBJECT_BIMANUAL[primary.otyp])
+            else if (isBimanualObject(primary))
                 weapon = primary;
             await wetHeroObject(weapon);
             const gloves = heroObject('uarmg');

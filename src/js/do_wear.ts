@@ -11,9 +11,10 @@ import type { GameObject } from './object_types.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import {
     GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING,
-    OBJECT_BIMANUAL, OBJECT_DELAY,
+    OBJECT_DELAY,
 } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
+import { isBimanualObject } from './object_properties.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import type { PlayingGameState } from './game_state.js';
 import { recordRandom } from './monster_action_types.js';
@@ -155,9 +156,9 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
     const weapon = game.uwep;
     const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
     const discoveredWeld = !!weapon && !weapon.bknown;
-    if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
+    if (weapon && (ringSlot === primary || isBimanualObject(weapon))
         && isWeldedPrimary(weapon)) {
-        const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
+        const handName = isBimanualObject(weapon) ? makePlural(heroHandName(game)) : heroHandName(game);
         await pline(`You cannot free your weapon ${handName} to put on the ring.`);
         game.context.move = discoveredWeld ? 1 : 0;
         return;

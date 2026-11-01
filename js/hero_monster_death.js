@@ -200,6 +200,8 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
                 < MZ_HUMAN
                 && extra.otyp !== FIGURINE
                 && ((extra.owt ?? 1) > 30
+                    // C mon.c:3607 reads objects[otyp].oc_big raw; the
+                    // comment there notes it is also oc_bimanual and oc_bulky.
                     || OBJECT_BIMANUAL[extra.otyp]);
             const disposableFood = extra.oclass === FOOD_CLASS && !collectsFood
                 && !extra.oartifact;

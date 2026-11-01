@@ -21,9 +21,8 @@ import { AD_DRIN, AD_PHYS, AD_SPEL, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW,
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead, monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks, } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
 import { objectMaterial } from './object_material.js';
-import { isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, returnHeroToHumanForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
 import { dropSecondaryWeapon } from './two_weapon.js';
@@ -155,7 +154,7 @@ async function performFormWeaponAttack(sequence, attack, index) {
     sequence.oddClaw = !sequence.oddClaw;
     const primary = state.uwep || state.u.uwep;
     if (sequence.weaponUsed && (sequence.results[index - 1] ?? M_ATTK_MISS) > M_ATTK_MISS
-        && primary && OBJECT_BIMANUAL[primary.otyp])
+        && primary && isBimanualObject(primary))
         return { kind: 'skip' };
     sequence.weaponUsed = true;
     const secondary = state.uswapwep || state.u.uswapwep;
@@ -188,8 +187,8 @@ async function performFormWeaponAttack(sequence, attack, index) {
 }
 function canAlternateFormWeapon(primary, secondary, state) {
     return !!(primary && secondary && (primary.oclass === 2 || isWeaponTool(primary))
-        && !OBJECT_BIMANUAL[primary.otyp] && !(state.uarms || state.u.uarms)
-        && !secondary.oartifact && isTwoWeaponObject(secondary) && !OBJECT_BIMANUAL[secondary.otyp]
+        && !isBimanualObject(primary) && !(state.uarms || state.u.uarms)
+        && !secondary.oartifact && isTwoWeaponObject(secondary) && !isBimanualObject(secondary)
         && !(objectMaterial(secondary, state) === 14 && monsterSpeciesHatesSilver(heroSpecies(state))));
 }
 async function performNaturalContact(sequence, attack) {

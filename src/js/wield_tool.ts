@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { inventoryItemDescription } from './invent.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import {
     willWeld,
     readyHeroWeapon,
@@ -40,7 +40,9 @@ function isWeapon(object: GameObject): boolean {
 }
 
 function isTwoHanded(object: GameObject): boolean {
-    return !!OBJECT_BIMANUAL[object.otyp];
+    // C wield.c:wield_tool() checks bimanual(obj) at both the welded message
+    // and the shield refusal.
+    return isBimanualObject(object);
 }
 
 function weldedPrimary(state: GameState): GameObject | null {
