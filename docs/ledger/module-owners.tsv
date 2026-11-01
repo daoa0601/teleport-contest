@@ -30,7 +30,6 @@ src/js/corpse_meal.ts	eat.c
 src/js/cream_pie.ts	apply.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
-src/js/detect.ts	detect.c
 src/js/dig.ts	dig.c
 src/js/digging_watch.ts	dig.c
 src/js/divine_gifts.ts	pray.c

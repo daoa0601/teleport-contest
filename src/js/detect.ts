@@ -795,7 +795,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
                 article: steed.mtame ? 'your' : 'the', suppressSaddle: true });
             message = `You feel interested in ${name}${name.endsWith('s') ? "'" : "'s"} financial situation.`;
         }
-        await detectionFeeling(message, state);
+        await strangeFeeling(message, state);
         return effectResult(1, false, true);
     }
     if (!remote) {
@@ -854,7 +854,7 @@ export async function detectFood(source: GameObject | null, { state = game }: De
             await grantEdibility(source, state);
         } else if (source) {
             const starts = source.blessed && !state.u.uedibility;
-            await detectionFeeling(`Your ${heroNoseName(state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
+            await strangeFeeling(`Your ${heroNoseName(state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
             if (starts) state.u.uedibility = 1;
         }
         return effectResult(stale ? 0 : 1, stale && !confused, !stale && !!source);
@@ -886,7 +886,7 @@ export async function detectMonsters(source: GameObject | null, { state = game, 
     requirePlayingGame(state);
     const monsters = liveMonsters(state);
     if (!monsters.length) {
-        if (source) await detectionFeeling(heroIsHallucinating(state)
+        if (source) await strangeFeeling(heroIsHallucinating(state)
             ? 'You get the heebie jeebies.' : 'You feel threatened.', state);
         return effectResult(1, false, !!source);
     }
@@ -972,7 +972,7 @@ export async function detectObjects(source: GameObject | null, { state = game, o
     if (boulderClass && objectClass !== ROCK_CLASS) what += ' and/or large stones';
     if (!stale && !elsewhere) {
         if (!here) {
-            if (source) await detectionFeeling('You feel a lack of something.', state);
+            if (source) await strangeFeeling('You feel a lack of something.', state);
             return effectResult(1, false, !!source);
         }
         await plineWithContinuation(`You sense ${what} nearby.`);
@@ -1025,7 +1025,10 @@ function effectResult(result: 0 | 1, known: boolean, strangeFeeling = false): De
     return { result, known, strangeFeeling };
 }
 
-async function detectionFeeling(message: string, state: GameState, forceMessage = false) {
+// C potion.c:strange_feeling(), message half, as detect.c's detectors call
+// it; the trycall/useup half stays with the callers' effectResult handling.
+// The owning full port is potion.ts:strangeFeeling().
+async function strangeFeeling(message: string, state: GameState, forceMessage = false) {
     await plineWithContinuation(state.flags.beginner && !forceMessage
         ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`
         : message);
