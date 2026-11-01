@@ -26,14 +26,14 @@ const changes = {
     weight: ['weight.js', 'return base * quantity(object);', 'return base * quantity(object) + 1;'],
     capacity: ['weight.js', 'return inventoryWeight(state) - weightCapacity(state);',
         'return inventoryWeight(state) - weightCapacity(state) + 1;'],
-    damage: ['weapon_damage.js', 'return applyErosion(object, damage);',
+    damage: ['weapon.js', 'return applyErosion(object, damage);',
         'return applyErosion(object, damage) + 1;'],
     accuracy: ['hero_attack_accuracy.js', 'threshold += 2;', 'threshold += 3;'],
-    state: ['weapon_damage.js', 'return applyErosion(object, damage);',
+    state: ['weapon.js', 'return applyErosion(object, damage);',
         'object.spe += 1; return applyErosion(object, damage);'],
-    rng: ['weapon_damage.js', 'return applyErosion(object, damage);',
+    rng: ['weapon.js', 'return applyErosion(object, damage);',
         'rnd(1); return applyErosion(object, damage);'],
-    log: ['weapon_damage.js', 'return applyErosion(object, damage);',
+    log: ['weapon.js', 'return applyErosion(object, damage);',
         'd(0, 4); return applyErosion(object, damage);'],
     naming_plural: ['object_grammar.js', "return replacePluralSuffix(stem, '', 's') + excess;",
         "return replacePluralSuffix(stem, '', 'es') + excess;"],
@@ -111,7 +111,7 @@ const stateModule = await import('../../js/gstate.js');
 const { initRng, enableRngLog, getRngLog } = await import('../../js/rng.js');
 const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
 const weight = await import('../../js/weight.js');
-const { rollPhysicalWeaponDamage } = await import('../../js/weapon_damage.js');
+const { rollPhysicalWeaponDamage } = await import('../../js/weapon.js');
 const { findHeroMeleeHitThreshold } = await import('../../js/hero_attack_accuracy.js');
 const { wearHeroAccessory } = await import('../../js/accessory.js');
 const { grantIntrinsicProperty } = await import('../../js/properties.js');

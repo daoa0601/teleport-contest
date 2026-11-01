@@ -78,13 +78,13 @@ src/js/armor.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
 src/js/armor.ts	erodeWornArmor	rn2	"[""4""]"	constant
 src/js/armor.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
 src/js/armor.ts	someHeroArmor	rn2	"[""4""]"	constant
-src/js/artifact_hit.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	guarded
-src/js/artifact_hit.ts	applyBeheading	random	"[""2""]"	constant
-src/js/artifact_hit.ts	applyBeheading	random	"[""2""]"	constant
-src/js/artifact_invoke.ts	invokeBanish	rn2	"[""chance""]"	guarded
-src/js/artifact_invoke.ts	invokeBanish	rn2	"[""dungeon.num_dunlevs""]"	unproved
-src/js/artifact_invoke.ts	invokeBlindingRay	rnd	"[""damage""]"	constant
-src/js/artifact_invoke.ts	invokeFlingPoison	rn2	"[""2""]"	constant
+src/js/artifacts.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	guarded
+src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant
+src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant
+src/js/artifacts.ts	invokeBanish	rn2	"[""chance""]"	guarded
+src/js/artifacts.ts	invokeBanish	rn2	"[""dungeon.num_dunlevs""]"	unproved
+src/js/artifacts.ts	invokeBlindingRay	rnd	"[""damage""]"	constant
+src/js/artifacts.ts	invokeFlingPoison	rn2	"[""2""]"	constant
 src/js/artifacts.ts	artifactDamageBonus	roll	"[""artifact.attack.damageDie""]"	guarded
 src/js/artifacts.ts	artifactToHitBonus	roll	"[""artifact.attack.toHitDie""]"	unproved
 src/js/artifacts.ts	createArtifactGift	rn2	"[""2""]"	constant
@@ -2330,15 +2330,15 @@ src/js/trap.ts	waterDamageObject	random	"[""20""]"	constant
 src/js/trap.ts	waterDamageObject	random	"[""3""]"	constant
 src/js/trap.ts	waterDamageObject	random	"[""object.spestudied""]"	unproved
 src/js/trap.ts	waterDamageObject	rollOne	"[""7 - spe""]"	unproved
-src/js/trap_detection.ts	senseTrap	rn2	"[""MONSTER_NAME.length""]"	constant
-src/js/trap_detection.ts	senseTrap	rn2	"[""OBJECT_NAMES.length - firstObject""]"	unproved
-src/js/trap_detection.ts	senseTrap	rnd	"[""10""]"	constant
-src/js/trap_detection.ts	senseTrap	rnd	"[""2""]"	constant
-src/js/trap_magic.ts	openHoldingTrap	rn2	"[""2""]"	constant
-src/js/trap_name.ts	trapName	rn2	"[""3""]"	constant
-src/js/trap_name.ts	trapName	rn2Display	"[""total + 1""]"	constant
-src/js/trap_setting.ts	continueTrapSetting	rnl	"[""10""]"	constant
-src/js/trap_setting.ts	useSettableTrap	rnl	"[""10""]"	constant
+src/js/detect.ts	senseTrap	rn2	"[""MONSTER_NAME.length""]"	constant
+src/js/detect.ts	senseTrap	rn2	"[""OBJECT_NAMES.length - firstObject""]"	unproved
+src/js/detect.ts	senseTrap	rnd	"[""10""]"	constant
+src/js/detect.ts	senseTrap	rnd	"[""2""]"	constant
+src/js/trap.ts	openHoldingTrap	rn2	"[""2""]"	constant
+src/js/trap.ts	trapName	rn2	"[""3""]"	constant
+src/js/trap.ts	trapName	rn2Display	"[""total + 1""]"	constant
+src/js/apply.ts	continueTrapSetting	rnl	"[""10""]"	constant
+src/js/apply.ts	useSettableTrap	rnl	"[""10""]"	constant
 src/js/tty_prompts.ts	confusePromptDirection	rn2	"[""5""]"	constant
 src/js/tty_prompts.ts	confusePromptDirection	rn2	"[""count""]"	constant
 src/js/two_weapon.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
@@ -2412,14 +2412,14 @@ src/js/engrave.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
 src/js/engrave.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
 src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
-src/js/weapon_accuracy.ts	rangedTargetHitBonus	random	"[""10""]"	constant
-src/js/weapon_damage.ts	monsterWeaponStrengthBonus	random	"[""4""]"	constant
-src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant
-src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
-src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant
-src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""6""]"	constant
-src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""profile.range""]"	guarded
-src/js/weapon_type.ts	monsterWeaponSwingVerb	random	"[""2""]"	constant
+src/js/dothrow.ts	rangedTargetHitBonus	random	"[""10""]"	constant
+src/js/uhitm.ts	monsterWeaponStrengthBonus	random	"[""4""]"	constant
+src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant
+src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
+src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant
+src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""6""]"	constant
+src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""profile.range""]"	guarded
+src/js/mhitu.ts	monsterWeaponSwingVerb	random	"[""2""]"	constant
 src/js/were.ts	revertHeroWereForm	rn2	"[""200""]"	constant
 src/js/were.ts	summonWereAttackHelp	random	"[""10""]"	constant
 src/js/were.ts	summonWereAttackHelp	random	"[""30""]"	constant
