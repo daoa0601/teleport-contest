@@ -10,18 +10,18 @@ import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES } from './shknam.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION, monsterHasNoLimbs } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './do_name.js';
-import { possessiveName, depth } from './hacklib.js';
+import { possessiveName, depth, distmin } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
 import { shopkeeperName, shopStocksObject } from './shknam.js';
-import { containedGold } from './gold.js';
+import { containedGold, hiddenGold } from './gold.js';
 import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, rouseShopkeeper } from './shop_sell.js';
-import { canSeeMonster, canSenseMonster } from './display.js';
+import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { currency } from './currency.js';
-import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming } from './objnam.js';
+import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { heroGoldAmount, monsterGoldAmount } from './hero_gold.js';
@@ -29,7 +29,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { publishMonsterWake, angerWatchGuards, removeMonsterFromGame } from './mon.js';
-import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, LL_ACHIEVE, G_GONE, isok, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY } from './const.js';
+import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, LL_ACHIEVE, G_GONE, isok, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL } from './const.js';
 import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership, roomForIndex } from './room.js';
 import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
@@ -38,7 +38,7 @@ import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BAL
 import { learnObjectType, recordObjectPriceQuote, observeObject } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
-import { moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, setPaidShopkeeper, hotPursuitShopkeeper, addUpBill, homeShopkeeper } from './shop_damage.js';
+import { moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, setPaidShopkeeper, hotPursuitShopkeeper, addUpBill, homeShopkeeper, makeShopkeeperHappy } from './shop_damage.js';
 import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
@@ -62,7 +62,7 @@ import { SPBOOK_CLASS, FOOD_CLASS } from './mklev.js';
 import { paymentObjectDescription, objectDescription } from './object_description.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee } from './vision.js';
-import { showDisclosureOverlay } from './windows.js';
+import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { mergable } from './object_merge.js';
 import { splitObjectStack } from './object_stack.js';
@@ -71,6 +71,10 @@ import { intrinsicPossible } from './corpse_intrinsics.js';
 import { countContents } from './invent.js';
 import { objectWeight } from './weight.js';
 import { artifactById } from './artifacts.js';
+import { bot } from './botl.js';
+import { setMulti, commandResultCancelled } from './command_state.js';
+import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
+import { promptYesNo, promptChoice } from './query.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -2336,6 +2340,679 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
         await angerWatchGuards(false);
     }
     return value;
+}
+// C shk.c:cheapest_item().
+export async function minimumShopPurchase(resident, state = game) {
+    const bill = await itemizedShopBill(resident, state);
+    if (!bill.length || !hasShopBill(resident))
+        return null;
+    return {
+        price: Math.min(...bill.map(item => item.price)),
+        multipleItems: resident.eshk.bill.length > 1 || bill.length > 1
+            || bill[0]?.kind === 'hidden-container',
+    };
+}
+// Contents share one entry for their outermost container. Used portions stay
+// separate, so they can be paid before buying the remaining contained goods.
+// C shk.c:sortbill_cmp().
+// C shk.c:bp_to_obj().
+export async function itemizedShopBill(resident, state = game) {
+    if (!hasShopBill(resident))
+        return [];
+    const objects = objectsInTimerGraph(state);
+    const bill = [];
+    for (const [billIndex, entry] of resident.eshk.bill.entries()) {
+        const object = (entry.useup ? state.billObjects ?? [] : objects)
+            .find(candidate => candidate.o_id === entry.bo_id);
+        if (!object)
+            continue;
+        if (object.where === 'onbill' || object.quan === 0) {
+            bill.push({ object, kind: 'used', quantity: entry.bquan,
+                price: entry.price * entry.bquan, billIndex });
+            continue;
+        }
+        if (object.quan < entry.bquan) {
+            const quantity = entry.bquan - object.quan;
+            bill.push({ object, kind: 'used', quantity,
+                price: entry.price * quantity, billIndex });
+        }
+        if (object.container || object.contents?.length) {
+            const container = outermostContainer(object);
+            const previous = bill.find(item => item.object === container);
+            const kind = container === object ? 'intact'
+                : containerContentsKnown(object) ? 'known-container' : 'hidden-container';
+            if (previous) {
+                if (previous.kind === 'intact')
+                    previous.kind = kind;
+                continue;
+            }
+            bill.push({ object: container, kind, quantity: 1,
+                price: await unpaidObjectCost(container, state, 'contents'),
+                billIndex: container.unpaid ? billIndex : -1 });
+        }
+        else {
+            bill.push({ object, kind: 'intact', quantity: object.quan,
+                price: entry.price * object.quan, billIndex });
+        }
+    }
+    return bill.sort((left, right) => Number(right.kind === 'used') - Number(left.kind === 'used')
+        || right.price - left.price || left.billIndex - right.billIndex);
+}
+export async function buyShopBillItem(resident, item, state = game, { itemize = false } = {}) {
+    if (!hasShopBill(resident))
+        return 'stop';
+    const container = item.kind === 'known-container' || item.kind === 'hidden-container';
+    // buy_container() checks the group price first; dopayobj() rejects a
+    // partly used loose stack before considering its intact portion's price.
+    if (container) {
+        if (!await checkPurchaseFunds(resident, item, state, 0))
+            return 'stop';
+        if (!await checkPurchaseFunds(resident, item, state))
+            return 'stop';
+    }
+    let declined = false;
+    if (itemize && !container) {
+        if (!await checkPurchaseFunds(resident, item, state, 0))
+            return 'broke';
+        observeObjectForNaming(item.object, { state });
+        const originalQuantity = item.object.quan;
+        const originalSuppressPrice = state.iflags.suppress_price;
+        item.object.quan = item.quantity;
+        state.iflags.suppress_price = true;
+        try {
+            declined = await promptYesNo(await paymentQuestion(item.object, item.price, state)) === 'n';
+        }
+        finally {
+            item.object.quan = originalQuantity;
+            if (originalSuppressPrice === undefined)
+                delete state.iflags.suppress_price;
+            else
+                state.iflags.suppress_price = originalSuppressPrice;
+        }
+    }
+    const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
+    for (const object of purchases) {
+        const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
+        if (entry && item.kind !== 'used' && object.quan < entry.bquan) {
+            await rejectPartlyUsedPurchase(resident, object, entry, state);
+            return container ? 'stop' : 'skip';
+        }
+    }
+    if (declined)
+        return 'skip';
+    if (!container && !await checkPurchaseFunds(resident, item, state))
+        return itemize ? 'skip' : 'stop';
+    const unpaidContainer = container && item.object.unpaid;
+    let bought = 0;
+    for (const object of purchases) {
+        const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
+        if (!entry)
+            continue;
+        const quantity = item.kind === 'used' ? item.quantity : object.quan;
+        const price = entry.price * quantity;
+        // The group quote uses today's valuation; each bill entry retains
+        // its agreed price. Native keeps trying later contents after a refusal.
+        if (container && !await checkPurchaseFunds(resident, { ...item, object, quantity }, state, price)) {
+            await impossible(`Buying ${simpleObjectName(item.object, state)} contents failed unexpectedly (#${object.o_id} 0).`, { state });
+            continue;
+        }
+        // dopayobj() retains the purchased count through payment and feedback,
+        // then restores the intact count before update_bill().
+        const originalQuantity = object.quan;
+        object.quan = quantity;
+        try {
+            await payShopkeeper(resident, price, state);
+            if (!container)
+                await nameShopTransaction(resident, object, name => `${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${item.kind === 'used' ? ' at a cost of' : ' for'} ${price} gold piece${price === 1 ? '' : 's'}.`, { publish: plineWithContinuation, state });
+        }
+        finally {
+            object.quan = originalQuantity;
+        }
+        if (item.kind === 'used' && object.where !== 'onbill' && object.quan > 0) {
+            entry.bquan = object.quan;
+        }
+        else {
+            object.unpaid = false;
+            if (object.where === 'onbill') {
+                unlinkObject(object, state);
+                deallocateObject(object, state);
+            }
+            removeBillEntry(resident, entry);
+        }
+        bought++;
+    }
+    if (container && bought === 0) {
+        await plineWithContinuation(`"You need to remove any unpaid items from that ${simpleObjectName(item.object, state)} and buy them separately."`);
+        return 'stop';
+    }
+    if (container) {
+        // buy_container() names the container with its prior ownership, then
+        // clears both flags after the purchase summary has finished.
+        if (unpaidContainer) {
+            item.object.unpaid = true;
+            item.object.no_charge = true;
+        }
+        await nameShopTransaction(resident, item.object, name => `bought ${name} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`, { publish: plineWithContinuation, state });
+        item.object.unpaid = false;
+        item.object.no_charge = false;
+    }
+    return 'paid';
+}
+// C dopayobj(): safe_qbuf() reserves the price and question before shortening
+// the doname() description. Keep the same object for equipment annotations,
+// and restore the temporary naming fields before asking for input.
+async function paymentQuestion(object, price, state) {
+    const suffix = ` for ${price} ${currency(price, { state })}.  Pay?`;
+    const limit = QBUFSZ - 1 - suffix.length;
+    const describe = async (nameState) => {
+        const name = await objectDescription(object, { state: nameState });
+        return object.quan === 1 ? name.charAt(0).toUpperCase() + name.slice(1) : name;
+    };
+    let name = await describe(state);
+    if (name.length <= limit)
+        return name + suffix;
+    // C short_oname() tries each user name separately, then both together.
+    const callName = state._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+                ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+            } } : state;
+    if (shortCallState !== state) {
+        name = await describe(shortCallState);
+        if (name.length <= limit)
+            return name + suffix;
+    }
+    const shortPersonalName = personalName && personalName.length >= 12
+        ? `${personalName.slice(0, 8)}...` : null;
+    const { oextra, bknown, rknown, greased, oeroded, oeroded2 } = object;
+    try {
+        if (shortPersonalName) {
+            object.oextra = { ...oextra, oname: shortPersonalName };
+            name = await describe(state);
+            if (name.length <= limit)
+                return name + suffix;
+        }
+        const shortenBoth = shortCallState !== state && shortPersonalName !== null;
+        const nameState = shortenBoth ? shortCallState : state;
+        if (shortenBoth) {
+            name = await describe(nameState);
+            if (name.length <= limit)
+                return name + suffix;
+        }
+        else if (oextra === undefined)
+            delete object.oextra;
+        else
+            object.oextra = oextra;
+        // Only the combined attempt keeps abbreviated names while stripping
+        // physical details; native restores each separate attempt first.
+        object.bknown = object.rknown = object.greased = false;
+        object.oeroded = object.oeroded2 = 0;
+        name = await describe(nameState);
+        if (name.length > limit)
+            name = simpleObjectNameWithArticle(object, nameState);
+        if (name.length > limit)
+            name = object.quan === 1 ? 'that' : 'those';
+        return name + suffix;
+    }
+    finally {
+        if (oextra === undefined)
+            delete object.oextra;
+        else
+            object.oextra = oextra;
+        if (bknown === undefined)
+            delete object.bknown;
+        else
+            object.bknown = bknown;
+        if (rknown === undefined)
+            delete object.rknown;
+        else
+            object.rknown = rknown;
+        if (greased === undefined)
+            delete object.greased;
+        else
+            object.greased = greased;
+        if (oeroded === undefined)
+            delete object.oeroded;
+        else
+            object.oeroded = oeroded;
+        if (oeroded2 === undefined)
+            delete object.oeroded2;
+        else
+            object.oeroded2 = oeroded2;
+    }
+}
+// C shk.c:insufficient_funds().
+async function checkPurchaseFunds(resident, item, state, cost = item.price) {
+    const funds = heroGoldAmount(state) + (resident.eshk.credit ?? 0);
+    // C insufficient_funds(): zero cost checks for exhausted cash and credit.
+    if (cost === 0 && funds === 0) {
+        await plineWithContinuation(`You ${hiddenGold(state, true) ? 'seem to ' : ''}have no gold or credit left.`);
+        return false;
+    }
+    if (funds >= cost)
+        return true;
+    const originalQuantity = item.object.quan;
+    // dopayobj() leaves the payment quantity in place during refusal feedback.
+    item.object.quan = item.quantity;
+    try {
+        await plineWithContinuation(`You don't${hiddenGold(state, true) ? ' seem to' : ''} have gold${resident.eshk.credit ? ' or credit' : ''} enough to pay for ${await paymentObjectDescription(item.object, item.quantity, { state })}.`);
+    }
+    finally {
+        item.object.quan = originalQuantity;
+    }
+    return false;
+}
+function outermostContainer(object) {
+    while (object.container)
+        object = object.container;
+    return object;
+}
+function containerContentsKnown(object) {
+    while (object.container) {
+        object = object.container;
+        if (!object.cknown)
+            return false;
+    }
+    return true;
+}
+function containedPurchases(resident, container, state) {
+    const objects = objectsInTimerGraph(state);
+    const purchases = [];
+    for (const entry of resident.eshk.bill) {
+        const object = objects.find(candidate => candidate.o_id === entry.bo_id);
+        if (object && object !== container && outermostContainer(object) === container)
+            purchases.push(object);
+    }
+    // Native buys the container last; its prior ownership controls the name.
+    if (container.unpaid)
+        purchases.push(container);
+    return purchases;
+}
+// C shk.c:reject_purchase().
+async function rejectPartlyUsedPurchase(resident, object, entry, state) {
+    const intactQuantity = object.quan;
+    // reject_purchase() restores the intact count after feedback returns.
+    object.quan = entry.bquan - intactQuantity;
+    try {
+        const other = simpleObjectName(object, state);
+        if (!heroIsDeaf(state) && !shopkeeperIsMuted(resident)) {
+            const which = object.container ? `the one${intactQuantity > 1 ? 's' : ''} in ${definiteName(simpleObjectName(object.container, state), state)}`
+                : intactQuantity > 1 ? 'these' : 'this one';
+            await plineWithContinuation(`"${resident.mpeaceful ? 'Please pay' : 'Pay'} for the other ${other} before buying ${which}."`);
+        }
+        else {
+            const gesture = monsterHasNoLimbs(resident.mnum) ? 'motions to' : 'points out';
+            await plineWithContinuation(`${shopkeeperName(resident)} ${resident.mpeaceful ? '' : 'angrily '}${gesture} your bill for the other ${other} first.`);
+        }
+    }
+    finally {
+        object.quan = intactQuantity;
+    }
+}
+export async function payShopkeeper(resident, price, state = game) {
+    const credit = resident.eshk.credit ?? 0;
+    const creditUsed = Math.min(credit, price);
+    if (creditUsed)
+        await plineWithContinuation(credit >= price ? 'The price is deducted from your credit.'
+            : 'The price is partially covered by your credit.');
+    resident.eshk.credit = credit - creditUsed;
+    const gold = price - creditUsed;
+    if (gold)
+        await moneyToMonster(resident, gold, state);
+    resident.eshk.robbed = Math.max(0, (resident.eshk.robbed ?? 0) - price);
+    state.context.botl = true;
+}
+// Native compaction overwrites the vacated slot and preserves its identity.
+function removeBillEntry(resident, entry) {
+    const last = resident.eshk.bill.pop();
+    if (last && last !== entry) {
+        entry.bo_id = last.bo_id;
+        entry.bquan = last.bquan;
+        entry.price = last.price;
+        entry.useup = last.useup;
+    }
+    resident.eshk.billct = resident.eshk.bill.length;
+}
+// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
+// An empty bill takes a turn when the keeper can respond. A payment menu
+// takes no time until a debt or billed item is paid.
+export async function dopay() {
+    setMulti(0);
+    const stashedGold = hiddenGold(game, true) > 0;
+    const target = await choosePaymentShopkeeper();
+    if (!target) {
+        game.context.move = 0;
+        return;
+    }
+    const { keeper, resident } = target;
+    const shop = keeper.eshk;
+    const robbed = shop.robbed ?? 0;
+    if (robbed || shop.billct || shop.debit)
+        await rouseShopkeeper(keeper);
+    if (monsterIsHelpless(keeper)) {
+        const name = shopkeeperName(keeper, { capitalized: true });
+        const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
+        await plineWithContinuation(`${name} ${response}.`);
+        game.context.move = 0;
+        return;
+    }
+    if (keeper !== resident && keeper.mpeaceful) {
+        await payOutsideShop(keeper, robbed, stashedGold);
+        game.context.move = 1;
+        return;
+    }
+    if (!shop.billct && !shop.debit) {
+        await settleEmptyBill(keeper, robbed, stashedGold);
+        game.context.move = 1;
+        return;
+    }
+    if (keeper !== resident) {
+        await impossible('dopay: not to shopkeeper?');
+        if (resident)
+            setPaidShopkeeper(resident);
+        game.context.move = 0;
+        return;
+    }
+    let paid = false;
+    const debt = Math.max(0, keeper.eshk?.debit ?? 0);
+    if (debt) {
+        const loan = keeper.eshk.loan ?? 0;
+        const reason = !loan ? 'for the use of merchandise.'
+            : loan === debt ? 'you picked up in the store.'
+                : 'for gold picked up and the use of merchandise.';
+        await plineWithContinuation(`You owe ${shopkeeperName(keeper)} ${debt} ${currency(debt)} ${reason}`);
+        const payment = await payShopDebt(keeper, game);
+        if (!payment.paid) {
+            await plineWithContinuation(`But you don't${stashedGold ? ' seem to' : ''} have enough gold${keeper.eshk.credit ? ' or credit' : ''}.`);
+            game.context.move = 1;
+            return;
+        }
+        if (payment.creditUsed === payment.debt) {
+            await plineWithContinuation('Your debt is covered by your credit.');
+        }
+        else if (payment.creditUsed) {
+            await plineWithContinuation('That debt is partially offset by your credit.');
+            await plineWithContinuation('You pay the remainder.');
+        }
+        else {
+            await plineWithContinuation('You pay that debt.');
+        }
+        paid = true;
+    }
+    // pay_billed_items() checks the whole bill, including contained goods,
+    // before offering item selection. Stashed gold cannot fund this payment.
+    if (keeper === resident && (keeper.eshk?.billct ?? 0) > 0
+        && !heroGoldAmount(game) && !(keeper.eshk?.credit ?? 0)) {
+        await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
+        if (paid && keeper.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(keeper));
+        game.context.move = paid ? 1 : 0;
+        return;
+    }
+    if (keeper === resident) {
+        const purchase = await minimumShopPurchase(keeper);
+        if (purchase && heroGoldAmount(game) + (keeper.eshk?.credit ?? 0) < purchase.price) {
+            const items = purchase.multipleItems ? ' any of the items' : ' the item';
+            const bill = (keeper.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
+            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
+            if (hiddenGold(game, true))
+                await plineWithContinuation('Maybe you have some gold stashed away?');
+            if (paid && keeper.mpeaceful)
+                await plineWithContinuation(shopThankYouMessage(keeper));
+            game.context.move = paid ? 1 : 0;
+            return;
+        }
+    }
+    const billed = await itemizedShopBill(keeper);
+    if (!billed.length) {
+        if (!paid) {
+            await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+            if (keeper === resident && keeper.mpeaceful && !heroGoldAmount(game))
+                await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
+            game.context.move = 1;
+            return;
+        }
+        if (keeper.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(keeper));
+        game.context.move = 1;
+        return;
+    }
+    const selection = await chooseBilledItems(billed, (await minimumShopPurchase(keeper))?.multipleItems ?? false);
+    let paidForItem = false;
+    let finished = true;
+    // Native queued selection buys in bill order, regardless of selection order.
+    for (const item of selection.items) {
+        const result = await buyShopBillItem(keeper, item, game, { itemize: selection.itemize });
+        if (result === 'broke') {
+            paidForItem = true;
+            break;
+        }
+        if (result === 'stop') {
+            finished = false;
+            break;
+        }
+        if (result === 'skip')
+            continue;
+        paidForItem = true;
+        if (selection.itemize || selection.queued)
+            await bot();
+    }
+    game.iflags.menu_requested = false;
+    if (!paid && !paidForItem) {
+        game.context.move = 0;
+        return;
+    }
+    if (finished && keeper.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(keeper));
+    game.context.move = 1;
+}
+async function chooseBilledItems(billed, multiple) {
+    let viaMenu = (game.flags.menu_style ?? MENU_FULL) !== MENU_TRADITIONAL;
+    if (game.iflags.menu_requested)
+        viaMenu = !viaMenu;
+    if (!viaMenu) {
+        const answer = multiple
+            ? await promptChoice('Itemized billing?', ['y', 'n', 'q', 'm'], 'q', { visibleChoices: 'ynq m' })
+            : 'y';
+        if (answer === 'q')
+            return { items: [], itemize: false, queued: false };
+        if (answer !== 'm')
+            return { items: billed, itemize: answer === 'y', queued: false };
+    }
+    const selected = await paymentMenu(billed);
+    return { items: billed.filter(item => selected.includes(item)), itemize: false, queued: true };
+}
+async function paymentMenu(billed) {
+    for (const item of billed)
+        observeObjectForNaming(item.object);
+    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
+    const used = billed.filter(item => item.kind === 'used');
+    const intact = billed.filter(item => item.kind !== 'used');
+    const sections = [];
+    for (const group of [used, intact]) {
+        if (!group.length)
+            continue;
+        const items = [];
+        for (const item of group)
+            items.push({
+                key: String.fromCharCode(97 + billed.indexOf(item)),
+                text: `${String(item.price).padStart(priceWidth)} Zm, ${await paymentObjectDescription(item.object, item.quantity)}`,
+                value: item,
+            });
+        sections.push({
+            heading: used.length ? `${group === used ? 'Used up' : 'Unpaid'} item${group.length > 1 ? 's' : ''}:` : '',
+            items,
+        });
+    }
+    // C select_menu() pages the pending topline with --More-- before the
+    // menu is drawn; tty_display_nhwindow() owns that pager.
+    await flush_screen(1);
+    return await showMultiSelectWindow({
+        title: 'Pay for which items?', sections,
+        omitHeadings: !used.length,
+    });
+}
+async function choosePaymentShopkeeper() {
+    const shopkeepers = [];
+    let nearby = null;
+    let nearbyCount = 0;
+    let visibleCount = 0;
+    let resident = null;
+    const adjacent = (keeper) => distmin(keeper.mx, keeper.my, game.u.ux, game.u.uy) <= 1;
+    for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+        if (!monster.isshk || monster.dead || monster.mhp <= 0 || !hasShopkeeperData(monster))
+            continue;
+        if (!monster.mpeaceful && !monster.eshk.surcharge)
+            rileShopkeeper(monster);
+        shopkeepers.push(monster);
+        if (adjacent(monster)) {
+            // Once an angry neighbor has priority, C skips the remaining
+            // visibility and residency checks for other adjacent keepers.
+            if (nearby && !nearby.mpeaceful)
+                continue;
+            nearbyCount++;
+            nearby = monster;
+        }
+        if (canSpotMonster(monster))
+            visibleCount++;
+        if (shopkeeperInOwnShop(monster) && game.u.ushops?.[0] === monster.eshk.shoproom)
+            resident = monster;
+    }
+    if (nearby && nearbyCount === 1)
+        return { keeper: nearby, resident };
+    const blind = heroIsBlind();
+    if ((!shopkeepers.length && (!blind || game.u.blindTelepathy || game.u.telepathy))
+        || (!blind && !visibleCount)) {
+        await pline('There appears to be no shopkeeper here to receive your payment.');
+        return null;
+    }
+    if (!visibleCount) {
+        await pline("You can't see...");
+        return null;
+    }
+    if (shopkeepers.length === 1 && resident)
+        return { keeper: resident, resident };
+    if (visibleCount === 1) {
+        const keeper = shopkeepers.find(monster => canSpotMonster(monster));
+        if (!keeper)
+            throw new Error('Visible shopkeeper disappeared during payment.');
+        if (keeper !== resident && !adjacent(keeper)) {
+            await pline(`${shopkeeperName(keeper, { capitalized: true })} is not near enough to receive your payment.`);
+            return null;
+        }
+        return { keeper, resident };
+    }
+    // C shk.c dopay(): pline("Pay whom?"), then getpos() adds its tip and
+    // instructions to the same message window before reading a position.
+    const goal = 'the creature you want to pay';
+    await plineWithContinuation('Pay whom?');
+    const tip = await showGetposTip();
+    await showGetposInstructions();
+    if (tip)
+        await plineWithContinuation(`Move cursor to ${goal}:`);
+    const position = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy },
+        prompt: game._pending_message, goal,
+    });
+    game._pending_message = '';
+    if (!position) {
+        // shk.c:dopay() returns ECMD_CANCEL when getpos() is dismissed;
+        // the later "no one there" refusals stay ECMD_OK.
+        commandResultCancelled();
+        return null;
+    }
+    if (position.x === game.u.ux && position.y === game.u.uy) {
+        await pline('You are generous to yourself.');
+        return null;
+    }
+    const monster = game.level?.monsters.find(candidate => !candidate.dead
+        && candidate.mhp > 0 && candidate.mx === position.x && candidate.my === position.y);
+    if (!cansee(position.x, position.y) && (!monster || !canSpotMonster(monster))) {
+        await pline(`You can't ${blind ? 'sense' : 'see'} anyone there.`);
+    }
+    else if (!monster) {
+        await pline('There is no one there to receive your payment.');
+    }
+    else if (!monster.isshk || !hasShopkeeperData(monster)) {
+        await pline(`${monsterName(monster, { capitalized: true })} is not interested in your payment.`);
+    }
+    else if (monster !== resident && !adjacent(monster)) {
+        await pline(`${shopkeeperName(monster, { capitalized: true })} is too far to receive your payment.`);
+    }
+    else {
+        return { keeper: monster, resident };
+    }
+    return null;
+}
+// A peaceful keeper away from the hero's shop accepts whatever is offered,
+// even when that amount will not settle the robbery.
+async function payOutsideShop(keeper, robbed, stashed) {
+    const money = heroGoldAmount(game);
+    if (!robbed) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+    }
+    else if (!money) {
+        await plineWithContinuation(`You ${stashed ? 'seem to ' : ''}have no gold.`);
+        if (stashed)
+            await plineWithContinuation('But you have some gold stashed away.');
+    }
+    else {
+        if (money > robbed) {
+            await plineWithContinuation(`You give ${shopkeeperName(keeper)} the ${robbed} gold piece${robbed === 1 ? '' : 's'} ${monsterSubjectPronoun(keeper, { noIt: true })} asked for.`);
+            await payShopkeeper(keeper, robbed);
+        }
+        else {
+            await plineWithContinuation(`You give ${shopkeeperName(keeper)} all your${stashed ? ' openly kept' : ''} gold.`);
+            await payShopkeeper(keeper, money);
+            if (stashed)
+                await plineWithContinuation('But you have hidden gold!');
+        }
+        if (money < Math.trunc(robbed / 2) || money < robbed && stashed) {
+            await plineWithContinuation(`Unfortunately, ${monsterSubjectPronoun(keeper, { noIt: true })} doesn't look satisfied.`);
+        }
+        else
+            await makeShopkeeperHappy(keeper);
+    }
+}
+async function settleEmptyBill(keeper, robbed, stashed) {
+    const money = heroGoldAmount(game);
+    if (!robbed && keeper.mpeaceful) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+        if (!money)
+            await plineWithContinuation(`Moreover, you${stashed ? ' seem to' : ''} have no gold.`);
+    }
+    else if (robbed) {
+        await plineWithContinuation(`${shopkeeperName(keeper)} is after blood, not gold!`);
+        if (money < Math.trunc(robbed / 2) || money < robbed && stashed) {
+            await rejectRestitution(keeper, money, stashed);
+            return;
+        }
+        await plineWithContinuation(`But since ${monsterPossessive(keeper, { noIt: true })} shop has been robbed recently,`);
+        await plineWithContinuation(`you ${money < robbed ? 'partially ' : ''}compensate ${shopkeeperName(keeper)} for ${monsterPossessive(keeper, { noIt: true })} losses.`);
+        await payShopkeeper(keeper, Math.min(money, robbed));
+        await makeShopkeeperHappy(keeper);
+    }
+    else {
+        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })} is after your hide, not your gold!`);
+        if (money < 1000) {
+            await rejectRestitution(keeper, money, stashed);
+            return;
+        }
+        const name = canSpotMonster(keeper)
+            ? monsterName(keeper, { adjective: 'angry' }) : shopkeeperName(keeper);
+        await plineWithContinuation(`You try to appease ${name} by giving ${monsterObjectPronoun(keeper, { noIt: true })} 1000 gold pieces.`);
+        await payShopkeeper(keeper, 1000);
+        if (keeper.eshk.customer !== game.plname || rn2(3))
+            await makeShopkeeperHappy(keeper);
+        else
+            await plineWithContinuation(`But ${shopkeeperName(keeper)} is as angry as ever.`);
+    }
+}
+async function rejectRestitution(keeper, money, stashed) {
+    await plineWithContinuation(!money
+        ? `Moreover, you${stashed ? ' seem to' : ''} have no gold.`
+        : `Besides, you don't have enough to interest ${monsterObjectPronoun(keeper, { noIt: true })}.`);
 }
 // C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.
 // Chooses a goal before move_special() selects a square.

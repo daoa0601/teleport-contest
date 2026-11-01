@@ -55,7 +55,6 @@ import { beginCommandResult, clearCannedCommands, commandResultCancelled, comman
 import { propertyIsActive } from './properties.js';
 import { pickupAtHero } from './pickup.js';
 import { gotoLevel } from './level_change.js';
-import { dopay } from './shop_pay_command.js';
 import { inventoryReport } from './inventory_reports.js';
 import { isContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
@@ -144,7 +143,7 @@ import { dowear, doputon, removeWornItem } from './do_wear.js';
 import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance, } from './skills.js';
-import { objectTypeKnown } from './shk.js';
+import { objectTypeKnown, dopay } from './shk.js';
 import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
 import { performPetRangedAttack } from './dogmove.js';
 import { dokick } from './dokick.js';
