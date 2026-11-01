@@ -15,7 +15,6 @@ import {
 } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';
 import {
@@ -23,7 +22,7 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { goodPosition } from './teleport_rules.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { resolveMonsterLiquid, wakeMonster as awakenMonster } from './mon.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import {
     finishImmediateMonsterTrap, triggerImmediateMonsterTrap,

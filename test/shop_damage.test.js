@@ -10,7 +10,6 @@ import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import { ARROW, DAGGER, BOULDER, CHAIN_MAIL, LAND_MINE, LEASH, LOCK_PICK, POT_FRUIT_JUICE, } from '../js/object_data.js';
 import { addShopDamage, makeAngryShopkeeper, pacifyShopkeeper, payForShopDamage, repairShopDamage, rileShopkeeper, setPaidShopkeeper, shopDig, shopkeeperRepairsDamage, } from '../js/shop_damage.js';
-import { deliverMigratingMonsters } from '../js/monster_migration.js';
 import { createMonsterAt } from './support/monsters.js';
 import { checkSpecialRoom } from '../js/shk.js';
 import { initRng } from '../js/rng.js';
@@ -19,6 +18,7 @@ import { syncBlindness } from '../js/senses.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { deliverMigratingMonsters } from '../js/dog.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 // A staffed shop with a real west wall gap candidate and a door entrance.
 async function damageShop({ bill = [], role = 'caveman', moves = 100 } = {}) {

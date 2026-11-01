@@ -17,10 +17,8 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { newsym, randomDisplayMonsterName, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { breakFloorObject } from './object_breakage.js';
 import { BOULDER, STATUE } from './object_data.js';
@@ -30,6 +28,8 @@ import { d, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { cansee } from './vision.js';
+import { wakeAttackedMonster } from './mon.js';
+import { monsterResistsEffect } from './zap.js';
 
 export async function hitMonsterWithForce(monster: Monster, source: 'wand' | 'spell', state: GameState, options: ForceHitOptions) {
     const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;

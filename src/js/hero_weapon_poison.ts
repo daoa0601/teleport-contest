@@ -10,12 +10,12 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
-import { monsterHasPoisonResistance } from './monster_resistance.js';
 import {
     isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject,
     isPoisonableObject,
 } from './object_properties.js';
 import { rn2, rnd } from './rng.js';
+import { monsterHasPoisonResistance } from './mondata.js';
 
 export interface HeroWeaponPoisonOptions {
     state?: GameState;

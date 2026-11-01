@@ -14,7 +14,6 @@ import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
@@ -40,6 +39,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './slippery_hands.js';
 import { fireDamageObject } from './fire_damage.js';
+import { wakeAttackedMonster } from './mon.js';
 const PM_GRID_BUG = 116;
 const CARDINAL_DIRECTIONS = [
     { dx: -1, dy: 0 }, { dx: 0, dy: -1 },

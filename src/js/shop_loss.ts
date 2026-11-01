@@ -13,7 +13,6 @@ import type { Monster, MonsterFlag, ShopBillEntry } from './monster_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import { containedGold } from './gold.js';
-import { angerWatchGuards } from './monster_anger.js';
 import {
     MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL,
     MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND,
@@ -35,6 +34,7 @@ import {
     hotPursuitShopkeeper, makeAngryShopkeeper,
 } from './shop_damage.js';
 import { objectWeight } from './weight.js';
+import { angerWatchGuards } from './mon.js';
 
 const COIN_CLASS = 12;
 const FOOD_CLASS = 7;

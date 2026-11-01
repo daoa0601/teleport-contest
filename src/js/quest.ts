@@ -26,7 +26,6 @@ import { objectCombatName, definiteName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './monster_name.js';
-import { angerMonster, angerWatchGuards } from './monster_anger.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { rn2 } from './rng.js';
@@ -34,6 +33,7 @@ import { createPoisonGasCloud } from './regions.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
+import { angerMonster, angerWatchGuards } from './mon.js';
 
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;

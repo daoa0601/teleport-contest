@@ -17,7 +17,6 @@ import { beginObjectBurn } from '../js/light.js';
 import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, LEASH, OBJECT_NAMES, OIL_LAMP, SCR_PUNISHMENT, STATUE, WAX_CANDLE } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterHasStoneResistance } from '../js/monster_resistance.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -26,6 +25,7 @@ import { addInventoryObject, artifactObject, floorObject, knownObject } from './
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { monsterHasStoneResistance } from '../js/mondata.js';
 
 function recordMessages(messages: string[], onRead: (() => void) | null = null) {
     const input = resetInputState();

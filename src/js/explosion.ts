@@ -3,48 +3,37 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY,
-    EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd,
-    PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME,
-    KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX,
+    A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE,
+    PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY,
+    KILLED_BY_AN, NO_KILLER_PREFIX,
 } from './const.js';
 import {
-    canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, randomDisplayMonsterName,
-    SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph,
+    canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, randomDisplayMonsterName, SHIELD_STATIC,
+    show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroDeath } from './end.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { igniteItems } from './light.js';
-import { applyMonsterGolemEffects } from './mon.js';
-import { angerAttackedMonster, wakeMonster } from './monster_anger.js';
+import { applyMonsterGolemEffects, angerAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
-    AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX,
-    AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE,
-    AD_SPEL, AT_ENGL,
+    AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE,
+    AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL,
 } from './monster_attack_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving,
-    monsterIsVampireShifter,
+    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
-    monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
-    monsterResistsEffect,
-} from './monster_resistance.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import {
-    OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
-} from './object_data.js';
+import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP } from './object_data.js';
 import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
@@ -53,7 +42,7 @@ import { payForShopDamage } from './shop_damage.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { cansee } from './vision.js';
 import {
-    applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement,
+    applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect,
 } from './zap.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -65,12 +54,11 @@ import type { PropertyName } from './property_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
-import { requirePlayingGame } from './gstate.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import {
-    monstersForgetHeroResistance,
-    monstersObserveHeroResistance,
-    seenResistanceForDamage,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance,
+    monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance,
+    monsterHasPoisonResistance, monsterHasShockResistance,
 } from './mondata.js';
 
 export interface ExplosionOptions {

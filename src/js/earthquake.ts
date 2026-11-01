@@ -30,7 +30,7 @@ import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { deleteFloorTrap, maketrap } from './mklev.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { resolveMonsterLiquid, wakeMonster } from './mon.js';
 import {
     MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
@@ -46,7 +46,6 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { setHeroTrap } from './hero_traps.js';
-import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
 import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';

@@ -12,7 +12,6 @@ import { AD_PHYS, AT_BITE, AT_CLAW } from '../js/monster_attack_types.js';
 import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, } from '../js/mhitm.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { hideMonsterUnder } from '../js/mon.js';
-import { beginMonsterMealMimicry } from '../js/monster_meal_mimicry.js';
 import { APPLE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -20,6 +19,7 @@ import { floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { beginMonsterMealMimicry } from '../js/dogmove.js';
 async function topline() {
     await flush_screen();
     return requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';

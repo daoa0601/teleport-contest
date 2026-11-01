@@ -93,14 +93,13 @@ import {
 } from './teleport.js';
 import { canFallThrough } from './mklev.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
-import { angerMonster } from './monster_anger.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { monsterResistsSleep } from './monster_sleep.js';
-import { monsterHasFireResistance } from './monster_resistance.js';
-import { maybeUnhideAt } from './mon.js';
+import { maybeUnhideAt, angerMonster } from './mon.js';
 import {
     completeMovedMonsterAction, moveMonsterAfterTrap, requireMovementCapabilities,
 } from './monmove.js';
+import { monsterHasFireResistance } from './mondata.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH

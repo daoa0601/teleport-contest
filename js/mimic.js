@@ -10,9 +10,9 @@ import { objectAtMonsterDescription } from './monster_birth.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { wakeMonster } from './monster_anger.js';
 import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind } from './senses.js';
+import { wakeMonster } from './mon.js';
 const S_VERTICAL_CLOSED_DOOR = 15;
 const S_HORIZONTAL_CLOSED_DOOR = 16;
 const CLOSED_DOOR_APPEARANCES = new Set([

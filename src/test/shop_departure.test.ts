@@ -6,7 +6,6 @@ import { DOOR, SHARED, SHOPBASE, STAIRS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { killGenocidedMonster } from '../js/mon.js';
@@ -22,6 +21,7 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { migrateMonsterOffLevel } from '../js/dog.js';
 
 async function enterAt(x: number, y: number) {
     requirePlayingGame(game);

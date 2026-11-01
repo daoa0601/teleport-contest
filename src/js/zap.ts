@@ -18,13 +18,13 @@ import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING } from './const.js';
-import { displayColorName, displayLiquidName, docrt, newsym } from './display.js';
+import { canSeeMonster, displayColorName, displayLiquidName, docrt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
 import { game, requireLiveGame } from './gstate.js';
-import { monsterHasFireResistance, monsterHasShockResistance } from './monster_resistance.js';
+import { monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
 import { SHOPBASE } from './const.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
@@ -44,10 +44,13 @@ import { igniteItems } from './light.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { deleteFloorTrap, maketrap } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { monsterResistanceBits } from './monster_resistance.js';
+import { monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import {
+    MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME,
+    monsterIsPlayerMonster, monsterIsWhirly,
+} from './monster_data.js';
 import {
     DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_NAMES,
     OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD,
@@ -72,7 +75,7 @@ import { exceedsActionCapacity, objectWeight } from './weight.js';
 import { chargeUnpaidUsage } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
     definiteObjectAction,
     killerObjectName, objectName, ownedObjectName, observeObjectForNaming,
@@ -88,6 +91,24 @@ import type { DeathHandler } from './end.js';
 import type { PropertyName } from './property_types.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind, RayFloorResult } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
+import { BOLT_LIM } from './const.js';
+import { wakeMonster, copyPetData } from './mon.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
+import { expelHero, holdingMonsterName } from './hero_expulsion.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { checkMonsterGearNextTurn } from './monworn.js';
+import { monsterHasMagicResistance } from './anti_magic_trap.js';
+import { normalizeMonsterShape, changeMonsterForm } from './monster_polymorph.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
+import type { HeroMonsterKillOptions } from './hero_monster_death.js';
+import type { MonsterDeathOptions } from './monster_death.js';
+import type { MonsterSelfTouchResult } from './monster_stoning.js';
+import type { MonsterFormChange, MonsterFormChangeOptions } from './monster_polymorph.js';
+import type { SavedMonsterTraits } from './monster_types.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
+import type { MonsterHitPointRandom } from './makemon.js';
 
 export interface FloorBurnOptions {
     state?: GameState;
@@ -957,4 +978,413 @@ export function destroyElectricInventory(sourceDamage: number, options: Inventor
     return destroyInventoryByElement(
         INVENTORY_DAMAGE.ELECTRIC, sourceDamage, options,
     );
+}
+
+// The make-invisible wand against a monster. C zap.c:bhitm().
+function knownInvisible(monster: Monster, state: GameState = game) {
+    if (!monster.minvis) return false;
+    const hero = state.u;
+    if (cansee(monster.mx, monster.my) && (hero.seeInvisible
+        || (hero.seeInvisibleTurns ?? 0) > 0
+        || hero.detectMonsters || state.detectMonsters)) return true;
+    const hasSightedTelepathy = (hero.unblind_telepat_range ?? -1) >= 0
+        || state.uarmh?.otyp === 100 || state.uamul?.otyp === 201;
+    const distance = (monster.mx - hero.ux) ** 2 + (monster.my - hero.uy) ** 2;
+    return !heroIsBlind(state) && hasSightedTelepathy && distance <= BOLT_LIM ** 2;
+}
+
+export async function makeMonsterInvisible(monster: Monster) {
+    const wasInvisible = !!monster.minvis;
+    const wasVisible = canSeeMonster(monster);
+    await revealMonsterAppearance(monster);
+    const name = monsterName(monster, { capitalized: true });
+
+    setMonsterPermanentInvisibility(monster);
+    if (!monster.invis_blkd) {
+        await newsym(monster.mx, monster.my);
+        if (monster.wormno) await redrawMonsterWormSegments(monster);
+    }
+
+    let identified = false;
+    if (!wasInvisible && knownInvisible(monster)) {
+        await plineWithContinuation(`${name} turns transparent!`);
+        identified = true;
+    } else if (wasVisible
+        && !canSeeMonster(monster)) {
+        await plineWithContinuation(`${name} vanishes!`);
+    }
+    await wakeMonster(monster, { attacked: true });
+    return identified;
+}
+
+// Slow-monster and speed-monster point effects. C zap.c:bhitm().
+interface SpeedMagicOptions {
+    random: (limit: number) => number;
+    roll: (sides: number) => number;
+}
+
+export async function affectMonsterSpeed(
+    monster: Monster,
+    kind: 'speed' | 'slow',
+    source: 'wand' | 'spell',
+    state: GameState,
+    options: SpeedMagicOptions,
+): Promise<boolean> {
+    const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
+    const resisted = monsterResistsEffect(
+        monster, attackLevel, options.random,
+    );
+    let observed = false;
+    if (!resisted) {
+        await revealMonsterAppearance(monster);
+        const speed = adjustMonsterSpeed(monster, kind === 'speed' ? 1 : -1);
+        checkMonsterGearNextTurn(monster);
+        if (speed.changed && speed.canDescribe && canSeeMonster(monster)) {
+            const subject = monsterName(monster, { state, capitalized: true });
+            const message = monsterSpeedMessage(speed, subject);
+            if (message) {
+                await plineWithContinuation(message);
+                observed = true;
+            }
+        }
+        if (kind === 'slow' && state.u?.uswallow
+            && state.u?.ustuck === monster && monsterIsWhirly(monster)) {
+            await plineWithContinuation(`You disrupt ${holdingMonsterName(monster, state)}!`);
+            await plineWithContinuation('A huge hole opens up...');
+            await expelHero(monster, {
+                state, random: options.random, rollOne: options.roll,
+            });
+        }
+    }
+    await wakeMonster(monster, { attacked: kind === 'slow' });
+    return observed;
+}
+
+// Involuntary monster polymorph caused by magic.
+// C refs: zap.c bhitm() and mon.c newcham().
+type WakeResult = void | { heroDied?: boolean };
+
+interface PolymorphMagicOptions {
+    state?: GameState;
+    targetSpotted?: boolean;
+    wakeMonster?: ((monster: Monster) => WakeResult | Promise<WakeResult>) | null;
+    publish?: MessagePublisher;
+    showShield?: (monster: Monster) => unknown;
+    finishDeath?: ((monster: Monster, options?: MonsterDeathOptions & HeroMonsterKillOptions)
+        => { heroDied?: boolean } | Promise<{ heroDied?: boolean }>) | null;
+    attackLevel?: number;
+    polyspot?: boolean;
+}
+
+interface PolymorphMagicDetails {
+    changed: boolean;
+    change: MonsterFormChange | null;
+    selfTouch: MonsterSelfTouchResult | null;
+    magicResistant: boolean;
+    resisted: boolean;
+    systemShock: boolean;
+    killed: boolean;
+}
+
+export type MonsterMagicPolymorphResult =
+    | ({ heroDied: true; alreadyChanged?: never } & Partial<PolymorphMagicDetails>)
+    | ({ heroDied?: false; alreadyChanged?: never } & PolymorphMagicDetails)
+    | {
+        heroDied?: false;
+        changed: false;
+        alreadyChanged: true;
+        killed: false;
+        change?: never;
+        selfTouch?: never;
+        magicResistant?: never;
+        resisted?: never;
+        systemShock?: never;
+    };
+
+const POTION_ATTACK_LEVEL = 6;
+const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+
+function survived(monster: Monster): boolean {
+    return !monster.dead && (monster.mhp ?? 0) > 0;
+}
+
+function alreadyChangedThisAttack(monster: Monster): boolean {
+    const corpseSpecies = monster.mcorpsenm;
+    const extraCorpseSpecies = monster.mextra?.mcorpsenm;
+    return (corpseSpecies !== undefined && Number.isInteger(corpseSpecies) && corpseSpecies >= 0)
+        || (extraCorpseSpecies !== undefined && Number.isInteger(extraCorpseSpecies)
+            && extraCorpseSpecies >= 0);
+}
+
+function markNewLongWorm(monster: Monster, state: GameState): void {
+    if (monster.mnum !== PM_LONG_WORM) return;
+    if (!monster.mextra) monster.mextra = {};
+    monster.mextra.mcorpsenm = PM_LONG_WORM;
+    state.context.bypasses = true;
+}
+
+export async function polymorphMonsterFromMagic(monster: Monster, {
+    state = game,
+    targetSpotted = false,
+    wakeMonster,
+    publish = plineWithContinuation,
+    showShield,
+    finishDeath,
+    attackLevel = POTION_ATTACK_LEVEL,
+    polyspot = false,
+}: PolymorphMagicOptions = {}): Promise<MonsterMagicPolymorphResult> {
+    if (monster.mnum === PM_LONG_WORM
+        && alreadyChangedThisAttack(monster)) {
+        if ((await wakeMonster?.(monster))?.heroDied)
+            return { heroDied: true };
+        return { changed: false, alreadyChanged: true, killed: false };
+    }
+
+    const magicResistant = monsterHasMagicResistance(monster);
+    if (magicResistant) await showShield?.(monster);
+    const resisted = !magicResistant
+        && monsterResistsEffect(monster, attackLevel);
+    let systemShock = false;
+    let change: MonsterFormChange | null = null;
+    let selfTouch: MonsterSelfTouchResult | null = null;
+
+    if (!magicResistant && !resisted) {
+        if (polyspot) {
+            bypassObjectList(monster.minvent || monster.inventory || [], true, state);
+        }
+        const naturalSpecies = monster.cham;
+        const naturalShapechanger = naturalSpecies !== undefined
+            && Number.isInteger(naturalSpecies) && naturalSpecies >= 0;
+        systemShock = !naturalShapechanger && rn2(25) === 0;
+        if (systemShock) {
+            if (targetSpotted)
+                await publish(`${monsterName(monster, { state, capitalized: true })} shudders!`);
+            if (!finishDeath)
+                throw new Error('polymorph fatality owner unavailable');
+            const death = await finishDeath(monster, { noCorpse: true });
+            if (death.heroDied) return { heroDied: true };
+        } else {
+            const heroInsideTarget = !!state.u.uswallow
+                && state.u.ustuck === monster;
+            const changeOptions: MonsterFormChangeOptions = {
+                showMessage: !heroIsHallucinating(state) && (targetSpotted || heroInsideTarget),
+                creditHero: true,
+                finishDeath: (target, death) => {
+                    if (!finishDeath)
+                        throw new Error('polymorph self-touch requires a monster death handler');
+                    return finishDeath(target, {
+                        ...death,
+                        showKillMessage: false,
+                        recordConduct: false,
+                    });
+                },
+                publish,
+                polyspot,
+            };
+            change = await changeMonsterForm(monster, null, state, changeOptions);
+            if (!change && naturalShapechanger)
+                change = await changeMonsterForm(monster, naturalSpecies, state, changeOptions);
+            if (change?.heroDied) return {
+                changed: true, change, heroDied: true,
+                magicResistant, resisted, systemShock, killed: false,
+            };
+            selfTouch = change?.selfTouch || null;
+        }
+        if (survived(monster)) markNewLongWorm(monster, state);
+    }
+
+    const killed = !survived(monster);
+    if (!killed && (await wakeMonster?.(monster))?.heroDied)
+        return { heroDied: true };
+    return {
+        changed: !!change,
+        change,
+        selfTouch,
+        magicResistant,
+        resisted,
+        systemShock,
+        killed,
+    };
+}
+
+// Monster state restored from a corpse or statue. C zap.c:montraits().
+// Both arguments have the same trait contract; the target's type determines
+// which values the saved record may supply. Inventory/body ownership is restored
+// separately below, and only the saved record's own fields are copied.
+function copyRestoredTraits<Traits extends SavedMonsterTraits>(
+    monster: Traits, saved: NoInfer<Traits>,
+): void {
+    for (const key in saved) {
+        if (Object.hasOwn(saved, key)) monster[key] = saved[key];
+    }
+}
+
+export function restoreMonsterTraits(
+    monster: Monster, saved: SavedMonsterTraits | null | undefined,
+    options?: MonsterHitPointRandom,
+): Monster;
+export function restoreMonsterTraits(
+    monster: Monster | null | undefined, saved: SavedMonsterTraits | null | undefined,
+    options?: MonsterHitPointRandom,
+): Monster | null | undefined;
+export function restoreMonsterTraits(
+    monster: Monster | null | undefined, saved: SavedMonsterTraits | null | undefined, {
+    rollOne = rnd,
+    randomBelow = rn2,
+}: MonsterHitPointRandom = {}): Monster | null | undefined {
+    if (!monster || !saved) return monster;
+    const created = {
+        m_id: monster.m_id,
+        mx: monster.mx,
+        my: monster.my,
+        mux: monster.mux,
+        muy: monster.muy,
+        minvent: monster.minvent || [],
+        wormno: monster.wormno,
+        wormSegments: monster.wormSegments,
+        wormHead: monster.wormHead,
+        wormGrowTime: monster.wormGrowTime,
+        misc_worn_check: monster.misc_worn_check,
+        weaponCheck: monster.weaponCheck,
+        mtrapseen: monster.mtrapseen,
+        mflee: monster.mflee,
+        mfleetim: monster.mfleetim,
+        mburied: monster.mburied,
+        mlstmv: monster.mlstmv,
+        mundetected: monster.mundetected,
+        m_ap_type: monster.m_ap_type,
+        m_lev: monster.m_lev ?? 0,
+        mhpmax: monster.mhpmax ?? 1,
+    };
+
+    let restoredLevel = saved.m_lev ?? created.m_lev;
+    const speciesLevel = MONSTER_LEVEL[saved.mnum] ?? 0;
+    if (created.m_lev < speciesLevel) {
+        const targetLevel = rollOne(speciesLevel + 1);
+        if (targetLevel > created.m_lev) {
+            while (created.m_lev < targetLevel) {
+                created.m_lev++;
+                created.mhpmax += monsterHitPointsPerLevel(
+                    { mnum: saved.mnum, m_lev: created.m_lev },
+                    { rollOne, randomBelow },
+                );
+            }
+            restoredLevel = created.m_lev;
+        }
+    }
+
+    copyRestoredTraits(monster, saved);
+    monster.m_id = created.m_id;
+    monster.mx = created.mx;
+    monster.my = created.my;
+    if (created.mux === undefined) delete monster.mux;
+    else monster.mux = created.mux;
+    if (created.muy === undefined) delete monster.muy;
+    else monster.muy = created.muy;
+    monster.minvent = created.minvent;
+    monster.inventory = monster.minvent;
+    monster.hasInventory = monster.minvent.length > 0;
+    monster.mw = null;
+    if (created.wormno === undefined) delete monster.wormno;
+    else monster.wormno = created.wormno;
+    if (created.wormSegments === undefined) delete monster.wormSegments;
+    else monster.wormSegments = created.wormSegments;
+    if (created.wormHead === undefined) delete monster.wormHead;
+    else monster.wormHead = created.wormHead;
+    if (created.wormGrowTime === undefined) delete monster.wormGrowTime;
+    else monster.wormGrowTime = created.wormGrowTime;
+    monster.misc_worn_check = created.misc_worn_check ?? 0;
+    monster.weaponCheck = created.weaponCheck ?? 0;
+    monster.mtrapseen = created.mtrapseen ?? 0;
+    monster.mflee = created.mflee ?? 0;
+    monster.mfleetim = created.mfleetim ?? 0;
+    monster.mburied = created.mburied ?? 0;
+    monster.mlstmv = created.mlstmv ?? 0;
+    monster.mundetected = created.mundetected ?? 0;
+    monster.m_ap_type = created.m_ap_type ?? 0;
+    monster.m_lev = restoredLevel;
+    monster.mhpmax = Math.max(created.mhpmax, saved.mhpmax ?? 1);
+    monster.mhp = monster.mhpmax;
+    monster.dead = false;
+    monster.mrevived = 1;
+    monster.mavenge = 0;
+    monster.meating = 0;
+    monster.mleashed = 0;
+    monster.mtrapped = 0;
+    monster.msleeping = 0;
+    monster.mfrozen = 0;
+    monster.mcanmove = 1;
+    if (!monsterHasSeductionAttack(monster.mnum)) monster.mcan = 0;
+    monster.mcansee = 1;
+    monster.mblinded = 0;
+    monster.mstun = 0;
+    monster.mconf = 0;
+    if (monster.edog) {
+        monster.edog = copyPetData(monster.edog);
+        monster.mextra = { ...(monster.mextra || {}), edog: monster.edog };
+    }
+    return monster;
+}
+
+// Cancellation applied to a monster.
+// C ref: zap.c cancel_monst() and mon.c normal_shape().
+const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
+
+export interface CancelMonsterOptions {
+    state?: GameState;
+    attackLevel: number;
+    random?: typeof rn2;
+    allowKill?: boolean;
+    publish?: MessagePublisher;
+    finishMonsterKill?: typeof finishHeroMonsterKill;
+}
+
+export async function cancelMonster(monster: Monster, {
+    state = game,
+    attackLevel,
+    random = rn2,
+    allowKill = true,
+    publish = plineWithContinuation,
+    finishMonsterKill = finishHeroMonsterKill,
+}: CancelMonsterOptions) {
+    if (monsterResistsEffect(monster, attackLevel, random)) {
+        return { cancelled: false, resisted: true, killed: false };
+    }
+
+    monster.mcan = 1;
+    const shape = await normalizeMonsterShape(monster, state, publish);
+    if (shape.heroDied) return {
+        cancelled: true, resisted: false, heroDied: true, changedShape: shape.changed,
+    };
+    const changedShape = shape.changed;
+    const clayGolem = monster.mnum === PM_CLAY_GOLEM;
+    if (clayGolem && canSeeMonster(monster)) {
+        await publish(
+            `Some writing vanishes from ${possessiveName(monsterName(monster, { state }))} head!`,
+        );
+    }
+
+    let killed = false;
+    if (clayGolem && allowKill) {
+        killed = await finishMonsterKill(monster, monster.mx, monster.my);
+    }
+    return {
+        cancelled: true,
+        resisted: false,
+        killed,
+        clayGolem,
+        changedShape,
+    };
+}
+
+// C zap.c:resist().
+export function monsterResistsEffect(
+    monster: Monster, attackLevel: number, random = rn2,
+): boolean {
+    let defenseLevel = monster?.m_lev ?? 1;
+    if (defenseLevel > 50) defenseLevel = 50;
+    else if (defenseLevel < 1)
+        defenseLevel = monsterIsPlayerMonster(monster.mnum) ? game.u.ulevel ?? 1 : 1;
+    const resistance = MONSTER_MAGIC_RESISTANCE[monster?.mnum] ?? 0;
+    return random(100 + attackLevel - defenseLevel) < resistance;
 }

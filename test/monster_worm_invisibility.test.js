@@ -7,7 +7,6 @@ import { resetInputState } from '../js/input.js';
 import { grantMonsterCorpseIntrinsic } from '../js/monster_corpse_intrinsic.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
-import { makeMonsterInvisible } from '../js/monster_invisibility_magic.js';
 import { monsterName } from '../js/monster_name.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
@@ -18,6 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
+import { makeMonsterInvisible } from '../js/zap.js';
 async function visibleWorm() {
     await freshObjectRoom({ right: 25 });
     const worm = await createMonsterAt('long worm', 16, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);

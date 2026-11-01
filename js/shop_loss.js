@@ -7,7 +7,6 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { containedGold } from './gold.js';
-import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN, } from './object_data.js';
@@ -19,6 +18,7 @@ import { heroIsDeaf } from './senses.js';
 import { costlySpot, insideShopRoomAt, removeOneObjectFromBill, shopResident, shopkeeperInOwnShop, shopObjectUnitCost, visitBilledShopkeepers, } from './shk.js';
 import { hotPursuitShopkeeper, makeAngryShopkeeper, } from './shop_damage.js';
 import { objectWeight } from './weight.js';
+import { angerWatchGuards } from './mon.js';
 const COIN_CLASS = 12;
 const FOOD_CLASS = 7;
 const MS_ANIMAL = 17; // C monflag.h: msound at or below this is not speech

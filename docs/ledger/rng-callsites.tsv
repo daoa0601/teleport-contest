@@ -1373,19 +1373,19 @@ src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	u
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved
 src/js/trap.ts	triggerMonsterTrap	rnl	"[""5""]"	constant
-src/js/monster_anger.ts	aggravateMonsters	random	"[""5""]"	constant
-src/js/monster_anger.ts	angerMonster	rnd	"[""5""]"	constant
-src/js/monster_anger.ts	maybeHumanoidGasp	rn2	"[""HUMANOID_GASP_EXCLAMATIONS.length""]"	constant
-src/js/monster_anger.ts	publishMonsterGrowl	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/monster_anger.ts	publishMonsterWhimper	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/monster_anger.ts	publishMonsterYelp	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/monster_anger.ts	reactHumanoidBystander	rn2	"[""10""]"	constant
-src/js/monster_anger.ts	reactHumanoidBystander	rn2	"[""5""]"	constant
-src/js/monster_anger.ts	reactHumanoidBystander	rn2	"[""50""]"	constant
-src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""25""]"	constant
-src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""3""]"	constant
-src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""4""]"	constant
-src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""6""]"	constant
+src/js/wizard.ts	aggravateMonsters	random	"[""5""]"	constant
+src/js/mon.ts	angerMonster	rnd	"[""5""]"	constant
+src/js/mon.ts	maybeHumanoidGasp	rn2	"[""HUMANOID_GASP_EXCLAMATIONS.length""]"	constant
+src/js/monster_sound.ts	publishMonsterGrowl	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/monster_sound.ts	publishMonsterWhimper	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/monster_sound.ts	publishMonsterYelp	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/mon.ts	reactHumanoidBystander	rn2	"[""10""]"	constant
+src/js/mon.ts	reactHumanoidBystander	rn2	"[""5""]"	constant
+src/js/mon.ts	reactHumanoidBystander	rn2	"[""50""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""25""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""3""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""4""]"	constant
+src/js/mon.ts	reactPeacefulBystanders	rn2	"[""6""]"	constant
 src/js/monmove.ts	breakMonsterBoulder	random	"[""20""]"	constant
 src/js/eat.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
 src/js/eat.ts	eatMonsterBrain	rollOne	"[""60""]"	constant
@@ -1444,19 +1444,19 @@ src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""3""]"	constant
 src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""4""]"	constant
 src/js/monster_conversation.ts	select	rn2	"[""messages.length""]"	unproved
 src/js/monster_conversation.ts	vampireReply	rn2	"[""2""]"	constant
-src/js/monster_covetous_retreat.ts	retreatCovetousMonster	random	"[""3 + Math.trunc(monster.mhp / 10)""]"	unproved
-src/js/monster_covetous_retreat.ts	retreatCovetousMonster	rollOne	"[""8""]"	constant
-src/js/monster_cuss.ts	publishMonsterCuss	random	"[""minion ? 100 : 5""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""2""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""2""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""2""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""2""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""5""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
-src/js/monster_cuss.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_MALEDICTIONS.length""]"	constant
+src/js/wizard.ts	retreatCovetousMonster	random	"[""3 + Math.trunc(monster.mhp / 10)""]"	unproved
+src/js/wizard.ts	retreatCovetousMonster	rollOne	"[""8""]"	constant
+src/js/wizard.ts	publishMonsterCuss	random	"[""minion ? 100 : 5""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""2""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""2""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""2""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""2""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""5""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_INSULTS.length""]"	constant
+src/js/wizard.ts	selectWizardCussMessage	roll	"[""WIZARD_CUSS_MALEDICTIONS.length""]"	constant
 src/js/monster_death.ts	createGolemRemains	d	"[""2"", ""4""]"	constant
 src/js/monster_death.ts	createGolemRemains	d	"[""2"", ""4""]"	constant
 src/js/monster_death.ts	createGolemRemains	d	"[""2"", ""4""]"	constant
@@ -1537,14 +1537,14 @@ src/js/uhitm.ts	drainHeroBrain	rollOne	"[""2""]"	constant
 src/js/eat.ts	eatHeroBrain	rollOne	"[""10""]"	constant
 src/js/eat.ts	eatHeroBrain	rollOne	"[""60""]"	constant
 src/js/mon.ts	attemptMonsterRestrap	random	"[""3""]"	constant
-src/js/monster_hit_points.ts	monsterHitPointsPerLevel	randomBelow	"[""5""]"	constant
-src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
-src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
-src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""8""]"	constant
-src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""10"", ""8""]"	constant
-src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""level"", ""4""]"	unproved
-src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""level"", ""8""]"	unproved
-src/js/monster_hit_points.ts	newMonsterHitPoints	rnd	"[""4""]"	constant
+src/js/makemon.ts	monsterHitPointsPerLevel	randomBelow	"[""5""]"	constant
+src/js/makemon.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
+src/js/makemon.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
+src/js/makemon.ts	monsterHitPointsPerLevel	rollOne	"[""8""]"	constant
+src/js/makemon.ts	newMonsterHitPoints	d	"[""10"", ""8""]"	constant
+src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""4""]"	unproved
+src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""8""]"	unproved
+src/js/makemon.ts	newMonsterHitPoints	rnd	"[""4""]"	constant
 src/js/monster_hurtle.ts	tryUnarmedStagger	rnd	"[""100""]"	constant
 src/js/muse.ts	checkMonsterWandBackfire	random	"[""WAND_BACKFIRE_CHANCE""]"	constant
 src/js/muse.ts	checkMonsterWandBackfire	rollDice	"[""object.spe + 2"", ""6""]"	unproved
@@ -1565,16 +1565,16 @@ src/js/monster_magic_ray.ts	resolveMonsterMagicRay	random	"[""3""]"	constant
 src/js/monster_magic_response.ts	respondToImmediateMagic	random	"[""10""]"	constant
 src/js/monster_magic_response.ts	respondToImmediateMagic	random	"[""13""]"	constant
 src/js/monster_magic_response.ts	teleportMonsterByHero	rn2	"[""13""]"	constant
-src/js/monster_meal_mimicry.ts	chooseMealDisguise	rn2	"[""DISGUISES.length""]"	constant
-src/js/monster_migration.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
-src/js/monster_migration.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
-src/js/monster_migration.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
-src/js/monster_migration.ts	catchUpMonster	rn2	"[""wilder""]"	unproved
-src/js/monster_migration.ts	monsterArrive	rn1	"[""region.hx - region.lx + 1"", ""region.lx""]"	unproved
-src/js/monster_migration.ts	monsterArrive	rn1	"[""region.hy - region.ly + 1"", ""region.ly""]"	unproved
-src/js/monster_migration.ts	monsterArrive	rn2	"[""denominator""]"	constant
-src/js/monster_migration.ts	wanderLocale	rn1	"[""highX - lowX"", ""lowX""]"	unproved
-src/js/monster_migration.ts	wanderLocale	rn1	"[""highY - lowY"", ""lowY""]"	unproved
+src/js/dogmove.ts	chooseMealDisguise	rn2	"[""DISGUISES.length""]"	constant
+src/js/dog.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
+src/js/dog.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
+src/js/dog.ts	catchUpMonster	rn2	"[""imv + 1""]"	guarded
+src/js/dog.ts	catchUpMonster	rn2	"[""wilder""]"	unproved
+src/js/dog.ts	monsterArrive	rn1	"[""region.hx - region.lx + 1"", ""region.lx""]"	unproved
+src/js/dog.ts	monsterArrive	rn1	"[""region.hy - region.ly + 1"", ""region.ly""]"	unproved
+src/js/dog.ts	monsterArrive	rn2	"[""denominator""]"	constant
+src/js/dog.ts	wanderLocale	rn1	"[""highX - lowX"", ""lowX""]"	unproved
+src/js/dog.ts	wanderLocale	rn1	"[""highY - lowY"", ""lowY""]"	unproved
 src/js/monmove.ts	useMonsterMindBlast	random	"[""10""]"	constant
 src/js/monmove.ts	useMonsterMindBlast	random	"[""10""]"	constant
 src/js/monmove.ts	useMonsterMindBlast	random	"[""2""]"	constant
@@ -1630,9 +1630,9 @@ src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn2	"[""7""]"	constant
 src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn2	"[""SPECIAL_PM""]"	constant
 src/js/monster_polymorph.ts	selectSandestinForm	rn2	"[""7""]"	constant
 src/js/monster_polymorph.ts	shapechangerGender	rn2	"[""10""]"	constant
-src/js/monster_polymorph_attack.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
+src/js/zap.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
 src/js/monster_quest_theft.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
-src/js/monster_resistance.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
+src/js/zap.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
 src/js/monster_return.ts	returnDeadKop	rollOne	"[""5""]"	constant
 src/js/mhitu.ts	exchangeAdornmentRings	random	"[""20""]"	constant
 src/js/mhitu.ts	maybeRemoveArmor	random	"[""2""]"	constant
@@ -1656,12 +1656,12 @@ src/js/monster_sound.ts	publishMonsterNoise	rn2	"[""2""]"	constant
 src/js/monster_speed.ts	mcalcmove	random	"[""2""]"	constant
 src/js/monster_speed.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/monster_spell_insects.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded
-src/js/monster_starting_inventory.ts	giveMonsterStartingObject	rn2	"[""4""]"	constant
+src/js/makemon.ts	giveMonsterStartingObject	rn2	"[""4""]"	constant
 src/js/monster_stoning.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
 src/js/muse.ts	consumeMonsterStoningCure	rollOne	"[""15""]"	constant
-src/js/monster_taming.ts	tameMonster	rn2	"[""6""]"	constant
-src/js/monster_taming.ts	tameMonster	rnd	"[""10""]"	constant
-src/js/monster_traits.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
+src/js/dog.ts	tameMonster	rn2	"[""6""]"	constant
+src/js/dog.ts	tameMonster	rnd	"[""10""]"	constant
+src/js/zap.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
 src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""2""]"	constant
 src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""40""]"	constant
 src/js/monster_tunnel.ts	digMonsterTunnel	random	"[""3""]"	constant

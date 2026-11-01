@@ -9,8 +9,6 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishMonsterEating } from '../js/monster_eating.js';
-import { beginMonsterMealMimicry } from '../js/monster_meal_mimicry.js';
 import { putMonsterToSleep } from '../js/monster_sleep.js';
 import { LEASH, RIN_PROTECTION_FROM_SHAPE_CHANGERS, TRIPE_RATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -18,6 +16,8 @@ import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishMonsterEating } from '../js/dogmove.js';
+import { beginMonsterMealMimicry } from '../js/dogmove.js';
 
 void test('a dog borrowing a kitten appearance is revealed when its meal finishes', async () => {
     await freshObjectRoom();

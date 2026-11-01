@@ -5,10 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment, deityName } from './alignment.js';
 import { disintegrateWornArmor } from './armor.js';
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
-import {
-    A_NONE, A_WIS, ALTAR, Amask2align, Is_astralevel,
-    M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL,
-} from './const.js';
+import { A_NONE, A_WIS, ALTAR, Amask2align, Is_astralevel, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL } from './const.js';
 import { displayColorName, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -19,20 +16,18 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { summonMinion } from './minion.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import {
-    monsterHasDisintegrationResistance, monsterHasShockResistance,
-} from './monster_resistance.js';
 import { propertyIsActive, wornObjectGrantsProperty } from './properties.js';
 import { heroIsPunished } from './ball.js';
 import { punishHero } from './punishment.js';
-import {
-    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay,
-} from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './ray.js';
 import { rn2, rnz } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
+    monsterHasShockResistance,
+} from './mondata.js';
 
 const GOD_VOICES = ['booms out', 'thunders', 'rings out', 'booms'];
 const S_HUMAN = 53;

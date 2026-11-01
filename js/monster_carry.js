@@ -6,9 +6,9 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MON
 import { AT_ENGL } from './monster_attack_types.js';
 import { BELL_OF_OPENING, BOULDER, CORPSE } from './object_data.js';
 import { objectMaterial } from './object_material.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { rn2 } from './rng.js';
 import { touchPetrifies } from './stoning.js';
+import { monsterHasStoneResistance } from './mondata.js';
 const COIN_CLASS = 12, GEM_CLASS = 13, ROCK_CLASS = 14;
 const M1_NOTAKE = 0x00000800;
 const M1_NOHANDS = 0x00002000;

@@ -14,7 +14,6 @@ import { igniteItems } from './light.js';
 import { healMonster } from './mon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMagicbaneHit } from './magicbane.js';
-import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { recordObjectEncounter } from './object_knowledge.js';
@@ -22,6 +21,7 @@ import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
 import { cansee } from './vision.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
 const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
 // Native fatal blows leave enough damage for the caller's AC reduction.

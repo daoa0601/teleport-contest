@@ -6,7 +6,6 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterWouldConsumeItem } from '../js/monmove.js';
-import { monsterCouldReachItem } from '../js/monster_item_reach.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { placeMonsterWormTailRandomly } from '../js/monster_worm.js';
@@ -20,6 +19,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { monsterCouldReachItem } from '../js/dogmove.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function searchRoom(species = 'goblin') {
     const level = await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 16,

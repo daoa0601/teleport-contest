@@ -10,7 +10,7 @@ import {
 } from '../js/const.js';
 import { reviveCorpseByMagic } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
-import { initializePet } from '../js/dog.js';
+import { initializePet, migrateMonsterOffLevel } from '../js/dog.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -24,7 +24,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { monsterAtPosition } from '../js/monster_location.js';
-import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { petrifyMonsterAttacker } from '../js/monster_stoning.js';
 import { runMonsterAction } from '../js/monmove.js';

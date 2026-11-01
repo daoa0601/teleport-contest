@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { aggravateMonsters } from '../js/monster_anger.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { aggravateMonsters } from '../js/wizard.js';
 
 for (const cannotMove of [0, false] as const) {
     void test(`aggravation can release paralysis stored as a ${typeof cannotMove} flag`, async () => {

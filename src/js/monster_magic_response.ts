@@ -8,13 +8,11 @@ import { level_difficulty } from './dungeon.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makemonAt } from './makemon.js';
-import { aggravateMonsters } from './monster_anger.js';
 import {
     MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, monsterIsRider,
 } from './monster_data.js';
 import { respondMedusa } from './monster_gaze.js';
 import type { MonsterGazeOptions } from './monster_gaze.js';
-import { sendMonsterToLimbo } from './monster_migration.js';
 import { monsterName } from './monster_name.js';
 import { stopHeroOccupation } from './occupation.js';
 import { templeRoomAt } from './priest.js';
@@ -23,6 +21,8 @@ import { heroIsDeaf } from './senses.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
+import { aggravateMonsters } from './wizard.js';
+import { sendMonsterToLimbo } from './mon.js';
 
 // C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 export async function respondToImmediateMagic(monster: Monster, state: GameState = game, {

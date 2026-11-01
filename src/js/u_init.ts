@@ -27,7 +27,6 @@ import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { mkobj, mksobj } from './mkobj.js';
-import { newMonsterHitPoints } from './monster_hit_points.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
@@ -92,6 +91,7 @@ import { makePlural } from './object_grammar.js';
 import {
     setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
 } from './weapon_slots.js';
+import { newMonsterHitPoints } from './makemon.js';
 
 interface InitialInventoryEntry {
     typ: number;

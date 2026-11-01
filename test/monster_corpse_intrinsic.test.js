@@ -8,12 +8,12 @@ import { grantMonsterCorpseIntrinsic } from '../js/monster_corpse_intrinsic.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, } from '../js/monster_resistance.js';
 import { monsterResistsSleep } from '../js/monster_sleep.js';
 import { MUMMY_WRAPPING, RED_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance } from '../js/mondata.js';
 const species = (name) => MONSTER_NAME.indexOf(name);
 for (const [corpse, resists, message] of [
     ['red dragon', monsterHasFireResistance, 'shivers slightly'],

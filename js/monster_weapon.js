@@ -20,12 +20,12 @@ import { monsterName, monsterPossessive as perceivedPossessivePronoun } from './
 import { monsterSentenceSubject } from './monster_sound.js';
 import { AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData, } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
 import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
 import { isPolearm, monsterWeaponSwingVerb, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
+import { monsterHasStoneResistance } from './mondata.js';
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;

@@ -3,7 +3,6 @@ import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
-import { tameMonster } from './monster_taming.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import {
     RLOC_NOMSG,
@@ -14,7 +13,7 @@ import {
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { makePetWary } from './dog.js';
+import { makePetWary, tameMonster } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
@@ -37,7 +36,6 @@ import { removeMonsterFromGame } from './monster_departure.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
-import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import {
     destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject,
@@ -60,6 +58,7 @@ import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js
 import type { Monster } from './monster_types.js';
 import type { Position, Trap } from './map_types.js';
 import type { DueObjectTimer } from './object_timers.js';
+import { restoreMonsterTraits } from './zap.js';
 
 type CorpseObject = GameObject & { corpsenm: number };
 

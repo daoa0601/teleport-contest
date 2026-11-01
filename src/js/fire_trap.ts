@@ -26,7 +26,6 @@ import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
 import { igniteItems } from './light.js';
 import { MONSTER_LEVEL } from './monster_data.js';
-import { monsterHasFireResistance } from './monster_resistance.js';
 import { monsterName as perceivedMonsterName } from './monster_name.js';
 import { objectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
@@ -35,7 +34,9 @@ import { d, rn2, rnd } from './rng.js';
 import { burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { surfaceName } from './terrain_name.js';
 import { burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasFireResistance,
+} from './mondata.js';
 
 export interface MonsterFireTrapEvent {
     kind: 'fire-trap';

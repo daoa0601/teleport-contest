@@ -9,7 +9,6 @@ import { game, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL } from './monster_data.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { cutWorm } from './monster_worm.js';
@@ -37,6 +36,7 @@ import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { Position } from './map_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
+import { wakeAttackedMonster } from './mon.js';
 
 export type RangedAttackMode = 'applied' | 'thrown' | 'kicked';
 

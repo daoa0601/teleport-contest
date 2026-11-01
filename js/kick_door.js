@@ -8,7 +8,6 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasMartialKick } from './kick_rules.js';
-import { angerWatchGuards, isWatch } from './monster_anger.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { rn2, rnl } from './rng.js';
@@ -16,6 +15,7 @@ import { inTown, roomsAt } from './room.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { couldsee, vision_note_blocker_change } from './vision.js';
+import { angerWatchGuards, isWatch } from './mon.js';
 export async function kickDoor(x, y, average, responses) {
     requirePlayingGame(game);
     const door = game.level.requireAt(x, y);

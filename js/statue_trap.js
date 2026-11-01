@@ -22,7 +22,6 @@ import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNon
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import { monsterAtPosition } from './monster_location.js';
-import { restoreMonsterTraits } from './monster_traits.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
@@ -33,6 +32,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { heroIsBlind } from './senses.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, } from './revival_species.js';
 import { cansee } from './vision.js';
+import { restoreMonsterTraits } from './zap.js';
 function requireStatueSpecies(statue) {
     if (statue.corpsenm === undefined)
         throw new Error(`Statue ${statue.o_id} has no monster species.`);

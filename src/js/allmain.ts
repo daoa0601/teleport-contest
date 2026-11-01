@@ -8,7 +8,7 @@ import type { MessagePublisher } from './pline.js';
 import { heroLegName } from './body_parts.js';
 import { doStorms } from './storms.js';
 import { rewindEngravingsForSave } from './engrave.js';
-import { finishMonsterHideUnder } from './mon.js';
+import { finishMonsterHideUnder, angerMonster } from './mon.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
@@ -22,7 +22,7 @@ import { finishHeroDigestion } from './hero_combat_engulf.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
+import type { Monster, MonsterPopulationState } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { Position, Trap } from './map_types.js';
 import type {
@@ -32,7 +32,7 @@ import type {
 } from './monster_action_types.js';
 import { clearBypasses } from './object_bypass.js';
 import { clearSplitObjects } from './object_stack.js';
-import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { A_CURRENT, A_ORIGINAL, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
@@ -61,7 +61,7 @@ import { resolveMonsterWeaponContact } from './uhitm.js';
 import { applyArtifactHit } from './artifact_hit.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
-import { monsterIsAnimal } from './monster_data.js';
+import { MONSTER_GENO, monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
@@ -91,8 +91,6 @@ import { finishInventoryRemoval } from './hero_inventory.js';
 import { RLOC_MSG, LOST_STOLEN } from './const.js';
 import { MMOVE_DIED, NORMAL_SPEED } from './const.js';
 import { tryKnockback } from './uhitm.js';
-import { finishMonsterGrowth } from './monster_growth.js';
-import type { MonsterGrowth } from './monster_growth.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
@@ -102,7 +100,7 @@ import {
     mklev, l_nhcore_init,
     u_on_upstairs,
 } from './mklev.js';
-import { makemonAt } from './makemon.js';
+import { makemonAt, finishMonsterGrowth } from './makemon.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueRun } from './hack.js';
 import { continueCountedCommand, getLine, promptYesNo, rhack } from './cmd.js';
@@ -112,11 +110,10 @@ import { clearRepeatCommand } from './command_repeat.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { amuletTurn, intervene, monsterCarriesAmulet } from './wizard.js';
+import { amuletTurn, intervene, monsterCarriesAmulet, publishMonsterCuss } from './wizard.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
-import { angerMonster } from './monster_anger.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
@@ -278,7 +275,6 @@ import {
     getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness,
 } from './hunger.js';
 import { talkQuestCharacter } from './quest.js';
-import { publishMonsterCuss } from './monster_cuss.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
@@ -298,11 +294,10 @@ import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js
 import { nhTimeout } from './timeout.js';
 import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
 import {
-    monstersForgetHeroResistance,
-    monstersObserveHeroResistance,
-    seenResistanceForDamage,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
     monsterLocomotion,
 } from './mondata.js';
+import type { MonsterGrowth } from './makemon.js';
 
 interface TurnMaintenance {
     sourceTurn: number;
@@ -1592,4 +1587,12 @@ export async function moveloop(resuming?: boolean): Promise<void> {
         await runMoveloopCore();
         if (game.program_state?.gameover) break;
     }
+}
+
+// C allmain.c:newgame(): start a fresh species history before object and
+// monster creation. Restore keeps its saved history and never calls this.
+export function initializeMonsterVitals(state: MonsterPopulationState = game): void {
+    state.mvitals = MONSTER_GENO.map(generation => ({
+        mvflags: generation & G_NOCORPSE, born: 0, died: 0,
+    }));
 }

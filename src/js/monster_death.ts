@@ -23,7 +23,7 @@ import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { meldNearbyFloorGlobs } from './glob.js';
 import { mkcorpstat, mkgold, mksobj } from './mkobj.js';
-import { undeadToCorpse } from './mon.js';
+import { undeadToCorpse, corpseKeepsMonsterTraits } from './mon.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { releaseMonsterInventory } from './monster_drop.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
@@ -44,7 +44,6 @@ import {
     resolveMonsterDeathExplosion, monsterHasDeathExplosion,
     monsterDeathSwallower, rollMonsterDeathExplosion,
 } from './monster_explosion.js';
-import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import {
     BOOMERANG, BULLWHIP, CLUB, CORPSE, ELVEN_SPEAR,
     GLOB_OF_GRAY_OOZE, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN,

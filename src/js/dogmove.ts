@@ -1,74 +1,36 @@
 import { questMonsterSound } from './role_monsters.js';
-import { performMonsterHeroAttack } from './mhitu.js';
+import { performMonsterHeroAttack, beginMonsterHeroAttack } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
-import { monsterFliesOrFloats } from './terrain_properties.js';
+import { monsterFliesOrFloats, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { monsterName } from './monster_name.js';
 import { observeDistantObjectForNaming } from './objnam.js';
-import { verbForSubject } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
-import type { PlayingGameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type {
-    AttackTuple,
-    MonsterCallLog,
-    MonsterCombatResult,
-    MonsterMovement,
-    PetInventoryAction,
-    PetMovePlan,
-    RandomBelow,
-    RollDice,
-    RollOne,
+    AttackTuple, MonsterCallLog, MonsterCombatResult, MonsterMovement, PetInventoryAction, PetMovePlan, RandomBelow,
+    RollDice, RollOne,
 } from './monster_action_types.js';
-import type {
-    PetRangedSelection, PetRangedTarget, PetTargetOptions,
-} from './pet_ranged_types.js';
-import { beginMonsterHeroAttack } from './mhitu.js';
+import type { PetRangedSelection, PetRangedTarget, PetTargetOptions } from './pet_ranged_types.js';
 import {
-    monsterAvoidsKickedLocation,
-    monsterAvoidsSokobanPushLocation,
-    readyMonsterDiggingWeapon,
-    speciesHasWeaponAttack,
-    setMonsterApparentHeroPosition,
+    monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon,
+    speciesHasWeaponAttack, setMonsterApparentHeroPosition,
 } from './monmove.js';
-import {
-    mfndpos,
-    monAllowFlags,
-    monsterMayDigLocation,
-    resistConflict,
-} from './mon.js';
+import { mfndpos, monAllowFlags, monsterMayDigLocation, resistConflict } from './mon.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import { couldSeeFromHero } from './vision.js';
+import { couldSeeFromHero, cansee, clearPath, visibleCellsFrom } from './vision.js';
 import { trapAt } from './trap.js';
-import {
-    attackMonsterWithMonster,
-    beginMonsterMeleeAttack,
-    monsterAttackStopsAggressor,
-} from './mhitm.js';
-import {
-    monsterAtPosition,
-    placeMonsterOnMap,
-    removeMonsterFromMapAt,
-} from './monster_location.js';
+import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { dist2, distmin, isok } from './hacklib.js';
 import {
-    MONSTER_ATTACKS,
-    MONSTER_FLAGS1,
-    MONSTER_FLAGS2,
-    MONSTER_LEVEL,
-    MONSTER_NAME,
-    MONSTER_SYMBOL,
-    monsterIsVampireShifter,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
+    monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
-import {
-    ACCFOOD,
-    CADAVER,
-    DOGFOOD,
-    MANFOOD,
-    UNDEF,
-    dogFood,
-} from './pet_food.js';
+import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { petDroppableObject } from './dog.js';
 import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating } from './pet_eating.js';
@@ -76,89 +38,44 @@ import { releaseMonsterInventory } from './monster_drop.js';
 import { monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
 import { splitObjectStack } from './object_stack.js';
 import { isLevelPrize } from './level_prize.js';
-import { SCR_MAIL } from './object_data.js';
+import {
+    BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, SCR_MAIL, TRIPE_RATION, requireObjectData,
+} from './object_data.js';
 import { dismountHero } from './steed.js';
 import { loseGuardianAngel } from './guardian_angel.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './regions.js';
 import { goodPosition } from './teleport_rules.js';
 import {
-    ALLOW_M,
-    ALLOW_MDISP,
-    ALLOW_TRAPS,
-    ALLOW_U,
-    COLNO,
-    D_CLOSED,
-    D_LOCKED,
-    DISMOUNT_THROWN,
-    IS_DOOR,
-    IS_OBSTRUCTED,
-    IS_ROOM,
-    Is_rogue_level,
-    MAGIC_PORTAL,
-    MMOVE_DIED,
-    MMOVE_DONE,
-    MMOVE_MOVED,
-    MMOVE_NOTHING,
-    M_ATTK_AGR_DIED,
-    M_ATTK_DEF_DIED,
-    M_ATTK_HIT,
-    M_ATTK_MISS,
-    NEED_HTH_WEAPON,
-    NEED_WEAPON,
-    xdir,
-    ydir,
+    ALLOW_M, ALLOW_MDISP, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED,
+    IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED,
+    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
+    M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir,
 } from './const.js';
 import {
-    AD_ACID,
-    AD_COLD,
-    AD_DCAY,
-    AD_ELEC,
-    AD_FIRE,
-    AD_PHYS,
-    AD_RUST,
-    AT_BITE,
-    AT_BOOM,
-    AT_BREA,
-    AT_BUTT,
-    AT_CLAW,
-    AT_ENGL,
-    AT_HUGS,
-    AT_KICK,
-    AT_NONE,
-    AT_STNG,
-    AT_TENT,
-    AT_TUCH,
-    AT_WEAP,
+    AD_ACID, AD_COLD, AD_DCAY, AD_ELEC, AD_FIRE, AD_PHYS, AD_RUST, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW,
+    AT_ENGL, AT_HUGS, AT_KICK, AT_NONE, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import {
-    canSpotMonster,
-    newsym,
-} from './display.js';
+import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { wieldMonsterWeapon } from './monster_weapon.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { releaseMonsterLeash } from './monster_leash.js';
-import { monsterSentenceSubject, publishMonsterNoise } from './monster_sound.js';
-import { publishMonsterWhimper } from './monster_anger.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './monster_sound.js';
 import { touchPetrifies } from './stoning.js';
 import {
-    monsterHasAcidResistance,
-    monsterHasColdResistance,
-    monsterHasFireResistance,
-    monsterHasShockResistance,
-    monsterHasStoneResistance,
-} from './monster_resistance.js';
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
+    monsterHasStoneResistance, monsterLocomotion,
+} from './mondata.js';
 import { monsterReflectsRay } from './ray.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { clearPath, visibleCellsFrom } from './vision.js';
 import { getTrack } from './track.js';
-import { monsterCouldReachItem } from './monster_item_reach.js';
 import { d, rn2, rnd } from './rng.js';
-import { requireInitializedGame, requireLiveGame } from './gstate.js';
-import { monsterLocomotion } from './mondata.js';
+import { requireInitializedGame, requireLiveGame, game } from './gstate.js';
 
 const DOG_HUNGRY = 300;
 const M1_SEE_INVIS = 0x01000000;
@@ -1279,4 +1196,138 @@ export async function reluctantPetMessage(monster: Monster, movement: MonsterMov
     const subject = monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true });
     const preposition = monsterFliesOrFloats(monster) ? 'over' : 'onto';
     return `${subject} ${verb} reluctantly ${preposition} ${objectName}.`;
+}
+
+// C dogmove.c:could_reach_item(). Flying across a square does not make
+// the objects beneath its water or lava reachable.
+const M1_SWIM = 0x2, M2_ROCKTHROW = 0x08000000;
+const PM_FIRE_ELEMENTAL_REACH = MONSTER_NAME.indexOf('fire elemental');
+const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+
+export function monsterCouldReachItem(
+    monster: Monster, x: number, y: number, state: PlayingGameState,
+): boolean {
+    if (isPoolAt(x, y, state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM)) return false;
+    if (isLavaAt(x, y, state)
+        && monster.mnum !== PM_FIRE_ELEMENTAL_REACH && monster.mnum !== PM_SALAMANDER) return false;
+    return !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW)
+        || !(state.level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER);
+}
+
+// C dogmove.c:finish_meating(). Unlike seemimic(), this does not remove
+// corpse disguise metadata or change light blocking.
+const S_MIMIC = 13;
+
+export async function finishMonsterEating(monster: Monster, state: GameState = game): Promise<void> {
+    requireLiveGame(state);
+    monster.meating = 0;
+    if (M_AP_TYPE(monster) !== M_AP_NOTHING
+        && MONSTER_SYMBOL[monster.mnum] !== S_MIMIC) {
+        monster.m_ap_type = M_AP_NOTHING;
+        monster.mappearance = 0;
+        await newsym(monster.mx, monster.my);
+    }
+}
+
+// Temporary disguises caused by eating mimic corpses. C dogmove.c:quickmimic().
+const DOG_SYMBOL = 4;
+const SINK_APPEARANCE = MAP_SYMBOLS.findIndex(symbol => symbol.name === 'sink');
+interface MealDisguise {
+    species?: number;
+    symbol?: number;
+    type: typeof M_AP_MONSTER | typeof M_AP_OBJECT | typeof M_AP_FURNITURE;
+    appearance: number;
+}
+
+const FOOD_DISGUISE: MealDisguise = { type: M_AP_OBJECT, appearance: TRIPE_RATION };
+const DISGUISES: readonly MealDisguise[] = [
+    mealDisguise('little dog', 'kitten'),
+    mealDisguise('dog', 'housecat'),
+    mealDisguise('large dog', 'large cat'),
+    mealDisguise('kitten', 'little dog'),
+    mealDisguise('housecat', 'dog'),
+    mealDisguise('large cat', 'large dog'),
+    mealDisguise('housecat', 'giant rat'),
+    { symbol: DOG_SYMBOL, type: M_AP_FURNITURE, appearance: SINK_APPEARANCE },
+    FOOD_DISGUISE,
+];
+
+export async function beginMonsterMealMimicry(
+    monster: Monster, state: GameState = game,
+): Promise<void> {
+    requireLiveGame(state);
+    const wasLeashed = !!monster.mleashed;
+    if (state.u.protectionFromShapeChangers || state.protectionFromShapeChangers
+        || !monster.meating) return;
+    if (monster === state.u.usteed) await dismountHero(DISMOUNT_POLY, { state });
+
+    const disguise = chooseMealDisguise(monster);
+    const name = monsterName(monster, { state, article: 'your' });
+    const spotted = canSpotMonster(monster);
+    const seeLocation = cansee(monster.mx, monster.my);
+    monster.m_ap_type = disguise.type;
+    monster.mappearance = disguise.appearance;
+    if (!spotted && !seeLocation && !canSpotMonster(monster)) return;
+
+    const previousGlyph = glyphAt(monster.mx, monster.my, state);
+    const description = disguiseDescription(disguise, monster.female);
+    await newsym(monster.mx, monster.my);
+    // All animal disguises in qm[] are leashable. Furniture and food are not.
+    if (wasLeashed && disguise.type !== M_AP_MONSTER) {
+        await plineWithContinuation('Your leash goes slack.');
+        releaseMonsterLeash(monster, state);
+    }
+    if (samePerceivedGlyph(previousGlyph, glyphAt(monster.mx, monster.my, state))) {
+        await plineWithContinuation(`You sense that ${name} feels rather ${description}-ish.`);
+    } else {
+        await plineWithContinuation(`You ${seeLocation ? 'see' : 'sense that'} ${withIndefiniteArticle(description)} ${seeLocation ? 'appear' : 'has appeared'} where ${name} was!`);
+    }
+    await displayMessageWindow();
+}
+
+function mealDisguise(species: string, appearance: string): MealDisguise {
+    return { species: MONSTER_NAME.indexOf(species),
+        type: M_AP_MONSTER, appearance: MONSTER_NAME.indexOf(appearance) };
+}
+
+function chooseMealDisguise(monster: Monster): MealDisguise {
+    for (let tries = 0; tries < 5; tries++) {
+        const choice = DISGUISES[rn2(DISGUISES.length)];
+        if (!choice) throw new RangeError('Mimic meal selected an invalid disguise.');
+        if (choice.species !== undefined && choice.species === monster.mnum
+            || choice.symbol !== undefined && choice.symbol === MONSTER_SYMBOL[monster.mnum]
+            || choice.species === undefined && choice.symbol === undefined) return choice;
+    }
+    return FOOD_DISGUISE;
+}
+
+function disguiseDescription(disguise: MealDisguise, female: boolean): string {
+    if (disguise.type === M_AP_MONSTER)
+        return monsterTypeName(disguise.appearance, female);
+    if (disguise.type === M_AP_FURNITURE) {
+        const symbol = MAP_SYMBOLS[disguise.appearance];
+        if (!symbol) throw new RangeError('Mimic meal has an invalid furniture appearance.');
+        return symbol.name;
+    }
+    return requireObjectData(OBJECT_DESCRIPTIONS, disguise.appearance)
+        || requireObjectData(OBJECT_NAMES, disguise.appearance) || 'something';
+}
+
+// Native glyph identity distinguishes two species even when both use 'f'.
+function samePerceivedGlyph(left: ReturnType<typeof glyphAt>, right: ReturnType<typeof glyphAt>): boolean {
+    if (left === right) return true;
+    if (!left || !right || left.kind !== right.kind) return false;
+    switch (left.kind) {
+    case 'monster': return right.kind === 'monster' && left.mnum === right.mnum;
+    case 'object': return right.kind === 'object' && left.otyp === right.otyp;
+    case 'terrain': return right.kind === 'terrain' && left.terrainName === right.terrainName;
+    case 'trap': return right.kind === 'trap' && left.trapType === right.trapType;
+    case 'effect':
+    case 'engraving':
+    case 'invisible':
+    case 'nothing':
+    case 'unexplored':
+    case 'warning':
+        return true;
+    }
 }

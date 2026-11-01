@@ -6,13 +6,13 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
-import { migrateMonsterOffLevel, prepareMonsterDeparture } from '../js/monster_migration.js';
 import { clearMonsterWormFromMap, initializeMonsterWormBody, removeMonsterWormBody, } from '../js/monster_worm.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { assertWormBody } from './support/worms.js';
+import { migrateMonsterOffLevel, prepareMonsterDeparture } from '../js/dog.js';
 async function placedWorm(segmentCount) {
     await freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, heroX: 10, heroY: 10 });
     requirePlayingGame(game);

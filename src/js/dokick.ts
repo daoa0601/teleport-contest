@@ -29,7 +29,6 @@ import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerAttackedMonster } from './monster_anger.js';
 import {
     abuseKickedPet, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage,
     tryKickEvasion, tryKickReel,
@@ -60,6 +59,7 @@ import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { kickFloorObject } from './object_kick.js';
 import type { Monster } from './monster_types.js';
+import { angerAttackedMonster } from './mon.js';
 
 // C dokick.c:kick_ouch().
 async function kickOuch(x: number, y: number, objectName = '') {

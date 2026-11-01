@@ -10,7 +10,6 @@ import type { Position } from '../js/map_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterWouldConsumeItem } from '../js/monmove.js';
-import { monsterCouldReachItem } from '../js/monster_item_reach.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import type { MonsterApproach } from '../js/monmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';
@@ -25,6 +24,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { monsterCouldReachItem } from '../js/dogmove.js';
 
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 

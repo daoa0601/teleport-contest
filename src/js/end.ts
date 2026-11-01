@@ -17,7 +17,6 @@ import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
-import { collectLevelFollowers } from './monster_followers.js';
 import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
@@ -39,7 +38,6 @@ import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { d, rn2 } from './rng.js';
 import { mksobj } from './mkobj.js';
-import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
@@ -83,6 +81,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { InventoryMenuItem, TextMenuEntry, TextMenuLine, TextPage } from './windows.js';
 import type { ScoreOutcome, ScoreRecord } from './score_records.js';
+import { collectLevelFollowers } from './dog.js';
+import { adjustedMonsterLevel } from './makemon.js';
 
 export interface DeathDamage {
     hpKey: 'mh' | 'uhp';

@@ -46,7 +46,6 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
-import { angerAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
 import {
@@ -67,9 +66,6 @@ import {
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
-import {
-    monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
-} from './monster_resistance.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
@@ -121,7 +117,11 @@ import type { HeroMonsterWeaponVolley, MonsterProjectileShot, MonsterWeaponWield
     TargetMonsterWeaponVolley } from './monster_projectile_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { requirePerceivedHero } from './monmove.js';
-import { seenResistanceForDamage } from './mondata.js';
+import {
+    seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance,
+    monsterHasStoneResistance,
+} from './mondata.js';
+import { angerAttackedMonster } from './mon.js';
 
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);

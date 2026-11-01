@@ -46,14 +46,10 @@ import {
 import { drainMonsterEnergy } from './mhitm.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import {
-    monsterHasAcidResistance, monsterHasPoisonResistance,
-} from './monster_resistance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { sessionIsNight } from './monster_sound.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
-import { tameMonster } from './monster_taming.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { erodeArmor } from './object_erosion.js';
 import { d, rn2, rnd } from './rng.js';
@@ -67,6 +63,8 @@ import type {
 import type { Position } from './map_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance } from './mondata.js';
+import { tameMonster } from './dog.js';
 
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;

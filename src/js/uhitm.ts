@@ -23,19 +23,22 @@
 import { armorSimpleName, heroHasDrainResistance, heroHasFreeAction } from './armor.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
 import { applyArtifactHit } from './artifact_hit.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute } from './attrib.js';
+import {
+    adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute,
+} from './attrib.js';
 import { heroCanBeBlindedByContact, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroLegName } from './body_parts.js';
 import {
-    A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING,
-    FAINTED, G_NOCORPSE, Is_airlevel, Is_waterlevel, isok, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE,
-    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC,
-    M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER,
-    MSLOW, NON_PM, POOL, RLOC_MSG, RLOC_NOMSG, STRAT_WAITFORU, STONING, Upolyd, WATER,
-    W_AMUL, W_ARMH, W_SADDLE,
+    A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, FAINTED, G_NOCORPSE,
+    Is_airlevel, Is_waterlevel, isok, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS,
+    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA,
+    MM_IGNOREWATER, MSLOW, NON_PM, POOL, RLOC_MSG, RLOC_NOMSG, STRAT_WAITFORU, STONING, Upolyd, WATER, W_AMUL,
+    W_ARMH, W_SADDLE,
 } from './const.js';
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff } from './display.js';
+import {
+    canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff,
+} from './display.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -57,40 +60,37 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { splitMonster } from './monster_clone.js';
-import { showMonsterArtifactFallbackHit } from './mhitm.js';
+import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
 import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { drainMonsterEnergy } from './mhitm.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
 import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
-import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
+import {
+    destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
+    unlinkMonsterObject,
+} from './monster_inventory.js';
 import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import {
-    AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX,
-    AD_DRIN, AD_DREN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL,
-    AD_LEGS, AD_MAGM, AD_PHYS, AD_PEST, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SGLD,
-    AD_SLEE, AD_SLIM, AD_SLOW, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP,
-    AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS,
-    AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
+    AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX, AD_DRIN, AD_DREN,
+    AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PHYS, AD_PEST,
+    AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SGLD, AD_SLEE, AD_SLIM, AD_SLOW, AD_SSEX, AD_STCK, AD_STON,
+    AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE,
+    AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS,
-    MONSTER_SIZE, MONSTER_SYMBOL, monsterHasHead, monsterIsNonliving, monsterIsRider,
-    monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned,
-    monsterIsUndead, monsterTypeName,
-    requireMonsterData,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE,
+    MONSTER_SYMBOL, monsterHasHead, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof,
+    monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterTypeName, requireMonsterData,
 } from './monster_data.js';
-import { monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import {
-    monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName,
-    possessiveName,
+    monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance,
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance,
+    monsterHasPoisonResistance, monsterHasShockResistance,
+} from './mondata.js';
+import {
+    monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName, possessiveName,
 } from './monster_name.js';
-import { monsterHasLineOfSightToHero } from './vision.js';
-import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance,
-    monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
-    monsterResistsEffect,
-} from './monster_resistance.js';
+import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
@@ -101,17 +101,14 @@ import { stealHeroQuestObject } from './monster_quest_theft.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { sessionIsNight } from './monster_sound.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import {
-    monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph,
-} from './monster_weapon.js';
+import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './monster_hurtle.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { petFoodNutrition } from './pet_eating.js';
 import {
-    AMULET_OF_LIFE_SAVING, CORPSE, DUNCE_CAP, IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES,
+    AMULET_OF_LIFE_SAVING, CORPSE, DUNCE_CAP, IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from './object_data.js';
 import { mksobj, set_corpsenm } from './mkobj.js';
 import { deallocateObject } from './object_delete.js';
@@ -122,8 +119,8 @@ import { inventoryItemDescription } from './invent.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import {
-    applyHeroGolemEffects, heroHasProtectionFromShapeChangers, heroIsUnchanging,
-    heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm,
+    applyHeroGolemEffects, heroHasProtectionFromShapeChangers, heroIsUnchanging, heroMonsterForm, polymonHero,
+    polymorphHero, returnHeroToHumanForm,
 } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { poisonHero } from './poison.js';
@@ -138,12 +135,11 @@ import { attrcurse } from './throne.js';
 import { spendHeroNutrition } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import {
-    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
-    destroyMonsterInventoryByElement,
+    destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement,
+    monsterResistsEffect,
 } from './zap.js';
 import {
-    applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy, isHumanWereMonster,
-    isWereMonster, wereChange,
+    applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy, isHumanWereMonster, isWereMonster, wereChange,
 } from './were.js';
 import { heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction } from './mhitu.js';
 import { touchHeroWithDeath } from './mcastu.js';
@@ -156,15 +152,12 @@ import { doorlessDoor } from './hack.js';
 import { plineWithContinuation } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
-import {
-    askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation,
-} from './teleport.js';
+import { askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
-import { cansee } from './vision.js';
 import type { DeathHandler } from './end.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState, MonsterHelplessnessReason } from './game_state.js';

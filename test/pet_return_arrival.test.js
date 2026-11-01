@@ -1,11 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { initializePet } from '../js/dog.js';
+import { initializePet, collectLevelFollowers, deliverMigratingMonsters } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { distmin } from '../js/hacklib.js';
-import { collectLevelFollowers } from '../js/monster_followers.js';
-import { deliverMigratingMonsters } from '../js/monster_migration.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

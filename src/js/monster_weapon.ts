@@ -36,7 +36,6 @@ import {
     ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
 import { rn2 } from './rng.js';
@@ -46,6 +45,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { monsterHasStoneResistance } from './mondata.js';
 
 interface WeaponMessageOptions {
     publish?: MessagePublisher;

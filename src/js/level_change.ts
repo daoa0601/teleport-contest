@@ -31,11 +31,6 @@ import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
-import {
-    deliverMigratingMonsters, discardMigrations, updateMonsterLastMove,
-    catchUpMonster, setShopResidency, sendMonsterToLimbo,
-} from './monster_migration.js';
-import { collectLevelFollowers } from './monster_followers.js';
 import { restoreMonsterCover, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
@@ -53,7 +48,7 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
-import { killGenocidedMonsters } from './mon.js';
+import { killGenocidedMonsters, sendMonsterToLimbo } from './mon.js';
 import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { resetTrapSetting } from './trap_setting.js';
@@ -67,7 +62,7 @@ import {
 } from './ball.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
 import { heroHasOlfaction } from './polyself.js';
-import { checkSpecialRoom } from './shk.js';
+import { checkSpecialRoom, setShopResidency } from './shk.js';
 import { fixShopDamage } from './shop_damage.js';
 import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall,
@@ -89,6 +84,8 @@ import type { GameMap } from './game.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
 import type { ActiveSpecialLevel, ArrivalRegion, CachedLevelState, Position, Stairway } from './map_types.js';
+import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster } from './dog.js';
+import { collectLevelFollowers } from './dog.js';
 
 export type LevelArrival = 'random' | 'stairs' | 'downstairs' | 'portal' | 'falling';
 

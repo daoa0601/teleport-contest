@@ -21,7 +21,6 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { GasCloud, Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 
-import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { heroIsBreathless } from './hero_species.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
@@ -37,7 +36,9 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasPoisonResistance,
+} from './mondata.js';
 
 const GAS_BAD = 0;
 const GAS_MINOR = 1;

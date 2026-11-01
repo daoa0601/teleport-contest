@@ -4,7 +4,6 @@ import { AM_LAWFUL, LOW_PM, M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OB
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import { CORPSE, EGG, FIGURINE, LOADSTONE, SLIME_MOLD, STATUE, TIN } from '../js/object_data.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -13,6 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 const SAVE_KEY = 'teleport-save:species';
 function savedRecord(value) {
     assert.ok(isSavedRecord(value), 'Expected a record in the saved game');

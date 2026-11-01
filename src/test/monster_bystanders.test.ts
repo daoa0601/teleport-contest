@@ -6,13 +6,13 @@ import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
-import { angerMonster } from '../js/monster_anger.js';
 import { makeMonsterFlee } from '../js/monmove.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { angerMonster } from '../js/mon.js';
 
 async function topline() {
     await flush_screen();

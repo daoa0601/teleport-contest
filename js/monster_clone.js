@@ -9,9 +9,9 @@ import { findMonsterNearPosition } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
-import { tameMonster } from './monster_taming.js';
 import { rn2 } from './rng.js';
 import { monsterEmitsLight } from './vision.js';
+import { tameMonster } from './dog.js';
 function copyPetState(monster, clone) {
     const source = monster.edog || monster.mextra?.edog;
     if (!source)

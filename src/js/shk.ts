@@ -1581,3 +1581,18 @@ export async function moveShopkeeper(
     });
     return { ...movement, shopkeeper: true };
 }
+
+// C shk.c:set_residency(): a shopkeeper leaving her shop level clears
+// the room's resident pointer; arriving on it restores the pointer.
+export function setShopResidency(monster: Monster, zeroOut: boolean, state: GameState): void {
+    if (!monster.isshk || !monster.eshk) return;
+    if (!sameShopLevel(monster.eshk.shoplevel, state.u?.uz)) return;
+    const room = roomForRoomno(state.level, monster.eshk.shoproom);
+    if (room) room.resident = zeroOut ? null : monster;
+}
+
+function sameShopLevel(first: { dnum: number; dlevel: number } | null | undefined, second: { dnum: number; dlevel: number } | null | undefined): boolean {
+    return !!first && !!second
+        && first.dnum === second.dnum
+        && first.dlevel === second.dlevel;
+}

@@ -17,7 +17,6 @@ import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { consumeInventoryItem } from './invent.js';
-import { aggravateMonsters } from './monster_anger.js';
 import { tryCallObjectType } from './object_call.js';
 import { erodeObject } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -40,6 +39,7 @@ import { teleportHero } from './teleport.js';
 import { rndcurse } from './throne.js';
 import type { GameState, SpellbookContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { aggravateMonsters } from './wizard.js';
 
 interface SpellbookOptions { state?: GameState; }
 

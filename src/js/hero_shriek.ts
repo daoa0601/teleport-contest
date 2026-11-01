@@ -5,10 +5,10 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
-import { aggravateMonsters } from './monster_anger.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
 import { rn2 } from './rng.js';
+import { aggravateMonsters } from './wizard.js';
 
 const MS_SHRIEK = 18;
 

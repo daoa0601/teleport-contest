@@ -13,14 +13,12 @@ import { heroSpecies } from './hero_species.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { consumeInventoryItem } from './invent.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver,
     monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
-import { monsterHasAcidResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
@@ -48,6 +46,8 @@ import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
+import { monsterHasAcidResistance, monsterHasStoneResistance } from './mondata.js';
 
 export interface HeroObjectContactOptions {
     mode: HeroPhysicalAttackMode;

@@ -7,12 +7,12 @@ import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { CHEST, CORPSE, SADDLE } from '../js/object_data.js';
 import { keepSaddleWithSteedcorpse, triggerHeroTrap } from '../js/hero_traps.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import type { GameObject } from '../js/object_types.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObject, knownObject } from './support/game-objects.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 
 function collectMessages(): string[] {
     const messages: string[] = [];

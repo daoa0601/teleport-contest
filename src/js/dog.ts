@@ -13,29 +13,82 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { heroHasConflict } from './hero_conflict.js';
 import {
     publishMonsterYelp, publishMonsterGrowl,
-} from './monster_anger.js';
+} from './monster_sound.js';
 import {
     releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
-import { finishMonsterEating } from './monster_eating.js';
+import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './monster_name.js';
 import { dismountHero } from './steed.js';
 import { cansee } from './vision.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2,
-    monsterHasNoHands, monsterIsVerySmall, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
+    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall,
+    monsterTypeName,
 } from './monster_data.js';
 import {
-    CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE,
+    CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE,
     RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN,
 } from './object_data.js';
-import { rn2, rnd } from './rng.js';
-import { redrawMonsterWorm } from './monster_worm.js';
+import { rn1, rn2, rnd } from './rng.js';
+import {
+    initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody,
+} from './monster_worm.js';
 import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import type { Monster, PetData } from './monster_types.js';
+import type { Monster, MonsterLevel, PetData } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
+import type { DungeonLocation } from './dungeon_types.js';
+import type { Position, Trap } from './map_types.js';
+import { requireGameLevel, requirePlayingGame } from './gstate.js';
+import {
+    COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS,
+    MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP,
+    MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS,
+    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO,
+    MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU,
+    MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING,
+    NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU,
+} from './const.js';
+import { canSeeMonster } from './display.js';
+import { levelFollower } from './mondata.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { sessionIsNight } from './monster_sound.js';
+import { questMonsterFlags3 } from './role_monsters.js';
+import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
+import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { AT_WEAP } from './monster_attack_types.js';
+import { wieldMonsterWeapon } from './monster_weapon.js';
+import {
+    corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun,
+} from './objnam.js';
+import { beginPetEating, finishPetEating } from './pet_eating.js';
+import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
+import { heroIsHallucinating } from './senses.js';
+import { makeShopkeeperHappy, makeShoppersHappy } from './shop_damage.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { healMonster } from './mon.js';
+import { depth } from './hacklib.js';
+import { monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
+import { dropSpecialMonsterObjects } from './monster_drop.js';
+import { releaseMonsterLeash } from './monster_leash.js';
+import { monsterEmitsLight, vision_recalc } from './vision.js';
+import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
+import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
+import { somexy } from './mkroom.js';
+import { roomForRoomno, roomsAt } from './room.js';
+import { restoreMonsterShape } from './monster_polymorph.js';
+import { detachMonsterFromLevel } from './monster_level_departure.js';
+import { deliverOrcRaidLoot } from './orc_raid.js';
+import { tryMonsterTrapEscape } from './monster_trap_escape.js';
+import { monsterCarriesAmulet } from './wizard.js';
+import { setShopResidency } from './shk.js';
+import { possessiveName } from './monster_name.js';
+import { placeObject } from './floor_object.js';
+import { insideWizardTower } from './dungeon.js';
+import { sendMonsterToLimbo } from './mon.js';
 
 const M2_DOMESTIC = 0x00400000;
 const M1_ANIMAL = 0x00040000;
@@ -260,4 +313,695 @@ function newPetData(monster: Monster): PetData {
         whistletime: 0, hungrytime: 0, ogoal: { x: 0, y: 0 }, abuse: 0,
         revivals: 0, mhpmax_penalty: 0, killed_by_u: 0,
     };
+}
+
+// C dog.c:tamedog(). Food may be caught and consumed; magic has no object
+// transfer. A true result tells a projectile caller that the food was caught,
+// even when its meal kills the new pet.
+const M2_DEMON_TAMING = 0x00000100;
+const M3_WANTSARTI = 0x0010;
+const M3_COVETOUS = 0x001f;
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
+const S_DOG = 4;
+const SCROLL_CLASS = 9;
+const SPBOOK_CLASS = 10;
+
+export async function tameMonster(monster: Monster, source: GameObject | null = null, {
+    state = game, announce = false,
+}: { state?: GameState; announce?: boolean } = {}): Promise<boolean> {
+    requireLiveGame(state);
+    const magic = source?.oclass === SCROLL_CLASS || source?.oclass === SPBOOK_CLASS;
+    const blessedScroll = !!(magic && source?.blessed);
+    const food = magic ? null : source;
+    if (monster.mfrozen) monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
+    if (monster.msleeping) await wakeMonstersNearWithMessages(monster.mx, monster.my, 1, state);
+
+    const speciesFlags = questMonsterFlags3(monster.mnum, state);
+    if (monster.iswiz || monster.mnum === PM_MEDUSA || (speciesFlags & M3_WANTSARTI))
+        return false;
+    if (announce && !monster.mpeaceful && canSpotMonster(monster)) {
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} seems ${heroIsHallucinating(state) ? 'really chill' : 'more amiable'}.`);
+        announce = false;
+    }
+    monster.mpeaceful = 1;
+    setMonsterMalign(monster, state);
+    // The moon roll precedes the food/species tests, including for magic.
+    if (state.flags.moonphase === 4 && sessionIsNight(state.datetime)
+        && rn2(6) && food && MONSTER_SYMBOL[monster.mnum] === S_DOG)
+        return false;
+    monster.mflee = monster.mfleetim = 0;
+    if (state.u.ustuck === monster) {
+        if (state.u.uswallow) {
+            const expelled = await expelHero(monster, { state });
+            if (expelled.died) return false;
+        } else if (!heroFormSticks(state)) {
+            await releaseHeroFromMonster(monster, { state });
+        }
+    }
+
+    if (monster.mtame && food) {
+        if (!willCatchFood(monster, food, state)) return false;
+        await describeFoodCatch(monster, food, state);
+        await feedTamedMonster(monster, food, false, state);
+        return true;
+    }
+    if (monster.mtame && monster.mtame < 10) {
+        if (monster.mtame < rnd(10)) monster.mtame++;
+        if (blessedScroll) monster.mtame = Math.min(monster.mtame + 2, 10);
+        return false;
+    }
+    if (monster.isshk) {
+        if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
+        await makeShopkeeperHappy(monster, { state });
+        return false;
+    }
+    if (!monster.mcanmove || monster.isgd || monster.ispriest || monster.isminion
+        || (speciesFlags & M3_COVETOUS) || monsterIsHuman(monster.mnum)
+        || (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON_TAMING)
+            && !((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_DEMON_TAMING))
+        || (food && dogFood(monster, food, rn2, [], state) >= MANFOOD))
+        return false;
+    if (monster.m_id === state.quest_status?.leader_m_id) return false;
+
+    initializePet(monster, { state, everything: !(monster.edog || monster.mextra?.edog) });
+    if (food) {
+        await feedTamedMonster(monster, food, true, state);
+        if (monster.dead || monster.mhp <= 0 || state.program_state.gameover)
+            return true;
+    }
+    if (announce && canSpotMonster(monster)) {
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} seems quite ${heroIsHallucinating(state) ? 'approachable' : 'friendly'}.`);
+    }
+    await newsym(monster.mx, monster.my);
+    if (monster.wormno) await redrawMonsterWorm(monster, state);
+    if ((MONSTER_ATTACKS[monster.mnum] || []).some(([type]) => type === AT_WEAP)) {
+        monster.weaponCheck = NEED_HTH_WEAPON;
+        await wieldMonsterWeapon(monster, state);
+    }
+    return true;
+}
+
+function willCatchFood(monster: Monster, food: GameObject, state: GameState): boolean {
+    if (!monster.mcanmove || monster.mconf || monster.meating) return false;
+    const quality = dogFood(monster, food, rn2, [], state);
+    if (quality === DOGFOOD) return true;
+    const pet = monster.edog ?? monster.mextra?.edog;
+    return quality <= ACCFOOD && !!pet && pet.hungrytime <= state.moves;
+}
+
+async function describeFoodCatch(monster: Monster, food: GameObject, state: GameState): Promise<void> {
+    const visible = canSeeMonster(monster);
+    if (!visible && !cansee(monster.mx, monster.my)) return;
+    observeObjectForNaming(food, { state });
+    const noun = catchFoodName(food, state);
+    if (visible) {
+        const corpseSize = food.otyp === CORPSE && food.corpsenm !== undefined
+            ? MONSTER_SIZE[food.corpsenm] : undefined;
+        const tooLarge = corpseSize !== undefined
+            && corpseSize > (MONSTER_SIZE[monster.mnum] ?? 0);
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} catches ${noun}${tooLarge ? ', or vice versa!' : '.'}`);
+    } else {
+        const subject = noun.charAt(0).toUpperCase() + noun.slice(1);
+        await plineWithContinuation(`${subject} ${food.quan === 1 ? 'stops' : 'stop'}.`);
+    }
+}
+
+function catchFoodName(food: GameObject, state: GameState): string {
+    if (food.otyp === CORPSE) return corpseName(food, { definite: true });
+    const name = objectName(food, state);
+    const noun = food.quan === 1 ? name : pluralizeObjectNoun(food, name);
+    return /^the /i.test(noun) ? noun.replace(/^The /, 'the ') : `the ${noun}`;
+}
+
+async function feedTamedMonster(monster: Monster, food: GameObject, devour: boolean, state: GameState): Promise<void> {
+    await placeObject(food, monster.mx, monster.my, state);
+    const meal = beginPetEating(monster, food, { x: monster.mx, y: monster.my }, state, devour);
+    await finishPetEating(monster, meal, state);
+}
+
+// Monster level migration: departure, limbo, and arrival.
+// C refs: dog.c migrate_to_level(), mon_leave(), losedogs(), mon_arrive(),
+// mon_catchup_elapsed_time(), update_mlstmv(), discard_migrations().
+export type MonsterMigrationKind = 'level-fall-migration' | 'magic-portal-migration'
+    | 'level-migration' | 'limbo-migration' | 'shop-return';
+
+export interface MonsterMigrationOptions {
+    kind?: MonsterMigrationKind;
+    mode?: number;
+    confused?: boolean;
+    coordinate?: Position | null;
+}
+
+export interface MonsterMigrationResult<
+    T extends Pick<Trap, 'dst'> = Pick<Trap, 'dst'>,
+    K extends MonsterMigrationKind = MonsterMigrationKind,
+> {
+    kind: K;
+    trap: T;
+    visible: boolean;
+    destination: DungeonLocation;
+    damage: 0;
+    killed: false;
+}
+
+// C include/monflag.h M1 flags used by mon_catchup_elapsed_time().
+const M1_CARNIVORE_MIGRATION = 0x20000000;
+const M1_HERBIVORE_MIGRATION = 0x40000000;
+const M1_REGEN = 0x00800000;
+
+// C dog.c mon_arrive()'s `when` argument.
+export const WIZ_ARRIVE = -1; // C dog.c mon_arrive(mtmp, -1) from resurrect()
+export type MonsterArrivalPhase = typeof WIZ_ARRIVE | typeof MON_ARRIVE_BEFORE_YOU
+    | typeof MON_ARRIVE_WITH_YOU | typeof MON_ARRIVE_AFTER_YOU;
+
+const PM_LONG_WORM_MIGRATION = 114;
+
+// C dog.c: overloading of mtrack[] is kept as explicit fields here:
+// migrationArrival (mtrack[0].x), migrationFlags (mtrack[0].y),
+// migrationSource (mtrack[1]), migrationOrigin (mtrack[2]).
+
+function sameMigrationLevel(first: DungeonLocation | null | undefined, second: DungeonLocation | null | undefined): boolean {
+    return !!first && !!second
+        && first.dnum === second.dnum
+        && first.dlevel === second.dlevel;
+}
+
+export function migrationQueue(state: GameState): Monster[] {
+    if (!Array.isArray(state._migratingMonsters))
+        state._migratingMonsters = [];
+    return state._migratingMonsters;
+}
+
+export function currentDungeonLevel(state: GameState): DungeonLocation {
+    if (!state.u.uz) throw new Error('Monster migration requires an initialized hero dungeon location.');
+    return state.u.uz;
+}
+
+function defaultFallDestination(state: GameState): DungeonLocation {
+    // C hole falls land on the next level down within the same dungeon.
+    const uz = currentDungeonLevel(state);
+    const bottom = state.dungeons?.[uz.dnum]?.num_dunlevs
+        ?? (uz.dlevel ?? 1);
+    return {
+        dnum: uz.dnum,
+        dlevel: Math.min((uz.dlevel ?? 1) + 1, bottom),
+    };
+}
+
+function clearNoCharge(object: GameObject): void {
+    // C dog.c mon_leave() resets shop pricing on carried containers.
+    object.no_charge = false;
+    for (const content of object.contents || [])
+        clearNoCharge(content);
+}
+
+// losedogs() requeues ordinary failures after all arrivals. Wizard
+// resurrection has no such caller tail and returns to limbo immediately.
+async function failArrival(monster: Monster, when: MonsterArrivalPhase, state: GameState): Promise<false> {
+    const level = requireGameLevel(state);
+    level.monsters = level.monsters.filter(candidate => candidate !== monster);
+    monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
+    monster.mx = monster.my = 0;
+    if (when === WIZ_ARRIVE) await sendMonsterToLimbo(monster, state);
+    return false;
+}
+
+// C mon_leave(): both followers and independently migrating monsters lose
+// their old shop residency and carry only a tail length between levels.
+export async function prepareMonsterDeparture(monster: Monster, state: GameState): Promise<void> {
+    for (const object of monster.minvent || monster.inventory || [])
+        clearNoCharge(object);
+    setShopResidency(monster, true, state);
+    if (monster.wormno) {
+        const x = monster.mx, y = monster.my;
+        const count = Math.min(monster.wormSegments?.length ?? 0, MAX_NUM_WORMS - 1);
+        await removeMonsterWormBody(monster);
+        monster.migratingWormSegments = count;
+        if (x) await placeMigratingMonster(monster, x, y);
+    }
+}
+
+async function placeMigratingMonster(monster: Monster, x: number, y: number): Promise<void> {
+    await placeMonsterOnMap(monster, x, y);
+    monster.mtrack = [];
+}
+
+export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
+    monster: Monster, state: GameState, trap: T,
+    options?: Omit<MonsterMigrationOptions, 'kind'> & { kind?: 'level-fall-migration' },
+): Promise<MonsterMigrationResult<T, 'level-fall-migration'>>;
+export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>, K extends MonsterMigrationKind>(
+    monster: Monster, state: GameState, trap: T,
+    options: Omit<MonsterMigrationOptions, 'kind'> & { kind: K },
+): Promise<MonsterMigrationResult<T, K>>;
+export function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
+    monster: Monster, state: GameState, trap: T,
+    options: MonsterMigrationOptions,
+): Promise<MonsterMigrationResult<T>>;
+export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
+    monster: Monster, state: GameState, trap: T, {
+        kind = 'level-fall-migration',
+        mode = MIGR_RANDOM,
+        confused = false,
+        coordinate = null,
+    }: MonsterMigrationOptions = {},
+): Promise<MonsterMigrationResult<T>> {
+    // C dog.c migrate_to_level() plus mon_leave().
+    requireLiveGame(state);
+    const origin = currentDungeonLevel(state);
+    const x = monster.mx, y = monster.my;
+    const visible = !state.blind && !((state.u.blindTurns ?? 0) > 0)
+        && !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2)
+        && !!(!monster.minvis || state.u.seeInvisible);
+
+    if (monster.mleashed) {
+        monster.mtame = (monster.mtame ?? 0) - 1;
+        monster.pet = monster.mtame > 0;
+        await releaseMonsterLeashWithFeedback(monster, { state });
+    }
+
+    await prepareMonsterDeparture(monster, state);
+    await detachMonsterFromLevel(monster, state);
+    if (confused) monster.mconf = 1;
+    monster.migrating = true;
+    monster.mstate = (monster.mstate ?? 0) | MON_MIGRATING;
+    monster.migrationMode = mode;
+    monster.migrationArrival = mode;
+    monster.migrationOrigin = { ...origin };
+    monster.migrationDestination = { ...(trap?.dst
+        || defaultFallDestination(state)) };
+    monster.migrationSource = coordinate
+        ? { x: coordinate.x, y: coordinate.y } : { x, y };
+    const movingUp = depth(monster.migrationDestination, state.dungeons)
+        < depth(origin, state.dungeons);
+    monster.migrationFlags = (movingUp ? 1 : 0) | (insideWizardTower(x, y, state) ? 2 : 0);
+    monster.mlstmv = state.moves ?? 0;
+    monster.mx = 0;
+    monster.my = 0;
+    migrationQueue(state).push(monster);
+    // C migrate_to_level() keeps a mobile light but turns it global (mx == 0)
+    // and recalculates vision at once, so what it lit goes dark before the
+    // next monster moves.
+    if (monsterEmitsLight(monster.mnum)) await vision_recalc(0);
+    return {
+        kind, trap, visible, destination: monster.migrationDestination,
+        damage: 0, killed: false,
+    };
+}
+
+// C dog.c:update_mlstmv().
+// C dog.c:set_mon_lastmove().
+export function updateMonsterLastMove(state: GameState = game): void {
+    for (const monster of state.level?.monsters || []) {
+        if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        monster.mlstmv = state.moves;
+    }
+}
+
+// C dog.c mon_catchup_elapsed_time().
+export async function catchUpMonster(monster: Monster, moves: number, state: GameState): Promise<void> {
+    if (moves < 0) throw new RangeError('Monster catch-up cannot start in the future.');
+    const imv = Math.min(Math.trunc(moves), LARGEST_INT - 1);
+
+    if (monster.mblinded)
+        monster.mblinded = imv >= monster.mblinded ? 1
+            : monster.mblinded - imv;
+    if (monster.mfrozen)
+        monster.mfrozen = imv >= monster.mfrozen ? 1
+            : monster.mfrozen - imv;
+    if (monster.mfleetim)
+        monster.mfleetim = imv >= monster.mfleetim ? 1
+            : monster.mfleetim - imv;
+
+    if (monster.mtrapped && rn2(imv + 1) > 20) monster.mtrapped = 0;
+    if (monster.mconf && rn2(imv + 1) > 25) monster.mconf = 0;
+    if (monster.mstun && rn2(imv + 1) > 5) monster.mstun = 0;
+
+    if (monster.meating) {
+        if (imv > monster.meating) await finishMonsterEating(monster, state);
+        else monster.meating -= imv;
+    }
+    if (imv > (monster.mspec_used ?? 0)) monster.mspec_used = 0;
+    else monster.mspec_used = (monster.mspec_used ?? 0) - imv;
+
+    // Tameness drops by one for every 150 moves of separation.
+    if (monster.mtame) {
+        const wilder = Math.trunc((imv + 75) / 150);
+        if (monster.mtame > wilder) monster.mtame -= wilder;
+        else if (monster.mtame > rn2(wilder)) monster.mtame = 0;
+        else monster.mtame = monster.mpeaceful = 0;
+    }
+
+    // A pet that would have starved goes wild instead of dying.
+    if (monster.mtame && !monster.isminion) {
+        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+        if (flags & (M1_CARNIVORE_MIGRATION | M1_HERBIVORE_MIGRATION)) {
+            const pet = monster.edog ?? monster.mextra?.edog;
+            if (!pet) throw new Error(`Tame monster ${monster.m_id} has no feeding history.`);
+            const hungrytime = pet.hungrytime;
+            if ((state.moves > hungrytime + 500 && monster.mhp < 3)
+                || state.moves > hungrytime + 750)
+                monster.mtame = monster.mpeaceful = 0;
+        }
+    }
+
+    monster.pet = (monster.mtame ?? 0) > 0;
+    if (!monster.mtame && monster.mleashed)
+        releaseMonsterLeash(monster, state);
+
+    const healing = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_REGEN
+        ? imv : Math.trunc(imv / 20);
+    healMonster(monster, healing);
+
+    monster.mlstmv = state.moves ?? 0;
+}
+
+function arrivalStairway(state: GameState, origin: DungeonLocation | undefined, ladder?: boolean) {
+    // C stairway_find_from()/stairway_find(): the stair on this level that
+    // connects back to the origin level.
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (sameMigrationLevel(stair.tolev, origin)
+            && (ladder === undefined || stair.isladder === ladder)) return stair;
+    }
+    return null;
+}
+
+function wanderLocale(state: GameState, x: number, y: number, wander: number): Position | null {
+    // C mon_arrive(): a monster that moved during limbo arrives within
+    // `wander` squares, or somewhere inside its room.
+    const roomNumber = roomsAt(state.level, x, y, 0)[0];
+    const room = roomNumber != null
+        ? roomForRoomno(state.level, roomNumber) : null;
+    if (room) {
+        const coordinate = { x: 0, y: 0 };
+        if (somexy(room, coordinate, state)) return coordinate;
+        return null;
+    }
+    const lowX = Math.max(1, x - wander);
+    const highX = Math.min(COLNO - 1, x + wander);
+    const lowY = Math.max(0, y - wander);
+    const highY = Math.min(ROWNO - 1, y + wander);
+    return {
+        x: rn1(highX - lowX, lowX),
+        y: rn1(highY - lowY, lowY),
+    };
+}
+
+// C dog.c mon_arrive(); returns false when no placement was possible.
+export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase, state: GameState): Promise<boolean> {
+    const level = requireGameLevel(state);
+    const queue = migrationQueue(state);
+    const index = queue.indexOf(monster);
+    if (index >= 0) queue.splice(index, 1);
+
+    monster.mstate = ((monster.mstate ?? 0) | MON_STILL_ARRIVING)
+        & ~(MON_MIGRATING | MON_LIMBO);
+    monster.migrating = false;
+    level.monsters.push(monster);
+    setShopResidency(monster, false, state);
+    monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_ARRIVE;
+
+    if (monster.mnum === PM_LONG_WORM_MIGRATION) {
+        initializeUnplacedMonsterWormBody(monster, monster.migratingWormSegments ?? 0, { state });
+    } else {
+        monster.wormno = 0;
+    }
+    delete monster.migratingWormSegments;
+
+    // rloc_to()/mnexto() must not use stale pre-migration coordinates.
+    monster.mux = state.u.ux;
+    monster.muy = state.u.uy;
+
+    let xlocale = monster.migrationSource?.x ?? 0;
+    let ylocale = monster.migrationSource?.y ?? 0;
+    const origin = monster.migrationOrigin;
+    // C mon_arrive(): Wiz_arrive overrides the recorded arrival mode.
+    const arrival = when === WIZ_ARRIVE
+        ? MIGR_WITH_HERO : (monster.migrationArrival ?? MIGR_RANDOM);
+    monster.mtrack = [];
+
+    await restoreMonsterShape(monster, state);
+    if (state.program_state.gameover) return false;
+
+    if (monster === state.u?.usteed) return true;
+
+    if (when === MON_ARRIVE_WITH_YOU) {
+        // An accompanying monster usually lands beside the hero and
+        // sometimes on the hero's own square (which then displaces the hero).
+        const heroOccupied = level.monsters.some(candidate => monsterHasMapPosition(candidate, state) &&
+            candidate !== monster && (candidate.mhp ?? 1) > 0
+            && candidate.mx === state.u.ux && candidate.my === state.u.uy);
+        const denominator = monster.mtame ? 10 : monster.mpeaceful ? 5 : 2;
+        if (!heroOccupied && !rn2(denominator))
+            await relocateMonsterTo(monster, state.u.ux, state.u.uy, { state, flags: RLOC_NOMSG });
+        else {
+            const nearby = findNearbyMonsterPosition(
+                monster.mnum, state.u.ux, state.u.uy, { state },
+            );
+            if (!nearby) return await failArrival(monster, when, state);
+            await relocateMonsterTo(monster, nearby.x, nearby.y, { state, flags: RLOC_NOMSG });
+        }
+        monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
+        return true;
+    }
+
+    let wander = 0;
+    const lastMove = monster.mlstmv ?? state.moves ?? 0;
+    if (lastMove < (state.moves ?? 0) - 1) {
+        const elapsed = (state.moves ?? 0) - 1 - lastMove;
+        await catchUpMonster(monster, elapsed, state);
+        wander = Math.min(elapsed, 8);
+    }
+
+    switch (arrival) {
+    case MIGR_APPROX_XY:
+        break;
+    case MIGR_EXACT_XY:
+        wander = 0;
+        break;
+    case MIGR_WITH_HERO:
+        xlocale = state.u.ux;
+        ylocale = state.u.uy;
+        break;
+    case MIGR_STAIRS_UP:
+    case MIGR_STAIRS_DOWN: {
+        const stair = arrivalStairway(state, origin, false);
+        if (stair) xlocale = stair.sx, ylocale = stair.sy;
+        break;
+    }
+    case MIGR_LADDER_UP:
+    case MIGR_LADDER_DOWN: {
+        const stair = arrivalStairway(state, origin, true);
+        if (stair) xlocale = stair.sx, ylocale = stair.sy;
+        break;
+    }
+    case MIGR_SSTAIRS: {
+        const stair = arrivalStairway(state, origin);
+        if (stair) xlocale = stair.sx, ylocale = stair.sy;
+        break;
+    }
+    case MIGR_PORTAL:
+        if (In_endgame(state.u?.uz)) {
+            const region = state.level?.upTeleportRegion;
+            if (region) {
+                xlocale = rn1(region.hx - region.lx + 1, region.lx);
+                ylocale = rn1(region.hy - region.ly + 1, region.ly);
+            }
+            break;
+        }
+        {
+            const portal = state.level?.traps?.find(candidate =>
+                candidate.ttyp === MAGIC_PORTAL);
+            if (portal) xlocale = portal.tx, ylocale = portal.ty;
+            else xlocale = ylocale = 0;
+        }
+        break;
+    default:
+        xlocale = ylocale = 0;
+        break;
+    }
+
+    if ((monster.migflags ?? 0) & MIGR_LEFTOVERS)
+        await deliverOrcRaidLoot(monster, state, true);
+    if (xlocale && wander) {
+        const drifted = wanderLocale(state, xlocale, ylocale, wander);
+        if (drifted) xlocale = drifted.x, ylocale = drifted.y;
+        else xlocale = ylocale = 0;
+    }
+
+    if (xlocale) {
+        // mnearto() uses the requested square before searching its neighbours.
+        const destination = goodPosition(xlocale, ylocale, { kind: 'monster', monster }, { state })
+            ? { x: xlocale, y: ylocale } : findNearbyMonsterPosition(
+            monster.mnum, xlocale, ylocale, { state },
+        );
+        if (!destination) return await failArrival(monster, when, state);
+        await relocateMonsterTo(monster, destination.x, destination.y, { state, flags: RLOC_NOMSG });
+    } else {
+        const relocation = await randomMonsterRelocation(monster, { state, flags: RLOC_NOMSG });
+        if (!relocation) return await failArrival(monster, when, state);
+    }
+
+    monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
+    return true;
+}
+
+export async function deliverMigratingMonsters(
+    state: GameState = game, followers: readonly Monster[] = [],
+): Promise<number> {
+    if (!state.level || !state.u?.uz) return 0;
+    // Migration arrays append where C prepends to migrating_mons.
+    const arrivals = [...migrationQueue(state)].reverse().filter(monster =>
+        sameMigrationLevel(monster.migrationDestination, state.u.uz));
+    // C losedogs(): settle a pacified keeper's home-level pursuit before
+    // arrivals can displace anyone. An angry returning keeper vetoes it.
+    let dismissKops = false;
+    let angryKeeper = false;
+    for (const monster of arrivals) {
+        if (!monster.isshk) continue;
+        const shop = monster.eshk;
+        if (!shop) throw new Error(`Migrating shopkeeper ${monster.m_id} has no shop data.`);
+        if (shop.dismiss_kops) {
+            dismissKops = true;
+            shop.dismiss_kops = false;
+        } else if (!monster.mpeaceful) {
+            angryKeeper = true;
+        }
+    }
+    if (followers.some(monster => monster.isshk && !monster.mpeaceful))
+        angryKeeper = true;
+    if (dismissKops && !angryKeeper)
+        await makeShoppersHappy({ state, silentKops: true });
+    const exact = arrivals.filter(monster => monster.migrationArrival === MIGR_EXACT_XY);
+    const others = arrivals.filter(monster => monster.migrationArrival !== MIGR_EXACT_XY);
+    const failed: Monster[] = [];
+    let delivered = 0;
+    const passes: Array<[readonly Monster[], MonsterArrivalPhase]> = [
+        [exact, MON_ARRIVE_BEFORE_YOU], [followers, MON_ARRIVE_WITH_YOU], [others, MON_ARRIVE_AFTER_YOU],
+    ];
+    for (const [group, when] of passes) {
+        for (const monster of group) {
+            if (await monsterArrive(monster, when, state)) delivered++;
+            else failed.push(monster);
+            if (state.program_state.gameover) return delivered;
+        }
+    }
+    // C prepends failed_arrivals, then migrates that list only after all
+    // arrivals. An exact arrival must not retry as approximate in this visit.
+    for (const monster of failed.reverse()) await sendMonsterToLimbo(monster, state);
+    return delivered;
+}
+
+export function discardMigrations(state: GameState = game): void {
+    // C dog.c discard_migrations(): entering the endgame discards monsters
+    // scheduled for unreachable levels; the Wizard always stays queued.
+    const queue = migrationQueue(state);
+    state._migratingMonsters = queue.filter(monster =>
+        monster.iswiz || In_endgame(monster.migrationDestination));
+}
+
+// C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
+const M2_STALK = 0x01000000;
+const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
+
+// The caller skips this entire transaction when iflags.nofollowers is set.
+// Returned monsters are detached from the old level in native mydogs order.
+// C dog.c:keepdogs().
+export async function collectLevelFollowers(state: GameState = game, petsOnly = false): Promise<Monster[]> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const level = state.level;
+    const followers: Monster[] = [];
+    // Births append in the port; C fmon links each new monster at the head.
+    for (const monster of level.monsters.slice().reverse()) {
+        if (monster.mhp <= 0) continue;
+        if (petsOnly) {
+            if (!monster.mtame) continue;
+            monster.mtrapped = 0;
+            await finishMonsterEating(monster, state);
+            monster.msleeping = monster.mfrozen = 0;
+            monster.mcanmove = 1;
+        }
+        const follows = (nearHero(monster, state) && levelFollower(monster, state)
+            || state.u.uhave.amulet && monster.iswiz)
+            && (!(monster.msleeping || !monster.mcanmove) || monster === state.u.usteed)
+            && !((monster.mstrategy ?? 0) & STRAT_WAITFORU);
+        if (follows) {
+            if (monster.mtrapped) {
+                await tryMonsterTrapEscape(monster, state, {
+                    describeMonster: target => monsterName(target, { capitalized: true, state }),
+                });
+            }
+            if (monster === state.u.usteed) {
+                monster.mtrapped = 0;
+                monster.meating = 0;
+                await dropSpecialMonsterObjects(monster, state);
+            } else if (await staysBehind(monster, state)) {
+                continue;
+            }
+            await prepareMonsterDeparture(monster, state);
+            await detachMonsterFromLevel(monster, state);
+            monster.mx = monster.my = 0;
+            monster.mlstmv = state.moves;
+            // C relmon() prepends each transferred monster to mydogs.
+            followers.unshift(monster);
+        } else if (keepAccessible(monster, state.u.uz)) {
+            await migrateMonsterOffLevel(monster, state, { dst: { ...state.u.uz } }, {
+                kind: 'level-migration', mode: MIGR_EXACT_XY,
+            });
+        } else if (monster.mleashed) {
+            const name = monsterName(monster, { capitalized: true, state });
+            await plineWithContinuation(`${possessiveName(name)} leash goes slack.`);
+            releaseMonsterLeash(monster, state);
+        }
+    }
+    return followers;
+}
+
+function nearHero(monster: Monster, state: GameState): boolean {
+    const dx = monster.mx - state.u.ux;
+    const dy = monster.my - state.u.uy;
+    const distance = dx * dx + dy * dy;
+    return distance < 3 && !(distance === 2 && monster.mnum === PM_GRID_BUG);
+}
+
+async function staysBehind(monster: Monster, state: GameState): Promise<boolean> {
+    let message: string;
+    if (monster.meating || monster.mtrapped) {
+        message = `is still ${monster.meating ? 'eating' : 'trapped'}.`;
+    } else if (monsterCarriesAmulet(monster)) {
+        message = 'seems very disoriented for a moment.';
+    } else {
+        return false;
+    }
+    if (canSeeMonster(monster)) {
+        await plineWithContinuation(`${monsterName(monster, {
+            capitalized: true, state,
+        })} ${message}`);
+    }
+    if (monster.mleashed) {
+        // This is a species/sex pronoun, independent of visibility or hallucination.
+        const whose = monsterIsHumanoid(monster.mnum)
+            ? monster.female ? 'Her' : 'His' : 'Its';
+        await plineWithContinuation(`${whose} leash suddenly comes loose.`);
+        releaseMonsterLeash(monster, state);
+    }
+    return true;
+}
+
+// C dog.c:keep_mon_accessible().
+function keepAccessible(monster: Monster, current: MonsterLevel): boolean {
+    if (monster.iswiz) return true;
+    const homes = [
+        monster.isshk ? monster.eshk?.shoplevel : null,
+        monster.ispriest ? (monster.epri ?? monster.mextra?.epri)?.shrlevel : null,
+        monster.isgd ? monster._egd?.gdlevel : null,
+    ];
+    for (const home of homes) {
+        if (home === undefined)
+            throw new Error(`Monster ${monster.m_id} has no home level for its resident role.`);
+        if (home !== null && (home.dnum !== current.dnum || home.dlevel !== current.dlevel))
+            return true;
+    }
+    return false;
 }

@@ -45,10 +45,10 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { findTrap } from './detect.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { resolveGoldMonsterContact } from './gold_throw.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { surfaceName } from './terrain_name.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectWeight } from './weight.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 
 export interface KickObjectOptions {
     state?: GameState;

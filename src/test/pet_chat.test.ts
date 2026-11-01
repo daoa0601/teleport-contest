@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { game } from '../js/gstate.js';
-import { publishMonsterGrowl, publishMonsterYelp, publishMonsterWhimper } from '../js/monster_anger.js';
 import { flush_screen } from '../js/display.js';
 import type { Monster } from '../js/monster_types.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -10,6 +9,7 @@ import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { publishMonsterGrowl, publishMonsterYelp, publishMonsterWhimper } from '../js/monster_sound.js';
 
 for (const [name, message] of [
     ['', 'The saddled pony is eating noisily.'],

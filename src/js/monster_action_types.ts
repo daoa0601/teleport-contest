@@ -12,7 +12,6 @@ import type { rndcurse } from './throne.js';
 import type { finishMonsterAttackDeath } from './monster_attack_death.js';
 import type { DeathHandler } from './end.js';
 import type { MonsterDeathHandler } from './monster_death.js';
-import type { growMonster } from './monster_growth.js';
 import type { MonsterSpitResult } from './mthrowu.js';
 import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_offensive_types.js';
 import type { AttackMethod, DamageType, AT_EXPL, AT_GAZE, AT_ENGL, AT_WEAP, AT_BREA, AT_SPIT } from './monster_attack_types.js';
@@ -31,7 +30,8 @@ import type { MonsterVibratingSquareEvent } from './vibrating_square_trap.js';
 import type { MonsterPolymorphTrapEvent } from './polymorph_trap.js';
 import type { MonsterRustTrapEvent } from './rust_trap.js';
 import type { MonsterAntiMagicTrapEvent } from './anti_magic_trap.js';
-import type { MonsterMigrationResult } from './monster_migration.js';
+import type { growMonster } from './makemon.js';
+import type { MonsterMigrationResult } from './dog.js';
 
 export type RandomBelow = (limit: number) => number;
 export type RollOne = (sides: number) => number;

@@ -19,7 +19,6 @@ import { consumeMonsterObject } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsSlimeproof, speciesEatsCorpses } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName } from './monster_name.js';
-import { monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import type { Monster } from './monster_types.js';
 import {
     AMULET_OF_STRANGULATION, CORPSE, EGG, GLOB_OF_GREEN_SLIME,
@@ -34,6 +33,7 @@ import { observeDistantObjectForNaming } from './objnam.js';
 import { d, rn2, rnd } from './rng.js';
 import { fleshPetrifies, touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
+import { monsterHasPoisonResistance, monsterHasStoneResistance } from './mondata.js';
 
 const WOOD = 8, IRON = 11, MITHRIL = 17;
 const SCROLL_CLASS = 9, ROCK_CLASS = 14;

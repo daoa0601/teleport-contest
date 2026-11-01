@@ -19,7 +19,6 @@ import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mkobj.js';
-import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
@@ -35,6 +34,7 @@ import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
+import { angerQuestGuardiansAfterLeaderDeath } from './mon.js';
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
 // pet-murder chronicle entry behind (mon.c:xkilled()).
 const G_UNIQ = 0x1000;

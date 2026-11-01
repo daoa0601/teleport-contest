@@ -19,7 +19,8 @@ import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
 import {
-    In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN,
+    In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE,
+    TROLL_REVIVE_CHANCE, RANDOM_TIN,
     MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT,
     CORPSTAT_SPE_VAL,
 } from './const.js';
@@ -36,11 +37,15 @@ import {
     objectDirection, POT_OIL, BELL_OF_OPENING,
 } from './object_data.js';
 import {
-    MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM,
+    MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL,
+    MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM,
     requireMonsterData,
 } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
-import { saveMonsterTraits } from './monster_traits.js';
+import { forgetTempleEntry } from './priest.js';
+import { copyPetData, copyShopkeeperData } from './mon.js';
+
+import type { PetData, SavedMonsterTraits, ShopkeeperData } from './monster_types.js';
 import { artifactExistCount, createRandomArtifact } from './artifacts.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer,
@@ -736,5 +741,36 @@ export async function createToptenObject(type: number, x: number, y: number): Pr
         object.owt = objectWeight(object);
     }
     return object;
+}
+
+// Monster state stored in a corpse or statue.
+// C refs: mkobj.c save_mtraits() and mon.c copy_mextra().
+export function saveMonsterTraits(monster: Monster): SavedMonsterTraits;
+export function saveMonsterTraits(monster: null | undefined): null;
+export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null;
+export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null {
+    if (!monster) return null;
+    if (monster.ispriest) forgetTempleEntry(monster);
+    const {
+        minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved, headOnMap,
+        ...saved
+    } = monster;
+    saved.wormno = 0;
+    saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
+    saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
+    saved.mstate = (saved.mstate ?? MON_FLOOR) & ~MON_DETACH;
+    if (monster.edog) saved.edog = copyPetData(monster.edog);
+    if (monster.mextra) {
+        saved.mextra = { ...monster.mextra };
+        if (monster.mextra.edog) saved.mextra.edog = copyPetData(monster.mextra.edog);
+        if (monster.mextra.emin) saved.mextra.emin = { ...monster.mextra.emin };
+        if (monster.mextra.epri) saved.mextra.epri = { ...monster.mextra.epri };
+        if (monster.mextra.eshk)
+            saved.mextra.eshk = copyShopkeeperData(monster.mextra.eshk);
+    }
+    if (monster.eshk) saved.eshk = copyShopkeeperData(monster.eshk);
+    if (monster.emin) saved.emin = { ...monster.emin };
+    if (monster.epri) saved.epri = { ...monster.epri };
+    return saved;
 }
 

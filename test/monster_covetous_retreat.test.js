@@ -7,11 +7,11 @@ import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { retreatCovetousMonster } from '../js/monster_covetous_retreat.js';
 import { BOULDER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { retreatCovetousMonster } from '../js/wizard.js';
 for (const woundedHp of [85, 50]) {
     void test(`a covetous lich at ${woundedHp}/90 HP retreats before checking its attack range`, async () => {
         await freshObjectRoom({ left: 8, right: 45 });

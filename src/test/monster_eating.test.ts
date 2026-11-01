@@ -5,10 +5,10 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { M_AP_MONSTER } from '../js/const.js';
 import { paralyzeMonster } from '../js/mon.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { cancelMonster } from '../js/zap.js';
 
 void test('paralysis interrupts a quickmimic meal and preserves the borrowed appearance', async () => {
     await freshObjectRoom();

@@ -20,12 +20,9 @@ import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';
 import { createCritters } from './makemon.js';
 import { withMonsterNoticesBlocked } from './monster_notices.js';
-import { angerMonster } from './monster_anger.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterResistsEffect } from './monster_resistance.js';
-import { tameMonster } from './monster_taming.js';
 import { makePlural } from './object_grammar.js';
 import {
     LEASH, LOADSTONE, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES,
@@ -60,6 +57,9 @@ import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { RoomLightOptions } from './light.js';
 import type { gotoLevel as changeLevel } from './level_change.js';
+import { angerMonster } from './mon.js';
+import { monsterResistsEffect } from './zap.js';
+import { tameMonster } from './dog.js';
 
 export type ScrollLevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
 export type ScrollMonsterKill = NonNullable<RoomLightOptions['finishMonsterKill']>;

@@ -7,9 +7,9 @@ import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
 import { makemonAt, rndmonstAdj } from './makemon.js';
 import { monsterTypeName } from './monster_data.js';
-import { migrateMonsterOffLevel } from './monster_migration.js';
 import { getLine, promptChoice } from './query.js';
 import { showTextWindow } from './windows.js';
+import { migrateMonsterOffLevel } from './dog.js';
 // C wizcmds.c:wiz_migrate_mons().
 export async function wizMigrateMonsters() {
     requirePlayingGame(game);

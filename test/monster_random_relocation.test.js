@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { LADDER, MIGR_RANDOM, RLOC_NOMSG, STAIRS } from '../js/const.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { initRng } from '../js/rng.js';
 import { controlMonsterTeleport, randomMonsterRelocation } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/dog.js';
 function stairsAt(x, y, { up = true, ladder = false, dungeon } = {}) {
     requirePlayingGame(game);
     game.level.requireAt(x, y).typ = ladder ? LADDER : STAIRS;

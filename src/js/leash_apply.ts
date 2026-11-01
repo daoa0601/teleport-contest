@@ -5,7 +5,6 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
 import { monsterCanBeLeashed, releaseMonsterLeash } from './monster_leash.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -15,6 +14,7 @@ import { promptDirection } from './tty_prompts.js';
 import { rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './monster_sound.js';
 
 export async function useLeash(leash: GameObject): Promise<boolean> {
     const hero = game.u;

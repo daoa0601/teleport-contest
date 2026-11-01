@@ -14,7 +14,6 @@ import { floorObjectsAt } from './support/level-state.js';
 import { throwInventoryObject, kickDirection } from './support/commands.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { wakeMonster } from '../js/monster_anger.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BLINDING_VENOM, CLUB, CREAM_PIE, EGG, FLINT, LEATHER_ARMOR, POT_CONFUSION, RIN_PROTECTION, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { updateHeroRoomMembership } from '../js/room.js';
@@ -22,6 +21,7 @@ import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { wakeMonster } from '../js/mon.js';
 async function equipForArmorClass(monster, targetArmorClass) {
     const enchantment = findMonsterArmorClass(monster) - targetArmorClass
         - armorBaseBonus(LEATHER_ARMOR);

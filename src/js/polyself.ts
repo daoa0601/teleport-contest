@@ -73,7 +73,6 @@ import { nameToMonster, resolveMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
 import { isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
-import { golemHitPoints, isHomeElemental } from './monster_hit_points.js';
 import { setSlipperyHands } from './towel.js';
 import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
@@ -108,6 +107,7 @@ import {
 import {
     clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown,
 } from './slime.js';
+import { golemHitPoints, isHomeElemental } from './makemon.js';
 
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;

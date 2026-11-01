@@ -8,8 +8,6 @@ import { releaseHold } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
 import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
-import { monsterHasColdResistance } from '../js/monster_resistance.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import { DAGGER, RIN_CONFLICT } from '../js/object_data.js';
@@ -20,6 +18,8 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { cancelMonster } from '../js/zap.js';
+import { monsterHasColdResistance } from '../js/mondata.js';
 
 async function conflictRoom(expectedMessages: RegExp) {
     await freshObjectRoom({ hero: { ulevel: 30 } });

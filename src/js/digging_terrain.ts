@@ -61,12 +61,10 @@ import { gotoLevel } from './level_change.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { migrateMonsterOffLevel } from './monster_migration.js';
 import {
     MONSTER_FLAGS1, MONSTER_SIZE,
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { publishMonsterYelp } from './monster_anger.js';
 import {
     leashAttachedToMonster, releaseMonsterLeash,
 } from './monster_leash.js';
@@ -105,6 +103,8 @@ import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { migrateMonsterOffLevel } from './dog.js';
+import { publishMonsterYelp } from './monster_sound.js';
 
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;

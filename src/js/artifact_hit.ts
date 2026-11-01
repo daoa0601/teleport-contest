@@ -21,7 +21,6 @@ import { igniteItems } from './light.js';
 import { healMonster } from './mon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMagicbaneHit } from './magicbane.js';
-import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import {
     MONSTER_NAME,
     MONSTER_SIZE,
@@ -36,6 +35,7 @@ import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
 import { cansee } from './vision.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
 
 export interface ArtifactHitOptions {
     state?: GameState;

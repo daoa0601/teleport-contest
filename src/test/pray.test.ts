@@ -31,13 +31,13 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { objectTimers } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initializePet } from '../js/dog.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 import { fullyIdentifyObject } from '../js/invent.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 
 async function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
     await freshObjectRoom({

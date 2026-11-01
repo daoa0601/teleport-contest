@@ -63,7 +63,7 @@ import { teleportHero } from './teleport.js';
 import { setSlipperyHands } from './towel.js';
 import { cansee } from './vision.js';
 import { makeWish } from './wish.js';
-import { aggravateMonsters } from './monster_anger.js';
+import { aggravateMonsters } from './wizard.js';
 
 const COIN_CLASS = 12;
 const M2_PRINCE = 0x00000800;

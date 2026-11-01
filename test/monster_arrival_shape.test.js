@@ -6,7 +6,6 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';
-import { migrateMonsterOffLevel, monsterArrive } from '../js/monster_migration.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { RIN_PROTECTION_FROM_SHAPE_CHANGERS } from '../js/object_data.js';
@@ -15,6 +14,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { migrateMonsterOffLevel, monsterArrive } from '../js/dog.js';
 void test('a migrating chameleon reports its off-map worm head before reverting and arriving without a tail', async () => {
     const { destination } = freshConnectedLevels();
     requirePlayingGame(game);

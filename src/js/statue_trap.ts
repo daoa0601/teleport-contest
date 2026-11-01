@@ -32,7 +32,6 @@ import {
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import { monsterAtPosition } from './monster_location.js';
-import { restoreMonsterTraits } from './monster_traits.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
@@ -45,6 +44,7 @@ import {
     bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement,
 } from './revival_species.js';
 import { cansee } from './vision.js';
+import { restoreMonsterTraits } from './zap.js';
 
 type StatueObject = GameObject & { corpsenm: number };
 

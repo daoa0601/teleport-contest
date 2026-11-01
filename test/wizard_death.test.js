@@ -8,7 +8,6 @@ import { resetInputState } from '../js/input.js';
 import { flush_screen } from '../js/display.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
-import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { monsterDeathCount } from '../js/monster_vitals.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { resurrectWizard } from '../js/wizard.js';
@@ -17,6 +16,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { migrateMonsterOffLevel } from '../js/dog.js';
 void test('a resurrected Wizard announces his threat without repeating his birth announcement', async () => {
     await freshObjectRoom({ moves: 5000 });
     const messages = [];

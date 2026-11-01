@@ -11,13 +11,13 @@ import { findMonsterNearPosition } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
-import { tameMonster } from './monster_taming.js';
 import { rn2 } from './rng.js';
 import { monsterEmitsLight } from './vision.js';
 import type { Monster, PetData } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
+import { tameMonster } from './dog.js';
 
 interface CloneOptions {
     monsterMoving?: boolean;

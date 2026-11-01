@@ -39,7 +39,6 @@ import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { corpseName, objectName } from './objnam.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { useMonsterStoningCure } from './muse.js';
 import { rn2, rnd } from './rng.js';
@@ -52,6 +51,7 @@ import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterStoningCureOptions, MonsterStoningCureResult } from './muse.js';
+import { monsterHasStoneResistance } from './mondata.js';
 
 // Petrification determines survival before dispatching the caller's death
 // bookkeeping. That callback's return value does not decide the stone result.

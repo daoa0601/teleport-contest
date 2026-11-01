@@ -12,17 +12,17 @@ import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { probeMonster } from './magic_probe.js';
-import { cancelMonster } from './monster_cancellation.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import type { ArtifactHitDefender, ArtifactHitResult } from './artifact_hit.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { cancelMonster } from './zap.js';
+import { monsterResistsEffect } from './zap.js';
 
 type MagicbaneEffect = 'probe' | 'stun' | 'scare' | 'cancel';
 

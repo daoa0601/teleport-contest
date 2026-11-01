@@ -12,8 +12,6 @@ import {
     MONSTER_NAME, MONSTER_SIZE, monsterIsDisplacer, monsterIsRider, requireMonsterData,
 } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import { finishMonsterEating } from './monster_eating.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
@@ -28,6 +26,8 @@ import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathOptions } from './monster_death.js';
+import { finishMonsterEating } from './dogmove.js';
+import { monsterHasStoneResistance } from './mondata.js';
 
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 

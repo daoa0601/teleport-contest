@@ -11,7 +11,6 @@ import type { MonsterNameGender } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
     requireMonsterData } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { tameMonster } from './monster_taming.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { getLine, promptYesNo } from './query.js';
 import { revivalReplacement } from './revival_species.js';
@@ -19,6 +18,7 @@ import { monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { isPoolAt } from './terrain_properties.js';
 import { couldsee } from './vision.js';
 import type { Monster } from './monster_types.js';
+import { tameMonster } from './dog.js';
 
 type Gender = -1 | MonsterNameGender;
 type MonsterChoice = { kind: 'species'; species: number; gender: MonsterNameGender }

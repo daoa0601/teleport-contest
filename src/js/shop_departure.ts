@@ -15,7 +15,6 @@ import { requireShopGame } from './shop_types.js';
 import type { ShopGameState, Shopkeeper } from './shop_types.js';
 import { depth } from './hacklib.js';
 import { makemonAt } from './makemon.js';
-import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, shopkeeperName } from './monster_name.js';
 import { rnd } from './rng.js';
@@ -26,6 +25,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { rouseShopkeeper } from './shop_sell.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { angerWatchGuards } from './mon.js';
 
 const kopSpecies = ['Keystone Kop', 'Kop Sergeant', 'Kop Lieutenant', 'Kop Kaptain']
     .map(name => MONSTER_NAME.indexOf(name));

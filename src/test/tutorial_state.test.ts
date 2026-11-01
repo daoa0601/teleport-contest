@@ -1,5 +1,4 @@
 import { createRoomLevel } from './support/playable-room.js';
-import { initializeMonsterVitals } from '../js/monster_population.js';
 import { requireMonsterVital } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
@@ -26,6 +25,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 
 import type { TerminalCell } from '../js/terminal.js';
+import { initializeMonsterVitals } from '../js/allmain.js';
 
 void test('tutorial entry retains the old armor class until its entry message is acknowledged', async () => {
     const engine = await runSegment({

@@ -30,7 +30,6 @@ import { promptDirection } from './tty_prompts.js';
 import { rejoinObjectStack } from './object_stack.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -43,6 +42,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 const M2_ROCKTHROW = 0x08000000;
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.

@@ -13,11 +13,12 @@ import { placeCreatedObject } from './floor_object.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
-import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, } from './const.js';
+import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, } from './object_data.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
-import { saveMonsterTraits } from './monster_traits.js';
+import { forgetTempleEntry } from './priest.js';
+import { copyPetData, copyShopkeeperData } from './mon.js';
 import { artifactExistCount, createRandomArtifact } from './artifacts.js';
 import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, } from './object_timers.js';
 import { objectWeight } from './weight.js';
@@ -744,5 +745,36 @@ export async function createToptenObject(type, x, y) {
         object.owt = objectWeight(object);
     }
     return object;
+}
+export function saveMonsterTraits(monster) {
+    if (!monster)
+        return null;
+    if (monster.ispriest)
+        forgetTempleEntry(monster);
+    const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved, headOnMap, ...saved } = monster;
+    saved.wormno = 0;
+    saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
+    saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
+    saved.mstate = (saved.mstate ?? MON_FLOOR) & ~MON_DETACH;
+    if (monster.edog)
+        saved.edog = copyPetData(monster.edog);
+    if (monster.mextra) {
+        saved.mextra = { ...monster.mextra };
+        if (monster.mextra.edog)
+            saved.mextra.edog = copyPetData(monster.mextra.edog);
+        if (monster.mextra.emin)
+            saved.mextra.emin = { ...monster.mextra.emin };
+        if (monster.mextra.epri)
+            saved.mextra.epri = { ...monster.mextra.epri };
+        if (monster.mextra.eshk)
+            saved.mextra.eshk = copyShopkeeperData(monster.mextra.eshk);
+    }
+    if (monster.eshk)
+        saved.eshk = copyShopkeeperData(monster.eshk);
+    if (monster.emin)
+        saved.emin = { ...monster.emin };
+    if (monster.epri)
+        saved.epri = { ...monster.epri };
+    return saved;
 }
 //# sourceMappingURL=mkobj.js.map

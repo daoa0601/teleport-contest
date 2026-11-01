@@ -8,7 +8,6 @@ import {
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './terrain_properties.js';
-import { tameMonster } from './monster_taming.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
 import { hideMonsterUnder } from './mon.js';
@@ -71,6 +70,7 @@ import {
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
+import { tameMonster } from './dog.js';
 
 const G_UNIQ = 0x1000;
 const M1_FLY = 0x00000001;
