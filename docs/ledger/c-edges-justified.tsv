@@ -1883,3 +1883,23 @@ peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum
 qst_guardians_respond	quest_info	inlined	quest_info(MS_GUARDIAN) read directly as urole.guardnum in angerQuestGuardiansAfterAttack (mon.ts)
 wake_nearto_core	dist2	inlined	monstersNear filters dx*dx+dy*dy < distance inline (mon.ts wakeMonstersNearWithMessages)
 newgame	reset_glyphmap	inlined	glyph appearance is computed at render (cmapSymbolAppearance and the rogue-color path in display.ts:1907-1994) instead of precomputed glyphmap tables, so a new game has no cache to reset
+rumor_check	couldnt_open_file	n/a	the bundled rumors file always opens; the port embeds the compiled data (rumor.ts) and has no file read to fail
+rumor_check	init_rumors	n/a	file-header parsing; rumorCheck derives the same makedefs layout offsets from the embedded rumor arrays (rumor.ts:150-155)
+others_check	couldnt_open_file	n/a	same as rumor_check: the port's embedded engravings/epitaphs/bogus-monster arrays cannot fail to open
+query_annotation	describe_level	inlined	annotationLevelDescription builds the prompt's level description inline (dungeon.ts queryLevelAnnotation)
+query_annotation	find_mapseen	inlined	game._levelAnnotations keyed by dnum:dlevel replaces the mapseen list lookup (dungeon.ts queryLevelAnnotation)
+yn_function_menu	yn_menuable_resp	inlined	query.ts yn_function's menuable flag plus queryResponseMenu's per-set choice lists replace the response-set identity test
+yn_function_menu	yn_func_menu_opt	inlined	queryResponseMenu builds the (key,text,default-marker) menu entries inline (query.ts:323-325)
+parse	flush_screen	inlined	command_input.ts readCommandInput is the parse() input half and calls flush_screen(1) before reading the key; the name match found EreParser.parse in posix_regex.ts instead
+parse	readchar	inlined	readCommandInput/readCommandCount call readchar('command') (command_input.ts:18,37); the name match found EreParser.parse in posix_regex.ts instead
+parse	get_count	inlined	readCommandCount inlines get_count(GC_NOFLAGS): digit accumulation, backspace, ESC zeroing, LARGEST_INT cap (command_input.ts:33); the name match found EreParser.parse in posix_regex.ts instead
+parse	cmdbind_get	inlined	rhack's configuredCommand(key) and the do_repeat branch (cmd.ts:454) replace parse()'s cmdbind_get() do-again binding lookup; command_repeat.ts stores each replayed count with the queue
+wiz_custom	ecname_from_fn	inlined	the unavailable-command name comes from the centralized admission gate (cmd.ts commandAllowed, C can_do_extcmd) using command.name; no per-command function-pointer lookup is needed
+wiz_custom	fill_glyphid_cache	n/a	glyphid cache only accelerates glyph-identifier lookup for the #wizcustom menu; wizCustom builds entries through customizedGlyphs() directly
+wiz_custom	free_glyphid_cache	n/a	cache teardown for the accelerator above; no port cache exists
+wiz_custom	glyphid_cache_status	n/a	cache state probe for the accelerator above; no port cache exists
+wiz_level_tele	ecname_from_fn	inlined	same centralized admission gate (cmd.ts commandAllowed) prints Unavailable command '<name>' for every wizard command; the port's wizLevelTeleport needs no fallback branch
+vpline	alloc	n/a	memory allocation for the accessiblemsg coordinate prefix; plineWithContinuation builds the prefixed string directly (pline.ts:82-87)
+vpline	dumplogmsg	n/a	DUMPLOG_CORE dump-file message log; the replay grader writes no dump log
+vpline	execplinehandler	n/a	MSGHANDLER fork/exec of a user message handler; an operating-system feature with no grader effect (c-js-semantics lists it out of scope)
+vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (tty_topline.ts), the putstr(WIN_MESSAGE) owner
