@@ -1871,3 +1871,7 @@ there_cmd_menu_next2u	t_at	inlined	adjacentEntries finds a trap by its map coord
 there_cmd_menu_self	mcmd_addmenu	inlined	selfEntries supplies each action and label through the add callback; selectContextMenu passes the collected entries to tty_add_menu
 there_cmd_menu_self	num_spells	inlined	selfEntries adds Cast a spell only when the contiguous known-spell array has entries
 there_cmd_menu_self	stairway_at	inlined	selfEntries traverses game.stairs and stops at the first stairway on the selected square
+is_pool	isok	inlined	terrain_properties.ts isPoolAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_pool	is_moat	inlined	terrain_properties.ts isPoolAt calls isMoatAt (C dbridge.c:is_moat()) after the POOL/MOAT/WATER type test; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_lava	isok	inlined	terrain_properties.ts isLavaAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_LAVA macro helper in const.ts instead
+is_waterwall	isok	inlined	terrain_properties.ts isWaterwallAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_WATERWALL macro helper in const.ts instead
