@@ -11,7 +11,7 @@ import { init_objects } from '../js/o_init.js';
 import { STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
-import { addShopDamage } from '../js/shop_damage.js';
+import { addShopDamage } from '../js/shk.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';

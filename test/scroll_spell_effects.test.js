@@ -10,7 +10,7 @@ import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLUB, OBJECT_NAMES, POT_HEALING, SCR_IDENTIFY, SPE_DIG } from '../js/object_data.js';
 import { applyScrollEffects, identifyEffect } from '../js/scroll_effects.js';
-import { makeShopkeeperHappy } from '../js/shop_damage.js';
+import { makeShopkeeperHappy } from '../js/shk.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';

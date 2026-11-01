@@ -4,7 +4,7 @@ import { requirePlayingGame, game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { DAGGER } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
-import { sellHeroDroppedObject, shopOfferForObject } from '../js/shop_sell.js';
+import { sellHeroDroppedObject, shopOfferForObject } from '../js/shk.js';
 import { floorObject } from './support/game-objects.js';
 import { planInput } from './support/planned-input.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';

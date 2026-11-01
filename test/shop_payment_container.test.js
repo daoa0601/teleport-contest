@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { DAGGER, SACK } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';
-import { buyShopBillItem, itemizedShopBill } from '../js/shop_payment.js';
+import { buyShopBillItem, itemizedShopBill } from '../js/shk.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { withMessagePages } from './support/planned-input.js';
