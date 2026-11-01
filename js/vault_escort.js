@@ -432,6 +432,7 @@ async function pickCorridorGold(guard, x, y, state, random) {
         await newsym(oldx, oldy);
     }
 }
+// C vault.c:move_gold(). Guard-cleaned gold lands inside the vault.
 async function moveGoldIntoVault(gold, guard, state, random) {
     const vault = guard._egd.vault;
     if (!vault)

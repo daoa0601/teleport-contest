@@ -74,6 +74,7 @@ export function setWallState(): void {
 // while the low three wall_info bits say which side is unfinished exterior.
 // back_to_glyph()/wall_angle() later combines that mode with `seenv` so a
 // hero beside a doorway does not see the outside face of the room wall.
+// C display.c:check_pos(). Rock or corridor means an unfinished exterior.
 function wallCheckPos(x: number, y: number, which: number): number {
     if (!isok(x, y)) return which;
     const typ = requireGameLevel().at(x, y)?.typ ?? STONE;

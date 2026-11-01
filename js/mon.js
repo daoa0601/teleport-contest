@@ -1588,7 +1588,8 @@ async function angerQuestGuardiansAfterAttack(monster) {
     const verb = visibleCount > 1 ? 'appear' : 'appears';
     await plineWithContinuation(`The ${name} ${verb} to be angry too...`);
 }
-// C mon.c mondied(): killing the quest leader angers its guardians.
+// C mon.c mondied() iterating anger_quest_guardians(): killing the quest
+// leader angers its guardians.
 export async function angerQuestGuardiansAfterLeaderDeath() {
     for (const guardian of Array.from(game.level?.monsters || []).reverse()) {
         if (!guardian.dead && (guardian.mhp ?? 1) > 0

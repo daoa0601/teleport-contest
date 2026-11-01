@@ -65,6 +65,7 @@ git -C nethack-c/upstream submodule update --init submodules/lua
 node scripts/static-gaps.mjs messages [--coverage OUT/c-coverage.json] [--verbose] [--reviewed-ledger R.tsv] [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs edges [--function C_NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs screens RUN_DIR
 ```
 
@@ -142,6 +143,15 @@ citation. When an audit confirms an inlined or unobservable edge, or a dead C
 branch, add a justification line. `--function NAME` prints one function's
 lists.
 
+`owners` folds the same counterpart mapping by port module: which C file each
+`src/js` module's mapped functions come from, its dominant C file, the
+minority functions that stray into other C files (a small tolerance marks a
+module nearly single-owner rather than a structure problem), and the C files
+whose ports are spread across many modules. It guides the consolidation
+units folding modules by hand; `docs/ledger/module-owners.tsv` records each
+module that already ports exactly one C file, so a module that was
+single-owner and gains a function from another C file fails the check.
+
 `screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
 screen-only first difference to the C function whose literal appears on the
 differing row. When only the port's row matches a literal, it is reported as
@@ -149,8 +159,9 @@ differing row. When only the port's row matches a literal, it is reported as
 routes random-call failures.
 
 Ledgers: `docs/ledger/c-messages.tsv` (literals present),
-`c-constants.tsv` (names whose value matches C) and `c-edges.tsv` (present
-edges). The `static-gaps.yml` workflow runs on every pull request and integration
+`c-constants.tsv` (names whose value matches C), `c-edges.tsv` (present
+edges) and `module-owners.tsv` (modules porting exactly one C file). The
+`static-gaps.yml` workflow runs on every pull request and integration
 push, and fails when any entry is lost.
 As with the RNG ledgers, add entries with `--write-ledger` only after a
 batch passes all its other checks.

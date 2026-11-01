@@ -307,6 +307,8 @@ function randomSpecialTrapType(): number {
     return typ;
 }
 
+// C sp_lev.c:fill_empty_maze(). The special-level maze is stocked in
+// proportion to how much of it the map left unused.
 export async function fillEmptySpecialMaze(mappedCells: SpecialSelection): Promise<void> {
     const level = requireGameLevel();
     // sp_lev.c:fill_empty_maze().  mapcount intentionally begins at the
@@ -534,6 +536,7 @@ function getSpecialLevelExtents(): { minx: number; miny: number; maxx: number; m
     return { minx, miny, maxx, maxy };
 }
 
+// C sp_lev.c:flip_level(). Transposes top with bottom or left with right.
 export async function flipSpecialLevel(flp: number, extras = false): Promise<void> {
     if (!(flp & 3)) return;
     const level = requireGameLevel();
@@ -793,6 +796,7 @@ function flipEncodedDirections(flp: number, value: number): number {
     return value;
 }
 
+// C sp_lev.c:flip_visuals(). Updates the seen vector and known wall glyphs.
 function flipRememberedVisuals(flp: number, minx: number, miny: number, maxx: number, maxy: number): void {
     const level = requireGameLevel();
     for (let y = miny; y <= maxy; y++) {
@@ -820,6 +824,7 @@ function flipRememberedVisuals(flp: number, minx: number, miny: number, maxx: nu
     }
 }
 
+// C sp_lev.c:flip_level_rnd(). Picks which of the allowed transpositions run.
 export async function flipSpecialLevelRandom(allowed: number, extras = false): Promise<void> {
     let flp = 0;
     if ((allowed & 1) && rn2(2)) flp |= 1;
@@ -1310,6 +1315,7 @@ export function specialRoomContext(room: Room): SpecialLevelContext {
     return context;
 }
 
+// C sp_lev.c:add_doors_to_room(). Claims bordering doors, subrooms included.
 export function addDoorsToSpecialRoom(room: Room): void {
     const level = requireGameLevel();
     for (let x = room.lx - 1; x <= room.hx + 1; x++) {
@@ -1341,6 +1347,7 @@ export function linkSpecialLevelDoors(): void {
     }
 }
 
+// C sp_lev.c:maybe_add_door(). A door joins the room it is inside or borders.
 function maybeAddSpecialRoomDoor(x: number, y: number, room: Room): void {
     const level = requireGameLevel();
     const roomNumber = room.roomnoidx + ROOMOFFSET;
@@ -1353,6 +1360,7 @@ function maybeAddSpecialRoomDoor(x: number, y: number, room: Room): void {
     }
 }
 
+// C sp_lev.c:shared_with_room(). Is x,y right next to the room?
 function specialDoorSharedWithRoom(x: number, y: number, room: Room, roomNumber: number): boolean {
     const level = requireGameLevel();
     const loc = level.at(x, y);
@@ -1363,6 +1371,8 @@ function specialDoorSharedWithRoom(x: number, y: number, room: Room, roomNumber:
         || (isok(x, y + 1) && y + 1 >= room.ly && level.at(x, y + 1)?.roomno === roomNumber);
 }
 
+// C sp_lev.c:set_door_orientation(). Horizontal unless the side walls say
+// otherwise.
 function setSpecialDoorOrientation(x: number, y: number): void {
     const level = requireGameLevel();
     const wallOrDoor = (nx: number, ny: number): boolean => {
@@ -1399,6 +1409,7 @@ interface SpecialRoomSpec {
     joined?: boolean | number;
 }
 
+// C sp_lev.c:build_room(). Chance-gated room or subroom creation.
 export async function buildSpecialRoom(
     spec: SpecialRoomSpec, parent: Room | null = null,
     contents: ((room: Room) => Promise<unknown> | void) | null = null,
@@ -1439,6 +1450,7 @@ export async function buildSpecialRoom(
     return room;
 }
 
+// C sp_lev.c:create_door(). A door on a room wall, with a random state.
 function createSpecialRoomDoor(
     room: Room, state: string, wall: string, position = -1,
 ): void {
@@ -1772,6 +1784,7 @@ function specialRoomAt(x: number, y: number, roomType: number): Room | null {
     return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
 
+// C sp_lev.c:create_altar(). Altar placement with optional shrine priest.
 // C sp_lev.c:sp_amask_to_amask(): the Lua altar mask resolves here, drawing
 // induced_align(80) for "random" and the re-evaluated noncoalignment ternary
 // for "noncoaligned" before the altar stores its flags.
@@ -1973,6 +1986,7 @@ export async function createLuaDoor(context: SpecialLevelContext, {
     return specialDoorAt(context, mask, x, y);
 }
 
+// C sp_lev.c:create_corridor(). Corridors start from a door.
 export async function createLuaCorridor(options: DesOptions): Promise<void> {
     const { srcroom, srcdoor, destroom, destdoor } = options;
     if (srcroom === undefined || srcdoor === undefined || destroom === undefined || destdoor === undefined)
@@ -2435,6 +2449,7 @@ export async function levelRegionCoordinates(context: SpecialLevelContext, optio
     return { region, exclude };
 }
 
+// C sp_lev.c:solidify_map(). Unmapped walls become nondiggable.
 export function solidifyLuaMap(mappedCells: SpecialSelection): void {
     const level = requireGameLevel();
     for (let x = 0; x < COLNO; x++) {
@@ -2517,6 +2532,8 @@ async function addWayOut(x: number, y: number, reachable: SpecialSelection): Pro
     await mksobj_at(type, point.x, point.y, true, false);
 }
 
+// C sp_lev.c:ensure_way_out(). Floods from stairs and holes until every
+// accessible spot is reached.
 export async function ensureWaysOut() {
     const level = requireGameLevel();
     const reachable = new SpecialSelection();

@@ -3,6 +3,7 @@
 //   node scripts/static-gaps.mjs messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs edges [--function NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
+//   node scripts/static-gaps.mjs owners [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs screens RUN_DIR
 //
 // `messages` lists every C string literal (outside debugging calls) whose
@@ -44,6 +45,7 @@ import { compareEdges } from './lib/gap-edges.mjs';
 import type { EdgeRow } from './lib/gap-edges.mjs';
 import { checkMessageReviews, messageLedgerKey } from './lib/gap-message-reviews.mjs';
 import type { MessageReview } from './lib/gap-message-reviews.mjs';
+import { MIXED_TOLERANCE, moduleOwnership } from './lib/module-owners.mjs';
 import { arrayValue, errorMessage, numberValue, objectValue, stringValue } from './lib/session-types.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -452,6 +454,52 @@ async function edges(args: string[]): Promise<void> {
         'caller\tcallee — C call edges the port counterpart reaches (static-gaps.mjs edges)');
 }
 
+// ── owners ──
+
+// Folds the edges mapping by module: which C file each port module ports,
+// which functions stray into other C files, and which C files are spread
+// over many modules (see lib/module-owners.mts).
+async function ownership(args: string[]): Promise<void> {
+    const option = optionReader(args);
+    const tree = resolveCSourceTree(ROOT, CACHE);
+    const { rows } = await compareEdges(ROOT, tree, CACHE, (await cFacts(tree)).definedIn);
+    const report = moduleOwnership(rows);
+    writeFileSync(join(CACHE, 'owners.json'), JSON.stringify(report, null, 1) + '\n');
+    const single = report.modules.filter(row => row.minority.length === 0).length;
+    const near = report.modules.filter(row => row.minority.length && !row.beyondTolerance);
+    const beyond = report.modules.filter(row => row.beyondTolerance);
+    console.log('# Port modules by the C file their functions map to\n');
+    console.log(`${report.modules.length} modules with mapped C functions: ${single} single-owner, `
+        + `${near.length} nearly (strays within ${MIXED_TOLERANCE}), ${beyond.length} mixed beyond tolerance`);
+    console.log(`${report.cFiles.length} C files with mapped functions\n`);
+    console.log('## Modules mixed beyond tolerance (minority functions with their C file)\n');
+    const straysOf = (row: { minority: { functions: string[] }[] }): number =>
+        row.minority.reduce((total, entry) => total + entry.functions.length, 0);
+    for (const row of [...beyond].sort((a, b) => straysOf(b) - straysOf(a) || a.module.localeCompare(b.module))
+        .slice(0, 40)) {
+        console.log(`${row.module} (${row.mapped} mapped): `
+            + row.counts.map(({ file, count }) => `${file} ${count}`).join(', '));
+        for (const { file, functions } of row.minority) {
+            const shown = functions.slice(0, 12).join(' ');
+            const more = functions.length > 12 ? ` … +${functions.length - 12}` : '';
+            console.log(`    ${file}: ${shown}${more}`);
+        }
+    }
+    console.log('\n## Nearly single-owner modules (strays within tolerance)\n');
+    for (const row of [...near].sort((a, b) => a.module.localeCompare(b.module))) {
+        console.log(`${row.module} (${row.mapped} mapped): `
+            + row.minority.map(({ file, functions }) => `${file}: ${functions.join(' ')}`).join('; '));
+    }
+    console.log('\n## C files whose ports are spread across the most modules\n');
+    for (const row of report.cFiles.slice(0, 40)) {
+        console.log(`${row.file} (${row.modules.length} modules, ${row.mapped} mapped): `
+            + row.modules.slice(0, 12).map(({ module, count }) => `${module} ${count}`).join(', '));
+    }
+    console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'owners.json'))}`);
+    applyLedger(option, report.singleOwnerKeys, 'module owners',
+        'module\tC file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)');
+}
+
 
 // ── screens ──
 
@@ -506,13 +554,14 @@ async function screens(args: string[]): Promise<void> {
 }
 
 const USAGE = 'usage: static-gaps.mjs {messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] '
-    + '| constants | edges [--function NAME] | screens RUN_DIR} '
+    + '| constants | edges [--function NAME] | owners | screens RUN_DIR} '
     + '[--check-ledger L.tsv] [--write-ledger L.tsv]';
 const [command, ...rest] = process.argv.slice(2);
 try {
     if (command === 'messages') await messages(rest);
     else if (command === 'constants') await constants(rest);
     else if (command === 'edges') await edges(rest);
+    else if (command === 'owners') await ownership(rest);
     else if (command === 'screens') await screens(rest);
     else {
         console.error(USAGE);

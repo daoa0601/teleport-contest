@@ -43,6 +43,7 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 
 const G_UNIQ = 0x1000;
 
+// C dig.c:zap_dig(). Digging via wand zap or spell cast.
 export async function zapDigWithObject(
     _object: GameObject | null, { state = game }: { state?: GameState } = {},
 ): Promise<void> {

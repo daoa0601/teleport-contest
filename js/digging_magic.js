@@ -31,6 +31,7 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { CLR_WHITE } from './terminal.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 const G_UNIQ = 0x1000;
+// C dig.c:zap_dig(). Digging via wand zap or spell cast.
 export async function zapDigWithObject(_object, { state = game } = {}) {
     requireLiveGame(state);
     const hero = state.u;

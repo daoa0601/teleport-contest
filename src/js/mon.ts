@@ -1789,7 +1789,8 @@ async function angerQuestGuardiansAfterAttack(monster: Monster) {
     );
 }
 
-// C mon.c mondied(): killing the quest leader angers its guardians.
+// C mon.c mondied() iterating anger_quest_guardians(): killing the quest
+// leader angers its guardians.
 export async function angerQuestGuardiansAfterLeaderDeath() {
     for (const guardian of Array.from(game.level?.monsters || []).reverse()) {
         if (!guardian.dead && (guardian.mhp ?? 1) > 0

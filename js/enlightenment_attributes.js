@@ -68,6 +68,7 @@ export function attributeEnlightenmentLines(final = 0) {
     lines.push(...itemResistanceLines('shockResistance', 'electric shocks', final));
     if (active('poisonResistance'))
         are('poison resistant', 'poisonResistance');
+    // C eat.c:temp_resist(): a property held only by a timeout.
     const temporaryResistance = (property) => propertyTimeout(property) && !(intrinsicPropertyMask(property) & ~TIMEOUT)
         && !extrinsicPropertyMask(property) && !propertyIsBlocked(property) ? 'temporarily ' : '';
     if (active('acidResistance'))

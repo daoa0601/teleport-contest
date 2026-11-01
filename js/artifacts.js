@@ -149,6 +149,7 @@ export function artifactWarningMask(object, state = game) {
         ? FLAG2_TARGETS[artifact.target.value]
         : 0;
 }
+// C artifact.c:glow_color(). The glow color of an artifact's invocation.
 export function artifactGlowColor(object, state = game) {
     const artifact = artifactById(object.oartifact, state);
     if (!artifact)
@@ -547,6 +548,7 @@ export function artifactEmitsLight(object) {
 export function artifactStrikesShade(object) {
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
+// C artifact.c:bane_applies(). The artifact's bane targets the carrier.
 export function artifactBaneApplies(artifact, state = game) {
     if (!artifact)
         return false;
@@ -608,17 +610,19 @@ export function rollHeroArtifactBlast(object, artifact, state = game) {
     }
     return damage;
 }
-// C artifact.c:is_magic_key()/has_magic_key(), for monster carriers.
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
+// C artifact.c:is_magic_key(). Master Key of Thievery, keyed to rogues.
 export function isMonsterMagicKey(monster, object, state = game) {
     if (artifactById(object.oartifact, state)?.name !== 'The Master Key of Thievery')
         return false;
     return monster.mnum === PM_ROGUE ? !object.cursed : !!object.blessed;
 }
+// C artifact.c:has_magic_key(), for the hero's inventory.
 export function heroHasMagicKey(state = game) {
     return state.inventory.some(object => artifactById(object.oartifact, state)?.name === 'The Master Key of Thievery'
         && (state.urole?.key === 'rogue' ? !object.cursed : object.blessed));
 }
+// C artifact.c:has_magic_key(), for a monster's inventory.
 export function monsterHasMagicKey(monster, state = game) {
     return (monster.minvent || []).some(object => isMonsterMagicKey(monster, object, state));
 }

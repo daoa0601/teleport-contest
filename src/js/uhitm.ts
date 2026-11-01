@@ -1441,6 +1441,7 @@ async function stealGold(
     return escapeAfterTheft(attacker, thiefName, context);
 }
 
+// C uhitm.c:steal_it(). The hero's theft attack takes the target's goods.
 async function stealItem(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
 ): Promise<MonsterCombatEffectResult> {

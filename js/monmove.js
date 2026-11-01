@@ -641,6 +641,8 @@ export function searchMonsterItems(monster, state, { goal: initialGoal, approach
     }
     return { goal, approach, underfoot: null };
 }
+// C monmove.c:vamp_shift() as the closed-door branch reaches it: a vampire
+// becomes a fog cloud to pass a closed door, seen or sensed.
 export async function shiftMonsterForDoor(monster, state, { previousPosition, wasSeen, wasSpotted, publish = plineWithContinuation, }) {
     requireLiveGame(state);
     const destination = { x: monster.mx, y: monster.my };
@@ -1697,6 +1699,7 @@ async function runCovetousHarassTactics(monster, state, random, calls) {
     }
     await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
+// C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
 async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls) {
     if (![94, 96].includes(monster?.mnum) ||
         monster.mcanmove === 0 ||

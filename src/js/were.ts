@@ -473,6 +473,7 @@ const COUNTER_WERE_SPECIES = new Map<number, number>([
     [PM_HUMAN_WEREWOLF, PM_WEREWOLF],
 ]);
 
+// C were.c:counter_were(). The human or beast form of a lycanthrope.
 export function counterWereSpecies(mnum: number): number | null {
     return COUNTER_WERE_SPECIES.get(mnum) ?? null;
 }

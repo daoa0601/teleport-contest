@@ -862,6 +862,8 @@ interface DoorShiftOptions {
     publish?: MessagePublisher;
 }
 
+// C monmove.c:vamp_shift() as the closed-door branch reaches it: a vampire
+// becomes a fog cloud to pass a closed door, seen or sensed.
 export async function shiftMonsterForDoor(monster: Monster, state: PlayingGameState, {
     previousPosition, wasSeen, wasSpotted, publish = plineWithContinuation,
 }: DoorShiftOptions): Promise<{ died: boolean; heroDied: boolean }> {
@@ -2164,6 +2166,7 @@ async function runCovetousHarassTactics(
     await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
 
+// C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
 async function maybeSpinMonsterWeb(
     monster: Monster,
     movement: MonsterMovement,

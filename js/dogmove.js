@@ -111,6 +111,7 @@ function petSeesInvisible(pet) {
 function petCanSee(pet, x, y) {
     return clearPath(pet.mx, pet.my, x, y);
 }
+// C dogmove.c:find_targ(). Walks outward for a ranged-attack target.
 function findTarget(pet, dx, dy, state) {
     let x = pet.mx;
     let y = pet.my;

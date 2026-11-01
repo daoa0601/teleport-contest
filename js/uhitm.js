@@ -1181,6 +1181,7 @@ async function stealGold(attacker, defender, context) {
         await publish(`${thiefName} steals some gold from ${monsterName(defender, { state })}.`);
     return escapeAfterTheft(attacker, thiefName, context);
 }
+// C uhitm.c:steal_it(). The hero's theft attack takes the target's goods.
 async function stealItem(attacker, defender, context) {
     if (attacker.mcan)
         return theftResult(context.damage);
