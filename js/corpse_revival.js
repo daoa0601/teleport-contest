@@ -20,7 +20,7 @@ import { makemonAt } from './makemon.js';
 import { riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName, } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';

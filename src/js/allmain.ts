@@ -83,7 +83,7 @@ import { monsterAtPosition } from './steed.js';
 import {
     finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath,
 } from './end.js';
-import { monsterCanCarryObject } from './monster_carry.js';
+import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
 import { touchPetrifies } from './stoning.js';
 import {
@@ -138,7 +138,7 @@ import {
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { rndcurse } from './throne.js';
 import { stopRun, captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
-import { resolveMonsterGaze } from './monster_gaze.js';
+import { resolveMonsterGaze } from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import {
     canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, randomDisplayMonsterName, see_monsters,
@@ -180,7 +180,7 @@ import { petrifyMonsterImmediately, resumeDeferredMonsterTrap, burnHeroArmorByFi
 import { commitPetPickup } from './dogmove.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
@@ -195,7 +195,7 @@ import { automaticSearch, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './hunger.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';

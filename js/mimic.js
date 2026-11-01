@@ -7,7 +7,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { AD_STCK } from './monster_attack_types.js';
 import { objectAtMonsterDescription } from './pager.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';

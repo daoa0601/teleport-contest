@@ -20,7 +20,7 @@ import {
 import { makeMonsterFlee } from './monmove.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { monsterName } from './do_name.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG, EXPENSIVE_CAMERA, HEAVY_IRON_BALL,

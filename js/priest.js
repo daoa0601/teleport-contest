@@ -11,7 +11,7 @@ import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym, randomDisplayMonsterIdentity } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
@@ -36,6 +36,7 @@ import { monsterName } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { indefiniteArticlePrefix } from './object_grammar.js';
 import { makemon, makemonAt } from './makemon.js';
+import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { mksobj, mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -270,6 +271,23 @@ export function priestAlignment(priest) {
     if (alignment === A_NONE)
         return A_NONE;
     return Math.sign(alignment);
+}
+export function monsterAlignmentValue(monster, state) {
+    if (monster.ispriest) {
+        if (!monster.epri)
+            throw new Error(`Priest ${monster.m_id} has no temple state`);
+        return monster.epri.shralign;
+    }
+    if (monster.isminion) {
+        if (!monster.emin)
+            throw new Error(`Minion ${monster.m_id} has no alignment state`);
+        return monster.emin.min_align;
+    }
+    return questMonsterAlignment(monster.mnum, state);
+}
+export function monsterAlignmentType(monster, state = game) {
+    const alignment = monsterAlignmentValue(monster, state);
+    return alignment === A_NONE ? A_NONE : Math.sign(alignment);
 }
 // C priest.c:priestname().
 export function priestName(monster, { article, hallucinating, invisible, state, exact }) {

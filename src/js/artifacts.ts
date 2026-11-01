@@ -85,7 +85,7 @@ import {
     monsterIsPlayerMonster,
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';

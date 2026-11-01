@@ -26,7 +26,7 @@ import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { consumeInventoryItem } from './invent.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { withIndefiniteArticle } from './object_grammar.js';

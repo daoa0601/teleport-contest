@@ -48,7 +48,7 @@ import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js
 import { createMaze } from './maze_terrain.js';
 import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME, } from './monster_data.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, terrain_glyph } from './display.js';
 import { pline } from './pline.js';

@@ -7,7 +7,8 @@ import type { Monster } from './monster_types.js';
 import { displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
-import { setMonsterMalign, monsterAlignmentType } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
+import { monsterAlignmentType } from './priest.js';
 import {
     BOLT_LIM, Is_astralevel, Is_rogue_level, isok, MAGIC_PORTAL, M_AP_MONSTER, MM_NOWAIT,
     RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR,
@@ -17,7 +18,7 @@ import { msummon } from './minion.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { rndcurse } from './throne.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { mksobj } from './mkobj.js';
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -45,7 +46,7 @@ import {
 import { mnearto } from './shop_damage.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { deliverCommonQuestInsult } from './quest_pager.js';
 import { remove_object } from './floor_object.js';
 import { objectDescription } from './object_description.js';

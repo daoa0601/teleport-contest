@@ -13,7 +13,7 @@ import { meltIce } from '../js/ice.js';
 import { createCorpstatAt } from '../js/mkobj.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
+import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { BOULDER, CORPSE, ROCK } from '../js/object_data.js';
 import { objectTimers, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, scheduleLevelTimer, } from '../js/object_timers.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

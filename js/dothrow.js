@@ -30,7 +30,7 @@ import { promptDirection } from './tty_prompts.js';
 import { rejoinObjectStack } from './object_stack.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';

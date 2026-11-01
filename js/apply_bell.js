@@ -20,7 +20,7 @@ import { summonUndead } from './undead_summoning.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { adjustMonsterSpeed } from './worn.js';
 import { monsterName } from './do_name.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { rn2, rnd } from './rng.js';
 import { requireInitializedHero } from './hero_types.js';
 const S_NYMPH = 14;

@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { grantMonsterCorpseIntrinsic } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from '../js/worn.js';
 import { monsterName } from '../js/do_name.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import type { Position } from '../js/map_types.js';

@@ -22,7 +22,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster } from './mon.js';
 import type { MonsterExplosionOptions } from './mon.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import {
     AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE,
     AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL,
@@ -33,7 +33,7 @@ import {
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP } from './object_data.js';
 import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';

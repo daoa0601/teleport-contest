@@ -1,7 +1,7 @@
 // C shk.c:block_door()/block_entry(): diagonal passage at shop entrances.
 import { DOOR, D_BROKEN, SHOPBASE } from './const.js';
 import { game } from './gstate.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { PICK_AXE, DWARVISH_MATTOCK } from './object_data.js';
 import { propertyIsActive } from './properties.js';
 import { roomForIndex, roomsAt } from './room.js';

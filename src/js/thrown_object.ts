@@ -4,7 +4,7 @@
 
 import { objectMaterial } from './object_material.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import {
     A_STR,

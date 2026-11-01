@@ -20,9 +20,9 @@ import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVA
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { makeMonsterFlee } from './monmove.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { levelFollower } from './mondata.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';

@@ -17,7 +17,7 @@ import { removeMonsterFromGame } from './mon.js';
 import { releaseAllMonsterLeashes } from './leash_apply.js';
 import { monsterObjectPronoun, monsterPossessive } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { rn2 } from './rng.js';
 import { costlyAdjacent, shopkeeperInOwnShop } from './shk.js';
 import {

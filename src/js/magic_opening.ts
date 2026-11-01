@@ -17,7 +17,7 @@ import { monsterName } from './do_name.js';
 import { expelHero } from './hero_expulsion.js';
 import { revealSecretDoor, revealSecretCorridor } from './detect.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { openHoldingTrap, openFallingTrap } from './trap_magic.js';
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 

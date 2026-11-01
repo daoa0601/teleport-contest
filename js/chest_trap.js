@@ -16,7 +16,7 @@ import { plineWithContinuation } from './pline.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import { delobj, deleteObjectContents, } from './object_delete.js';
 import { getObjectLocation } from './object_location.js';

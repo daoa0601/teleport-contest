@@ -21,7 +21,7 @@ import {
 } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { applyHeroContactPassive } from './uhitm.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { makePlural } from './object_grammar.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn2, rnd } from './rng.js';

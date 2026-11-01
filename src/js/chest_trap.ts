@@ -21,7 +21,7 @@ import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import {
     delobj, deleteObjectContents,

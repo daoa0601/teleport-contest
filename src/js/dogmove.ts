@@ -35,7 +35,7 @@ import { petDroppableObject } from './dog.js';
 import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
-import { monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
+import { monsterCanCarryObject, monsterCarryAmount } from './mon.js';
 import { splitObjectStack } from './object_stack.js';
 import { isLevelPrize } from './level_prize.js';
 import {

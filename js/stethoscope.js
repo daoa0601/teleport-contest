@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroStatusLine } from './hero_status.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, monsterIsHumanoid, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';

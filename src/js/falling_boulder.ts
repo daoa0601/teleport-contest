@@ -23,7 +23,7 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterObjectPronoun } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { inventoryItemDescription } from './invent.js';

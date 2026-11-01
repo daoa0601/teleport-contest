@@ -19,7 +19,7 @@ import { objectMaterial } from './object_material.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';

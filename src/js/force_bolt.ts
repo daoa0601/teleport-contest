@@ -17,7 +17,7 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { newsym, randomDisplayMonsterName, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { monsterName } from './do_name.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { breakFloorObject } from './object_breakage.js';

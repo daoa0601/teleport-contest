@@ -14,7 +14,7 @@ import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero
 import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, removeIntrinsicProperty, } from './properties.js';
 import { onQuestStart } from './quest.js';
 import { rn1, rnd } from './rng.js';

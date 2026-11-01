@@ -8,7 +8,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';

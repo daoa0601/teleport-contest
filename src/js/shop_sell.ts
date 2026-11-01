@@ -32,7 +32,7 @@ import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectType
 import {
     objectIsCandle, objectPricingUnits, shopGetPrice, shopkeeperIsMuted,
 } from './shop_loss.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { promptYesNoAllQuit } from './query.js';
 

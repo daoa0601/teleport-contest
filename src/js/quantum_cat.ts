@@ -11,7 +11,7 @@ import { getObjectLocation } from './object_location.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { set_corpsenm } from './mkobj.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { LARGE_BOX } from './object_data.js';
 import { deleteObject } from './object_delete.js';

@@ -27,7 +27,7 @@ import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { endHeroVolley } from './hero_multishot.js';
 import { triggerHeroTrap, type HeroTrapOptions } from './hero_traps.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName } from './monster_data.js';
 import { BOULDER } from './object_data.js';

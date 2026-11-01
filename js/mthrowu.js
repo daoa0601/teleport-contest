@@ -17,7 +17,8 @@ import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monw
 import { objectWeight, calcCapacity } from './weight.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_WEP, isok, } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, } from './display.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -31,7 +32,7 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2 } from './monster_attack_types.js';
 import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
@@ -41,8 +42,7 @@ import { unlinkObject } from './object_location.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { delobj, deleteObject } from './object_delete.js';
@@ -486,6 +486,58 @@ async function catchThrownObject(object, { state, random, publish }) {
         holdMessage: `You catch the ${name}!`,
     });
     return true;
+}
+// ---------------------------------------------------------------------------
+// Native m_throw() and bhit() tmp_at flight. Impacts run between frames, so a
+// suspended hit message retains the last flight cell until the input resumes.
+// ---------------------------------------------------------------------------
+export function monsterProjectileDisplay(object, state, { tethered = false, } = {}) {
+    const glyph = transientObjectGlyph(object);
+    const topRow = state.nhDisplay?.grid[0]?.map(cell => ({ ...cell }));
+    const retainedTopline = !state._pending_message && topRow?.some(cell => cell.ch !== ' ') ? topRow : null;
+    const effect = new TemporaryMapEffect(tethered ? 'tether' : 'flash', glyph);
+    let first = true;
+    async function flushFrame() {
+        const cursor = lastDirtyMapCursor();
+        await flush_screen(1);
+        if (retainedTopline && !state._pending_message) {
+            for (const [column, cell] of retainedTopline.entries())
+                state.nhDisplay?.setCell(column, 0, cell.ch, cell.color, cell.attr);
+        }
+        if (cursor)
+            state.nhDisplay?.setCursor(...cursor);
+        await state.animationFrame?.();
+    }
+    async function clear() {
+        await effect.clear();
+    }
+    return {
+        glyph,
+        async show(position) {
+            if (!isok(position.x, position.y))
+                return;
+            if (first)
+                await effect.start();
+            first = false;
+            // Native tmp_at() stops before show_glyph() and its
+            // flush_screen(0) when the flash cell cannot be seen, so an
+            // impact that just blinded the hero hides its trailing frame
+            // and any pending status update stays unpublished; the
+            // caller's nh_delay_output() still runs.
+            if (await effect.draw(position.x, position.y))
+                await flushFrame();
+            else
+                await state.animationFrame?.();
+        },
+        async backtrack() {
+            // DISP_END/BACKTRACK moves inward before the first return frame.
+            while (await effect.retract()) {
+                await flushFrame();
+            }
+            await clear();
+        },
+        clear,
+    };
 }
 // C mthrowu.c:m_throw(). Detaches one missile from the thrower and flies it
 // along its line; each projectile completes its visible flight and world

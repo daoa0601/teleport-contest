@@ -16,7 +16,7 @@ import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';
 import { createToptenObject, mkgold, mkobj, mkobj_at, mksobj, mksobj_at, } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { monsterAtPosition } from './steed.js';
 import { objectWeight } from './weight.js';
 import { deleteEngravingAt } from './engrave.js';

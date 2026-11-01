@@ -42,7 +42,7 @@ import { fingersOrGloves } from './dip_water.js';
 import { surfaceName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
 import { STRAT_WAITMASK } from './const.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 import { wormSegmentIndexAt } from './worm.js';
 import { findMonsterArmorClass } from './monworn.js';

@@ -66,7 +66,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import {
     OBJECT_MERGE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE,
 } from './object_data.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { terrain_glyph } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';

@@ -13,7 +13,7 @@ import { touchArtifactByHero } from '../js/artifact_touch.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { monsterCanCarryObject } from '../js/monster_carry.js';
+import { monsterCanCarryObject } from '../js/mon.js';
 import { mksobj } from '../js/mkobj.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

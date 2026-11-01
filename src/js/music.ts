@@ -21,10 +21,11 @@ import {
 } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { displayRayName } from './ray_name.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
-import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { monsterResistsSleep } from './mondata.js';
+import { putMonsterToSleep } from './mhitm.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {

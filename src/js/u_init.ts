@@ -24,7 +24,7 @@ import { setHeroSpecies } from './hero_species.js';
 import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './do_name.js';
 import { impossible } from './diagnostics.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition } from './mklev.js';

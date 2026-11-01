@@ -8,7 +8,7 @@ import { loseGuardianAngel } from '../js/guardian_angel.js';
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishSpecialRoamer } from '../js/sp_lev.js';
-import { monsterAlignmentType } from '../js/monster_alignment.js';
+import { monsterAlignmentType } from '../js/priest.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';

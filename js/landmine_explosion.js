@@ -7,7 +7,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { liquidForHole } from './hole.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { seeTrap, waterDamageChain } from './trap.js';

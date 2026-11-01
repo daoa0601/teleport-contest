@@ -3,7 +3,7 @@ import test from 'node:test';
 import { LARGEST_INT, MFAST, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_ARMG, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from '../js/monster_carry.js';
+import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

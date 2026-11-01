@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { NEED_HTH_WEAPON, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NO_MINVENT, W_ARMG, W_ARMS, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
-import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
+import { monsterCanCarryObject, monsterCanTouchObject } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

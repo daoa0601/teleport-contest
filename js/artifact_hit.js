@@ -12,7 +12,7 @@ import { Upolyd } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { igniteItems } from './light.js';
 import { healMonster } from './mon.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { applyMagicbaneHit } from './magicbane.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, } from './monster_data.js';
 import { monsterName } from './do_name.js';

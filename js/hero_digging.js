@@ -28,7 +28,7 @@ import { triggerBoobyTrap } from './booby_trap.js';
 import { makemonAt, adjustedMonsterLevel } from './makemon.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, OBJECT_BIMANUAL, ORANGE, PEAR, STATUE, } from './object_data.js';
 import { definiteName, objectName, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { heroMonsterForm, heroIsFlying, } from './polyself.js';

@@ -25,7 +25,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK,
     MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,
 } from './monster_data.js';
-import { monsterCanTouchObject } from './monster_carry.js';
+import { monsterCanTouchObject } from './mon.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';

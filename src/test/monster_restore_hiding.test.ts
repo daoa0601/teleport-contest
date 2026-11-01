@@ -8,7 +8,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
 import { nameToMonster } from '../js/mondata.js';
-import { revealMonsterAppearance } from '../js/monster_appearance.js';
+import { revealMonsterAppearance } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { attemptMonsterRestrap, hideMonsterUnder, maybeUnhideAt } from '../js/mon.js';
 import { hideMonsterOnRestore } from '../js/save.js';

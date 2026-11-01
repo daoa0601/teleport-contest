@@ -25,7 +25,7 @@ import { itemizedShopBill, minimumShopPurchase, buyShopBillItem, payShopkeeper }
 import { observeObjectForNaming } from './objnam.js';
 import { paymentObjectDescription } from './object_description.js';
 import { rouseShopkeeper } from './shop_sell.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { impossible } from './diagnostics.js';
 import { showMultiSelectWindow } from './windows.js';
 

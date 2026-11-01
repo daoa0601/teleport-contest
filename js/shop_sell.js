@@ -20,7 +20,7 @@ import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
 import { objectIsCandle, objectPricingUnits, shopGetPrice, shopkeeperIsMuted, } from './shop_loss.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { promptYesNoAllQuit } from './query.js';
 const WEAPON_CLASS = 2;

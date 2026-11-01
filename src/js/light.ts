@@ -31,7 +31,7 @@ import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { makemonNear } from './mklev.js';
 import { mksobj } from './mkobj.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import {
     monsterDigests, monsterIsWhirly,
 } from './monster_data.js';

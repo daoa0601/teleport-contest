@@ -36,7 +36,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation } from './occupation_types.js';
 import { consumeInventoryItem } from './invent.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import {
     CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE,
     OBJECT_SUBTYPE,

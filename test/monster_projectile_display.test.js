@@ -8,7 +8,7 @@ import { getHungry } from '../js/hunger.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { heroIsBlind } from '../js/senses.js';
-import { monsterProjectileDisplay } from '../js/monster_projectile_display.js';
+import { monsterProjectileDisplay } from '../js/mthrowu.js';
 import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';

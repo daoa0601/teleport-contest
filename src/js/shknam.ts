@@ -28,7 +28,7 @@ import { setTinVariety } from './tin.js';
 import { objectWeight } from './weight.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { removeMonsterFromGame } from './mon.js';
 import { FOOD_CLASS, S_MIMIC } from './mklev.js';

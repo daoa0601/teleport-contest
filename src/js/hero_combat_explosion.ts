@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { AD_BLND, AD_COLD, AD_ELEC, AD_FIRE, AD_HALU } from './monster_attack_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { d, rn2 } from './rng.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

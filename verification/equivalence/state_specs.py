@@ -14,7 +14,7 @@ STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
-    'js/monster_vitals.js', 'js/dungeon.js', 'js/mon.js',
+    'js/dungeon.js', 'js/mon.js',
 )
 
 

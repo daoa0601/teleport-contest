@@ -26,7 +26,7 @@ import { liquidForHole } from './hole.js';
 import { gotoLevel } from './level_change.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { leashAttachedToMonster, releaseMonsterLeash } from './leash_apply.js';

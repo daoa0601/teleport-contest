@@ -28,7 +28,8 @@ import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices } from '.
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
-import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
+import { setMonsterMalign } from './makemon.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
 import {
     restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads,
@@ -46,7 +47,7 @@ import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely, bri
 import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterDeathCount } from './monster_vitals.js';
+import { monsterDeathCount } from './mon.js';
 import { killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';

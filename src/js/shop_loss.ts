@@ -21,7 +21,7 @@ import { artifactById } from './artifacts.js';
 import {
     CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN,
 } from './object_data.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { OBJECT_WEIGHT } from './object_data.js';
 import { roomsAt } from './room.js';
 import { currency } from './currency.js';

@@ -10,7 +10,7 @@ import { containedGold } from './gold.js';
 import { MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN, } from './object_data.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { OBJECT_WEIGHT } from './object_data.js';
 import { roomsAt } from './room.js';
 import { currency } from './currency.js';

@@ -7,7 +7,7 @@ import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { adjustMonsterSpeed } from '../js/worn.js';
-import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from '../js/worn.js';
 import { ALCHEMY_SMOCK, ELVEN_SHIELD, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
 import { castNativeRay } from '../js/ray_attack.js';
 import { hitMonsterWithRay } from '../js/zap.js';

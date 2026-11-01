@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { redrawMap } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { monsterProjectileDisplay } from '../js/monster_projectile_display.js';
+import { monsterProjectileDisplay } from '../js/mthrowu.js';
 import { ARROW } from '../js/object_data.js';
 import { captureThrownObjectFlight } from '../js/thrown_object.js';
 import { floorObject, knownObject } from './support/game-objects.js';
