@@ -1939,3 +1939,4 @@ discover_object	Japanese_item_name	inlined	japaneseItemName in o_init.ts:241 (C 
 discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-inventory window; the grader has no perm_invent window, and the gem reprice itself is repriceDiscoveredGems (object_knowledge.ts)
 display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); terrain_properties.ts isPoolOrLavaAt is the same predicate
 display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
+zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire
