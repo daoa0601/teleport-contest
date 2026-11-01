@@ -2475,8 +2475,11 @@ export async function completeMovedMonsterAction(
             if (outcome === 'hero-died') return movement;
             if (outcome === 'killed') {
                 // C postmov() repaints the destination before returning
-                // MMOVE_DIED for a trap that killed the actor.
+                // MMOVE_DIED for a trap that killed the actor (monmove.c:1512);
+                // the presenter must not paint this return's cell a second
+                // time, which would consume an extra display-RNG draw.
                 await newsym(movement.x, movement.y);
+                movement.postMoveDestinationPainted = true;
                 return movement;
             }
         }
