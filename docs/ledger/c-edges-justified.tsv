@@ -1911,3 +1911,11 @@ monshoot	sgn	inlined	dx/dy are Math.sign(target - source) (mthrowu.ts launchVoll
 move_into_trap	into_vs_onto	inlined	the preposition list is inlined at untrap.ts:517-518; through try_disarm's reachable kinds (bear trap, web, landmine, squeaky board, dart/arrow) it matches into_vs_onto() exactly, and hero_step_confirmation.ts:54 has the full list for hack.c's caller
 move_into_trap	sgn	inlined	dx/dy are computed directly and only tested for diagonal vs cardinal (untrap.ts:980-985)
 move_into_trap	test_move	inlined	blocksMove plus blocksDiagonalDoor cover test_move(TEST_MOVE)'s passable-terrain and diagonal door tests (untrap.ts:983-986)
+bot_via_windowport	encglyph	inlined	the gold symbol comes from activeObjectSymbols() and renders directly (botl.ts:156-157); encglyph()'s \GXXXXNNNN sequence is tty window-protocol encoding with no extra screen effect
+bot_via_windowport	evaluate_and_notify_windowport	inlined	refreshStatusLines compares the evaluated fields and hands changes to wintty's renderer through the display object (botl.ts:188-227)
+do_statusline1	rank	inlined	statusTitle calls rankOf(ulevel) directly (botl.ts:303), inlining rank()'s rank_of(u.ulevel, Role_switch, flags.female) wrapper
+do_statusline1	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
+do_statusline2	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
+do_statusline2	encglyph	inlined	same as bot_via_windowport: the gold field renders the symbol directly (botl.ts:156-157,165)
+is_ltgt_percentnumber	digit	inlined	the \d class of the pattern is the digit() test (botl.ts:1740)
+parse_status_hl2	status_hilite_add_threshold	inlined	each parsed threshold is pushed as an operation (botl.ts:2018 operations.push({threshold:{fld,rule}})), the restructured form of the shared adder
