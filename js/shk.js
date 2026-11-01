@@ -25,7 +25,7 @@ import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import { heroGoldAmount } from './hero_gold.js';
+import { heroGoldAmount, monsterGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
@@ -64,7 +64,10 @@ import { paymentObjectDescription, objectDescription } from './object_descriptio
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee } from './vision.js';
 import { showDisclosureOverlay } from './windows.js';
-import { monsterGoldAmount } from './shop_money.js';
+import { dropObjectAtHero } from './object_drop.js';
+import { mergable } from './object_merge.js';
+import { splitObjectStack } from './object_stack.js';
+import { addInventoryItem } from './u_init.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -1963,6 +1966,31 @@ function keeperForEntrance(x, y, state) {
         return null;
     const keeper = shopResident(roomno, state);
     return keeper && shopkeeperInOwnShop(keeper, state) ? keeper : null;
+}
+export async function moneyToHero(monster, amount, state = game) {
+    if (amount <= 0) {
+        await impossible(`${amount ? 'negative' : 'zero'} payment in money2u!`, { state });
+        return;
+    }
+    const coins = monster.minvent?.find(object => object.oclass === COIN_CLASS);
+    if (!coins || coins.quan < amount) {
+        await impossible(`${monsterName(monster, { state, article: 'a' })} paying without ${coins ? 'enough' : ''} gold?`, { state });
+        return;
+    }
+    const payment = coins.quan > amount ? splitObjectStack(coins, amount, state) : coins;
+    if (!payment)
+        throw new Error('Shopkeeper could not split the payment coins.');
+    unlinkObject(payment, state);
+    const canMerge = state.inventory.some(object => mergable(object, payment, state));
+    const slots = state.inventory.filter(object => object.invlet !== '$').length;
+    if (!canMerge && slots >= 52) {
+        await plineWithContinuation('You have no room for the gold!');
+        await dropObjectAtHero(payment, { state });
+    }
+    else {
+        await addInventoryItem(payment);
+        state.context.botl = true;
+    }
 }
 // C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.
 // Chooses a goal before move_special() selects a square.

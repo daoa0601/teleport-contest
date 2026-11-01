@@ -2,8 +2,8 @@ import { currency } from './currency.js';
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
 import { objectMaterial } from './object_material.js';
-import { monsterGoldAmount, moneyToHero } from './shop_money.js';
-import { nameShopTransaction } from './shk.js';
+import { monsterGoldAmount } from './hero_gold.js';
+import { nameShopTransaction, moneyToHero } from './shk.js';
 import { objectDescription } from './object_description.js';
 import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
