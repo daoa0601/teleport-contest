@@ -14,7 +14,7 @@ import {
     DUNCE_CAP, POT_GAIN_ABILITY, POT_HALLUCINATION, POT_PARALYSIS, POT_SLEEPING,
     RIN_FREE_ACTION,
 } from '../js/object_data.js';
-import { applyPotionMentalEffect } from '../js/potion_mental_effects.js';
+import { applyPotionMentalEffect } from '../js/potion.js';
 import { grantIntrinsicProperty, revokeIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';

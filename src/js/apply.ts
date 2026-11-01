@@ -46,7 +46,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { heroHasNoHands } from './polyself.js';
 import { transformMagicLampToOilLamp } from './light.js';
-import { releaseDjinni } from './potion_occupants.js';
+import { releaseDjinni } from './potion.js';
 import { jumpHero } from './jumping.js';
 import { usePickAxe } from './pick_axe.js';
 import { usePolearm } from './polearm.js';

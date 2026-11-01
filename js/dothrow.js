@@ -13,7 +13,7 @@ import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
 import { exceedsActionCapacity } from './weight.js';
 import { isAmmunition, isPolearm, isWetTowel } from './weapon_type.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { launcherMatchesAmmo } from './object_properties.js';
 import { autoquiverCandidate } from './quiver.js';
@@ -29,7 +29,7 @@ import { doquiverCore } from './wield.js';
 import { promptDirection } from './tty_prompts.js';
 import { rejoinObjectStack } from './object_stack.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
-import { captureThrownObjectFlight } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -40,7 +40,14 @@ import { dryTowel } from './towel.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
-import { resolveMapPotionThrow } from './potion_throw.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, } from './potion.js';
+import { dist2 } from './hacklib.js';
+import { hurtleHero } from './hero_hurtle.js';
+import { hitFloorWithObject } from './object_drop.js';
+import { tossObjectUp } from './toss_up.js';
+import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
+import { offerThrownFood } from './thrown_food.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, } from './mon.js';
 import { monsterHasMapPosition } from './steed.js';
@@ -48,7 +55,7 @@ import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.j
 import { goodPosition } from './teleport_rules.js';
 import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
-import { vision_recalc } from './vision.js';
+import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
@@ -475,6 +482,136 @@ async function throwSelectedUnit(item, dx, dy, volley) {
         volley,
     });
     return 'stopVolley' in shotResult && !!shotResult.stopVolley;
+}
+const POTION_CLASS = 8;
+function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
+    if (state.u?.uswallow || objectClass !== POTION_CLASS
+        || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
+        || !Number.isInteger(selectedQuantity) || selectedQuantity < 1
+        || !Number.isInteger(dx) || !Number.isInteger(dy))
+        return false;
+    return true;
+}
+function distanceFromHero(state, x, y) {
+    return dist2(state.u.ux, state.u.uy, x, y);
+}
+function hitMonsterWithThrownPotion({ state, monster, potion, wakeMonster, wakeNearby, finishKill, publish, }) {
+    return hitMonsterWithSupportedPotion({
+        state,
+        monster,
+        potion,
+        wakeMonster,
+        wakeNearby,
+        finishKill,
+        publish,
+        targetVisible: cansee(monster.mx, monster.my),
+        resolveVapor: true,
+        distance: distanceFromHero(state, monster.mx, monster.my),
+    });
+}
+export async function resolveMapPotionThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, dx, dy, captureFlight = null, wakeMonster = null, wakeNearby = null, finishKill = null, publish = plineWithContinuation, }) {
+    if (!canResolveMapPotionThrow({
+        state, item, objectClass, selectedQuantity, dx, dy,
+    }))
+        return false;
+    const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    try {
+        if (state.program_state?.gameover)
+            return true;
+        // In C, slipping or low stamina changes the direction after the potion
+        // leaves inventory and before it begins moving across the map.
+        await applyThrowSlip({ state, object: thrown, publish });
+        await applyLowStaminaThrow({ state, object: thrown, publish });
+        if (state.u?.dz) {
+            const steed = state.u.dz > 0 ? state.u.usteed : null;
+            if (steed && rn2(6) !== 0) {
+                const impact = await hitMonsterWithThrownPotion({
+                    state,
+                    monster: steed,
+                    potion: thrown,
+                    wakeMonster,
+                    wakeNearby,
+                    finishKill,
+                    publish,
+                });
+                if (impact?.heroDied)
+                    return true;
+                state.context.move = 1;
+                return true;
+            }
+            if (state.u.dz > 0) {
+                await hitFloorWithObject(thrown, { state, publish });
+            }
+            else {
+                await tossObjectUp(thrown, { state, publish });
+            }
+            state.context.move = 1;
+            return true;
+        }
+        const actualDx = state.u?.dx ?? dx;
+        const actualDy = state.u?.dy ?? dy;
+        const underwater = state.underwater || state.u?.uinwater;
+        const trajectory = underwater
+            ? { range: 1, recoil: 0 }
+            : heroThrowTrajectory(thrown, state);
+        const flight = await flyHeroThrownObject({
+            state,
+            object: thrown,
+            dx: actualDx,
+            dy: actualDy,
+            range: trajectory.range,
+            captureFlight,
+            publish,
+        });
+        if (trajectory.recoil) {
+            await hurtleHero(-actualDx, -actualDy, trajectory.recoil, { verbose: true });
+        }
+        if (flight.destroyed) {
+            state.context.move = 1;
+            return true;
+        }
+        if (flight.contact) {
+            prepareHeroThrownTarget(flight.contact);
+            rnd(20); // thitmonst() computes this before the potion class test
+            if (currentAttribute(A_DEX, state) > rnd(25)) {
+                const impact = await hitMonsterWithThrownPotion({
+                    state,
+                    monster: flight.contact,
+                    potion: thrown,
+                    wakeMonster,
+                    wakeNearby,
+                    finishKill,
+                    publish,
+                });
+                if (impact?.heroDied)
+                    return true;
+                state.context.move = 1;
+                return true;
+            }
+            const food = await offerThrownFood(flight.contact, thrown, state);
+            if (food?.heroDied || food?.handled)
+                return true;
+            if (!food) {
+                await reportHeroThrownMiss(flight.contact, thrown, { state, publish });
+                if (rn2(3) === 0 && (await wakeMonster?.(flight.contact))?.heroDied)
+                    return true;
+            }
+        }
+        await finishHeroThrownObjectLanding({
+            state,
+            object: thrown,
+            x: flight.x,
+            y: flight.y,
+            contactedMonster: flight.contact,
+            publish,
+        });
+        state.context.move = 1;
+        return true;
+    }
+    finally {
+        if (state._thrownObject === thrown)
+            state._thrownObject = null;
+    }
 }
 // ---------------------------------------------------------------------------
 // Moving a monster after a forceful hit.

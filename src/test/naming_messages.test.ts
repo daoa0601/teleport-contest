@@ -37,7 +37,7 @@ import {
     GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE,
 } from '../js/object_data.js';
 import { dropObjectAtHero } from '../js/object_drop.js';
-import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/projectile_trap.js';
 import { initRng } from '../js/rng.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap } from '../js/rock_trap.js';

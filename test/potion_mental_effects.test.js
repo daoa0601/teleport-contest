@@ -9,7 +9,7 @@ import { heroIsUnconscious } from '../js/hero_sleep.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { resetInputState } from '../js/input.js';
 import { POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, DUNCE_CAP, POT_GAIN_ABILITY, POT_HALLUCINATION, POT_PARALYSIS, POT_SLEEPING, RIN_FREE_ACTION, } from '../js/object_data.js';
-import { applyPotionMentalEffect } from '../js/potion_mental_effects.js';
+import { applyPotionMentalEffect } from '../js/potion.js';
 import { grantIntrinsicProperty, revokeIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';

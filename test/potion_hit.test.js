@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL, LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED, POT_INVISIBILITY, POT_WATER, RIN_FREE_ACTION, SPEED_BOOTS, } from '../js/object_data.js';
-import { applySupportedPotionVapor, hitMonsterWithSupportedPotion, } from '../js/potion_hit.js';
+import { applySupportedPotionVapor, hitMonsterWithSupportedPotion, } from '../js/potion.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { pushKey, pushKeys } from '../js/input.js';

@@ -40,7 +40,7 @@ import { objectResistsDestruction } from './object_state.js';
 import { isWeaponTool } from './object_properties.js';
 import { CORPSE, ICE_BOX } from './object_data.js';
 import { startCorpseTimeout } from './mkobj.js';
-import { applySupportedPotionVapor, randomBottleName } from './potion_hit.js';
+import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage } from './shk.js';

@@ -26,7 +26,7 @@ import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './object_state.js';
 import {
     applySupportedPotionVapor, heroPotionVaporProfile,
-} from './potion_hit.js';
+} from './potion.js';
 import { d, rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, insideShopRoomAt, settleThrownShopObject, stolenValue, makeAngryShopkeeper } from './shk.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_OBJECT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { BOULDER, POT_SLEEPING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

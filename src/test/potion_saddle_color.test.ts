@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { POT_WATER } from '../js/object_data.js';
 import { monsterSaddle } from '../js/steed.js';
 import { knownObject } from './support/game-objects.js';

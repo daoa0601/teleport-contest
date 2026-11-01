@@ -1,6 +1,6 @@
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { PotionEffectOptions } from './potion_types.js';
+import type { PotionEffectOptions } from './potion.js';
 // C potion.c:dodrink()/dopotion(). Effects are shared with spells and digestion.
 import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, SINK } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -16,8 +16,8 @@ import { tryCallObjectType } from './object_call.js';
 import { learnObjectType } from './object_knowledge.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { OBJECT_INITIAL_KNOWN } from './object_data.js';
-import { applyPotionEffect } from './potion_effects.js';
-import { releasePotionOccupant } from './potion_occupants.js';
+import { applyPotionEffect } from './potion.js';
+import { releasePotionOccupant } from './potion.js';
 import { promptYesNo } from './query.js';
 import { heroIsHallucinating } from './senses.js';
 import { drinkFountain } from './fountain.js';

@@ -6,7 +6,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_HEALING } from '../js/object_data.js';
-import { grantMonsterWish, releasePotionOccupant } from '../js/potion_occupants.js';
+import { grantMonsterWish, releasePotionOccupant } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';

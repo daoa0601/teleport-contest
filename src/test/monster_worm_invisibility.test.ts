@@ -12,7 +12,7 @@ import { monsterName } from '../js/do_name.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import type { Position } from '../js/map_types.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
-import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { initRng, rn2Display } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

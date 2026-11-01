@@ -21,7 +21,7 @@ import {
     WAN_UNDEAD_TURNING,
 } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';
-import { applyPotionEffect } from '../js/potion_effects.js';
+import { applyPotionEffect } from '../js/potion.js';
 import { dopray } from '../js/pray.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';

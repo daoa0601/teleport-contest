@@ -11,7 +11,7 @@ import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import {
     applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, randomBottleName,
-} from './potion_hit.js';
+} from './potion.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';

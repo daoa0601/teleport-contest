@@ -33,7 +33,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
 import { breakFloorObject } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
-import { hitMonsterWithSupportedPotion } from './potion_hit.js';
+import { hitMonsterWithSupportedPotion } from './potion.js';
 import { delobj } from './object_delete.js';
 import { observeObject } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';

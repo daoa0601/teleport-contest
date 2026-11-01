@@ -18,7 +18,7 @@ import { deleteObject, delobj } from './object_delete.js';
 import { observeObjectForNaming } from './objnam.js';
 import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './object_state.js';
-import { applySupportedPotionVapor, heroPotionVaporProfile, } from './potion_hit.js';
+import { applySupportedPotionVapor, heroPotionVaporProfile, } from './potion.js';
 import { d, rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, insideShopRoomAt, settleThrownShopObject, stolenValue, makeAngryShopkeeper } from './shk.js';
