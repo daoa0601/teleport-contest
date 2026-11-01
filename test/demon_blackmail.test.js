@@ -8,7 +8,7 @@ import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
-import { runMonsterAction, resumeDeferredCovetousRelocation } from '../js/monmove.js';
+import { runMonsterAction } from '../js/monmove.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { RING_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -24,9 +24,7 @@ void test('a peaceful invisible demon prince reveals itself and attacks a pennil
     assert.equal(!!prince.mpeaceful, true);
     assert.equal(!!prince.minvis, true);
     pushKeys(' '.repeat(20));
-    const action = await runMonsterAction(prince, game);
-    if (action.movement?.deferredCovetousRelocation)
-        await resumeDeferredCovetousRelocation(action, game);
+    await runMonsterAction(prince, game);
     assert.equal(!!prince.minvis, false, 'the prince reveals itself before asking for payment');
     assert.equal(!!prince.perminvis, false);
     assert.equal(!!prince.mpeaceful, false, 'a hero without spendable gold cannot buy safe passage');

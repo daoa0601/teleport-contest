@@ -537,7 +537,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     trapped?: boolean;
     priest?: boolean;
     shopkeeper?: boolean;
-    immediateTrap?: boolean;
     forcedTrapLanding?: boolean;
     // FORCEBUNGLE retains the avoidance roll but makes its result ineffective.
     forcedTrapBungle?: boolean;
@@ -554,13 +553,9 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     postMoveOldSquarePainted?: boolean;
     // notice_mon() ran for this action's single postmov() pass.
     postMoveNoticed?: boolean;
-    hideUnder?: MonsterHideUnder;
-    deferredAfterHideUnder?: boolean;
     deferredAfterMonsterTrap?: boolean;
     deferredAfterMovementSpell?: boolean;
-    deferredAfterRestrictedTenguTeleport?: boolean;
     deferredAfterSpecialAttack?: boolean;
-    deferredCovetousRelocation?: boolean;
     deferredCuss?: boolean;
 }
 
@@ -585,10 +580,6 @@ export interface MonsterTurnResult extends MonsterMoveResult {
     dochugContext: DochugContext;
 }
 
-export interface MonsterTurnOptions {
-    dochugContext?: DochugContext;
-    afterCovetousRelocation?: boolean;
-}
 
 export interface MonsterRandomOptions {
     random?: RandomBelow;

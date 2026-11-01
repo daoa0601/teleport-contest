@@ -4,7 +4,8 @@ import test from 'node:test';
 import { LANDMINE, PIT, SPIKED_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { pushKeys } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { createSpecialLevel } from './support/topology.js';
@@ -20,26 +21,17 @@ for (const onAstral of [false, true]) {
         game.u.uz = { dnum: 1, dlevel: onAstral ? 1 : 5 };
         monster.mundetected = false;
         placeMonsterAt(monster, 12, 10);
-        const messages: string[] = [];
-        const options = {
-            random: (limit: number) => limit - 1,
-            rollOne: (sides: number) => sides,
-            publish: (message: string) => { messages.push(message); },
-        };
+        // mintrap() now publishes inside the move; acknowledge its pagers.
+        pushKeys(' '.repeat(30));
 
-        const turn = await takeMonsterTurn(monster, game, options.random,
-            (count, sides) => count * sides, options.rollOne);
+        const turn = await takeMonsterTurn(monster, game, (limit: number) => limit - 1,
+            (count, sides) => count * sides, (sides: number) => sides);
         assert.ok(turn.movement, 'the clinger must move onto the mine');
-        await resumeDeferredMonsterTrap({
-            monster, calls: turn.calls, movement: turn.movement,
-        }, game, options);
-
         assert.equal(trap.ttyp, PIT);
         assert.equal(monster.mtrapped ?? 0, onAstral ? 1 : 0);
         assert.equal(monster.mhp, onAstral ? 78 : 84,
             'the mine deals 16 damage, and falling into its pit deals another 6');
-        assert.ok(messages.includes('KAABLAMM!!!  The wumpus triggers a land mine!'));
-        assert.equal(messages.at(-1), onAstral
+        assert.equal(game._lastPlineMessage, onAstral
             ? 'The wumpus falls into a pit!'
             : "The wumpus doesn't fall into the pit.");
     });

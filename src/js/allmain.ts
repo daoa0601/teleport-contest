@@ -114,8 +114,7 @@ import {
 } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
 import {
-    makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, resumeDeferredCovetousRelocation,
-    resumeDeferredRestrictedTenguTeleport, resumeDeferredMonsterHideUnder,
+    makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction,
     completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove,
     beginMonsterDochug, runMonsterAction,
 } from './monmove.js';

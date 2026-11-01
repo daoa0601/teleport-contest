@@ -1201,7 +1201,6 @@ async function executeMonsterTurns() {
         }
         if (game.context.bypasses)
             clearBypasses(game);
-        const actorWasOpticallySeen = canSeeMonster(actor);
         const liquid = await resolveMonsterLiquid(actor, game, {
             announce: plineWithContinuation,
             finishDeath: finishMonsterLiquidDeath,
@@ -1224,7 +1223,7 @@ async function executeMonsterTurns() {
         finally {
             game._deferVisibleMonsterContact = false;
         }
-        const presented = await presentMonsterAction(action, game, actorWasOpticallySeen);
+        const presented = await presentMonsterAction(action, game);
         if (presented === 'stop')
             return false;
         if (presented === 'next-monster')

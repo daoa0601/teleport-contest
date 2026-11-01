@@ -13,7 +13,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { prepareTeleportAtWill } from './wizard_teleport.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { randomTeleportDepth } from './level_teleport.js';
-import { depth, distmin } from './hacklib.js';
+import { depth, dist2, distmin } from './hacklib.js';
 import { clampHoleDestination } from './hole_destination.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
@@ -666,14 +666,14 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
     setMonsterApparentHeroPosition(monster, state, random, calls);
 
     if (report && (canSpotMonster(monster) || appear || hero.ustuck === monster)) {
-        const distance = (x - hero.ux) ** 2 + (y - hero.uy) ** 2;
+        const distance = dist2(x, y, hero.ux, hero.uy);
         const near = distance <= 2 ? ' next to you'
             : distance <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_APPEARMSG;
         if (hero.ustuck === monster && (hero.ux !== hero.ux0 || hero.uy !== hero.uy0)) {
             await plineWithContinuation(`You and ${monsterName(monster, { state })} teleport together.`);
         } else if (seenAtBothEnds && (couldsee(x, y) || canSenseMonster(monster))) {
-            const oldDistance = (oldx - hero.ux) ** 2 + (oldy - hero.uy) ** 2;
+            const oldDistance = dist2(oldx, oldy, hero.ux, hero.uy);
             const suffix = near || (oldDistance === distance ? ''
                 : distance < oldDistance ? ' closer to you' : ' farther away');
             await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} vanishes and reappears${suffix}.`);
