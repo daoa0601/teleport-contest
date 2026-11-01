@@ -77,16 +77,43 @@ import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCa
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import {
-    consumeMonsterObject, growAfterFood, monsterCanOpenDoor, monsterCanUnlockDoor, wakeMonster, angerMonster,
-    angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, hideMonsterUnder, maybeUnhideAt,
-    finishMonsterHideUnder, presentMonsterGrowth, mfndpos, monAllowFlags, monsterMayDigLocation,
-    monstersInFmonOrder, resistConflict, schedulable,
+    angerMonster,
+    angerWatchGuards,
+    attemptMonsterRestrap,
+    beginMonsterHideUnder,
+    changeMonsterForm,
+    consumeMonsterFloorObjects,
+    consumeMonsterObject,
+    decideMonsterShapeChange,
+    finishEnvironmentalMonsterDeath,
+    finishMonsterHideUnder,
+    finishMonsterKilled,
+    finishMonsterLiquidDeath,
+    growAfterFood,
+    hideMonsterUnder,
+    initializeMonsterMovement,
+    maybeUnhideAt,
+    mcalcmove,
+    mfndpos,
+    monAllowFlags,
+    monsterCanOpenDoor,
+    monsterCanUnlockDoor,
+    monsterDisplacementFlags,
+    monsterMayDigLocation,
+    monstersInFmonOrder,
+    naturalMonsterSpeed,
+    pickUpMonsterFloorObject,
+    presentMonsterGrowth,
+    resistConflict,
+    respondToImmediateMagic,
+    schedulable,
+    wakeMonster,
 } from './mon.js';
-import type { MonsterConsumptionOptions } from './mon.js';
+import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import {
     monsterCorrodesBars, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance,
 } from './mondata.js';
-import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
+import { adjustMonsterSpeed } from './worn.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './rock_breakage.js';
 import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop } from './shk.js';
@@ -115,9 +142,7 @@ import {
     POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS,
     LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
 } from './object_data.js';
-import type { MonsterDeathResult } from './monster_death.js';
 import type { MessagePublisher } from './pline.js';
-import { pickUpMonsterFloorObject } from './monster_pickup.js';
 import { digMonsterTunnel } from './monster_tunnel.js';
 import { heroSpecies, heroFormSticks } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
@@ -133,7 +158,11 @@ import {
     movePet, pullLeashedPetCloser, monsterCouldReachItem, finishMonsterEating, commitPetPickup, reluctantPetMessage,
 } from './dogmove.js';
 import {
-    attackMonsterWithMonster, beginMonsterMeleeAttack, fightNearbyMonster, monsterAttackStopsAggressor,
+    attackMonsterWithMonster,
+    beginMonsterMeleeAttack,
+    displaceMonster,
+    fightNearbyMonster,
+    monsterAttackStopsAggressor,
 } from './mhitm.js';
 import {
     chooseMonsterSpell, heroCanSeeInvisible, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind,
@@ -153,7 +182,6 @@ import {
 import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { trapName } from './trap_name.js';
 import { currentAttribute } from './attrib.js';
-import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed, adjustMonsterSpeed } from './monster_speed.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -182,13 +210,11 @@ import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { respondToImmediateMagic } from './monster_magic_response.js';
 import { plineWithContinuation } from './pline.js';
 import { placeCreatedObject, placeObjectSynchronously, stack_object } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { canFallThrough, maketrap } from './mklev.js';
 import { mksobj } from './mkobj.js';
-import { decideMonsterShapeChange, changeMonsterForm } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
 import {
@@ -198,7 +224,6 @@ import { dismountHero } from './steed.js';
 import {
     advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween,
 } from './monster_worm.js';
-import { displaceMonster, monsterDisplacementFlags } from './monster_displacement.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { moveVaultGuard } from './vault.js';
@@ -213,7 +238,6 @@ import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetr
 import { monsterReflectsRay } from './ray.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 export { monsterCanCarryObject } from './monster_carry.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { talkToDemon } from './demon_talk.js';

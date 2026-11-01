@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from '../js/monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from '../js/worn.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -23,18 +23,15 @@ import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import { describeStoneEngulferEscape, prepareMonsterPetrification } from './monster_stoning.js';
 import { MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsUnicorn, } from './monster_data.js';
 import { monsterDeathCount, } from './monster_vitals.js';
-import { createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
-import { resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { BOULDER, FIGURINE, OBJECT_BIMANUAL, } from './object_data.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
-import { angerQuestGuardiansAfterLeaderDeath } from './mon.js';
+import { angerQuestGuardiansAfterLeaderDeath, createMonsterRemains, describeStoneEngulferEscape, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterDeathSwallower, monsterLeavesCorpse, prepareMonsterPetrification, resolveMonsterDeathExplosion, rollMonsterDeathExplosion, } from './mon.js';
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
 // pet-murder chronicle entry behind (mon.c:xkilled()).
 const G_UNIQ = 0x1000;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

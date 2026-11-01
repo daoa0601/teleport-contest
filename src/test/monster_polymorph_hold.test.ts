@@ -14,7 +14,7 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { dropInventoryObject, throwInventoryObject } from './support/commands.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { initRng } from '../js/rng.js';

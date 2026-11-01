@@ -8,7 +8,7 @@ import {
     ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData,
 } from './object_data.js';
 import { monsterName } from './monster_name.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { dismountHero } from './steed.js';
 import { learnWand } from './wand_charge.js';
 import type { MessagePublisher } from './pline.js';

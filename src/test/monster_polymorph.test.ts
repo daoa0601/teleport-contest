@@ -8,13 +8,10 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import {
-    changeMonsterForm, decideMonsterShapeChange,
-} from '../js/monster_polymorph.js';
 import {
     BOULDER, CHAIN_MAIL, CLUB, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
     LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS,

@@ -10,7 +10,7 @@ import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
 import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName, } from './monster_data.js';

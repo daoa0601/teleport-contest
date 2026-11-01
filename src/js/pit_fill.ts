@@ -17,7 +17,7 @@ import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { BOULDER } from './object_data.js';

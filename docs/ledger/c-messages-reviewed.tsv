@@ -273,7 +273,7 @@ mon.c	copy_mextra	has_epri(mtmp2)	diagnostic	NHASSERT assertion condition text; 
 mon.c	copy_mextra	has_eshk(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mon.c	lifesaved_monster	looks much better!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
 mon.c	lifesaved_monster	reconstitutes!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
-mon.c	make_corpse	recently regrown horn crumbles to dust.	composed	src/js/monster_death.ts:createMonsterPart; Appends crumbles to dust to the possessive unicorn name and recently regrown horn.
+mon.c	make_corpse	recently regrown horn crumbles to dust.	composed	src/js/mon.ts:createMonsterPart; Appends crumbles to dust to the possessive unicorn name and recently regrown horn.
 mon.c	minliquid_core	burns slightly.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
 mon.c	minliquid_core	surrenders to the fire.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
 mon.c	pick_animal	ga.animal_list != 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.

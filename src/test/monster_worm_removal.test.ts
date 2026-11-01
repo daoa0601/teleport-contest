@@ -5,7 +5,7 @@ import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import {
     clearMonsterWormFromMap, initializeMonsterWormBody, removeMonsterWormBody,

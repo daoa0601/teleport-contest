@@ -1,6 +1,6 @@
 // Rust traps triggered by monsters.
 // C ref: trap.c:trapeffect_rust_trap().
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled } from './mon.js';
 import { AD_RUST } from './monster_attack_types.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';

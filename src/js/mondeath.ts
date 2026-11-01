@@ -19,7 +19,8 @@ import {
     MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal,
     monsterIsNonliving, monsterIsVampire,
 } from './monster_data.js';
-import { changeMonsterForm } from './monster_polymorph.js';
+import { changeMonsterForm } from './mon.js';
+import type { MonsterDeathResult } from './mon.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import {
@@ -31,7 +32,6 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
-import type { MonsterDeathResult } from './monster_death.js';
 
 interface LifeSavingOptions {
     creditedKill?: string | null;

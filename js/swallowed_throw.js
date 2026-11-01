@@ -14,7 +14,7 @@ import { monsterName } from './monster_name.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
-import { petrifyMonsterImmediately } from './monster_stoning.js';
+import { petrifyMonsterImmediately } from './trap.js';
 import { delobj } from './object_delete.js';
 import { AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE, } from './object_data.js';
 import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';

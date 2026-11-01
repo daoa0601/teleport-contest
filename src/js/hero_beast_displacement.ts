@@ -4,9 +4,8 @@ import { canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym } from 
 import { plineWithContinuation } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroBadRock } from './hack.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { finishEnvironmentalMonsterDeath, resolveMonsterLiquid } from './mon.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import type { Monster } from './monster_types.js';

@@ -10,7 +10,7 @@ import { performMonsterTurn } from '../js/monmove.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
-import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
+import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';

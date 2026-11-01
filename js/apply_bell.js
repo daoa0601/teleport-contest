@@ -19,7 +19,7 @@ import { openit } from './magic_opening.js';
 import { summonUndead } from './undead_summoning.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { monsterName } from './monster_name.js';
-import { adjustMonsterSpeed } from './monster_speed.js';
+import { adjustMonsterSpeed } from './worn.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { rn2, rnd } from './rng.js';
 import { requireInitializedHero } from './hero_types.js';

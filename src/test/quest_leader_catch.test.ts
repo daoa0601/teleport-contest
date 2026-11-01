@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR } from '../js/object_data.js';
 import { ensureQuestStatus, registerQuestLeader } from '../js/quest.js';
 import { heroIsBlind, heroIsDeaf } from '../js/senses.js';

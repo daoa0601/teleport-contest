@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, DART, DAGGER, ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';

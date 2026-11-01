@@ -34,7 +34,7 @@ import {
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { dist2, pointsOnline } from './hacklib.js';
-import { mfndpos, monAllowFlags, resistConflict, angerMonster, wakeMonster } from './mon.js';
+import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder } from './monmove.js';
 import { moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
@@ -48,7 +48,6 @@ import type {
     MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { makemon, makemonAt } from './makemon.js';

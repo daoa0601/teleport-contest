@@ -9,7 +9,7 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { monsterName } from './monster_name.js';
 import { monsterTypeName } from './monster_data.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import { deleteObject } from './object_delete.js';
 import { EGG } from './object_data.js';
 import { rnd, rn2 } from './rng.js';

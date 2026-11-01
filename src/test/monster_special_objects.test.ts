@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
     SACK, SPE_BOOK_OF_THE_DEAD,

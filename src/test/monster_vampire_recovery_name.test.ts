@@ -5,7 +5,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

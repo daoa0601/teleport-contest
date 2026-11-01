@@ -12,7 +12,7 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { MonsterDeathHandler } from './monster_death.js';
+import type { MonsterDeathHandler } from './mon.js';
 import type { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { LiquidEffectResult } from './hack.js';
 import { liquidForHole } from './hole.js';

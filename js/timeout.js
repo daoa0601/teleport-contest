@@ -33,7 +33,7 @@ import { advanceHeroPetrification, heroIsPetrifying, petrificationDialogue } fro
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { restartMonsterShapechanging } from './monster_polymorph.js';
+import { restartMonsterShapechanging } from './mon.js';
 import { stopHeroOccupation } from './occupation.js';
 import { polymonHero } from './polyself.js';
 import { finishHeroDeath } from './end.js';

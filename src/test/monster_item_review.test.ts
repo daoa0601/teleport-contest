@@ -14,7 +14,7 @@ import {
     useMonsterDefensiveItem,
 } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_YENDOR, BUGLE, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

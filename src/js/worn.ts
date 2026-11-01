@@ -1,13 +1,11 @@
-// Monster movement rates and permanent speed changes.
-// C refs: mon.c:mcalcmove(), worn.c:mon_adjust_speed().
-
-import { MFAST, MSLOW, NORMAL_SPEED } from './const.js';
+// C worn.c:mon_adjust_speed(). Permanent monster speed changes.
+import { MFAST, MSLOW } from './const.js';
 import { game } from './gstate.js';
-import { rn2 } from './rng.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_PROPERTY } from './object_data.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import { naturalMonsterSpeed } from './mon.js';
 
 export interface MonsterSpeedChange {
     amount: number;
@@ -17,56 +15,10 @@ export interface MonsterSpeedChange {
     much: boolean;
     canDescribe: boolean;
 }
-
 function wearsSpeedItem(monster: Monster): boolean {
     return (monster?.minvent || monster?.inventory || []).some(object =>
         OBJECT_PROPERTY[object.otyp] === 'fast' && (object.owornmask ?? 0) !== 0);
 }
-
-export function naturalMonsterSpeed(monster: Monster): number {
-    return monster.mmove !== undefined && Number.isFinite(monster.mmove)
-        ? monster.mmove : MONSTER_MOVE[monster.mnum] ?? 0;
-}
-
-export function initializeMonsterMovement(monster: Monster): Monster {
-    if (!monster) return monster;
-    if (!Number.isFinite(monster.movement)) monster.movement = 0;
-    if (!Number.isFinite(monster.mmove))
-        monster.mmove = naturalMonsterSpeed(monster);
-    if (!Number.isFinite(monster.mspeed)) monster.mspeed = 0;
-    return monster;
-}
-
-// C mon.c:mcalcmove(). moving=false leaves the adjusted speed unrounded.
-export function mcalcmove(
-    monster: Monster, moving = true, random = rn2, state: GameState = game,
-): number {
-    initializeMonsterMovement(monster);
-    let mmove = naturalMonsterSpeed(monster);
-
-    if (monster.mspeed === MSLOW) {
-        mmove = mmove < NORMAL_SPEED
-            ? Math.trunc((2 * mmove + 1) / 3)
-            : 4 + Math.trunc(mmove / 3);
-    } else if (monster.mspeed === MFAST) {
-        mmove = Math.trunc((4 * mmove + 2) / 3);
-    }
-
-    if (monster === state.u?.usteed
-        && (state.u?.ugallop ?? 0) > 0
-        && state.context?.mv) {
-        mmove = Math.trunc((random(2) ? 4 : 5) * mmove / 3);
-    }
-
-    if (moving) {
-        const adjustment = mmove % NORMAL_SPEED;
-        mmove -= adjustment;
-        // NetHack performs this draw even when adjustment is zero.
-        if (random(NORMAL_SPEED) < adjustment) mmove += NORMAL_SPEED;
-    }
-    return mmove;
-}
-
 export function adjustMonsterSpeed(monster: Monster, amount: number): MonsterSpeedChange {
     const oldSpeed = monster.mspeed ?? 0;
     if (amount === 2) {
@@ -93,7 +45,6 @@ export function adjustMonsterSpeed(monster: Monster, amount: number): MonsterSpe
             && !(monster.mfrozen ?? 0) && !monster.msleeping,
     };
 }
-
 export function monsterSpeedMessage(change: MonsterSpeedChange, subject: string, state: GameState = game): string | null {
     if (state.in_mklev || [2, -2, -4].includes(change.amount)
         || (!change.changed && change.amount !== -3) || !change.canDescribe)

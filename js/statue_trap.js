@@ -20,7 +20,7 @@ import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
+import { changeMonsterForm, restoreMonsterShape } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';

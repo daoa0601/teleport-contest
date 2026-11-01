@@ -9,7 +9,7 @@ import { finishSpecialRoamer } from './sp_lev.js';
 import { makemonAt, giveMonsterStartingObject } from './makemon.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { removeMonsterFromGame } from './mon.js';
 import { monsterName } from './monster_name.js';
 import { d, rn1, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

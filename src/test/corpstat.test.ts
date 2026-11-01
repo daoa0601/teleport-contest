@@ -14,8 +14,8 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mkobj.js';
-import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { petrifyMonsterImmediately } from '../js/monster_stoning.js';
+import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { petrifyMonsterImmediately } from '../js/trap.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';

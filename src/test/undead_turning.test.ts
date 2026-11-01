@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
 import { castSpell } from '../js/spell.js';

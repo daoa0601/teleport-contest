@@ -12,7 +12,7 @@ import {
     addObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject,
 } from './monster_inventory.js';
 import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';
-import { monsterSelfTouch } from './monster_stoning.js';
+import { monsterSelfTouch } from './trap.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { CORPSE } from './object_data.js';
 import { dropObjectAtHero } from './object_drop.js';

@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { AD_BLND, AD_COLD, AD_ELEC, AD_FIRE, AD_HALU, AD_STUN } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyHeroGolemEffects } from './polyself.js';

@@ -30,9 +30,8 @@ import { CORPSE, EGG, GLOB_OF_GREEN_SLIME, ENORMOUS_MEATBALL, MEATBALL, MEAT_RIN
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterDigests, } from './monster_data.js';
 import { AD_POLY } from './monster_attack_types.js';
 import { touchPetrifies } from './stoning.js';
-import { petrifyMonsterImmediately } from './monster_stoning.js';
-import { changeMonsterForm } from './monster_polymorph.js';
-import { healMonster } from './mon.js';
+import { petrifyMonsterImmediately } from './trap.js';
+import { changeMonsterForm, healMonster } from './mon.js';
 import { growMonster } from './makemon.js';
 const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
 const PM_WRAITH = MONSTER_NAME.indexOf('wraith');

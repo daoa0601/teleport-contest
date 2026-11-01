@@ -7,9 +7,8 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { consumeMonsterFloorObjects } from '../js/monster_floor_consumption.js';
+import { changeMonsterForm, consumeMonsterFloorObjects } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, BOULDER, CORPSE,
     DAGGER, EGG, FOOD_RATION, GLOB_OF_GREEN_SLIME, GOLD_PIECE,

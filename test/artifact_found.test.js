@@ -13,7 +13,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mkobj.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
+import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { makeWish } from '../js/wish.js';

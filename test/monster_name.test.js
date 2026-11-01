@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { mklev } from '../js/mklev.js';
 import { generateMinetown } from '../js/mkmaze.js';
 import { monsterName, monsterPossessive } from '../js/monster_name.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { shopkeeperName } from '../js/monster_name.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';

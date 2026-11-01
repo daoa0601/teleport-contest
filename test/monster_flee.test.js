@@ -4,7 +4,7 @@ import { M_AP_FURNITURE, PIT, TT_PIT } from '../js/const.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CLOVE_OF_GARLIC, TOOLED_HORN } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';

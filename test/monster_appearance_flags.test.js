@@ -5,7 +5,7 @@ import { createEarthquake } from '../js/earthquake.js';
 import { breatheInDirection } from '../js/breath_ray.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AD_COLD, AT_BREA } from '../js/monster_attack_types.js';
 import { BOULDER } from '../js/object_data.js';

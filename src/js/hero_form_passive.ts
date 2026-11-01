@@ -27,7 +27,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMo
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveDamage } from './uhitm.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { petrifyMonsterAttacker } from './monster_stoning.js';
+import { petrifyMonsterAttacker } from './mhitm.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';

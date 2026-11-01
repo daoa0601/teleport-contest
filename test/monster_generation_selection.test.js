@@ -11,7 +11,7 @@ import { makemonAt } from '../js/makemon.js';
 import { mksobj, rndmonnum } from '../js/mkobj.js';
 import { MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { freshGameplayRoom } from './support/playable-room.js';

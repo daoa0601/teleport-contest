@@ -5,7 +5,7 @@ import { G_EXTINCT, LANDMINE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, STONE, W_AMU
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { tryMonsterPuddingSplit } from '../js/mhitm.js';
 import { unwieldMonsterWeapon } from '../js/monster_weapon.js';

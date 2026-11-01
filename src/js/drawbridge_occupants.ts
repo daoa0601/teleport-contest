@@ -13,13 +13,10 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { finishMonsterKilled, resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
-import {
-    finishMonsterKilled,
-} from './monster_death.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroHasWaterWalking } from './armor.js';

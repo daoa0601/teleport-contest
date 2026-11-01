@@ -10,7 +10,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { loseHeroHp } from './hero_damage.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { BOULDER } from './object_data.js';

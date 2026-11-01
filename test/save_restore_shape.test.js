@@ -9,7 +9,7 @@ import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';

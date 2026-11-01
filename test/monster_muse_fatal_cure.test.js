@@ -4,7 +4,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { petrifyMonsterFromContact } from '../js/monster_stoning.js';
+import { petrifyMonsterFromContact } from '../js/trap.js';
 import { useMonsterStoningCure } from '../js/muse.js';
 import { CORPSE, DAGGER, POT_ACID } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';

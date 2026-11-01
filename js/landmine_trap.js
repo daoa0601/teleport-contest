@@ -1,6 +1,5 @@
 // Land mines triggered by monsters.
 // C ref: trap.c:trapeffect_landmine().
-import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
 import { setMulti } from './command_state.js';
@@ -15,7 +14,7 @@ import { MONSTER_BODY_META } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';

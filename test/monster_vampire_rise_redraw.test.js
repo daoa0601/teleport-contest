@@ -6,7 +6,7 @@ import { glyphAt } from '../js/display.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { MONSTER_NAME, MONSTER_COLOR } from '../js/monster_data.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

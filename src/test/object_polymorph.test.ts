@@ -17,7 +17,7 @@ import {
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createCorpstatAt } from '../js/mkobj.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import {
     createPolymorphMonsterFromPile, do_osshock, obj_unpolyable,
     poly_obj, polymorphFloorObject, stone_to_flesh_obj,

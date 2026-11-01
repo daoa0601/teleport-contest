@@ -44,12 +44,12 @@ import {
     mhitmAdFire, mhitmAdLegs, mhitmAdStun, physicalDamage,
 } from './uhitm.js';
 import { drainMonsterEnergy } from './mhitm.js';
-import { teleportMonsterByHero } from './monster_magic_response.js';
+import { teleportMonsterByHero } from './teleport.js';
+import { petrifyMonsterFromContact } from './trap.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { sessionIsNight } from './monster_sound.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { erodeArmor } from './object_erosion.js';
 import { d, rn2, rnd } from './rng.js';

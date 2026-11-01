@@ -8,7 +8,7 @@ import { heroSpecies } from './hero_species.js';
 import { specialAttackNegated } from './magic_negation.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
-import { changeMonsterForm } from './monster_polymorph.js';
+import { changeMonsterForm } from './mon.js';
 import { teleportHero } from './teleport.js';
 import { cansee } from './vision.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';

@@ -84,9 +84,8 @@ import { pitsAreConjoined } from './pit_connections.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { hitSteedWithTrapMissile } from './projectile_trap.js';
 import { dismountHero } from './steed.js';
-import { finishMonsterTrapDeath } from './monster_death.js';
+import type { MonsterDeathOptions } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import type { MonsterDeathOptions } from './monster_death.js';
 import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
 import {
@@ -112,8 +111,14 @@ import {
     putMonsterToSleep,
 } from './monster_sleep.js';
 import {
-    feelTrap, finishImmediateMonsterTrap, seeTrap, splashLitObject,
-    trapTriggeredByFloor, triggerImmediateMonsterTrap, waterDamageObject,
+    feelTrap,
+    finishImmediateMonsterTrap,
+    finishMonsterTrapDeath,
+    seeTrap,
+    splashLitObject,
+    trapTriggeredByFloor,
+    triggerImmediateMonsterTrap,
+    waterDamageObject,
 } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';

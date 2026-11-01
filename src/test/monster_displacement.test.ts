@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { displaceMonster } from '../js/monster_displacement.js';
+import { displaceMonster } from '../js/mhitm.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

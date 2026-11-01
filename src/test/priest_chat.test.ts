@@ -8,7 +8,7 @@ import { hasPermanentIntrinsicProperty, propertyTimeout } from '../js/properties
 import { monsterGoldAmount } from '../js/shop_money.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { rhack } from '../js/cmd.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { dosave, saveGame, restoreGame } from '../js/save.js';

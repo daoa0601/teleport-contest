@@ -55,7 +55,7 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectTypeKnown } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE,

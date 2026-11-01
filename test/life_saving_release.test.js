@@ -15,7 +15,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { damageHeroFromMonster, loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { initRng } from '../js/rng.js';
 import { refreshProperty } from '../js/properties.js';

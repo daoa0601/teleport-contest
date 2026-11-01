@@ -8,11 +8,20 @@ import type { MessagePublisher } from './pline.js';
 import { heroLegName } from './body_parts.js';
 import { doStorms } from './storms.js';
 import { rewindEngravingsForSave } from './engrave.js';
-import { finishMonsterHideUnder, angerMonster } from './mon.js';
+import {
+    angerMonster,
+    finishEnvironmentalMonsterDeath,
+    finishMonsterHideUnder,
+    finishMonsterKilled,
+    finishMonsterLiquidDeath,
+    mcalcmove,
+    purgeDeadMonsters,
+    restoreMonsterShape,
+    seeNearbyMonsters,
+} from './mon.js';
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
-import { mcalcmove } from './monster_speed.js';
 import { learnWand } from './wand_charge.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeStunned } from './hero_mental_status.js';
@@ -47,9 +56,6 @@ import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
-import { seeNearbyMonsters } from './monster_observation.js';
-import { purgeDeadMonsters } from './monster_level_departure.js';
-import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterCover } from './monster_hiding.js';
 import { runDueTimers } from './timer_effects.js';
 import { finishInUseInventory } from './object_cleanup.js';
@@ -64,7 +70,6 @@ import { monsterMissMessage } from './monster_miss.js';
 import { MONSTER_GENO, monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
-import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { touchPetrifies } from './stoning.js';
 import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
@@ -213,7 +218,7 @@ import {
     revealAggravatingMonster,
 } from './muse.js';
 import { fumaroles } from './mkmaze.js';
-import { resumeDeferredMonsterTrap } from './trap.js';
+import { petrifyMonsterImmediately, resumeDeferredMonsterTrap } from './trap.js';
 import { commitPetPickup } from './dogmove.js';
 import {
     applyHeroSpellDamage,
@@ -226,9 +231,6 @@ import {
     resumeDeferredMovementSpell,
     rollDeferredHeroSpellDamage,
 } from './mcastu.js';
-import {
-    finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath,
-} from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { resolveMonsterLiquid } from './mon.js';

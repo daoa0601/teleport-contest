@@ -4,7 +4,7 @@ import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { explodeLandMine } from '../js/landmine_explosion.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { DAGGER } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';

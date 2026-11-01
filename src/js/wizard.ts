@@ -9,7 +9,7 @@ import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { setMonsterMalign, monsterAlignmentType } from './monster_alignment.js';
 import {
-    BOLT_LIM, Is_astralevel, isok, MAGIC_PORTAL, M_AP_MONSTER, MM_NOWAIT,
+    BOLT_LIM, Is_astralevel, Is_rogue_level, isok, MAGIC_PORTAL, M_AP_MONSTER, MM_NOWAIT,
     RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR,
     STRAT_PLAYER, STRAT_WAITFORU, STRAT_WAITMASK,
 } from './const.js';
@@ -21,7 +21,9 @@ import { monsterIsHelpless } from './monster_sleep.js';
 import { mksobj } from './mkobj.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { recordRandom } from './monster_action_types.js';
-import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import {
+    MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterClassSymbol,
+} from './monster_data.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import {
     catchUpMonster, monsterArrive, WIZ_ARRIVE,
@@ -36,7 +38,9 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { monsterAtPosition } from './monster_location.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
-import { healMonster } from './mon.js';
+import {
+    healMonster, monsterIndexByName, speciesWasGenocided,
+} from './mon.js';
 import { mnearto } from './shop_damage.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
@@ -537,3 +541,70 @@ function selectWizardCussMessage(monster: Monster, game: PlayingGameState, roll:
     ] + '!"';
 }
 
+// ── C wizard.c:pick_nasty().
+const NASTY_MONSTERS = [
+    'cockatrice', 'ettin', 'stalker', 'minotaur',
+    'owlbear', 'purple worm', 'xan', 'umber hulk',
+    'xorn', 'zruty', 'leocrotta', 'baluchitherium',
+    'carnivorous ape', 'fire elemental', 'jabberwock',
+    'iron golem', 'ochre jelly', 'green slime',
+    'displacer beast', 'genetic engineer',
+    'black dragon', 'red dragon', 'arch-lich', 'vampire leader',
+    'master mind flayer', 'disenchanter', 'winged gargoyle',
+    'storm giant', 'Olog-hai', 'elf-noble', 'elven monarch',
+    'ogre tyrant', 'captain', 'gremlin',
+    'silver dragon', 'orange dragon', 'green dragon', 'yellow dragon',
+    'guardian naga', 'fire giant', 'Aleax', 'couatl',
+    'horned devil', 'barbed devil',
+].map(monsterIndexByName);
+
+const NASTY_SHAPE_DEMOTIONS: readonly (readonly [string, string])[] = [
+    ['cockatrice', 'chickatrice'],
+    ['purple worm', 'baby purple worm'],
+    ['black dragon', 'baby black dragon'],
+    ['red dragon', 'baby red dragon'],
+    ['silver dragon', 'baby silver dragon'],
+    ['orange dragon', 'baby orange dragon'],
+    ['green dragon', 'baby green dragon'],
+    ['yellow dragon', 'baby yellow dragon'],
+    ['arch-lich', 'master lich'],
+    ['vampire leader', 'vampire'],
+    ['master mind flayer', 'mind flayer'],
+    ['elf-noble', 'elf'],
+    ['elven monarch', 'elf-noble'],
+    ['ogre tyrant', 'ogre leader'],
+    ['captain', 'lieutenant'],
+];
+const NASTY_BIG_TO_LITTLE = new Map(NASTY_SHAPE_DEMOTIONS.map(([large, small]): [number, number] => [
+    monsterIndexByName(large), monsterIndexByName(small),
+]));
+export function pickNastyShape(difficultyCap: number): number {
+    let result = pickNastyCandidate();
+    if (Is_rogue_level(game.u?.uz)
+        && !/^[A-Z]$/.test(monsterClassSymbol(result))) {
+        result = pickNastyCandidate();
+    }
+
+    const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
+    const outOfPlaceMask = inHell ? 0x0800 : 0x0400;
+    const shouldDemote = speciesWasGenocided(result, game)
+        || (difficultyCap > 0
+            && (MONSTER_DIFFICULTY[result] ?? 0) >= difficultyCap)
+        || !!((MONSTER_GENO[result] ?? 0) & outOfPlaceMask);
+    const alternate = shouldDemote
+        ? (NASTY_BIG_TO_LITTLE.get(result) ?? result) : result;
+    if (alternate !== result && !speciesWasGenocided(alternate, game)) {
+        const name = MONSTER_NAME[alternate] ?? '';
+        if (!name.startsWith('baby ')
+            && !/(?: hatchling| pup| cub)$/.test(name)) {
+            result = alternate;
+        }
+    }
+    return result;
+}
+
+function pickNastyCandidate(): number {
+    const result = NASTY_MONSTERS[rn2(NASTY_MONSTERS.length)];
+    if (result === undefined) throw new RangeError('Nasty monster selection is outside its species list');
+    return result;
+}

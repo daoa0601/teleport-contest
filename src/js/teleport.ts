@@ -32,7 +32,7 @@ import {
     Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, Is_astralevel,
     MON_ENDGAME_MIGR, MON_OBLITERATE,
 } from './const.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsRider } from './monster_data.js';
 import { AMULET_OF_YENDOR, LEASH, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, WAN_TELEPORTATION } from './object_data.js';
 import { spendHeroNutrition } from './hunger.js';
 import {
@@ -40,13 +40,13 @@ import {
 } from './ball.js';
 
 import { searchSpecial, somexyspace } from './mkroom.js';
-import { priestIsInOwnTemple } from './priest.js';
+import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 
 import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop } from './shk.js';
 import { makeAngryShopkeeper } from './shop_damage.js';
 import { findObjectOwner, onBillEntry, stolenValue } from './shop_loss.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { maybeUnhideAt, migrateMonsterToLevel, sendMonsterToLimbo } from './mon.js';
+import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
@@ -59,7 +59,6 @@ import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -1196,4 +1195,34 @@ export async function teleportAtWillCommand(ignoreRestrictions: boolean): Promis
         ignoreRestrictions, chooseDestination: askTeleportDestination,
     });
     game.context.move = Number(result.spentTime);
+}
+
+// C teleport.c:u_teleport_mon(). Relocation caused by immediate magic.
+export async function teleportMonsterByHero(monster: Monster, {
+    state = game, giveFeedback = true,
+}: { state?: GameState; giveFeedback?: boolean } = {}) {
+    requirePlayingGame(state);
+    if ((state.level.flags.stasis_until ?? -1) >= state.moves) {
+        if (giveFeedback) await pline(`A mysterious force prevents you teleporting ${monsterName(monster)}!`);
+        return false;
+    }
+    if (monster.ispriest && templeRoomAt(state, monster.mx, monster.my)) {
+        if (giveFeedback) await pline(`${monsterName(monster, { capitalized: true })} resists your magic!`);
+        return false;
+    }
+    if (state.u.uswallow && state.u.ustuck === monster && monsterTeleportRestricted(monster, state)) {
+        if (giveFeedback) await pline(`You are no longer inside ${monsterName(monster)}!`);
+        await releaseHeroFromMonster(monster, { state });
+        if (!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG }))
+            await sendMonsterToLimbo(monster, state);
+        return true;
+    }
+    if ((monsterIsRider(monster) || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x04000000)) && rn2(13)) {
+        const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
+        if (destination) {
+            await relocateMonsterTo(monster, destination.x, destination.y, { state });
+            return true;
+        }
+    }
+    return !!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
 }

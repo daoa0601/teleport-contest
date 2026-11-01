@@ -9,7 +9,7 @@ import { createCorpstatAt } from '../js/mkobj.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { CHEST, CORPSE, FOOD_RATION, SCR_MAIL } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';

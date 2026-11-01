@@ -18,9 +18,8 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { MapLocation, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MonsterLiquidDeathContext } from './mon.js';
+import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import type { HeroLiquidMonsterDeathOutcome, HeroMonsterKillOptions } from './hero_monster_death.js';
-import type { MonsterLiquidDeathResult } from './monster_death.js';
 import { heroLiquidEffects } from './hack.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
@@ -30,17 +29,15 @@ import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { deleteFloorTrap, maketrap } from './mklev.js';
-import { resolveMonsterLiquid, wakeMonster } from './mon.js';
+import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster } from './mon.js';
 import {
     MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
-import { monsterSelfTouch } from './monster_stoning.js';
 import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
-import { waterDamageChain } from './trap.js';
+import { monsterSelfTouch, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';

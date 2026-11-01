@@ -5,7 +5,7 @@ import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
-import { adjustMonsterSpeed } from '../js/monster_speed.js';
+import { adjustMonsterSpeed } from '../js/worn.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
 import { ALCHEMY_SMOCK, ELVEN_SHIELD, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
 import { castNativeRay } from '../js/ray_attack.js';

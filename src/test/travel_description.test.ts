@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { createMonsterAt } from './support/monsters.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 
 import { LA_DOWN, MM_ANGRY, NO_MINVENT, STAIRS } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';

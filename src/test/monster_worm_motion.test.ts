@@ -6,7 +6,7 @@ import { MM_ANGRY, MM_NOTAIL, NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
-import { adjustMonsterSpeed } from '../js/monster_speed.js';
+import { adjustMonsterSpeed } from '../js/worn.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { monsterAtPosition } from '../js/monster_location.js';

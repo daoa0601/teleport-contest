@@ -6,13 +6,13 @@
 // xdrainenergym() are folded in below in native order.
 import { setHeroGrip } from './hero_grip.js';
 import { d, rn2, rnd } from './rng.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData, } from './monster_data.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, newsym, } from './display.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData, } from './monster_data.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, flush_screen, map_invisible, newsym, } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { artifactById } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
-import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
+import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -21,12 +21,9 @@ import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { cloneMonster, splitMonster } from './monster_clone.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { cansee } from './vision.js';
-import { changeMonsterForm } from './monster_polymorph.js';
-import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
-import { applyMonsterGolemEffects, healMonster, monstersInFmonOrder, paralyzeMonster, resistConflict, resolveMonsterLiquid, } from './mon.js';
+import { applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, paralyzeMonster, prepareMonsterPetrification, resistConflict, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, } from './monster_location.js';
 import { monsterName as canonicalMonsterName, possessiveName, monsterName, monsterObjectPronoun, monsterPossessive, namelessMonsterName, } from './monster_name.js';
@@ -36,9 +33,14 @@ import { weaponHitBonus } from './weapon_accuracy.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
-import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack, resolveMonsterPhysicalDamage, tryKnockback, } from './uhitm.js';
+import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack, resolveMonsterPhysicalDamage, tryKnockback, } from './uhitm.js';
 import { monsterReflectionSource } from './ray.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
+import { finishMonsterEating } from './dogmove.js';
+import { monsterPolymorphsWhenStoned } from './mondata.js';
+import { clearMonsterWormFromMap, placeMonsterWormTailRandomly, } from './monster_worm.js';
+import { updateMonsterRegions } from './regions.js';
+import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './object_material.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objnam.js';
@@ -47,7 +49,6 @@ import { learnObjectType } from './object_knowledge.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
-import { petrifyMonsterAttacker, petrifyMonsterDefender, prepareMonsterPetrification } from './monster_stoning.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { dist2, distmin } from './hacklib.js';
@@ -1293,5 +1294,89 @@ export async function drainMonsterEnergy(monster, { state = game, publish = plin
     monster.mspec_used = (monster.mspec_used ?? 0) + rollDice(2, 2);
     if (giveMessage)
         await publish(`${monsterName(monster, { state, capitalized: true })} seems lethargic.`);
+}
+// C mhitm.c:mdisplacem(). Movement callers admit candidates through
+// monsterDisplacementFlags() (mon.ts); this excludes live worm tails;
+// a head-only worm keeps its wormno unchanged.
+// Movement callers admit candidates through monsterDisplacementFlags().
+// This excludes live worm tails; a head-only worm keeps its wormno unchanged.
+// C mhitm.c:mdisplacem().
+export async function displaceMonster(aggressor, defender, state = game, { quietly = false, random = rn2, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    if (!aggressor || !defender || aggressor === defender)
+        return M_ATTK_MISS;
+    const from = { x: aggressor.mx, y: aggressor.my };
+    const to = { x: defender.mx, y: defender.my };
+    const level = requireGameLevel(state);
+    const at = ({ x, y }) => monsterAtPosition(level, x, y);
+    if (at(from) !== aggressor || at(to) !== defender)
+        return M_ATTK_MISS;
+    if (random(7) === 0)
+        return M_ATTK_MISS;
+    if (aggressor.mnum === PM_GRID_BUG && from.x !== to.x && from.y !== to.y)
+        return M_ATTK_MISS;
+    defender.mundetected = 0;
+    const appearanceType = M_AP_TYPE(defender);
+    if (appearanceType && appearanceType !== M_AP_MONSTER)
+        await revealMonsterAppearance(defender);
+    defender.msleeping = 0;
+    defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    await finishMonsterEating(defender, state);
+    const aggressorSpotted = canSpotMonster(aggressor);
+    const bothSpotted = aggressorSpotted
+        && canSpotMonster(defender);
+    const wearsGloves = (aggressor.minvent ?? []).some(object => (object.owornmask ?? 0) & W_ARMG);
+    if (touchPetrifies(defender.mnum) && !monsterHasStoneResistance(aggressor)
+        && !wearsGloves) {
+        if (!monsterPolymorphsWhenStoned(aggressor) && !quietly && bothSpotted)
+            await publish(displacementMessage(aggressor, defender, true, state, random));
+        const result = await petrifyMonsterAttacker(aggressor, {
+            visible: !quietly && aggressorSpotted,
+            creditHero: false,
+            publish,
+            finishDeath: (monster, options = {}) => finishEnvironmentalMonsterDeath(monster, state, { ...options, random, publish }),
+        });
+        if (result.survived)
+            return M_ATTK_HIT;
+        if (aggressor.mtame && !bothSpotted)
+            await publish('You have a peculiarly sad feeling for a moment, then it passes.');
+        return M_ATTK_AGR_DIED;
+    }
+    removeMonsterFromMapAt(from.x, from.y, state);
+    removeMonsterFromMapAt(to.x, to.y, state);
+    const segments = defender.wormno ? await clearMonsterWormFromMap(defender) : 0;
+    await placeMonsterOnMap(aggressor, to.x, to.y);
+    await placeMonsterOnMap(defender, from.x, from.y);
+    if (defender.wormno)
+        await placeMonsterWormTailRandomly(defender, segments, { state, random });
+    updateMonsterRegions(aggressor, state);
+    updateMonsterRegions(defender, state);
+    if (bothSpotted && !quietly)
+        await publish(displacementMessage(aggressor, defender, false, state, random));
+    await newsym(from.x, from.y);
+    await newsym(to.x, to.y);
+    await flush_screen(0);
+    return M_ATTK_HIT;
+}
+function displacementMessage(aggressor, defender, trying, state, random) {
+    const subject = monsterName(aggressor, { capitalized: true, state });
+    const target = monsterName(defender, { state });
+    const possessive = monsterIsRider(aggressor) ? 'the'
+        : monsterPossessive(aggressor, { state, random });
+    return `${subject} ${trying ? 'tries to move' : 'moves'} ${target} out of ${possessive} way${trying ? '.' : '!'}`;
+}
+// C mhitm.c:mdamagem(). Touching the defender leaves no time to eat
+// a cure.
+export async function petrifyMonsterAttacker(monster, { publish = plineWithContinuation, visible = canSeeMonster(monster), creditHero = false, ...options } = {}) {
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied)
+        return { heroDied: true };
+    if (stoneForm)
+        return { survived: true };
+    if (visible)
+        await publish(`${monsterSubject(monster)} turns to stone!`);
+    if (creditHero)
+        recordHeroKillConduct();
+    return finishMonsterPetrification(monster, { ...options, publish });
 }
 //# sourceMappingURL=mhitm.js.map

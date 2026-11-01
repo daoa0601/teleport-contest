@@ -12,7 +12,6 @@ import { heroFormSticks } from './hero_species.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
 import { BOULDER, GOLD_PIECE, ROCK, TIN_WHISTLE } from './object_data.js';
@@ -29,7 +28,7 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { askTeleportDestination } from './teleport.js';
 import { publishMonsterYelp } from './monster_sound.js';
-import { sendMonsterToLimbo } from './mon.js';
+import { removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 export function findGuardDestination(state = game, guard = null) {
     const level = requireGameLevel(state);
     const ux = state.u.ux;

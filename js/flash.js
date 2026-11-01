@@ -16,7 +16,6 @@ import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '.
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
-import { seeMonsterCloseup } from './monster_observation.js';
 import { EXPENSIVE_CAMERA, WAN_LIGHT } from './object_data.js';
 import { rayPositionIsOpen } from './ray.js';
 import { visibleRegionAt } from './regions.js';
@@ -24,7 +23,7 @@ import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
-import { angerMonster, wakeMonster } from './mon.js';
+import { angerMonster, seeMonsterCloseup, wakeMonster } from './mon.js';
 const GREMLIN = MONSTER_NAME.indexOf('gremlin');
 const M1_NOEYES = 0x1000;
 const S_LIGHT = 25;

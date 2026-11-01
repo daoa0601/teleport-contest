@@ -2,7 +2,7 @@
 // C refs: trap.c dofiretrap() and trapeffect_fire_trap().
 import { formatSeenMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
-import { finishMonsterKilled, finishMonsterTrapDeath } from './monster_death.js';
+import { finishMonsterKilled } from './mon.js';
 import { AD_FIRE, AD_PHYS } from './monster_attack_types.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { heroHasDrainResistance } from './armor.js';
@@ -23,7 +23,7 @@ import { objectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
-import { burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
+import { burnArmorByFire, burnHeroArmorByFire, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { surfaceName } from './terrain_name.js';
 import { burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasFireResistance, } from './mondata.js';

@@ -1,6 +1,8 @@
 // potion_hit.js — Shared potion impact, direct effect, and vapor ownership.
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
 import { formatFeltMessage } from './hero_speech.js';
+import { finishMonsterKilled } from './mon.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { requirePlayingGame } from './gstate.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -24,8 +26,6 @@ import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledg
 import { POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
 import { AD_ACID, AD_DISE, AD_PEST, } from './monster_attack_types.js';
-import { finishMonsterKilled } from './monster_death.js';
-import { adjustMonsterSpeed, monsterSpeedMessage, } from './monster_speed.js';
 import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, } from './object_state.js';

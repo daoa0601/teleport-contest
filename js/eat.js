@@ -1,5 +1,6 @@
 // Native eat.c:doeat(), start_eating(), bite(), eatfood(), and done_eating().
 import { A_INT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, SATIATED, Upolyd } from './const.js';
+import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification } from './mon.js';
 import { applyCorpsePostEffects, applyCorpsePreEffects } from './corpse_eating.js';
 import { prepareCorpseMeal } from './corpse_meal.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -14,8 +15,6 @@ import { monsterName, possessiveName } from './monster_name.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { exerciseWisdom } from './attrib.js';
 import { fleshPetrifies } from './stoning.js';
-import { prepareMonsterPetrification } from './monster_stoning.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { propertyIsActive } from './properties.js';
 import { formatFeltMessage } from './hero_speech.js';

@@ -9,7 +9,7 @@ import { runSegment } from '../js/jsmain.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm, decideMonsterShapeChange } from '../js/monster_polymorph.js';
+import { changeMonsterForm, decideMonsterShapeChange } from '../js/mon.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { launchRollingBoulder } from '../js/rolling_boulder.js';

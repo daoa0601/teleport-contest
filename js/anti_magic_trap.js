@@ -2,7 +2,7 @@
 // C ref: trap.c trapeffect_anti_magic().
 import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled } from './mon.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { W_ACCESSORY, W_ARMF, W_ARMOR, W_WEP } from './const.js';

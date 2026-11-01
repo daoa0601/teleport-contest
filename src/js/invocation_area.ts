@@ -12,15 +12,13 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
-import type { MonsterLiquidDeathContext } from './mon.js';
-import type { MonsterLiquidDeathResult } from './monster_death.js';
+import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
 import { impossible, panic } from './diagnostics.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { maketrap, mkstairs } from './mklev.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { finishMonsterLiquidDeath, resolveMonsterLiquid } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { BOULDER } from './object_data.js';

@@ -10,7 +10,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { ddoinv } from '../js/invent.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';
 import { restoreGame, saveGame } from '../js/save.js';

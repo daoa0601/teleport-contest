@@ -2,7 +2,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { begForFood } from './monster_sound.js';

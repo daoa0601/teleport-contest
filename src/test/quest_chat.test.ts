@@ -10,7 +10,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { artifactObject } from './support/game-objects.js';
 import { floorArtifact } from './support/game-objects.js';
 import { rhack } from '../js/cmd.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { STRAT_CLOSE } from '../js/const.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';

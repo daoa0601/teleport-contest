@@ -9,7 +9,7 @@ import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { beginMonsterMove } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { DAGGER, ROCK } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

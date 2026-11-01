@@ -5,7 +5,7 @@ import { ANTI_MAGIC, ARROW_TRAP, DART_TRAP, NO_MINVENT, ROCKTRAP } from '../js/c
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_MAGM } from '../js/monster_attack_types.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';

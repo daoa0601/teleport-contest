@@ -64,7 +64,7 @@ import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetr
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { setHeroGrip } from './hero_grip.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf, } from './hero_engulf.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';

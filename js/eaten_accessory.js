@@ -12,7 +12,7 @@ import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { changeHeroSex } from './hero_species.js';
 import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
-import { restoreNaturalMonsterShapes } from './monster_polymorph.js';
+import { restoreNaturalMonsterShapes } from './mon.js';
 import { OBJECT_NAMES, OBJECT_PROPERTY, requireObjectData } from './object_data.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';

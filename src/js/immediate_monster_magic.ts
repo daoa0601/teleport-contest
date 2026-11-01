@@ -21,7 +21,7 @@ import { isSteadfast } from './uhitm.js';
 import { probeMonster } from './magic_probe.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './mimic.js';
-import { healMonster, wakeMonster, wakeAttackedMonster } from './mon.js';
+import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless,
@@ -29,9 +29,8 @@ import {
 } from './monster_data.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
-import { respondToImmediateMagic, teleportMonsterByHero } from './monster_magic_response.js';
+import { teleportMonsterByHero } from './teleport.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { changeMonsterForm } from './monster_polymorph.js';
 import { setMimicAppearance, monsterHitPointsPerLevel } from './makemon.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import {

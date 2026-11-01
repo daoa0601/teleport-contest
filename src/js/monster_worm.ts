@@ -10,7 +10,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { cloneMonster } from './monster_clone.js';
 import { monsterAtPosition, removeMonsterFromMapAt } from './monster_location.js';
 import { monsterName } from './monster_name.js';
-import { mcalcmove } from './monster_speed.js';
+import { mcalcmove } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { goodPosition } from './teleport_rules.js';
 import { isSavedRecord } from './saved_graph.js';

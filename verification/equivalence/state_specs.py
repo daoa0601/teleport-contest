@@ -14,7 +14,7 @@ STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
-    'js/monster_vitals.js', 'js/dungeon.js', 'js/monster_speed.js',
+    'js/monster_vitals.js', 'js/dungeon.js', 'js/mon.js',
 )
 
 
@@ -37,8 +37,8 @@ EXPERIENCE_ASSUMPTIONS = (
 MOVEMENT_ASSUMPTIONS = (
     'monst.c:monst_globals_init: all NUMMONS species partitioned; native/emitted fields retain initial values',
     'mon.c:mcalcmove: monster.data points to mons[species]; emitted mnum equals species',
-    'monster_speed.js:initializeMonsterMovement: finite movement/mmove/mspeed are already initialized',
-    'monster_speed.js:naturalMonsterSpeed: cached mmove equals emitted MONSTER_MOVE[species]',
+    'mon.js:initializeMonsterMovement: finite movement/mmove/mspeed are already initialized',
+    'mon.js:naturalMonsterSpeed: cached mmove equals emitted MONSTER_MOVE[species]',
     'you.h:usteed: missing/same/other mount identities correspond; other mount fields are unread',
 )
 
@@ -119,7 +119,7 @@ STATE_SPECS += [
     Spec('mcalcmove:tables', 'mcalcmove', 'mcalcmove',
          [('species', INT), ('moving', (8, False)), ('riding', INT), ('steed_present', INT), ('movement', INT)],
          slow=True, assumptions=MOVEMENT_ASSUMPTIONS,
-         require_counterexamples=True, js_file='js/monster_speed.js',
+         require_counterexamples=True, js_file='js/mon.js',
          state=[('monster.mspeed', (32, False), 'monster.mspeed'),
                 ('u.ugallop', (64, True), 'game.u.ugallop'),
                 ('svc.context.mv', SCHAR, 'game.context.mv')],
@@ -131,6 +131,6 @@ STATE_SPECS += [
                  ('negative gallop timer', lambda s: movement_domain(s, -1) + [
                      s['species'] == 0, s['moving'] == 0, s['riding'] == 1,
                      s['u.ugallop'] == -1, s['svc.context.mv'] == 1])],
-         mutants=[('js/monster_speed.js', 'random(NORMAL_SPEED) < adjustment',
+         mutants=[('js/mon.js', 'random(NORMAL_SPEED) < adjustment',
                    'random(NORMAL_SPEED) <= adjustment')]),
 ]

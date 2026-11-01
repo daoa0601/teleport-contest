@@ -40,7 +40,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { removeObjectAndContentsFromBill, currentShopResident } from './shk.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { touchPetrifies } from './stoning.js';
-import { petrifyMonsterImmediately } from './monster_stoning.js';
+import { petrifyMonsterImmediately } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { makeMonsterFlee } from './monmove.js';
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".

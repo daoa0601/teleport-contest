@@ -5,7 +5,7 @@ import { G_NOCORPSE, MGIVENNAME, NO_MINVENT } from '../js/const.js';
 import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import {
     CORPSE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,

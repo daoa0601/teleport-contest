@@ -19,6 +19,7 @@ import {
     M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP,
 } from './const.js';
 import { game } from './gstate.js';
+import { speciesWasGenocided } from './mon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import type { ArtifactDefense } from './data_types.js';
 import type { GameState } from './game_state.js';
@@ -665,4 +666,14 @@ export function levelFollower(monster: Monster, state: GameState): boolean {
         return true;
     return !!(questMonsterFlags2(monster.mnum, state) & M2_STALK)
         && (!monster.mflee || !!state.u.uhave?.amulet);
+}
+
+// C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
+const S_GOLEM_POLY = 55;
+const PM_STONE_GOLEM_POLY = 257;
+
+export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
+    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
+        && monster.mnum !== PM_STONE_GOLEM_POLY
+        && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
 }

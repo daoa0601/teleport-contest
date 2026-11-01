@@ -1,6 +1,5 @@
 // Arrows and darts fired at monsters by floor traps.
 // C ref: trap.c:trapeffect_arrow_trap() and trapeffect_dart_trap().
-import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
@@ -12,7 +11,7 @@ import { objectDescription } from './object_description.js';
 import { observeObjectForNaming } from './objnam.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makeTrapMissile } from './trap_missile.js';

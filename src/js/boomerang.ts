@@ -8,7 +8,7 @@ import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { monsterAtPosition } from './monster_location.js';
-import { respondToImmediateMagic } from './monster_magic_response.js';
+import { respondToImmediateMagic } from './mon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';

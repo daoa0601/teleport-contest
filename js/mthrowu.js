@@ -35,7 +35,7 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
 import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2, } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, } from './monster_data.js';
 import { unlinkObject } from './object_location.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -44,7 +44,6 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './monster_weapon.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { delobj, deleteObject } from './object_delete.js';
@@ -77,7 +76,7 @@ import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { plineWithContinuation } from './pline.js';
 import { requirePerceivedHero } from './monmove.js';
 import { seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
-import { angerAttackedMonster } from './mon.js';
+import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
