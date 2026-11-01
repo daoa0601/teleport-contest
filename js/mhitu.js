@@ -2986,7 +2986,7 @@ export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, 
 }
 export async function swingMonsterWeapon(monster, weapon, state = game, { defender = null, publish = plineWithContinuation, random = rn2, } = {}) {
     if (!state.flags.verbose || heroIsBlind(state)
-        || !(defender ? monsterVisible(monster) : canSeeMonster(monster)))
+        || !monsterVisible(monster, state))
         return;
     const x = defender ? defender.mx : state.u.ux;
     const y = defender ? defender.my : state.u.uy;

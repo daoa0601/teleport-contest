@@ -3241,7 +3241,7 @@ export async function swingMonsterWeapon(
     }: WeaponSwingOptions = {},
 ): Promise<void> {
     if (!state.flags.verbose || heroIsBlind(state)
-        || !(defender ? monsterVisible(monster) : canSeeMonster(monster))) return;
+        || !monsterVisible(monster, state)) return;
     const x = defender ? defender.mx : state.u.ux;
     const y = defender ? defender.my : state.u.uy;
     const bash = isPolearm(weapon)
