@@ -15,10 +15,12 @@ for 120 seconds under the default configuration on Linux while the same
 branch proved it in about a second on macOS, with byte-identical
 propositions, and reproduced layouts were later observed to stall the tuned
 configuration instead. The tuned configuration decided all 144 distinct rnl
-propositions in at most 0.3 s for every seed from 0 to 7, so it runs first
-under a probe budget; whichever configuration answers decides the query. An
-`unsat` or `sat` answer from either configuration is an ordinary Z3 result;
-which search found it does not affect soundness.
+propositions in at most 0.3 s for every seed of a standalone 0-to-7 matrix,
+and the whole claim proved for every seed from 0 to 20 inside one process
+(worst run 6.2 s, paying the probe budget once on a fragile layout), so it
+runs first under a probe budget; whichever configuration answers decides the
+query. An `unsat` or `sat` answer from either configuration is an ordinary
+Z3 result; which search found it does not affect soundness.
 """
 from collections import OrderedDict
 
@@ -44,12 +46,12 @@ def _default_solver(proposition, timeout):
     return solver.check(), solver
 
 
-def solve(constraints, timeout):
+def solve(constraints, timeout, probe_ms=_PROBE_MS):
     proposition = z3.simplify(z3.And(*constraints))
     if proposition in _UNSAT:
         _UNSAT.move_to_end(proposition)
         return z3.unsat, None
-    result, solver = _tuned_solver(proposition, min(timeout, _PROBE_MS))
+    result, solver = _tuned_solver(proposition, min(timeout, probe_ms))
     if result == z3.unknown:
         result, solver = _default_solver(proposition, timeout)
     if result == z3.unknown:

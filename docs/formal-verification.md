@@ -185,14 +185,18 @@ same claim instead. `solve()` therefore runs every proposition under the
 then the default configuration with the full budget, and finally the tuned
 configuration with the full budget; whichever answers decides. The tuned
 configuration discharged all 144 distinct `rnl` propositions in at most 0.3 s
-for every seed from 0 to 7. The claims, domains, and outputs are unchanged:
-an `unsat` answer from either configuration is an ordinary Z3 proof, and
-`sat`/`unknown` results still return immediately from the producing solver.
-A regression test runs the whole `rnl` claim under seeds 0 through 20 and
-bounds each run at 45 seconds; before the change it failed in three of three
-processes (one obligation reaching the per-query timeout each time), and
-after it every seed proves in a few seconds -- a fragile layout costs the
-probe budget once, not a 120-second timeout.
+for every seed of a standalone 0-to-7 matrix, and the whole claim proved for
+every seed from 0 to 20 inside one process (worst run 6.2 s). The claims,
+domains, and outputs are unchanged: an `unsat` answer from either
+configuration is an ordinary Z3 proof, and `sat`/`unknown` results still
+return immediately from the producing solver. A regression test runs the
+whole `rnl` claim under seeds 0 through 20 with a bounded per-query budget
+and asserts only that every seed proves; before the change it failed in
+three of three processes (one obligation reaching the per-query timeout
+each time), and after it every seed proves in a few seconds -- a fragile
+layout costs the probe budget once, not a 120-second timeout. A second test
+drives a genuine tuned-solver timeout (a one-millisecond probe budget) and
+checks that the default configuration still returns both proofs and models.
 
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.

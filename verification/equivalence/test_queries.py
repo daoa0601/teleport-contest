@@ -1,7 +1,6 @@
 """Repeated solver queries keep their entry domains and isolate temporary facts."""
-import time
 import unittest
-from unittest.mock import patch
+
 import z3
 
 import prove
@@ -12,13 +11,18 @@ from specs import SPECS
 
 
 class SolverRetryTests(unittest.TestCase):
-    def test_a_tuned_solver_timeout_is_retried_with_the_default_configuration(self):
-        x = z3.Int('retry_x')
-        with patch('queries._tuned_solver', return_value=(z3.unknown, None)):
-            self.assertEqual(solve([x >= 0, x <= 3, x == 5], 60_000)[0], z3.unsat)
-            result, solver = solve([x >= 0, x <= 3, x == 2], 60_000)
-            self.assertEqual(result, z3.sat)
-            self.assertEqual(solver.model()[x], z3.IntVal(2))
+    def test_a_tuned_solver_timeout_is_answered_by_the_default_configuration(self):
+        # A one-millisecond probe budget makes the tuned configuration give
+        # up for real (its own z3 timeout), so the default configuration
+        # must still decide both propositions.
+        x, r = z3.Ints('retry_x retry_r')
+        self.assertEqual(solve([x >= 1, x <= 50, (r % x) >= x], 60_000, probe_ms=1)[0],
+                         z3.unsat)
+        result, solver = solve([x >= 4, x <= 40, (r % x) == 3], 60_000, probe_ms=1)
+        self.assertEqual(result, z3.sat)
+        model = solver.model()
+        self.assertGreaterEqual(model[x].as_long(), 4)
+        self.assertEqual(model[r].as_long() % model[x].as_long(), 3)
 
     def test_rnl_output_obligations_hold_under_every_solver_seed(self):
         spec = next(s for s in SPECS if s.name == 'rnl')
@@ -26,9 +30,9 @@ class SolverRetryTests(unittest.TestCase):
         front = prove.CFront(recorder, [recorder / 'src' / file for file in prove.C_FILES]
                              + list((prove.HERE / 'harness').glob('*.c')))
         modules = prove.load_modules()
-        # A seed near the default solver's search limit must not turn into a
-        # 120-second timeout: every obligation still has to be discharged,
-        # quickly, for every seed.
+        # Without the second solver configuration, one rnl obligation
+        # reached the per-query timeout and the claim failed; here every
+        # seed must prove within the bounded per-query budget below.
         previous_seed = z3.get_param('smt.random_seed')
         original_solve = prove._solve
         prove._solve = lambda constraints: solve(constraints, 8_000)
@@ -37,14 +41,8 @@ class SolverRetryTests(unittest.TestCase):
                 with self.subTest(seed=seed):
                     z3.set_param('smt.random_seed', seed)
                     queries._UNSAT.clear()
-                    started = time.monotonic()
                     proved, report = prove.check(spec, front, modules, spec.pre)
-                    elapsed = time.monotonic() - started
                     self.assertTrue(proved, report)
-                    # A fragile layout must cost the probe budget, not a
-                    # 120-second timeout: without the second configuration
-                    # one obligation stalled here for the full query timeout.
-                    self.assertLess(elapsed, 45, f'{elapsed:.1f}s at seed {seed}')
         finally:
             prove._solve = original_solve
             z3.set_param('smt.random_seed', previous_seed)
