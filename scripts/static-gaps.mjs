@@ -456,7 +456,9 @@ async function edges(args) {
 async function ownership(args) {
     const option = optionReader(args);
     const tree = resolveCSourceTree(ROOT, CACHE);
-    const { rows } = await compareEdges(ROOT, tree, CACHE, (await cFacts(tree)).definedIn);
+    // Ownership counts only the port's own origin citation (or exact name);
+    // prose mentions of other C functions stay edges-mode callee coverage.
+    const { rows } = await compareEdges(ROOT, tree, CACHE, (await cFacts(tree)).definedIn, true);
     const report = moduleOwnership(rows);
     writeFileSync(join(CACHE, 'owners.json'), JSON.stringify(report, null, 1) + '\n');
     const single = report.modules.filter(row => row.minority.length === 0).length;

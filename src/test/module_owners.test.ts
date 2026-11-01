@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { MIXED_TOLERANCE, moduleOwnership, removedModuleKeys } from '../scripts/lib/module-owners.mjs';
+import { originCitation } from '../scripts/lib/gap-edges.mjs';
 import type { OwnerEdge } from '../scripts/lib/module-owners.mjs';
 
 // The edges mapping located as `src/js/file.ts:line`, the way the report
@@ -100,4 +101,16 @@ void test('a C file spread over modules lists them, most mapped functions first'
         { module: 'src/js/allmain.ts', count: 3 },
         { module: 'src/js/hack.ts', count: 1 },
     ]);
+});
+
+void test('only a comment block that opens with C file.c:name() is an origin citation', () => {
+    assert.equal(originCitation('// C zap.c:dobuzz(). The port fires a bolt.'), 'dobuzz');
+    assert.equal(originCitation('// sp_lev.c:get_free_room_loc(). No C prefix.'), 'get_free_room_loc');
+
+    // Prose mentions of other C functions are callee coverage, never origin.
+    assert.equal(originCitation('// The dobuzz port reaches ureflects() as heroReflectionSource.'), null);
+    assert.equal(originCitation('// bl_unconsc reads trap.c:unconscious() as the helplessness flag.'), null);
+    assert.equal(originCitation('// Forwarded through stop_occupation(), via xytodir().'), null);
+    assert.equal(originCitation('// Ref: zap.c buzz(), dobuzz() and friends.'), null);
+    assert.equal(originCitation(undefined), null);
 });

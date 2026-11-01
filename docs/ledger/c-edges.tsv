@@ -1324,6 +1324,8 @@ godvoice	rn2
 good_rm_wall_doorpos	bydoor
 good_rm_wall_doorpos	isok
 goodpos	accessible
+goodpos	closed_door
+goodpos	is_pool
 goodpos	isok
 goodpos	rn2
 gulpmm	newsym

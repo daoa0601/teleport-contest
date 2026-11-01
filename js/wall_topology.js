@@ -57,12 +57,12 @@ export function setWallState() {
             setWallStateAt(x, y);
     }
 }
-// C ref: display.c set_wall_state()/xy_set_wall_state().  Wall topology and
-// visibility are separate: the terrain type supplies the nominal junction,
-// while the low three wall_info bits say which side is unfinished exterior.
+// C display.c:check_pos(). Rock or corridor means an unfinished exterior.
+// Junction context: the terrain type supplies the nominal junction, while
+// the low three wall_info bits say which side is unfinished exterior.
 // back_to_glyph()/wall_angle() later combines that mode with `seenv` so a
 // hero beside a doorway does not see the outside face of the room wall.
-// C display.c:check_pos(). Rock or corridor means an unfinished exterior.
+// C ref: display.c set_wall_state()/xy_set_wall_state() for the callers.
 function wallCheckPos(x, y, which) {
     if (!isok(x, y))
         return which;

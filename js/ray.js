@@ -65,7 +65,7 @@ export function rayHitsHero(state = game, random = rn2, rollOne = rnd) {
         ? armorClass : -rollOne(-armorClass);
     return 3 - chance < effectiveArmorClass;
 }
-// C zap.c:ureflects(): finds the reflecting worn item; callers print the
+// C muse.c:ureflects(): finds the reflecting worn item; callers print the
 // "It bounces off your ..." line ureflects() used to print itself, and
 // discoverHeroReflectionSource below performs its makeknown()
 // (discover_object()) for a reflecting shield or amulet.
