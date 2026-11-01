@@ -9,7 +9,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { displayColorName, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -123,49 +123,6 @@ export function resetHeroSlimingCountdown(state = game, turns = 10) {
     state.u.slimedTurns = turns;
     state.u.slimed = true;
     return true;
-}
-// Continue a green slime's touch after hitmsg(). The contact's ordinary
-// damage remains unless the hero's current form cannot be slimed.
-export function resumeDeferredHeroSlime(action, state) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredSlimeEffect)
-        return action;
-    attack.deferredSlimeEffect = false;
-    if (attack.slimeNegated) {
-        if (!attack.slimeCancelled)
-            attack.slimeEffectMessage = 'You escape harm.';
-    }
-    else if (heroIsFlaming(state)) {
-        attack.damage = 0;
-        attack.slimeEffectMessage = 'The slime burns away!';
-    }
-    else if (state.u?.unchanging || state.unchanging
-        || heroIsNoncorporeal(state)
-        || heroIsGreenSlime(state)) {
-        attack.damage = 0;
-        attack.slimeEffectMessage = 'You are unaffected.';
-    }
-    else if (!heroIsSliming(state)) {
-        attack.slimeEffectMessage = "You don't feel very well.";
-        attack.slimeStartPending = true;
-        attack.slimeKiller = requireMonsterData(MONSTER_NAME, action.monster.mnum);
-    }
-    else {
-        attack.slimeEffectMessage = 'Yuck!';
-    }
-    attack.deferredPostHit = true;
-    return action;
-}
-// make_slimed() runs after its warning line has crossed tty.
-export function finishDeferredHeroSlime(action, state) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.slimeStartPending)
-        return action;
-    if (attack.slimeKiller === undefined)
-        throw new Error('Deferred slime contact is missing its killer.');
-    startHeroSliming({ state, killer: attack.slimeKiller });
-    attack.slimeStartPending = false;
-    return action;
 }
 function slimeMessage(turns, state, randomMonsterName) {
     if (turns === 9) {

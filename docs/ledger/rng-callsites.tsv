@@ -1367,7 +1367,7 @@ src/js/mthrowu.ts	resolveMonsterCombatBreath	random	"[""3""]"	constant
 src/js/mthrowu.ts	resolveMonsterCombatBreath	random	"[""8""]"	constant
 src/js/mthrowu.ts	linedUp	random	"[""2 + boulderSquares""]"	guarded
 src/js/mthrowu.ts	monsterLinedUpWithHero	random	"[""25""]"	constant
-src/js/mhitu.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
+src/js/mhitu.ts	presentHeroEngulfSlot/rollOne	rollOne	"[""sides""]"	unproved
 src/js/uhitm.ts	mhitmAdLegs	rollOne	"[""durationSides""]"	invariant
 src/js/trap.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
 src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved

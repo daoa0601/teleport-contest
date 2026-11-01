@@ -115,7 +115,7 @@ import {
 import { loseHeroExperience } from './exper.js';
 import {
     makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, resumeDeferredCovetousRelocation,
-    resumeDeferredRestrictedTenguTeleport, resumeDeferredSpecialAttack, resumeDeferredMonsterHideUnder,
+    resumeDeferredRestrictedTenguTeleport, resumeDeferredMonsterHideUnder,
     completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove,
     beginMonsterDochug, runMonsterAction,
 } from './monmove.js';
@@ -176,8 +176,7 @@ import { initializeSourceStartup } from './startup.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
-    completeHeroAttackSlot, resumeDeferredHeroContact, resumeDeferredHeroSticking, resumeDeferredHeroEngulf,
-    resumeDeferredHeroReveal, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion,
+    completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion,
 } from './mhitu.js';
 import {
     finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, presentMonsterQuaff as publishMonsterQuaff,
@@ -192,7 +191,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
-import { clearHeroSliming, finishDeferredHeroSlime, resumeDeferredHeroSlime } from './slime.js';
+import { clearHeroSliming } from './slime.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';

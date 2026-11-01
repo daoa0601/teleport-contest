@@ -2480,7 +2480,6 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
     }
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
-    attack.deferredPostHit = true;
 }
 async function splashHeroWithAcid(monster, attack, state, publish, random) {
     if (monster.mcan || random(3) !== 0) {
