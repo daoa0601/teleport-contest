@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import {
     fullyIdentifyObject, inventoryItemDescription,
 } from '../js/invent.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, SADDLE, SHIELD_OF_REFLECTION,
     WAN_WISHING,

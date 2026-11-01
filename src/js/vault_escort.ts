@@ -5,10 +5,9 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import {
-    ACCESSIBLE, BLCORNER, BRCORNER, COLNO, COULD_SEE, CORR, DOOR, D_NODOOR,
-    GD_EATGOLD, HWALL, IN_SIGHT, IS_POOL, IS_ROOM, IS_STWALL, IS_WALL,
-    MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_MSG, RLOC_NOMSG,
-    ROWNO, SCORR, STONE, TLCORNER, TRCORNER, VAULT, VWALL, isok,
+    ACCESSIBLE, BLCORNER, BRCORNER, COLNO, COULD_SEE, CORR, DOOR, D_NODOOR, GD_EATGOLD, HWALL, IN_SIGHT, IS_POOL,
+    IS_ROOM, IS_STWALL, IS_WALL, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, ROWNO,
+    SCORR, STONE, TLCORNER, TRCORNER, VAULT, VWALL, isok,
 } from './const.js';
 import { canSpotMonster, monsterVisible, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -21,24 +20,26 @@ import { heroFormSticks } from './hero_species.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
-import { linkObjectToMonsterInventory } from './monster_inventory.js';
-import { monsterName, monsterPossessive } from './monster_name.js';
+import { linkObjectToMonsterInventory } from './mkobj.js';
+import { monsterName } from './do_name.js';
+import { monsterPossessive } from './mondata.js';
 import { BOULDER, GOLD_PIECE, ROCK, TIN_WHISTLE } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
+import { moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard, setVaultTerrainFlags } from './vault_guard.js';
+import {
+    clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard, setVaultTerrainFlags,
+} from './vault_guard.js';
 import type { VaultGuard } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
-import { askTeleportDestination } from './teleport.js';
-import { publishMonsterYelp } from './monster_sound.js';
 import { removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
+import { publishMonsterYelp } from './ambient_sounds.js';
 
 export function findGuardDestination(state: GameState = game, guard: Monster | null = null) {
     const level = requireGameLevel(state);

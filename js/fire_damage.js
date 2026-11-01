@@ -9,7 +9,7 @@ import { delobj } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
-import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX, POT_OIL, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';

@@ -7,7 +7,7 @@ import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, LEASH } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterLearnsTrap } from '../js/trap_knowledge.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

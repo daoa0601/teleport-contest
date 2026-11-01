@@ -56,22 +56,14 @@ import { retouchEquipment } from './hero_retouch.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { igniteItems } from './light.js';
 import {
-    applyMonsterGolemEffects,
-    changeMonsterForm,
-    finishMonsterKilled,
-    grantMonsterCorpseIntrinsic,
-    grantMonsterIntrinsic,
-    healMonster,
-    paralyzeMonster,
-    removeMonsterFromGame,
-    resolveMonsterCorpseChance,
+    applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, grantMonsterCorpseIntrinsic,
+    grantMonsterIntrinsic, healMonster, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance,
     finishMonsterPetrification, monsterSubject, turnGolemToStone,
 } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import type {
-    MonsterDeathHandler, MonsterDefenderPetrificationResult,
-    PetrificationDeathHandler, PetrificationOptions,
+    MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationDeathHandler, PetrificationOptions,
 } from './mon.js';
 import { monsterSelfTouch } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
@@ -79,10 +71,8 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { splitMonster } from './monster_clone.js';
 import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
-import {
-    destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
-    unlinkMonsterObject,
-} from './monster_inventory.js';
+import { linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, set_corpsenm } from './mkobj.js';
+import { destroyObjectFromMonsterInventory, removeObjectFromMonsterInventory } from './monworn.js';
 import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import {
     AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX, AD_DRIN, AD_DREN,
@@ -99,19 +89,18 @@ import {
 import {
     monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance,
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance,
-    monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance,
+    monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterPossessive,
 } from './mondata.js';
-import {
-    monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName, possessiveName,
-} from './monster_name.js';
+import { monsterName, monsterName as displayedMonsterName, namelessMonsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
-import { stealHeroQuestObject } from './monster_quest_theft.js';
+import { stealHeroQuestObject, stealHeroGold } from './steal.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
-import { sessionIsNight } from './monster_sound.js';
+import { sessionIsNight } from './ambient_sounds.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
@@ -122,7 +111,6 @@ import { petFoodNutrition } from './pet_eating.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, DUNCE_CAP, IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from './object_data.js';
-import { mksobj, set_corpsenm } from './mkobj.js';
 import { deallocateObject } from './object_delete.js';
 import { cloneHeroMonsterForm } from './mklev.js';
 import { objectMaterial } from './object_material.js';
@@ -155,7 +143,6 @@ import {
 } from './were.js';
 import { heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction } from './mhitu.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { stealHeroGold } from './steal.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { isBluntWeapon, isFlimsyObject, isPermanentlyPoisonedObject, isWeaponTool } from './object_properties.js';
 import { d, rn2, rnd } from './rng.js';

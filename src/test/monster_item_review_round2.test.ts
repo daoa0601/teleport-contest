@@ -14,7 +14,7 @@ import {
 } from '../js/muse.js';
 import { rollDeferredHeroSpellDamage } from '../js/mcastu.js';
 import type { MonsterCallLog } from '../js/monster_action_types.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { summonMonsterInsects } from '../js/monster_spell_insects.js';
 import { IRON_SHOES, KICKING_BOOTS, SPEED_BOOTS, LEASH, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { detectObjects } from '../js/magic_detection.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { SPE_DETECT_TREASURE } from '../js/object_data.js';

@@ -20,14 +20,16 @@ import {
     BL_WEAPON, BL_ARMOR, BL_TERRAIN,
     In_endgame, In_quest, Is_knox_level, Upolyd,
 } from './const.js';
-import { MONSTER_LEVEL } from './monster_data.js';
+import { MONSTER_LEVEL, SPECIAL_PM } from './monster_data.js';
 import { GOLD_PIECE } from './object_data.js';
+import { roles } from './roles.js';
+import type { Monster } from './monster_types.js';
+import type { GameState } from './game_state.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { nearCapacity } from './weight.js';
 import { activeObjectSymbols, objectClassForType, objectClassSymbol } from './display.js';
 import { writeStatusLines } from './wintty.js';
-import type { GameState } from './game_state.js';
 
 // C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
@@ -221,4 +223,20 @@ export function timebot(): void {
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
+}
+
+// C botl.c:rank_of(). A player monster's title from its level; mon_nam()
+// lowercase it for "the roguish Brigitte".
+export function monsterRank(monster: Monster, state: GameState = game): string {
+    const role = roles.find(candidate =>
+        SPECIAL_PM + 1 + candidate.mnum === monster.mnum) || state.urole;
+    if (!role) throw new Error('Naming a player monster requires an initialized hero role.');
+    const level = monster.m_lev;
+    const rank = level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
+    for (let index = rank; index >= 0; index--) {
+        const title = role.title[index];
+        if (monster.female && title?.f) return title.f;
+        if (title?.m) return title.m;
+    }
+    return monster.female && role.name.f || role.name.m || 'Player';
 }

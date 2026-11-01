@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { lookAtMonster } from '../js/pager_monsters.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

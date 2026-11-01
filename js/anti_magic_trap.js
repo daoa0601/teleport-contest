@@ -19,7 +19,7 @@ import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { ownedObjectName } from './objnam.js';
 const M1_WALLWALK = 0x00000008;
 const IRON = 11;

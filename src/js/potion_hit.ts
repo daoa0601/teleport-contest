@@ -75,7 +75,8 @@ import {
     chargeUnpaidObjectAsDebt, objectTypeKnown,
 } from './shk.js';
 import { monsterSaddle } from './steed.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { deleteObject } from './object_delete.js';
 import { cansee } from './vision.js';
 import {

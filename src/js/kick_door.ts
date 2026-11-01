@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { rn2, rnl } from './rng.js';
 import { inTown, roomsAt } from './room.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

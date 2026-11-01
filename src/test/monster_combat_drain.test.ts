@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    M_ATTK_DEF_DIED, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG,
-    MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU, W_AMUL, W_ARM, W_ARMC, W_WEP,
+    M_ATTK_DEF_DIED, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU, W_AMUL,
+    W_ARM, W_ARMC, W_WEP,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -14,11 +14,9 @@ import {
 } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { changeMonsterForm } from '../js/mon.js';
-import {
-    AMULET_OF_LIFE_SAVING, BLACK_DRAGON_SCALES, CLOAK_OF_PROTECTION, OBJECT_NAMES,
-} from '../js/object_data.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
+import { AMULET_OF_LIFE_SAVING, BLACK_DRAGON_SCALES, CLOAK_OF_PROTECTION, OBJECT_NAMES } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { isHumanWereMonster } from '../js/were.js';
 import { artifactObject, knownObject } from './support/game-objects.js';

@@ -30,7 +30,7 @@ import { objectTimers } from '../js/object_timers.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initializePet } from '../js/dog.js';
 import { installSwallowedHero } from './support/hero-state.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { syncBlindness } from '../js/senses.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';

@@ -6,7 +6,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroIsUnconscious, putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { revealAggravatingMonster } from '../js/muse.js';
 import { initializePet } from '../js/dog.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';

@@ -7,7 +7,7 @@ import { canSenseMonster } from './display.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { d, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { moveMonsterNextToHero } from './teleport.js';

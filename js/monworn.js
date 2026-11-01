@@ -5,26 +5,33 @@ import { bypassObject } from './object_bypass.js';
 import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
-import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, } from './objnam.js';
+import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { canSeeMonster, displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
-import { updateMonsterEquipment } from './monster_equipment.js';
+import { learnWand } from './wand_charge.js';
 import { learnObjectType } from './object_knowledge.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './terrain_name.js';
-import { monsterName, monsterObjectPronoun, monsterPossessive, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { monsterObjectPronoun, monsterPossessive } from './mondata.js';
+import { possessiveName } from './hacklib.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
-import { destroyObjectFromMonsterInventory, dropMonsterArmor, } from './monster_inventory.js';
-import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
-import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, } from './const.js';
+import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
+import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP, } from './const.js';
+import { placeObject } from './floor_object.js';
+import { objectNoLongerHeld } from './object_release.js';
+import { deleteObject } from './object_delete.js';
+import { unwieldMonsterWeapon } from './monster_weapon.js';
+import { unlinkMonsterObject } from './mkobj.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -42,6 +49,73 @@ const SLOT_MASK = Object.freeze({
     uarmf: W_ARMF,
     uarmu: W_ARMU,
 });
+// Properties granted or blocked by monster armor. C worn.c:update_mon_extrinsics().
+const RESISTANCE_BITS = {
+    fireResistance: 0x01,
+    coldResistance: 0x02,
+    sleepResistance: 0x04,
+    disintegrationResistance: 0x08,
+    shockResistance: 0x10,
+    poisonResistance: 0x20,
+    acidResistance: 0x40,
+    stoneResistance: 0x80,
+};
+function equipmentProperties(object) {
+    const primary = requireObjectData(OBJECT_PROPERTY, object.otyp);
+    if (!primary)
+        return [];
+    if (object.otyp !== ALCHEMY_SMOCK)
+        return [primary];
+    return [primary, primary === 'poisonResistance' ? 'acidResistance' : 'poisonResistance'];
+}
+// C worn.c:update_mon_extrinsics(). Also used when constructing
+// already-equipped monsters without game messages.
+export function applyMonsterEquipmentProperties(monster, object, on) {
+    let speed = null;
+    for (const property of equipmentProperties(object)) {
+        if (property === 'invisible') {
+            monster.minvis = on ? !monster.invis_blkd : !!monster.perminvis;
+        }
+        else if (property === 'fast') {
+            speed = adjustMonsterSpeed(monster, 0);
+        }
+        else {
+            const bit = RESISTANCE_BITS[property];
+            if (!bit)
+                continue;
+            if (on) {
+                monster.mextrinsics = (monster.mextrinsics || 0) | bit;
+            }
+            else {
+                const anotherSource = (monster.minvent || []).some(other => other !== object && other.owornmask
+                    && equipmentProperties(other).includes(property));
+                if (!anotherSource)
+                    monster.mextrinsics = (monster.mextrinsics || 0) & ~bit;
+            }
+        }
+    }
+    if (object.otyp === MUMMY_WRAPPING) {
+        monster.invis_blkd = on ? 1 : 0;
+        monster.minvis = on ? false : !!monster.perminvis;
+    }
+    return speed;
+}
+// C worn.c:update_mon_extrinsics().
+export async function updateMonsterEquipment(monster, object, on, state = game, { silently = false, publish = plineWithContinuation } = {}) {
+    const wasVisible = canSeeMonster(monster);
+    const speed = applyMonsterEquipmentProperties(monster, object, on);
+    if (!silently && !state.in_mklev && speed?.changed && speed.canDescribe && canSeeMonster(monster)) {
+        const message = monsterSpeedMessage(speed, monsterName(monster, { state, capitalized: true }), state);
+        if (message) {
+            await publish(message);
+            learnWand(object, { state });
+        }
+    }
+    if (!on && state.u.usteed === monster && object.otyp === SADDLE)
+        await dismountHero(DISMOUNT_FELL, { state, announce: publish });
+    if (!silently && wasVisible !== canSeeMonster(monster))
+        await newsym(monster.mx, monster.my);
+}
 function monsterCanDress(monster, creation) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
@@ -466,5 +540,78 @@ export async function reassessMonsterArmor(monster, state = game, { publish = pl
         consumed: (monster.misc_worn_check ?? 0) !== oldMask
             || monster.mcanmove === 0,
     };
+}
+// Clears the worn, wielded and carried links of an object taken from a
+// monster's inventory, e.g. when stoning moves it into a statue.
+export function clearMonsterCarriedObjectState(object, state = game) {
+    if (!object)
+        return;
+    if (object.lamplit && artifactEmitsLight(object))
+        endObjectBurn(object, state);
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    object.ocarry = null;
+    delete object.carrierMid;
+}
+// C worn.c:extract_from_minvent(). Remove an object from a monster's
+// inventory; it leaves worn state, extrinsics and weapon bookkeeping behind.
+export async function removeObjectFromMonsterInventory(monster, object, state = game, { doExtrinsics = true, silently = false, publish = plineWithContinuation } = {}) {
+    requireLiveGame(state);
+    const worn = object.owornmask ?? 0;
+    const wielded = monster.mw === object || object.wielded || (worn & W_WEP);
+    if (object.where !== 'minvent'
+        || !(monster.minvent || monster.inventory || []).includes(object))
+        return false;
+    if ((worn & W_ARM) && object.lamplit && artifactEmitsLight(object))
+        endObjectBurn(object, state);
+    unlinkMonsterObject(monster, object);
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    if (worn) {
+        if (monster.mhp > 0 && doExtrinsics) {
+            await updateMonsterEquipment(monster, object, false, state, { silently, publish });
+            if (state.program_state?.gameover)
+                return false;
+        }
+        monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~worn;
+        monster.misc_worn_check |= I_SPECIAL;
+    }
+    if (monster.saddle === object || (worn & W_SADDLE)) {
+        monster.saddle = null;
+        monster.saddled = false;
+    }
+    // C worn.c:1413 obj_no_longer_held(): the release runs after the equipment
+    // extrinsics and worn-check updates and before mwepgone()'s weapon
+    // bookkeeping (unwieldMonsterWeapon below), unconditionally — even for
+    // unworn items.  A fixed crysknife can survive this first draw and
+    // still revert on the later placement release; that second release
+    // stays with placeObject.
+    await objectNoLongerHeld(object, state);
+    if (wielded)
+        await unwieldMonsterWeapon(monster, state, { weapon: object, publish });
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    return true;
+}
+// C worn.c:m_lose_armor(): no floor effects or stacking.
+export async function dropMonsterArmor(monster, object, state = game, options = {}) {
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options))
+        return null;
+    // Monster inventory releases also run during hero actions (polymorph
+    // from a hero zap, kill cascades), so placement is always awaited.
+    return placeObject(object, monster.mx, monster.my, state);
+}
+// extract_from_minvent() followed by obfree(): m_useup() and
+// discard_minvent() destroy a monster's worn or carried object this way.
+export async function destroyObjectFromMonsterInventory(monster, object, state = game, options = {}) {
+    if (!await removeObjectFromMonsterInventory(monster, object, state, options))
+        return false;
+    return await deleteObject(object, state);
 }
 //# sourceMappingURL=monworn.js.map

@@ -14,7 +14,7 @@ import { deleteFloorTrap } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { rnd } from './rng.js';

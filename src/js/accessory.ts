@@ -44,7 +44,7 @@ import { rnd } from './rng.js';
 import { heroNeckName } from './body_parts.js';
 import { heroCanSwim } from './hack.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';

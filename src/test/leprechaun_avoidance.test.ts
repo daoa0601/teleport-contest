@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { beginMonsterMove, takeMonsterTurn } from '../js/monmove.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

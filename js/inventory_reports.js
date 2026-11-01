@@ -12,7 +12,7 @@ import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from 
 import { yn_function } from './query.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { possessiveName } from './monster_name.js';
+import { possessiveName } from './hacklib.js';
 import { distantObjectName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { currency } from './currency.js';

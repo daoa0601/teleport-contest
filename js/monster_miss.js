@@ -8,7 +8,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { AD_SEDU, AD_SSEX, AT_BITE, AT_BUTT, AT_KICK, AT_STNG, } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, monsterDigests, monsterHasNoLimbs, monsterIsWhirly, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { cansee } from './vision.js';
 const M1_SEE_INVIS = 0x01000000;

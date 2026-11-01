@@ -4,7 +4,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { splitObjectStack } from './object_stack.js';
 import { unlinkObject } from './object_location.js';
 import { mergable } from './object_merge.js';

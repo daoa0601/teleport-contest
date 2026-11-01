@@ -19,7 +19,7 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { MONSTER_FLAGS2, monsterIsNoncorporeal } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { relocateObjectRandomly } from './object_teleport.js';

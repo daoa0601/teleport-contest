@@ -15,18 +15,17 @@ import { payForShopDamage } from './shop_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import {
-    EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE,
-    M_SEEN_REFL, STRAT_WAITMASK,
-    W_ARM, W_ARMC, W_ARMU, W_ARMS,
+    EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS,
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { game } from './gstate.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
@@ -34,19 +33,16 @@ import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
-import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
 import {
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
-    monsterIsNonliving, monsterIsVampireShifter,
+    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
-    AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE,
-    AD_MAGM, AD_RBRE, AD_SLEE,
+    AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE,
 } from './monster_attack_types.js';
 import {
-    BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
-    FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH,
+    BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH,
     WAN_MAGIC_MISSILE, WAN_LIGHTNING,
 } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
@@ -56,11 +52,12 @@ import { flashBurn } from './sight_change.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { realRayName, displayRayName } from './ray_name.js';
 import {
-    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay,
-    monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster,
-    rayMonsterAt, runRay,
+    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectsRay,
+    monsterReflectionSource, rayHitsHero, rayHitsMonster, rayMonsterAt, runRay,
 } from './ray.js';
-import { applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect } from './zap.js';
+import {
+    applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect,
+} from './zap.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -74,11 +71,10 @@ import type { HeroRaySource } from './hero_breath.js';
 import type { Position } from './map_types.js';
 import type { RayFloorKind, RayFloorResult } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
-import { requirePlayingGame } from './gstate.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance,
-    monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance,
-    monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance,
+    monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance,
+    monsterHasShockResistance, monsterResistanceBits,
 } from './mondata.js';
 import { finishMonsterEating } from './dogmove.js';
 

@@ -10,7 +10,7 @@ import { BOULDER } from './object_data.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;
 export async function tryMonsterTrapEscape(monster, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LEVEL_TELEP, D_CLOSED, DOOR, MFAST, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { heroEveryturnEffect, takeMonsterTurn } from '../js/monmove.js';
 import { resumeDeferredMovementSpell } from '../js/mcastu.js';
 import { BAG_OF_HOLDING, DAGGER, POT_EXTRA_HEALING, SACK, POT_HEALING } from '../js/object_data.js';

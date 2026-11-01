@@ -8,7 +8,7 @@ import { allocateMonsterMovement, finishMonsterLiquidDeath, mcalcmove, mfndpos, 
 import { FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP, } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { OBJECT_NAMES, ROCK, SCR_TELEPORTATION, } from '../js/object_data.js';

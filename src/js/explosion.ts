@@ -32,7 +32,8 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP } from './object_data.js';
 import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';

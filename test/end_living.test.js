@@ -4,7 +4,7 @@ import { initializePet } from '../js/dog.js';
 import { finishLivingGame } from '../js/end.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { LEASH } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -2,19 +2,17 @@ import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    G_EXTINCT, LANDMINE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, STONE,
-    W_AMUL, W_ARM, W_WEP,
+    G_EXTINCT, LANDMINE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, STONE, W_AMUL, W_ARM, W_WEP,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { tryMonsterPuddingSplit } from '../js/mhitm.js';
 import { unwieldMonsterWeapon } from '../js/monster_weapon.js';
 import {
-    AMULET_OF_LIFE_SAVING, CLUB, DAGGER, GOLD_PIECE, LEATHER_ARMOR,
-    OBJECT_NAMES, ROCK,
+    AMULET_OF_LIFE_SAVING, CLUB, DAGGER, GOLD_PIECE, LEATHER_ARMOR, OBJECT_NAMES, ROCK,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';

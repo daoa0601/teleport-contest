@@ -9,7 +9,7 @@ import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
 import { makePlural } from './object_grammar.js';
 import { CANDELABRUM_OF_INVOCATION, } from './object_data.js';
 import { stopRun } from './runmode.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { definiteObjectAction } from './objnam.js';
 function heroPositionDescription() {
     const steed = game.u?.usteed;

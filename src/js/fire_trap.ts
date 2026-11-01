@@ -26,7 +26,7 @@ import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
 import { igniteItems } from './light.js';
 import { MONSTER_LEVEL } from './monster_data.js';
-import { monsterName as perceivedMonsterName } from './monster_name.js';
+import { monsterName as perceivedMonsterName } from './do_name.js';
 import { objectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 import { heroIsBlind } from './senses.js';

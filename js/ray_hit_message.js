@@ -2,7 +2,7 @@
 // are separate decisions. Callers own whether a hit or miss is reported.
 import { canSpotMonster } from './display.js';
 import { game } from './gstate.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { verbForSubject } from './object_grammar.js';
 import { definiteName } from './objnam.js';
 import { cansee } from './vision.js';

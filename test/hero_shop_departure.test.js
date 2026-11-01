@@ -11,7 +11,7 @@ import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { CHEST, DAGGER } from '../js/object_data.js';
 import { unlinkObject } from '../js/object_location.js';

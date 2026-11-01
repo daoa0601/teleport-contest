@@ -8,7 +8,7 @@ import type { InputGate } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CANDELABRUM_OF_INVOCATION } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

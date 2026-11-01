@@ -8,12 +8,12 @@ import { RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, isok } from '.
 import { map_location, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { deleteEngravingAt } from './engrave.js';
-import { releaseMonsterInventory } from './monster_drop.js';
+import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { cansee, couldsee, unset_seenv, vision_note_blocker_change } from './vision.js';
-import { publishMonsterYelp } from './monster_sound.js';
+import { publishMonsterYelp } from './ambient_sounds.js';
 import { sendMonsterToLimbo } from './mon.js';
 
 export interface VaultGuard extends Monster {

@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, OIL_LAMP } from '../js/object_data.js';
 import { cansee, hasLightSources, vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';

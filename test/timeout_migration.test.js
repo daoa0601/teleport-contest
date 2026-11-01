@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { beginObjectBurn } from '../js/light.js';
-import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG, OIL_LAMP } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';

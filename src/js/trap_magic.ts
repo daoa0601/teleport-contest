@@ -21,7 +21,7 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { gotoLevel } from './level_change.js';
 import { triggerImmediateMonsterTrap, finishImmediateMonsterTrap } from './trap.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { rewardMonsterRescue } from './untrap.js';
 import { rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';

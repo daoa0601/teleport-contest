@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES, RIN_FREE_ACTION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';

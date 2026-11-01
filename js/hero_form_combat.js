@@ -20,7 +20,7 @@ import { tryKnockback } from './uhitm.js';
 import { AD_DRIN, AD_PHYS, AD_SPEL, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead, monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks, } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
 import { objectMaterial } from './object_material.js';

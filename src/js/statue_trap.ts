@@ -2,13 +2,12 @@
 // C refs: trap.c animate_statue() and activate_statue_trap().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsHallucinating, heroIsBlind } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterGivenName, monsterName } from './do_name.js';
 import { adjustHeroAlignment } from './alignment.js';
 import {
-    CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG,
-    MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP,
+    CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP,
 } from './const.js';
 import { canSpotMonster, feel_newsym, map_invisible, newsym, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -26,23 +25,18 @@ import { makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
-    MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,
-    monsterIsNonliving, monsterIsVampireShifter,
+    MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeMonsterForm, restoreMonsterShape } from './mon.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './monster_location.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { markQuestLeaderAlive } from './quest.js';
-import { monsterName } from './monster_name.js';
 import { ownedObjectName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
-import { heroIsBlind } from './senses.js';
-import {
-    bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement,
-} from './revival_species.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
 import { cansee } from './vision.js';
 import { restoreMonsterTraits } from './zap.js';
 

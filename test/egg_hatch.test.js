@@ -8,7 +8,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { EGG } from '../js/object_data.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { addCreatedInventoryItem } from '../js/u_init.js';

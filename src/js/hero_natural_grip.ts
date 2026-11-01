@@ -10,7 +10,8 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsSlithy,
     monsterSpeciesSticks,
 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectName } from './objnam.js';
 import { objectTypeKnown } from './shk.js';

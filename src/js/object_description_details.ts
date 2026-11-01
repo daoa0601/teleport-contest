@@ -8,7 +8,7 @@ import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { impossible } from './diagnostics.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE,
     LEASH, MAGIC_LAMP, OBJECT_CHARGED, OBJECT_COST, OIL_LAMP, POT_OIL,

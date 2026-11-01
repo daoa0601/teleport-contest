@@ -9,7 +9,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/mon.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, CRYSKNIFE,
     GLOB_OF_BLACK_PUDDING, OBJECT_NAMES,

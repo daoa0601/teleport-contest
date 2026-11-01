@@ -14,8 +14,8 @@ import {
 } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { monsterSentenceSubject } from './monster_sound.js';
-import { monsterName } from './monster_name.js';
+import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterName } from './do_name.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,

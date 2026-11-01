@@ -16,7 +16,7 @@ import { game } from './gstate.js';
 import { probeObject } from './magic_probe.js';
 import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
-import { monsterName, namelessMonsterName } from './monster_name.js';
+import { monsterName, namelessMonsterName } from './do_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { cancelObjectMagic } from './object_cancellation.js';
 import {

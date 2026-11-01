@@ -18,7 +18,9 @@ import type { MessagePublisher } from './pline.js';
 import type {
     MonsterCombatDamageResult, MonsterCombatEffectContext, MonsterCombatEffectResult, ResolveMonsterCombatDamage,
 } from './monster_combat_effect_types.js';
-import type { MonsterDeathOptions, MonsterDeathResult } from './mon.js';
+import type {
+    MonsterDeathOptions, MonsterDeathResult, MonsterPetrificationResult, PetrificationContactOptions,
+} from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import {
@@ -36,8 +38,7 @@ import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
     M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED,
     M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum,
-    M_AP_MONSTER, STRAT_WAITMASK, W_ARMG,
-    NORMAL_SPEED, PIT, SPIKED_PIT,
+    M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT,
 } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { monsterIsHelpless } from './monster_sleep.js';
@@ -50,31 +51,21 @@ import { cloneMonster, splitMonster } from './monster_clone.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { cansee } from './vision.js';
 import {
-    applyMonsterGolemEffects,
-    changeMonsterForm,
-    finishEnvironmentalMonsterDeath,
-    finishMonsterKilled,
-    finishMonsterLiquidDeath,
-    grantMonsterCorpseIntrinsic,
-    healMonster,
-    monstersInFmonOrder,
-    paralyzeMonster,
-    prepareMonsterPetrification,
-    resistConflict,
-    resolveMonsterLiquid,
-    finishMonsterPetrification, monsterSubject, turnGolemToStone,
-} from './mon.js';
-import type {
-    MonsterPetrificationResult, PetrificationContactOptions,
+    applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled,
+    finishMonsterLiquidDeath, grantMonsterCorpseIntrinsic, healMonster, monstersInFmonOrder, paralyzeMonster,
+    prepareMonsterPetrification, resistConflict, resolveMonsterLiquid, finishMonsterPetrification, monsterSubject,
+    turnGolemToStone,
 } from './mon.js';
 import { staggerVerb } from './monster_hurtle.js';
 import {
     exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
 } from './monster_location.js';
+import { monsterName as canonicalMonsterName, monsterName, namelessMonsterName } from './do_name.js';
+import { possessiveName, dist2, distmin } from './hacklib.js';
 import {
-    monsterName as canonicalMonsterName, possessiveName, monsterName, monsterObjectPronoun, monsterPossessive,
-    namelessMonsterName,
-} from './monster_name.js';
+    monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, monsterHasAcidResistance,
+    monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance,
+} from './mondata.js';
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import {
     monsterWieldedWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon,
@@ -84,35 +75,16 @@ import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
 import {
-    applyMonsterCombatBlindness,
-    applyMonsterDigestionEffect,
-    applyMonsterDrainEffect,
-    applyMonsterElementEffect,
-    applyMonsterStatusEffect,
-    applyMonsterTheftEffect,
-    applyMonsterTransformEffect,
-    mhitmAdBlnd,
-    mhitmAdDrli,
-    mhitmAdEnch,
-    mhitmAdLegs,
-    mhitmAdStun,
-    monsterCombatAttackNegated,
-    passiveAttack,
-    passiveDamage,
-    petrifyMonsterDefender,
-    poisonMonsterFromAttack,
-    rejectMonsterShadeContact,
-    resolveMonsterBrainAttack,
-    resolveMonsterPhysicalDamage,
-    tryKnockback,
+    applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect,
+    applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
+    mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage,
+    petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack,
+    resolveMonsterPhysicalDamage, tryKnockback,
 } from './uhitm.js';
 import { monsterReflectionSource } from './ray.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
 import { finishMonsterEating } from './dogmove.js';
-import { monsterPolymorphsWhenStoned } from './mondata.js';
-import {
-    clearMonsterWormFromMap, placeMonsterWormTailRandomly,
-} from './monster_worm.js';
+import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { updateMonsterRegions } from './regions.js';
 import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './object_material.js';
@@ -122,7 +94,7 @@ import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { drainObjectEnchantment } from './object_state.js';
-import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
+import { snuffMonsterInventoryLights } from './light.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN,
@@ -132,14 +104,9 @@ import {
     AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC,
     AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import { dist2, distmin } from './hacklib.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport_rules.js';
 import { finishMonsterGrowth, growMonster } from './makemon.js';
-import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
-    monsterHasStoneResistance,
-} from './mondata.js';
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;

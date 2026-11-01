@@ -23,7 +23,10 @@ import type {
 import { SHOP_TYPES } from './shop_data.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName, monsterPossessive, monsterSubjectPronoun, possessiveName, shopkeeperName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
+import { shopkeeperName } from './shknam.js';
 import { containedGold } from './gold.js';
 import {
     containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer,

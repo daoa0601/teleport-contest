@@ -3,7 +3,7 @@
 
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { unlinkMonsterObject } from './mkobj.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { objectWeight } from './weight.js';
 import type { GameObject } from './object_types.js';

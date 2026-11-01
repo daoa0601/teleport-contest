@@ -11,12 +11,13 @@ import { dist2 } from './hacklib.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { monsterHasHead } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
-import { releaseAllMonsterLeashes } from './monster_leash.js';
-import { monsterObjectPronoun, monsterPossessive, shopkeeperName } from './monster_name.js';
+import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { monsterObjectPronoun, monsterPossessive } from './mondata.js';
+import { shopkeeperName } from './shknam.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { rn2 } from './rng.js';
 import { costlyAdjacent, shopkeeperInOwnShop } from './shk.js';
-import { addUpBill, homeShopkeeper, moneyToMonster, pacifyShopkeeper, rileShopkeeper, setPaidShopkeeper } from './shop_damage.js';
+import { addUpBill, homeShopkeeper, moneyToMonster, pacifyShopkeeper, rileShopkeeper, setPaidShopkeeper, } from './shop_damage.js';
 import { hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { cansee } from './vision.js';
 export async function settleShopkeepersOnExit(outcome, { silent = false, publish = plineWithContinuation, random = rn2 } = {}) {

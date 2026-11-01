@@ -12,8 +12,8 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_DCAY, AD_DGST, AD_FIRE, AD_MAGM, AD_PHYS, AD_RUST } from '../js/monster_attack_types.js';
 import { changeMonsterForm, finishMonsterKilled } from '../js/mon.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { setMonsterGivenName } from '../js/do_name.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { nameToMonster } from '../js/mondata.js';
 import { runMonsterAction } from '../js/monmove.js';
 import {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { beginMonsterMove } from '../js/monmove.js';
 import { ELVEN_ARROW, ELVEN_BOW } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

@@ -8,7 +8,7 @@ import { runDueTimers } from '../js/timer_effects.js';
 import { NO_MINVENT } from '../js/const.js';
 import { CANDELABRUM_OF_INVOCATION, OIL_LAMP } from '../js/object_data.js';
 import { vision_recalc } from '../js/vision.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { unlinkObject } from '../js/object_location.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

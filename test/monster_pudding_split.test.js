@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { tryMonsterPuddingSplit } from '../js/mhitm.js';
 import { unwieldMonsterWeapon } from '../js/monster_weapon.js';
 import { AMULET_OF_LIFE_SAVING, CLUB, DAGGER, GOLD_PIECE, LEATHER_ARMOR, OBJECT_NAMES, ROCK, } from '../js/object_data.js';

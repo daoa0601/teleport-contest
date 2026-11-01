@@ -12,7 +12,9 @@ import {
     monsterHasHead, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider,
     monsterTypeName,
 } from './monster_data.js';
-import { monsterName, monsterPossessive, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterPossessive } from './mondata.js';
 import type { Monster } from './monster_types.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { heroIsUnchanging } from './polyself.js';

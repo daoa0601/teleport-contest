@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, BOW, CHEST, CLUB, CORPSE, DART, FOOD_RATION, HEAVY_IRON_BALL, LEATHER_ARMOR, LOADSTONE, LUCKSTONE, ROCK, SCR_SCARE_MONSTER, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorArtifact, floorObject, knownObject, } from './support/game-objects.js';

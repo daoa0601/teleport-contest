@@ -21,8 +21,8 @@ import { resetPick } from './lock_context.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { monsterAtPosition } from './monster_location.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './monster_name.js';
-import { maybeAbsorbItem } from './monster_item_absorption.js';
+import { monsterName } from './do_name.js';
+import { maybeAbsorbItem } from './steal.js';
 import {
     CHEST, CREDIT_CARD, LARGE_BOX, LOCK_PICK, SKELETON_KEY,
 } from './object_data.js';

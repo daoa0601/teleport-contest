@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { MM_NOGRP, MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { CANDELABRUM_OF_INVOCATION, HELMET, OBJECT_SUBTYPE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

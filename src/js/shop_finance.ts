@@ -2,7 +2,8 @@
 import { game } from './gstate.js';
 import { currency } from './currency.js';
 import { plineWithContinuation } from './pline.js';
-import { possessiveName, shopkeeperName } from './monster_name.js';
+import { possessiveName } from './hacklib.js';
+import { shopkeeperName } from './shknam.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
 import { addUpBill, rileShopkeeper } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';

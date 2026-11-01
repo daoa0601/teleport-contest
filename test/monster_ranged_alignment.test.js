@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { D_CLOSED, DOOR, LAVAWALL, M_AP_MONSTER, M_AP_OBJECT, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, STONE, WATER, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterLinedUpWithHero, monsterLinedUpWithMonster, } from '../js/mthrowu.js';
 import { BOULDER, WAN_STRIKING } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';

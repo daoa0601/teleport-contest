@@ -13,7 +13,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, monsterIsHumanoid, monsterIsWhirly, monsterTypeName } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { monsterStatusLine } from './monster_status.js';
 import { CORPSE, LENSES, SLIME_MOLD, STATUE } from './object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';

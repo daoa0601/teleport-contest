@@ -13,7 +13,7 @@ import { heroFootName } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { feel_location, flush_screen, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { trapName } from './trap_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { pitsAreConjoined } from './pit_connections.js';

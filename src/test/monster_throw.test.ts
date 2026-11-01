@@ -10,7 +10,7 @@ import { initializePet } from '../js/dog.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { resolveMonsterCombatThrow } from '../js/mthrowu.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile,
     throwMonsterWeaponAtMonster } from '../js/mthrowu.js';

@@ -31,8 +31,9 @@ import {
     AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC,
     AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS,
 } from './monster_attack_types.js';
-import { monsterSentenceSubject } from './monster_sound.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { CORPSE, EGG } from './object_data.js';
 import { corpseName, killerObjectName, objectMonsterName } from './objnam.js';
 import {

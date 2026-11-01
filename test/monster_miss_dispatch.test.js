@@ -6,7 +6,7 @@ import { MM_ANGRY, MM_NOGRP, NEED_WEAPON, NO_MINVENT, W_WEP } from '../js/const.
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, MUMMY_WRAPPING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

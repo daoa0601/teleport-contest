@@ -9,10 +9,10 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
-import { monsterName } from '../js/monster_name.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { monsterName } from '../js/do_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING, POT_OIL, RED_DRAGON_SCALE_MAIL,
     SCR_IDENTIFY, TOWEL,

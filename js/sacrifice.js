@@ -25,7 +25,7 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { MONSTER_ALIGNMENT, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, monsterIsUnicorn, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { AMULET_OF_YENDOR, CORPSE, FAKE_AMULET_OF_YENDOR, OBJECT_SUBTYPE, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { simpleObjectNameWithArticle } from './objnam.js';

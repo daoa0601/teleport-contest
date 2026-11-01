@@ -46,7 +46,7 @@ import { doFarlook, dohelp, dowhatis } from './pager.js';
 import { lookatDescription } from './pager_description.js';
 import { identifyTrap } from './pager_traps.js';
 import { GETOBJ_SUGGEST } from './const.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { monsterAtPosition } from './monster_location.js';
 import { observeBucForNaming } from './object_knowledge.js';

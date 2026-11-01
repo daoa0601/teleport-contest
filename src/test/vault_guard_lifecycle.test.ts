@@ -3,11 +3,13 @@ import { answerPrompts } from './support/input-boundaries.js';
 import type { Monster } from '../js/monster_types.js';
 import { requireScreenRow } from './support/screen.js';
 import { createRoom } from './support/topology.js';
-import { requirePlayingGame } from '../js/gstate.js';
+import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
+import {
+    ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE,
+} from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
@@ -18,17 +20,13 @@ import { setWallStateAt } from '../js/wall_topology.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { moveObject } from '../js/floor_object.js';
 import { flush_screen } from '../js/display.js';
-import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import {
-    finishEnvironmentalMonsterDeath,
-    finishMonsterLiquidDeath,
-    killGenocidedMonster,
-    removeMonsterFromGame,
+    finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath, killGenocidedMonster, removeMonsterFromGame,
     sendMonsterToLimbo,
 } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, DAGGER, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { installPunishedHero } from './support/hero-state.js';

@@ -13,8 +13,9 @@ import { hitpointBar, hitpointBarFill } from './status_hitpoint_bar.js';
 import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, BL_WEAPON, BL_ARMOR, BL_TERRAIN, In_endgame, In_quest, Is_knox_level, Upolyd, } from './const.js';
-import { MONSTER_LEVEL } from './monster_data.js';
+import { MONSTER_LEVEL, SPECIAL_PM } from './monster_data.js';
 import { GOLD_PIECE } from './object_data.js';
+import { roles } from './roles.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { nearCapacity } from './weight.js';
@@ -211,5 +212,22 @@ export function timebot() {
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
+}
+// C botl.c:rank_of(). A player monster's title from its level; mon_nam()
+// lowercase it for "the roguish Brigitte".
+export function monsterRank(monster, state = game) {
+    const role = roles.find(candidate => SPECIAL_PM + 1 + candidate.mnum === monster.mnum) || state.urole;
+    if (!role)
+        throw new Error('Naming a player monster requires an initialized hero role.');
+    const level = monster.m_lev;
+    const rank = level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
+    for (let index = rank; index >= 0; index--) {
+        const title = role.title[index];
+        if (monster.female && title?.f)
+            return title.f;
+        if (title?.m)
+            return title.m;
+    }
+    return monster.female && role.name.f || role.name.m || 'Player';
 }
 //# sourceMappingURL=botl.js.map

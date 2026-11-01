@@ -4,7 +4,7 @@ import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR,
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { CORPSE, FLINT, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, OBJECT_NAMES, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
 import { learnObjectType } from '../js/object_knowledge.js';
 import { initRng } from '../js/rng.js';

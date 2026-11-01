@@ -15,7 +15,7 @@ import { healMonster } from './mon.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMagicbaneHit } from './magicbane.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { recordObjectEncounter } from './object_knowledge.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { rn2, rnd } from './rng.js';

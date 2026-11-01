@@ -14,17 +14,17 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { consumeInventoryItem } from './invent.js';
 import {
-    MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver,
-    monsterIsShade, monsterIsUndead, monsterIsVampireShifter,
+    MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver, monsterIsShade, monsterIsUndead,
+    monsterIsVampireShifter,
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { monsterName } from './monster_name.js';
 import { petrifyMonsterFromContact } from './trap.js';
+import { monsterName } from './do_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import {
-    ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE,
-    EGG, EXPENSIVE_CAMERA, HEAVY_IRON_BALL, IRON_CHAIN, MIRROR, TOWEL,
+    ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG, EXPENSIVE_CAMERA, HEAVY_IRON_BALL,
+    IRON_CHAIN, MIRROR, TOWEL,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';

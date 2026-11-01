@@ -11,7 +11,7 @@ import { beginObjectBurn } from '../js/light.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mhitm.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
 import { AMULET_OF_LIFE_SAVING, OIL_LAMP } from '../js/object_data.js';

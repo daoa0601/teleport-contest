@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { roguePlayerName } from '../js/monster_given_name.js';
+import { roguePlayerName } from '../js/do_name.js';
 import { initRng } from '../js/rng.js';
 
 void test('Rogue names honor the name entry in ROGUEOPTS', () => {

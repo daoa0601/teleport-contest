@@ -14,7 +14,7 @@ import { inventoryItemDescription } from './invent.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { consumeMonsterObject } from './mon.js';
 import { feedBeeRoyalJelly } from './monmove.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_DELAY, OBJECT_NUTRITION } from './object_data.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { splitObjectStack } from './object_stack.js';

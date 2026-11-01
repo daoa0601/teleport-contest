@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { D_CLOSED, DOOR, MM_ANGRY, NO_MINVENT, STONE, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWieldedWeapon } from '../js/monster_weapon.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { BOULDER, LONG_SWORD, PICK_AXE, ROCK } from '../js/object_data.js';

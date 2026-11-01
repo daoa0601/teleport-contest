@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { newsym, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';

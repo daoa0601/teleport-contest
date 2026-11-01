@@ -24,7 +24,8 @@ import {
     MONSTER_FLAGS2, MONSTER_NAME, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider,
     requireMonsterData,
 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { exerciseWisdom } from './attrib.js';
 import { fleshPetrifies } from './stoning.js';

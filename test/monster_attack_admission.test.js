@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { AT_BREA } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { GOLD_PIECE, RIN_CONFLICT } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -12,7 +12,7 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
     monsterDigests, monsterEnfolds, monsterIsAnimal, monsterTypeName,
 } from './monster_data.js';
-import { monsterName as nameMonster } from './monster_name.js';
+import { monsterName as nameMonster } from './do_name.js';
 import { wormSegmentIndexAt } from './monster_worm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';

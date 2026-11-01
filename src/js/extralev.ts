@@ -13,7 +13,7 @@ import {
     RING_MAIL, TWO_HANDED_SWORD,
 } from './object_data.js';
 import { curseObjectState } from './object_state.js';
-import { roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
+import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { makemon } from './makemon.js';
 import { mksobj_at } from './mkobj.js';
 import { somex, somey } from './mkroom.js';

@@ -8,7 +8,7 @@ import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishDeferredMonsterMiscItem, useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { POT_FULL_HEALING, WAN_MAKE_INVISIBLE, WAN_SPEED_MONSTER } from '../js/object_data.js';

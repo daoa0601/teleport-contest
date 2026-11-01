@@ -29,7 +29,8 @@ import {
 } from './const.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { tossObjectUp } from './toss_up.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { currentAttribute } from './attrib.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -42,9 +43,8 @@ import { freeInventoryObject } from './hero_inventory.js';
 import {
     detachHeroGold, heroGoldAmount, heroGoldObject,
 } from './hero_gold.js';
-import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
-} from './monster_inventory.js';
+import { linkObjectToMonsterInventory } from './mkobj.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { MONSTER_FLAGS2, monsterDigests, monsterIsWhirly } from './monster_data.js';
 import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';

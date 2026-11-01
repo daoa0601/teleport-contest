@@ -20,7 +20,7 @@ import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 
 export interface MonsterBearTrapEvent {
     kind: 'bear-trap';

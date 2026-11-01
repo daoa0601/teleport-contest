@@ -6,7 +6,7 @@ import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { OIL_LAMP, SCR_IDENTIFY } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';

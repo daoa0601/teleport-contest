@@ -12,7 +12,7 @@ import { resetInputState } from '../js/input.js';
 import { meltIce } from '../js/ice.js';
 import { createCorpstatAt } from '../js/mkobj.js';
 import { nameToMonster } from '../js/mondata.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
 import { BOULDER, CORPSE, ROCK } from '../js/object_data.js';
 import { objectTimers, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, scheduleLevelTimer, } from '../js/object_timers.js';
@@ -30,7 +30,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { installPagerInput } from './support/pager-input.js';
 import { angerMonster } from '../js/mon.js';
-import { publishMonsterYelp, publishMonsterGrowl } from '../js/monster_sound.js';
+import { publishMonsterYelp, publishMonsterGrowl } from '../js/ambient_sounds.js';
 async function topline() {
     await flush_screen();
     const row = requireGameDisplay().grid[0];

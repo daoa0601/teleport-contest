@@ -8,7 +8,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { game } from '../js/gstate.js';
-import { discardMonsterInventory } from '../js/monster_drop.js';
+import { discardMonsterInventory } from '../js/mkobj.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 

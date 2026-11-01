@@ -11,7 +11,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import {
     BOULDER, CHAIN_MAIL, CLUB, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET,
     LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS,

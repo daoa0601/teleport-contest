@@ -9,7 +9,7 @@ import { displayLiquidName, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
-import { monsterSpellDeathReason } from './monster_name.js';
+import { monsterSpellDeathReason } from './mcastu.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { putHeroToSleep } from './hero_sleep.js';

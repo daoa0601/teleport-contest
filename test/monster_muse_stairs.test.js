@@ -3,7 +3,7 @@ import test from 'node:test';
 import { LADDER, MIGR_SSTAIRS, MM_ANGRY, NO_MINVENT, STAIRS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

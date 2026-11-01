@@ -2,7 +2,7 @@
 // C mkobj.c:obj_extract_self(). Equipment effects belong to the caller.
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { unlinkMonsterObject } from './mkobj.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { objectWeight } from './weight.js';
 // C zap.c:get_obj_location(). Free and migrating objects have no current

@@ -6,7 +6,7 @@ import { canSeeMonster, flush_screen, objectColor, redrawMap } from '../js/displ
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { getHungry } from '../js/hunger.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { heroIsBlind } from '../js/senses.js';
 import { monsterProjectileDisplay } from '../js/monster_projectile_display.js';
 import { throwMonsterProjectile } from '../js/mthrowu.js';

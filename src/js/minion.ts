@@ -21,8 +21,12 @@ import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { mkclassAligned } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { ensureMinionData } from './monster_birth_extensions.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { currency } from './currency.js';
+import { getLine } from './query.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import type { MinionData } from './monster_types.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isWereMonster, summonWereAttackHelp } from './were.js';
@@ -316,4 +320,40 @@ export async function msummon(monster: Monster | null = null): Promise<MonsterSu
     }
     if (litAngel) await cleanupTransientLight(requireInitializedGame());
     return { count: created.length ? monsterCensus() - census : 0, created };
+}
+
+// C minion.c:newemin(). Preserve an existing record and its ownership link.
+export function ensureMinionData(monster: Monster): MinionData {
+    const minion = monster.emin ?? monster.mextra?.emin
+        ?? { parentmid: monster.m_id, min_align: 0, renegade: 0 };
+    monster.emin = minion;
+    monster.mextra ??= {};
+    monster.mextra.emin = minion;
+    return minion;
+}
+
+// C minion.c:bribe(), shared by demon and priest conversations.
+export async function offerGoldToMonster(monster: Monster, prompt: string, state: PlayingGameState, random = rn2): Promise<number> {
+    const text = await getLine(prompt, () => true);
+    const digits = /^\s*[+-]?\d+/u.exec(text ?? '');
+    let offer = digits ? Number(digits[0]) : 0;
+    if (!Number.isFinite(offer)) offer = 0;
+    if (offer < 0) {
+        await plineWithContinuation(`You try to shortchange ${monsterName(monster, { state })}, but fumble.`);
+        return 0;
+    }
+    if (!offer) {
+        await plineWithContinuation('You refuse.');
+        return 0;
+    }
+    const name = monsterName(monster, { state });
+    const cash = heroGoldAmount(state);
+    if (offer >= cash) {
+        await plineWithContinuation(`You give ${name} all your gold.`);
+        offer = cash;
+    } else await plineWithContinuation(`You give ${name} ${offer} ${currency(offer, { state, random })}.`);
+    const gold = detachHeroGold(state, offer);
+    if (gold) await addObjectToMonsterInventory(monster, gold, state);
+    state.context.botl = true;
+    return offer;
 }

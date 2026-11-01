@@ -7,7 +7,7 @@ import { rn2, rn1, rnd } from './rng.js';
 import { CORR, D_NODOOR, OROOM, SCORR, XL_DOWN, XL_LEFT, XL_RIGHT, XL_UP, } from './const.js';
 import { ARROW, BOW, FAKE_AMULET_OF_YENDOR, FOOD_RATION, MACE, OBJECT_WEIGHT, RING_MAIL, TWO_HANDED_SWORD, } from './object_data.js';
 import { curseObjectState } from './object_state.js';
-import { roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
+import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { makemon } from './makemon.js';
 import { mksobj_at } from './mkobj.js';
 import { somex, somey } from './mkroom.js';

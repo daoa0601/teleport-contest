@@ -23,7 +23,7 @@ import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 
 interface TrapVisibility {
     trap: Trap;

@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { selectMonsterOffensiveItem } from '../js/muse.js';
 import { addObjectToContainer } from '../js/object_container.js';

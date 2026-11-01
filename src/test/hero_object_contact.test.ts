@@ -9,7 +9,7 @@ import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
 import { resolveHeroObjectContact } from '../js/hero_object_contact.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
     MIRROR, OBJECT_NAMES, POT_ACID, POT_HEALING, POT_SPEED, ROCK, STATUE,

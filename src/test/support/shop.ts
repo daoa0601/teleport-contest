@@ -1,7 +1,7 @@
 import type { Monster } from '../../js/monster_types.js';
 import { GOLD_PIECE } from '../../js/object_data.js';
 import { deleteObject } from '../../js/object_delete.js';
-import { addCreatedObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { addCreatedObjectToMonsterInventory } from '../../js/steal.js';
 import { knownObject } from './game-objects.js';
 import type { Room } from '../../js/map_types.js';
 import type { ShopBillEntry, ShopkeeperData, MonsterBirthState } from '../../js/monster_types.js';

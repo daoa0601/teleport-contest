@@ -1,9 +1,8 @@
 // Object transformations, system shock, and material golems.
 // C zap.c:obj_shudders(), do_osshock(), poly_obj(), polyuse(), create_polymon().
 import {
-    G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT,
-    W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP,
-    W_TOOL, W_WEP,
+    G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL,
+    W_RINGR, W_SWAPWEP, W_TOOL, W_WEP,
 } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -12,13 +11,10 @@ import type { Monster } from './monster_types.js';
 import type { ObjectLocation } from './object_location.js';
 import { rn2, rnd } from './rng.js';
 import {
-    AMULET_OF_UNCHANGING, BOULDER, CHEST, CORPSE, EGG, ENORMOUS_MEATBALL,
-    FIGURINE, LARGE_BOX, LEASH, MAGIC_LAMP, MAGIC_MARKER,
-    MEATBALL, MEAT_RING, MEAT_STICK, SPE_NOVEL, OBJECT_BIMANUAL,
-    OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP,
-    POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, POT_WATER, ROCK,
-    SPE_BLANK_PAPER, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds,
-    WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING,
+    AMULET_OF_UNCHANGING, BOULDER, CHEST, CORPSE, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_LAMP,
+    MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, SPE_NOVEL, OBJECT_BIMANUAL, OBJECT_MAGIC, OBJECT_MERGE,
+    OBJECT_NAMES, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, POT_WATER, ROCK, SPE_BLANK_PAPER,
+    SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING,
 } from './object_data.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,
@@ -39,15 +35,12 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
 import { wearHeroAccessory } from './accessory.js';
 import { isEyewear, wearEyewear } from './eyewear.js';
-import {
-    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat,
-} from './weapon_slots.js';
-import { releaseObjectLeash } from './monster_leash.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './weapon_slots.js';
 import { changeMonsterForm, maybeUnhideAt } from './mon.js';
-import { monsterName, shopkeeperName } from './monster_name.js';
-import {
-    addShopObjectToBill, costlySpot, shopkeeperInOwnShop,
-} from './shk.js';
+import { releaseObjectLeash } from './leash_apply.js';
+import { monsterName } from './do_name.js';
+import { shopkeeperName } from './shknam.js';
+import { addShopObjectToBill, costlySpot, shopkeeperInOwnShop } from './shk.js';
 import { containedBuyCost, stolenValue } from './shop_loss.js';
 import { hotPursuitShopkeeper, makeAngryShopkeeper } from './shop_damage.js';
 import { roomsAt } from './room.js';

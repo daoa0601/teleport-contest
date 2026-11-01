@@ -42,7 +42,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { goodPosition } from './teleport_rules.js';
 import { altarWrath } from './pray.js';
 import { randomEngraving } from './mklev.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';

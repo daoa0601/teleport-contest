@@ -8,19 +8,8 @@ import { heroBlindingObjectHitMessage } from '../js/blinding_attack.js';
 import { finishGhostlyPickup } from '../js/bones_object.js';
 import { triggerChestTrap } from '../js/chest_trap.js';
 import {
-    ANTI_MAGIC,
-    ARROW_TRAP,
-    BEAR_TRAP,
-    DBWALL,
-    DB_MOAT,
-    DB_NORTH,
-    DRAWBRIDGE_UP,
-    MSLOW,
-    PIT,
-    ROCKTRAP,
-    SLP_GAS_TRAP,
-    VIBRATING_SQUARE,
-    WEB,
+    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP,
+    VIBRATING_SQUARE, WEB,
 } from '../js/const.js';
 import { useContainer } from '../js/container.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
@@ -37,28 +26,16 @@ import { probeObject } from '../js/magic_probe.js';
 import { applyMonsterGolemEffects } from '../js/mon.js';
 import { AD_COLD, AD_FIRE } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { monsterName } from '../js/monster_name.js';
+import { setMonsterGivenName, monsterName } from '../js/do_name.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { tryKickReel } from '../js/dokick.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from '../js/monster_pit_trap.js';
 import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
 import { breakFloorObject } from '../js/object_breakage.js';
 import {
-    AMULET_OF_STRANGULATION,
-    BLINDING_VENOM,
-    BOULDER,
-    BOW,
-    CHEST,
-    CORPSE,
-    DAGGER,
-    GLOB_OF_GRAY_OOZE,
-    GOLD_DRAGON_SCALE_MAIL,
-    OBJECT_NAMES,
-    POT_HEALING,
-    SPE_FORCE_BOLT,
-    STATUE,
+    AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE,
+    GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE,
 } from '../js/object_data.js';
 import { dropObjectAtHero } from '../js/object_drop.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';

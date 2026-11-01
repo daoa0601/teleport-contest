@@ -15,7 +15,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
     monsterDigests, monsterTypeName,
 } from './monster_data.js';
-import { distantMonsterName, monsterName } from './monster_name.js';
+import { distantMonsterName, monsterName } from './do_name.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import type { Monster } from './monster_types.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';

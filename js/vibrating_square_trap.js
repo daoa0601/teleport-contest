@@ -8,7 +8,7 @@ import { monsterHasNoLimbs } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 function possessive(subject) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }

@@ -14,7 +14,7 @@ import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { mksobj } from '../js/mkobj.js';
 import { objectAtMonsterDescription } from '../js/monster_birth.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { objectName, readObjectName } from '../js/objnam.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { FORTUNE_COOKIE, LARGE_BOX, SLIME_MOLD } from '../js/object_data.js';

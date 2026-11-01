@@ -12,7 +12,7 @@ import { gotoLevel } from './level_change.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { maketrap } from './mklev.js';
 import { monsterDigests } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { LAND_MINE } from './object_data.js';
 import { heroHasNoHands } from './polyself.js';
 import { propertyIsActive } from './properties.js';

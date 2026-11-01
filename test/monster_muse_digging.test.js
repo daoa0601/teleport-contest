@@ -3,7 +3,7 @@ import test from 'node:test';
 import { AIR, HOLE, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { WAN_DIGGING } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';

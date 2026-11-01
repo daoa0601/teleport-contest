@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MIGR_RANDOM, NO_MINVENT, ROOM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_YENDOR, SACK } from '../js/object_data.js';
 import { resurrectWizard } from '../js/wizard.js';

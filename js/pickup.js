@@ -32,7 +32,7 @@ import { roomsAt } from './room.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { unlinkMonsterObject } from './mkobj.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { LOADSTONE, GOLD_PIECE, CORPSE, SCR_SCARE_MONSTER, } from './object_data.js';
 import { endVoluntaryMultiTurn } from './command_state.js';

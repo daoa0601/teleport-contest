@@ -12,7 +12,7 @@ import { CLUB, DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 
 const quiet = { publish: async () => {} };
 

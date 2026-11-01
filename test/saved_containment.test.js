@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
 import { game, resetGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { CLUB, ROCK, SACK } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';

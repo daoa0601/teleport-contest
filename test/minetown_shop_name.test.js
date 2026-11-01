@@ -3,7 +3,7 @@ import test from 'node:test';
 import { SHOPBASE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateMinetown } from '../js/mkmaze.js';
-import { shopkeeperName } from '../js/monster_name.js';
+import { shopkeeperName } from '../js/shknam.js';
 import { freshSpecialLevel } from './support/special-level.js';
 for (const town of [true, false]) {
     void test(`the lighting shop uses ${town ? 'Izchak' : 'an ordinary name'} when the dungeon town flag is ${town}`, async () => {

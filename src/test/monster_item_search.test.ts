@@ -8,7 +8,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import type { Position } from '../js/map_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWouldConsumeItem } from '../js/monmove.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import type { MonsterApproach } from '../js/monmove.js';

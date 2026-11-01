@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
 import { nameToMonster, nameToMonsterClass } from '../js/mondata.js';
 import { doClassGenocide, doGenocide } from '../js/genocide.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CLUB, CRYSKNIFE, EGG, WORM_TOOTH } from '../js/object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,

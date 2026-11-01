@@ -14,7 +14,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { currentMonsterLoad } from './monster_carry.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterIsVerySmall } from './monster_data.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import type { Monster } from './monster_types.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { findMonsterArmorClass } from './monworn.js';

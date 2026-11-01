@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { grantMonsterCorpseIntrinsic } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';

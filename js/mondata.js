@@ -1,16 +1,19 @@
 // Monster-name and monster-class lookup.
 // C ref: mondata.c name_to_mon() and name_to_monclass().
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX, } from './monster_attack_types.js';
 import { dragonFormForArmor } from './armor.js';
 import { artifactById } from './artifacts.js';
 import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, } from './const.js';
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
+import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
+import { canSpotMonster } from './display.js';
+import { heroIsHallucinating } from './senses.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES } from './object_data.js';
 import { heroSpecies } from './hero_species.js';
@@ -614,5 +617,38 @@ export function monsterPolymorphsWhenStoned(monster) {
     return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
         && monster.mnum !== PM_STONE_GOLEM_POLY
         && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
+}
+const POSSESSIVE_PRONOUNS = ['his', 'her', 'its', 'their'];
+const SUBJECT_PRONOUNS = ['he', 'she', 'it', 'they'];
+const OBJECT_PRONOUNS = ['him', 'her', 'it', 'them'];
+const PRONOUN_G_UNIQ = 0x1000;
+const PRONOUN_M2_NEUTER = 0x00040000;
+const PRONOUN_M2_PNAME = 0x00080000;
+// C mondata.c:pronoun_gender(), the mhis()/mhim() macros in include/you.h.
+// Hallucination precedes visibility and sex and uses the core RNG.
+export function monsterPossessive(monster, { state = game, random = rn2, noIt = false } = {}) {
+    return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
+}
+export function monsterSubjectPronoun(monster, { state = game, noIt = false } = {}) {
+    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
+}
+// The same perceived gender, in the object case.
+export function monsterObjectPronoun(monster, { state = game, random = rn2, noIt = false } = {}) {
+    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
+}
+export function monsterPronounGender(monster, { state = game, random = rn2, noIt = false } = {}) {
+    requireLiveGame(state);
+    if (heroIsHallucinating(state)) {
+        const gender = random(4);
+        if (gender === 0 || gender === 1 || gender === 2 || gender === 3)
+            return gender;
+        throw new RangeError(`Invalid hallucinated pronoun gender: ${gender}`);
+    }
+    if ((!noIt && !canSpotMonster(monster)) || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_NEUTER))
+        return 2;
+    return monsterIsHumanoid(monster.mnum)
+        || ((MONSTER_GENO[monster.mnum] ?? 0) & PRONOUN_G_UNIQ)
+        || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_PNAME)
+        ? monster.female ? 1 : 0 : 2;
 }
 //# sourceMappingURL=mondata.js.map

@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
 import { nameToMonster } from '../js/mondata.js';
 import { revealMonsterAppearance } from '../js/monster_appearance.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { attemptMonsterRestrap, hideMonsterUnder, maybeUnhideAt } from '../js/mon.js';
 import { hideMonsterOnRestore } from '../js/monster_hiding.js';
 import { APPLE, CORPSE, GOLD_PIECE, ROCK } from '../js/object_data.js';

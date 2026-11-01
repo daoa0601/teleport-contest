@@ -9,7 +9,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { saveBonesLevel } from '../js/bones.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { init_objects } from '../js/o_init.js';
 import { AMULET_OF_YENDOR, LEASH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

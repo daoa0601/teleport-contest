@@ -14,7 +14,7 @@ import {
 import {
     MONSTER_FLAGS1, monsterDigests, monsterHasNoLimbs, monsterIsWhirly,
 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import type { Monster } from './monster_types.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { cansee } from './vision.js';

@@ -8,7 +8,7 @@ import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { linkCreatedObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { linkCreatedObjectToMonsterInventory } from '../js/mkobj.js';
 import { APPLE, ARROW, DAGGER, DIAMOND } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { throwInventoryObject } from './support/commands.js';

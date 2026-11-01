@@ -2,7 +2,7 @@
 // Reusable by drop-side theft owners (swallowed objects, destroyed contents).
 
 import { HUNGRY, SHOPBASE } from './const.js';
-import { shopkeeperName } from './monster_name.js';
+import { shopkeeperName } from './shknam.js';
 import { canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';

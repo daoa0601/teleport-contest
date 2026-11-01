@@ -5,7 +5,7 @@ import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { CORPSE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ROCK, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObjectsAt } from './support/level-state.js';

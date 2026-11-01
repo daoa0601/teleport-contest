@@ -6,7 +6,7 @@ import { NO_MINVENT, Upolyd } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { ACID_VENOM, BLINDING_VENOM, DAGGER, DART, ROCK } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';

@@ -8,7 +8,7 @@ import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
 import { AD_SEDU, AD_SGLD, AD_SITM, AD_SSEX, AT_CLAW, AT_TUCH } from '../js/monster_attack_types.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     AMULET_OF_LIFE_SAVING, APPLE, BOULDER, DAGGER, GOLD_PIECE,
     LEATHER_ARMOR, LEATHER_GLOVES, STATUE,

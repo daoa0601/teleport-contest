@@ -4,7 +4,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { currentShopResident, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { shopkeeperCustomerInsult } from './shop_damage.js';
-import { shopkeeperName } from './monster_name.js';
+import { shopkeeperName } from './shknam.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { heroIsDeaf } from './senses.js';
 import { isPick } from './weapon_type.js';

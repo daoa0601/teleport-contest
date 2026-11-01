@@ -12,7 +12,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { createCorpstatAt, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { CORPSE, CRYSKNIFE, SACK } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';

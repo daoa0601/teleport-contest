@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { NEED_WEAPON, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AKLYS } from '../js/object_data.js';
 import { mksobj } from '../js/mkobj.js';
 import { createMonsterAt } from './support/monsters.js';

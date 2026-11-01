@@ -11,7 +11,7 @@ import type { Monster } from './monster_types.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { moneyToMonster } from './shop_damage.js';
 import { currency } from './currency.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { exerciseWisdom } from './attrib.js';

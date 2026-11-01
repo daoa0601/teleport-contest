@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterDoorPassage, shiftMonsterForDoor, monsterCanFog, monsterCanOoze, } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/mon.js';
 import { addObjectToContainer } from '../js/object_container.js';

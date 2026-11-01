@@ -6,7 +6,7 @@ import { canSpotMonster, canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SPEED } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

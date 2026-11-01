@@ -3,7 +3,7 @@ import { buryObject } from './buried_object.js';
 import { ROOM, SHOPBASE } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { dropMonsterObject } from './monster_drop.js';
+import { dropMonsterObject } from './steal.js';
 import { GOLD_PIECE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { roomsAt } from './room.js';

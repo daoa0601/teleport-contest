@@ -13,7 +13,7 @@ import type { HeroSkill } from './hero_types.js';
 import {
     monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade,
 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 

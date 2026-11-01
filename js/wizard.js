@@ -1,7 +1,7 @@
 // C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
@@ -13,7 +13,8 @@ import { rndcurse } from './throne.js';
 import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { mksobj } from './mkobj.js';
-import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
+import { linkObjectToMonsterInventory } from './mkobj.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { recordRandom } from './monster_action_types.js';
 import { MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterClassSymbol, } from './monster_data.js';
 import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './dog.js';

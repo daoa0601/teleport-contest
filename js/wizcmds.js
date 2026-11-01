@@ -23,7 +23,7 @@ import { polymorphHero } from './polyself.js';
 import { createParticularMonster } from './read_creation.js';
 import { findit } from './detect.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { monsterIsNonliving } from './monster_data.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './mon.js';
 import { finishHeroDeath } from './end.js';

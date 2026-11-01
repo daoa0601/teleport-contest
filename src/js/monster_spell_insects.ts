@@ -11,7 +11,7 @@ import { makemonAt, mkclassAligned } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import type { MonsterSpellEffect } from './monster_action_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import type { Monster } from './monster_types.js';
 import { makePlural, makeSingular, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { rnd } from './rng.js';

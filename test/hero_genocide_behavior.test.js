@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeConfused, makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, SCR_GENOCIDE } from '../js/object_data.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { doread } from '../js/read.js';

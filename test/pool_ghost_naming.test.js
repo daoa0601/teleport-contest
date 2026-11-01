@@ -3,7 +3,8 @@ import test from 'node:test';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterName, possessiveName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
+import { possessiveName } from '../js/hacklib.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the sleeping Rogue-level ghost is addressed by its assigned name', async () => {
     await freshObjectRoom({ gameplaySeed: 17n });

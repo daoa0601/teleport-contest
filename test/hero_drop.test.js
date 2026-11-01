@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { dropHeroObject, dropInventoryObjectAtHero, } from '../js/hero_drop.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
-import { shopkeeperName } from '../js/monster_name.js';
+import { shopkeeperName } from '../js/shknam.js';
 import { createStaffedShop } from './support/shop.js';
 import { wearHeroArmor } from '../js/armor.js';
 const DAGGER = OBJECT_NAMES.indexOf('dagger');

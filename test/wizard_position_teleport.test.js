@@ -7,7 +7,7 @@ import { askTeleportDestination } from '../js/teleport.js';
 import { BEAR_TRAP, PIT, TELEP_TRAP, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR, DIAMOND } from '../js/object_data.js';
 import { teleportHero } from '../js/teleport.js';
 import { runExtendedCommand } from './support/commands.js';

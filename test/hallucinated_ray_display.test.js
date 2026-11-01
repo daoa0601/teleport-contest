@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
 import { castNativeRay } from '../js/ray_attack.js';

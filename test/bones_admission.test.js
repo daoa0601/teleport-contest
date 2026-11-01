@@ -7,13 +7,13 @@ import { DEFUNCT_MONSTER, G_EXTINCT, G_GENOD, MAGIC_PORTAL, NO_MINVENT } from '.
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { maketrap, mklev, } from '../js/mklev.js';
+import { maketrap, mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { changeMonsterForm } from '../js/mon.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, SACK, WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { init_objects } from '../js/o_init.js';

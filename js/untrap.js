@@ -60,7 +60,7 @@ import { isWeldedPrimary } from './weapon_slots.js';
 import { cansee } from './vision.js';
 import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
-import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterName as canonicalMonsterName } from './do_name.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;

@@ -8,7 +8,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/mon.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, CRYSKNIFE, GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, POT_ACID, RED_DRAGON_SCALES, ROCK, STATUE, UNICORN_HORN, WORM_TOOTH, } from '../js/object_data.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

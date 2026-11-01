@@ -8,7 +8,7 @@ import { createElementalMonsterExplosion } from '../js/explosion.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AD_FIRE } from '../js/monster_attack_types.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

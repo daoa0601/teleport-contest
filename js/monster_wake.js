@@ -5,7 +5,7 @@ import { canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { disturbBuriedZombies } from './object_impact.js';
 const G_UNIQ = 0x1000;
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');

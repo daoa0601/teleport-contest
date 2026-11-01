@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { runMonsterAction, resumeDeferredCovetousRelocation } from '../js/monmove.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { RING_MAIL } from '../js/object_data.js';

@@ -6,7 +6,7 @@ import { pline, plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { resolveMonsterImmediateWand } from '../js/muse.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

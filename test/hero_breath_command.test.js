@@ -6,7 +6,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { heroBreathAttack } from '../js/hero_breath.js';
 import { useHeroBreath } from '../js/hero_breath_command.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { BLACK_DRAGON_SCALES, HELMET, LONG_SWORD, SMALL_SHIELD, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';

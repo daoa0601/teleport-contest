@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { pushKeys } from '../js/input.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { AMULET_OF_LIFE_SAVING, CLUB, CORPSE } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';

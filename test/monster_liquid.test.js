@@ -4,7 +4,7 @@ import { LAVAPOOL, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroLiquidMonsterDeath } from '../js/hero_monster_death.js';
 import { initializePet } from '../js/dog.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterLiquidDeath, resolveMonsterLiquid } from '../js/mon.js';

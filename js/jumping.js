@@ -19,7 +19,7 @@ import { spendHeroNutrition } from './hunger.js';
 import { gotoLevel } from './level_change.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { makePlural } from './object_grammar.js';
 import { BOULDER, SPE_JUMPING } from './object_data.js';
 import { walkPathCells } from './path_walk.js';

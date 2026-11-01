@@ -3,7 +3,7 @@ import test from 'node:test';
 import { BEAR_TRAP, NEED_WEAPON, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWieldedWeapon } from '../js/monster_weapon.js';
 import { CROSSBOW, CROSSBOW_BOLT, TWO_HANDED_SWORD } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

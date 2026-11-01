@@ -9,7 +9,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { makePlural, makeSingular, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { rnd } from './rng.js';
 import { heroDetectsMonsters, heroIsDeaf, heroIsHallucinating } from './senses.js';

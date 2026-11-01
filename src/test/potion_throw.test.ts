@@ -1,7 +1,7 @@
 import { monsterAtPosition } from '../js/monster_location.js';
 import type { GameObject } from '../js/object_types.js';
 import type { Monster } from '../js/monster_types.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import type { AttributeValues } from '../js/roles.js';
 import type { KeyInput } from '../js/input.js';
 import test from 'node:test';

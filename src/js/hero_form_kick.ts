@@ -10,7 +10,7 @@ import { resolveHeroNaturalDamage } from './hero_natural_damage.js';
 import { heroSpecies } from './hero_species.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterIsShade, requireMonsterData } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { rnd } from './rng.js';
 import type { Monster } from './monster_types.js';

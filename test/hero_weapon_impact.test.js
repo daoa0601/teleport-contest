@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/hero_weapon_impact.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
 import { objectMaterial } from '../js/object_material.js';

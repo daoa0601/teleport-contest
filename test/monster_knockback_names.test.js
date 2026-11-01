@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a perceived invisible attacker retains its invisibility in knockback feedback', async () => {

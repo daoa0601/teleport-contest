@@ -9,7 +9,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, GOLD_PIECE, LEASH } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';

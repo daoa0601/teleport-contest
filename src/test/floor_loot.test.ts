@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { pushKeys } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { POOL } from '../js/const.js';
 import { CHEST, CLUB, DART, SADDLE } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';

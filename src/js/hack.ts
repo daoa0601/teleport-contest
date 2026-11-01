@@ -30,7 +30,8 @@ import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn, nomul } from './command_state.js';
 import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
 import { clearHeroTrap, setHeroTrap, heroCanMoveFromTrap } from './hero_traps.js';
-import { monsterName, shopkeeperName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { shopkeeperName } from './shknam.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet,
 } from './end.js';
@@ -43,7 +44,7 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { loseHeroHp } from './hero_damage.js';
 import { igniteItems } from './light.js';
 import { destroyFireInventory } from './zap.js';
-import { releaseAllMonsterLeashes } from './monster_leash.js';
+import { releaseAllMonsterLeashes } from './leash_apply.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ATTACKS,

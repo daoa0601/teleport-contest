@@ -23,7 +23,7 @@ import { shieldeff } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
 import { setMonsterMalign } from './monster_alignment.js';

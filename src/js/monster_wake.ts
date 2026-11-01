@@ -6,7 +6,7 @@ import { canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_GENO, MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

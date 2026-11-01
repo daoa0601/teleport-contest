@@ -3,12 +3,10 @@ import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
-import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterGivenName, monsterName } from './do_name.js';
 import {
-    RLOC_NOMSG,
-    CORR, G_GENOD, GRAVE, IS_POOL, MFAST,
-    MM_NOCOUNTBIRTH, MM_NOTAIL,
-    MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM,
+    RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT,
+    PIT, PLNMSG_OBJ_GLOWS, ROOM,
 } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
@@ -23,35 +21,26 @@ import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonNear, maketrap } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { riderRevivalTime, set_corpsenm } from './mkobj.js';
+import { riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import {
-    MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME,
-    MONSTER_SYMBOL,
-    monsterIsDisplacer, monsterTypeName,
+    MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName,
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { monsterName } from './monster_name.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
-import {
-    destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject,
-} from './monster_inventory.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
 import {
-    OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
-    scheduleObjectTimer, stopAllObjectTimers,
+    OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers,
 } from './object_timers.js';
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { markQuestLeaderAlive } from './quest.js';
-import {
-    bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE,
-    revivalReplacement,
-} from './revival_species.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './revival_species.js';
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';

@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AMULET_OF_YENDOR, BOULDER, CORPSE, DAGGER, ORCISH_DAGGER, POT_HEALING, } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, BOULDER, CORPSE, DAGGER, ORCISH_DAGGER, POT_HEALING } from '../js/object_data.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_WEP } from '../js/const.js';
 import { artifactObject, floorObject } from './support/game-objects.js';
 import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { removeMonsterFromGame, removeWishGrantingMonster } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { deleteObject } from '../js/object_delete.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { resetInputState } from '../js/input.js';

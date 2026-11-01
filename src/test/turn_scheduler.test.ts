@@ -14,7 +14,7 @@ import { game } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';

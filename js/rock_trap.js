@@ -12,7 +12,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
-import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterName as canonicalMonsterName } from './do_name.js';
 const M1_UNSOLID = 0x00100000;
 const M1_WALLWALK = 0x00000008;
 function monsterPassesRocks(monster) {
