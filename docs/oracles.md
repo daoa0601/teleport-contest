@@ -151,6 +151,9 @@ whose ports are spread across many modules. It guides the consolidation
 units folding modules by hand; `docs/ledger/module-owners.tsv` records each
 module that already ports exactly one C file, so a module that was
 single-owner and gains a function from another C file fails the check.
+A consolidation that deletes modules or moves ownership on purpose only
+regenerates the ledger: `node scripts/static-gaps.mjs owners --write-ledger
+docs/ledger/module-owners.tsv`.
 
 `screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
 screen-only first difference to the C function whose literal appears on the

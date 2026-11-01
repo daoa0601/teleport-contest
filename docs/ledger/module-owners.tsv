@@ -21,14 +21,8 @@ src/js/cannibalism.ts	eat.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
 src/js/coin_flip.ts	apply.c
-src/js/command_help.ts	cmd.c
-src/js/command_keys.ts	cmd.c
 src/js/confused_loot.ts	pickup.c
 src/js/confusing_touch.ts	uhitm.c
-src/js/container_contents.ts	end.c
-src/js/container_location.ts	pickup.c
-src/js/container_loot.ts	pickup.c
-src/js/container_tip.ts	pickup.c
 src/js/context_menu.ts	cmd.c
 src/js/corpse_eating.ts	eat.c
 src/js/corpse_intrinsics.ts	eat.c
@@ -151,9 +145,6 @@ src/js/lock_context.ts	lock.c
 src/js/lock_pick.ts	lock.c
 src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/selection.ts	botl.c
-src/js/magic_map_display.ts	detect.c
-src/js/magic_mapping.ts	detect.c
-src/js/magic_opening.ts	detect.c
 src/js/maze_terrain.ts	mkmaze.c
 src/js/meal_mimic.ts	eat.c
 src/js/menu_coloring.ts	windows.c
@@ -270,4 +261,3 @@ src/js/wish.ts	zap.c
 src/js/worm.ts	worm.c
 src/js/worn.ts	worn.c
 src/js/write.ts	write.c
-src/js/zap.ts	zap.c

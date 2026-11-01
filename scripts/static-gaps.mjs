@@ -39,7 +39,7 @@ import { INFRASTRUCTURE_FILES, baseName, calleeName, forEachTopLevelDecl, resolv
 import { checkConstants } from './lib/gap-constants.mjs';
 import { compareEdges } from './lib/gap-edges.mjs';
 import { checkMessageReviews, messageLedgerKey } from './lib/gap-message-reviews.mjs';
-import { MIXED_TOLERANCE, moduleOwnership } from './lib/module-owners.mjs';
+import { MIXED_TOLERANCE, moduleOwnership, removedModuleKeys } from './lib/module-owners.mjs';
 import { arrayValue, errorMessage, numberValue, objectValue, stringValue } from './lib/session-types.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CACHE = join(ROOT, '.cache', 'static-gaps');
@@ -300,11 +300,14 @@ function optionReader(args) {
     };
 }
 // Fails when a ledger entry is no longer among `now`; writes `now` on request.
-function applyLedger(option, now, what, header) {
+// `removed` marks entries that went away on purpose (a consolidation deleted
+// the module); they are reported but do not fail the check, and `--write-ledger`
+// drops them because they are not in `now`.
+function applyLedger(option, now, what, header, removed = new Set()) {
     const current = new Set(now);
     const checkPath = option('--check-ledger');
     if (checkPath) {
-        const lost = [...readLedger(checkPath)].filter(key => !current.has(key));
+        const lost = [...readLedger(checkPath)].filter(key => !current.has(key) && !removed.has(key));
         if (lost.length) {
             console.error(`\n${lost.length} ledger ${what} are lost:`);
             for (const key of lost.slice(0, 50))
@@ -312,13 +315,16 @@ function applyLedger(option, now, what, header) {
             process.exitCode = 1;
         }
         else
-            console.log(`\nLedger ${checkPath}: every listed ${what.replace(/s$/, '')} still holds.`);
+            console.log(`\nLedger ${checkPath}: every listed ${what.replace(/s$/, '')} still holds.`
+                + (removed.size ? `\n${removed.size} removed with their module (consolidation); `
+                    + 'regenerate with --write-ledger.' : ''));
     }
     const writePath = option('--write-ledger');
     if (writePath) {
         const keys = [...current].sort();
         writeFileSync(writePath, `# ${header}\n` + keys.join('\n') + '\n');
-        console.log(`\nWrote ${keys.length} entries to ${writePath}`);
+        console.log(`\nWrote ${keys.length} entries to ${writePath}`
+            + (removed.size ? ` (${removed.size} removed-module rows dropped)` : ''));
     }
 }
 // ── messages ──
@@ -483,7 +489,10 @@ async function ownership(args) {
             + row.modules.slice(0, 12).map(({ module, count }) => `${module} ${count}`).join(', '));
     }
     console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'owners.json'))}`);
-    applyLedger(option, report.singleOwnerKeys, 'module owners', 'module\tC file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)');
+    const checkPath = option('--check-ledger');
+    // Rows whose module a consolidation deleted are reported, not failed on.
+    const removed = removedModuleKeys(checkPath ? [...readLedger(checkPath)] : [], module => existsSync(join(ROOT, module)));
+    applyLedger(option, report.singleOwnerKeys, 'module owners', 'module\tC file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)', removed);
 }
 // ── screens ──
 // The C functions whose literals appear in `text`, longest piece first.

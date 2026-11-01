@@ -2283,6 +2283,10 @@ openholdingtrap	reward_untrap
 openholdingtrap	rn2
 openholdingtrap	trapname
 openholdingtrap	vision_recalc
+openone	newsym
+openone	open_drawbridge
+openone	openholdingtrap
+openone	wake_nearto
 out_container	costly_spot
 out_container	fatal_corpse_mistake
 out_container	lift_object

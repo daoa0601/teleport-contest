@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MIXED_TOLERANCE, moduleOwnership } from '../scripts/lib/module-owners.mjs';
+import { MIXED_TOLERANCE, moduleOwnership, removedModuleKeys } from '../scripts/lib/module-owners.mjs';
 import type { OwnerEdge } from '../scripts/lib/module-owners.mjs';
 
 // The edges mapping located as `src/js/file.ts:line`, the way the report
@@ -74,6 +74,15 @@ void test('one C function mapped into two modules counts on both sides', () => {
     assert.deepEqual(allmain.minority, []);
     // Both hold hack.c functions only, so both are single-owner for it.
     assert.deepEqual(report.singleOwnerKeys, ['src/js/allmain.ts\thack.c', 'src/js/hack.ts\thack.c']);
+});
+
+void test('ledger rows for modules a consolidation deleted are removed, not lost', () => {
+    const removed = removedModuleKeys(
+        ['src/js/trap.ts\ttrap.c', 'src/js/container_loot.ts\tpickup.c', 'src/js/magic_mapping.ts\tdetect.c'],
+        module => module === 'src/js/trap.ts',
+    );
+
+    assert.deepEqual([...removed], ['src/js/container_loot.ts\tpickup.c', 'src/js/magic_mapping.ts\tdetect.c']);
 });
 
 void test('a C file spread over modules lists them, most mapped functions first', () => {

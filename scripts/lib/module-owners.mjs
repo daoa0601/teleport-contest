@@ -73,4 +73,17 @@ export function moduleOwnership(edges) {
         .sort();
     return { modules, cFiles, singleOwnerKeys };
 }
+// Ledger keys whose module file no longer exists among `moduleExists`'s
+// yes-set: consolidation units delete modules on purpose, so a check
+// reports these as removed instead of failing on them, and the next
+// `--write-ledger` drops them.
+export function removedModuleKeys(keys, moduleExists) {
+    const removed = new Set();
+    for (const key of keys) {
+        const module = key.slice(0, key.indexOf('\t'));
+        if (module && !moduleExists(module))
+            removed.add(key);
+    }
+    return removed;
+}
 //# sourceMappingURL=module-owners.mjs.map
