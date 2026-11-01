@@ -7,7 +7,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { peaceMinded, propagateMonsterSpecies } from './makemon.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { hideMonsterOnRestore } from './save.js';
 import { hideMonsterUnder, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';

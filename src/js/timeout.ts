@@ -27,7 +27,7 @@ import { requireInitializedGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { PropertyName } from './property_types.js';
 import { nomul } from './command_state.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { deferredDecor } from './dungeon_feature.js';
 import { rnd } from './rng.js';
 import {

@@ -12,7 +12,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterAtPosition } from './steed.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';

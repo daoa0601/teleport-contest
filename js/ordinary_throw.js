@@ -10,7 +10,7 @@ import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { tossObjectUp } from './toss_up.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { AKLYS, BOOMERANG, OBJECT_SUBTYPE } from './object_data.js';

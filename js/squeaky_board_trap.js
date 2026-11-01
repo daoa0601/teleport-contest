@@ -4,7 +4,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterIsMindless } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { heroIsDeaf } from './senses.js';

@@ -12,7 +12,7 @@ import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { resetHeroFaint } from './hunger.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
 import { offerGoldToMonster } from './minion.js';

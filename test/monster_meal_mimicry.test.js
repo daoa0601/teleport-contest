@@ -8,7 +8,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { putMonsterToSleep } from '../js/monster_sleep.js';
+import { putMonsterToSleep } from '../js/mhitm.js';
 import { LEASH, RIN_PROTECTION_FROM_SHAPE_CHANGERS, TRIPE_RATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';

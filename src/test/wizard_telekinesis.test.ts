@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, LAVAPOOL, NO_MINVENT, PIT, POOL } from '../js/const.js';
-import { setMonsterMalign } from '../js/monster_alignment.js';
+import { setMonsterMalign } from '../js/makemon.js';
 import { initializePet } from '../js/dog.js';
 import { STATUE } from '../js/object_data.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

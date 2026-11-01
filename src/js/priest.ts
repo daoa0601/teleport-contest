@@ -16,7 +16,7 @@ import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym, randomDisplayMonsterIdentity } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -48,6 +48,7 @@ import type { MonsterArticle } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { indefiniteArticlePrefix } from './object_grammar.js';
 import { makemon, makemonAt } from './makemon.js';
+import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { mksobj, mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -261,6 +262,28 @@ export function priestAlignment(priest: Monster | null | undefined): number {
         ?? minionData(priest)?.min_align ?? A_NONE;
     if (alignment === A_NONE) return A_NONE;
     return Math.sign(alignment);
+}
+
+// C priest.c:mon_aligntyp(). Alignment value of a live monster; priests read
+// the temple record, minions their summon record, others the quest table.
+type MonsterAlignmentSubject = Pick<Monster, 'mnum'> & Partial<Pick<Monster,
+    'm_id' | 'ispriest' | 'epri' | 'isminion' | 'emin'>>;
+
+export function monsterAlignmentValue(monster: MonsterAlignmentSubject, state: GameState): number {
+    if (monster.ispriest) {
+        if (!monster.epri) throw new Error(`Priest ${monster.m_id} has no temple state`);
+        return monster.epri.shralign;
+    }
+    if (monster.isminion) {
+        if (!monster.emin) throw new Error(`Minion ${monster.m_id} has no alignment state`);
+        return monster.emin.min_align;
+    }
+    return questMonsterAlignment(monster.mnum, state);
+}
+
+export function monsterAlignmentType(monster: MonsterAlignmentSubject, state: GameState = game): number {
+    const alignment = monsterAlignmentValue(monster, state);
+    return alignment === A_NONE ? A_NONE : Math.sign(alignment);
 }
 
 // C priest.c:priestname().

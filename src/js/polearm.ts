@@ -28,7 +28,7 @@ import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { ensureHeroSkills } from './skills.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_SUBTYPE, STATUE } from './object_data.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, couldsee } from './vision.js';

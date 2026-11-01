@@ -62,7 +62,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects,
 } from './hack.js';

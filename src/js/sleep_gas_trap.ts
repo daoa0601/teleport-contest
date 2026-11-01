@@ -6,12 +6,8 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
-import {
-    monsterIsBreathless,
-    monsterIsHelpless,
-    monsterResistsSleep,
-    putMonsterToSleep,
-} from './monster_sleep.js';
+import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
+import { putMonsterToSleep } from './mhitm.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterName } from './do_name.js';

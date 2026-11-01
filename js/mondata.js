@@ -504,6 +504,7 @@ export function monsterHasSeductionAttack(mnum) {
 }
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
+const MR_SLEEP = 0x04;
 const MR_DISINTEGRATION = 0x08;
 const MR_ELECTRIC = 0x10;
 const MR_ACID = 0x40;
@@ -597,6 +598,21 @@ export function monsterHasPoisonResistance(monster) {
 }
 export function monsterHasStoneResistance(monster) {
     return !!(monsterResistanceBits(monster) & MR_STONE);
+}
+// C include/monst.h:274 resists_sleep() over mondata.c Resists_Elem(),
+// with the mondata.c:91 defended(mon, AD_SLEE) half of the caller checks.
+export function monsterResistsSleep(monster) {
+    return !!(monsterResistanceBits(monster) & MR_SLEEP)
+        || !!monster?.defendedSleep;
+}
+// C include/mondata.h:26 breathless().
+export function monsterIsBreathless(monster) {
+    return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS);
+}
+// C include/monst.h:251 helpless().
+export function monsterIsHelpless(monster) {
+    return !!(monster.msleeping
+        || !monster.mcanmove || (monster.mfrozen ?? 0) > 0);
 }
 // C mondata.c:levl_follower(). Used by dog.c keepdogs() when the hero
 // changes levels.

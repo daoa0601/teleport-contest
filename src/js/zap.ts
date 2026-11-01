@@ -94,8 +94,8 @@ import type { InventoryDamageType, MagicDamageResult, RayFloorKind, RayFloorResu
 import { requirePlayingGame } from './gstate.js';
 import { BOLT_LIM } from './const.js';
 import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster } from './mon.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
-import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { revealMonsterAppearance } from './mon.js';
+import { setMonsterPermanentInvisibility } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { expelHero, holdingMonsterName } from './hero_expulsion.js';
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';

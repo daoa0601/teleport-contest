@@ -1389,7 +1389,7 @@ src/js/monmove.ts	breakMonsterBoulder	random	"[""20""]"	constant
 src/js/eat.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
 src/js/eat.ts	eatMonsterBrain	rollOne	"[""60""]"	constant
 src/js/uhitm.ts	resolveMonsterBrainAttack	random	"[""8""]"	constant
-src/js/monster_carry.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
+src/js/mon.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/mhitm.ts	applyMonsterCombatEffect	context.random	"[""8""]"	constant
@@ -1477,7 +1477,7 @@ src/js/mon.ts	woodGolemMaterial	rn2	"[""2""]"	constant
 src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
-src/js/monster_death_cloud.ts	createSteamVortexDeathCloud	random	"[""10""]"	constant
+src/js/mon.ts	createSteamVortexDeathCloud	random	"[""10""]"	constant
 src/js/uhitm.ts	resolveDeathTouchContact	random	"[""20""]"	constant
 src/js/mcastu.ts	touchHeroWithDeath	rollDice	"[""8"", ""6""]"	constant
 src/js/muse.ts	findMonsterDefensiveItem	random	"[""3""]"	constant
@@ -1499,26 +1499,26 @@ src/js/monmove.ts	checkMonsterHeroRange	random	"[""7""]"	constant
 src/js/monmove.ts	checkMonsterHeroRange	rollOne	"[""random(7) ? 10 : 100""]"	constant
 src/js/monmove.ts	makeMonsterFlee	random	"[""25""]"	constant
 src/js/mon.ts	eatMetal	rollOne	"[""25""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""20""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""20""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""3""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""3""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""3""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""4""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""5""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""5""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""5""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""6""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""reactions.length""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""12"", ""6""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""2"", ""6""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""2"", ""6""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""3"", ""4""]"	constant
-src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""dice"", ""sides""]"	unproved
-src/js/monster_gaze.ts	resolveMonsterGaze	rollOne	"[""3""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""2""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""2""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""2""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""20""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""20""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""3""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""3""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""3""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""4""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""5""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""5""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""5""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""6""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	random	"[""reactions.length""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	rollDice	"[""12"", ""6""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	rollDice	"[""2"", ""6""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	rollDice	"[""2"", ""6""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	rollDice	"[""3"", ""4""]"	constant
+src/js/mhitu.ts	resolveMonsterGaze	rollDice	"[""dice"", ""sides""]"	unproved
+src/js/mhitu.ts	resolveMonsterGaze	rollOne	"[""3""]"	constant
 src/js/do_name.ts	randomGhostName	rn2	"[""7""]"	constant
 src/js/do_name.ts	randomGhostName	rn2	"[""GHOST_NAMES.length""]"	constant
 src/js/do_name.ts	roguePlayerName	rn2	"[""2""]"	constant
@@ -1632,7 +1632,7 @@ src/js/mon.ts	shapechangerGender	rn2	"[""10""]"	constant
 src/js/zap.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
 src/js/steal.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
 src/js/zap.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
-src/js/monster_return.ts	returnDeadKop	rollOne	"[""5""]"	constant
+src/js/mon.ts	returnDeadKop	rollOne	"[""5""]"	constant
 src/js/mhitu.ts	exchangeAdornmentRings	random	"[""20""]"	constant
 src/js/mhitu.ts	maybeRemoveArmor	random	"[""2""]"	constant
 src/js/mhitu.ts	maybeRemoveArmor	random	"[""2""]"	constant

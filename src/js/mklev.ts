@@ -84,7 +84,7 @@ import {
     MONSTER_SYMBOL, MONSTER_NAME,
 } from './monster_data.js';
 
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, terrain_glyph } from './display.js';
 import { pline } from './pline.js';

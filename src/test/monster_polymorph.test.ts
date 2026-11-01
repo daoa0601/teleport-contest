@@ -9,7 +9,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
+import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import {

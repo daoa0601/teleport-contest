@@ -5,7 +5,7 @@ import { monsterStomachName } from './body_parts.js';
 import { canSpotMonster, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { makemonAt } from './makemon.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { doBlindingRay } from './flash.js';
 import { game, requireLiveGame } from './gstate.js';
 import { lightDamage } from './light.js';

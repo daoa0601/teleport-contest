@@ -21,7 +21,7 @@ import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathHandler } from './mon.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { monsterName } from './do_name.js';
@@ -31,7 +31,7 @@ import {
 } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { heroSpecies } from './hero_species.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import {

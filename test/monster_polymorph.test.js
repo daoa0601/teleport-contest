@@ -4,7 +4,7 @@ import { DOOR, D_CLOSED, D_NODOOR, I_SPECIAL, LAVAPOOL, NO_MINVENT, NO_WEAPON_WA
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
+import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { BOULDER, CHAIN_MAIL, CLUB, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET, LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS, } from '../js/object_data.js';

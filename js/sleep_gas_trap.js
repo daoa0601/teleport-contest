@@ -1,7 +1,8 @@
 // Sleeping-gas traps affecting monsters.
 // C ref: trap.c:trapeffect_slp_gas_trap().
 import { game } from './gstate.js';
-import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
+import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
+import { putMonsterToSleep } from './mhitm.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterName } from './do_name.js';

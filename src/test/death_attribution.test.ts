@@ -11,7 +11,7 @@ import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/end.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { respondMedusa } from '../js/monster_gaze.js';
+import { respondMedusa } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';

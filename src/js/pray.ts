@@ -24,7 +24,7 @@ import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './at
 import { reviveCorpseForHero } from './corpse_revival.js';
 import { loseHeroHp } from './hero_damage.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { CORPSE, OBJECT_NAMES, STATUE } from './object_data.js';
 import { blessObjectState, curseObject } from './object_state.js';
 import { returnHeroToHumanForm } from './polyself.js';

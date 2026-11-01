@@ -21,17 +21,17 @@ import { nextIdent } from './ident.js';
 import { beginObjectBurn } from './light.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, } from './mkobj.js';
 import { occupied } from './mkroom.js';
-import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
 import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterTypeName, requireMonsterData, } from './monster_data.js';
-import { monsterDeathCount } from './monster_vitals.js';
+import { monsterDeathCount } from './mon.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
 import { OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, OBJECT_WEIGHT, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
-import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from './worn.js';
 import { monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, placeMonsterOnMap, maybeGiveDomesticSaddle, } from './steed.js';
 import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -658,6 +658,39 @@ async function chooseMimicAppearance(x, y) {
     const appearance = temporary.otyp;
     await deleteObject(temporary);
     return object(appearance);
+}
+// C makemon.c:set_malign(). Alignment value assigned to a live monster.
+const MS_LEADER = 36;
+export function setMonsterMalign(monster, state = game) {
+    let alignment = monsterAlignmentValue(monster, state);
+    if ((monster.ispriest || monster.isminion) && alignment !== A_NONE)
+        alignment *= 5;
+    const peaceful = !!monster?.mpeaceful;
+    const coaligned = Math.sign(alignment)
+        === Math.sign(state.u?.ualign?.type ?? 0);
+    const absoluteAlignment = Math.abs(alignment);
+    const flags = questMonsterFlags2(monster.mnum, state);
+    if (questMonsterSound(monster.mnum, state) === MS_LEADER) {
+        monster.malign = -20;
+    }
+    else if (alignment === A_NONE) {
+        monster.malign = peaceful ? 0 : 20;
+    }
+    else if (flags & M2_PEACEFUL) {
+        monster.malign = (peaceful ? -3 : 3)
+            * Math.max(5, absoluteAlignment);
+    }
+    else if (flags & M2_HOSTILE) {
+        monster.malign = coaligned ? 0 : Math.max(5, absoluteAlignment);
+    }
+    else if (coaligned) {
+        monster.malign = peaceful
+            ? -3 * Math.max(3, absoluteAlignment)
+            : Math.max(3, absoluteAlignment);
+    }
+    else {
+        monster.malign = absoluteAlignment;
+    }
 }
 export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const level = requireGameLevel();

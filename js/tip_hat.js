@@ -9,7 +9,7 @@ import { MONSTER_FLAGS1, MONSTER_SOUND, monsterIsHumanoid } from './monster_data
 import { monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { publishMonsterNoise } from './ambient_sounds.js';
 import { STATUE } from './object_data.js';
 import { propertyIsActive } from './properties.js';

@@ -28,7 +28,7 @@ import { detectMonsters, detectObjects } from './magic_detection.js';
 import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './magic_map_display.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_SYMBOLS } from './mondata.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';

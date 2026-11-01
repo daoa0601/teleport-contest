@@ -19,7 +19,7 @@ import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { requireInitializedGame } from './gstate.js';
 import { nomul } from './command_state.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { deferredDecor } from './dungeon_feature.js';
 import { rnd } from './rng.js';
 import { propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, setPropertyTimeout, } from './properties.js';

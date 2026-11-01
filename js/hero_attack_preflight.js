@@ -13,7 +13,7 @@ import { heroDetectsMonsters } from './senses.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
 import { stumbleOntoMimic } from './mimic.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 import { monsterName, monsterLeashName } from './do_name.js';

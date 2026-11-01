@@ -18,7 +18,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
-import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './trap.js';

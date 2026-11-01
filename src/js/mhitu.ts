@@ -16,27 +16,28 @@ import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_ATTK_AGR_DIED,
-    M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT,
-    QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, Upolyd, WATER,
+    M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON,
+    NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, WATER,
 } from './const.js';
 import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import {
     canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy,
+    shieldeff,
 } from './display.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    seenResistanceForDamage,
+    monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage,
 } from './mondata.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
     monsterDigests, monsterHatesBlessings, monsterHasNoLimbs, monsterIsAnimal, monsterIsThickSkinned,
     monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName,
-    requireMonsterData,
+    requireMonsterData, MONSTER_RESISTS,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DGST, AD_DRIN,
@@ -57,8 +58,8 @@ import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { startHeroSickness } from './hero_illness.js';
-import { makeHallucinated } from './hero_mental_status.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
 import { stopRun } from './runmode.js';
@@ -70,7 +71,7 @@ import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength 
 import { adjustHeroAlignment } from './alignment.js';
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
-import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
+import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
 import { d, rn2, rnd } from './rng.js';
 import {
@@ -84,11 +85,10 @@ import {
     castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS,
     monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay,
 } from './mcastu.js';
-import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveDeferredHeroItemTheft, addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, startHeroSliming } from './slime.js';
 import { bot } from './botl.js';
-import { trapAt } from './trap.js';
+import { burnArmorByFire, trapAt } from './trap.js';
 import { selectAttack } from './attack_selection.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, setMulti } from './command_state.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.js';
@@ -104,9 +104,11 @@ import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
-import { CORPSE, OBJECT_NAMES } from './object_data.js';
+import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies } from './stoning.js';
+import {
+    applyMonsterStoningAttack, heroResistsStoning, startHeroPetrificationFromMonster, touchPetrifies,
+} from './stoning.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { setHeroGrip } from './hero_grip.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
@@ -126,7 +128,14 @@ import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './currency.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
-import { loseHeroHp } from './hero_damage.js';
+import { damageHeroFromMonster, loseHeroHp } from './hero_damage.js';
+import {
+    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource,
+} from './ray.js';
+import { destroyInventoryByElement } from './zap.js';
+import { burnAwayHeroSlime } from './hack.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { igniteItems } from './light.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -3122,4 +3131,176 @@ export async function swingMonsterWeapon(
     const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
     const target = defender ? ` at ${monsterName(defender, { state })}` : '';
     await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
+}
+
+// ---------------------------------------------------------------------------
+// Active monster gazes. Native mhitu.c:gazemu().
+// ---------------------------------------------------------------------------
+
+const reactions = ['confused', 'stunned', 'puzzled', 'dazzled', 'irritated', 'inflamed', 'tired', 'dulled'];
+
+function identifyGazeReflection(source: ReturnType<typeof heroReflectionSource>, state: GameState) {
+    const object = source?.object;
+    if (object && [SHIELD_OF_REFLECTION, AMULET_OF_REFLECTION].includes(object.otyp)) {
+        discoverHeroReflectionSource(source, state);
+    }
+}
+
+export interface MonsterGazeOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    rollDice?: typeof d;
+    rollOne?: typeof rnd;
+    calls?: MonsterCallLog;
+    die?: typeof finishMonsterAttackDeath;
+}
+
+export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack, {
+    state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd,
+    calls = [], die,
+}: MonsterGazeOptions = {}) {
+    requirePlayingGame(state);
+    const [, damageType, dice, sides] = attack;
+    if (damageType === AD_FIRE && ((monster.seen_resistance ?? 0) & M_SEEN_FIRE))
+        return { mask: M_ATTK_MISS, heroDied: false };
+    const visible = () => canSeeMonster(monster);
+    const name = (capitalized = true) => monsterName(monster, { state, capitalized });
+    const mutualGaze = visible() && couldsee(monster.mx, monster.my) && monster.mcansee;
+    const medusa = MONSTER_NAME[monster.mnum] === 'Medusa';
+    const reflectable = heroReflectsRay(state) && couldsee(monster.mx, monster.my) && medusa;
+    let cancelled = !!monster.mcan;
+    if ((heroIsHallucinating(state) && random(4)) || (heroIsUnaware(state) && !reflectable))
+        cancelled = true;
+    // Native gazemu has effects only for these gaze damage types.
+    if (damageType !== AD_STON && damageType !== AD_CONF && damageType !== AD_STUN
+        && damageType !== AD_BLND && damageType !== AD_FIRE)
+        return { mask: M_ATTK_MISS, heroDied: !!state.program_state.gameover };
+    let reaction = -1;
+    let already = false;
+    switch (damageType) {
+    case AD_STON:
+        if (cancelled || !monster.mcansee) {
+            if (!visible()) break;
+            if (heroIsUnaware(state)) { reaction = medusa ? 4 : 2; break; }
+            if (medusa && heroIsHallucinating(state) && random(3) === 0)
+                await publish('Someone seems overdue for a serpent cut.');
+            else await publish(`${name()} gazes ineffectually.`);
+            break;
+        }
+        if (reflectable) {
+            const seen = visible();
+            const reflection = heroReflectionSource(state);
+            if (seen && reflection) {
+                await publish(`${possessiveName(name())} gaze is reflected by your ${reflection.noun}.`);
+                identifyGazeReflection(reflection, state);
+            }
+            const reflectedBack = monsterReflectionSource(monster, state);
+            if (reflectedBack) {
+                if (seen) {
+                    await publish(`The gaze is reflected away by ${possessiveName(name(false))} ${reflectedBack.noun}!`);
+                    identifyGazeReflection(reflectedBack, state);
+                }
+                break;
+            }
+            if (!monsterHasLineOfSightToHero(monster, state)) {
+                if (seen) await publish(`${name()} doesn't seem to notice that ${monsterPossessive(monster, { state, random })} gaze was reflected.`);
+                break;
+            }
+            if (seen) await publish(`${name()} is turned to stone!`);
+            const death = await finishHeroMonsterKillOutcome(
+                monster, monster.mx, monster.my, { petrified: true, publish },
+            );
+            return { mask: death.killed ? M_ATTK_AGR_DIED : M_ATTK_MISS,
+                heroDied: !!death.heroDied || !!state.program_state?.gameover };
+        }
+        if (visible() && couldsee(monster.mx, monster.my)
+            && !heroResistsStoning(state) && !heroIsUnaware(state)) {
+            await publish(`You meet ${possessiveName(name(false))} gaze.`);
+            await stopHeroOccupation(state, publish);
+            if (monsterPolymorphsWhenStoned({ mnum: state.u.umonnum })) {
+                const change = await polymonHero(MONSTER_NAME.indexOf('stone golem'));
+                if (change.transformed) break;
+            }
+            await publish('You turn to stone...', { urgent: true });
+            await finishHeroDeath({ killer: monsterTypeName(monster.mnum, !!monster.female),
+                killerFormat: KILLED_BY, deathVerb: 'turned to stone',
+                deathLineShown: true, deathType: STONING });
+        }
+        break;
+    case AD_CONF:
+    case AD_STUN:
+        if (!mutualGaze || monster.mspec_used || !random(5)) break;
+        if (cancelled) {
+            reaction = damageType === AD_CONF ? 0 : 1;
+            already = !!(damageType === AD_CONF ? monster.mconf : monster.mstun);
+            break;
+        }
+        {
+            const duration = damageType === AD_CONF ? rollDice(3, 4) : rollDice(2, 6);
+            monster.mspec_used = (monster.mspec_used || 0) + duration + random(6);
+            if (damageType === AD_CONF) {
+                await publish(state.u.confusionTurns ? 'You are getting more and more confused.'
+                    : `${possessiveName(name())} gaze confuses you!`);
+                await makeConfused((state.u.confusionTurns || 0) + duration, { state, talk: false, publish });
+            } else {
+                await publish(`${name()} stares piercingly at you!`);
+                await makeStunned((state.u.stunnedTurns || 0) + duration, { state, talk: true, publish });
+            }
+            await stopHeroOccupation(state, publish);
+        }
+        break;
+    case AD_BLND:
+        if (!visible() || heroResistsBlindingLight(state)
+            || (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2 > BOLT_LIM ** 2) break;
+        if (cancelled) {
+            reaction = random(2) + 2;
+            already = !monster.mcansee;
+            if (monster.mcan && MONSTER_NAME[monster.mnum] === 'Archon' && random(5)) reaction = -1;
+            break;
+        }
+        {
+            const duration = rollDice(dice, sides);
+            await publish(`You are blinded by ${possessiveName(name(false))} radiance!`);
+            await makeBlinded(duration, { state, talk: false, publish });
+            await stopHeroOccupation(state, publish);
+            if (!heroIsBlind(state)) await publish('Your vision quickly clears.');
+            else await makeStunned(Math.max(state.u.stunnedTurns || 0, rollOne(3)), { state, talk: true, publish });
+        }
+        break;
+    case AD_FIRE:
+        if (!mutualGaze || monster.mspec_used || !random(5)) break;
+        if (cancelled) { reaction = random(2) + 4; break; }
+        {
+            const originalDamage = rollDice(2, 6);
+            let damage = originalDamage;
+            const level = monster.m_lev;
+            await publish(`${name()} attacks you with a fiery gaze!`);
+            await stopHeroOccupation(state, publish);
+            const observers = (target: Monster) => monsterHasLineOfSightToHero(target, state);
+            if (state.u.fireResistance || ((MONSTER_RESISTS[state.u.umonnum] ?? 0) & 0x01)) {
+                await shieldeff(state.u.ux, state.u.uy);
+                await publish("The fire doesn't feel hot!");
+                monstersObserveHeroResistance(M_SEEN_FIRE, state, observers);
+                await applyHeroGolemEffects(AD_FIRE, rollDice(12, 6), { state, publish });
+                damage = 0;
+            } else monstersForgetHeroResistance(M_SEEN_FIRE, state, observers);
+            await burnAwayHeroSlime(state, publish);
+            if (level > random(20)) await burnArmorByFire(state.u, state, publish, calls, random);
+            if (level > random(20)) {
+                const items = await destroyInventoryByElement('fire', originalDamage, { state, publish, random, rollOne });
+                if (items.heroDied || state.program_state?.gameover)
+                    return { mask: M_ATTK_MISS, heroDied: true };
+                await igniteItems(state.inventory, { state, publish, random });
+            }
+            if (damage) await damageHeroFromMonster(monster, damage, { state, publish, ...(die ? { die } : {}) });
+        }
+        break;
+    }
+    if (reaction >= 0 && !state.program_state?.gameover) {
+        if (heroIsHallucinating(state) && random(3)) reaction = random(reactions.length);
+        const modifier = random(3) ? already ? 'quite ' : random(2) ? 'somewhat ' : 'a bit ' : '';
+        await publish(`${name()} looks ${modifier}${reactions[reaction]}.`);
+    }
+    return { mask: M_ATTK_MISS, heroDied: !!state.program_state?.gameover };
 }

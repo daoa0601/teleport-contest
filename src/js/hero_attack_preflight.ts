@@ -24,7 +24,7 @@ import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { stumbleOntoMimic } from './mimic.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL,
     requireMonsterData,

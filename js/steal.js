@@ -35,7 +35,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { isBeingTakenOff } from './takeoff_state.js';
-import { monsterCanCarryObject } from './monster_carry.js';
+import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash } from './leash_apply.js';
 import { assertCreatedObject, } from './object_release.js';
 import { forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, } from './mkobj.js';

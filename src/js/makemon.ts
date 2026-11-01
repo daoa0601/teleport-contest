@@ -34,7 +34,7 @@ import {
     restoreMonsterInventoryOwnership,
 } from './mkobj.js';
 import { occupied } from './mkroom.js';
-import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
+import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
 import {
@@ -44,7 +44,7 @@ import {
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterTypeName,
     requireMonsterData,
 } from './monster_data.js';
-import { monsterDeathCount } from './monster_vitals.js';
+import { monsterDeathCount } from './mon.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
 import {
@@ -65,7 +65,7 @@ import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState, 
 
 import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
-import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from './worn.js';
 import {
     monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, placeMonsterOnMap, maybeGiveDomesticSaddle,
 } from './steed.js';
@@ -680,6 +680,38 @@ async function chooseMimicAppearance(x: number, y: number): Promise<{ type: numb
     const appearance = temporary.otyp;
     await deleteObject(temporary);
     return object(appearance);
+}
+
+// C makemon.c:set_malign(). Alignment value assigned to a live monster.
+const MS_LEADER = 36;
+
+export function setMonsterMalign(monster: Monster, state: GameState = game): void {
+    let alignment = monsterAlignmentValue(monster, state);
+    if ((monster.ispriest || monster.isminion) && alignment !== A_NONE)
+        alignment *= 5;
+
+    const peaceful = !!monster?.mpeaceful;
+    const coaligned = Math.sign(alignment)
+        === Math.sign(state.u?.ualign?.type ?? 0);
+    const absoluteAlignment = Math.abs(alignment);
+    const flags = questMonsterFlags2(monster.mnum, state);
+
+    if (questMonsterSound(monster.mnum, state) === MS_LEADER) {
+        monster.malign = -20;
+    } else if (alignment === A_NONE) {
+        monster.malign = peaceful ? 0 : 20;
+    } else if (flags & M2_PEACEFUL) {
+        monster.malign = (peaceful ? -3 : 3)
+            * Math.max(5, absoluteAlignment);
+    } else if (flags & M2_HOSTILE) {
+        monster.malign = coaligned ? 0 : Math.max(5, absoluteAlignment);
+    } else if (coaligned) {
+        monster.malign = peaceful
+            ? -3 * Math.max(3, absoluteAlignment)
+            : Math.max(3, absoluteAlignment);
+    } else {
+        monster.malign = absoluteAlignment;
+    }
 }
 
 export async function makemon(

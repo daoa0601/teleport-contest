@@ -11,7 +11,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { removeMonsterFromGame, removeWishGrantingMonster } from './mon.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { monsterName } from './do_name.js';
 import { OBJECT_DESCRIPTIONS } from './object_data.js';
 import { rn2, rnd } from './rng.js';

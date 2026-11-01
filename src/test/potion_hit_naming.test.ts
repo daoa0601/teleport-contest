@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
+import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { POT_ACID, POT_HEALING, POT_WATER } from '../js/object_data.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
 import { initRng } from '../js/rng.js';

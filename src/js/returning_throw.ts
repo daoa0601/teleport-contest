@@ -24,7 +24,7 @@ import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './weapon_
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { monsterProjectileDisplay } from './monster_projectile_display.js';
+import type { monsterProjectileDisplay } from './mthrowu.js';
 
 export function isAutoReturningThrow(object: GameObject, weaponMask: number, state: GameState): boolean {
     return object.otyp === BOOMERANG || !!(weaponMask & W_WEP)

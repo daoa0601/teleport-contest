@@ -7,7 +7,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { flush_screen } from '../js/display.js';
 import { finishEnvironmentalMonsterDeath, removeMonsterFromGame } from '../js/mon.js';
-import { monsterDeathCount } from '../js/monster_vitals.js';
+import { monsterDeathCount } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { resurrectWizard } from '../js/wizard.js';
 import { knownObject } from './support/game-objects.js';

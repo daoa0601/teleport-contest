@@ -24,7 +24,7 @@ import type { Position } from './map_types.js';
 import type { DrawbridgeOptions, DrawbridgeSquare } from './drawbridge_terrain.js';
 import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { delobj } from './object_delete.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsDeaf } from './senses.js';

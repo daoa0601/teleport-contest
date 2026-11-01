@@ -3,7 +3,7 @@
 // and zap.c bhit().
 import { objectMaterial } from './object_material.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { monsterProjectileDisplay } from './mthrowu.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { monsterName } from './do_name.js';

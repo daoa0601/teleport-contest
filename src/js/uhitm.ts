@@ -95,7 +95,8 @@ import { monsterName, monsterName as displayedMonsterName, namelessMonsterName }
 import { possessiveName } from './hacklib.js';
 import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
-import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { monsterIsHelpless, monsterResistsSleep } from './mondata.js';
+import { putMonsterToSleep } from './mhitm.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { stealHeroQuestObject, stealHeroGold } from './steal.js';
@@ -103,7 +104,7 @@ import { sessionIsNight } from './ambient_sounds.js';
 import {
     infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction,
 } from './mhitu.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './dothrow.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './dothrow.js';

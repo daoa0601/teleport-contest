@@ -1,9 +1,26 @@
-// C worn.c:mon_adjust_speed(). Permanent monster speed changes.
+// C worn.c:mon_set_minvis() and mon_adjust_speed(). Permanent monster
+// invisibility and speed changes.
 import { MFAST, MSLOW } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_PROPERTY } from './object_data.js';
 import { naturalMonsterSpeed } from './mon.js';
+// C worn.c:mon_set_minvis(). The map refresh and worm-tail reveal that the
+// native function performs when visibility flips stay with its callers.
+export function setMonsterPermanentInvisibility(monster, permanent = true) {
+    const oldPermanent = !!monster.perminvis;
+    const oldInvisible = !!monster.minvis;
+    monster.perminvis = permanent ? 1 : 0;
+    if (!monster.invis_blkd)
+        monster.minvis = monster.perminvis;
+    return {
+        oldPermanent,
+        oldInvisible,
+        permanent: !!monster.perminvis,
+        invisible: !!monster.minvis,
+        changed: oldInvisible !== !!monster.minvis,
+    };
+}
 function wearsSpeedItem(monster) {
     return (monster?.minvent || monster?.inventory || []).some(object => OBJECT_PROPERTY[object.otyp] === 'fast' && (object.owornmask ?? 0) !== 0);
 }

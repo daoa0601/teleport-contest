@@ -24,7 +24,7 @@ import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import { monsterDeathCount } from './monster_vitals.js';
+import { monsterDeathCount } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { BOULDER, FIGURINE, OBJECT_BIMANUAL } from './object_data.js';
 import { removeIntrinsicProperty } from './properties.js';

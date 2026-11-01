@@ -14,7 +14,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import { stopHeroOccupation } from './occupation.js';

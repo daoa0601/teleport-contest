@@ -9,7 +9,7 @@ import { mkobj, mksobj } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import {
     CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES,
     LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY,

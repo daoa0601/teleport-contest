@@ -57,7 +57,7 @@ import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThr
 import { canFallThrough } from './mklev.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
-import { monsterResistsSleep } from './monster_sleep.js';
+import { monsterResistsSleep } from './mondata.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import { monsterHasFireResistance } from './mondata.js';
 import { monsterHasStoneResistance } from './mondata.js';

@@ -41,12 +41,12 @@ import {
     M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT,
 } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';
 import { createElementalMonsterExplosion } from './explosion.js';
@@ -1595,4 +1595,20 @@ export async function petrifyMonsterAttacker(monster: Monster, {
     if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
     if (creditHero) recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });
+}
+
+// C mhitm.c:sleep_monst(). `mon' is hit by a sleep attack; returns true if
+// it is affected. The mimic-reveal, resistance and shield-effect halves of
+// the native function live with their callers (music.c, trap.c, uhitm.c).
+export async function putMonsterToSleep(monster: Monster, turns: number): Promise<boolean> {
+    if (!monster.mcanmove) return false;
+    await finishMonsterEating(monster);
+    const duration = turns + (monster.mfrozen ?? 0);
+    if (duration > 0) {
+        monster.mcanmove = 0;
+        monster.mfrozen = Math.min(duration, 127);
+    } else {
+        monster.msleeping = 1;
+    }
+    return true;
 }

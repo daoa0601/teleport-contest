@@ -16,7 +16,7 @@ import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js'
 import { bonesLevelExists, deleteBonesLevel, saveBonesLevel } from './bones.js';
 import { makemonAt } from './makemon.js';
 import { createCorpstatAt, mkcorpstat, mksobj } from './mkobj.js';
-import { monsterCanCarryObject, monsterLikesObjects, } from './monster_carry.js';
+import { monsterCanCarryObject } from './mon.js';
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './leash_apply.js';
@@ -24,7 +24,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, MONSTER_HAS_WEAPON_ATTACK } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './object_release.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
@@ -46,6 +46,18 @@ function monsterAt(x, y) {
     return (game.level?.monsters || []).find(monster => monsterHasMapPosition(monster, game) &&
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
+}
+const M2_GREEDY = 0x10000000;
+const M2_JEWELS = 0x20000000;
+const M2_COLLECT = 0x40000000;
+const M2_MAGIC = 0x80000000;
+// C bones.c:give_to_nearby_mon() takes from a monster with any of the
+// likes_gold()/likes_gems()/likes_objs()/likes_magic() appetites
+// (mondata.h macros), with no check that the object matches.
+export function monsterLikesObjects(monster) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    return !!(flags & (M2_GREEDY | M2_JEWELS | M2_COLLECT | M2_MAGIC))
+        || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
 }
 function nearbyMonsterForDeathDrop(x, y) {
     let selected = null;

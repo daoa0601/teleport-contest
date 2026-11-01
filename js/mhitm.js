@@ -14,12 +14,12 @@ import { artifactById } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';
 import { createElementalMonsterExplosion } from './explosion.js';
@@ -1378,5 +1378,22 @@ export async function petrifyMonsterAttacker(monster, { publish = plineWithConti
     if (creditHero)
         recordHeroKillConduct();
     return finishMonsterPetrification(monster, { ...options, publish });
+}
+// C mhitm.c:sleep_monst(). `mon' is hit by a sleep attack; returns true if
+// it is affected. The mimic-reveal, resistance and shield-effect halves of
+// the native function live with their callers (music.c, trap.c, uhitm.c).
+export async function putMonsterToSleep(monster, turns) {
+    if (!monster.mcanmove)
+        return false;
+    await finishMonsterEating(monster);
+    const duration = turns + (monster.mfrozen ?? 0);
+    if (duration > 0) {
+        monster.mcanmove = 0;
+        monster.mfrozen = Math.min(duration, 127);
+    }
+    else {
+        monster.msleeping = 1;
+    }
+    return true;
 }
 //# sourceMappingURL=mhitm.js.map

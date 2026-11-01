@@ -40,7 +40,7 @@ import { diggingTarget, startHeroDigging } from './hero_digging.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './monster_data.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_NAMES, STATUE } from './object_data.js';
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
 import { roomsAt, roomForRoomno } from './room.js';

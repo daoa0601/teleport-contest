@@ -26,7 +26,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './do_name.js';
 import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { makeMonsterFlee } from './monmove.js';
 import {
     MONSTER_FLAGS2, MONSTER_SYMBOL,

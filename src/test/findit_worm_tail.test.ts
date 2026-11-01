@@ -4,7 +4,7 @@ import test from 'node:test';
 import { MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { findit } from '../js/detect.js';
 import { game } from '../js/gstate.js';
-import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from '../js/worn.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';

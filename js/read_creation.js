@@ -9,7 +9,7 @@ import { mkclassAligned, rndmonstAdj } from './makemon.js';
 import { resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { changeMonsterForm } from './mon.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { getLine, promptYesNo } from './query.js';
 import { revivalReplacement } from './revival_species.js';
 import { monsterSaddle, putSaddleOnMonster } from './steed.js';

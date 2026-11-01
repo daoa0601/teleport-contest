@@ -5,7 +5,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject } from './makemon.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { rndClass } from './objnam.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsPlayerMonster } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';

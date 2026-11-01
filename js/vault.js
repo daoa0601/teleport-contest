@@ -23,7 +23,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { MONSTER_SOUND } from './monster_data.js';
-import { setMonsterMalign } from './monster_alignment.js';
+import { setMonsterMalign } from './makemon.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';

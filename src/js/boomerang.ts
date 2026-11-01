@@ -9,7 +9,7 @@ import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { monsterAtPosition } from './steed.js';
 import { respondToImmediateMagic } from './mon.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';

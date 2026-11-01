@@ -21,7 +21,7 @@ import { probeMonster } from './magic_probe.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './mimic.js';
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
+import { revealMonsterAppearance } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless, monsterIsUndead,
     monsterIsVampireShifter,
@@ -32,7 +32,8 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { setMimicAppearance, monsterHitPointsPerLevel } from './makemon.js';
-import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { monsterResistsSleep } from './mondata.js';
+import { putMonsterToSleep } from './mhitm.js';
 import {
     BOULDER, CHEST, FIGURINE, LARGE_BOX, OBJECT_COLOR, OBJECT_NAMES, POT_POLYMORPH, SPE_EXTRA_HEALING,
     SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY,

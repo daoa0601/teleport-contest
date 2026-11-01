@@ -7,7 +7,7 @@ import { heroBadRock } from './hack.js';
 import { finishEnvironmentalMonsterDeath, resolveMonsterLiquid } from './mon.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import type { Monster } from './monster_types.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { BOULDER } from './object_data.js';

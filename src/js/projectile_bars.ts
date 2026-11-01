@@ -14,7 +14,7 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import type { ObjectBreakResult } from './object_breakage.js';
 import {

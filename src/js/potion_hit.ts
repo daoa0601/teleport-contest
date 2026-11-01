@@ -58,9 +58,7 @@ import {
 import {
     AD_ACID, AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
-import {
-    setMonsterPermanentInvisibility,
-} from './monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import {
     blessObjectState, curseObjectState, unblessObjectState,
@@ -86,8 +84,8 @@ import {
     heroHasProtectionFromShapeChangers,
 } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
-import { putMonsterToSleep } from './monster_sleep.js';
+import { revealMonsterAppearance } from './mon.js';
+import { putMonsterToSleep } from './mhitm.js';
 import { objectAction, objectCombatName, definiteObjectAction } from './objnam.js';
 import {
     monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasPoisonResistance,

@@ -73,7 +73,7 @@ import {
     findMonsterDefensiveItem, useMonsterDefensiveItem, useMonsterMiscItem,
 } from './muse.js';
 import { monsterHasMagicKey } from './artifact.js';
-import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './monster_carry.js';
+import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import {
@@ -117,7 +117,7 @@ import { adjustMonsterSpeed } from './worn.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './rock_breakage.js';
 import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop } from './shk.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
 import { artifactEmitsLight, artifactById } from './artifacts.js';
@@ -171,7 +171,7 @@ import {
     attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName,
     readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem,
 } from './mthrowu.js';
-import { wakeMonstersNearWithMessages, publishMonsterWake } from './monster_wake.js';
+import { wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
 import { finishMonsterWebTrap } from './web_trap.js';
 import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon,
@@ -188,7 +188,7 @@ import { possessiveName } from './hacklib.js';
 import { monsterPossessive } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
-import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
+import { monsterIsHelpless, monsterResistsSleep } from './mondata.js';
 import {
     applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance,
 } from './anti_magic_trap.js';
@@ -235,8 +235,7 @@ import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetr
 import { monsterReflectsRay } from './ray.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
-export { monsterCanCarryObject } from './monster_carry.js';
-import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { setMonsterPermanentInvisibility } from './worn.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { depth, dist2, distmin } from './hacklib.js';

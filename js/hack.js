@@ -83,7 +83,7 @@ import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { arriveTravel, captureRunmodeDelay, stopRun } from './runmode.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterMayDigLocation } from './mon.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { roomForRoomno, roomsAt } from './room.js';

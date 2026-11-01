@@ -8,7 +8,7 @@ import type { PlayingGameState } from './game_state.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { offerGoldToMonster } from './minion.js';
-import { monsterAlignmentType } from './monster_alignment.js';
+import { monsterAlignmentType } from './priest.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';
 import type { Monster } from './monster_types.js';

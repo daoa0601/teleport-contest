@@ -10,7 +10,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { monsterIsHelpless } from './monster_sleep.js';
+import { monsterIsHelpless } from './mondata.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
 import { BOOMERANG, KATANA, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
 import { objectMaterial } from './object_material.js';
