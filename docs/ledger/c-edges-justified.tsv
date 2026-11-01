@@ -1879,7 +1879,6 @@ notice_all_mons	alloc	n/a	memory allocation; the port builds a plain array of th
 notice_mons_cmp	dist2	inlined	noticeAllMonsters sorts by (mx-ux)^2+(my-uy)^2, dist2(u,mon) inline, and the stable Array.sort retains fmon order like the deterministic qsort tie-break (hack.ts)
 show_glyph	isok	n/a	isok only guards the impossible() diagnostic for out-of-range glyph positions (display.c:1894); the port has no developer-diagnostic path to guard
 noises	dist2	inlined	reportMonsterCombatNoise compares (mx-ux)^2+(my-uy)^2 > 15, mdistu() inline (mhitm.ts)
-mattackm	mswingsm	cited	swingMonsterWeapon (mhitu.ts:3148) implements both mswingsm() and mswings(); mhitm.ts attackMonsterWithMonster calls it with a defender when the wielder is visible
 peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum read directly as urole.ldrnum/guardnum in reactHumanoidBystander (mon.ts)
 qst_guardians_respond	quest_info	inlined	quest_info(MS_GUARDIAN) read directly as urole.guardnum in angerQuestGuardiansAfterAttack (mon.ts)
 wake_nearto_core	dist2	inlined	monstersNear filters dx*dx+dy*dy < distance inline (mon.ts wakeMonstersNearWithMessages)
