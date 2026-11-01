@@ -3150,6 +3150,7 @@ interface WeaponSwingOptions {
     random?: (limit: number) => number;
 }
 
+// C mhitm.c:mswingsm() when a defender is given, mhitu.c:mswings() otherwise.
 export async function swingMonsterWeapon(
     monster: Monster,
     weapon: GameObject,

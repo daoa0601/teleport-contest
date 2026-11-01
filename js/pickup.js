@@ -718,7 +718,8 @@ export async function lootCommand(input) {
     else
         await plineWithContinuation(`You don't find anything ${result.asked ? 'else ' : ''}${underfoot ? 'here' : 'there'} to loot.`);
 }
-// C pickup.c:container_at().
+// C pickup.c:do_loot_cont(): the unlocked-container loot loop, including
+// the carnivorous bag of tricks bite.
 async function lootFloorContainers(x, y, unlock) {
     const pile = requireGameLevel().objects[x]?.[y] ?? [];
     const containers = pile.filter(isContainer);

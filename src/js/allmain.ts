@@ -1034,6 +1034,10 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     return { kind: 'regions', sourceTurn: game.moves, capacity };
 }
 
+// C allmain.c:moveloop_core() runs the immobile-hero delay tail (allmain.c:379-388)
+// inside this turn's maintenance: finishInitialTurnMaintenanceAfterIntervention
+// completes the delay and calls hack.c:unmul() through finishHeroHelplessness,
+// then deferred_goto() through finishScheduledLevelChange.
 async function advanceWorldTurn(): Promise<void> {
     const game = requireInitializedGame();
     const initialPhase = await beginInitialTurnMaintenance();

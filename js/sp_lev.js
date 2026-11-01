@@ -1711,6 +1711,9 @@ function specialRoomAt(x, y, roomType) {
     const roomNumber = roomsAt(level, x, y, roomType)[0];
     return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
+// C sp_lev.c:sp_amask_to_amask(): the Lua altar mask resolves here, drawing
+// induced_align(80) for "random" and the re-evaluated noncoalignment ternary
+// for "noncoaligned" before the altar stores its flags.
 export async function createLuaAltar(context, options) {
     const level = requireGameLevel();
     const coordinate = tablePoint(options);

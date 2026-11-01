@@ -376,7 +376,8 @@ export function setConditionOption(option: string, enabled: boolean, mask = defa
     return enabled ? mask | bit : mask & ~bit;
 }
 
-// C botl.c:cond_cmp().
+// C botl.c:cond_cmp(); the bl_unconsc test reads trap.c:unconscious() as
+// heroIsUnconscious (botl.c:1214 does the same through the cond cache).
 export function statusConditions(state: GameState): readonly ConditionText[] {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     const enabled = (name: ConditionName) => statusConditionEnabled(name, state);

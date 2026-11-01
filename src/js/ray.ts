@@ -116,6 +116,10 @@ export function rayHitsHero(
     return 3 - chance < effectiveArmorClass;
 }
 
+// C zap.c:ureflects(): finds the reflecting worn item; callers print the
+// "It bounces off your ..." line ureflects() used to print itself, and
+// discoverHeroReflectionSource below performs its makeknown()
+// (discover_object()) for a reflecting shield or amulet.
 export function heroReflectionSource(state: GameState = game): ReflectionSource | null {
     if (state.uarms?.otyp === SHIELD_OF_REFLECTION)
         return { object: state.uarms, noun: 'shield' };

@@ -272,14 +272,17 @@ export function attributeChangeMessage(attribute: number, result: AttributeChang
     return formatFeltMessage(`${emphasis}${word}!`, state);
 }
 
+// C attrib.c:exercise(): accumulate attribute exercise, then report
+// encumbrance when Strength or Constitution can change.
 export async function exerciseAttribute(attribute: number, improving: boolean, state: GameState = game): Promise<void> {
     if (!accumulateAttributeExercise(attribute, improving, state)) return;
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))
         await reportHeroEncumbrance(state);
 }
 
-// Wisdom exercise never calls encumber_msg(). Knowledge and identification
-// can therefore use the same accumulation rule without an input boundary.
+// C attrib.c:exercise() for Wisdom: exercise never calls encumber_msg().
+// Knowledge and identification can therefore use the same accumulation
+// rule without an input boundary.
 export function exerciseWisdom(improving = true, state: GameState = game): void {
     accumulateAttributeExercise(A_WIS, improving, state);
 }

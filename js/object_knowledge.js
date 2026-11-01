@@ -116,8 +116,9 @@ function discoverKnownType(otyp, creditHero, state) {
         && !state.program_state.gameover)
         repriceDiscoveredGems(otyp, state);
 }
-// C makeknown(): learning a type also records the encounter and credits
-// Wisdom once. Restoring saved knowledge does not grant that credit.
+// C makeknown() — the macro every caller's call graph spells
+// discover_object(): learning a type also records the encounter and
+// credits Wisdom once. Restoring saved knowledge does not grant that credit.
 export function learnObjectType(otyp, state = game) {
     if (otyp < FIRST_OBJECT)
         return;

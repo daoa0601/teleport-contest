@@ -1791,6 +1791,8 @@ export async function poisonHeroFromMonster(monster: Monster, attackType: Attack
     });
 }
 
+// C uhitm.c:mhitm_really_poison(): the visible-attacker poison message, the
+// resistant-defender notice, and the deadly 6+rn2(10) damage live here.
 export async function poisonMonsterFromAttack(attacker: Monster, defender: Monster, attackType: AttackMethod, damage: number, {
     visible, state = game, random = rn2, publish = plineWithContinuation,
 }: { visible: boolean; state?: GameState; random?: (limit: number) => number; publish?: MessagePublisher }): Promise<number> {

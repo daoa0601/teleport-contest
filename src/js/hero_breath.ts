@@ -104,6 +104,8 @@ interface HeroRayContext {
     nativeType: number | null;
 }
 
+// C zap.c:zhitu(): the per-element ray switch for the hero; the damage
+// tail is applyRayDamage() with losehp().
 export async function hitHeroWithRay({
     state = game,
     attack = heroBreathAttack(state),

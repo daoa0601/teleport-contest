@@ -73,6 +73,8 @@ export function monsterLikesObjects(monster: Monster): boolean {
         || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
 }
 
+// C bones.c:give_to_nearby_mon(): reservoir sampling over the 3x3
+// neighborhood picks the taker.
 function nearbyMonsterForDeathDrop(x: number, y: number): Monster | null {
     let selected: Monster | null = null;
     let candidateCount = 0;

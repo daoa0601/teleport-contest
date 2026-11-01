@@ -66,6 +66,8 @@ export function heroGoldObject(state: Pick<GameState, 'inventory'>): GameObject 
         object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
 
+// C hack.c:money_cnt() over the hero's inventory: zero gold pieces
+// rather than a missing stack.
 export function heroGoldAmount(state: Pick<GameState, 'inventory'>): number {
     const object = heroGoldObject(state);
     return object ? quantity(object) : 0;

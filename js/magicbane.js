@@ -16,6 +16,7 @@ import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import { cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
+// C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
 export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {
     const enchantment = magicbaneEnchantment(object);
     let scareDieRoll = 4;

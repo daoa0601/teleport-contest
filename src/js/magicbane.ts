@@ -39,6 +39,7 @@ export interface MagicbaneHitOptions {
 
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 
+// C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
 export async function applyMagicbaneHit(
     object: GameObject,
     defender: ArtifactHitDefender,

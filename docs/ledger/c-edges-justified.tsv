@@ -1871,3 +1871,72 @@ there_cmd_menu_next2u	t_at	inlined	adjacentEntries finds a trap by its map coord
 there_cmd_menu_self	mcmd_addmenu	inlined	selfEntries supplies each action and label through the add callback; selectContextMenu passes the collected entries to tty_add_menu
 there_cmd_menu_self	num_spells	inlined	selfEntries adds Cast a spell only when the contiguous known-spell array has entries
 there_cmd_menu_self	stairway_at	inlined	selfEntries traverses game.stairs and stops at the first stairway on the selected square
+is_pool	isok	inlined	terrain_properties.ts isPoolAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_pool	is_moat	inlined	terrain_properties.ts isPoolAt calls isMoatAt (C dbridge.c:is_moat()) after the POOL/MOAT/WATER type test; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_lava	isok	inlined	terrain_properties.ts isLavaAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_LAVA macro helper in const.ts instead
+is_waterwall	isok	inlined	terrain_properties.ts isWaterwallAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_WATERWALL macro helper in const.ts instead
+notice_all_mons	alloc	n/a	memory allocation; the port builds a plain array of the spottable monsters
+notice_mons_cmp	dist2	inlined	noticeAllMonsters sorts by (mx-ux)^2+(my-uy)^2, dist2(u,mon) inline, and the stable Array.sort retains fmon order like the deterministic qsort tie-break (hack.ts)
+show_glyph	isok	n/a	isok only guards the impossible() diagnostic for out-of-range glyph positions (display.c:1894); the port has no developer-diagnostic path to guard
+noises	dist2	inlined	reportMonsterCombatNoise compares (mx-ux)^2+(my-uy)^2 > 15, mdistu() inline (mhitm.ts)
+peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum read directly as urole.ldrnum/guardnum in reactHumanoidBystander (mon.ts)
+qst_guardians_respond	quest_info	inlined	quest_info(MS_GUARDIAN) read directly as urole.guardnum in angerQuestGuardiansAfterAttack (mon.ts)
+wake_nearto_core	dist2	inlined	monstersNear filters dx*dx+dy*dy < distance inline (mon.ts wakeMonstersNearWithMessages)
+newgame	reset_glyphmap	inlined	glyph appearance is computed at render (cmapSymbolAppearance and the rogue-color path in display.ts:1907-1994) instead of precomputed glyphmap tables, so a new game has no cache to reset
+rumor_check	couldnt_open_file	n/a	the bundled rumors file always opens; the port embeds the compiled data (rumor.ts) and has no file read to fail
+rumor_check	init_rumors	n/a	file-header parsing; rumorCheck derives the same makedefs layout offsets from the embedded rumor arrays (rumor.ts:150-155)
+others_check	couldnt_open_file	n/a	same as rumor_check: the port's embedded engravings/epitaphs/bogus-monster arrays cannot fail to open
+query_annotation	describe_level	inlined	annotationLevelDescription builds the prompt's level description inline (dungeon.ts queryLevelAnnotation)
+query_annotation	find_mapseen	inlined	game._levelAnnotations keyed by dnum:dlevel replaces the mapseen list lookup (dungeon.ts queryLevelAnnotation)
+yn_function_menu	yn_menuable_resp	inlined	query.ts yn_function's menuable flag plus queryResponseMenu's per-set choice lists replace the response-set identity test
+yn_function_menu	yn_func_menu_opt	inlined	queryResponseMenu builds the (key,text,default-marker) menu entries inline (query.ts:323-325)
+parse	flush_screen	inlined	command_input.ts readCommandInput is the parse() input half and calls flush_screen(1) before reading the key; the name match found EreParser.parse in posix_regex.ts instead
+parse	readchar	inlined	readCommandInput/readCommandCount call readchar('command') (command_input.ts:18,37); the name match found EreParser.parse in posix_regex.ts instead
+parse	get_count	inlined	readCommandCount inlines get_count(GC_NOFLAGS): digit accumulation, backspace, ESC zeroing, LARGEST_INT cap (command_input.ts:33); the name match found EreParser.parse in posix_regex.ts instead
+parse	cmdbind_get	inlined	rhack's configuredCommand(key) and the do_repeat branch (cmd.ts:454) replace parse()'s cmdbind_get() do-again binding lookup; command_repeat.ts stores each replayed count with the queue
+wiz_custom	ecname_from_fn	inlined	the unavailable-command name comes from the centralized admission gate (cmd.ts commandAllowed, C can_do_extcmd) using command.name; no per-command function-pointer lookup is needed
+wiz_custom	fill_glyphid_cache	n/a	glyphid cache only accelerates glyph-identifier lookup for the #wizcustom menu; wizCustom builds entries through customizedGlyphs() directly
+wiz_custom	free_glyphid_cache	n/a	cache teardown for the accelerator above; no port cache exists
+wiz_custom	glyphid_cache_status	n/a	cache state probe for the accelerator above; no port cache exists
+wiz_level_tele	ecname_from_fn	inlined	same centralized admission gate (cmd.ts commandAllowed) prints Unavailable command '<name>' for every wizard command; the port's wizLevelTeleport needs no fallback branch
+vpline	alloc	n/a	memory allocation for the accessiblemsg coordinate prefix; plineWithContinuation builds the prefixed string directly (pline.ts:82-87)
+vpline	dumplogmsg	n/a	DUMPLOG_CORE dump-file message log; the replay grader writes no dump log
+vpline	execplinehandler	n/a	MSGHANDLER fork/exec of a user message handler; an operating-system feature with no grader effect (c-js-semantics lists it out of scope)
+vpline	putmesg	inlined	the ATR_URGENT/ATR_NOHISTORY attributes are computed where vpline is ported: plineWithContinuation passes urgent to updateTopline (tty_topline.ts), the putstr(WIN_MESSAGE) owner
+mcast_stun_you	make_stunned	inlined	the stun timeout write, the 0<->nonzero botl flag, and the status transition are inline (mcastu.ts:484-486); set_itimeout replaces the timeout, matching duration over stunnedTurns
+mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed state and the caller prints the burn-away message (mcastu.ts:563-565); slime.ts burnAwayHeroSlime is the shared timeout.c owner
+missmu	map_invisible	inlined	the attack transaction maps an unseen attacker before projecting its contact line (mhitu.ts:484-497)
+missmu	stop_occupation	inlined	stopHeroOccupation runs after the whole contact transaction, passiveum included (mhitu.ts:919-933)
+monshoot	sgn	inlined	dx/dy are Math.sign(target - source) (mthrowu.ts launchVolley); sgn(x) is -1/0/1 just like Math.sign on these small deltas
+move_into_trap	into_vs_onto	inlined	the preposition list is inlined at untrap.ts:517-518; through try_disarm's reachable kinds (bear trap, web, landmine, squeaky board, dart/arrow) it matches into_vs_onto() exactly, and hero_step_confirmation.ts:54 has the full list for hack.c's caller
+move_into_trap	sgn	inlined	dx/dy are computed directly and only tested for diagonal vs cardinal (untrap.ts:980-985)
+move_into_trap	test_move	inlined	blocksMove plus blocksDiagonalDoor cover test_move(TEST_MOVE)'s passable-terrain and diagonal door tests (untrap.ts:983-986)
+bot_via_windowport	encglyph	inlined	the gold symbol comes from activeObjectSymbols() and renders directly (botl.ts:156-157); encglyph()'s \GXXXXNNNN sequence is tty window-protocol encoding with no extra screen effect
+bot_via_windowport	evaluate_and_notify_windowport	inlined	refreshStatusLines compares the evaluated fields and hands changes to wintty's renderer through the display object (botl.ts:188-227)
+do_statusline1	rank	inlined	statusTitle calls rankOf(ulevel) directly (botl.ts:303), inlining rank()'s rank_of(u.ulevel, Role_switch, flags.female) wrapper
+do_statusline1	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
+do_statusline2	suppress_map_output	inlined	the saving/exited/suppress guards at botl.ts:190-191 inline suppress_map_output()
+do_statusline2	encglyph	inlined	same as bot_via_windowport: the gold field renders the symbol directly (botl.ts:156-157,165)
+is_ltgt_percentnumber	digit	inlined	the \d class of the pattern is the digit() test (botl.ts:1740)
+parse_status_hl2	status_hilite_add_threshold	inlined	each parsed threshold is pushed as an operation (botl.ts:2018 operations.push({threshold:{fld,rule}})), the restructured form of the shared adder
+tty_init_nhwindows	alloc	n/a	memory allocation for the tty descriptor; the port's GameDisplay is a plain object
+tty_init_nhwindows	tty_clear_nhwindow	inlined	the browser GameDisplay owns the base window; clearScreen and the banner rows replace the separate window calls (jsmain.ts showStartupNotice)
+tty_init_nhwindows	tty_create_nhwindow	inlined	the display is its own base window; no per-window creation (jsmain.ts:419-424)
+tty_init_nhwindows	tty_curs	inlined	showStartupNotice addresses rows directly through display.putstr(0, row) (jsmain.ts:423) instead of a cursor move
+tty_init_nhwindows	tty_display_nhwindow	inlined	the base window is shown by writing the banner rows; tty_display_nhwindow(BASE,FALSE) is an fflush with no extra screen effect
+tty_init_nhwindows	tty_putstr	inlined	the four copyright lines are written with display.putstr (jsmain.ts:421-423)
+tty_init_nhwindows	set_wc2_option_mod_status	n/a	option-visibility bookkeeping for the statuslines window capability; no grader-visible effect
+tty_putstatusfield	tty_curs	inlined	writeStatusLines positions each field with display.putstr(column,row) (wintty.ts:144-189); the display addresses cells explicitly instead of a tty_curs() move
+tty_status_update	make_things_fit	inlined	the shrink loop lives beside render_status (wintty.ts:191-264) and runs from the port's status-line rendering path
+tty_status_update	critically_low_hp	inlined	the hitpoint bar samples criticallyLowHp (prayer_trouble.ts:123) for barCritical (botl.ts:106,700), as wintty.c:4612 samples hpbar_crit_hp
+tty_status_update	stat_cap_indx	inlined	the capacity index is read directly from nearCapacity() (botl.ts:118 and wintty.ts's shrink path); stat_cap_indx() was a window-port callback for that value
+do_loot_cont	cmdq_add_ec	inlined	the queued #force is game._cannedCommands.push({kind:'command',name:'force'}) (pickup.ts:616-619), the port's CQ_CANNED queue
+mbhit	sgn	inlined	dx/dy are Math.sign of the mux/muy deltas (muse.ts resolveMonsterImmediateWand)
+zap_map	is_db_wall	inlined	the portcullis test is originalType === DBWALL inline (zap.ts zapDrawbridge)
+zap_updown	is_db_wall	inlined	the portcullis test is level.requireAt(x,y).typ === DBWALL inline (zap.ts zapVertically and strikeOrLockVertically)
+zap_updown	mksobj_at	inlined	mksobj() plus placeCreatedObject() create and place the dislodged rock (zap.ts strikeOrLockVertically), which is what mksobj_at() composes
+discover_object	Japanese_item_name	inlined	japaneseItemName in o_init.ts:241 (C objnam.c:Japanese_item_name) drives the samurai discovery annotations; discoverKnownType expresses the disco[] insertion through the known/encountered sets
+discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-inventory window; the grader has no perm_invent window, and the gem reprice itself is repriceDiscoveredGems (object_knowledge.ts)
+display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); terrain_properties.ts isPoolOrLavaAt is the same predicate
+display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
+zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire

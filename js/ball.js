@@ -718,6 +718,8 @@ export async function beginBallAndChainRedraw(state = game) {
     await unplaceMovingBallAndChain(plan, state);
     return plan;
 }
+// C ball.c:move_bc(): place the dragged ball and chain at their planned
+// coordinates; beginBallAndChainMove above is drag_ball().
 export async function finishBallAndChainMove(plan, state = game) {
     requireLiveGame(state);
     if (!plan || plan.blocked)

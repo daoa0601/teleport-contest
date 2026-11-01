@@ -20,7 +20,8 @@ import {
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, set_msg_dir } from './pline.js';
+import { xyToDirection } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
@@ -134,7 +135,7 @@ interface MonsterRayHit {
     noCorpse?: boolean;
     reintegrated?: boolean;
 }
-interface RayCell extends Position { remainingRange: number; }
+interface RayCell extends Position { dx: number; dy: number; remainingRange: number; }
 interface RayCellResult {
     stop?: boolean;
     result?: NativeRayResult;
@@ -202,6 +203,18 @@ export async function hitMonsterWithRay(monster: Monster, nativeType: number, di
     });
     return hit.damage;
 }
+// C zap.c:dobuzz(): the wand/spell/breath ray engine. traceRay() drives the
+// beam through ray.ts runRay() (the tmp_at() beam display, the closed_door()
+// and ZAP_POS obstacle tests, and bounce_dir() as rayBounceDirection);
+// zap_hit() is rayHitsMonster()/rayHitsHero() (ray.ts); zhitm() is
+// damageRayMonster() below; zhitu() is hitHeroWithRay() (hero_breath.ts);
+// disintegrate_mon() is disintegrateMonster(); flashburn() is
+// blindHeroWithLightning(); shieldeff(), stop_occupation() as
+// stopHeroOccupation, ureflects() as heroReflectionSource, and
+// monstseesu()/monstunseesu() as monstersObserveHeroResistance/
+// monstersForgetHeroResistance all live along the hit paths; the hero hit
+// anchors its line like pline_dir(xytodir(-dx, -dy)) through
+// set_msg_dir(xyToDirection()).
 
 export async function castNativeRay(nativeType: number, dice: number, direction: string | undefined, {
     state = game, sourceMonster = null, sourceObject = null,
@@ -289,7 +302,7 @@ async function traceRay(direction: RayDirection, originX: number, originY: numbe
 }
 
 async function hitRayCell(
-    { x, y, remainingRange }: RayCell, context: RayContext,
+    { x, y, dx, dy, remainingRange }: RayCell, context: RayContext,
 ): Promise<RayCellResult> {
     const {
         state, attack, damageType, publish, random, rollDice, rollOne,
@@ -354,7 +367,7 @@ async function hitRayCell(
         }
     } else if (x === state.u.ux && y === state.u.uy
         && remainingRange + floor.rangeChange >= 0) {
-        const heroHit = await hitHeroOnRay(x, y, context);
+        const heroHit = await hitHeroOnRay(x, y, dx, dy, context);
         context.hits += heroHit.hit ? 1 : 0;
         rangeChange -= heroHit.hit ? 2 : 0;
         reflected = heroHit.reflected;
@@ -432,7 +445,7 @@ async function showMonsterReflection(monster: Monster, context: RayContext) {
     discoverHeroReflectionSource(reflection, state);
 }
 
-async function hitHeroOnRay(x: number, y: number, context: RayContext) {
+async function hitHeroOnRay(x: number, y: number, rayDx: number, rayDy: number, context: RayContext) {
     const { state, damageType, publish, random, rollOne } = context;
     const canSeeHero = (monster: Monster) => monsterHasLineOfSightToHero(monster, state);
     endVoluntaryMultiTurn(state);
@@ -440,7 +453,11 @@ async function hitHeroOnRay(x: number, y: number, context: RayContext) {
     let reflected = false;
     let heroDied = false;
     if (hit) {
+        // C zap.c:dobuzz() anchors the hit line with pline_dir(xytodir(-dx,-dy)),
+        // naming the square the ray arrived from for accessiblemsg prefixes.
+        set_msg_dir(xyToDirection(-rayDx, -rayDy));
         await publish(`${raySubject(context.displayName())} hits you!`);
+        if (state.iflags.messageLocation) delete state.iflags.messageLocation;
         if (heroReflectsRay(state)) {
             const source = heroReflectionSource(state);
             if (heroIsBlind(state)) {

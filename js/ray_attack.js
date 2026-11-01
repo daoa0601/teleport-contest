@@ -17,7 +17,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, set_msg_dir } from './pline.js';
+import { xyToDirection } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
@@ -92,6 +93,18 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
     });
     return hit.damage;
 }
+// C zap.c:dobuzz(): the wand/spell/breath ray engine. traceRay() drives the
+// beam through ray.ts runRay() (the tmp_at() beam display, the closed_door()
+// and ZAP_POS obstacle tests, and bounce_dir() as rayBounceDirection);
+// zap_hit() is rayHitsMonster()/rayHitsHero() (ray.ts); zhitm() is
+// damageRayMonster() below; zhitu() is hitHeroWithRay() (hero_breath.ts);
+// disintegrate_mon() is disintegrateMonster(); flashburn() is
+// blindHeroWithLightning(); shieldeff(), stop_occupation() as
+// stopHeroOccupation, ureflects() as heroReflectionSource, and
+// monstseesu()/monstunseesu() as monstersObserveHeroResistance/
+// monstersForgetHeroResistance all live along the hit paths; the hero hit
+// anchors its line like pline_dir(xytodir(-dx, -dy)) through
+// set_msg_dir(xyToDirection()).
 export async function castNativeRay(nativeType, dice, direction, { state = game, sourceMonster = null, sourceObject = null, originX = state.u.ux, originY = state.u.uy, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, die = finishHeroDeath, finishMonsterKill = finishHeroMonsterKill, sayHit = true, sayMiss = false, forceMiss = false, } = {}) {
     requirePlayingGame(state);
     if (!isRayDirection(direction))
@@ -172,7 +185,7 @@ async function traceRay(direction, originX, originY, context) {
     }
     return stopped || { used: true, heroDied: !!state.program_state.gameover, hits: context.hits };
 }
-async function hitRayCell({ x, y, remainingRange }, context) {
+async function hitRayCell({ x, y, dx, dy, remainingRange }, context) {
     const { state, attack, damageType, publish, random, rollDice, rollOne, finishMonsterKill, } = context;
     let floor = { absorbed: false, rangeChange: 0 };
     let reflected = false;
@@ -230,7 +243,7 @@ async function hitRayCell({ x, y, remainingRange }, context) {
     }
     else if (x === state.u.ux && y === state.u.uy
         && remainingRange + floor.rangeChange >= 0) {
-        const heroHit = await hitHeroOnRay(x, y, context);
+        const heroHit = await hitHeroOnRay(x, y, dx, dy, context);
         context.hits += heroHit.hit ? 1 : 0;
         rangeChange -= heroHit.hit ? 2 : 0;
         reflected = heroHit.reflected;
@@ -308,7 +321,7 @@ async function showMonsterReflection(monster, context) {
     await publish(`But it reflects from ${possessiveName(monsterName(monster, { state }))} ${reflection.noun}!`);
     discoverHeroReflectionSource(reflection, state);
 }
-async function hitHeroOnRay(x, y, context) {
+async function hitHeroOnRay(x, y, rayDx, rayDy, context) {
     const { state, damageType, publish, random, rollOne } = context;
     const canSeeHero = (monster) => monsterHasLineOfSightToHero(monster, state);
     endVoluntaryMultiTurn(state);
@@ -316,7 +329,12 @@ async function hitHeroOnRay(x, y, context) {
     let reflected = false;
     let heroDied = false;
     if (hit) {
+        // C zap.c:dobuzz() anchors the hit line with pline_dir(xytodir(-dx,-dy)),
+        // naming the square the ray arrived from for accessiblemsg prefixes.
+        set_msg_dir(xyToDirection(-rayDx, -rayDy));
         await publish(`${raySubject(context.displayName())} hits you!`);
+        if (state.iflags.messageLocation)
+            delete state.iflags.messageLocation;
         if (heroReflectsRay(state)) {
             const source = heroReflectionSource(state);
             if (heroIsBlind(state)) {

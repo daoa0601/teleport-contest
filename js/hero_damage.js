@@ -9,6 +9,7 @@ import { returnHeroToHumanForm } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { hasPermanentIntrinsicProperty, propertyIsActive } from './properties.js';
 import { stopRun } from './runmode.js';
+// C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
 export async function loseHeroHp(amount, killer, { state = game, publish = plineWithContinuation, die = finishHeroDeath, deathCause = null, killerFormat = KILLED_BY_AN, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
