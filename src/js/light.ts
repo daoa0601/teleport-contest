@@ -4,10 +4,9 @@
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { loseHeroHp } from './hero_damage.js';
-import { finishMonsterKilled } from './monster_death.js';
+import type { MonsterDeathResult } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import type { MonsterDeathResult } from './monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
@@ -58,7 +57,7 @@ import { deallocateObject, deleteObject } from './object_delete.js';
 import { blessObjectState, curseObjectState, objectResistsDestruction,
     unblessObjectState, uncurseObjectState } from './object_state.js';
 import { ownedObjectAction } from './objnam.js';
-import { maybeUnhideAt } from './mon.js';
+import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
 
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;

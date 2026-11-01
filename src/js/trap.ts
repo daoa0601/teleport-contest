@@ -60,8 +60,7 @@ import type {
     PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow,
 } from './monster_action_types.js';
 import { verbForSubject } from './object_grammar.js';
-import type { MonsterDeathOptions } from './monster_death.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import type { MonsterDeathOptions } from './mon.js';
 import {
     applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance,
 } from './anti_magic_trap.js';
@@ -95,11 +94,28 @@ import { canFallThrough } from './mklev.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { monsterResistsSleep } from './monster_sleep.js';
-import { maybeUnhideAt, angerMonster } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import {
     completeMovedMonsterAction, moveMonsterAfterTrap, requireMovementCapabilities,
 } from './monmove.js';
 import { monsterHasFireResistance } from './mondata.js';
+import { monsterHasStoneResistance } from './mondata.js';
+import {
+    finishMonsterKilled, finishMonsterPetrification, monsterSubject,
+    restoreShapechanger, turnGolemToStone,
+} from './mon.js';
+import type {
+    MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions,
+    MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult,
+    PetrificationContactOptions, PetrificationOptions,
+} from './mon.js';
+import { CORPSE } from './object_data.js';
+import { touchPetrifies } from './stoning.js';
+import { corpseName } from './objnam.js';
+import { unwieldMonsterWeapon } from './monster_weapon.js';
+import { useMonsterStoningCure } from './muse.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { recordHeroKillConduct } from './end.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
@@ -1550,4 +1566,124 @@ export async function resumeDeferredMonsterTrap(
     }
     await continueAfterMonsterTrap(action, state, random, rollDice, rollOne, calls);
     return action;
+}
+
+// ── C trap.c:mselftouch() and minstapetrify(). Falling can force
+// contact even through gloves; newcham() only calls mselftouch()
+// after the new body has lost its gloves.
+export function monsterWearsGloves(monster: Monster): boolean {
+    return !!((monster?.misc_worn_check ?? 0) & W_ARMG)
+        || (monster?.minvent || monster?.inventory || []).some(object =>
+            ((object.owornmask ?? 0) & W_ARMG) !== 0);
+}
+
+function selfTouchSubject(monster: Monster, prefix: string): string {
+    const subject = monsterSubject(monster);
+    if (!prefix || monster.name) return subject;
+    return subject.charAt(0).toLowerCase() + subject.slice(1);
+}
+// C trap.c:mselftouch(). Falling can force contact even through gloves;
+// newcham() only calls this after the new body has lost its gloves.
+export async function monsterSelfTouch(monster: Monster, {
+    prefix = '',
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    state = game,
+}: MonsterSelfTouchOptions = {}): Promise<MonsterSelfTouchResult> {
+    const corpse = monsterWieldedWeapon(monster);
+    if (!corpse || corpse.otyp !== CORPSE || corpse.corpsenm === undefined
+        || !touchPetrifies(corpse.corpsenm)
+        || monsterHasStoneResistance(monster)) {
+        return { touched: false, survived: true };
+    }
+
+    if (cansee(monster.mx, monster.my)) {
+        await publish(
+            `${prefix}${selfTouchSubject(monster, prefix)} touches ${corpseName(corpse, { definite: true })}.`,
+        );
+    }
+    const petrification = await petrifyMonsterImmediately(monster, {
+        creditHero, finishDeath, publish,
+    });
+    if (petrification.survived && !monsterWearsGloves(monster)
+        && !monsterHasStoneResistance(monster)) {
+        await unwieldMonsterWeapon(monster, state, { publish });
+    }
+    return { touched: true, corpse, ...petrification };
+}
+export async function petrifyMonsterFromContact(monster: Monster, {
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+    rollOne = rnd,
+    state = game,
+}: PetrificationContactOptions = {}): Promise<MonsterContactPetrificationResult> {
+    const cure = await useMonsterStoningCure(monster, {
+        byHero: creditHero, publish, rollOne, state,
+    });
+    if (cure.consumed && cure.heroDied) return { heroDied: true };
+    if (cure.consumed) {
+        return {
+            changed: true,
+            survived: !cure.died,
+            cured: !cure.died,
+            cure,
+        };
+    }
+    return petrifyMonsterImmediately(monster, {
+        creditHero, finishDeath, publish,
+    });
+}
+export async function petrifyMonsterImmediately(monster: Monster, {
+    creditHero = false,
+    finishDeath,
+    publish = plineWithContinuation,
+}: PetrificationOptions = {}): Promise<MonsterPetrificationResult> {
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+        return { changed: false, survived: false };
+    if (monsterHasStoneResistance(monster))
+        return { changed: false, survived: true };
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied) return { heroDied: true };
+    if (stoneForm) return { changed: true, survived: true };
+    const restored = await restoreShapechanger(monster, publish);
+    if (restored?.heroDied) return { heroDied: true };
+    if (restored) return { changed: true, survived: true };
+
+    const speed = adjustMonsterSpeed(monster, -3);
+    // worn.c:mon_adjust_speed() needs sight of the actor. The following
+    // minstapetrify() message only needs sight of its square; that difference
+    // matters when the hero is inside this monster.
+    if (!game.in_mklev && game.flags.verbose !== false
+        && speed.canDescribe && canSeeMonster(monster)) {
+        const speedMessage = monsterSpeedMessage(speed, monsterSubject(monster));
+        if (speedMessage) await publish(speedMessage);
+    }
+    if (cansee(monster.mx, monster.my)) {
+        await publish(
+            `${monsterSubject(monster)} turns to stone.`,
+        );
+    }
+    if (creditHero) recordHeroKillConduct();
+
+    const x = monster.mx, y = monster.my;
+    const result = await finishMonsterPetrification(monster, { finishDeath, publish });
+    // xkilled() reports unseen recovery even though monstone() has already
+    // returned without handing a surviving monster to the death handler.
+    if (creditHero && result.survived && !cansee(x, y))
+        await publish('Maybe not...');
+    return result;
+}
+
+// C trap.c:thitm() redraws the original square after a lethal hit, even
+// when make_corpse() already displayed the remains. Life-saving skips it.
+export async function finishMonsterTrapDeath(
+    monster: Monster, state: GameState, options: MonsterKilledOptions,
+): Promise<MonsterDeathResult> {
+    const x = monster.mx;
+    const y = monster.my;
+    const death = await finishMonsterKilled(monster, state, options);
+    if (!death.survived && !death.heroDied && state === game) await newsym(x, y);
+    return death;
 }

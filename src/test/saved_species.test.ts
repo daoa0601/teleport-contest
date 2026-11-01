@@ -6,7 +6,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, EGG, FIGURINE, LOADSTONE, SLIME_MOLD, STATUE, TIN } from '../js/object_data.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { restoreGame, saveGame } from '../js/save.js';

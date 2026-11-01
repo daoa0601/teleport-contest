@@ -25,7 +25,7 @@ import { findit } from './detect.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { monsterIsNonliving } from './monster_data.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath } from './mon.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath, } from './hero_monster_death.js';
 import { hurtleHero } from './hero_hurtle.js';

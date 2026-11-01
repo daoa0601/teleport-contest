@@ -3,7 +3,6 @@
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { loseHeroHp } from './hero_damage.js';
-import { finishMonsterKilled } from './monster_death.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
@@ -38,7 +37,7 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { blessObjectState, curseObjectState, objectResistsDestruction, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { ownedObjectAction } from './objnam.js';
-import { maybeUnhideAt } from './mon.js';
+import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
 const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
 ]);

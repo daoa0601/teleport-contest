@@ -7,8 +7,7 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { newsym } from './display.js';
-import { finishMonsterTrapDeath } from './monster_death.js';
-import type { MonsterDeathResult } from './monster_death.js';
+import type { MonsterDeathResult } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -18,7 +17,7 @@ import { ROCK } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 

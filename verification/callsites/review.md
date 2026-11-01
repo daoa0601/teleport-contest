@@ -156,7 +156,7 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/mklev.ts:7931` vibratingSquarePoint | constant | `mkmaze.c:1041 pick_vibrasquare_location` |
 | `src/js/mklev.ts:7932` vibratingSquarePoint | constant | `mkmaze.c:1041 pick_vibrasquare_location` |
 | `src/js/monmove.ts:6748` resumeDeferredHeroLegs | invariant | `uhitm.c:4424 mhitm_ad_legs` |
-| `src/js/monster_polymorph.ts:260` selectDoppelgangerFormOnce | constant | `mon.c:5156 select_newcham_form` |
+| `src/js/mon.ts:3548` selectDoppelgangerFormOnce | constant | `mon.c:5156 select_newcham_form` |
 | `src/js/monster_ranged_alignment.ts:64` linedUp | guarded | `mthrowu.c:1329 linedup` |
 | `src/js/monster_throw.ts:525` catchThrownObject | invariant | `mthrowu.c:532 u_catch_thrown_obj` |
 | `src/js/mplayer.ts:50` createPlayerMonsters | constant | `mplayer.c:326 create_mplayers` |

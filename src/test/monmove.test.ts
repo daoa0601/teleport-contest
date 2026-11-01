@@ -5,9 +5,7 @@ import assert from 'node:assert/strict';
 
 import { takeMonsterTurn, runMonsterAction } from '../js/monmove.js';
 import { resolveDeferredMonsterBreath } from '../js/mthrowu.js';
-import { allocateMonsterMovement, mfndpos } from '../js/mon.js';
-import { mcalcmove, naturalMonsterSpeed } from '../js/monster_speed.js';
-import { finishMonsterLiquidDeath } from '../js/monster_death.js';
+import { allocateMonsterMovement, finishMonsterLiquidDeath, mcalcmove, mfndpos, naturalMonsterSpeed } from '../js/mon.js';
 import {
     FOUNTAIN, IRONBARS, LAVAPOOL, POOL, ROOM, WATER, W_WEP,
 } from '../js/const.js';

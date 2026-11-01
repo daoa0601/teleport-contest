@@ -21,9 +21,13 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { killGenocidedMonster, sendMonsterToLimbo } from '../js/mon.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/monster_death.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import {
+    finishEnvironmentalMonsterDeath,
+    finishMonsterLiquidDeath,
+    killGenocidedMonster,
+    removeMonsterFromGame,
+    sendMonsterToLimbo,
+} from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { CORPSE, DAGGER, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';

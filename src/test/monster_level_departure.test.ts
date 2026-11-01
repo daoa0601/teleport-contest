@@ -5,7 +5,7 @@ import { M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, MM_NOGRP, MM_NOWAIT
     MON_OFFMAP, NO_MINVENT, PIT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { detachMonsterFromLevel } from '../js/monster_level_departure.js';
+import { detachMonsterFromLevel } from '../js/mon.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

@@ -6,7 +6,7 @@ import { flush_screen, show_glyph_cell } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { begForFood, publishMonsterNoise } from '../js/monster_sound.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';

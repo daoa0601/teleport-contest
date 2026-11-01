@@ -2,7 +2,7 @@
 // C refs: zap.c ubuzz(), dobuzz(), zhitm(), and zhitu().
 
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import { healMonster, wakeMonster } from './mon.js';
+import { finishMonsterKilled, healMonster, wakeMonster } from './mon.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -26,7 +26,6 @@ import { game } from './gstate.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
-import { finishMonsterKilled } from './monster_death.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';

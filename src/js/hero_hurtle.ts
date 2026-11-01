@@ -38,9 +38,7 @@ import {
 import { triggerHeroTrap, type HeroTrapOptions } from './hero_traps.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import {
-    monsterWearsTorsoArmor, petrifyMonsterFromContact,
-} from './monster_stoning.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import {
     MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName,
 } from './monster_data.js';
@@ -60,7 +58,7 @@ import { switchHeroTerrain } from './terrain_movement.js';
 import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
-import { angerMonster, wakeMonster } from './mon.js';
+import { angerMonster, monsterWearsTorsoArmor, wakeMonster } from './mon.js';
 
 export interface HeroTeleportMovement {
     oldx: number;

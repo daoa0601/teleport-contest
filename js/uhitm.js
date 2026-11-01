@@ -44,29 +44,25 @@ import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { igniteItems } from './light.js';
-import { applyMonsterGolemEffects, healMonster, paralyzeMonster } from './mon.js';
+import { applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, grantMonsterCorpseIntrinsic, grantMonsterIntrinsic, healMonster, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
+import { monsterSelfTouch } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { splitMonster } from './monster_clone.js';
 import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
-import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
-import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject, } from './monster_inventory.js';
 import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX, AD_DRIN, AD_DREN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PHYS, AD_PEST, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SGLD, AD_SLEE, AD_SLIM, AD_SLOW, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasHead, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterTypeName, requireMonsterData, } from './monster_data.js';
-import { monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, } from './mondata.js';
+import { monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './mondata.js';
 import { monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName, possessiveName, } from './monster_name.js';
 import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
-import { changeMonsterForm } from './monster_polymorph.js';
-import { petrifyMonsterDefender, monsterSelfTouch } from './monster_stoning.js';
-import { tryMonsterUnslime } from './muse.js';
+import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import { stealHeroQuestObject } from './monster_quest_theft.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { sessionIsNight } from './monster_sound.js';
@@ -2644,5 +2640,24 @@ async function polymorphHeroOnContact(monster, attack, state, publish, rollOne) 
     // mhitm_ad_poly() marks this hit done even when resistance prevented
     // the body change. hitmu() still attempts knockback, then returns.
     attack.contactDone = true;
+}
+// C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
+export async function petrifyMonsterDefender(monster, { publish = plineWithContinuation, visible = canSeeMonster(monster), ...options } = {}) {
+    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed && cure.heroDied)
+        return { heroDied: true };
+    if (cure.consumed)
+        return { survived: !cure.died, stopped: true, damage: 0, cure };
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied)
+        return { heroDied: true };
+    if (stoneForm)
+        return { survived: true, stopped: false, damage: 0 };
+    if (monsterHasStoneResistance(monster))
+        return { survived: true, stopped: false, damage: 1 };
+    if (visible)
+        await publish(`${monsterSubject(monster)} turns to stone!`);
+    const result = await finishMonsterPetrification(monster, { ...options, publish });
+    return { ...result, stopped: true, damage: 0 };
 }
 //# sourceMappingURL=uhitm.js.map

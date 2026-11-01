@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
 import { monsterName } from './monster_name.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { dismountHero } from './steed.js';
 import { learnWand } from './wand_charge.js';
 const RESISTANCE_BITS = {

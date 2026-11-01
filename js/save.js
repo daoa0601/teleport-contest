@@ -19,7 +19,7 @@ import { rollQuestFigureGenders } from './startup.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
-import { purgeDeadMonsters } from './monster_level_departure.js';
+import { purgeDeadMonsters } from './mon.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';

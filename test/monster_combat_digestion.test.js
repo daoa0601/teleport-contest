@@ -11,7 +11,7 @@ import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';

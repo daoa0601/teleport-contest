@@ -23,7 +23,7 @@ import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './mo
 import { monsterAtPosition } from './monster_location.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { removeMonsterFromGame } from './mon.js';
 import { FOOD_CLASS, S_MIMIC } from './mklev.js';
 // shknam.c's health-food pseudo-class lives just above the real object
 // classes and is resolved by shkveg(), not by mkobj().

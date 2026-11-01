@@ -14,7 +14,7 @@ import { consumeInventoryItem } from './invent.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterHatesBlessings, monsterHatesSilver, monsterIsShade, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import { ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, EGG, EXPENSIVE_CAMERA, HEAVY_IRON_BALL, IRON_CHAIN, MIRROR, TOWEL, } from './object_data.js';

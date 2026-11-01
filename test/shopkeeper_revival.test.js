@@ -5,7 +5,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { createCorpstatAt } from '../js/mkobj.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { unlinkObject } from '../js/object_location.js';
 import { CORPSE, DAGGER, STATUE } from '../js/object_data.js';
 import { addShopObjectToBill, checkSpecialRoom, objectOwnershipPrefix, shopResident } from '../js/shk.js';

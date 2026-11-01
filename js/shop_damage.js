@@ -36,9 +36,8 @@ import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './mon
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, } from './monster_data.js';
 import { mksobj } from './mkobj.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { detachMonsterFromLevel, removeMonsterFromGame } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
-import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
 import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK, } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';

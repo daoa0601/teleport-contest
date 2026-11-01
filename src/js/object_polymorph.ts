@@ -43,7 +43,7 @@ import {
     setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat,
 } from './weapon_slots.js';
 import { releaseObjectLeash } from './monster_leash.js';
-import { maybeUnhideAt } from './mon.js';
+import { changeMonsterForm, maybeUnhideAt } from './mon.js';
 import { monsterName, shopkeeperName } from './monster_name.js';
 import {
     addShopObjectToBill, costlySpot, shopkeeperInOwnShop,
@@ -60,7 +60,6 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';
 import { placeObject } from './floor_object.js';
 import { consumeInventoryItem } from './invent.js';
-import { changeMonsterForm } from './monster_polymorph.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './u_init.js';
 import { objectMaterial } from './object_material.js';

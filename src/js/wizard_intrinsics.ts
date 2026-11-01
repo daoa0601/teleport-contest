@@ -2,7 +2,7 @@
 import { KILLED_BY, SICK_NONVOMITABLE, SICK_VOMITABLE } from './const.js';
 import { docrt } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { restoreNaturalMonsterShapes } from './monster_polymorph.js';
+import { restoreNaturalMonsterShapes } from './mon.js';
 import { requireInitializedGame } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
 import { makeDeaf } from './hero_hearing.js';

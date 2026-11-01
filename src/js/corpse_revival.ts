@@ -32,11 +32,10 @@ import {
 import { monsterAtPosition } from './monster_location.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
-import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import {
     destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject,
 } from './monster_inventory.js';

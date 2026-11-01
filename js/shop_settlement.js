@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { monsterHasHead } from './monster_data.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { removeMonsterFromGame } from './mon.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { monsterObjectPronoun, monsterPossessive, shopkeeperName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';

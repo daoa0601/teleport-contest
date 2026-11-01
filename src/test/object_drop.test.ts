@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import {
     addInventoryObject, floorObject, knownObject,
 } from './support/game-objects.js';

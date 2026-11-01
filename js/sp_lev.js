@@ -18,8 +18,7 @@ import { ensureMinionData } from './monster_birth_extensions.js';
 import { setMonsterSpecies } from './monster_species.js';
 import { monsterIsVampireShifter } from './monster_data.js';
 import { ismnum } from './const.js';
-import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { impossible } from './diagnostics.js';
 import { tablePoint } from './lua/des.js';
 import { luaString } from './lua/arguments.js';
@@ -37,7 +36,6 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE, STRAT_WAITFORU } from './const.js';
 import { OBJECT_MERGE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE } from './object_data.js';
 import { MONSTER_GENO, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_RESISTS, monsterIsPlayerMonster } from './monster_data.js';
-import { changeMonsterForm, shapechangerGender } from './monster_polymorph.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { terrain_glyph } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
@@ -61,7 +59,7 @@ import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
 import { makeSpecialDrawbridge } from './dbridge.js';
-import { monsterHasStoneResistance } from './mondata.js';
+import { monsterHasStoneResistance, monsterPolymorphsWhenStoned } from './mondata.js';
 export async function fillVault(room) {
     if (!room)
         return;

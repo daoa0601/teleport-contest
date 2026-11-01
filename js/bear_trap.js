@@ -1,6 +1,5 @@
 // Bear traps triggered by monsters.
 // C ref: trap.c:trapeffect_bear_trap().
-import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
@@ -8,7 +7,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterName } from './monster_name.js';
 const MZ_SMALL = 1;

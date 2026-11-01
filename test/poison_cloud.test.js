@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { finishMonsterKilled } from '../js/monster_death.js';
+import { finishMonsterKilled } from '../js/mon.js';
 import { AD_DRST } from '../js/monster_attack_types.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { initRng } from '../js/rng.js';

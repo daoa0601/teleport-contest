@@ -15,7 +15,6 @@ import { igniteItems } from './light.js';
 import { AD_BLND, AD_CONF, AD_FIRE, AD_STON, AD_STUN, AT_GAZE } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName } from './monster_data.js';
 import { monsterName, monsterPossessive, possessiveName } from './monster_name.js';
-import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { applyHeroGolemEffects, polymonHero } from './polyself.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource } from './ray.js';
@@ -26,7 +25,7 @@ import { heroResistsStoning } from './stoning.js';
 import { burnArmorByFire } from './trap.js';
 import { couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { destroyInventoryByElement } from './zap.js';
-import { monstersObserveHeroResistance, monstersForgetHeroResistance } from './mondata.js';
+import { monsterPolymorphsWhenStoned, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 const reactions = ['confused', 'stunned', 'puzzled', 'dazzled', 'irritated', 'inflamed', 'tired', 'dulled'];
 function identifyGazeReflection(source, state) {
     const object = source?.object;

@@ -34,7 +34,6 @@ import {
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterTypeName,
     requireMonsterData,
 } from './monster_data.js';
-import { initialShapechangedBirth } from './monster_polymorph.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { monsterName, monsterSubjectPronoun } from './monster_name.js';
 import { setMonsterSpecies } from './monster_species.js';
@@ -56,7 +55,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState } from './monster_types.js';
 
 import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
-import { hideMonsterUnder } from './mon.js';
+import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import {
     addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership,
 } from './monster_inventory.js';

@@ -41,7 +41,7 @@ import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { monsterName } from '../js/monster_name.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { tryKickReel } from '../js/monster_kick.js';
+import { tryKickReel } from '../js/dokick.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from '../js/monster_pit_trap.js';
 import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
 import { breakFloorObject } from '../js/object_breakage.js';

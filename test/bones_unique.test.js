@@ -5,7 +5,7 @@ import { DELPHI, MON_LIMBO, NO_MINVENT, OROOM, ROOMOFFSET, STRAT_APPEARMSG } fro
 import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { init_objects } from '../js/o_init.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';

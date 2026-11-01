@@ -55,16 +55,30 @@ import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { igniteItems } from './light.js';
-import { applyMonsterGolemEffects, healMonster, paralyzeMonster } from './mon.js';
+import {
+    applyMonsterGolemEffects,
+    changeMonsterForm,
+    finishMonsterKilled,
+    grantMonsterCorpseIntrinsic,
+    grantMonsterIntrinsic,
+    healMonster,
+    paralyzeMonster,
+    removeMonsterFromGame,
+    resolveMonsterCorpseChance,
+    finishMonsterPetrification, monsterSubject, turnGolemToStone,
+} from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
+import type {
+    MonsterDeathHandler, MonsterDefenderPetrificationResult,
+    PetrificationDeathHandler, PetrificationOptions,
+} from './mon.js';
+import { monsterSelfTouch } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { splitMonster } from './monster_clone.js';
 import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
-import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
-import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import {
     destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
     unlinkMonsterObject,
@@ -85,7 +99,7 @@ import {
 import {
     monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance,
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance,
-    monsterHasPoisonResistance, monsterHasShockResistance,
+    monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance,
 } from './mondata.js';
 import {
     monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName, possessiveName,
@@ -93,10 +107,8 @@ import {
 import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
-import { changeMonsterForm } from './monster_polymorph.js';
-import { petrifyMonsterDefender, monsterSelfTouch } from './monster_stoning.js';
-import { tryMonsterUnslime } from './muse.js';
+import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
+import type { MonsterStoningCureOptions } from './muse.js';
 import { stealHeroQuestObject } from './monster_quest_theft.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { sessionIsNight } from './monster_sound.js';
@@ -170,8 +182,6 @@ import type { rnd as RndType } from './rng.js';
 import type { Hero } from './hero_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterAttack } from './data_types.js';
-import type { MonsterDeathHandler } from './monster_death.js';
-import type { PetrificationDeathHandler } from './monster_stoning.js';
 import type { ErosionKind } from './object_erosion.js';
 import type { HeroPoisonOptions } from './poison.js';
 
@@ -3092,4 +3102,24 @@ async function polymorphHeroOnContact(
     // mhitm_ad_poly() marks this hit done even when resistance prevented
     // the body change. hitmu() still attempts knockback, then returns.
     attack.contactDone = true;
+}
+
+// C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
+export async function petrifyMonsterDefender(monster: Monster, {
+    publish = plineWithContinuation,
+    visible = canSeeMonster(monster),
+    ...options
+}: MonsterStoningCureOptions & PetrificationOptions & { visible?: boolean } = {}): Promise<MonsterDefenderPetrificationResult> {
+    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed && cure.heroDied) return { heroDied: true };
+    if (cure.consumed)
+        return { survived: !cure.died, stopped: true, damage: 0, cure };
+    const stoneForm = await turnGolemToStone(monster, publish);
+    if (stoneForm?.heroDied) return { heroDied: true };
+    if (stoneForm) return { survived: true, stopped: false, damage: 0 };
+    if (monsterHasStoneResistance(monster))
+        return { survived: true, stopped: false, damage: 1 };
+    if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
+    const result = await finishMonsterPetrification(monster, { ...options, publish });
+    return { ...result, stopped: true, damage: 0 };
 }

@@ -14,7 +14,7 @@ import { heroSpecies } from './hero_species.js';
 import { resetHeroFaint } from './hunger.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { removeMonsterFromGame } from './monster_departure.js';
+import { removeMonsterFromGame } from './mon.js';
 import { offerGoldToMonster } from './monster_bribe.js';
 import { monsterName } from './monster_name.js';
 import { stopHeroOccupation } from './occupation.js';

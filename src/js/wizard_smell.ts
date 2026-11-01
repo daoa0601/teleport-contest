@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
 import type { Position } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
-import { smellUnseenMonster } from './monster_smell.js';
+import { smellUnseenMonster } from './mon.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasOlfaction } from './polyself.js';
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MFAST, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { mcalcmove } from '../js/monster_speed.js';
+import { mcalcmove } from '../js/mon.js';
 import { createDungeon } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -5,7 +5,7 @@ import { ALTAR, G_GENOD, LUCKMIN, MM_EPRI, PIT, POOL, STONE } from '../js/const.
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/mon.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

@@ -11,7 +11,7 @@ import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER } from '../js/object_data.js';
 import { discardMonsterInventory } from '../js/monster_drop.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { unpaidObjectCost } from '../js/shk.js';

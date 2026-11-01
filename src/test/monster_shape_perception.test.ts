@@ -4,7 +4,7 @@ import { MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

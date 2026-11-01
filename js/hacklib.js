@@ -85,4 +85,11 @@ export function pointsOnline(x0, y0, x1, y1) {
     const dy = y0 - y1;
     return !dx || !dy || dy === dx || dy === -dx;
 }
+// C hacklib.c:ordin().
+export function ordinalSuffix(number) {
+    const digit = number % 10;
+    if (digit === 0 || digit > 3 || Math.trunc((number % 100) / 10) === 1)
+        return 'th';
+    return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
+}
 //# sourceMappingURL=hacklib.js.map

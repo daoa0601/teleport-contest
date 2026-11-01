@@ -3,14 +3,13 @@
 import { SPIKED_PIT } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { monsterSelfTouch } from './monster_stoning.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterTrapDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { monsterName } from './monster_name.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterSelfTouch, monsterTrapVisibility, seeTrap } from './trap.js';
 import { levelHasCeiling } from './terrain_properties.js';
 const M1_CLING = 0x00000010;
 const M1_FLY = 0x00000001;

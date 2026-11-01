@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { BOULDER } from '../js/object_data.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';

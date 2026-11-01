@@ -8,7 +8,6 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
-import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathResult } from './monster_death.js';
 import {
     IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER,
     W_ARM, W_ARMC, W_ARMU,
@@ -22,13 +21,14 @@ import {
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { goodPosition } from './teleport_rules.js';
-import { resolveMonsterLiquid, wakeMonster as awakenMonster } from './mon.js';
-import type { MonsterLiquidDeathContext } from './mon.js';
 import {
-    finishImmediateMonsterTrap, triggerImmediateMonsterTrap,
-} from './trap.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import { monsterWearsTorsoArmor, petrifyMonsterImmediately } from './monster_stoning.js';
+    finishEnvironmentalMonsterDeath,
+    monsterWearsTorsoArmor,
+    resolveMonsterLiquid,
+    wakeMonster as awakenMonster,
+} from './mon.js';
+import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
+import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap } from './trap.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { stopHeroOccupation } from './occupation.js';
 import { vision_recalc } from './vision.js';

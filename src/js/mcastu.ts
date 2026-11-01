@@ -79,7 +79,7 @@ import type {
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { monsterName as canonicalMonsterName, monsterSpellDeathReason } from './monster_name.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';

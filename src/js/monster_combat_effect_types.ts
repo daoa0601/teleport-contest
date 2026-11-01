@@ -2,7 +2,7 @@ import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { AttackTuple, MonsterCombatDeath } from './monster_action_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import type { MonsterDeathHandler } from './monster_death.js';
+import type { MonsterDeathHandler } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { d, rn2, rnd } from './rng.js';

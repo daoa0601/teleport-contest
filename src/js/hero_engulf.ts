@@ -45,7 +45,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { monsterName } from './monster_name.js';
-import { petrifyMonsterImmediately } from './monster_stoning.js';
+import { petrifyMonsterImmediately } from './trap.js';
 import { ownedObjectName, objectNameIsPlural } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';

@@ -21,7 +21,7 @@ import { prepareBonesObjectForRestore, prepareBonesObjectForSave, } from './bone
 import { restoreBonesMonsters } from './bones_monster.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
-import { purgeDeadMonsters } from './monster_level_departure.js';
+import { purgeDeadMonsters } from './mon.js';
 import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory } from './monster_restore.js';
 import { restoreLevelTimers } from './object_timers.js';

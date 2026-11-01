@@ -12,7 +12,7 @@ import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { makePetWary } from './dog.js';
 import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampire, } from './monster_data.js';
-import { changeMonsterForm } from './monster_polymorph.js';
+import { changeMonsterForm } from './mon.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';

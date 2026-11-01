@@ -9,8 +9,9 @@ import type { MessagePublisher } from './pline.js';
 import type { Position } from './map_types.js';
 import type { ObjectCallResult } from './object_call.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
-import type { MonsterFormChange } from './monster_polymorph.js';
-import type { MonsterSelfTouchResult } from './monster_stoning.js';
+import { finishMonsterKilled } from './mon.js';
+import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { requirePlayingGame } from './gstate.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -57,10 +58,6 @@ import {
 import {
     AD_ACID, AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
-import { finishMonsterKilled } from './monster_death.js';
-import {
-    adjustMonsterSpeed, monsterSpeedMessage,
-} from './monster_speed.js';
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';

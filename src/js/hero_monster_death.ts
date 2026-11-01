@@ -21,14 +21,13 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { MonsterLiquidDeathContext } from './mon.js';
+import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mkobj.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import { describeStoneEngulferEscape, prepareMonsterPetrification } from './monster_stoning.js';
 import {
     MONSTER_FLAGS2,
     MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
@@ -39,15 +38,6 @@ import {
     monsterDeathCount,
 } from './monster_vitals.js';
 import {
-    createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops,
-    monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
-    monsterLeavesCorpse,
-} from './monster_death.js';
-import type { MonsterLiquidDeathResult } from './monster_death.js';
-import {
-    resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion,
-} from './monster_explosion.js';
-import {
     addObjectToMonsterInventory,
 } from './monster_inventory.js';
 import {
@@ -57,7 +47,22 @@ import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
-import { angerQuestGuardiansAfterLeaderDeath } from './mon.js';
+import {
+    angerQuestGuardiansAfterLeaderDeath,
+    createMonsterRemains,
+    describeStoneEngulferEscape,
+    detachDeadMonster,
+    finishMonsterLiquidDeath,
+    levelAllowsMonsterDeathDrops,
+    monsterBodyCrumbles,
+    monsterBodyCrumblesMessage,
+    monsterDeathSquareAllowsObjects,
+    monsterDeathSwallower,
+    monsterLeavesCorpse,
+    prepareMonsterPetrification,
+    resolveMonsterDeathExplosion,
+    rollMonsterDeathExplosion,
+} from './mon.js';
 
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
 // pet-murder chronicle entry behind (mon.c:xkilled()).

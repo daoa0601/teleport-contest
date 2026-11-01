@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT, W_ARM, W_ARMC } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { CHAIN_MAIL, ELVEN_CLOAK } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

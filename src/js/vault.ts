@@ -48,7 +48,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { canSpotMonster, map_invisible } from './display.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
 import { BOULDER, GOLD_PIECE } from './object_data.js';
@@ -58,7 +57,7 @@ import { rn2 } from './rng.js';
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
-import { angerMonster } from './mon.js';
+import { angerMonster, removeMonsterFromGame } from './mon.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;

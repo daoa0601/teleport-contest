@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { CANDELABRUM_OF_INVOCATION } from '../js/object_data.js';

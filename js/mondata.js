@@ -6,6 +6,7 @@ import { dragonFormForArmor } from './armor.js';
 import { artifactById } from './artifacts.js';
 import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, } from './const.js';
 import { game } from './gstate.js';
+import { speciesWasGenocided } from './mon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
@@ -605,5 +606,13 @@ export function levelFollower(monster, state) {
         return true;
     return !!(questMonsterFlags2(monster.mnum, state) & M2_STALK)
         && (!monster.mflee || !!state.u.uhave?.amulet);
+}
+// C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
+const S_GOLEM_POLY = 55;
+const PM_STONE_GOLEM_POLY = 257;
+export function monsterPolymorphsWhenStoned(monster) {
+    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
+        && monster.mnum !== PM_STONE_GOLEM_POLY
+        && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
 }
 //# sourceMappingURL=mondata.js.map

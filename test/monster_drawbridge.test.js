@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, LARGE_BOX } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
 import { floorObject } from './support/game-objects.js';

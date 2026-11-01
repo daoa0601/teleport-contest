@@ -1,4 +1,4 @@
-import { mfndpos } from '../js/mon.js';
+import { changeMonsterForm, mfndpos } from '../js/mon.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
@@ -21,7 +21,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/mon.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import {
     AMULET_OF_LIFE_SAVING, CREDIT_CARD, DAGGER, LOCK_PICK, MACE, ROCK, SACK, SKELETON_KEY,

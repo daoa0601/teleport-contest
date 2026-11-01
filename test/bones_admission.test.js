@@ -13,7 +13,7 @@ import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { DAGGER, SACK, WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { init_objects } from '../js/o_init.js';

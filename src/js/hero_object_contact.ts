@@ -19,7 +19,7 @@ import {
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './monster_name.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import {

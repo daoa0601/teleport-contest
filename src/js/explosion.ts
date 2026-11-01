@@ -20,7 +20,8 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { igniteItems } from './light.js';
-import { applyMonsterGolemEffects, angerAttackedMonster, wakeMonster } from './mon.js';
+import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster } from './mon.js';
+import type { MonsterExplosionOptions } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
     AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE,
@@ -28,8 +29,8 @@ import {
 } from './monster_attack_types.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter,
+    monsterTypeName,
 } from './monster_data.js';
-import { finishMonsterKilled } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -501,4 +502,11 @@ async function explosionStyleForDamage(damageType: DamageType, state: GameState)
     if (style !== undefined) return style;
     await impossible(`adtyp_to_expltype: bad explosion type ${damageType}`, { state });
     return EXPL_FIERY;
+}
+
+// C explode.c:mon_explodes(). Kill credit and the map blast for a
+// monster whose death explodes.
+export function createPhysicalMonsterExplosion(sourceMonster: Monster, x: number, y: number, damage: number, options: MonsterExplosionOptions = {}) {
+    const killer = `${possessiveName(monsterTypeName(sourceMonster.mnum, !!sourceMonster.female))} explosion`;
+    return explode(x, y, PHYS_EXPL_TYPE, damage, MON_EXPLODE, EXPL_NOXIOUS, { ...options, killer });
 }

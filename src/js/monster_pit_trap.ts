@@ -4,8 +4,8 @@
 import { SPIKED_PIT } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { monsterSelfTouch } from './monster_stoning.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterTrapDeath } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
+import type { MonsterDeathResult } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_SYMBOL,
@@ -13,13 +13,12 @@ import {
 import { monsterWearsIronShoes } from './monworn.js';
 import { monsterName } from './monster_name.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { finishMonsterTrapDeath, monsterSelfTouch, monsterTrapVisibility, seeTrap } from './trap.js';
 import { levelHasCeiling } from './terrain_properties.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { MonsterDeathResult } from './monster_death.js';
 
 export interface MonsterPitTrap {
     kind: 'pit-trap';

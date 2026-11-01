@@ -150,9 +150,8 @@ import { setHeroGrip } from './hero_grip.js';
 import {
     beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf,
 } from './hero_engulf.js';
-import type { MonsterDeathOptions } from './monster_death.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import type { MonsterLiquidDeathContext } from './mon.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
+import type { MonsterDeathOptions, MonsterLiquidDeathContext } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';

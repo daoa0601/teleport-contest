@@ -52,7 +52,7 @@ import {
     AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2,
 } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
+import { petrifyMonsterFromContact } from './trap.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver,
     monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster,
@@ -67,7 +67,6 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { petrifyMonsterFromContact } from './monster_stoning.js';
 import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
 } from './monster_weapon.js';
@@ -121,7 +120,7 @@ import {
     seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance,
     monsterHasStoneResistance,
 } from './mondata.js';
-import { angerAttackedMonster } from './mon.js';
+import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
 
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);

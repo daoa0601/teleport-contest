@@ -7,7 +7,7 @@ import { mklev } from '../js/mklev.js';
 import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { initRng } from '../js/rng.js';
 import { pline } from '../js/pline.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';

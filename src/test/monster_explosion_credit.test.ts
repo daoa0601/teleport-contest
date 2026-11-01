@@ -5,7 +5,7 @@ import { createElementalMonsterExplosion, explode } from '../js/explosion.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_COLD } from '../js/monster_attack_types.js';
-import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

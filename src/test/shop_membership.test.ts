@@ -11,7 +11,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { checkSpecialRoom, shopkeeperForHero } from '../js/shk.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { removeMonsterFromGame } from '../js/monster_departure.js';
+import { removeMonsterFromGame } from '../js/mon.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

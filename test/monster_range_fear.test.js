@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { checkMonsterHeroRange } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
 import { AMULET_OF_LIFE_SAVING, GOLD_DRAGON_SCALES, SCR_SCARE_MONSTER } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

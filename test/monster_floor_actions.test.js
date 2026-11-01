@@ -8,7 +8,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
+import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { CORPSE, DAGGER, GOLD_PIECE, SACK, SCR_BLANK_PAPER, WAN_STRIKING } from '../js/object_data.js';

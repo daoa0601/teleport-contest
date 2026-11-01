@@ -9,7 +9,7 @@ import { AD_CURS, AD_DETH, AD_DISE, AD_DREN, AD_DRIN, AD_DRLI, AD_FAMN, AD_PEST,
 import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, BLACK_DRAGON_SCALES, CLOAK_OF_PROTECTION, OBJECT_NAMES, } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { isHumanWereMonster } from '../js/were.js';

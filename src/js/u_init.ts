@@ -19,7 +19,7 @@ import { initializeHeroRoomMembership } from './room.js';
 import { prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack } from './hero_inventory.js';
 import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
 import { setHeroSpecies } from './hero_species.js';
-import { seeMonsterCloseup } from './monster_observation.js';
+import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { impossible } from './diagnostics.js';
 import { setMonsterMalign } from './monster_alignment.js';
