@@ -2,7 +2,6 @@ import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterName } from './monster_name.js';
 import { observeDistantObjectForNaming } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
@@ -31,6 +30,7 @@ import {
     monsterAvoidsSokobanPushLocation,
     readyMonsterDiggingWeapon,
     speciesHasWeaponAttack,
+    setMonsterApparentHeroPosition,
 } from './monmove.js';
 import {
     mfndpos,
@@ -155,10 +155,10 @@ import { monsterReflectsRay } from './ray.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { clearPath, visibleCellsFrom } from './vision.js';
 import { getTrack } from './track.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
 import { d, rn2, rnd } from './rng.js';
 import { requireInitializedGame, requireLiveGame } from './gstate.js';
+import { monsterLocomotion } from './mondata.js';
 
 const DOG_HUNGRY = 300;
 const M1_SEE_INVIS = 0x01000000;

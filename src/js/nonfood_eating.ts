@@ -25,7 +25,6 @@ import { currentHungerState, gainHeroNutrition } from './hunger.js';
 import { chewIronBars } from './iron_bars_meal.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import {
     FLINT, LEASH, OBJECT_NAMES, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData,
 } from './object_data.js';
@@ -45,6 +44,7 @@ import { surfaceName } from './terrain_name.js';
 import { findVaultGuard } from './vault_guard.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
 
 interface FoodOptions { state?: GameState; }
 export type FoodAdmission = { handled: true; spentTime: boolean; heroDied: boolean }

@@ -40,9 +40,9 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
 import { A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './mondata.js';
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
 // Keeping the complete table here makes equipment transactions consume object

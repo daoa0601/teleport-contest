@@ -80,7 +80,6 @@ type ArmorBonusSource = Pick<GameObject, 'otyp'>
     & Partial<Pick<GameObject, 'spe' | 'enchantment' | 'oeroded' | 'oeroded2'>>;
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import {
     captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,
     propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties,
@@ -90,6 +89,7 @@ import {
     A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX,
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU,
 } from './const.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './mondata.js';
 
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
@@ -983,7 +983,6 @@ export function findArmorClass(state: GameState = game) {
     }
     return hero.uac;
 }
-
 
 export function armorSimpleName(
     object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'name' | 'dknown'>>,

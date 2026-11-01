@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { couldsee, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { setMonsterApparentHeroPosition } from '../js/monmove.js';
 for (const { surface, name, accessible } of [
     { surface: DB_ICE, name: 'ice', accessible: true },
     { surface: DB_MOAT, name: 'water', accessible: false },

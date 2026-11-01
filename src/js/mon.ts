@@ -11,9 +11,15 @@ import type { MonsterDeathResult, MonsterLiquidDeathResult } from './monster_dea
 import type { MonsterRelocation } from './monster_action_types.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
 import {
-    canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee,
-    monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt,
+    canMonsterHideUnderObjectAt,
+    interruptOccupationForMonster,
+    makeMonsterFlee,
+    monsterCanBreakBoulder,
+    monsterHasKey,
+    monsterIsScaredAt,
     monsterSightingBeforeAction,
+    monsterCanFog,
+    requirePerceivedHero,
 } from './monmove.js';
 import {
     ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK,
@@ -38,10 +44,8 @@ import {
     monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter,
     monsterIsVerySmall, monsterIsWhirly, monsterYoungerForm,
 } from './monster_data.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { changeMonsterForm, decideMonsterShapeChange } from './monster_polymorph.js';
 import { monsterName } from './monster_name.js';
-import { monsterFireDescription } from './monster_fire_description.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import {
     AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE,
@@ -100,13 +104,17 @@ import { heroHasConflict } from './hero_conflict.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel } from './dungeon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { monsterCorrodesBars, monsterPassesBars } from './mondata.js';
+import {
+    monsterCorrodesBars,
+    monsterPassesBars,
+    monsterLocomotion,
+    monsterFireDescription,
+} from './mondata.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterDisplacementFlags } from './monster_displacement.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './armor.js';
-import { monsterCanFog, requirePerceivedHero } from './monster_perception.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt } from './regions.js';
 import { currentMonsterLoad } from './monster_carry.js';
 import { pointsOnline } from './hacklib.js';

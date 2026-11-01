@@ -19,7 +19,6 @@ import { makeConfused, makeHallucinated } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { updateHeroHunger } from './hunger.js';
 import { doEnlightenmentEffect, showEnlightenment } from './insight.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import {
     POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT,
     POT_GAIN_ABILITY, POT_HALLUCINATION, POT_PARALYSIS, POT_SLEEPING,
@@ -30,6 +29,7 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { blindnessBlocked, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { surfaceName } from './terrain_name.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 // C potion.c:peffect_enlightenment().
 // C potion.c:peffect_confusion().

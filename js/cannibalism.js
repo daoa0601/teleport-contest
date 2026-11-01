@@ -4,10 +4,10 @@ import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
-import { sameMonsterRace } from './monster_race.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { rn1 } from './rng.js';
 import { wereBeastForSpecies } from './were.js';
+import { sameMonsterRace } from './mondata.js';
 export function heroMayEatOwnKind(state = game) {
     requirePlayingGame(state);
     return state.urole.key === 'caveman' || state.urace.name === 'orc';

@@ -17,12 +17,12 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { AD_MAGM, AD_SPC2 } from './monster_attack_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { seenResistanceForDamage } from './monster_perception.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { d, rn2, rnd } from './rng.js';
 import { displayRayName } from './ray_name.js';
 import { heroIsDeaf } from './senses.js';
 import { couldsee } from './vision.js';
+import { seenResistanceForDamage } from './mondata.js';
 
 const M1_SEE_INVIS = 0x01000000;
 const STRANGE_OBJECT = 0;

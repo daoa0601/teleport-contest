@@ -2,8 +2,8 @@
 // over the movement word for the hero's current body.
 import { game } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { propertyIsActive } from './properties.js';
+import { monsterLocomotion } from './mondata.js';
 export function heroLocomotion(fallback, state = game) {
     const verb = propertyIsActive('levitation', state) ? 'float'
         : propertyIsActive('flying', state) ? 'fly' : null;

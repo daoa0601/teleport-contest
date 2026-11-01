@@ -24,7 +24,6 @@ import {
 } from './monster_data.js';
 import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectDescription } from './object_description.js';
@@ -36,6 +35,7 @@ import { ceilingName } from './terrain_name.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { advanceMonsterWormBody } from './monster_worm.js';
+import { setMonsterApparentHeroPosition } from './monmove.js';
 
 const M1_HIDE = 0x00000100;
 const S_EEL = 57;

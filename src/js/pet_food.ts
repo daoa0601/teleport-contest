@@ -9,7 +9,6 @@ import {
     monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider,
     monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
-import { sameMonsterRace } from './monster_race.js';
 import {
     monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
 } from './monster_resistance.js';
@@ -25,6 +24,7 @@ import type { GameState } from './game_state.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { sameMonsterRace } from './mondata.js';
 
 export const DOGFOOD = 0;
 export const CADAVER = 1;

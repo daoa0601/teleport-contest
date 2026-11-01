@@ -32,12 +32,12 @@ import {
     MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const GAS_BAD = 0;
 const GAS_MINOR = 1;

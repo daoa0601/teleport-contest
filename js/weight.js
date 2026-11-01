@@ -7,7 +7,7 @@ import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterStagger } from './monster_locomotion.js';
+import { monsterStagger } from './mondata.js';
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
 export const MOD_ENCUMBER = 2;

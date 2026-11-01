@@ -81,6 +81,7 @@ import {
     resumeDeferredSpecialAttack,
     presentMonsterPickups,
     presentMonsterPostMove,
+    requirePerceivedHero,
 } from './monmove.js';
 import {
     attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath,
@@ -112,10 +113,6 @@ import {
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance,
-    requirePerceivedHero, seenResistanceForDamage,
-} from './monster_perception.js';
 import { resolveDeferredHeroItemTheft } from './steal.js';
 import { finishDeferredHeroSlime, resumeDeferredHeroSlime } from './slime.js';
 import { finishHeroDeath } from './end.js';
@@ -177,9 +174,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { inventoryItemDescription } from './invent.js';
-import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
-} from './monster_inventory.js';
+import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { unlinkObject } from './object_location.js';
 import { promptYesNo } from './query.js';
@@ -189,6 +184,9 @@ import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { objectTypeKnown } from './shk.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
+} from './mondata.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
@@ -1060,7 +1058,6 @@ async function performWormTailAttacks(
     }
     return { nativeResult: 0, heroDied: false };
 }
-
 
 // C hack.h:AC_VALUE().  Hero AC below zero is deliberately randomized each
 // time an attack transaction evaluates it; callers must retain the returned
@@ -2430,7 +2427,6 @@ export async function resumeDeferredHeroEngulf(
     return result;
 }
 
-
 async function knockHeroFromMonster(
     monster: Monster,
     attack: Pick<HeroContactAttack, 'attackType' | 'damageType' | 'hit'>,
@@ -2583,7 +2579,6 @@ export async function resumeDeferredHeroReveal(
     sequence.current = resumedContact;
     return resumedContact;
 }
-
 
 export async function completeHeroAttackSlot(
     action: MonsterMovementAction,

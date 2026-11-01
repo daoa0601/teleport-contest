@@ -30,7 +30,6 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster
 import { adjustMonsterSpeed, monsterSpeedMessage, } from './monster_speed.js';
 import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
-import { monstersObserveHeroResistance } from './monster_perception.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, } from './object_state.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { d, rnd, rn2, rnl } from './rng.js';
@@ -46,6 +45,7 @@ import { heroFormSticks } from './hero_species.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { putMonsterToSleep } from './monster_sleep.js';
 import { objectAction, objectCombatName, definiteObjectAction } from './objnam.js';
+import { monstersObserveHeroResistance } from './mondata.js';
 const PM_PESTILENCE = 312;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;

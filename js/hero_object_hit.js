@@ -17,7 +17,7 @@ import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { definiteName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './mondata.js';
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;

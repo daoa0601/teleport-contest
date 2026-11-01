@@ -9,13 +9,13 @@ import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { setMonsterApparentHeroPosition } from '../js/monmove.js';
 void test('an uncaught returning candle is extinguished before landing', async () => {
     const level = await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);

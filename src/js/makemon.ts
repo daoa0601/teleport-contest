@@ -121,7 +121,6 @@ import {
 } from './monster_inventory.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { initialShapechangedBirth } from './monster_polymorph.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { giveMonsterStartingObject } from './monster_starting_inventory.js';
@@ -235,6 +234,7 @@ import { questMonsterType } from './quest_pager.js';
 import type { Position } from './map_types.js';
 import type { Monster, MonsterBirthState } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { setMonsterApparentHeroPosition } from './monmove.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;

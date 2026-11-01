@@ -10,11 +10,9 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { monsterSpellDeathReason } from './monster_name.js';
-import { monsterHasLineOfSightToHero, seenResistanceForDamage } from './monster_perception.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { putHeroToSleep } from './hero_sleep.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { igniteItems } from './light.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, monsterIsNonliving, } from './monster_data.js';
 import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, AT_BREA, } from './monster_attack_types.js';
@@ -25,6 +23,8 @@ import { d, rn2, rnd } from './rng.js';
 import { clearHeroSliming } from './slime.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, } from './zap.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
+import { seenResistanceForDamage, monstersForgetHeroResistance, monstersObserveHeroResistance, } from './mondata.js';
 export function heroBreathAttack(state = game, damageType = null) {
     const form = heroMonsterForm(state);
     if (form == null)

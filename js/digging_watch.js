@@ -5,10 +5,10 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { ensureDiggingContext, isDigging } from './hero_digging.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import { stopHeroOccupation } from './occupation.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
 const WATCH = new Set(['watchman', 'watch captain']);
 // C dig.c:watch_dig().
 // C dig.c:watchman_canseeu().

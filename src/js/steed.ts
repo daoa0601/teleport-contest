@@ -48,7 +48,6 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
-import { heroCanOoze } from './monster_perception.js';
 import { monsterPassesBars } from './mondata.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
@@ -81,6 +80,7 @@ import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
 import { surfaceName } from './terrain_name.js';
+import { heroCanOoze } from './monmove.js';
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

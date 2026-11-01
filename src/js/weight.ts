@@ -16,7 +16,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterStagger } from './monster_locomotion.js';
+import { monsterStagger } from './mondata.js';
 
 // Weight is also queried for a proposed quantity before a real stack splits.
 export interface WeightObject extends Pick<GameObject, 'otyp'>, Partial<Pick<GameObject,

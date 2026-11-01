@@ -5,7 +5,6 @@ import { A_CHA, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RINGL, W_RINGR } fr
 import { attributeIsAtLimit, currentAttribute } from './attrib.js';
 import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import { AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, } from './object_data.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
@@ -37,6 +36,7 @@ import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import { clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation, } from './hero_strangulation.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './mondata.js';
 const ACCESSORY_SLOTS = [
     { slot: 'uleft', mask: W_RINGL, label: 'left-ring' },
     { slot: 'uright', mask: W_RINGR, label: 'right-ring' },

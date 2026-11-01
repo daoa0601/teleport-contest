@@ -37,9 +37,6 @@ import { finishMonsterKilled } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
-} from './monster_perception.js';
-import {
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
     monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
     monsterResistsEffect,
@@ -70,6 +67,11 @@ import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './mag
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
+import {
+    monstersForgetHeroResistance,
+    monstersObserveHeroResistance,
+    seenResistanceForDamage,
+} from './mondata.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -463,7 +465,6 @@ async function engulferMessage(monster: Monster, damageType: DamageType, objectC
     const effect = effects.get(damageType)?.[digesting ? 0 : 1] || 'fried';
     await publish(`${monsterName(monster, { state, capitalized: true })} gets ${digesting ? '' : 'slightly '}${effect}!`);
 }
-
 
 async function finishExplosionMonsterDeath(monster: Monster, {
     state, publish, heroCaused, creditedMonster, burnsCompletely, random, damageType,

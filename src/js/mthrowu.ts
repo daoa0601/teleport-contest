@@ -66,7 +66,6 @@ import {
 } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
-import { requirePerceivedHero, seenResistanceForDamage } from './monster_perception.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import {
     monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
@@ -121,6 +120,8 @@ import type {
 import type { HeroMonsterWeaponVolley, MonsterProjectileShot, MonsterWeaponWield,
     TargetMonsterWeaponVolley } from './monster_projectile_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
+import { requirePerceivedHero } from './monmove.js';
+import { seenResistanceForDamage } from './mondata.js';
 
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);

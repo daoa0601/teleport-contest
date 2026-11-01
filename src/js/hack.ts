@@ -29,7 +29,6 @@ import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './h
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn, nomul } from './command_state.js';
 import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
-import { monstersObserveHeroResistance, heroCanOoze } from './monster_perception.js';
 import { clearHeroTrap, setHeroTrap, heroCanMoveFromTrap } from './hero_traps.js';
 import { monsterName, shopkeeperName } from './monster_name.js';
 import {
@@ -110,9 +109,9 @@ import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { monsterAtPosition } from './monster_location.js';
-import { makeMonsterFlee } from './monmove.js';
+import { makeMonsterFlee, heroCanOoze } from './monmove.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
-import { monsterPassesBars } from './mondata.js';
+import { monsterPassesBars, monstersObserveHeroResistance } from './mondata.js';
 import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
 import { strikeIronBarsWithWeapon } from './projectile_bars.js';
 import { fightSeenWebWithForce } from './hero_web_fight.js';
@@ -889,7 +888,6 @@ async function finishLiquidTeleport(
     const landing = await applyLandingEffects({ from, to });
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
-
 
 async function leaveWater({
     state, location, publish,

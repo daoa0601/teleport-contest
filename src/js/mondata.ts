@@ -2,13 +2,33 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
-    SPECIAL_PM, monsterIsVerySmall, monsterIsWhirly, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GROWTH_TARGET,
+    MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL,
+    SPECIAL_PM, monsterIsAmorphous, monsterIsMindFlayer, monsterIsRider,
+    monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
+    monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData,
 } from './monster_data.js';
-import { AD_CORR, AD_RUST } from './monster_attack_types.js';
+import {
+    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST,
+    AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE,
+    AD_SLOW, AD_STON, AD_WERE, AT_HUGS,
+} from './monster_attack_types.js';
+import type { AttackMethod, DamageType } from './monster_attack_types.js';
+import { dragonFormForArmor } from './armor.js';
+import { artifactById } from './artifacts.js';
+import {
+    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE,
+    M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM,
+} from './const.js';
+import { game } from './gstate.js';
+import { monsterWieldedWeapon } from './monster_weapon.js';
+import type { ArtifactDefense } from './data_types.js';
+import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import type { PropertyName } from './property_types.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
 
 // Native MALE, FEMALE, and NEUTRAL name indices.
 export type MonsterNameGender = 0 | 1 | 2;
@@ -257,6 +277,45 @@ export function resolveMonsterClass(value: string): MonsterClassMatch {
     return { monsterClass: mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0), mnum };
 }
 
+// Native mondata.c:defended() and artifact.c:defends(). This is the
+// wielded-weapon/dragon-body check; innate and carried resistances are separate.
+const ARTIFACT_DEFENSE: Partial<Record<DamageType, ArtifactDefense | null>> = {
+    [AD_PHYS]: null, [AD_DRLI]: 'life-drain', [AD_DRST]: 'poison',
+    [AD_MAGM]: 'magic', [AD_COLD]: 'cold', [AD_FIRE]: 'fire',
+    [AD_WERE]: 'lycanthropy', [AD_BLND]: 'blindness',
+};
+const DRAGON_DEFENSE: Partial<Record<DamageType, number>> = {
+    [AD_MAGM]: MONSTER_NAME.indexOf('gray dragon'),
+    [AD_HALU]: MONSTER_NAME.indexOf('gold dragon'),
+    [AD_FIRE]: MONSTER_NAME.indexOf('red dragon'),
+    [AD_COLD]: MONSTER_NAME.indexOf('white dragon'),
+    [AD_DRST]: MONSTER_NAME.indexOf('green dragon'),
+    [AD_DISE]: MONSTER_NAME.indexOf('green dragon'),
+    [AD_SLEE]: MONSTER_NAME.indexOf('orange dragon'),
+    [AD_PLYS]: MONSTER_NAME.indexOf('orange dragon'),
+    [AD_DISN]: MONSTER_NAME.indexOf('black dragon'),
+    [AD_DRLI]: MONSTER_NAME.indexOf('black dragon'),
+    [AD_ELEC]: MONSTER_NAME.indexOf('blue dragon'),
+    [AD_SLOW]: MONSTER_NAME.indexOf('blue dragon'),
+    [AD_ACID]: MONSTER_NAME.indexOf('yellow dragon'),
+    [AD_STON]: MONSTER_NAME.indexOf('yellow dragon'),
+};
+const FIRST_DRAGON = MONSTER_NAME.indexOf('gray dragon');
+const LAST_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
+
+export function monsterCombatDefense(
+    monster: Monster, damageType: DamageType, state: GameState = game,
+): boolean {
+    const artifact = artifactById(monsterWieldedWeapon(monster)?.oartifact, state);
+    const defense = ARTIFACT_DEFENSE[damageType];
+    if (artifact && defense !== undefined && (artifact.defense ?? null) === defense) return true;
+    const armor = (monster.minvent ?? monster.inventory ?? [])
+        .find(object => (object.owornmask ?? 0) & W_ARM);
+    const dragon = monster.mnum >= FIRST_DRAGON && monster.mnum <= LAST_DRAGON
+        ? monster.mnum : dragonFormForArmor(armor);
+    return dragon !== null && dragon === DRAGON_DEFENSE[damageType];
+}
+
 // C mondata.c:passes_bars(). Rust monsters and some puddings destroy bars;
 // postmov (monmove.c) reuses the same corrosion test for its iron-bars meal.
 const M1_WALLWALK = 0x00000008;
@@ -276,4 +335,190 @@ export function monsterPassesBars(monster: Pick<Monster, 'mnum'>): boolean {
 
 export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
     return (MONSTER_ATTACKS[monster.mnum] ?? []).some(([, damage]) => damage === AD_RUST || damage === AD_CORR);
+}
+
+// C mondata.c:can_blow(). Hero strangulation is an actor-specific check.
+const M1_BREATHLESS = 0x400, M1_NOHEAD = 0x8000;
+const MS_SILENT = 0, MS_BUZZ = 10, MZ_SMALL = 1, S_EEL = 57;
+
+export function speciesCanBlow(mnum: number): boolean {
+    const sound = requireMonsterData(MONSTER_SOUND, mnum);
+    if (sound !== MS_SILENT && sound !== MS_BUZZ) return true;
+    return !(requireMonsterData(MONSTER_FLAGS1, mnum) & (M1_BREATHLESS | M1_NOHEAD))
+        && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
+        && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
+}
+
+// Native mondata.c:same_race(). Species families used by cannibalism.
+const species = (name: string) => MONSTER_NAME.indexOf(name);
+const symbol = (name: string) => requireMonsterData(MONSTER_SYMBOL, species(name));
+const GOLEM = symbol('stone golem');
+const KOBOLD = symbol('kobold');
+const IMP = symbol('imp');
+const raceFlags = [0x08, 0x10, 0x20, 0x40, 0x80, 0x2000];
+const classFamilies = ['ogre', 'water nymph', 'plains centaur', 'red dragon', 'red naga'].map(symbol);
+const undeadFamilies = ['human zombie', 'human mummy', 'vampire', 'lich', 'wraith', 'ghost'].map(symbol);
+const kobolds = new Set(['kobold zombie', 'kobold mummy'].map(species));
+const gargoyles = new Set(['gargoyle', 'winged gargoyle'].map(species));
+const bees = new Set(['killer bee', 'queen bee'].map(species));
+const longWorms = new Set(['baby long worm', 'long worm', 'long worm tail'].map(species));
+const TENGU = species('tengu');
+
+export function sameMonsterRace(left: number, right: number): boolean {
+    if (left === right) return true;
+    const leftFlags = requireMonsterData(MONSTER_FLAGS2, left);
+    const rightFlags = requireMonsterData(MONSTER_FLAGS2, right);
+    const leftClass = requireMonsterData(MONSTER_SYMBOL, left);
+    const rightClass = requireMonsterData(MONSTER_SYMBOL, right);
+    for (const flag of raceFlags)
+        if (leftFlags & flag) return !!(rightFlags & flag);
+    if (leftClass === GOLEM) return rightClass === GOLEM;
+    if (monsterIsMindFlayer(left)) return monsterIsMindFlayer(right);
+    if (leftClass === KOBOLD || kobolds.has(left))
+        return rightClass === KOBOLD || kobolds.has(right);
+    if (classFamilies.includes(leftClass)) return leftClass === rightClass;
+    if (monsterIsUnicorn(left)) return monsterIsUnicorn(right);
+    if (monsterIsRider({ mnum: left })) return monsterIsRider({ mnum: right });
+    if (leftFlags & 0x1000) return !!(rightFlags & 0x1000);
+    if (left === TENGU || right === TENGU) return false;
+    if (leftClass === IMP) return rightClass === IMP;
+    if (rightClass === IMP) return false;
+    if (leftFlags & 0x100) return !!(rightFlags & 0x100);
+    if (monsterIsUndead(left)) {
+        if (undeadFamilies.includes(leftClass)) return leftClass === rightClass;
+    } else if (monsterIsUndead(right)) return false;
+    if (leftClass === rightClass) {
+        for (const nextForm of [monsterYoungerForm,
+            (mnum: number) => requireMonsterData(MONSTER_GROWTH_TARGET, mnum)]) {
+            let current = left;
+            for (;;) {
+                const next = nextForm(current);
+                if (next === current) break;
+                if (next === right) return true;
+                current = next;
+            }
+        }
+    }
+    for (const family of [gargoyles, bees, longWorms])
+        if (family.has(left)) return family.has(right);
+    return false;
+}
+
+// C mondata.c:locomotion() and stagger(). Describe the actual body, even
+// when its name is hidden or hallucinated.
+const S_EYE = 5;
+const S_LIGHT = 25;
+const M1_FLY = 0x00000001;
+const M1_NOLIMBS = 0x00006000;
+
+export function monsterLocomotion(mnum: number, fallback: string): string {
+    const body = MONSTER_FLAGS1[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
+    let verb = fallback;
+    if (symbol === S_EYE || symbol === S_LIGHT) verb = 'float';
+    else if (body & M1_FLY) verb = 'fly';
+    else if (monsterIsSlithy(mnum)) verb = 'slither';
+    else if (monsterIsAmorphous({ mnum })) verb = 'ooze';
+    else if (!MONSTER_MOVE[mnum]) verb = 'wiggle';
+    else if ((body & M1_NOLIMBS) === M1_NOLIMBS) verb = 'crawl';
+    return fallback.charAt(0) === fallback.charAt(0).toUpperCase()
+        ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
+}
+
+// C mondata.c:stagger(): the faltering counterpart of locomotion().
+export function monsterStagger(mnum: number, fallback: string): string {
+    const body = MONSTER_FLAGS1[mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[mnum];
+    let verb = fallback;
+    if (symbol === S_EYE || symbol === S_LIGHT) verb = 'wobble';
+    else if (body & M1_FLY) verb = (MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL ? 'flutter' : 'stagger';
+    else if (monsterIsSlithy(mnum)) verb = 'falter';
+    else if (monsterIsAmorphous({ mnum })) verb = 'tremble';
+    else if (!MONSTER_MOVE[mnum]) verb = 'pulsate';
+    else if ((body & M1_NOLIMBS) === M1_NOLIMBS) verb = 'falter';
+    return fallback.charAt(0) === fallback.charAt(0).toUpperCase()
+        ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
+}
+
+// C mondata.c:on_fire(). The affected body determines what heat looks like.
+export function monsterFireDescription(monster: Pick<Monster, 'mnum'>, method: AttackMethod): string {
+    const species = requireMonsterData(MONSTER_NAME, monster.mnum);
+    switch (species) {
+    case 'flaming sphere': case 'fire vortex': case 'fire elemental': case 'salamander':
+        return 'already on fire';
+    case 'water elemental': case 'fog cloud': case 'steam vortex':
+        return 'boiling';
+    case 'ice vortex': case 'glass golem':
+        return 'melting';
+    case 'stone golem': case 'clay golem': case 'gold golem': case 'air elemental':
+    case 'earth elemental': case 'dust vortex': case 'energy vortex':
+        return 'heating up';
+    default:
+        return method === AT_HUGS ? 'being roasted' : 'on fire';
+    }
+}
+
+// C mondata.c:cvt_adtyp_to_mseenres(): these eight damage types and bits share an order.
+export function seenResistanceForDamage(damageType: number): number {
+    return damageType >= AD_MAGM && damageType <= AD_ACID
+        ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
+}
+
+// C mondata.c:cvt_prop_to_mseenres().  Worn items confer these nine
+const M_SEEN_BY_PROPERTY: Partial<Record<PropertyName, number>> = {
+    antimagic: M_SEEN_MAGR,
+    fireResistance: M_SEEN_FIRE,
+    coldResistance: M_SEEN_COLD,
+    sleepResistance: M_SEEN_SLEEP,
+    disintegrationResistance: M_SEEN_DISINT,
+    shockResistance: M_SEEN_ELEC,
+    poisonResistance: M_SEEN_POISON,
+    acidResistance: M_SEEN_ACID,
+    reflection: M_SEEN_REFL,
+};
+
+// C mondata.c:cvt_prop_to_mseenres().
+export function seenResistanceForProperty(property: PropertyName): number {
+    return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
+}
+
+// monstseesu() and monstunseesu() share this loop: every living monster
+// which could see the hero (m_canseeu) gets the resistance update.
+function monstersThatCanSeeHero(state: GameState, canSeeHero: ((monster: Monster) => boolean) | null): Monster[] {
+    if (state.u?.uswallow) return [];
+    const seesHero = canSeeHero
+        || ((monster: Monster) => monsterHasLineOfSightToHero(monster, state));
+    return (state.level?.monsters || []).filter(monster =>
+        monster && !monster.dead && (monster.mhp ?? 1) > 0
+        && seesHero(monster));
+}
+
+// C mondata.c:monstseesu(). Monsters in line of sight remember hero resisting.
+export function monstersObserveHeroResistance(
+    resistance: number,
+    state: GameState = game,
+    canSeeHero: ((monster: Monster) => boolean) | null = null,
+): number {
+    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+    const observers = monstersThatCanSeeHero(state, canSeeHero);
+    for (const monster of observers) {
+        monster.seen_resistance = (monster.seen_resistance ?? 0)
+            | resistance;
+    }
+    return observers.length;
+}
+
+// C mondata.c:monstunseesu(). Monsters in line of sight forget hero resistance.
+export function monstersForgetHeroResistance(
+    resistance: number,
+    state: GameState = game,
+    canSeeHero: ((monster: Monster) => boolean) | null = null,
+): number {
+    if (!resistance || resistance === M_SEEN_NOTHING) return 0;
+    const observers = monstersThatCanSeeHero(state, canSeeHero);
+    for (const monster of observers) {
+        monster.seen_resistance = (monster.seen_resistance ?? 0)
+            & ~resistance;
+    }
+    return observers.length;
 }
