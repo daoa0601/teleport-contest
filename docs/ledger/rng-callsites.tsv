@@ -2147,18 +2147,18 @@ src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
 src/js/shk.ts	checkSpecialRoom	rn2	"[""3""]"	constant
 src/js/shk.ts	enterShop	rn2	"[""3""]"	constant
 src/js/shk.ts	heroHonorific	rn2	"[""4""]"	constant
-src/js/shop_chat.ts	chatWithShopkeeper	rn2	"[""IZCHAK_SPEAKS.length""]"	constant
-src/js/shop_damage.ts	getcad	rn2	"[""3""]"	constant
-src/js/shop_damage.ts	getcad	rn2	"[""3""]"	constant
-src/js/shop_damage.ts	litterScatter	rn2	"[""9""]"	constant
-src/js/shop_damage.ts	payForShopDamage	rn2	"[""++picks""]"	guarded
-src/js/shop_damage.ts	payForShopDamage	rn2	"[""50""]"	constant
-src/js/shop_damage.ts	repairShopDamage	rn2	"[""10""]"	constant
-src/js/shop_departure.ts	makeKops	rnd	"[""5""]"	constant
-src/js/shop_pay_command.ts	dopay	rn2	"[""2""]"	constant
-src/js/shop_pay_command.ts	settleEmptyBill	rn2	"[""3""]"	constant
-src/js/shop_price_quote.ts	embellish	rn2	"[""3""]"	constant
-src/js/shop_price_quote.ts	embellish	rn2	"[""5""]"	constant
+src/js/shk.ts	chatWithShopkeeper	rn2	"[""IZCHAK_SPEAKS.length""]"	constant
+src/js/shk.ts	getcad	rn2	"[""3""]"	constant
+src/js/shk.ts	getcad	rn2	"[""3""]"	constant
+src/js/shk.ts	litterScatter	rn2	"[""9""]"	constant
+src/js/shk.ts	payForShopDamage	rn2	"[""++picks""]"	guarded
+src/js/shk.ts	payForShopDamage	rn2	"[""50""]"	constant
+src/js/shk.ts	repairShopDamage	rn2	"[""10""]"	constant
+src/js/shk.ts	makeKops	rnd	"[""5""]"	constant
+src/js/shk.ts	dopay	rn2	"[""2""]"	constant
+src/js/shk.ts	settleEmptyBill	rn2	"[""3""]"	constant
+src/js/shk.ts	embellish	rn2	"[""3""]"	constant
+src/js/shk.ts	embellish	rn2	"[""5""]"	constant
 src/js/sink_dipping.ts	dipSink	rn2	"[""looted ? 15 : 25""]"	constant
 src/js/sink_drinking.ts	drinkSink	rn1	"[""30 - currentAttribute(A_CON, state)"", ""11""]"	invariant
 src/js/sink_drinking.ts	drinkSink	rn2	"[""20""]"	constant
