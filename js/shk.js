@@ -1156,7 +1156,8 @@ export async function addShopObjectToBill(object, state = game, { ininv = true, 
     }
     return transaction;
 }
-// C invent.c:count_unpaid(). Unpaid items in the container's chain.
+// C invent.c:count_contents(container, TRUE, TRUE, FALSE, TRUE).
+// Count unpaid stack quantities, including contents of nested containers.
 function countUnpaidContents(container) {
     let count = 0;
     for (const content of container.contents || []) {
