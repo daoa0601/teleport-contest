@@ -105,6 +105,11 @@ async function spitHorizontally({ venom, direction, state, publish, random, roll
     });
     if (trajectory.recoil) {
         await recoilHero(-direction.dx, -direction.dy, trajectory.recoil, { verbose: true });
+        // C throwit() recoils after bhit() (dothrow.c:1682); a fatal hurtle
+        // ends in done(), which never returns, so the venom never reaches
+        // its target or breaks afterwards.
+        if (state.program_state.gameover)
+            return { heroDied: true };
     }
     if (flight.destroyed)
         return flight;
