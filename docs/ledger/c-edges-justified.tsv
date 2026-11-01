@@ -1875,3 +1875,5 @@ is_pool	isok	inlined	terrain_properties.ts isPoolAt is the cited counterpart and
 is_pool	is_moat	inlined	terrain_properties.ts isPoolAt calls isMoatAt (C dbridge.c:is_moat()) after the POOL/MOAT/WATER type test; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
 is_lava	isok	inlined	terrain_properties.ts isLavaAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_LAVA macro helper in const.ts instead
 is_waterwall	isok	inlined	terrain_properties.ts isWaterwallAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_WATERWALL macro helper in const.ts instead
+notice_all_mons	alloc	n/a	memory allocation; the port builds a plain array of the spottable monsters
+notice_mons_cmp	dist2	inlined	noticeAllMonsters sorts by (mx-ux)^2+(my-uy)^2, dist2(u,mon) inline, and the stable Array.sort retains fmon order like the deterministic qsort tie-break (hack.ts)
