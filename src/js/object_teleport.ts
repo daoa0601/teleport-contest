@@ -21,11 +21,7 @@ import { CORPSE } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { rn2 } from './rng.js';
 import { roomsAt } from './room.js';
-import {
-    addShopObjectToBill, costlyAdjacent, costlySpot,
-    removeObjectAndContentsFromBill,
-} from './shk.js';
-import { findObjectOwner, stolenValue } from './shop_loss.js';
+import { addShopObjectToBill, costlyAdjacent, costlySpot, removeObjectAndContentsFromBill, findObjectOwner, stolenValue } from './shk.js';
 
 export async function relocateObjectRandomly(object: GameObject, {
     state = game, publish = plineWithContinuation, random = rn2,

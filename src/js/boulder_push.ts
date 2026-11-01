@@ -42,10 +42,7 @@ import { launchRollingBoulder } from './rolling_boulder.js';
 import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import {
-    addShopObjectToBill, billForObject, costlySpot, removeObjectAndContentsFromBill, shopResident,
-} from './shk.js';
-import { findObjectOwner, stolenValue } from './shop_loss.js';
+import { addShopObjectToBill, billForObject, costlySpot, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue } from './shk.js';
 import { reviveNastyAt } from './revive_nasty.js';
 import { surfaceName } from './terrain_name.js';
 import { feelTrap, seeTrap } from './trap.js';

@@ -42,7 +42,7 @@ const RESISTANCES = [
     'acidResistance', 'stoneResistance',
 ] as const;
 const CANDIDATES = [...RESISTANCES, 'telepathy', 'teleportation', 'teleportControl'] as const;
-type CorpseIntrinsic = typeof CANDIDATES[number];
+export type CorpseIntrinsic = typeof CANDIDATES[number];
 type TimedCorpseResistance = 'acidResistance' | 'stoneResistance';
 const timedResistances: readonly TimedCorpseResistance[] = ['acidResistance', 'stoneResistance'];
 
@@ -85,7 +85,7 @@ export function chooseCorpseIntrinsic(mnum: number): CorpseIntrinsic | 'strength
     return selected;
 }
 
-function intrinsicPossible(property: CorpseIntrinsic, mnum: number) {
+export function intrinsicPossible(property: CorpseIntrinsic, mnum: number) {
     const resistance = RESISTANCES.findIndex(resistance => resistance === property);
     if (resistance >= 0) return !!(requireMonsterData(MONSTER_CONVEYS, mnum) & (1 << resistance));
     if (property === 'telepathy') return TELEPATHIC_SPECIES.has(mnum);

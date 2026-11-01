@@ -29,8 +29,7 @@ import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance } from './mon.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
-import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
-import { stolenValue } from './shop_loss.js';
+import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue } from './shk.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
 import {

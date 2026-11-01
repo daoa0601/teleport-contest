@@ -1,6 +1,6 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
 import { moneyToMonster } from './shop_damage.js';
-import { nameShopTransaction } from './shk.js';
+import { nameShopTransaction, shopkeeperIsMuted } from './shk.js';
 import { promptYesNo } from './query.js';
 import { currency } from './currency.js';
 import { QBUFSZ } from './const.js';
@@ -18,7 +18,6 @@ import { heroGoldAmount } from './hero_gold.js';
 import { objectDescription, paymentObjectDescription } from './object_description.js';
 import { definiteName, simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { plineWithContinuation } from './pline.js';
-import { shopkeeperIsMuted } from './shop_loss.js';
 import { heroIsDeaf } from './senses.js';
 import { shopkeeperName } from './shknam.js';
 import { unlinkObject } from './object_location.js';

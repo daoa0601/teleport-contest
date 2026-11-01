@@ -116,7 +116,7 @@ import {
 import { adjustMonsterSpeed } from './worn.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './rock_breakage.js';
-import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop } from './shk.js';
+import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopkeeperInOwnShop, shopkeeperIsMuted } from './shk.js';
 import { monsterAlignmentType } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
@@ -224,7 +224,6 @@ import {
 import { retouchEquipment } from './hero_retouch.js';
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { moveVaultGuard } from './vault.js';
-import { shopkeeperIsMuted } from './shop_loss.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage, rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';

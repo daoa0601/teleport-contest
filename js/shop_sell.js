@@ -3,7 +3,7 @@ import { currency } from './currency.js';
 // plus sellobj_state()'s command disposition.
 import { objectMaterial } from './object_material.js';
 import { monsterGoldAmount } from './hero_gold.js';
-import { nameShopTransaction, moneyToHero } from './shk.js';
+import { nameShopTransaction, moneyToHero, objectIsCandle, objectPricingUnits, shopGetPrice, shopkeeperIsMuted } from './shk.js';
 import { objectDescription } from './object_description.js';
 import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
@@ -19,7 +19,6 @@ import { OBJECT_COST, OBJECT_NAMES } from './object_data.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
-import { objectIsCandle, objectPricingUnits, shopGetPrice, shopkeeperIsMuted, } from './shop_loss.js';
 import { monsterIsHelpless } from './mondata.js';
 import { promptYesNoAllQuit } from './query.js';
 const WEAPON_CLASS = 2;

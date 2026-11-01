@@ -57,8 +57,7 @@ import { startCorpseTimeout } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion_hit.js';
 import { promptYesNoQuit } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { costlySpot, currentShopResident, chargeAlteredUnpaidObject } from './shk.js';
-import { stolenValue } from './shop_loss.js';
+import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue } from './shk.js';
 import { isBlade } from './weapon_type.js';
 
 const WEAPON_CLASS = 2;

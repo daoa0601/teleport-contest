@@ -11,11 +11,48 @@ import { deleteObject } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { rn2 } from './rng.js';
-import { chargeDestroyedShopContent, settleDestroyedShopCharges, } from './shop_loss.js';
 import { objectWeight } from './weight.js';
 import { changeHeroLuck } from './attrib.js';
+import { costlySpot, stolenValue, insideShopRoomAt } from './shk.js';
+import { roomsAt } from './room.js';
+import { makeAngryShopkeeper } from './shop_damage.js';
+import { shopkeeperName } from './shknam.js';
+import { SHOPBASE } from './const.js';
+import { currency } from './currency.js';
 const GEM_CLASS = 13;
 const GLASS = 19;
+// dokick.c:443-450 per-item adapter: mark no_charge for the hero's own
+// contents, then charge the item at its pre-destruction value.  Called by
+// the container-impact owner immediately before each deletion.
+export async function chargeDestroyedShopContent(object, x, y, fromInventory, { publish = plineWithContinuation, state = game } = {}) {
+    requireLiveGame(state);
+    const spot = costlySpot(x, y, state);
+    if (!spot)
+        return 0;
+    if (fromInventory && !object.unpaid)
+        object.no_charge = true;
+    return stolenValue(object, x, y, !!spot.resident.mpeaceful, { silent: true, publish, state });
+}
+// dokick.c:476-484 summary: insider debt or outsider damage and anger.
+export async function settleDestroyedShopCharges({ loss, x, y, publish = plineWithContinuation, state = game }) {
+    requireLiveGame(state);
+    const spot = costlySpot(x, y, state);
+    if (!spot || !loss)
+        return { loss, settled: false };
+    const objectRooms = roomsAt(state.level, x, y, SHOPBASE);
+    // C inside_shop(): a boundary hero is an outsider; the decode is the
+    // shared shk helper, and the first-room equality stays separate.
+    const heroRoom = insideShopRoomAt(state, state.u.ux, state.u.uy);
+    const insider = heroRoom != null && objectRooms[0] === heroRoom.roomno;
+    if (!insider) {
+        await publish(`You caused ${loss} ${currency(loss)} worth of damage!`);
+        await makeAngryShopkeeper(spot.resident, state);
+    }
+    else {
+        await publish(`You owe ${shopkeeperName(spot.resident)} ${loss} ${currency(loss)} for objects destroyed.`);
+    }
+    return { loss, settled: true };
+}
 export async function containerImpactDamage(container, x, y, { state = game, publish = plineWithContinuation, random = rn2, fromInventory = true, } = {}) {
     // Contents breakage mutates live floor state, shop billing, and the
     // topline.

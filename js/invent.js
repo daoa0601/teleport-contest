@@ -52,7 +52,7 @@ import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
-import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk.js';
+import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot } from './shk.js';
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
@@ -877,6 +877,26 @@ async function inspectHere() {
     }
     const { tookTime } = await lookHere(0);
     game.context.move = tookTime ? 1 : 0;
+}
+// C invent.c:count_contents(container, nested, quantity, everything, FALSE):
+// shk.c:stolen_value() sizes a broken container's shop-owned contents.
+export function countContents(container, { quantity = false, everything = false } = {}, state = game) {
+    let shoppy = false;
+    if (!everything) {
+        let top = container;
+        while (top.container)
+            top = top.container;
+        if (top.where === 'floor')
+            shoppy = !!costlySpot(top.ox, top.oy, state);
+    }
+    let count = 0;
+    for (const content of container.contents || []) {
+        if (content.contents?.length)
+            count += countContents(content, { quantity, everything }, state);
+        if (everything || content.unpaid || (shoppy && !content.no_charge))
+            count += quantity ? (content.quan ?? content.quantity ?? 1) : 1;
+    }
+    return count;
 }
 // C invent.c:doperminv(). The recorder's tty port is built without
 // TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is
