@@ -2432,26 +2432,6 @@ export async function moveMonsterAfterTrap(monster, state, random, rollDice, rol
         await finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext);
     return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
 }
-// shk_move()/pri_move() discard the first mattacku() result and return zero.
-// Resume that same movement only after the complete attack has been presented.
-export async function resumeDeferredSpecialAttack(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    const movement = action.movement;
-    if (!movement?.deferredAfterSpecialAttack)
-        return action;
-    delete movement.deferredAfterSpecialAttack;
-    delete movement.heroAttackSequence;
-    if (state.program_state.gameover)
-        return action;
-    const previousDeferral = state._deferVisibleMonsterContact;
-    state._deferVisibleMonsterContact = true;
-    try {
-        await completeMovedMonsterAction(action.monster, movement, state, random, rollDice, rollOne, action.calls, action.dochugContext);
-    }
-    finally {
-        state._deferVisibleMonsterContact = previousDeferral;
-    }
-    return action;
-}
 // Resume m_move() immediately after tele_restrict() has emitted the visible
 // failed-teleport line.  The same actor still owns ordinary destination
 // selection, postmov(), the second distfleeck(), and any phase-four attack.

@@ -33,9 +33,10 @@ import {
     seenResistanceForDamage,
 } from './mondata.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
-    monsterHatesBlessings, monsterHasNoLimbs, monsterIsAnimal, monsterIsThickSkinned, monsterIsUndead,
-    monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
+    monsterDigests, monsterHatesBlessings, monsterHasNoLimbs, monsterIsAnimal, monsterIsThickSkinned,
+    monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName,
+    requireMonsterData,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DGST, AD_DRIN,
@@ -73,7 +74,7 @@ import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
 import { d, rn2, rnd } from './rng.js';
 import {
-    completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPostMove,
+    completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove,
     requirePerceivedHero,
 } from './monmove.js';
 import {
@@ -90,7 +91,7 @@ import {
 } from './mcastu.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveDeferredHeroItemTheft, addObjectToMonsterInventory } from './steal.js';
-import { finishDeferredHeroSlime, resumeDeferredHeroSlime } from './slime.js';
+import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, startHeroSliming } from './slime.js';
 import { bot } from './botl.js';
 import { trapAt } from './trap.js';
 import { selectAttack } from './attack_selection.js';
@@ -156,6 +157,8 @@ const M2_ORC = 0x00000080;
 const S_EEL = 57;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_LEATHER_GOLEM = 253;
+const PM_WOOD_GOLEM = 254;
+const PM_IRON_GOLEM = 259;
 async function monsterAttackMessage(
     monster: Monster, attack: HeroContactAttack & HeroAttackSlot,
     previousAttack: (HeroAttack & HeroAttackSlot) | null = null,
@@ -230,7 +233,6 @@ async function resolveErosionFormRehumanization(
     });
     heroAttack.heroDied = restored.died;
 
-    heroAttack.deferredPostHit = !restored.died;
     return pagerOwned;
 }
 export async function presentMonsterAttackEffects(
@@ -548,17 +550,39 @@ export async function presentMonsterAttackEffects(
                         heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                         continue;
                     }
-                if (heroAttack.deferredRevealUnder) {
+                if (heroAttack.revealUnderMessage !== null
+                    && heroAttack.revealUnderMessage !== undefined) {
+                    // C mhitu.c:hitmu(): the hidden-attacker reveal line
+                    // precedes the base-damage roll, and the to-hit die
+                    // was already consumed.  Resume this same slot with
+                    // that roll retained once the line has crossed tty.
                     const revealDismissal = await plineWithContinuation(
-                        heroAttack.revealUnderMessage ?? '',
+                        heroAttack.revealUnderMessage,
                     );
+                    heroAttack.revealUnderMessage = null;
                     await newsym(monster.mx, monster.my);
                     if (revealDismissal !== null
                         && revealDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
-                    heroAttack = await resumeDeferredHeroReveal(action, game);
-                    if (!heroAttack) break;
+                    const sequence = action.movement.heroAttackSequence;
+                    if (!sequence) break;
+                    const resumed = await beginHeroAttackSlot(
+                        sequence,
+                        heroAttack,
+                        game,
+                        rn2,
+                        rnd,
+                        d,
+                        action.calls,
+                        { roll: heroAttack.roll ?? null, hit: heroAttack.hit },
+                        true,
+                    );
+                    if (resumed?.kind !== 'hero-attack')
+                        throw new Error('A revealed contact attack must resume the same attack slot');
+                    heroAttack = { ...heroAttack, ...resumed };
+                    heroAttack.revealUnderMessage = null;
+                    sequence.current = heroAttack;
                 }
                 // Hero-command and actor-prose history do not themselves
                 // decide whether tty has repainted status.  The fatal path
@@ -569,12 +593,13 @@ export async function presentMonsterAttackEffects(
                 // in hero memory so a pager or later blind docrt() cannot
                 // erase the source of the attack.  A hidden attacker was
                 // already mapped before its reveal redrew the square.
-                if (!heroAttack.deferredEngulf
-                    && !heroAttack.attackerMapped
+                if (heroAttack.effect !== 'engulf'
+                    && heroAttack.effect !== 'engulf-tick'
                     && heroAttack.effect !== 'wild-miss'
                     && heroAttack.effect !== 'engulf-unfound'
                     && heroAttack.effect !== 'engulf-refused'
                     && heroAttack.effect !== 'failed-grab'
+                    && !heroAttack.attackerMapped
                     && !canSpotMonster(monster))
                     await map_invisible(monster.mx, monster.my);
                 const publishEquipmentMessage: typeof plineWithContinuation = async (line, options) => {
@@ -582,8 +607,44 @@ export async function presentMonsterAttackEffects(
                     if (dismissal != null) paging.pagerOwned = true;
                     return dismissal;
                 };
+                // C mhitu.c:hitmu() runs mhitm_adtyping(), then
+                // mhitm_knockback(), the armor-class reduction and
+                // mdamageu()/passiveum() as one tail.  The begin-phase slot
+                // records the rolls and the ad_* inputs; the shared tail
+                // still runs here for every contact that branch left open.
+                // The direct beginHeroAttackSlot branches — reached when a
+                // resumed movement finish (hidden attacker the hero senses)
+                // runs without the presenter's contact deferral — already
+                // applied the whole tail and recorded their passiveum
+                // result, so those slots only project their hit line.
+                const contactCompletedInline = heroAttack.passive !== undefined;
+                let contactTailPending = !contactCompletedInline && (
+                    heroAttack.deferredSpecialContact
+                    || heroAttack.effect === 'physical-weapon'
+                    || heroAttack.effect === 'physical-natural'
+                    || heroAttack.effect === 'physical-hug'
+                    || heroAttack.effect === 'physical-unarmed-weapon'
+                    || heroAttack.effect === 'silent-physical-touch'
+                    || heroAttack.effect === 'poisonous-natural'
+                    || heroAttack.effect === 'fire-natural'
+                    || heroAttack.effect === 'cold-natural'
+                    || heroAttack.effect === 'electric-natural'
+                    || heroAttack.effect === 'life-drain-natural'
+                    || heroAttack.effect === 'enchantment-natural'
+                    || heroAttack.effect === 'stun-natural'
+                    || heroAttack.effect === 'leg-natural'
+                    || heroAttack.effect === 'stoning-natural'
+                    || heroAttack.effect === 'sticking-natural'
+                    || heroAttack.effect === 'slime-natural'
+                    || heroAttack.effect === 'rust-natural'
+                    || heroAttack.effect === 'corrosion-natural'
+                    || heroAttack.effect === 'decay-natural'
+                    || heroAttack.effect === 'cancelled-rust-natural'
+                    || heroAttack.effect === 'cancelled-corrosion-natural'
+                    || heroAttack.effect === 'cancelled-decay-natural'
+                );
                 if (heroAttack.hit && heroAttack.effect === 'physical-weapon'
-                    && heroAttack.deferredPostHit) {
+                    && !contactCompletedInline) {
                     const artifact = await applyArtifactHit(monsterWieldedWeapon(monster), 'hero',
                         heroAttack.damage ?? 0, {
                             state: game, attacker: monster, dieRoll: heroAttack.roll ?? 0,
@@ -629,16 +690,20 @@ export async function presentMonsterAttackEffects(
                     });
                 if (game.program_state.gameover)
                     return { heroDied: true };
-                if (heroAttack.deferredStickingAfterHit)
-                    resumeDeferredHeroSticking(action, game);
-                if (heroAttack.stickingMessage) {
-                    const stickingDismissal = await plineWithContinuation(
-                        heroAttack.stickingMessage,
-                    );
-                    heroAttack.stickingMessage = null;
-                    if (stickingDismissal !== null
-                        && stickingDismissal !== undefined) {
-                        paging.pagerOwned = true;
+                if (heroAttack.effect === 'sticking-natural') {
+                    // C uhitm.c:mhitm_ad_stck() mhitu branch: set_ustuck()
+                    // and the barbs line follow hitmsg() directly.
+                    if (!heroAttack.negated && !game.u?.ustuck && !heroFormSticks(game)) {
+                        setHeroGrip(monster, game);
+                        if (monster.mnum === 293) {
+                            const stickingDismissal = await plineWithContinuation(
+                                'The barbs stick to you!',
+                            );
+                            if (stickingDismissal !== null
+                                && stickingDismissal !== undefined) {
+                                paging.pagerOwned = true;
+                            }
+                        }
                     }
                 }
                 if (heroAttack.deferredItemTheft) {
@@ -655,34 +720,61 @@ export async function presentMonsterAttackEffects(
                         publish: publishEquipmentMessage,
                     });
                 }
-                if (heroAttack.deferredEngulf) {
-                    const engulf = await resumeDeferredHeroEngulf(action, game, {
-                        publish: publishEquipmentMessage,
-                        die: (attacker: Monster, options: MonsterAttackDeathOptions = {}) => finishMonsterAttackDeath(attacker, {
-                            ...options,
-                            pagerOwned: paging.pagerOwned,
-                        }),
-                        flushMessages: async () => {
-                            const dismissal = await displayMessageWindow();
-                            if (dismissal != null) paging.pagerOwned = true;
+                if (heroAttack.effect === 'engulf' || heroAttack.effect === 'engulf-tick') {
+                    // C mhitu.c:gulpmu(): the capture prose and every
+                    // per-slot digestion effect run directly here.
+                    const engulf = await presentHeroEngulfSlot(
+                        monster, heroAttack, game, {
+                            publish: publishEquipmentMessage,
+                            die: (attacker: Monster, options: MonsterAttackDeathOptions = {}) => finishMonsterAttackDeath(attacker, {
+                                ...options,
+                                pagerOwned: paging.pagerOwned,
+                            }),
+                            flushMessages: async () => {
+                                const dismissal = await displayMessageWindow();
+                                if (dismissal != null) paging.pagerOwned = true;
+                            },
+                            random, rollOne, calls: action.calls,
                         },
-                    });
+                    );
                     if (engulf?.died || game.program_state.gameover) return { heroDied: true };
                 }
-                if (heroAttack.deferredSlimeEffect)
-                    resumeDeferredHeroSlime(action, game);
-                if (heroAttack.slimeEffectMessage) {
-                    const slimeDismissal = await plineWithContinuation(
-                        heroAttack.slimeEffectMessage,
-                    );
-                    heroAttack.slimeEffectMessage = null;
-                    if (slimeDismissal !== null
-                        && slimeDismissal !== undefined) {
-                        paging.pagerOwned = true;
+                if (heroAttack.effect === 'slime-natural') {
+                    // C uhitm.c:mhitm_ad_slim() mhitu branch: the negation
+                    // gate, the slime line and make_slimed() follow hitmsg();
+                    // the contact's ordinary damage remains unless the hero's
+                    // current form cannot be slimed.
+                    let slimeMessage: string | null = null;
+                    let slimeKiller: string | null = null;
+                    if (heroAttack.slimeNegated) {
+                        if (!heroAttack.slimeCancelled)
+                            slimeMessage = 'You escape harm.';
+                    } else if (heroIsFlaming(game)) {
+                        heroAttack.damage = 0;
+                        slimeMessage = 'The slime burns away!';
+                    } else if (game.u?.unchanging || game.unchanging
+                        || heroIsNoncorporeal(game)
+                        || heroIsGreenSlime(game)) {
+                        heroAttack.damage = 0;
+                        slimeMessage = 'You are unaffected.';
+                    } else if (!heroIsSliming(game)) {
+                        slimeMessage = "You don't feel very well.";
+                        slimeKiller = requireMonsterData(MONSTER_NAME, monster.mnum);
+                    } else {
+                        slimeMessage = 'Yuck!';
                     }
+                    if (slimeMessage) {
+                        const slimeDismissal = await plineWithContinuation(
+                            slimeMessage,
+                        );
+                        if (slimeDismissal !== null
+                            && slimeDismissal !== undefined) {
+                            paging.pagerOwned = true;
+                        }
+                    }
+                    if (slimeKiller !== null)
+                        startHeroSliming({ state: game, killer: slimeKiller });
                 }
-                if (heroAttack.slimeStartPending)
-                    finishDeferredHeroSlime(action, game);
                 if (heroAttack.effect === 'cold-natural') {
                     // C uhitm.c:mhitm_ad_cold() mhitu branch: hitmsg(),
                     // magic cancellation, the frost lines and the gated
@@ -706,7 +798,7 @@ export async function presentMonsterAttackEffects(
                     if (cold.heroDied) return { heroDied: true };
                     if (cold.heroAtZeroHitPoints) {
                         heroAttack.heroDied = true;
-                        heroAttack.deferredPostHit = false;
+                        contactTailPending = false;
                     }
                 }
                 if (heroAttack.effect === 'fire-natural') {
@@ -734,7 +826,7 @@ export async function presentMonsterAttackEffects(
                     if (fire.heroDied) return { heroDied: true };
                     if (fire.heroAtZeroHitPoints) {
                         heroAttack.heroDied = true;
-                        heroAttack.deferredPostHit = false;
+                        contactTailPending = false;
                     }
                 }
                 if (heroAttack.effect === 'electric-natural') {
@@ -760,7 +852,7 @@ export async function presentMonsterAttackEffects(
                     if (electric.heroDied) return { heroDied: true };
                     if (electric.heroAtZeroHitPoints) {
                         heroAttack.heroDied = true;
-                        heroAttack.deferredPostHit = false;
+                        contactTailPending = false;
                     }
                 }
                 if (heroAttack.effect === 'life-drain-natural') {
@@ -858,45 +950,50 @@ export async function presentMonsterAttackEffects(
                     });
                     heroAttack.damage = legs.damage;
                 }
-                if (heroAttack.deferredRustRehumanize) {
-                    const rustFormPagerOwned
-                        = await resolveErosionFormRehumanization(
+                // C uhitm.c:mhitm_ad_rust()/mhitm_ad_corr()/mhitm_ad_dcay()
+                // mhitu branches: a cancelled attacker stops after hitmsg();
+                // a completely rustable/rottable hero form rehumanizes, and
+                // every other hero loses armor erosion before hitmu()'s
+                // shared knockback and damage tail.
+                if (heroAttack.effect === 'rust-natural') {
+                    if (Upolyd(game.u) && game.u.umonnum === PM_IRON_GOLEM) {
+                        const rehumanizePager = await resolveErosionFormRehumanization(
                             heroAttack, 'You rust!',
                         );
-                    paging.pagerOwned ||= rustFormPagerOwned;
-                    heroAttack.deferredRustRehumanize = false;
+                        paging.pagerOwned ||= rehumanizePager;
+                        if (heroAttack.heroDied) contactTailPending = false;
+                    } else {
+                        await erodeArmor(game.u, 'rust', { publish: publishEquipmentMessage });
+                    }
                 }
-                if (heroAttack.deferredDecayRehumanize) {
-                    const decayPagerOwned = await resolveErosionFormRehumanization(
-                        heroAttack, 'You rot!',
-                    );
-                    paging.pagerOwned ||= decayPagerOwned;
-                    heroAttack.deferredDecayRehumanize = false;
+                if (heroAttack.effect === 'corrosion-natural') {
+                    await erodeArmor(game.u, 'corrosion', { publish: publishEquipmentMessage });
                 }
-                const armorErosion = heroAttack.deferredRustArmor ? 'rust'
-                    : heroAttack.deferredCorrosionArmor ? 'corrosion'
-                        : heroAttack.deferredDecayArmor ? 'rot' : null;
-                if (armorErosion) {
-                    await erodeArmor(game.u, armorErosion, { publish: publishEquipmentMessage });
-                    heroAttack.deferredRustArmor = false;
-                    heroAttack.deferredCorrosionArmor = false;
-                    heroAttack.deferredDecayArmor = false;
-                    heroAttack.deferredPostHit = true;
+                if (heroAttack.effect === 'decay-natural') {
+                    if (Upolyd(game.u)
+                        && (game.u.umonnum === PM_LEATHER_GOLEM || game.u.umonnum === PM_WOOD_GOLEM)) {
+                        const rehumanizePager = await resolveErosionFormRehumanization(
+                            heroAttack, 'You rot!',
+                        );
+                        paging.pagerOwned ||= rehumanizePager;
+                        if (heroAttack.heroDied) contactTailPending = false;
+                    } else {
+                        await erodeArmor(game.u, 'rot', { publish: publishEquipmentMessage });
+                    }
                 }
-                if (heroAttack.deferredPostHit) {
+                if (contactTailPending) {
                     const publishContactMessage: typeof plineWithContinuation = async (message, options) => {
                         const dismissal = await plineWithContinuation(message, options);
                         if (dismissal !== null && dismissal !== undefined)
                             paging.pagerOwned = true;
                         return dismissal;
                     };
-                    const contactOptions = {
-                        random, rollDice, rollOne,
-                        publish: publishContactMessage,
-                        die: finishHeroDeathAfterMonsterMessage,
-                    };
-                    await resumeDeferredHeroContact(
-                        action, game, contactOptions,
+                    await completeHeroContactTail(
+                        action, heroAttack, game, {
+                            random, rollDice, rollOne,
+                            publish: publishContactMessage,
+                            die: finishHeroDeathAfterMonsterMessage,
+                        },
                     );
                     if (game.program_state?.gameover) return { heroDied: true };
                 }
@@ -945,7 +1042,29 @@ export async function presentMonsterAttackEffects(
         }
         if (!movement?.deferredAfterSpecialAttack || game.program_state?.gameover)
             break;
-        await resumeDeferredSpecialAttack(action, game, random, rollDice, rollOne);
+        // C shk_move()/pri_move() discard the first mattacku() result and
+        // finish their own movement only after the complete attack has been
+        // presented; the resumed finish keeps deferring any later contact.
+        delete movement.deferredAfterSpecialAttack;
+        delete movement.heroAttackSequence;
+        if (!game.program_state.gameover) {
+            const previousDeferral = game._deferVisibleMonsterContact;
+            game._deferVisibleMonsterContact = true;
+            try {
+                await completeMovedMonsterAction(
+                    action.monster,
+                    movement,
+                    game,
+                    random,
+                    rollDice,
+                    rollOne,
+                    action.calls,
+                    action.dochugContext,
+                );
+            } finally {
+                game._deferVisibleMonsterContact = previousDeferral;
+            }
+        }
         movement = action.movement;
         if (await presentMonsterPostMove(action, game))
             return { heroDied: true };
@@ -1634,7 +1753,6 @@ async function beginHeroAttackSlot(
                 return {
                     kind: 'hero-attack', roll, threshold, hit,
                     attackType, damageType, attackIndex,
-                    deferredRevealUnder: true,
                     revealUnderMessage: `${name === 'It' ? 'Something' : name} was hidden under ${what}!`,
                 };
             }
@@ -1675,7 +1793,6 @@ async function beginHeroAttackSlot(
                 damageType,
                 effect: 'engulf-tick',
                 engulfDamage: damage,
-                deferredEngulf: 'effect',
             };
         }
         if (!monsterCanEngulfHero(monster, state)) {
@@ -1720,7 +1837,6 @@ async function beginHeroAttackSlot(
             attackIndex,
             effect: 'engulf',
             engulfDamage: damage,
-            deferredEngulf: 'capture',
             engulfOldX,
             engulfOldY,
         };
@@ -1774,7 +1890,6 @@ async function beginHeroAttackSlot(
                 effect: 'physical-weapon',
                 oldFormMnum,
                 poison,
-                deferredPostHit: true,
             };
         }
         const artifact = await applyArtifactHit(contactWeapon, 'hero', damage, {
@@ -1904,7 +2019,6 @@ async function beginHeroAttackSlot(
                 damageType,
                 effect: 'poisonous-natural',
                 poison,
-                deferredPostHit: true,
             };
         }
         if (poison) {
@@ -1993,7 +2107,6 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'sticking-natural',
             negated,
-            deferredStickingAfterHit: true,
             oldFormMnum,
         };
     } else if (
@@ -2014,9 +2127,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'fire-natural',
             // uhitm.ts:mhitmAdFire() runs the whole mhitm_ad_fire() body
-            // with direct awaits; only hitmu()'s shared knockback and damage
-            // tail remains deferred with the other contact effects.
-            deferredPostHit: true,
+            // with direct awaits; hitmu()'s shared knockback and damage
+            // tail runs after it in the slot presentation.
             oldFormMnum,
         };
     } else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
@@ -2030,9 +2142,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'cold-natural',
             // uhitm.ts:mhitmAdCold() runs the whole mhitm_ad_cold() body
-            // with direct awaits; only hitmu()'s shared knockback and damage
-            // tail remains deferred with the other contact effects.
-            deferredPostHit: true,
+            // with direct awaits; hitmu()'s shared knockback and damage
+            // tail runs after it in the slot presentation.
         };
     } else if (
         hit &&
@@ -2052,9 +2163,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'electric-natural',
             // uhitm.ts:mhitmAdElec() runs the whole mhitm_ad_elec() body
-            // with direct awaits; only hitmu()'s shared knockback and damage
-            // tail remains deferred with the other contact effects.
-            deferredPostHit: true,
+            // with direct awaits; hitmu()'s shared knockback and damage
+            // tail runs after it in the slot presentation.
         };
     } else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
         // hitmu() records the attack's declared zero dice before dispatching
@@ -2082,9 +2192,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'leg-natural',
             // uhitm.ts:mhitmAdLegs() runs the whole mhitm_ad_legs() mhitu
-            // body with direct awaits; only hitmu()'s shared knockback and
-            // damage tail remains deferred with the other contact effects.
-            deferredPostHit: true,
+            // body with direct awaits; hitmu()'s shared knockback and
+            // damage tail runs after it in the slot presentation.
             oldFormMnum,
         };
     } else if (hit && damageType === AD_BLND && dice > 0 && sides > 0) {
@@ -2112,9 +2221,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'stun-natural',
             // uhitm.ts:mhitmAdStun() runs the whole mhitm_ad_stun() mhitu
-            // body with direct awaits; only hitmu()'s shared knockback and
-            // damage tail remains deferred with the other contact effects.
-            deferredPostHit: true,
+            // body with direct awaits; hitmu()'s shared knockback and
+            // damage tail runs after it in the slot presentation.
             oldFormMnum,
         };
     } else if (hit && damageType === AD_SLIM) {
@@ -2132,13 +2240,7 @@ async function beginHeroAttackSlot(
             effect: 'slime-natural',
             slimeNegated: negated,
             slimeCancelled: cancelled,
-            deferredSlimeEffect: true,
             oldFormMnum,
-        };
-    } else if (hit && damageType === AD_WERE) {
-        return {
-            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
-            deferredPostHit: true, oldFormMnum,
         };
     } else if (hit && damageType === AD_STON) {
         return {
@@ -2150,14 +2252,11 @@ async function beginHeroAttackSlot(
             attackType,
             damageType,
             effect: 'stoning-natural',
-            deferredPostHit: true,
         };
     } else if (hit && damageType === AD_RUST) {
         // uhitm.c:mhitm_ad_rust() still receives hitmu()'s declared 0d0
-        // damage and publishes hitmsg() before cancellation or erode_armor().
-        // Armor erosion is a separately resumable message owner; shared
-        // knockback gates follow it before mattacku() advances attack slots.
-        const completelyRustableForm = Upolyd(state?.u) && state.u.umonnum === 259;
+        // damage and publishes hitmsg() before cancellation or erode_armor();
+        // the slot presentation owns that line and the erosion gate.
         return {
             kind: 'hero-attack',
             roll,
@@ -2168,15 +2267,11 @@ async function beginHeroAttackSlot(
             damageType,
             effect: monster.mcan ? 'cancelled-rust-natural' : 'rust-natural',
             oldFormMnum,
-            deferredRustRehumanize: !monster.mcan && completelyRustableForm,
-            deferredRustArmor: !monster.mcan && !completelyRustableForm,
-            deferredPostHit: !!monster.mcan,
         };
     } else if (hit && damageType === AD_CORR) {
         // uhitm.c:mhitm_ad_corr() keeps the bite's declared 3d8 damage, but
         // hitmsg() and erode_armor(ERODE_CORRODE) both precede the common
-        // knockback and HP-damage tail.  Keep armor erosion resumable across
-        // tty exactly as for rust without conflating primary/secondary state.
+        // knockback and HP-damage tail.
         return {
             kind: 'hero-attack',
             roll,
@@ -2187,15 +2282,11 @@ async function beginHeroAttackSlot(
             damageType,
             effect: monster.mcan ? 'cancelled-corrosion-natural' : 'corrosion-natural',
             oldFormMnum,
-            deferredCorrosionArmor: !monster.mcan,
-            deferredPostHit: !!monster.mcan,
         };
     } else if (hit && damageType === AD_DCAY) {
         // uhitm.c:mhitm_ad_dcay() follows the same hitmsg/cancellation/armor
-        // continuation shape as rust, but erodes secondary rot state and
-        // deliberately disables grease protection.
-        const completelyRottableForm =
-            Upolyd(state?.u) && [PM_LEATHER_GOLEM, 254].includes(state.u.umonnum);
+        // shape as rust, but erodes secondary rot state and deliberately
+        // disables grease protection.
         return {
             kind: 'hero-attack',
             roll,
@@ -2206,9 +2297,6 @@ async function beginHeroAttackSlot(
             damageType,
             effect: monster.mcan ? 'cancelled-decay-natural' : 'decay-natural',
             oldFormMnum,
-            deferredDecayRehumanize: !monster.mcan && completelyRottableForm,
-            deferredDecayArmor: !monster.mcan && !completelyRottableForm,
-            deferredPostHit: !!monster.mcan,
         };
     } else if (hit && damageType === AD_ENCH) {
         return {
@@ -2221,9 +2309,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'enchantment-natural',
             // uhitm.ts:mhitmAdEnch() runs the negation probe, hitmsg(), the
-            // armor drain and its line with direct awaits; only hitmu()'s
-            // shared knockback and damage tail remains deferred.
-            deferredPostHit: true,
+            // armor drain and its line with direct awaits; hitmu()'s shared
+            // knockback and damage tail runs after it in the presentation.
             oldFormMnum,
         };
     } else if (hit && damageType === AD_DRLI) {
@@ -2237,10 +2324,8 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'life-drain-natural',
             // uhitm.ts:mhitmAdDrli() runs hitmsg(), the selection gate and
-            // losexp() with direct awaits; only hitmu()'s shared knockback
-            // and damage tail remains deferred with the other contact
-            // effects.
-            deferredPostHit: true,
+            // losexp() with direct awaits; hitmu()'s shared knockback and
+            // damage tail runs after it in the slot presentation.
             oldFormMnum,
         };
     } else if (
@@ -2260,8 +2345,8 @@ async function beginHeroAttackSlot(
             : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
         // hitmu() rolls ordinary physical damage before pline() announces the
         // hit, but knockback and HP subtraction happen after that message.
-        // The tty can suspend inside pline() for --More--, so the live actor
-        // driver must be able to resume this same contact after input.
+        // The deferred slot records that boundary; the presenter resumes the
+        // same contact when the hit line returns from tty.
         if (deferVisibleContact) {
             return {
                 kind: 'hero-attack',
@@ -2273,7 +2358,6 @@ async function beginHeroAttackSlot(
                 damageType,
                 effect: physicalEffect,
                 oldFormMnum,
-                deferredPostHit: true,
             };
         }
         // hitmu() enters mhitm_knockback() after ordinary physical damage.
@@ -2330,9 +2414,11 @@ function monsterGrabPassesThroughHero(attack: AttackTuple, state: PlayingGameSta
         && (attack[0] === AT_HUGS || [AD_DGST, AD_STCK, AD_WRAP].includes(attack[1]));
 }
 
-// Initial capture and every subsequent slot resume into the same gulpmu body.
-export async function resumeDeferredHeroEngulf(
-    action: MonsterMovementAction,
+// C mhitu.c:gulpmu(), presented after mattacku()'s flush_screen(1): the
+// initial capture and every subsequent swallowed slot resolve here.
+async function presentHeroEngulfSlot(
+    monster: Monster,
+    attack: HeroContactAttack,
     state: PlayingGameState,
     {
         random = rn2,
@@ -2340,14 +2426,11 @@ export async function resumeDeferredHeroEngulf(
         publish = plineWithContinuation,
         flushMessages,
         die,
-    }: MonsterEngulfOptions = {},
+        calls = [],
+    }: MonsterEngulfOptions & { calls?: MonsterCallLog } = {},
 ) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredEngulf) return null;
     if (attack.engulfDamage === undefined)
-        throw new Error('A deferred engulf must retain its rolled damage');
-    const monster = action.monster;
-    const calls = action.calls;
+        throw new Error('An engulf slot must retain its rolled damage');
     const options = {
         state,
         publish,
@@ -2360,13 +2443,11 @@ export async function resumeDeferredHeroEngulf(
             return value;
         },
     };
-    if (attack.deferredEngulf === 'capture') {
+    if (attack.effect === 'engulf') {
         const capture = await beginHeroEngulf(monster, attack, options);
         if (!capture.captured) {
             attack.hit = false;
             attack.damage = attack.appliedDamage = 0;
-            attack.deferredEngulf = false;
-            attack.engulfResolved = true;
             delete attack.engulfDamage;
             return { died: capture.died };
         }
@@ -2379,8 +2460,6 @@ export async function resumeDeferredHeroEngulf(
     );
     attack.hit = result.hit;
     attack.damage = attack.appliedDamage = result.damage;
-    attack.deferredEngulf = false;
-    attack.engulfResolved = true;
     delete attack.engulfDamage;
     return result;
 }
@@ -2409,10 +2488,11 @@ async function knockHeroFromMonster(
     });
 }
 
-// Continue an ordinary natural hit after its visible hit message has been
-// accepted.  C ref: mhitu.c:hitmu() -> mhitm_knockback(), then losehp().
-export async function resumeDeferredHeroContact(
+// C mhitu.c:hitmu() after mhitm_adtyping(): mhitm_knockback(), the
+// armor-class and permanent-damage reductions, mdamageu() and passiveum().
+async function completeHeroContactTail(
     action: MonsterMovementAction,
+    attack: HeroContactAttack,
     state: PlayingGameState,
     {
         random = rn2,
@@ -2422,16 +2502,16 @@ export async function resumeDeferredHeroContact(
         die,
     }: MonsterDamageOptions = {},
 ) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredPostHit) return action;
     const calls = action.calls;
     if (
         attack.damageType === AD_STON &&
         await applyMonsterStoningAttack(action.monster, { state, random, publish })
     ) {
-        await knockHeroFromMonster(action.monster, attack, state, random, publish);
-        attack.deferredPostHit = false;
-        return action;
+        // C uhitm.c:mhitm_ad_ston() mhitu branch: a successful do_stone_u()
+        // sets mhm.done, so hitmu() returns before mhitm_knockback() and
+        // stop_occupation().
+        attack.contactDone = true;
+        return;
     }
     if (attack.poison) {
         const poison = await poisonHeroFromMonster(action.monster, attack.attackType, {
@@ -2446,21 +2526,18 @@ export async function resumeDeferredHeroContact(
         attack.poison = null;
         if (poison.died) {
             attack.heroDied = true;
-            attack.deferredPostHit = false;
-            return action;
+            return;
         }
     }
     const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
     if (knockback.defenderLeftLevel) attack.attackerDone = true;
     if (knockback.defenderDied) {
         attack.heroDied = true;
-        attack.deferredPostHit = false;
-        return action;
+        return;
     }
     if (attack.contactDone) {
         attack.nativeResult ??= M_ATTK_HIT;
-        attack.deferredPostHit = false;
-        return action;
+        return;
     }
     attack.appliedDamage = reduceHeroContactDamage(action.monster, attack.damage ?? 0, state, rollOne, calls);
     if (attack.permanentDamage && attack.appliedDamage > 0) {
@@ -2487,56 +2564,8 @@ export async function resumeDeferredHeroContact(
         { random, rollDice, publish, ...(die ? { die } : {}) },
     );
     if (attack.passive.heroDied) attack.heroDied = true;
-    attack.deferredPostHit = false;
-    return action;
 }
 
-export function resumeDeferredHeroSticking(action: MonsterMovementAction, state: PlayingGameState) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredStickingAfterHit) return action;
-    if (!attack.negated && !state.u?.ustuck && !heroFormSticks(state)) {
-        setHeroGrip(action.monster, state);
-        attack.stuckHero = true;
-        if (action.monster?.mnum === 293) attack.stickingMessage = 'The barbs stick to you!';
-    }
-    attack.deferredStickingAfterHit = false;
-    attack.deferredPostHit = true;
-    return action;
-}
-
-// Resume hitmu() after its concealed-attacker line has crossed tty.  The
-// mattacku() to-hit die belongs before that line; base damage and every later
-// contact effect belong after it.
-export async function resumeDeferredHeroReveal(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollDice: RollDice = d,
-    rollOne: RollOne = rnd,
-) {
-    const sequence = action.movement?.heroAttackSequence;
-    if (!sequence) return null;
-    const attack = sequence.current;
-    if (attack?.kind !== 'hero-attack') return null;
-    if (!attack.deferredRevealUnder) return attack;
-    const resumed = await beginHeroAttackSlot(
-        sequence,
-        attack,
-        state,
-        random,
-        rollOne,
-        rollDice,
-        action.calls,
-        { roll: attack.roll ?? null, hit: attack.hit },
-        true,
-    );
-    delete attack.deferredRevealUnder;
-    if (resumed?.kind !== 'hero-attack')
-        throw new Error('A revealed contact attack must resume the same attack slot');
-    const resumedContact: HeroContactAttack & HeroAttackSlot = { ...attack, ...resumed };
-    sequence.current = resumedContact;
-    return resumedContact;
-}
 
 export async function completeHeroAttackSlot(
     action: MonsterMovementAction,

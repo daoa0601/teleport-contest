@@ -266,37 +266,23 @@ export interface HeroContactAttack extends HeroAttackProgress {
     effect?: string;
     passive?: { heroDied?: boolean; attackerStopped?: boolean };
     negated?: boolean;
-    deferredPostHit?: boolean;
     deferredSpecialContact?: boolean;
     skipBrainDrain?: boolean;
     contactDone?: boolean;
     permanentDamage?: boolean;
-    deferredRevealUnder?: boolean;
-    revealUnderMessage?: string;
+    /** hitmu()'s hidden-attacker reveal line, pending its tty publication. */
+    revealUnderMessage?: string | null;
     poison?: { attribute: number; fatal?: number; chance?: number } | null;
-    deferredStickingAfterHit?: boolean;
-    stuckHero?: boolean;
-    stickingMessage?: string | null;
     effectMessage?: string | null;
     theftResolved?: boolean;
     deferredItemTheft?: boolean;
     monsterDisappeared?: boolean;
-    deferredEngulf?: 'capture' | 'effect' | false;
+    /** gulpmu()'s damage die, rolled before the swallow prose. */
     engulfDamage?: number;
     engulfOldX?: number;
     engulfOldY?: number;
-    engulfResolved?: boolean;
-    deferredSlimeEffect?: boolean;
     slimeNegated?: boolean;
     slimeCancelled?: boolean;
-    slimeKiller?: string;
-    slimeEffectMessage?: string | null;
-    slimeStartPending?: boolean;
-    deferredRustRehumanize?: boolean;
-    deferredRustArmor?: boolean;
-    deferredCorrosionArmor?: boolean;
-    deferredDecayRehumanize?: boolean;
-    deferredDecayArmor?: boolean;
     rehumanize?: boolean;
 }
 
