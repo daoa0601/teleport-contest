@@ -9,9 +9,10 @@ import {
     AD_PHYS, AD_SEDU, AD_SITM, AD_SSEX, AT_CLAW, AT_TENT, AT_TUCH, AT_WEAP,
 } from '../js/monster_attack_types.js';
 import {
-    canSeeMonsterCombat, prepareMonsterCombatContact, rejectMonsterShadeContact,
+    canSeeMonsterCombat, prepareMonsterCombatContact,
     showMonsterArtifactFallbackHit, showMonsterCombatMiss,
-} from '../js/monster_combat_messages.js';
+} from '../js/mhitm.js';
+import { rejectMonsterShadeContact } from '../js/uhitm.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { seductionCompatibility } from '../js/seduction_compatibility.js';

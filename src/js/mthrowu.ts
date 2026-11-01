@@ -37,7 +37,7 @@ import { placeObject, stack_object } from './floor_object.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin } from './hacklib.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { rejectMonsterShadeContact } from './monster_combat_messages.js';
+import { rejectMonsterShadeContact } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { mksobj } from './mkobj.js';
 import { hitHeroWithObject } from './hero_object_hit.js';

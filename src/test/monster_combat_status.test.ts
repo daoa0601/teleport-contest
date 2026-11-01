@@ -10,7 +10,7 @@ import {
     AD_SLOW, AD_STCK, AD_STUN, AD_WERE, AD_WRAP,
     AT_BITE, AT_CLAW, AT_GAZE, AT_HUGS, AT_KICK, AT_STNG, AT_TUCH,
 } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { applyMonsterCombatBlindness } from '../js/uhitm.js';
 import { CLOAK_OF_PROTECTION, LEATHER_ARMOR, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

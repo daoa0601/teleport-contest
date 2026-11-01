@@ -5,7 +5,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SEDU, AD_SGLD, AD_SITM, AD_SSEX, AT_TUCH } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { APPLE, DAGGER, GOLD_PIECE, LEATHER_GLOVES, POT_SICKNESS, STATUE } from '../js/object_data.js';

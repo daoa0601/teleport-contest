@@ -35,7 +35,7 @@ import {
     W_AMUL, W_ARMH, W_SADDLE,
 } from './const.js';
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, shieldeff } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff } from './display.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -57,10 +57,10 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { splitMonster } from './monster_clone.js';
-import { rejectMonsterShadeContact, showMonsterArtifactFallbackHit } from './monster_combat_messages.js';
+import { showMonsterArtifactFallbackHit } from './mhitm.js';
 import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { drainMonsterEnergy } from './monster_energy.js';
+import { drainMonsterEnergy } from './mhitm.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
 import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
@@ -161,7 +161,9 @@ import {
 } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { objectCanTouchShade } from './hero_object_contact.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { cansee } from './vision.js';
 import type { DeathHandler } from './end.js';
 import type { MessagePublisher } from './pline.js';
@@ -2062,6 +2064,38 @@ export async function resolvePhysicalHeroHug(
     // A failed capture still deals the rolled hug damage. Another holder
     // prevents capture and crushing prose, but does not protect against it.
     return damage;
+}
+
+// C uhitm.c:shade_miss(), the monster-attacker and thrown halves; the
+// hero-attacker wording lives in hero_physical_messages.ts. Called from
+// mhitm.c:hitmm(), mhitm_ad_phys()'s mhitm branch, and mthrowu.c:thrwmm().
+// Native mdamagem() makes a second, independent dmgval probe for AD_PHYS.
+// The caller supplies that probe's stricter visibility (both actors seen).
+interface MonsterShadeContactOptions {
+    state?: GameState;
+    visible: boolean;
+    publish?: MessagePublisher;
+    rollOne?: typeof rnd;
+    rollDice?: typeof d;
+    thrown?: boolean;
+}
+
+export async function rejectMonsterShadeContact(
+    aggressor: Monster, defender: Monster, weapon: GameObject | null,
+    { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d, thrown = false }: MonsterShadeContactOptions,
+): Promise<boolean> {
+    if (!monsterIsShade(defender)
+        || weapon && rollPhysicalWeaponDamage(weapon, defender, { state, rollOne, rollDice }) !== 0) return false;
+    if (visible && (cansee(defender.mx, defender.my) || canSenseMonster(defender))) {
+        const what = !weapon || objectCanTouchShade(weapon, state) ? 'attack' : objectCombatName(weapon, { state });
+        const target = monsterName(defender, { state });
+        const subject = thrown ? capitalizedDefiniteName(what, state)
+            : `${possessiveName(monsterName(aggressor, { state, capitalized: true }))} ${what}`;
+        await publish(`${subject} ${verbForSubject(what, 'pass')} harmlessly through ${target}.`);
+        if (!canSpotMonster(defender)) await map_invisible(defender.mx, defender.my);
+    }
+    defender.msleeping = 0;
+    return true;
 }
 
 // Native uhitm.c:mhitm_ad_phys(), monster against monster.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
-import { applyMonsterContactPassive } from '../js/monster_contact_passive.js';
+import { applyMonsterContactPassive } from '../js/mhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an experienced floating eye freezes the hero for its current level', async () => {

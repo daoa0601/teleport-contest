@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_ACID, AD_COLD, AD_CORR, AD_DCAY, AD_ELEC, AD_FIRE, AD_RUST, AT_TUCH } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { CHAIN_MAIL, CLOAK_OF_PROTECTION, CORPSE, DAGGER, LEATHER_ARMOR, OIL_LAMP, POT_HEALING, POT_OIL, SCR_BLANK_PAPER, WAN_FIRE, } from '../js/object_data.js';
 import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';

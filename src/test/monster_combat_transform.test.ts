@@ -5,7 +5,7 @@ import { G_GENOD, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, NO_MINVENT,
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_POLY, AD_SLIM, AD_TLPT, AT_TUCH } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, SCR_FIRE, WAN_FIRE } from '../js/object_data.js';

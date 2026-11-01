@@ -189,12 +189,12 @@ mail.c	ckmailstatus	I have some mail for you	out-of-scope	Mail delivery requires
 mail.c	md_rush	This place's too crowded.  I'm outta here.	out-of-scope	The mail daemon requires host mailbox polling and delivery (MAIL without SIMPLE_MAIL); the browser runtime has no OS mailbox integration.
 makemon.c	clone_mon	has_edog(m2) && has_edog(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 makemon.c	clone_mon	has_emin(m2) && has_emin(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-mhitm.c	passivemm	is jolted with electricity!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitm.c	passivemm	is mildly chilly.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitm.c	passivemm	is mildly tingled.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitm.c	passivemm	is mildly warmed.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitm.c	passivemm	is suddenly very cold!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
-mhitm.c	passivemm	is suddenly very hot!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is jolted with electricity!	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly chilly.	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly tingled.	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly warmed.	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is suddenly very cold!	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is suddenly very hot!	composed	src/js/mhitm.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
 mhitu.c	doseduce	on your left	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
 mhitu.c	doseduce	on your right	composed	src/js/mhitu.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
 mhitu.c	gazemu	doesn't look all that ugly	dead	The AD_STON cancellation branch tests !react while react is still initialized to -1; assignments later in the switch cannot reach that test.

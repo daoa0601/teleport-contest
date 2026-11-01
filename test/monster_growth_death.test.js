@@ -3,7 +3,7 @@ import test from 'node:test';
 import { G_GENOD, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';

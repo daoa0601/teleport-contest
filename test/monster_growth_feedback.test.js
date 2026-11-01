@@ -4,7 +4,7 @@ import { G_GENOD, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { AD_PHYS, AT_BITE } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
+import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { growMonster } from '../js/monster_growth.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';

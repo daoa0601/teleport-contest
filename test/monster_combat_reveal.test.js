@@ -9,7 +9,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW } from '../js/monster_attack_types.js';
-import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, } from '../js/monster_combat_messages.js';
+import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, } from '../js/mhitm.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { hideMonsterUnder } from '../js/mon.js';
 import { beginMonsterMealMimicry } from '../js/monster_meal_mimicry.js';
