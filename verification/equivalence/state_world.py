@@ -54,6 +54,18 @@ def monster_state(world, front, modules):
     world.js_state['monster.mnum'] = species
 
 
+def species_predicate_state(world, front, modules):
+    species = next(value for name, value, _ in world.params if name == 'species')
+    world.c_globals['mons'] = native_monsters(world, front)
+    world.pre.append(species < front.enum_value('NUMMONS'))
+
+
+def species_predicate_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    pointer = CPtr(values['native_pointer_present'] != 0, CElement('mons', values['species']))
+    return ([pointer], [V('num', values['species'])])
+
+
 def experience_state(world, front, modules):
     monster_state(world, front, modules)
     # This table-pair claim covers monsters with no inventory. Execute the real

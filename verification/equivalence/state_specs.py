@@ -2,7 +2,8 @@
 from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT, SCHAR,
                    Spec, ULEVEL, UnrelatedState, WEAPON_DAMAGE)
 from state_world import (experience_arguments, experience_state, hero_state,
-                         hit_bonus_state, movement_arguments, movement_state)
+                         hit_bonus_state, movement_arguments, movement_state,
+                         species_predicate_arguments, species_predicate_state)
 
 WORN = [(slot, (f'game.{slot}', f'game.u.{slot}')) for slot in ('uarmg', 'uarmh', 'uwep')]
 ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
@@ -10,7 +11,7 @@ ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
                ('uwep.oartifact', SCHAR, 'game.uwep.oartifact')]
 HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
-STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c')
+STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c', 'mondata.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
@@ -83,6 +84,39 @@ def species_partitions(front):
     # The domain has precisely NUMMONS valid indices. Each gets a proof with
     # symbolic monster state, rather than one enumerated example state.
     return [(f'species {i}', {'species': i}) for i in range(front.enum_value('NUMMONS'))]
+
+
+PREDICATE_ASSUMPTIONS = (
+    'monst.c:monst_globals_init: fields read retain mons_init values; emitted table fields retain initial values',
+    'species is an int in 0..NUMMONS-1; NUMMONS is read from the pinned C headers',
+    'native permonst pointer is &mons[species]; emitted argument is the same species index',
+)
+MONSTER_DATA = 'js/monster_data.js'
+
+STATE_SPECS += [
+    Spec(name, native, port, [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         partitions=species_partitions if name in ('ceiling_hider:tables', 'sliparm:tables', 'breakarm:tables') else None,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                          s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, old, new)])
+    for name, native, port, old, new in (
+        ('mindless:tables', 'verification_mindless', 'monsterIsMindless',
+         '& M1_MINDLESS);', '& M1_ANIMAL);'),
+        ('nohands:tables', 'verification_nohands', 'monsterHasNoHands',
+         '& M1_NOHANDS);', '& M1_NOHEAD);'),
+        ('humanoid:tables', 'verification_humanoid', 'monsterIsHumanoid',
+         '& M1_HUMANOID);', '& M1_ANIMAL);'),
+        ('ceiling_hider:tables', 'verification_ceiling_hider', 'monsterSpeciesHidesOnCeiling',
+         'MONSTER_SYMBOL[mnum] !== S_MIMIC', 'MONSTER_SYMBOL[mnum] === S_MIMIC'),
+        ('sliparm:tables', 'sliparm', 'monsterSlipsArmor',
+         '(MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL;', '(MONSTER_SIZE[mnum] ?? 0) < MZ_SMALL;'),
+        ('breakarm:tables', 'breakarm', 'monsterBreaksArmor',
+         'if (monsterSlipsArmor(mnum))', 'if (!monsterSlipsArmor(mnum))'),
+    )
+]
 
 
 def experience_domain(s):

@@ -196,10 +196,11 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 33 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 41 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
-initialized monster movement, and eight ISAAC64/seed-packing claims. The monster
-claims check all 383 valid native species with symbolic state; movement uses
+initialized monster movement, eight geometry/species predicates, and eight
+ISAAC64/seed-packing claims. The monster claims check all 383 valid native
+species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
 An empty partition fails the claim and reports its label. The regression
@@ -214,8 +215,35 @@ correspondences; `docs/formal-verification.md` gives their native sources.
 The new claims require both a concrete failing domain probe and a concrete
 killed mutant. No game code or corpora were changed.
 
+The added geometry claims pair `cmd.c:isok` with `hacklib.js:isok` and
+`hacklib.c:online2` with `hacklib.js:pointsOnline`, over every signed-16-bit
+coordinate. The species claims cover `mindless`, `nohands`, `humanoid`,
+`ceiling_hider`, `sliparm` and `breakarm` for every valid initial species.
+Four harness functions expand the real `mondata.h` macros. The entry relation
+requires a non-null pointer to `mons[species]`; native/emitted fields retain
+their initial values. The simple flag claims keep the index symbolic; the
+three branch-heavy claims exhaust all 383 species in both logging modes.
+Live table mutations and caller establishment of this relation remain outside
+the claims. Probes demonstrate coordinate narrowing or native null-pointer
+unsafety; each claim also kills a mutant with a concrete return difference.
+
+The leaf runner relates JS Boolean results to native 0/1, while preserving a
+difference between native 2 and JS true. The JS executor reads shorthand
+object fields such as `{ mnum }` from the current binding, as required by the
+existing armor helpers. Four added executor tests cover these behaviors;
+three failed before the corresponding verifier extensions. See
+`docs/formal-verification.md` for per-claim domains, paths and measured times.
+
+The complete 41-claim run passed in 704.66 s, including all 45 domain probes
+and 49 mutant checks. It wrote the 41-row equivalence ledger only after the
+complete run succeeded. All 62 executor/query/selection tests passed in
+8.594 s, all 37 ledger CLI tests passed in 129.197 s, and `npm run compile`
+passed. The ledger tests include a complete fast-claim run against the new
+ledger. The eight added claims remain `fast`; the two existing slow claims
+retain their domains and negative checks.
+
 Run the language, solver-isolation and command-selection tests
-(58 tests; no game sessions):
+(62 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -307,7 +335,7 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 `experience:tables` and `mcalcmove:tables` are marked `slow` in their specs.
 The default command includes them, all probes and all mutants. Use
 `uv run prove.py --skip-slow` for pull-request checks: it reports each excluded
-claim and checks the other 31. The separate scheduled job uses `--slow-only --check-ledger`.
+claim and checks the other 39. The separate scheduled job uses `--slow-only --check-ledger`.
 Run just the slow claims with:
 
 ```sh
@@ -321,7 +349,7 @@ fail even with `--skip-slow`. A partial run cannot write a ledger. Skipping a
 claim does not establish it; its domains and negative checks are unchanged.
 See `docs/formal-verification.md` for measured times and profiling limits.
 
-The final full command exited 0 with all 33 claims, 37 domain probes and 41
+The earlier full command exited 0 with all 33 claims, 37 domain probes and 41
 mutant checks in 688.98 s. The final `--skip-slow` run exited 0 with 31 claims,
 34 probes and 39 mutant checks in 97.92 s. Table proof times were 415.6 s for
 experience and 175.5 s for movement; both remain above the 120-second target.

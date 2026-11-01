@@ -115,7 +115,7 @@ ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
 HACKLIB = 'js/hacklib.js'
 
-C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c')
+C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
 JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
             'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js')
 
@@ -173,6 +173,26 @@ SPECS = [
                   # a block-local binding must not escape or overwrite the outer one
                   (HACKLIB, 'return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);',
                    'let r = 0; { let r = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2); } return r;')]),
+]
+
+
+def coordinate_domain(s, names):
+    return [z3.And(s[name] >= -32768, s[name] <= 32767) for name in names]
+
+
+SPECS += [
+    Spec('isok', 'isok', 'isok', [('x', INT), ('y', INT)],
+         require_counterexamples=True, js_file=HACKLIB,
+         pre=lambda s: coordinate_domain(s, ('x', 'y')),
+         probes=[('x narrows to coordxy', lambda s: [s['x'] == 65537, s['y'] == 0])],
+         mutants=[(HACKLIB, 'return x >= 1 && x <= COLNO - 1',
+                   'return x >= 0 && x <= COLNO - 1')]),
+    Spec('online2', 'online2', 'pointsOnline', [(name, INT) for name in ('x0', 'y0', 'x1', 'y1')],
+         require_counterexamples=True, js_file=HACKLIB,
+         pre=lambda s: coordinate_domain(s, ('x0', 'y0', 'x1', 'y1')),
+         probes=[('x0 narrows to coordxy', lambda s: [s['x0'] == 65536, s['y0'] == 1,
+                                                     s['x1'] == 0, s['y1'] == 0])],
+         mutants=[(HACKLIB, 'dy === -dx;', 'dy === dx;')]),
 ]
 
 # Stage 2: the global attribute arrays have six signed-char elements

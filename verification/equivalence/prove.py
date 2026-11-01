@@ -136,9 +136,10 @@ def _outputs_equal(c, j):
     if len(c.events) != len(j.events) or any(a.shape != b.shape or len(a.values) != len(b.values)
                                              for a, b in zip(c.events, j.events)):
         return z3.BoolVal(False)
-    if not isinstance(c.ret, CVal) or j.ret.kind != 'num':
+    c_value, j_value = returned_integer(c), returned_integer(j)
+    if c_value is None or j_value is None:
         return z3.BoolVal(False)
-    eqs = [c.ret.v == j.ret.v]
+    eqs = [c_value == j_value]
     eqs += [c.pos[s] == j.pos[s] for s in STREAMS]
     for a, b in zip(c.events, j.events):
         eqs += [x == y for x, y in zip(a.values, b.values)]
@@ -177,6 +178,10 @@ def returned_integer(path):
         return path.ret.v
     if isinstance(path.ret, V) and path.ret.kind == 'num':
         return path.ret.v
+    if isinstance(path.ret, V) and path.ret.kind == 'bool':
+        # Native predicates return 0 or 1. Do not collapse other integers
+        # to truth values: a native return of 2 must still differ from true.
+        return z3.If(path.ret.v, z3.IntVal(1), z3.IntVal(0))
     return None
 
 
@@ -199,7 +204,7 @@ def describe_model(model, world, extra=()):
 
 
 def show_path(model, label, p):
-    ret = p.ret.v if isinstance(p.ret, CVal) else (p.ret.v if p.ret is not None and p.ret.kind == 'num' else None)
+    ret = returned_integer(p)
     value = model.eval(ret, model_completion=True) if ret is not None else 'none'
     events = ['%s%s' % (e.shape.format(*[model.eval(v, model_completion=True) for v in e.values]), '')
               for e in p.events]

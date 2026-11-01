@@ -46,6 +46,28 @@ class ExecutorTests(unittest.TestCase):
         self.assertFalse(proved, report)
         self.assertIn(reason, report)
 
+    def test_boolean_returns_correspond_to_native_zero_and_one(self):
+        self.equivalent('int example(int x) { return x > 0; }',
+                        'function example(x) { return x > 0; }', params=[('x', INT)])
+
+    def test_boolean_returns_do_not_hide_a_different_native_integer(self):
+        self.rejected('int example(int x) { return x ? 2 : 0; }',
+                      'function example(x) { return x !== 0; }', params=[('x', INT)],
+                      reason='outputs differ')
+
+    def test_boolean_return_difference_reports_both_values(self):
+        proved, report = self.compare('int example(int x) { return x > 0; }',
+                                      'function example(x) { return x >= 0; }',
+                                      params=[('x', INT)])
+        self.assertFalse(proved, report)
+        self.assertIn('C : returns 0', report)
+        self.assertIn('JS: returns 1', report)
+
+    def test_object_shorthand_captures_the_current_binding_value(self):
+        self.equivalent('int example(int x) { return x; }',
+                        'function example(x) { const item = {x}; x++; return item.x; }',
+                        params=[('x', INT)])
+
     def test_glibc_assert_is_a_proof_obligation(self):
         source = GLIBC_ASSERT + 'int example(int x) { assert(x > 0); return x; }'
         self.equivalent(source, 'function example(x) { return x; }',
