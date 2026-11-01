@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt } from '../js/display.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

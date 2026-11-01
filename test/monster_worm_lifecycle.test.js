@@ -18,7 +18,7 @@ import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { petrifyMonsterAttacker } from '../js/mhitm.js';
 import { changeMonsterForm, finishEnvironmentalMonsterDeath, removeMonsterFromGame } from '../js/mon.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

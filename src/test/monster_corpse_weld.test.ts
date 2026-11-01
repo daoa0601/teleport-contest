@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, W_WEP } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { updateMonsterWeaponAfterPolymorph } from '../js/monster_weapon.js';
+import { updateMonsterWeaponAfterPolymorph } from '../js/weapon.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

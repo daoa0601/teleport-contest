@@ -4,7 +4,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { LAVAPOOL, NO_MINVENT, ROOM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';

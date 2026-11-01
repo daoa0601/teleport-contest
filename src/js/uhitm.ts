@@ -40,7 +40,7 @@ import {
     canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff,
 } from './display.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { finishHeroDeath } from './end.js';
+import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { eatHeroBrain, eatMonsterBrain } from './eat.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -68,7 +68,7 @@ import type {
 import { monsterSelfTouch } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
-import { splitMonster } from './monster_clone.js';
+import { splitMonster } from './potion.js';
 import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
 import { linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, set_corpsenm } from './mkobj.js';
@@ -99,14 +99,15 @@ import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './mon
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { stealHeroQuestObject, stealHeroGold } from './steal.js';
-import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { sessionIsNight } from './ambient_sounds.js';
+import {
+    infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction,
+} from './mhitu.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
-import { hurtleMonster, staggerVerb, willMonsterHurtle } from './monster_hurtle.js';
-import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './monster_hurtle.js';
+import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
+import { hurtleMonster, staggerVerb, willMonsterHurtle } from './dothrow.js';
+import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './dothrow.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { petFoodNutrition } from './pet_eating.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, DUNCE_CAP, IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
@@ -141,7 +142,6 @@ import {
 import {
     applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy, isHumanWereMonster, isWereMonster, wereChange,
 } from './were.js';
-import { heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction } from './mhitu.js';
 import { touchHeroWithDeath } from './mcastu.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { isBluntWeapon, isFlimsyObject, isPermanentlyPoisonedObject, isWeaponTool } from './object_properties.js';

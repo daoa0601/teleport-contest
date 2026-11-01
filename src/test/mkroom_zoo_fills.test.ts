@@ -15,7 +15,7 @@ import type { Room } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
 import { insideRoom } from '../js/room.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';

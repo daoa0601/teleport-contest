@@ -6,10 +6,10 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import {
     clearMonsterWormFromMap, initializeMonsterWormBody, removeMonsterWormBody,
-} from '../js/monster_worm.js';
+} from '../js/worm.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

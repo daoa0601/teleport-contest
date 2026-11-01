@@ -1,5 +1,5 @@
 import { objectTypeKnown } from '../js/shk.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, NO_MINVENT, POOL, W_AMUL, W_ARM, W_ARMC, W_ARMH, W_ARMU } from '../js/const.js';

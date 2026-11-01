@@ -84,7 +84,7 @@ import {
     monsterIsCovetous,
     monsterIsPlayerMonster,
 } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';

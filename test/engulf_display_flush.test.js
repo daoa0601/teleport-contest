@@ -4,7 +4,7 @@ import { performMonsterTurn } from '../js/monmove.js';
 import { IRONBARS, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterOnMap } from '../js/monster_location.js';
+import { placeMonsterOnMap } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

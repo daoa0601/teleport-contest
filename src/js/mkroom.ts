@@ -31,7 +31,7 @@ import {
 } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { objectWeight } from './weight.js';
 import { deleteEngravingAt } from './engrave.js';
 import { normalDemon } from './minion.js';

@@ -6,9 +6,9 @@
 // crossed the tty boundary.
 import {
     A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, MMOVE_DONE,
-    Upolyd, ismnum, KILLED_BY,
+    Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT,
 } from './const.js';
-import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC } from './monster_attack_types.js';
+import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import type {
     MonsterAction, HeroSpellAttack, MonsterCallLog, MonsterMovementAction, MonsterSpell, MonsterSpellEffect,
     MovementSpellCast, PublishMonsterMessage, RandomBelow, RollDice, RollOne,
@@ -18,36 +18,45 @@ import {
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
-import { requireInitializedGame } from './gstate.js';
+import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
+import {
+    canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName,
+} from './display.js';
+import { requireInitializedGame, game, requirePlayingGame } from './gstate.js';
+import { castMonsterSpellRay } from './breath_ray.js';
+import { displayRayName } from './ray_name.js';
+import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute } from './attrib.js';
 import { clearHeroSliming } from './slime.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory } from './zap.js';
 import { burnHeroArmorByFire } from './trap.js';
-import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishHeroDeath } from './end.js';
 import { igniteItems } from './light.js';
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { flashBurn } from './sight_change.js';
 import { rndcurse } from './throne.js';
-import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { loseHeroHp } from './hero_damage.js';
 import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation } from './pline.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { d, rn2, rnd } from './rng.js';
-import type { PlayingGameState } from './game_state.js';
+import type { PlayingGameState, GameState } from './game_state.js';
+import type { DeathHandler } from './end.js';
+import type { MonsterAttack } from './data_types.js';
 import type { Monster } from './monster_types.js';
-import { formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
-import { summonMonsterInsects } from './monster_spell_insects.js';
-import { heroIsBlinded, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
+import { heroIsUnaware } from './hero_sleep.js';
+import { makemonAt, mkclassAligned } from './makemon.js';
+import { setMonsterMalign } from './monster_alignment.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
 import { finishDochugAfterMovement, requireDochugContext } from './monmove.js';
@@ -1009,4 +1018,134 @@ export function monsterSpellDeathReason(monster: Monster, reason: string): strin
         killer += ` imitating ${withIndefiniteArticle(form)}`;
     }
     return killer;
+}
+
+// ---------------------------------------------------------------------------
+// C mcastu.c:buzzmu(). Ranged spell rays are one original attack slot.
+// ---------------------------------------------------------------------------
+
+const STRANGE_OBJECT = 0;
+
+async function curseDirectedSpell(monster: Monster, state: GameState, publish: MessagePublisher, random: typeof rn2) {
+    if (canSeeMonster(monster)
+        && couldsee(monster.mx, monster.my)) {
+        const misplaced = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
+        const mimicking = state.u.m_ap_type === M_AP_OBJECT
+            && state.u.mappearance === STRANGE_OBJECT;
+        let pointing = 'at you, then curses';
+        if ((heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)
+            && misplaced) || mimicking || state.u.uundetected) {
+            pointing = 'and curses in your general direction';
+        } else if (heroIsDisplaced(state) && misplaced) {
+            pointing = 'and curses at your displaced image';
+        }
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${pointing}.`);
+    } else if (!(state.moves % 4) || !random(4)) {
+        const message = 'You hear a mumbled curse.';
+        if (!heroIsDeaf(state)) await publish(message, { noRepeat: true });
+    }
+}
+
+export interface MonsterMagicRayOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    rollDice?: typeof d;
+    rollOne?: typeof rnd;
+    calls?: MonsterCallLog;
+    die?: DeathHandler;
+}
+
+export async function resolveMonsterMagicRay(monster: Monster, attack: MonsterAttack, {
+    state = game, publish = plineWithContinuation,
+    random = rn2, rollDice = d, rollOne = rnd, calls = [], die = finishHeroDeath,
+}: MonsterMagicRayOptions = {}) {
+    requirePlayingGame(state);
+    const damageType = attack[1];
+    if (damageType < AD_MAGM || damageType > AD_SPC2)
+        return { mask: M_ATTK_MISS, heroDied: false };
+    if (monster.mcan || ((monster.seen_resistance || 0) & seenResistanceForDamage(damageType))) {
+        await curseDirectedSpell(monster, state, publish, random);
+        return { mask: M_ATTK_MISS, heroDied: false };
+    }
+    if (!monsterLinedUpWithPerceivedHero(monster, state, random, calls) || !random(3))
+        return { mask: M_ATTK_MISS, heroDied: false };
+    endVoluntaryMultiTurn(state);
+    if (canSeeMonster(monster)) {
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} zaps you with a ${displayRayName(damageType, 'wand', { state, random })}!`);
+    }
+    const dx = Math.sign((monster.mux ?? state.u.ux) - monster.mx);
+    const dy = Math.sign((monster.muy ?? state.u.uy) - monster.my);
+    const direction = [['y', 'k', 'u'], ['h', null, 'l'], ['b', 'j', 'n']][dy + 1]?.[dx + 1];
+    if (!direction) return { mask: M_ATTK_HIT, heroDied: false };
+    const result = await castMonsterSpellRay(direction, monster.mx, monster.my, attack, {
+        state, sourceMonster: monster, publish, random, rollDice, rollOne, die,
+    });
+    return { mask: M_ATTK_HIT, heroDied: result.heroDied };
+}
+
+// ---------------------------------------------------------------------------
+// C mcastu.c:mcast_insects(). Feedback depends on sensing the caster and
+// spotting the summons separately; blindness alone answers neither question.
+// ---------------------------------------------------------------------------
+
+const S_ANT = 1;
+const S_SNAKE = 45;
+
+export async function summonMonsterInsects(caster: Monster, state: PlayingGameState): Promise<MonsterSpellEffect> {
+    const monsterClass = mkclassAligned(S_ANT, 0) === null ? S_SNAKE : S_ANT;
+    const oldSeen = spottedMonsterCount(state);
+    const level = caster.m_lev ?? 0;
+    const quantity = Math.max(3, level < 2 ? 1 : rnd(Math.trunc(level / 2)));
+    const created: Monster[] = [];
+    for (let index = 0; index <= quantity; index++) {
+        const point = findNearbyMonsterPosition(caster.mnum,
+            caster.mux ?? state.u.ux, caster.muy ?? state.u.uy, { state });
+        // Native returns immediately if enexto() fails, including after
+        // earlier successful births; it gives no summoning feedback then.
+        if (!point) return { count: created.length, created, message: null };
+        const species = mkclassAligned(monsterClass, 0);
+        if (species === null) continue;
+        const monster = await makemonAt(species, point.x, point.y, MM_ANGRY | MM_NOMSG);
+        if (!monster) continue;
+        monster.msleeping = 0;
+        monster.mpeaceful = 0;
+        monster.mtame = 0;
+        setMonsterMalign(monster, state);
+        await newsym(monster.mx, monster.my);
+        created.push(monster);
+    }
+
+    const newSeen = spottedMonsterCount(state);
+    const seeCaster = canSeeMonster(caster) || !!(howMonsterSeen(caster) & MONSEEN_TELEPAT)
+        || heroDetectsMonsters(state);
+    const what = heroIsHallucinating(state) ? makePlural(randomBogusMonsterName())
+        : monsterClass === S_SNAKE ? 'snakes' : 'insects';
+    let message: string | null;
+    if (!seeCaster) {
+        if (newSeen <= oldSeen || heroIsUnaware(state)) {
+            message = formatHeardMessage(`someone summoning ${what}.`, state);
+        } else {
+            const subject = newSeen === oldSeen + 1 ? withIndefiniteArticle(makeSingular(what)) : what;
+            const appearance = `${subject} ${verbForSubject(subject, 'appear')}.`;
+            message = heroIsDeaf(state) ? appearance.charAt(0).toUpperCase() + appearance.slice(1)
+                : formatHeardMessage(`someone summoning something, and ${appearance}`, state);
+        }
+    } else {
+        const subject = canonicalMonsterName(caster, { state, capitalized: true });
+        const wrongTarget = caster.mux !== state.u.ux || caster.muy !== state.u.uy;
+        if (!created.length) message = `${subject} casts at a clump of sticks, but nothing happens.`;
+        else if (monsterClass === S_SNAKE) message = `${subject} transforms a clump of sticks into ${what}!`;
+        else if (heroIsInvisible(state) && !((MONSTER_FLAGS1[caster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget)
+            message = `${subject} summons ${what} around a spot near you!`;
+        else if (heroIsDisplaced(state) && wrongTarget)
+            message = `${subject} summons ${what} around your displaced image!`;
+        else message = `${subject} summons ${what}!`;
+    }
+    return { count: created.length, created, message };
+}
+
+function spottedMonsterCount(state: PlayingGameState): number {
+    return state.level.monsters.filter(monster => !monster.dead && monster.mhp > 0
+        && !(monster.isgd && monster.mx === 0) && canSpotMonster(monster)).length;
 }

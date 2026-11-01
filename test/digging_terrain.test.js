@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, M_SEEN_MAGR, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, FOUNTAIN, GRAVE, HOLE, ICE, LADDER, LAVAPOOL, MOAT, PIT, POOL, ROOM, STAIRS, STONE, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, } from '../js/const.js';
 import { digCheck, digCheckFailMessage, digHole, digUpGrave, liquidFlow, spotChecks, } from '../js/digging_terrain.js';
 import { game } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CLUB, CORPSE, GOLD_PIECE, LEASH } from '../js/object_data.js';
 import { fireDamageObject } from '../js/fire_damage.js';

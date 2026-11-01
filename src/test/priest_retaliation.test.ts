@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import type { Monster } from '../js/monster_types.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 

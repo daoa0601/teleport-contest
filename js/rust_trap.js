@@ -4,7 +4,7 @@ import { finishMonsterKilled } from './mon.js';
 import { AD_RUST } from './monster_attack_types.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
-import { splitMonster } from './monster_clone.js';
+import { splitMonster } from './potion.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterName } from './do_name.js';

@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    reviveCorpseByMagic, reviveCorpseImmediately, runClaimedCorpseRevivalTimer,
-} from '../js/corpse_revival.js';
+import { reviveCorpseByMagic, reviveCorpseImmediately, runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
 import { MFAST, MM_NOTAIL, NO_MINVENT, ROOM } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { doeat } from '../js/eat.js';
@@ -17,11 +15,10 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { createCorpstatAt, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { CORPSE, CRYSKNIFE, SACK } from '../js/object_data.js';
 import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-    scheduleObjectTimer, stopAllObjectTimers,
+    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';

@@ -4,13 +4,12 @@ import { A_DEX, IRONBARS, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOTAIL, 
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { resolveMonsterCombatThrow } from '../js/mthrowu.js';
+import { resolveMonsterCombatThrow, monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile, throwMonsterWeaponAtMonster, } from '../js/mthrowu.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
-import { monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile, throwMonsterWeaponAtMonster } from '../js/mthrowu.js';
-import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
-import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, POT_ACID, POT_CONFUSION, SLING, STATUE, YA, YUMI } from '../js/object_data.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
+import { selectMonsterRangedWeapon } from '../js/weapon.js';
+import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE, DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, POT_ACID, POT_CONFUSION, SLING, STATUE, YA, YUMI, } from '../js/object_data.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { uninitializedObject, untimedCorpse } from './support/game-objects.js';
 import { floorObjectQuantityAt, floorObjectsAt } from './support/level-state.js';

@@ -62,7 +62,7 @@ import { objectMaterial } from './object_material.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import {
     monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt,
-} from './monster_location.js';
+} from './steed.js';
 import { monsterIsScaredAt, makeMonsterFlee, monsterWantsFloorObject } from './monmove.js';
 import { finishImmediateMonsterTrap, seeTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
 import { isContainer, thawObject } from './container.js';
@@ -78,7 +78,7 @@ import {
     removeMonsterFromGame,
     wakeMonster,
 } from './mon.js';
-import { advanceMonsterWormBody } from './monster_worm.js';
+import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster } from './makemon.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
@@ -143,7 +143,7 @@ import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './he
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explode } from './explosion.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import { willWeld } from './weapon_type.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';
 import { impossible } from './diagnostics.js';

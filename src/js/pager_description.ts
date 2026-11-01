@@ -2,13 +2,12 @@ import { warningSymbols } from './warning_symbols.js';
 // C pager.c:do_screen_description(), add_cmap_descr(), append_str().
 import { BOULDER } from './object_data.js';
 import {
-    BUFSZ, def_warnsyms, In_hell, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP,
-    TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, Upolyd, VIBRATING_SQUARE, WEB,
+    BUFSZ, def_warnsyms, In_hell, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE,
+    TRAP_EXPLANATIONS, Upolyd, VIBRATING_SQUARE, WEB,
 } from './const.js';
 import {
-    canSpotHeroSelf, cmapSymbolAppearance, glyphAt, monsterClassSymbol,
-    objectClassSymbol, randomDisplayMonsterName, swallowSymbolAppearance,
-    transientMonsterGlyph, unblindTelepathyRange,
+    canSpotHeroSelf, cmapSymbolAppearance, glyphAt, monsterClassSymbol, objectClassSymbol, randomDisplayMonsterName,
+    swallowSymbolAppearance, transientMonsterGlyph, unblindTelepathyRange,
 } from './display.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { game } from './gstate.js';
@@ -20,8 +19,8 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { lookGlyphAt, mapFeatureDescription, quotedEngraving, unseenCreatureDescription } from './pager_features.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { decodeMixedLiteral } from './windows.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition } from './steed.js';
 import { lookAtMonster, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { iceDescriptionAt } from './dungeon_feature.js';

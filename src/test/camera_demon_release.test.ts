@@ -4,7 +4,7 @@ import { breakFloorObject } from '../js/object_breakage.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { EXPENSIVE_CAMERA } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';

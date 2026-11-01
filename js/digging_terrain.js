@@ -4,7 +4,7 @@ import { trapName } from './trap_name.js';
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';

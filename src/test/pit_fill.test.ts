@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import type { GameState } from '../js/game_state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

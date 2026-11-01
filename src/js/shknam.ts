@@ -6,9 +6,8 @@
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
-    CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN,
-    In_mines, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM, RLOC_NOMSG, ROOMOFFSET,
-    SDOOR, SHOPBASE,
+    CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN, In_mines, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM,
+    RLOC_NOMSG, ROOMOFFSET, SDOOR, SHOPBASE,
 } from './const.js';
 import { convertSecretDoor } from './detect.js';
 import { RANDOM_SHOP_TYPES, SHOP_TYPES } from './shop_data.js';
@@ -22,17 +21,13 @@ import type { MonsterNameOptions } from './do_name.js';
 import { makeEngravingAt } from './engrave.js';
 import { makemon, mkclass } from './makemon.js';
 import { depth as depth_of_level, ledgerNo } from './hacklib.js';
-import {
-    GOLD_PIECE, OBJECT_BASES, OBJECT_PROB, SPE_NOVEL,
-    TOUCHSTONE, CORPSE, EGG, TIN,
-} from './object_data.js';
-import { mksobj, mksobj_at, mkobj_at } from './mkobj.js';
+import { GOLD_PIECE, OBJECT_BASES, OBJECT_PROB, SPE_NOVEL, TOUCHSTONE, CORPSE, EGG, TIN } from './object_data.js';
+import { mksobj, mksobj_at, mkobj_at, linkObjectToMonsterInventory } from './mkobj.js';
 import { objectMaterial } from './object_material.js';
 import { setTinVariety } from './tin.js';
 import { objectWeight } from './weight.js';
-import { linkObjectToMonsterInventory } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { removeMonsterFromGame } from './mon.js';

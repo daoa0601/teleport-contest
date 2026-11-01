@@ -1,6 +1,6 @@
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { isPoolAt } from './terrain_properties.js';
 // ball.js — Punishment ball-and-chain movement.
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().

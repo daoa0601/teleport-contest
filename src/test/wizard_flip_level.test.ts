@@ -9,8 +9,8 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { monsterAtPosition } from '../js/steed.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { DAGGER } from '../js/object_data.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { relocateMonsterTo } from '../js/teleport.js';

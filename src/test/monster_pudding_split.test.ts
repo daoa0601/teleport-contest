@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
@@ -10,7 +10,7 @@ import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { tryMonsterPuddingSplit } from '../js/mhitm.js';
-import { unwieldMonsterWeapon } from '../js/monster_weapon.js';
+import { unwieldMonsterWeapon } from '../js/weapon.js';
 import {
     AMULET_OF_LIFE_SAVING, CLUB, DAGGER, GOLD_PIECE, LEATHER_ARMOR, OBJECT_NAMES, ROCK,
 } from '../js/object_data.js';

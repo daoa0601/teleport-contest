@@ -3,7 +3,7 @@ import { trapName } from './trap_name.js';
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { vision_note_blocker_change } from './vision.js';
 import { addShopDamage } from './shop_damage.js';
@@ -12,7 +12,7 @@ import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
-import { heroHasMagicKey } from './monster_key.js';
+import { heroHasMagicKey } from './artifact.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';

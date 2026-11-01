@@ -4,10 +4,9 @@ import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import {
-    A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IRONBARS,
-    IS_OBSTRUCTED, Is_airlevel, Is_rogue_level, LANDMINE, LEVEL_TELEP,
-    MIGR_RANDOM, P_BASIC, P_RIDING, ROLLING_BOULDER_TRAP, SHOPBASE, STONE,
-    TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok,
+    A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level,
+    LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, ROLLING_BOULDER_TRAP, SHOPBASE, STONE, TELEP_TRAP,
+    TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok,
 } from './const.js';
 import {
     canSpotMonster, feel_location, glyphAt, map_invisible, map_object, newsym, unmap_invisible,
@@ -27,8 +26,8 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import type { Trap } from './map_types.js';
 import { MONSTER_FLAGS2, monsterIsNoncorporeal } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition } from './steed.js';
 import type { Monster } from './monster_types.js';
 import { BOULDER } from './object_data.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -44,8 +43,7 @@ import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import {
-    addShopObjectToBill, billForObject, costlySpot,
-    removeObjectAndContentsFromBill, shopResident,
+    addShopObjectToBill, billForObject, costlySpot, removeObjectAndContentsFromBill, shopResident,
 } from './shk.js';
 import { findObjectOwner, stolenValue } from './shop_loss.js';
 import { reviveNastyAt } from './revive_nasty.js';

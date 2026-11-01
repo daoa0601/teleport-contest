@@ -11,7 +11,7 @@ import { nameToMonster } from '../js/mondata.js';
 import { revealMonsterAppearance } from '../js/monster_appearance.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { attemptMonsterRestrap, hideMonsterUnder, maybeUnhideAt } from '../js/mon.js';
-import { hideMonsterOnRestore } from '../js/monster_hiding.js';
+import { hideMonsterOnRestore } from '../js/save.js';
 import { APPLE, CORPSE, GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';

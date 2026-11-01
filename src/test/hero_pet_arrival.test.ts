@@ -5,7 +5,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { settlePetHeroDisplacement } from '../js/hero_pet_displacement.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { moveObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';

@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, PANICLOG, ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';

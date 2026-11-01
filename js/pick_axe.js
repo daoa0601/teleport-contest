@@ -1,6 +1,6 @@
 import { seeTrap } from './trap.js';
 // C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { heroIsHallucinating } from './senses.js';
 import { nomul } from './command_state.js';
 import { artifactById } from './artifacts.js';

@@ -2,7 +2,7 @@
 // C refs: dig.c dig_typ(), use_pick_axe2() digging branches, dig(),
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
 
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import {
     RLOC_NOMSG,

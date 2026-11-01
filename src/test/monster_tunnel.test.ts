@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -10,7 +10,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { digMonsterTunnel } from '../js/monster_tunnel.js';
+import { digMonsterTunnel } from '../js/dig.js';
 import type { AlignmentValue } from '../js/roles.js';
 import {
     AMULET_OF_LIFE_SAVING, APPLE, BOULDER, ROCK,

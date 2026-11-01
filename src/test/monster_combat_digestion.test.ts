@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT,
-    NO_MINVENT, W_AMUL,
+    M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -13,7 +12,7 @@ import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mh
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

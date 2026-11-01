@@ -1,5 +1,5 @@
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -13,7 +13,7 @@ import { moveDrawbridgeOccupants } from '../js/drawbridge_occupants.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, POT_OIL, RED_DRAGON_SCALE_MAIL } from '../js/object_data.js';

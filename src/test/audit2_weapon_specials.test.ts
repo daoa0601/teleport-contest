@@ -5,27 +5,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { AKLYS, DAGGER, DART, DWARVISH_MATTOCK, LONG_SWORD, MACE, OBJECT_NAMES } from '../js/object_data.js';
 import {
-    AKLYS, DAGGER, DART, DWARVISH_MATTOCK, LONG_SWORD, MACE, OBJECT_NAMES,
-} from '../js/object_data.js';
-import {
-    P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_EXPERT, P_ISRESTRICTED,
-    P_LANCE, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    W_ARMG, W_WEP, NO_MINVENT,
+    P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_EXPERT, P_ISRESTRICTED, P_LANCE, P_RIDING, P_SKILLED,
+    P_TWO_WEAPON_COMBAT, P_UNSKILLED, W_ARMG, W_WEP, NO_MINVENT,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { artifactByName } from '../js/artifacts.js';
 import { nameToMonster } from '../js/mondata.js';
-import {
-    ensureHeroSkills, weaponSkillDamageBonus, weaponSkillHitBonus,
-} from '../js/skills.js';
+import { ensureHeroSkills, weaponSkillDamageBonus, weaponSkillHitBonus } from '../js/skills.js';
 import { rollPhysicalWeaponDamage } from '../js/weapon_damage.js';
 import { weaponHitBonus } from '../js/weapon_accuracy.js';
-import {
-    selectHandToHandWeapon, selectMonsterRangedWeapon,
-} from '../js/monster_weapon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
+import { selectHandToHandWeapon, selectMonsterRangedWeapon } from '../js/weapon.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';

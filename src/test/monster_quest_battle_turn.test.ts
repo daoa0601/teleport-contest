@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, NO_MINVENT, STRAT_WAITFORU } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

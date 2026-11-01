@@ -2,7 +2,7 @@
 // C ref: music.c do_earthquake() and do_pit().
 
 import { publishHeardMessage } from './hero_speech.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {

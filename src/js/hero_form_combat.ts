@@ -3,8 +3,8 @@
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import {
-    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd,
-    W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR,
+    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU,
+    W_RINGL, W_RINGR,
 } from './const.js';
 import { selectAttack } from './attack_selection.js';
 import { specialContactDamage } from './contact_damage.js';
@@ -15,24 +15,24 @@ import { resolveHeroCombatEngulf } from './hero_combat_engulf.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { releaseHeroGrip } from './hero_expulsion.js';
-import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
+import {
+    heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact,
+} from './hero_form_contact.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { resolveHeroNaturalDamage } from './hero_natural_damage.js';
 import { heroSpecies } from './hero_species.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
-import { tryKnockback } from './uhitm.js';
+import { tryKnockback, applyHeroContactPassive } from './uhitm.js';
 import {
-    AD_DRIN, AD_PHYS, AD_SPEL, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT,
-    AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC,
-    AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
+    AD_DRIN, AD_PHYS, AD_SPEL, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS,
+    AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead,
-    monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks,
+    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead, monsterIsMindless, monsterIsShade,
+    monsterSpeciesHatesSilver, monsterSpeciesSticks,
 } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
-import { applyHeroContactPassive } from './uhitm.js';
+import { monsterAtPosition } from './steed.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isWeaponTool } from './object_properties.js';

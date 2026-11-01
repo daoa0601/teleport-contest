@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MINVENT, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';

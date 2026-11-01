@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import type { PropertyName } from '../js/property_types.js';
 import { floorObjects } from './support/level-state.js';

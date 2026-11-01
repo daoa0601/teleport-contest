@@ -8,7 +8,7 @@ import { objectAtMapDescription } from './map_object_description.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterTypeName, } from './monster_data.js';
 import { distantMonsterName, monsterName } from './do_name.js';
-import { monsterHiddenConditions } from './monster_status.js';
+import { monsterHiddenConditions } from './pager.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';

@@ -5,21 +5,17 @@
 import { hallucinatedDeityName } from './alignment.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
 import {
-    ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET,
-    SHOPBASE, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK,
-    M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, isok, In_endgame, PLNMSG_GROWL, Upolyd,
+    ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO,
+    IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, isok, In_endgame, PLNMSG_GROWL, Upolyd,
 } from './const.js';
-import {
-    canSeeMonster, canSpotMonster, glyphAt, map_invisible, randomDisplayMonsterName,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, glyphAt, map_invisible, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { commandResultCancelled, nomul } from './command_state.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,
-    monsterIsAnimal, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead,
-    monsterIsVampireShifter, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal,
+    monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
@@ -27,15 +23,13 @@ import { quoteShopGoods } from './shop_price_quote.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace } from './mondata.js';
-import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { STATUE, SPE_NOVEL } from './object_data.js';
+import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
-import { requireInitializedGame } from './gstate.js';
+import { monsterAtPosition } from './steed.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { searchSpecial } from './mkroom.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { GOLD_PIECE } from './object_data.js';
 import { priestIsInOwnTemple } from './priest.js';
 import { roomForRoomno } from './room.js';
 import { findVaultGuard } from './vault_guard.js';

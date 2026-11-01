@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { throwMonsterWeaponAtHero } from '../js/mthrowu.js';
-import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
+import { selectMonsterRangedWeapon } from '../js/weapon.js';
 import { DART } from '../js/object_data.js';
 import { unlinkObject } from '../js/object_location.js';
 import { uninitializedObject } from './support/game-objects.js';

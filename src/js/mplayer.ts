@@ -9,23 +9,19 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsPlayerMonster } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterRank } from './botl.js';
+import { monsterAtPosition } from './steed.js';
 import type { Monster } from './monster_types.js';
-import { monsterMightThrowWeapon } from './monster_weapon.js';
+import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { randomOffensiveMonsterItem, randomDefensiveMonsterItem, randomMiscMonsterItem } from './muse.js';
 import {
-    BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL,
-    CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL,
-    ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR,
-    GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALE_MAIL,
-    JADE, KATANA, LEATHER_GLOVES,
-    LEVITATION_BOOTS, LOADSTONE, LONG_SWORD, LUCKSTONE, MACE,
-    OBJECT_MERGE, OBJECT_SUBTYPE, OBJECT_NAMES, ORCISH_DAGGER,
-    QUARTERSTAFF, ROBE, SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD,
-    SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD,
-    UNICORN_HORN, WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL,
+    BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
+    CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR,
+    GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALE_MAIL, JADE, KATANA, LEATHER_GLOVES, LEVITATION_BOOTS, LOADSTONE,
+    LONG_SWORD, LUCKSTONE, MACE, OBJECT_MERGE, OBJECT_SUBTYPE, OBJECT_NAMES, ORCISH_DAGGER, QUARTERSTAFF, ROBE,
+    SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN,
+    WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL,
 } from './object_data.js';
 import { blessObjectState, curseObject } from './object_state.js';
 import { d, rn1, rn2, rnd } from './rng.js';

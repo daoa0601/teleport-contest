@@ -5,7 +5,7 @@ import { trapName } from './trap_name.js';
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
 
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';

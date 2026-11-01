@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_DEX, A_LAWFUL, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_DART, P_SKILLED, W_ARMG, W_WEP, } from '../js/const.js';

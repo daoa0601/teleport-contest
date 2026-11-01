@@ -27,7 +27,6 @@ import { selectMapPosition, showGetposTip } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './mirror.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName, } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { visibleCommandKey } from './command_keys.js';
@@ -35,9 +34,10 @@ import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
 import { possessiveName } from './hacklib.js';
-import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun, } from './mondata.js';
+import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from './mondata.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { rn2 } from './rng.js';
+import { monsterAtPosition } from './steed.js';
 // C do_name.c:docallcmd().
 // C do_name.c:name_ok().
 // C do_name.c:call_ok().

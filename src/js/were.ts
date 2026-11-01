@@ -17,9 +17,7 @@ import { plineWithContinuation } from './pline.js';
 import {
     MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman,
 } from './monster_data.js';
-import {
-    counterWereSpecies, setMonsterSpecies,
-} from './monster_species.js';
+import { setMonsterSpecies } from './mondata.js';
 import {
     heroCanControlPolymorph, heroHasProtectionFromShapeChangers,
     heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero,
@@ -29,7 +27,7 @@ import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import { heroIsDeaf } from './senses.js';
-import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
+import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
@@ -463,4 +461,18 @@ export async function transformWereMonster(monster: Monster, state: GameState = 
         });
     }
     return true;
+}
+
+// C were.c:counter_were().
+const COUNTER_WERE_SPECIES = new Map<number, number>([
+    [PM_WERERAT, PM_HUMAN_WERERAT],
+    [PM_WEREJACKAL, PM_HUMAN_WEREJACKAL],
+    [PM_WEREWOLF, PM_HUMAN_WEREWOLF],
+    [PM_HUMAN_WERERAT, PM_WERERAT],
+    [PM_HUMAN_WEREJACKAL, PM_WEREJACKAL],
+    [PM_HUMAN_WEREWOLF, PM_WEREWOLF],
+]);
+
+export function counterWereSpecies(mnum: number): number | null {
+    return COUNTER_WERE_SPECIES.get(mnum) ?? null;
 }

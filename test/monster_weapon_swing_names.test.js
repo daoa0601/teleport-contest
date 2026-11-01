@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { swingMonsterWeapon } from '../js/monster_weapon.js';
+import { swingMonsterWeapon } from '../js/mhitu.js';
 import { ELVEN_DAGGER } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

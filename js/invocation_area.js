@@ -11,7 +11,7 @@ import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { maketrap, mkstairs } from './mklev.js';
 import { finishMonsterLiquidDeath, resolveMonsterLiquid } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';

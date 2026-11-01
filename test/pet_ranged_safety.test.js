@@ -4,7 +4,7 @@ import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { bestPetRangedTarget } from '../js/dogmove.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;

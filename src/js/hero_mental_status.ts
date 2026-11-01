@@ -14,7 +14,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { updateMealMimicry } from './meal_mimic.js';
-import { staggerVerb } from './monster_hurtle.js';
+import { staggerVerb } from './dothrow.js';
 import {
     grantWornProperty, hasCarriedProperty, hasInvokedProperty, hasWornProperty,
     propertyIsActive, refreshProperty, removeWornProperty, setPropertyTimeout,

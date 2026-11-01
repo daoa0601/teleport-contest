@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import { ANTI_MAGIC, BEAR_TRAP, D_NODOOR, DOOR, FIRE_TRAP, LAVAPOOL, MM_ANGRY, NO_MINVENT, PIT, ROOM, RUST_TRAP, SLP_GAS_TRAP, STONE, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 
-import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { createPoisonGasCloud, createSteamCloud } from '../js/regions.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';

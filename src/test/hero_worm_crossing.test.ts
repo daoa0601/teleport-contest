@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { assertWormBody } from './support/worms.js';

@@ -4,7 +4,7 @@ import { isRider } from './corpse_species.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { CORPSE } from './object_data.js';
 import { relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';

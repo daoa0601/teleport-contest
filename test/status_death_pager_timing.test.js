@@ -7,7 +7,7 @@ import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { waitForCurrentMonsterMore } from '../js/monster_attack_death.js';
+import { waitForCurrentMonsterMore } from '../js/end.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';

@@ -14,12 +14,11 @@ import { definiteName, definiteObjectAction, objectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { monsterStatusLine } from './monster_status.js';
+import { monsterStatusLine } from './insight.js';
 import { CHEST, EGG, LARGE_BOX, STATUE, TIN } from './object_data.js';
-import { observeObject } from './object_knowledge.js';
+import { observeObject, objectClassForType } from './object_knowledge.js';
 import { heroIsHallucinating } from './senses.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { objectClassForType } from './object_knowledge.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
 

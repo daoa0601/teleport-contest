@@ -5,7 +5,7 @@ import { createBonesFromDeath } from '../js/bones_death.js';
 import { BURN, G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';

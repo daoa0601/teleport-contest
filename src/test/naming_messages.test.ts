@@ -27,11 +27,10 @@ import { applyMonsterGolemEffects } from '../js/mon.js';
 import { AD_COLD, AD_FIRE } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName, monsterName } from '../js/do_name.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
 import { tryKickReel } from '../js/dokick.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap } from '../js/monster_pit_trap.js';
-import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
+import { hurtleMonster } from '../js/dothrow.js';
+import { beginMonsterPitTrap, finishMonsterPitTrap, tryMonsterTrapEscape } from '../js/trap.js';
 import { breakFloorObject } from '../js/object_breakage.js';
 import {
     AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE,

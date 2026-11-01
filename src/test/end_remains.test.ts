@@ -3,7 +3,7 @@ import test from 'node:test';
 import { DIED, STONING } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { finishMonsterAttackDeath } from '../js/end.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -23,7 +23,7 @@ import {
 } from './monster_data.js';
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { hasCompletedEngraving } from './engrave.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterInAir } from './terrain_properties.js';
 import { propertyIsActive } from './properties.js';

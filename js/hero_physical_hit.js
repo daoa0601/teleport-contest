@@ -20,8 +20,8 @@ import { resolveHeroJoust, rollHeroJoust, tryHeroPuddingSplit } from './hero_wea
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { tryKnockback } from './uhitm.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsUnsolid, requireMonsterData, } from './monster_data.js';
-import { tryUnarmedStagger } from './monster_hurtle.js';
 import { monsterName } from './do_name.js';
+import { tryUnarmedStagger } from './dothrow.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, YA, YUMI } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';

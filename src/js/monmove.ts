@@ -4,7 +4,7 @@ import {
     moveMonsterNextToHero, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel,
     relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap,
 } from './teleport.js';
-import { noticeMonster } from './monster_notices.js';
+import { noticeMonster } from './hack.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import type { Monster } from './monster_types.js';
 import { impossible, panic } from './diagnostics.js';
@@ -72,7 +72,7 @@ import {
     revealAggravatingMonster, finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination,
     findMonsterDefensiveItem, useMonsterDefensiveItem, useMonsterMiscItem,
 } from './muse.js';
-import { monsterHasMagicKey } from './monster_key.js';
+import { monsterHasMagicKey } from './artifact.js';
 import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './monster_carry.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
@@ -143,7 +143,7 @@ import {
     LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
 } from './object_data.js';
 import type { MessagePublisher } from './pline.js';
-import { digMonsterTunnel } from './monster_tunnel.js';
+import { digMonsterTunnel } from './dig.js';
 import { heroSpecies, heroFormSticks } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
@@ -173,12 +173,12 @@ import {
     readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem,
 } from './mthrowu.js';
 import { finishPetEating } from './pet_eating.js';
-import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import { wakeMonstersNearWithMessages, publishMonsterWake } from './monster_wake.js';
 import { finishMonsterWebTrap } from './web_trap.js';
 import {
-    monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, wieldMonsterWeapon,
-} from './monster_weapon.js';
+    monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon,
+} from './weapon.js';
+import { swingMonsterWeapon } from './mhitu.js';
 import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
 import { trapName } from './trap_name.js';
 import { currentAttribute } from './attrib.js';
@@ -197,7 +197,6 @@ import {
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
 import { beginMonsterFireTrap, finishMonsterFireTrap } from './fire_trap.js';
 import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume } from './landmine_trap.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
 import {
     beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume,
@@ -219,11 +218,11 @@ import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
 import {
     monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt,
-} from './monster_location.js';
+} from './steed.js';
 import { dismountHero } from './steed.js';
 import {
     advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween,
-} from './monster_worm.js';
+} from './worm.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { moveVaultGuard } from './vault.js';
@@ -254,7 +253,8 @@ import {
     advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects,
 } from './mhitu.js';
 import {
-    resumeDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap,
+    beginMonsterPitTrap, resumeDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt,
+    triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap,
 } from './trap.js';
 import { tryCallObjectType } from './object_call.js';
 import {

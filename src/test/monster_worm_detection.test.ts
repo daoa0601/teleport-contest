@@ -8,7 +8,7 @@ import { GlyphOffset } from '../js/glyph_numbers.js';
 import { InputGate, bindInputGate } from '../js/input.js';
 import { detectMonsters } from '../js/magic_detection.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { assertWormBody } from './support/worms.js';

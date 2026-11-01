@@ -15,7 +15,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { regainHearingAfterHelplessness } from './hunger.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
-import { selectHandToHandWeapon } from './monster_weapon.js';
+import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, OBJECT_NAMES } from './object_data.js';
 import { blessObjectState } from './object_state.js';

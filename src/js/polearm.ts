@@ -2,7 +2,7 @@
 // C refs: apply.c use_pole(), calc_pole_range(), find_poleable_mon(),
 // get_valid_polearm_position(), snickersnee_used_dist_attk().
 
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import {
     COLNO,
     IS_FURNITURE,

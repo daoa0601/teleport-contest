@@ -5,10 +5,10 @@ import { D_CLOSED, D_LOCKED, DOOR, IRONBARS, MM_ANGRY, NO_MINVENT, STONE, W_NONP
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { monsterHasKey } from '../js/monmove.js';
-import { CLOVE_OF_GARLIC, CREDIT_CARD, LOCK_PICK, PICK_AXE, SCR_SCARE_MONSTER, SKELETON_KEY } from '../js/object_data.js';
+import { CLOVE_OF_GARLIC, CREDIT_CARD, LOCK_PICK, PICK_AXE, SCR_SCARE_MONSTER, SKELETON_KEY, } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

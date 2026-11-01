@@ -3,7 +3,7 @@
 //
 // Level construction owns the bubble list. goto_level() and the ordinary
 // movement loop share movement of that same persistent list.
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { AIR, CLOUD, COLNO, MON_BUBBLEMOVE, RLOC_NOMSG, ROWNO, STONE, WATER, Is_airlevel, Is_waterlevel, } from './const.js';
 import { rn2 } from './rng.js';
@@ -12,7 +12,7 @@ import { cmapSymbolAppearance, newsym } from './display.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { clearMonsterWormFromMap } from './monster_worm.js';
+import { clearMonsterWormFromMap } from './worm.js';
 import { mnearto } from './shop_damage.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero } from './teleport.js';
 import { block_point, recalc_block_point, unblock_point, vision_recalc, } from './vision.js';

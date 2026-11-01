@@ -33,7 +33,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';

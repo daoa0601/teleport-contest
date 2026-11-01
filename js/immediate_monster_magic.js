@@ -20,7 +20,7 @@ import { revealMimicIdentity } from './mimic.js';
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
-import { hurtleMonster } from './monster_hurtle.js';
+import { hurtleMonster } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { monsterName } from './do_name.js';

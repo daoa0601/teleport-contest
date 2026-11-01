@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { gotoLevel } from '../js/level_change.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setPaidShopkeeper } from '../js/shop_damage.js';

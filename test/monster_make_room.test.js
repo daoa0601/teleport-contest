@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LAVAPOOL, M_AP_F_DKNOWN, M_AP_OBJECT, NO_MINVENT, POOL, ROOM, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { BOULDER } from '../js/object_data.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { mnearto } from '../js/shop_damage.js';

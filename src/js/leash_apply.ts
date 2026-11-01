@@ -7,10 +7,10 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { impossible } from './diagnostics.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterLeashName, monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';
 import { possessiveName } from './hacklib.js';
+import { monsterAtPosition } from './steed.js';
 import { LEASH } from './object_data.js';
 import { promptDirection } from './tty_prompts.js';
 import { rn2, rnd } from './rng.js';

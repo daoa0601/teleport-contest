@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS,
-    MM_NOGRP, MM_NOWAIT, NO_MINVENT, PANICLOG, PIT, POOL, STONE, W_AMUL,
+    DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PANICLOG,
+    PIT, POOL, STONE, W_AMUL,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
@@ -12,8 +12,8 @@ import { AT_ENGL } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mhitm.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterAtPosition } from '../js/monster_location.js';
-import { setMonsterSpecies } from '../js/monster_species.js';
+import { monsterAtPosition } from '../js/steed.js';
+import { setMonsterSpecies } from '../js/mondata.js';
 import { AMULET_OF_LIFE_SAVING, OIL_LAMP } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';

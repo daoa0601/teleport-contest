@@ -89,4 +89,4 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
         vision_note_blocker_change(x, y);
     return { died: false, heroDied: false };
 }
-//# sourceMappingURL=monster_tunnel.js.map
+//# sourceMappingURL=dig.js.map

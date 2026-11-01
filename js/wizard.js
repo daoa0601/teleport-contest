@@ -23,7 +23,7 @@ import { FAKE_AMULET_OF_YENDOR } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { definiteObjectAction, observeDistantObjectForNaming } from './objnam.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
 import { healMonster, monsterIndexByName, speciesWasGenocided, } from './mon.js';

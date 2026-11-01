@@ -18,11 +18,11 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { triggerHeroTrapAt } from '../js/hero_traps.js';
 import { heroLiquidEffects } from '../js/hack.js';
 
-import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { deleteFloorTrap, maketrap } from '../js/mklev.js';
 import { mksobj } from '../js/mkobj.js';

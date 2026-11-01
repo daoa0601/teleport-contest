@@ -1,5 +1,5 @@
 // C pickup.c:observe_quantum_cat(), shared by opening and final disclosure.
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { heroFootName } from './body_parts.js';
 import { MM_ADJACENTOK, MM_NOMSG, NO_MINVENT } from './const.js';
 import { canSpotMonster, randomDisplayMonsterName, randomDisplayMonsterSubject } from './display.js';

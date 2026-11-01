@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';

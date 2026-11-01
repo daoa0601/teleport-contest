@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { createDungeon } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 import { armorBaseBonus } from '../js/armor.js';

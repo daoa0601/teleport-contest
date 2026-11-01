@@ -11,7 +11,7 @@ import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { loseHeroHp } from './hero_damage.js';
 import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';

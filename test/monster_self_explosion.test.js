@@ -3,7 +3,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { resolveMonsterSelfExplosion } from '../js/monster_self_explosion.js';
+import { resolveMonsterSelfExplosion } from '../js/mhitu.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { AT_EXPL } from '../js/monster_attack_types.js';
 import { D_CLOSED, D_NODOOR, DOOR, MM_ANGRY, MM_NOGRP, NO_MINVENT, NON_PM, PIT, POOL, TT_PIT, W_AMUL, W_ARM, W_WEP } from '../js/const.js';

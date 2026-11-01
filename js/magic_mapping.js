@@ -1,6 +1,6 @@
 import { requirePlayingGame } from './gstate.js';
 // C detect.c:do_mapping(), do_vicinity_map().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { exerciseWisdom } from './attrib.js';
 import { COLNO, IN_SIGHT, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { mapLevel, showMapSpot } from './detect.js';

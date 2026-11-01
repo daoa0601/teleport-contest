@@ -7,9 +7,8 @@
 // floor_naming.ts (namefloorobj).
 
 import {
-    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST,
-    In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
-    MGIVENNAME, PL_PSIZ, W_SADDLE,
+    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
+    M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, W_SADDLE,
 } from './const.js';
 import { clearCannedCommands } from './command_state.js';
 import { takeCommandKey, takeCommandPosition } from './input.js';
@@ -22,8 +21,8 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { SPE_NOVEL } from './object_data.js';
 import { nameIndividualObject } from './individual_naming.js';
 import {
-    canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible,
-    randomDisplayMonsterIdentity, seeMonsterWithInfrared,
+    canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomDisplayMonsterIdentity,
+    seeMonsterWithInfrared,
 } from './display.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
 import { objectTypeKnown } from './shk.js';
@@ -35,11 +34,9 @@ import { selectMapPosition, showGetposTip } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './mirror.js';
 import {
-    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND,
-    monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster,
-    monsterIsRider, monsterTypeName,
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid,
+    monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName,
 } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { visibleCommandKey } from './command_keys.js';
@@ -47,13 +44,12 @@ import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
 import { possessiveName } from './hacklib.js';
-import {
-    monsterPossessive, monsterPronounGender, monsterSubjectPronoun,
-} from './mondata.js';
+import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from './mondata.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { rn2 } from './rng.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
+import { monsterAtPosition } from './steed.js';
 
 // C do_name.c:docallcmd().
 // C do_name.c:name_ok().

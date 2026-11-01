@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

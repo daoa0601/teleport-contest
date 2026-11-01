@@ -11,7 +11,7 @@ import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterIsHelpless } from './monster_sleep.js';
-import { monsterWieldedWeapon, unwieldMonsterWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
 import { BOOMERANG, KATANA, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isFlimsyObject, isMissileObject, isWeaponTool } from './object_properties.js';

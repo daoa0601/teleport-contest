@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { adjustMonsterSpeed } from '../js/worn.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -6,7 +6,7 @@ import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './magic_map_display.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
 import { terrainCoversObjectsAt } from './terrain_properties.js';

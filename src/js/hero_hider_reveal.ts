@@ -14,17 +14,14 @@ import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
-import { dist2 } from './hacklib.js';
+import { dist2, possessiveName } from './hacklib.js';
 import { setHeroGrip } from './hero_grip.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import type { MonsterCallLog, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
-} from './monster_data.js';
-import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
+import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectDescription } from './object_description.js';
@@ -35,7 +32,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { ceilingName } from './terrain_name.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveHeroByTeleport } from './teleport.js';
-import { advanceMonsterWormBody } from './monster_worm.js';
+import { advanceMonsterWormBody } from './worm.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 
 const M1_HIDE = 0x00000100;

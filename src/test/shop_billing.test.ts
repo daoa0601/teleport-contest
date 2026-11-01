@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import {
     CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK,
     WORM_TOOTH, WAN_DIGGING,

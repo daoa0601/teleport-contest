@@ -2,7 +2,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame, requireGameLevel } from './gstate.js';
 // detect.js — Searching and detection.
 // C ref: detect.c — dosearch(), dosearch0().
-import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { heroIsHallucinating } from './senses.js';
 import { game } from './gstate.js';
 import { endVoluntaryMultiTurn } from './command_state.js';

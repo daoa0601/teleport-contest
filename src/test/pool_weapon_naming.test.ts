@@ -4,7 +4,7 @@ import test from 'node:test';
 import { NEED_HTH_WEAPON, NEED_RANGED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { wieldMonsterWeapon } from '../js/monster_weapon.js';
+import { wieldMonsterWeapon } from '../js/weapon.js';
 import { ORCISH_DAGGER, ELVEN_BOW, ELVEN_ARROW, LONG_SWORD } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

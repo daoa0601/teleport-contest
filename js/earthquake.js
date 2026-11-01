@@ -1,7 +1,7 @@
 // Earthquakes and the chasms they open.
 // C ref: music.c do_earthquake() and do_pit().
 import { publishHeardMessage } from './hero_speech.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';

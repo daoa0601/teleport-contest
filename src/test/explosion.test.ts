@@ -16,7 +16,7 @@ import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL, AD_DGST } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import {
     AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WAN_DEATH,
     WAN_FIRE, WAN_LIGHT, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING,

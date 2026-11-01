@@ -12,7 +12,7 @@ import { monsterSpeciesSticks } from './monster_data.js';
 import { showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { isWeaponTool } from './object_properties.js';
 import { isAxe, isBlade } from './weapon_type.js';
-import { cutWorm } from './monster_worm.js';
+import { cutWorm } from './worm.js';
 
 interface HeroWeaponHitOptions {
     attack: AttackTuple;

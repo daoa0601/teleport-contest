@@ -2,9 +2,7 @@
 // C refs: uhitm.c stumble_onto_mimic() and lock.c stumble_on_door_mimic().
 
 import { setHeroGrip } from './hero_grip.js';
-import {
-    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
-} from './const.js';
+import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { canSenseMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
@@ -12,11 +10,11 @@ import { AD_STCK } from './monster_attack_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
-import { objectAtMonsterDescription } from './monster_birth.js';
+import { objectAtMonsterDescription } from './pager.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { heroIsBlind } from './senses.js';
 import { wakeMonster } from './mon.js';
 

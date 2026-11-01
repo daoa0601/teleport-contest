@@ -13,7 +13,7 @@ import { heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, removeIntrinsicProperty, } from './properties.js';
 import { onQuestStart } from './quest.js';

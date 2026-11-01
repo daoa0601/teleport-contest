@@ -6,28 +6,48 @@
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
 
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum } from './mkobj.js';
+import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject } from './mkobj.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Position, MapLocation, Room, SpecialLevelContext, FloorObjects, Trap, ActiveSpecialLevel } from './map_types.js';
+import type {
+    Position, MapLocation, Room, SpecialLevelContext, FloorObjects, Trap, ActiveSpecialLevel, Rectangle,
+    StairRegion,
+} from './map_types.js';
 import { isRoom } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import type { Rectangle, StairRegion } from './map_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies } from './makemon.js';
 import { lookupNovelTitle } from './novel_titles.js';
 import { setWallState } from './wall_topology.js';
-import { monsterAtPosition } from './monster_location.js';
 import { ensureMinionData } from './minion.js';
-import { setMonsterSpecies } from './monster_species.js';
-import { monsterIsVampireShifter } from './monster_data.js';
-import { ismnum } from './const.js';
+import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
+
+import {
+    monsterIsVampireShifter, MONSTER_GENO, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME,
+    MONSTER_RESISTS, monsterIsPlayerMonster,
+} from './monster_data.js';
+import {
+    ismnum, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER,
+    BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED,
+    D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE,
+    DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE,
+    ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED,
+    IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE,
+    FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH,
+    DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL,
+    AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER,
+    MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE,
+    STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM,
+} from './const.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { impossible } from './diagnostics.js';
 import { tablePoint } from './lua/des.js';
-import type { DesOperations, DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, PositionedDesOptions, MonsterAppearance, LuaRegion } from './lua/des.js';
+import type {
+    DesOperations, DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, PositionedDesOptions,
+    MonsterAppearance, LuaRegion,
+} from './lua/des.js';
 import type { LuaValue } from './lua/runtime.js';
 import { luaString } from './lua/arguments.js';
 import { objectToLuaTable } from './lua/runtime.js';
@@ -39,22 +59,21 @@ import { depth as depth_of_level } from './hacklib.js';
 import { inducedAlignment, level_difficulty } from './dungeon.js';
 import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
-import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord } from './special_location.js';
+import {
+    ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord,
+} from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE, STRAT_WAITFORU } from './const.js';
-import { OBJECT_MERGE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE } from './object_data.js';
-import { MONSTER_GENO, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_RESISTS, monsterIsPlayerMonster } from './monster_data.js';
+import {
+    OBJECT_MERGE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE,
+} from './object_data.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { terrain_glyph } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
-import { unlinkMonsterObject } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { putSaddleOnMonster } from './steed.js';
 import { insideRoom, roomForIndex, roomsAt } from './room.js';
-import { somexy } from './mkroom.js';
-import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
+import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom } from './mkroom.js';
 import { beginObjectBurn } from './light.js';
 import { objectWeight } from './weight.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState } from './object_state.js';
@@ -62,32 +81,23 @@ import { addCreatedObjectToContainer, addObjectToContainer } from './object_cont
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionMatch } from './selvar.js';
 import {
-    CANDELABRUM_OF_INVOCATION, GEM_CLASS, G_IGNORE, G_NOGEN, HOLE,
-    LANDMINE, LEVEL_TELEP, M2_DWARF, M2_FEMALE, M2_GNOME, M2_MALE,
-    M2_SHAPESHIFTER, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT,
-    PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR,
-    PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT,
-    PM_VLAD_THE_IMPALER, RANDOM_CLASS, RIN_TELEPORTATION, ROCKTRAP,
-    ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD,
-    S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING,
-    WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom,
-    canDigDown, canFallThrough, findMonsterNearPosition, is_hole, is_pit,
-    make_engr_at, makecorridors, maketrap, maybe_sdoor, mkstairs, mktrap,
-    mktrap_victim, okdoor, stairway_add, topologize,
+    CANDELABRUM_OF_INVOCATION, GEM_CLASS, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, M2_DWARF, M2_FEMALE,
+    M2_GNOME, M2_MALE, M2_SHAPESHIFTER, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL,
+    PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER,
+    RANDOM_CLASS, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD,
+    S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM,
+    add_door, add_room, add_subroom, canDigDown, canFallThrough, findMonsterNearPosition, is_hole, is_pit,
+    make_engr_at, makecorridors, maketrap, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, stairway_add,
+    topologize,
 } from './mklev.js';
 import {
-    fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom,
-    fillZooRoom,
-} from './mkroom.js';
-import {
-    fillSpecialMazeGrid, fix_wall_spines, setLevelTerrainLit,
-    setLevelTerrainType, vibratingSquarePoint,
+    fillSpecialMazeGrid, fix_wall_spines, setLevelTerrainLit, setLevelTerrainType, vibratingSquarePoint,
 } from './mkmaze.js';
 import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
 import { makeSpecialDrawbridge } from './dbridge.js';
-import { monsterHasStoneResistance, monsterPolymorphsWhenStoned } from './mondata.js';
+import { monsterHasStoneResistance, monsterPolymorphsWhenStoned, setMonsterSpecies } from './mondata.js';
 
 export async function fillVault(room: Room | null | undefined): Promise<void> {
     if (!room) return;

@@ -5,9 +5,9 @@ import { MIGR_EXACT_XY, MIGR_RANDOM, MON_ARRIVE_BEFORE_YOU, NO_MINVENT, NON_PM }
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { changeMonsterForm } from '../js/mon.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { RIN_PROTECTION_FROM_SHAPE_CHANGERS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

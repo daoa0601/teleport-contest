@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { hurtleMonster } from '../js/monster_hurtle.js';
+import { hurtleMonster } from '../js/dothrow.js';
 import { MONSTER_FLAGS1, requireMonsterData } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, RIN_CONFLICT, ROCK } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';

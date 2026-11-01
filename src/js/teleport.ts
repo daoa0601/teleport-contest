@@ -3,11 +3,9 @@
 
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
-import {
-    monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,
-} from './monster_location.js';
+import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
-import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
+import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
@@ -21,7 +19,7 @@ import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.j
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { announceInvocationSquare } from './invocation.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked } from './hack.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash } from './leash_apply.js';
@@ -49,7 +47,6 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import {
     findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
@@ -64,7 +61,7 @@ import { gotoLevel } from './level_change.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { seeTrap } from './trap.js';
+import { seeTrap, tryMonsterTrapEscape } from './trap.js';
 import { learnObjectType } from './object_knowledge.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';

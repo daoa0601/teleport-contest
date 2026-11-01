@@ -1,8 +1,7 @@
 // C cmd.c:there_cmd_menu(), its entry builders, and act_on_act().
 import {
-    ALTAR, BOLT_LIM, CLICK_1, CLICK_2, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR,
-    FOUNTAIN, NHW_MENU, PICK_ONE, SCORR, SINK, THRONE, Upolyd,
-    VIBRATING_SQUARE,
+    ALTAR, BOLT_LIM, CLICK_1, CLICK_2, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FOUNTAIN, NHW_MENU, PICK_ONE, SCORR,
+    SINK, THRONE, Upolyd, VIBRATING_SQUARE,
 } from './const.js';
 import { canSpotMonster, glyphAt } from './display.js';
 import { clearMessageWindow } from './tty_topline.js';
@@ -12,17 +11,15 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { isContainer } from './container.js';
 import { monsterCanBeSaddled } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { BOULDER, CREDIT_CARD, LOCK_PICK, SADDLE, SKELETON_KEY } from './object_data.js';
 import { observeObjectForNaming } from './objnam.js';
-import { monsterSaddle } from './steed.js';
 import { couldsee } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import { heroTestMove } from './hack.js';
 import {
-    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
-    tty_end_menu, tty_select_menu, tty_start_menu,
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';

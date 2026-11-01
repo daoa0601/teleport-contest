@@ -6,7 +6,7 @@ import { glyphAt, map_invisible, unmap_invisible } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { smellUnseenMonster } from './mon.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasOlfaction } from './polyself.js';

@@ -1,19 +1,18 @@
 // Long-worm body ownership.
-// C refs: makemon.c:initworm(), worm.c:place_worm_tail_randomly(), wormgone().
+// C refs: worm.c:initworm(), place_worm_tail_randomly(), wormgone().
 
-import { MAX_NUM_WORMS, MHPMAX, MON_FLOOR, NORMAL_SPEED, isok, xdir, ydir } from './const.js';
+import { MAX_NUM_WORMS, MHPMAX, NORMAL_SPEED, xdir, ydir } from './const.js';
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { cloneMonster } from './monster_clone.js';
-import { monsterAtPosition, removeMonsterFromMapAt } from './monster_location.js';
+import { cloneMonster } from './makemon.js';
+import { monsterAtPosition, removeMonsterFromMapAt } from './steed.js';
 import { mcalcmove } from './mon.js';
 import { monsterName } from './do_name.js';
 import { d, rn2, rnd } from './rng.js';
 import { goodPosition } from './teleport_rules.js';
-import { isSavedRecord } from './saved_graph.js';
 import type { Monster, WormSegment } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
@@ -352,69 +351,4 @@ export async function shrinkStationaryMonsterWorm(monster: Monster, { rollDice =
 async function removeWormTailTip(monster: WormMonster) {
     const tip = monster.wormSegments.pop();
     if (tip) await newsym(tip.x, tip.y);
-}
-
-type WormRestoreMonster = Pick<Monster,
-    'mx' | 'my' | 'mstate' | 'headOnMap' | 'wormno' | 'wormHead' | 'wormSegments' | 'wormGrowTime'>;
-
-export interface WormRestoreLevel {
-    monsters: WormRestoreMonster[];
-}
-
-// This boundary proves only worm restoration fields, not a complete Monster.
-// Full saves and bones retain body identity and deadlines rather than rebuilding them.
-export function validMonsterWormBodies(level: unknown): level is WormRestoreLevel {
-    if (!isSavedRecord(level) || !Array.isArray(level.monsters)) return false;
-    const monsters: unknown[] = level.monsters;
-    const slots = new Set<number>();
-    for (const monster of monsters) {
-        if (!isSavedRecord(monster)
-            || typeof monster.mx !== 'number' || !Number.isInteger(monster.mx)
-            || typeof monster.my !== 'number' || !Number.isInteger(monster.my)
-            || monster.mstate !== undefined && typeof monster.mstate !== 'number'
-            || monster.headOnMap !== undefined && typeof monster.headOnMap !== 'boolean'
-            || monster.wormno !== undefined && typeof monster.wormno !== 'number'
-            || monster.wormGrowTime !== undefined
-                && typeof monster.wormGrowTime !== 'number') return false;
-        if (!monster.wormno) {
-            if (monster.wormHead != null) return false;
-            if (monster.wormSegments !== undefined
-                && (!Array.isArray(monster.wormSegments)
-                    || monster.wormSegments.length !== 0)) return false;
-            continue;
-        }
-        if (!Number.isInteger(monster.wormno)
-            || monster.wormno < 1 || monster.wormno >= MAX_NUM_WORMS
-            || slots.has(monster.wormno)
-            || typeof monster.wormGrowTime !== 'number'
-            || !Number.isInteger(monster.wormGrowTime) || monster.wormGrowTime < 0
-            || !savedWormPoint(monster.wormHead)
-            || (monster.wormHead.x !== 0 && !isok(monster.wormHead.x, monster.wormHead.y))
-            || !Array.isArray(monster.wormSegments)) return false;
-        const segments: unknown[] = monster.wormSegments;
-        for (const point of segments) {
-            if (!savedWormPoint(point)
-                || !(point.x === 0 && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
-                    && !isok(point.x, point.y)) return false;
-        }
-        slots.add(monster.wormno);
-    }
-    return true;
-}
-
-function savedWormPoint(value: unknown): value is WormSegment {
-    return isSavedRecord(value)
-        && typeof value.x === 'number' && Number.isInteger(value.x)
-        && typeof value.y === 'number' && Number.isInteger(value.y)
-        && (value.onMap === undefined || typeof value.onMap === 'boolean');
-}
-
-// C restore.c rebuilds the monster grid and places the whole worm chain.
-export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
-    for (const monster of level.monsters) {
-        // The native monster grid is rebuilt from fmon when loading a level.
-        delete monster.headOnMap;
-        for (const segment of monster.wormSegments ?? []) delete segment.onMap;
-        if (monster.wormno) monster.wormHead = { x: monster.mx, y: monster.my };
-    }
 }

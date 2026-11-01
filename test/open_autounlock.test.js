@@ -4,7 +4,7 @@ import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { artifactByName, discoverArtifact } from '../js/artifacts.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { CREDIT_CARD } from '../js/object_data.js';

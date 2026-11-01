@@ -11,7 +11,7 @@ import { finishSpecialRoamer } from '../js/sp_lev.js';
 import { monsterAlignmentType } from '../js/monster_alignment.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { AMULET_OF_YENDOR, DAGGER, FOOD_RATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

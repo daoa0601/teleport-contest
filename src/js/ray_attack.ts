@@ -37,7 +37,7 @@ import { destroyObjectFromMonsterInventory } from './monworn.js';
 import {
     MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import {
     AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE,
 } from './monster_attack_types.js';

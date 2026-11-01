@@ -5,7 +5,7 @@ import { artifactById } from './artifacts.js';
 import { liveSpellSkill } from './spell_casting_rules.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import {
     A_DEX, P_BASIC, P_SKILLED, P_EXPERT, COLNO, DOOR, D_CLOSED, D_LOCKED,
     In_mines, IS_ROOM, IS_WALL,
@@ -17,7 +17,7 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import {
     AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION,
     SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES,

@@ -10,7 +10,7 @@ import {
     ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD,
     SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
     Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
-    W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
+    W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok,
 } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
@@ -19,18 +19,18 @@ import { objectDescription as fullObjectDescription } from './object_description
 import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
-import { game, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
-import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { isPoolAt, levelHasCeiling, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
-import { monsterWieldedWeapon } from './monster_weapon.js';
+import { monsterWieldedWeapon } from './weapon.js';
 import {
-    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
+    BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
     FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
     MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
@@ -69,7 +69,8 @@ import { beginMonsterFireTrap, finishMonsterFireTrap } from './fire_trap.js';
 import {
     beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume,
 } from './landmine_trap.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
+import { AD_PHYS } from './monster_attack_types.js';
+import { monsterWearsIronShoes } from './monworn.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
 import {
     beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume,
@@ -84,7 +85,9 @@ import {
 import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymorph_trap.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
 import { finishMonsterWebTrap } from './web_trap.js';
-import { tryMonsterTrapEscape } from './monster_trap_escape.js';
+import { trapName } from './trap_name.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { fillPitWithBoulderAt } from './pit_fill.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import {
     teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal,
@@ -112,7 +115,7 @@ import type {
 import { CORPSE } from './object_data.js';
 import { touchPetrifies } from './stoning.js';
 import { corpseName } from './objnam.js';
-import { unwieldMonsterWeapon } from './monster_weapon.js';
+import { unwieldMonsterWeapon } from './weapon.js';
 import { useMonsterStoningCure } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct } from './end.js';
@@ -1686,4 +1689,204 @@ export async function finishMonsterTrapDeath(
     const death = await finishMonsterKilled(monster, state, options);
     if (!death.survived && !death.heroDied && state === game) await newsym(x, y);
     return death;
+}
+
+// ---------------------------------------------------------------------------
+// A monster falling into an ordinary or spiked pit.
+// C ref: trap.c:trapeffect_pit().
+// ---------------------------------------------------------------------------
+
+export interface MonsterPitTrap {
+    kind: 'pit-trap';
+    trap: Trap;
+    spiked: boolean;
+    relevantSpikes: boolean;
+    damageSides: number;
+    killed: boolean;
+    finished: boolean;
+    inSight: boolean;
+    seeSquare: boolean;
+    falls: boolean;
+    dragged: boolean;
+    death?: MonsterDeathResult;
+}
+
+interface PitTrapOptions {
+    publish?: MessagePublisher;
+    random?: (limit: number) => number;
+    rollOne?: (sides: number) => number;
+    describeMonster?: (monster: Monster) => string;
+    state?: GameState;
+}
+
+const M1_WALLWALK = 0x00000008;
+const PM_PIT_FIEND = 300;
+const PM_PIT_VIPER = 218;
+
+function monsterIsUngrounded(monster: Monster, state: GameState): boolean {
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    const clingsToCeiling = !!(flags & M1_CLING) && levelHasCeiling(state);
+    return !!(flags & M1_FLY) || clingsToCeiling || symbol === S_EYE || symbol === S_LIGHT
+        || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
+}
+
+export function beginMonsterPitTrap(
+    monster: Monster,
+    trap: Trap | null | undefined,
+    state: GameState = game,
+    { forced = false } = {},
+): MonsterPitTrap | null {
+    if (!trap) return null;
+    const ungrounded = monsterIsUngrounded(monster, state);
+    const sokoban = !!state.level?.flags.sokoban_rules;
+    const falls = !(ungrounded && forced && !sokoban);
+    const inescapable = forced || sokoban && !trap.madeby_u;
+    if (ungrounded && falls && !inescapable) return null;
+    const visibility = monsterTrapVisibility(monster, state);
+    const spiked = trap.ttyp === SPIKED_PIT;
+    const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
+    if (falls && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
+        monster.mtrapped = 1;
+    return {
+        kind: 'pit-trap',
+        trap,
+        spiked,
+        relevantSpikes,
+        damageSides: relevantSpikes ? 10 : 6,
+        killed: false,
+        finished: false,
+        ...visibility,
+        falls,
+        dragged: ungrounded && falls,
+    };
+}
+
+export async function finishMonsterPitTrap(
+    monster: Monster,
+    event: MonsterPitTrap | null,
+    {
+        publish = plineWithContinuation,
+        random,
+        rollOne = rnd,
+        state = game,
+        describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
+    }: PitTrapOptions = {},
+): Promise<MonsterPitTrap | null> {
+    if (!event || event.finished) return event;
+    if (!event.falls) {
+        if (event.inSight) {
+            await seeTrap(event.trap, state);
+            await publish(`${canonicalMonsterName(monster, { capitalized: true, state })} doesn't fall into the pit.`);
+        }
+        event.finished = true;
+        return event;
+    }
+    if (event.inSight) {
+        const owner = event.trap.madeby_u ? 'your' : 'a';
+        await publish(
+            `${describeMonster(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`,
+        );
+        if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
+            await publish("How pitiful.  Isn't that the pits?");
+        await seeTrap(event.trap, state);
+    }
+
+    const selfTouch = await monsterSelfTouch(monster, {
+        prefix: 'Falling, ',
+        finishDeath: (victim, options) => finishEnvironmentalMonsterDeath(victim, state, {
+            ...options, publish,
+            ...(random === undefined ? {} : { random }),
+        }),
+        publish,
+        state,
+    });
+    if (!selfTouch.survived) {
+        event.killed = true;
+        event.finished = true;
+        return event;
+    }
+
+    const damage = rollOne(event.damageSides);
+    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    if (monster.mhp <= 0) {
+        const death = await finishMonsterTrapDeath(monster, state, {
+            damageType: AD_PHYS,
+            ...(random === undefined ? {} : { random }),
+            publish,
+        });
+        event.death = death;
+        event.killed = !death.survived;
+        if (death.survived) monster.dead = false;
+    }
+    event.finished = true;
+    return event;
+}
+
+// ---------------------------------------------------------------------------
+// Escape attempts by an already trapped monster. C trap.c:mintrap().
+// dochug refreshes stationary monsters; a settling boulder owns its redraw.
+// ---------------------------------------------------------------------------
+
+const M1_METALLIVORE = 0x80000000;
+const MZ_HUGE = 4;
+
+export async function tryMonsterTrapEscape(monster: Monster, state: GameState = game, {
+    random = rn2,
+    publish = plineWithContinuation,
+    describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
+}: { random?: (limit: number) => number; publish?: MessagePublisher;
+    describeMonster?: (target: Monster) => string } = {}): Promise<void> {
+    const { mx: x, my: y } = monster;
+    const level = requireGameLevel(state);
+    const trap = level.traps.find(candidate =>
+        candidate.tx === x && candidate.ty === y);
+    if (!trap) {
+        monster.mtrapped = 0;
+        return;
+    }
+    const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
+    const pit = is_pit(trap.ttyp);
+    if (!trap.tseen && seeSquare && inSight
+        && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
+        await seeTrap(trap, state);
+    }
+    const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
+        || MONSTER_NAME[monster.mnum] === 'pit fiend';
+
+    if (random(40) === 0 || (pit && climbsEasily)) {
+        const boulder = pit && (level.objects[x]?.[y] || [])
+            .some(object => object.otyp === BOULDER);
+        if (boulder) {
+            if (random(2) === 0) {
+                monster.mtrapped = 0;
+                if (inSight) await publish(`${describeMonster(monster)} pulls free...`);
+                await fillPitWithBoulderAt(x, y, state, { publish });
+            }
+        } else {
+            if (inSight) {
+                if (pit) {
+                    await publish(`${describeMonster(monster)} climbs ${
+                        climbsEasily ? 'easily ' : ''
+                    }out of the pit.`);
+                } else if (trap.ttyp === BEAR_TRAP || trap.ttyp === WEB) {
+                    // C trapname() draws a hallucinated trap name after Monnam().
+                    const subject = describeMonster(monster);
+                    await publish(`${subject} pulls free of the ${trapName(trap.ttyp, { state })}.`);
+                }
+            }
+            monster.mtrapped = 0;
+        }
+    } else if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_METALLIVORE) {
+        if (trap.ttyp === BEAR_TRAP) {
+            if (inSight) await publish(`${describeMonster(monster)} eats a bear trap!`);
+            deleteTrap(trap, state);
+            monster.meating = 5;
+            monster.mtrapped = 0;
+        } else if (trap.ttyp === SPIKED_PIT) {
+            if (inSight) await publish(`${describeMonster(monster)} munches on some spikes!`);
+            trap.ttyp = PIT;
+            monster.meating = 5;
+        }
+    }
 }

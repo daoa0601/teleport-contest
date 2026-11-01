@@ -1,5 +1,5 @@
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_WIS, FIRE_TRAP, MAGIC_TRAP, NO_MINVENT, W_AMUL, W_ARM, } from '../js/const.js';

@@ -10,7 +10,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
-import { selectHandToHandWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
+import { swingMonsterWeapon } from '../js/mhitu.js';
+import { selectHandToHandWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/weapon.js';
 import {
     AKLYS, BELL_OF_OPENING, BULLWHIP, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
     SMALL_SHIELD, TWO_HANDED_SWORD,

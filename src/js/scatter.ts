@@ -5,14 +5,11 @@ import { currency } from './currency.js';
 
 import { deleteTrap } from './trap_lifecycle.js';
 import {
-    DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP,
-    ZAP_POS, isok,
+    DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok,
 } from './const.js';
 import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
-import {
-    placeObject, stack_object,
-} from './floor_object.js';
+import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
 import type { Monster } from './monster_types.js';
@@ -27,21 +24,18 @@ import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutc
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
-import { monsterObjectPronoun } from './mondata.js';
+import { possessiveName, dist2 } from './hacklib.js';
+import {
+    monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
+} from './mondata.js';
+import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
-import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import {
-    angerAttackedMonster,
-    finishEnvironmentalMonsterDeath,
-    hideHeroUnder,
-    maybeUnhideAt,
-    wakeAttackedMonster,
+    angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster,
 } from './mon.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -49,15 +43,13 @@ import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './punishment.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { roomsAt } from './room.js';
-import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver,
-    monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
+import {
+    MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal,
+    monsterIsNonliving, monsterIsVampireShifter,
+} from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import {
-    ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE,
-} from './object_data.js';
-import {
-    breakFloorObject,
-} from './object_breakage.js';
+import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
+import { breakFloorObject } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
 import { delobj } from './object_delete.js';
@@ -73,11 +65,8 @@ import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import {
-    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
-} from './weapon_damage.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './mondata.js';
 
 export interface ScatterOptions {
     state?: GameState;

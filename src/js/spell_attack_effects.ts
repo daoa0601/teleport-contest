@@ -1,33 +1,32 @@
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import { requirePlayingGame } from './gstate.js';
+import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 
 interface LightningStep extends Position { direction: number; strength: number; }
 
 // C spell.c:throwspell(), skilled elemental spells, cast_chain_lightning().
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP,
-    EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel,
+    A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel,
     LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir,
 } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, zapdir_to_glyph } from './display.js';
 import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { explode } from './explosion.js';
-import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
-import { game, requireLiveGame } from './gstate.js';
+import {
+    prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip,
+} from './getpos.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './do_name.js';
+import { monsterAtPosition } from './steed.js';
 import { SPE_CONE_OF_COLD, SPE_MAGIC_MISSILE } from './object_data.js';
 import { walkPathCells } from './path_walk.js';
 import { paintRayCell } from './ray.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
-import { zapdir_to_glyph } from './display.js';
 import { rnd, rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './spell_damage.js';

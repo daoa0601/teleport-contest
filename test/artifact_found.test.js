@@ -14,7 +14,7 @@ import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mkobj.js';
 import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { addObjectToMonsterInventory, dropMonsterObject } from '../js/steal.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { makeWish } from '../js/wish.js';
 import { initRng } from '../js/rng.js';

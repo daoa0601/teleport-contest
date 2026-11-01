@@ -21,7 +21,7 @@ import { heroIsStrangled } from './hero_strangulation.js';
 import { updateHeroHunger } from './hunger.js';
 import { applyLevitationPotion } from './levitation_potion.js';
 import { detectMonsters, detectObjects } from './magic_detection.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import {
     POT_RESTORE_ABILITY, POT_FRUIT_JUICE, POT_SEE_INVISIBLE, POT_SPEED,
     POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_INVISIBILITY,

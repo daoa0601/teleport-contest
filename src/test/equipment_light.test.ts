@@ -14,7 +14,7 @@ import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { finishEnvironmentalMonsterDeath, removeMonsterFromGame } from '../js/mon.js';
-import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/monster_weapon.js';
+import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/light.js';
 import { moveHeroByTeleport } from '../js/teleport.js';

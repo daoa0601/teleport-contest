@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { mfndpos } from '../js/mon.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { updateHeroRoomMembership } from '../js/room.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';

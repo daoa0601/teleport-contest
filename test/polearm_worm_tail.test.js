@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_NOTAIL, NO_MINVENT, P_BASIC, P_POLEARMS } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { initializeMonsterWormBody } from '../js/worm.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { applyInventoryObject } from './support/commands.js';

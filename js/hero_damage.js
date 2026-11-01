@@ -4,7 +4,7 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { finishMonsterAttackDeath } from './monster_attack_death.js';
+import { finishMonsterAttackDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { hasPermanentIntrinsicProperty, propertyIsActive } from './properties.js';

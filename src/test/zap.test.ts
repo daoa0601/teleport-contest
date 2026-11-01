@@ -1,5 +1,5 @@
 import { objectTypeKnown } from '../js/shk.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { W_ARM } from '../js/const.js';

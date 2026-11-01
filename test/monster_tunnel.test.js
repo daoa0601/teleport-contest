@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CHA, CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, HWALL, NO_MINVENT, ROOM, SCORR, SDOOR, STONE, TREE, W_AMUL, W_NONDIGGABLE, } from '../js/const.js';
@@ -7,7 +7,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { digMonsterTunnel } from '../js/monster_tunnel.js';
+import { digMonsterTunnel } from '../js/dig.js';
 import { AMULET_OF_LIFE_SAVING, APPLE, BOULDER, ROCK, } from '../js/object_data.js';
 import { couldsee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';

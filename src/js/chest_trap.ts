@@ -22,7 +22,7 @@ import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { staggerVerb } from './monster_hurtle.js';
+import { staggerVerb } from './dothrow.js';
 import {
     delobj, deleteObjectContents,
 } from './object_delete.js';

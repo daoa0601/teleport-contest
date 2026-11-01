@@ -3,7 +3,7 @@
 import { clearBypasses } from './object_bypass.js';
 import { DISMOUNT_BONES, PARANOID_BONES } from './const.js';
 import { paranoidQuery } from './query.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import {
     CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE,
     MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd,

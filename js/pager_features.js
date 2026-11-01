@@ -6,7 +6,7 @@ import { glyphAt, terrain_glyph } from './display.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { CHEST, LARGE_BOX } from './object_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import { monsterAtPosition } from './steed.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { waterbodyName } from './terrain_name.js';

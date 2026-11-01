@@ -1,10 +1,10 @@
 // vision.js — Visibility and light.
 // C ref: vision.c Algorithm C shadow-casting.
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition } from './steed.js';
 import { game } from './gstate.js';
 import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
 import { newsym } from './display.js';
-import { noticeAllMonsters } from './monster_notices.js';
+import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';

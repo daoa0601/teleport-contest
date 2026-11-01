@@ -45,10 +45,10 @@ import {
 import { placeObject } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { deleteObject } from './object_delete.js';
-import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import type { PropertyName } from './property_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { unwieldMonsterWeapon } from './weapon.js';
 
 type MonsterArmorSlot = keyof typeof SLOT_MASK;
 

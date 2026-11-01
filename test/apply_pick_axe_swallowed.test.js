@@ -6,7 +6,7 @@ import test from 'node:test';
 // uhitm.c:797-799 suppresses the second two-weapon swing.
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { BULLWHIP, PICK_AXE } from '../js/object_data.js';
 import { W_SWAPWEP, W_WEP } from '../js/const.js';
 import { setTwoWeaponCombat } from '../js/weapon_slots.js';

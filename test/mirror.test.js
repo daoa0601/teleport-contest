@@ -1,4 +1,4 @@
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { floorObjects } from './support/level-state.js';
 import { requireScreenRow } from './support/screen.js';

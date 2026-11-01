@@ -29,9 +29,9 @@ import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG
 import { placeObject } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { deleteObject } from './object_delete.js';
-import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
+import { unwieldMonsterWeapon } from './weapon.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;

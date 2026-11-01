@@ -37,24 +37,6 @@ const WEAPON_CLASS = 2;
 const GEM_CLASS = 13;
 const S_KOP = 37;
 const PM_BALROG = MONSTER_NAME.indexOf('balrog');
-// C mhitu.c:mswings() and mhitm.c:mswingsm().
-export async function swingMonsterWeapon(monster, weapon, state = game, { defender = null, publish = plineWithContinuation, random = rn2, } = {}) {
-    if (!state.flags.verbose || heroIsBlind(state)
-        || !(defender ? monsterVisible(monster) : canSeeMonster(monster)))
-        return;
-    const x = defender ? defender.mx : state.u.ux;
-    const y = defender ? defender.my : state.u.uy;
-    const bash = isPolearm(weapon)
-        && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
-        && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
-    const subject = monsterName(monster, { state, capitalized: true });
-    const verb = monsterWeaponSwingVerb(weapon, bash, random);
-    const quantity = weapon.quan > 1 ? 'one of ' : '';
-    const possessive = perceivedPossessivePronoun(monster, { state, random });
-    const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
-    const target = defender ? ` at ${monsterName(defender, { state })}` : '';
-    await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
-}
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
 const RANGED_WEAPON_PREFERENCE = [
     'dwarvish spear', 'silver spear', 'elven spear', 'spear', 'orcish spear',
@@ -378,4 +360,4 @@ export async function updateMonsterWeaponAfterPolymorph(monster, state = game, {
         monster.weaponCheck = NEED_WEAPON;
     return null;
 }
-//# sourceMappingURL=monster_weapon.js.map
+//# sourceMappingURL=weapon.js.map

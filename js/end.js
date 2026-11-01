@@ -8,7 +8,7 @@ import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
-import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
+import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
@@ -19,8 +19,10 @@ import { monsterName } from './do_name.js';
 import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
-import { flush_screen } from './display.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { canSpotMonster, flush_screen } from './display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip, } from './tty_topline.js';
+import { vision_recalc } from './vision.js';
+import { shopkeeperKillerName } from './shk.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
 import { containerContents } from './container_contents.js';
@@ -49,13 +51,13 @@ import { AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR, CANDELAB
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { paranoidQuery, promptChoice, promptYesNo } from './query.js';
-import { clearHeroRemains, setHeroRemainsFromDeath, } from './death_remains.js';
+import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster, } from './death_remains.js';
 import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import { requireInitializedHero } from './hero_types.js';
 import { collectLevelFollowers } from './dog.js';
@@ -1564,5 +1566,191 @@ async function finalPossessionLines(possessions) {
         }
     }
     return lines;
+}
+// C end.c:done_in_by(). Fatal attribution describes the real killer even
+// when its appearance, given name, or the hero's hallucination differs.
+function fatalMonsterDescription(monster) {
+    const current = monster.mnum;
+    const champion = ismnum(monster.cham) ? monster.cham : current;
+    const mimicker = M_AP_TYPE(monster) === M_AP_MONSTER;
+    const imitator = current !== champion || mimicker;
+    const givenName = MGIVENNAME(monster) || monster.name;
+    const ghost = current === MONSTER_NAME.indexOf('ghost');
+    const personal = (species) => !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+    const unique = (species) => !!((MONSTER_GENO[species] ?? 0) & G_UNIQ);
+    const uniqueKiller = unique(current) && !(imitator && !mimicker)
+        && (current !== MONSTER_NAME.indexOf('high cleric') || monster.ispriest);
+    let article = uniqueKiller ? personal(current) ? '' : 'the ' : null;
+    if (ghost && givenName)
+        article = 'the ';
+    let name = monster.minvis ? 'invisible ' : '';
+    if (heroIsHallucinating(game) && canSpotMonster(monster))
+        name += 'hallucinogen-distorted ';
+    if (imitator) {
+        const vampire = ['vampire', 'vampire leader', 'Vlad the Impaler']
+            .some(species => champion === MONSTER_NAME.indexOf(species));
+        const apparentSpecies = mimicker ? monster.mappearance : current;
+        if (apparentSpecies === undefined || !ismnum(apparentSpecies))
+            throw new Error('A monster killer has an invalid monster disguise.');
+        const real = monsterTypeName(champion, monster.female);
+        const apparent = !mimicker && vampire && real.toLowerCase().includes('vampire')
+            && current === MONSTER_NAME.indexOf('vampire bat')
+            ? 'bat' : monsterTypeName(apparentSpecies, monster.female);
+        const shape = vampire || personal(apparentSpecies) ? apparent
+            : unique(apparentSpecies) && apparentSpecies !== MONSTER_NAME.indexOf('high cleric')
+                ? `the ${apparent}` : withIndefiniteArticle(apparent);
+        name += vampire ? `${real} in ${shape} form`
+            : `${real} ${mimicker ? 'disguised as' : 'imitating'} ${shape}`;
+    }
+    else if (ghost) {
+        name += `ghost${givenName ? ` of ${givenName}` : ''}`;
+    }
+    else if (monster.isshk) {
+        name += shopkeeperKillerName(monster);
+        article = '';
+    }
+    else if (monster.ispriest || monster.isminion) {
+        name += monsterName(monster, { article: 'none', exact: true, suppressSaddle: true });
+    }
+    else {
+        name += monsterTypeName(current, monster.female);
+        if (givenName)
+            name += ` ${monster.mextra?.ebones ? 'of' : 'called'} ${givenName}`;
+    }
+    return article === null ? withIndefiniteArticle(name) : article + name;
+}
+export async function finishMonsterAttackDeath(monster, { pagerOwned = false, attribution = { kind: 'done-in-by' }, deathType = null, } = {}) {
+    const customCause = attribution.kind === 'death-inflicted-by';
+    const announcesDeath = !customCause || attribution.announcesDeath;
+    const fatalLine = deathType === STONING ? 'You turn to stone...' : 'You die...';
+    const hpSaveSentinel = game.u.uhp === -1;
+    const projectedFatalLine = !!game._pending_message
+        && !game._suppressMessagesUntilInput;
+    if (projectedFatalLine && announcesDeath && deathType !== STONING) {
+        // You("die...") runs vpline(): pending vision changes and the raw
+        // injury reach the map before tty pages older prose.
+        if (game.vision_full_recalc)
+            await vision_recalc(0);
+        await flush_screen(1);
+        await waitForCurrentMonsterMore();
+    }
+    // Petrification can append to a short hit or page a longer one. Both
+    // happen in done_in_by(), before done() records zero HP for life saving.
+    const petrificationAnnounced = announcesDeath && deathType === STONING;
+    if (petrificationAnnounced)
+        await plineWithContinuation(fatalLine);
+    const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
+    const fatalDeathCause = customCause
+        ? attribution.deathCause ?? formatKillerCause(fatalKiller, deathType, attribution.killerFormat ?? KILLED_BY)
+        : `${deathType === STONING ? 'petrified' : 'killed'} by ${fatalKiller}`;
+    if (!customCause) {
+        // done_in_by() removes redundant attribution only for the causing monster.
+        const reason = game._helplessReason;
+        if (reason && typeof reason !== 'string' && reason.monsterId === monster.m_id) {
+            const firstSpace = reason.text.indexOf(' ');
+            if (firstSpace >= 0)
+                game._helplessReason = { ...reason, text: reason.text.slice(0, firstSpace) };
+        }
+        setHeroRemainsFromMonster(monster, game);
+    }
+    // done_in_by() announces the death while HP still holds the lethal
+    // (often negative) value; done() commits zero afterwards. The
+    // life-saving transaction performs done()'s commit itself.
+    const lifeSaving = beginHeroLifeSaving();
+    if (lifeSaving) {
+        // "But wait..." can page the fatal line. Native makeknown()
+        // and its Wisdom exercise draw wait for that acknowledgement.
+        const medallionEffect = heroIsBlind(game) ? 'feels warm' : 'begins to glow';
+        if (announcesDeath && !petrificationAnnounced)
+            await plineWithContinuation(fatalLine);
+        await plineWithContinuation('But wait...');
+        identifyLifeSavingAmulet();
+        await plineWithContinuation(`Your medallion ${medallionEffect}!`);
+        const dismissal = await plineWithContinuation(formatFeltMessage('much better!'));
+        // ESC at tty --More-- sets WIN_STOP: the new overflow
+        // message is still installed, but later messages in this
+        // input transaction (starting with the crumble line) are
+        // suppressed.  Other dismissal keys retain the source
+        // follow-up.
+        if (dismissal !== 27) {
+            await plineWithContinuation('The medallion crumbles to dust!');
+        }
+        else {
+            game._suppressMessagesUntilInput = true;
+        }
+        await completeHeroLifeSaving(lifeSaving);
+        return !!game.program_state.gameover;
+    }
+    // C end.c:done() records every fatal event and forces HP to zero
+    // before it tests LifeSaved or offers the debug/explore "Die?"
+    // escape. done_in_by() has already announced the death by then, so
+    // its pager still shows the lethal HP; done()'s own message flush
+    // does not. The amulet branch commits in beginHeroLifeSaving().
+    const commitFatalEvent = () => {
+        game.u.umortality = (game.u.umortality || 0) + 1;
+        if (game.u.uhp !== 0 || (Upolyd(game.u) && game.u.mh !== 0)) {
+            game.u.uhp = 0;
+            game.u.mh = 0;
+            game.context.botl = true;
+        }
+    };
+    const previousStatusDisabled = game._statusUpdatesDisabled;
+    if (hpSaveSentinel)
+        game._statusUpdatesDisabled = true;
+    try {
+        if (announcesDeath && game._suppressMessagesUntilInput && deathType !== STONING) {
+            await plineWithContinuation(fatalLine);
+            commitFatalEvent();
+            if (pagerOwned && !game._suppressMessagesUntilInput)
+                await waitForCurrentMonsterMore(fatalLine);
+        }
+        else if (announcesDeath) {
+            if (!petrificationAnnounced)
+                await plineWithContinuation(fatalLine);
+            commitFatalEvent();
+            // tty_yn_function() skips more() while Escape's WIN_STOP is set.
+            if ((game.flags?.debug || game.flags?.explore) && !game._suppressMessagesUntilInput)
+                await waitForCurrentMonsterMore(fatalLine);
+        }
+        else {
+            commitFatalEvent();
+        }
+    }
+    finally {
+        if (previousStatusDisabled === undefined)
+            delete game._statusUpdatesDisabled;
+        else
+            game._statusUpdatesDisabled = previousStatusDisabled;
+    }
+    if (game.flags?.debug || game.flags?.explore) {
+        const die = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
+        if (!die) {
+            await plineWithContinuation("OK, so you don't die.");
+            await restoreHeroAfterDeath();
+            if (game.program_state.gameover)
+                return true;
+            return false;
+        }
+    }
+    await finishOrdinaryDeath({
+        killer: fatalKiller, deathCause: fatalDeathCause, deathType,
+        deathVerb: deathType === STONING ? 'were petrified' : 'died',
+    });
+    game.context.move = 0;
+    return true;
+}
+// losehp() enters urgent_pline(), whose map flush precedes paging the
+// previous message. Its pending HP request must reach that pager.
+export async function finishHeroDeathAfterMonsterMessage(options) {
+    await flush_screen(1);
+    await waitForCurrentMonsterMore();
+    return finishHeroDeath(options);
+}
+export async function waitForCurrentMonsterMore(fallbackMessage = '') {
+    if (!game._pending_message) {
+        game._pending_message = fallbackMessage;
+        resetToplineClip();
+    }
+    return flushPendingTopline();
 }
 //# sourceMappingURL=end.js.map

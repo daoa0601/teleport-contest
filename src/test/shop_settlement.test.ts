@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { pushKey } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 import { setHeroGoldAmount, heroGoldAmount } from '../js/hero_gold.js';
 import { deleteObject } from '../js/object_delete.js';
 import { unlinkObject } from '../js/object_location.js';

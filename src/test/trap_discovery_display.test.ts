@@ -8,7 +8,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { placeMonsterAt } from '../js/steed.js';
 
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { addTrap } from './support/level-state.js';

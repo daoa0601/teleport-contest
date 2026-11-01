@@ -1,11 +1,11 @@
 // C apply.c:use_stethoscope() and its_dead().
 import { armorSlotFor } from './armor.js';
 import { heroHandName } from './body_parts.js';
-import { CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok } from './const.js';
-import { convertSecretDoor } from './detect.js';
 import {
-    canSpotMonster, feel_newsym, map_invisible, map_object, newsym, unmap_invisible,
-} from './display.js';
+    CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok,
+} from './const.js';
+import { convertSecretDoor } from './detect.js';
+import { canSpotMonster, feel_newsym, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -13,10 +13,12 @@ import { heroStatusLine } from './hero_status.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, monsterIsHumanoid, monsterIsWhirly, monsterTypeName } from './monster_data.js';
-import { monsterAtPosition } from './monster_location.js';
+import {
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, monsterIsHumanoid, monsterIsWhirly, monsterTypeName,
+} from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { monsterStatusLine } from './monster_status.js';
+import { monsterAtPosition } from './steed.js';
+import { monsterStatusLine } from './insight.js';
 import { CORPSE, LENSES, SLIME_MOLD, STATUE } from './object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { minimalObjectName, objectMonsterName, simpleObjectTypeName } from './objnam.js';

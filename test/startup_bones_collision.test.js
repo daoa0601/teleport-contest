@@ -6,7 +6,7 @@ import { runSegment } from '../js/jsmain.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition } from '../js/steed.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('a new hero moves an ancestor off the starting stair before creating the pet', async () => {
     const storage = memoryStorage();
