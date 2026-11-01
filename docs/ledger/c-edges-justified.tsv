@@ -1930,3 +1930,4 @@ tty_putstatusfield	tty_curs	inlined	writeStatusLines positions each field with d
 tty_status_update	make_things_fit	inlined	the shrink loop lives beside render_status (wintty.ts:191-264) and runs from the port's status-line rendering path
 tty_status_update	critically_low_hp	inlined	the hitpoint bar samples criticallyLowHp (prayer_trouble.ts:123) for barCritical (botl.ts:106,700), as wintty.c:4612 samples hpbar_crit_hp
 tty_status_update	stat_cap_indx	inlined	the capacity index is read directly from nearCapacity() (botl.ts:118 and wintty.ts's shrink path); stat_cap_indx() was a window-port callback for that value
+do_loot_cont	cmdq_add_ec	inlined	the queued #force is game._cannedCommands.push({kind:'command',name:'force'}) (pickup.ts:616-619), the port's CQ_CANNED queue
