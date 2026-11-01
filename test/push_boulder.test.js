@@ -16,6 +16,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 async function pushRoom() {
     const level = await freshObjectRoom({ flags: { pickup: false, verbose: true } });
     pushRoomInput();
@@ -78,6 +79,35 @@ void test('pushing a boulder into a pit fills it and buries its floor pile', asy
     assert.equal(dagger.where, 'buried');
     assert.equal(game.u.ux, 11);
     assert.match(game._pending_message, /The boulder fills a pit\./);
+});
+void test('a boulder pushed onto an unseen trapped monster in a pit is heard, not seen', async () => {
+    // C hack.c:moverock_core() case PIT (hack.c:530-539) applies its
+    // IN_SIGHT kludge while the full recalc queued by obj_extract_self()
+    // -> remove_object() -> recalc_block_point() (mkobj.c:2517-2518) is
+    // still pending. The first flooreffects() pline (do.c:195-197,
+    // "The boulder falls into the pit.") flushes that recalc from inside
+    // pline() (pline.c:265-273); vision_recalc() rebuilds the buffers and
+    // drops the kludged bit, so when the closing message block re-tests
+    // cansee(x,y) (do.c:239-251) an unlit pit is no longer seen and C
+    // reports You_hear("a boulder fall.") instead of "The boulder fills
+    // a pit.".
+    const level = await pushRoom();
+    const pit = addTrap(level, PIT, 12, 10);
+    const monster = await createMonsterAt('newt', 12, 10);
+    monster.mtrapped = 1;
+    monster.mhp = monster.mhpmax = 100;
+    level.requireAt(12, 10).lit = false;
+    await vision_recalc(0);
+    assert.equal(cansee(12, 10), false);
+    const boulder = await floorObject(BOULDER, 11, 10);
+    initRng(9n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(monster.mtrapped, 0);
+    assert.ok(monster.mhp < 100, 'the trapped monster is struck by the boulder');
+    assert.equal(level.traps.includes(pit), false);
+    assert.equal(boulder.where, 'gone');
+    assert.equal(game.u.ux, 11);
+    assert.equal(game._pending_message, 'You hear a boulder fall.');
 });
 void test('pushing a boulder plugs a hole and makes its floor diggable', async () => {
     const level = await pushRoom();
