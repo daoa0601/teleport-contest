@@ -1919,3 +1919,14 @@ do_statusline2	suppress_map_output	inlined	the saving/exited/suppress guards at 
 do_statusline2	encglyph	inlined	same as bot_via_windowport: the gold field renders the symbol directly (botl.ts:156-157,165)
 is_ltgt_percentnumber	digit	inlined	the \d class of the pattern is the digit() test (botl.ts:1740)
 parse_status_hl2	status_hilite_add_threshold	inlined	each parsed threshold is pushed as an operation (botl.ts:2018 operations.push({threshold:{fld,rule}})), the restructured form of the shared adder
+tty_init_nhwindows	alloc	n/a	memory allocation for the tty descriptor; the port's GameDisplay is a plain object
+tty_init_nhwindows	tty_clear_nhwindow	inlined	the browser GameDisplay owns the base window; clearScreen and the banner rows replace the separate window calls (jsmain.ts showStartupNotice)
+tty_init_nhwindows	tty_create_nhwindow	inlined	the display is its own base window; no per-window creation (jsmain.ts:419-424)
+tty_init_nhwindows	tty_curs	inlined	showStartupNotice addresses rows directly through display.putstr(0, row) (jsmain.ts:423) instead of a cursor move
+tty_init_nhwindows	tty_display_nhwindow	inlined	the base window is shown by writing the banner rows; tty_display_nhwindow(BASE,FALSE) is an fflush with no extra screen effect
+tty_init_nhwindows	tty_putstr	inlined	the four copyright lines are written with display.putstr (jsmain.ts:421-423)
+tty_init_nhwindows	set_wc2_option_mod_status	n/a	option-visibility bookkeeping for the statuslines window capability; no grader-visible effect
+tty_putstatusfield	tty_curs	inlined	writeStatusLines positions each field with display.putstr(column,row) (wintty.ts:144-189); the display addresses cells explicitly instead of a tty_curs() move
+tty_status_update	make_things_fit	inlined	the shrink loop lives beside render_status (wintty.ts:191-264) and runs from the port's status-line rendering path
+tty_status_update	critically_low_hp	inlined	the hitpoint bar samples criticallyLowHp (prayer_trouble.ts:123) for barCritical (botl.ts:106,700), as wintty.c:4612 samples hpbar_crit_hp
+tty_status_update	stat_cap_indx	inlined	the capacity index is read directly from nearCapacity() (botl.ts:118 and wintty.ts's shrink path); stat_cap_indx() was a window-port callback for that value
