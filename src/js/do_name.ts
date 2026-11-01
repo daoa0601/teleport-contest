@@ -304,7 +304,6 @@ const PM_GHOST = MONSTER_NAME.indexOf('ghost');
 const PM_SHOPKEEPER = MONSTER_NAME.indexOf('shopkeeper');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
-
 // C do_name.c:mon_nam()/Monnam().
 export function monsterName(monster: Monster, {
     capitalized = false, state = game, article = 'the', adjective = '',
@@ -314,9 +313,12 @@ export function monsterName(monster: Monster, {
     augmentIt = false,
     suppressInvisible = false, suppressHallucination = false, exact = false,
 }: MonsterNameOptions = {}): string {
+    requireLiveGame(state);
     const name = formatMonsterName(monster, state, {
-        adjective, article, called, suppressIt, suppressSaddle, augmentIt,
-        suppressInvisible, suppressHallucination, exact,
+        article, adjective, called, suppressIt: suppressIt || exact,
+        suppressSaddle: suppressSaddle || exact, augmentIt,
+        suppressInvisible: suppressInvisible || exact,
+        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact, exact,
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }

@@ -275,9 +275,12 @@ const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 // C do_name.c:mon_nam()/Monnam().
 export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', called = false, suppressIt = false, suppressSaddle = !!MGIVENNAME(monster)
     || article === 'your' && !suppressIt && monster === state.u.usteed, augmentIt = false, suppressInvisible = false, suppressHallucination = false, exact = false, } = {}) {
+    requireLiveGame(state);
     const name = formatMonsterName(monster, state, {
-        adjective, article, called, suppressIt, suppressSaddle, augmentIt,
-        suppressInvisible, suppressHallucination, exact,
+        article, adjective, called, suppressIt: suppressIt || exact,
+        suppressSaddle: suppressSaddle || exact, augmentIt,
+        suppressInvisible: suppressInvisible || exact,
+        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact, exact,
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
