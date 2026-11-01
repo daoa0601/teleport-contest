@@ -610,7 +610,9 @@ function burnOwner(object, state) {
         return owner.charAt(0).toUpperCase() + owner.slice(1);
     }
     const carrier = object.ocarry || requireGameLevel(state).monsters.find(monster => (monster.minvent || monster.inventory || []).includes(object));
-    return carrier ? possessiveName(monsterName(carrier, { capitalized: true, state })) : 'The';
+    // C shk.c:mon_owns(): s_suffix(y_monnam(obj->ocarry)), so a pet's item
+    // reads "Your saddled pony's".
+    return carrier ? possessiveName(monsterName(carrier, { article: 'your', capitalized: true, state })) : 'The';
 }
 function burnName(object, state) {
     const count = object.quan ?? object.quantity ?? 1;

@@ -692,7 +692,9 @@ function burnOwner(object: GameObject, state: GameState) {
     }
     const carrier = object.ocarry || requireGameLevel(state).monsters.find(monster =>
         (monster.minvent || monster.inventory || []).includes(object));
-    return carrier ? possessiveName(monsterName(carrier, { capitalized: true, state })) : 'The';
+    // C shk.c:mon_owns(): s_suffix(y_monnam(obj->ocarry)), so a pet's item
+    // reads "Your saddled pony's".
+    return carrier ? possessiveName(monsterName(carrier, { article: 'your', capitalized: true, state })) : 'The';
 }
 
 function burnName(object: GameObject, state: GameState) {

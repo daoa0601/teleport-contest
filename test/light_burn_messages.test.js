@@ -5,7 +5,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { NO_MINVENT } from '../js/const.js';
-import { CANDELABRUM_OF_INVOCATION, OIL_LAMP } from '../js/object_data.js';
+import { CANDELABRUM_OF_INVOCATION, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { vision_recalc } from '../js/vision.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { unlinkObject } from '../js/object_location.js';
@@ -69,5 +69,19 @@ void test('an engulfed older lamp still flickers while the snuffed newer candela
     assert.equal(holder.lamplit, false);
     assert.equal(holder.spe, 3);
     assert.equal(holder.age, 76, 'snuffing preserves candle fuel and cancels the pending warning');
+});
+// timeout.c:burn_object() names a carried light's owner with Shk_Your(),
+// whose shk.c:mon_owns() uses y_monnam(): a pet's candle is "Your ...".
+void test("a pet's burning candle is announced as the hero's pet's", async () => {
+    await freshRoom();
+    const dog = await createMonsterAt('little dog', 15, 10, NO_MINVENT);
+    dog.mtame = 10;
+    dog.mpeaceful = 1;
+    const candle = await floorObject(WAX_CANDLE, 15, 10, { age: 16 });
+    assert.equal(beginObjectBurn(candle), true);
+    await vision_recalc(0);
+    unlinkObject(candle, game);
+    await addObjectToMonsterInventory(dog, candle);
+    assert.match(await burnFor(1), /Your little dog's candle's flame flickers low!/);
 });
 //# sourceMappingURL=light_burn_messages.test.js.map
