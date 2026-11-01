@@ -1920,6 +1920,9 @@ export async function publishMonsterWake(
     await publish(`${monsterName(monster, { capitalized: true, state })} wakes up${punctuation}${alive}`);
 }
 
+// C mon.c:wake_nearto_core(): the distance filter (monstersNear), the wake
+// message, indeterminate-sleep clearing, petcall whistles, and the closing
+// disturb_buried_zombies() all live here.
 export async function wakeMonstersNearWithMessages(
     x: number, y: number, distance: number, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,
