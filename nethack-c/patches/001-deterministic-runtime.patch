@@ -2,7 +2,7 @@ diff --git a/src/calendar.c b/src/calendar.c
 index 5a5287b2a..9bda4577d 100644
 --- a/src/calendar.c
 +++ b/src/calendar.c
-@@ -31,8 +31,14 @@ staticfn struct tm *getlt(void);
+@@ -31,8 +31,14 @@
  time_t
  getnow(void)
  {
@@ -17,21 +17,28 @@ index 5a5287b2a..9bda4577d 100644
      (void) time((TIME_type) &datetime);
      return datetime;
  }
-@@ -122,6 +128,7 @@ time_from_yyyymmddhhmmss(char *buf)
+@@ -122,6 +128,8 @@
      int k;
      time_t timeresult = (time_t) 0;
      struct tm t, *lt;
 +    time_t now;
++    const char *clock_env;
      char *d, *p, y[5], mo[3], md[3], h[3], mi[3], s[3];
  
      if (buf && strlen(buf) == 14) {
-@@ -150,7 +157,9 @@ time_from_yyyymmddhhmmss(char *buf)
+@@ -150,7 +158,15 @@
          for (k = 0; k < 2; ++k)
              *p++ = *d++;
          *p = '\0';
 -        lt = getlt();
-+        /* Avoid recursion when getnow() itself is using fixed datetime. */
-+        (void) time((TIME_type) &now);
++        /* Avoid recursion when getnow() itself is using fixed datetime.
++           NETHACK_RECORDER_CLOCK (epoch seconds) pins the recording clock
++           whose tm_isdst the fixed datetime inherits. */
++        clock_env = nh_getenv("NETHACK_RECORDER_CLOCK");
++        if (clock_env && *clock_env)
++            now = (time_t) atol(clock_env);
++        else
++            (void) time((TIME_type) &now);
 +        lt = localtime((LOCALTIME_type) &now);
          if (lt) {
              t = *lt;

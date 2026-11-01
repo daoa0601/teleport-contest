@@ -15,6 +15,9 @@
 //                      (defaults to nethack-c/recorder/install/...)
 //   NETHACK_INSTALL    install dir (HACKDIR / NETHACKDIR)
 //   RERECORD_TZ        timezone for the C process (default America/New_York)
+//   NETHACK_RECORDER_CLOCK  epoch seconds of the recording clock whose DST
+//                      state the fixed datetime inherits (default: a
+//                      daylight-time instant, matching the JS replay model)
 //
 // The recorder binary must be built from the patched submodule.
 // See nethack-c/build-recorder.sh.
@@ -25,6 +28,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { createSessionDriver } from './lib/session-driver.mjs';
 import { decodeSession, errorMessage, itemAt } from './lib/session-types.mjs';
+// 2026-07-01 12:00 UTC.  calendar.ts replays the recorder's inherited New York
+// offset as daylight time, so record under a daylight-time clock in any season.
+const DAYLIGHT_RECORDER_CLOCK = '1782907200';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_BINARY = path.join(TEMPLATE_ROOT, 'nethack-c', 'recorder', 'install', 'games', 'lib', 'nethackdir', 'nethack');
@@ -449,6 +455,7 @@ async function recordSegment({ seg, isFirstSegment, binary, installDir, rngLogPa
         NETHACK_NO_DELAY: '1',
         NETHACK_SEED: String(seg.seed ?? 0),
         NETHACK_FIXED_DATETIME: seg.datetime || '20000110090000',
+        NETHACK_RECORDER_CLOCK: process.env.NETHACK_RECORDER_CLOCK || DAYLIGHT_RECORDER_CLOCK,
         NETHACK_RNGLOG: rngLogPath,
         NOMUX_MARKERS: '1',
         NETHACK_RAW_KEYS: '1',
