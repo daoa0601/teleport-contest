@@ -1,17 +1,16 @@
-// C mcastu.c: monster spellcasting against the hero.
-// Spell selection (choose_monster_spell), usefulness checks
-// (spell_would_be_useless), the undirected castmu(FALSE,FALSE) entry used by
-// dochug(), curse feedback (cursetxt), and the deferred completions of
-// mcast_spell()/mcast_summon_mons() effects after their visible lines have
-// crossed the tty boundary.
+// C mcastu.c: monster spellcasting against the hero.  Spell selection
+// (choose_monster_spell), usefulness checks (spell_would_be_useless), the
+// undirected castmu(FALSE,FALSE) entry used by dochug(), curse feedback
+// (cursetxt), and the awaited mcast_spell()/mcast_*() effects, which run
+// each visible line and its state change as one native-order transaction.
 import {
-    A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, MMOVE_DONE,
+    A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT,
     Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT,
 } from './const.js';
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import type {
-    MonsterAction, HeroSpellAttack, MonsterCallLog, MonsterMovementAction, MonsterSpell, MonsterSpellEffect,
-    MovementSpellCast, PublishMonsterMessage, RandomBelow, RollDice, RollOne,
+    HeroSpellAttack, MonsterCallLog, MonsterSpell, MonsterSpellEffect,
+    MonsterSpellName, MovementSpellCast, RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM,
@@ -22,19 +21,19 @@ import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from 
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName,
 } from './display.js';
-import { requireInitializedGame, game, requirePlayingGame } from './gstate.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { displayRayName } from './ray_name.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, loseHeroStrength } from './attrib.js';
 import { clearHeroSliming } from './slime.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory } from './zap.js';
 import { burnHeroArmorByFire } from './trap.js';
-import { finishHeroDeathAfterMonsterMessage, finishHeroDeath } from './end.js';
+import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { igniteItems } from './light.js';
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
-import { flashBurn } from './sight_change.js';
+import { flashBurn, makeBlinded } from './sight_change.js';
 import { rndcurse } from './throne.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -52,20 +51,21 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
-import { heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
-import { finishDochugAfterMovement, requireDochugContext } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
 import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } from './wizard.js';
 import { msummon } from './minion.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
+import {
+    monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
+} from './mondata.js';
 
 const M1_SEE_INVIS = 0x01000000;
 export const MCF_INDIRECT = 0x01;
@@ -98,113 +98,595 @@ export const MONSTER_WIZARD_SPELLS: readonly [MonsterSpell, ...MonsterSpell[]] =
     { key: 'death-touch', level: 20, flags: MCF_HOSTILE | MCF_SIGHT },
 ];
 
-function monsterSpellEffectPreview(
-    spell: MonsterSpell,
-    damage: number,
-    state: PlayingGameState,
-): { effectDamage: number; effectMessage: string | null } {
-    const antimagic = !!state?.u?.antimagic;
-    let effectDamage = damage;
-    if (antimagic && ['psi-bolt', 'open-wounds'].includes(spell.key))
-        effectDamage = Math.trunc((effectDamage + 1) / 2);
-    let effectMessage = null;
-    if (spell.key === 'psi-bolt') {
-        const head = heroHeadName(state);
-        effectMessage =
-            effectDamage <= 5
-                ? `You get a slight ${head}ache.`
-                : effectDamage <= 10
-                  ? 'Your brain is on fire!'
-                  : effectDamage <= 20
-                    ? `Your ${head} suddenly aches painfully!`
-                    : `Your ${head} suddenly aches very painfully!`;
-    } else if (spell.key === 'open-wounds') {
-        effectMessage =
-            effectDamage <= 5
-                ? 'Your skin itches badly for a moment.'
-                : effectDamage <= 10
-                  ? 'Wounds appear on your body!'
-                  : effectDamage <= 20
-                    ? 'Severe wounds appear on your body!'
-                    : 'Your body is covered with painful wounds!';
-    } else if (spell.key === 'blind-you') {
-        const eye = heroEyeName(state);
-        effectMessage = `Scales cover your ${heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`;
-    } else if (spell.key === 'paralyze') {
-        const resisted = !!(state?.u?.antimagic || heroHasFreeAction(state));
-        if (!heroHasInvoluntaryDelay(state))
-            effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
-    } else if (spell.key === 'confuse-you') {
-        if (antimagic) {
-            effectMessage = formatFeltMessage('momentarily dizzy.', state);
-        } else if (heroIsHallucinating(state)) {
-            effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'trippier!' : 'trippy!', state);
-        } else {
-            effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'more confused!' : 'confused!', state);
-        }
-    } else if (spell.key === 'weaken-you') {
-        effectMessage = antimagic ? formatFeltMessage('momentarily weakened.', state) : 'You suddenly feel weaker!';
-    } else if (spell.key === 'aggravation') {
-        effectMessage = formatFeltMessage('that monsters are aware of your presence.', state);
-    } else if (spell.key === 'stun-you') {
-        const resisted = antimagic || heroHasFreeAction(state);
-        const alreadyStunned = !!state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0;
-        effectMessage = resisted
-            ? alreadyStunned
-                ? null
-                : formatFeltMessage('momentarily disoriented.', state)
-            : alreadyStunned
-              ? 'You struggle to keep your balance.'
-              : 'You reel...';
-    } else if (spell.key === 'curse-items') {
-        effectMessage = formatFeltMessage('as if you need some help.', state);
-    } else if (spell.key === 'geyser') {
-        effectMessage = 'A sudden geyser slams into you from nowhere!';
-    } else if (spell.key === 'fire-pillar') {
-        effectMessage = 'A pillar of fire strikes all around you!';
-    } else if (spell.key === 'lightning') {
-        effectMessage = 'A bolt of lightning strikes down at you from above!';
-    }
-    return { effectDamage, effectMessage };
+// Every mcastu.c effect below runs as one awaited transaction.  The slot
+// presenter (mhitu.c's mattacku() caller) supplies the paging-aware
+// publisher and its death finishers; dochug()'s movement cast supplies the
+// plain tty ones.  `publish` returns the pager dismissal so an escaped
+// --More-- can be recognized where tty replaces a retained line.
+export interface McastuSpellContext {
+    state: PlayingGameState;
+    publish: typeof plineWithContinuation;
+    random: RandomBelow;
+    rollDice: RollDice;
+    rollOne: RollOne;
+    calls: MonsterCallLog;
+    /** Finishes a fatal mdamageu(); true when the death ended the run. */
+    fatalDamage: () => Promise<boolean>;
+    /** die hook for losestr() in mcast_weaken_you(). */
+    strengthLossDeath: (killer: string) => DeathHandler;
 }
 
-// Resume castmu() after the casting line.  Damage is pre-rolled before the
-// concrete effect line, but not before a casting line which itself pages.
-export function rollDeferredHeroSpellDamage(
-    action: MonsterMovementAction,
+interface McastuSpellOutcome {
+    dmg: number;
+    died: boolean;
+    /** Dismissal of the effect line which may have forced a pager. */
+    effectLineDismissal: number | null | undefined;
+}
+
+// C mcastu.c:castmu() from the spell-damage roll through the end of the
+// adtyp switch.  The caller published the casting line first; everything
+// after it — the level-scaled damage roll, mcast_spell() or the elemental
+// switch, and the closing mdamageu() — follows here in native order.
+export async function castmuSpellEffect(
+    attack: HeroSpellAttack,
+    monster: Monster,
+    ctx: McastuSpellContext,
+): Promise<boolean> {
+    const { state } = ctx;
+    // Native castmu() passes zero damage without rolling when the caster
+    // aimed at a false position.
+    const dice = attack.spellDice ?? 0;
+    const sides = attack.spellSides ?? 6;
+    let dmg = 0;
+    if (dice > 0) {
+        dmg = ctx.rollDice(dice, sides);
+        ctx.calls.push(`d(${dice},${sides})`);
+        if (heroHasHalfSpellDamage(state)) dmg = Math.trunc((dmg + 1) / 2);
+    }
+    attack.damage = dmg;
+    const type = attack.damageType;
+    if (type === AD_FIRE || type === AD_COLD || type === AD_MAGM) {
+        return await castmuElementalSpell(attack, monster, type, dmg, ctx);
+    }
+    if (!attack.spell)
+        throw new Error('A monster spell cast must retain its chosen spell');
+    const outcome = await mcastSpell(monster, attack.spell, dmg, ctx);
+    if (outcome.dmg && !state.program_state.gameover)
+        return await finishSpellDamage(attack, outcome.dmg, outcome.effectLineDismissal, ctx);
+    return outcome.died || !!state.program_state.gameover;
+}
+
+// C mcastu.c:castmu() AD_FIRE/AD_COLD/AD_MAGM switch cases: the elemental
+// effect line, resistance feedback, and mon_spell_hits_spot(), closed by
+// the shared mdamageu() tail.  These never enter hitmu()'s armor
+// cancellation or contact/passive tail.
+async function castmuElementalSpell(
+    attack: HeroSpellAttack,
+    monster: Monster,
+    type: typeof AD_FIRE | typeof AD_COLD | typeof AD_MAGM,
+    dmg: number,
+    ctx: McastuSpellContext,
+): Promise<boolean> {
+    const { state } = ctx;
+    const effectLineDismissal = await ctx.publish(
+        type === AD_FIRE ? "You're enveloped in flames."
+            : type === AD_COLD ? "You're covered in frost."
+                : 'You are hit by a shower of missiles!',
+    );
+    const resisted = type === AD_FIRE ? !!state.u.fireResistance
+        : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        await ctx.publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
+        monstersObserveHeroResistance(seenResistanceForDamage(type), state);
+        dmg = 0;
+    } else {
+        monstersForgetHeroResistance(seenResistanceForDamage(type), state);
+        if (type === AD_MAGM) {
+            // Native replaces its already-halved pre-roll with fresh missile
+            // damage. Half_spell_damage is not applied to this second roll.
+            const count = Math.trunc(monster.m_lev / 2) + 1;
+            dmg = ctx.rollDice(count, 6);
+            ctx.calls.push(`d(${count},6)`);
+        }
+    }
+    if (type === AD_FIRE && clearHeroSliming(state))
+        await ctx.publish('The slime that covers you is burned away!');
+    if (type === AD_MAGM) {
+        // A shower of magic missiles scuffs an engraving.
+        const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
+        if (engraving) {
+            const wear = ctx.rollDice(6, 6);
+            ctx.calls.push('d(6,6)');
+            wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
+        }
+    }
+    await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic',
+        state.u.ux, state.u.uy, state, {
+            rayNoun: 'spell', heroCaused: false, publish: ctx.publish,
+            random: limit => {
+                ctx.calls.push(`rn2(${limit})`);
+                return ctx.random(limit);
+            },
+        });
+    if (dmg && !state.program_state.gameover)
+        return await finishSpellDamage(attack, dmg, effectLineDismissal, ctx);
+    return !!state.program_state.gameover;
+}
+
+// C mhitu.c:mdamageu() as castmu() reaches it after mcast_spell(): raw HP
+// is kept for tty's -1 sentinel, so rehumanization and the fatal input stay
+// with the presenter hooks.  An escaped pager (dismissal 27) has the
+// retained effect line replaced by the urgent rehumanize line.
+async function finishSpellDamage(
+    attack: HeroSpellAttack,
+    dmg: number,
+    effectLineDismissal: number | null | undefined,
+    ctx: McastuSpellContext,
+): Promise<boolean> {
+    applyHeroSpellDamage(attack, dmg, ctx.state);
+    if (attack.rehumanize) {
+        if (effectLineDismissal === 27) {
+            ctx.state._pending_message = '';
+            ctx.state._retained_message = '';
+        }
+        const restored = await returnHeroToHumanForm(ctx.state);
+        if (restored.died) return true;
+        attack.rehumanize = false;
+    }
+    if (attack.heroDied) {
+        if (await ctx.fatalDamage()) return true;
+        attack.heroDied = false;
+    }
+    return false;
+}
+
+// C mcastu.c:mcast_spell().  Each helper below mirrors one C mcast_*()
+// function and awaits its messages in native order; the switch returns the
+// damage mcast_spell() passes to mdamageu() (applied by the caller), whether
+// an inner death already finished the run, and the dismissal of the effect
+// line which may have forced a pager.
+export async function mcastSpell(
+    monster: Monster,
+    spell: MonsterSpellName,
+    dmg: number,
+    ctx: McastuSpellContext,
+): Promise<McastuSpellOutcome> {
+    switch (spell) {
+    case 'death-touch':
+        return { dmg: 0, died: await mcastDeathTouch(monster, ctx), effectLineDismissal: null };
+    case 'clone-wizard':
+        await mcastCloneWiz(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'summon-monsters':
+        await mcastSummonMons(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'aggravation':
+        await ctx.publish(formatFeltMessage('that monsters are aware of your presence.', ctx.state));
+        aggravateMonsters(ctx.state, ctx.random);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'curse-items':
+        await ctx.publish(formatFeltMessage('as if you need some help.', ctx.state));
+        // rndcurse() keeps the plain publisher, as in the slot presentation.
+        await rndcurse({ publish: plineWithContinuation });
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'destroy-armor':
+        await mcastDestroyArmor(ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'weaken-you':
+        return { dmg: 0, died: await mcastWeakenYou(monster, ctx), effectLineDismissal: null };
+    case 'disappear':
+        await mcastDisappear(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'stun-you':
+        await mcastStunYou(ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'haste-self':
+        await mcastHasteSelf(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'cure-self':
+        await mCureSelf(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    case 'psi-bolt':
+        return await mcastPsiBolt(dmg, ctx);
+    case 'open-wounds':
+        return await mcastOpenWounds(dmg, ctx);
+    case 'geyser':
+        return await mcastGeyser(ctx);
+    case 'fire-pillar':
+        return await mcastFirePillar(ctx);
+    case 'lightning':
+        return await mcastLightning(ctx);
+    case 'insects': {
+        // mcast_insects()'s own feedback goes through the plain publisher.
+        const result = await summonMonsterInsects(monster, ctx.state);
+        if (result.message) await plineWithContinuation(result.message);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    }
+    case 'blind-you':
+        return { dmg: 0, died: false, effectLineDismissal: await mcastBlindYou(ctx) };
+    case 'paralyze':
+        return await mcastParalyze(monster, ctx);
+    case 'confuse-you':
+        await mcastConfuseYou(monster, ctx);
+        return { dmg: 0, died: false, effectLineDismissal: null };
+    }
+}
+
+// The context for castmu(FALSE,FALSE) from dochug(): zero damage and
+// undirected spells only, so the finishers below stay out of reach (the
+// damaging spells are all directed); they carry the standard
+// monster-message death handling.
+export function movementSpellContext(
+    monster: Monster,
     state: PlayingGameState,
-    rollDice: RollDice = d,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSpellDamage) return attack;
-    if (attack.spellDice === undefined || attack.spellSides === undefined)
-        throw new Error('A deferred spell damage roll needs its selected dice');
-    // Undirected spells still produce their effects when aimed at a false
-    // position. Native castmu() passes zero damage without rolling dice.
-    let damage = 0;
-    if (attack.spellDice > 0) {
-        damage = rollDice(attack.spellDice, attack.spellSides);
-        action.calls.push(`d(${attack.spellDice},${attack.spellSides})`);
+    calls: MonsterCallLog = [],
+    overrides: Partial<McastuSpellContext> = {},
+): McastuSpellContext {
+    return {
+        state,
+        publish: plineWithContinuation,
+        random: rn2,
+        rollDice: d,
+        rollOne: rnd,
+        calls,
+        fatalDamage: () => finishMonsterAttackDeath(monster),
+        strengthLossDeath: (): DeathHandler => options =>
+            finishHeroDeathAfterMonsterMessage(options),
+        ...overrides,
+    };
+}
+
+// C mcastu.c:m_cure_self().
+async function mCureSelf(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    if ((monster.mhp ?? 0) >= (monster.mhpmax ?? monster.mhp ?? 0)) return;
+    if (canSeeMonster(monster))
+        await ctx.publish(`${canonicalMonsterName(monster, { state: ctx.state, capitalized: true })} looks better.`);
+    const healing = ctx.rollDice(3, 6);
+    ctx.calls.push('d(3,6)');
+    monster.mhp = Math.min(monster.mhpmax ?? monster.mhp, (monster.mhp ?? 0) + healing);
+}
+
+// C mcastu.c:mcast_death_touch().
+async function mcastDeathTouch(monster: Monster, ctx: McastuSpellContext): Promise<boolean> {
+    const { state } = ctx;
+    await ctx.publish(`Oh no, ${monsterSubjectPronoun(monster, { state })}'s using the touch of death!`);
+    const u = state.u;
+    const polymorphed = Upolyd(u);
+    const form = polymorphed ? u.umonnum : null;
+    const nonliving = form !== null && Number.isInteger(form)
+        && monsterIsNonliving(form);
+    const demon = form !== null && Number.isInteger(form)
+        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
+    if (nonliving || demon) {
+        await ctx.publish('You seem no deader than before.');
+        return false;
     }
-    if (heroHasHalfSpellDamage(state)) damage = Math.trunc((damage + 1) / 2);
-    attack.damage = damage;
-    attack.deferredSpellDamage = false;
-    if (attack.damageType === AD_FIRE || attack.damageType === AD_COLD || attack.damageType === AD_MAGM) {
-        attack.spellEffectMessage = attack.damageType === AD_FIRE ? "You're enveloped in flames."
-            : attack.damageType === AD_COLD ? "You're covered in frost."
-                : 'You are hit by a shower of missiles!';
-        return attack;
+    const antimagic = !!u.antimagic;
+    let succeeds = false;
+    if (!antimagic) {
+        const sides = Math.max(1, monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0);
+        const successRoll = ctx.random(sides);
+        ctx.calls.push('rn2(' + sides + ')');
+        succeeds = successRoll > 12;
     }
-    const spell = (
-        attack.damageType === AD_CLRC ? MONSTER_CLERIC_SPELLS : MONSTER_WIZARD_SPELLS
-    ).find((candidate) => candidate.key === attack.spell);
-    if (!spell) throw new Error('A deferred spell must retain its selected native spell');
-    const preview = monsterSpellEffectPreview(spell, damage, state);
-    attack.effectDamage = preview.effectDamage;
-    attack.spellEffectMessage = preview.effectMessage;
-    return attack;
+    if (!succeeds) {
+        if (antimagic) {
+            await shieldeff(u.ux, u.uy, state);
+            monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        }
+        await ctx.publish("Lucky for you, it didn't work!");
+        return false;
+    }
+    if (heroIsHallucinating(state)) {
+        await ctx.publish('You have an out of body experience.');
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+        return false;
+    }
+    const died = await touchHeroWithDeath(monster, state, ctx.publish, (count, sides) => {
+        ctx.calls.push(`d(${count},${sides})`);
+        return ctx.rollDice(count, sides);
+    });
+    if (!died) monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    return died;
+}
+
+// C mcastu.c:mcast_clone_wiz().
+async function mcastCloneWiz(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    await ctx.publish('Double Trouble...');
+    const clone = await makemonNear(DEATH_PM_WIZARD_OF_YENDOR, ctx.state.u.ux, ctx.state.u.uy, MM_NOWAIT);
+    if (clone) await finishWizardClone(clone, ctx.state, ctx.random, ctx.calls);
+}
+
+// C mcastu.c:mcast_summon_mons().
+async function mcastSummonMons(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    const effect = await monsterSummonSpellEffect(monster, ctx.state);
+    if (effect.message) await ctx.publish(effect.message);
+}
+
+// C mcastu.c:mcast_destroy_armor().
+async function mcastDestroyArmor(ctx: McastuSpellContext): Promise<void> {
+    const { state } = ctx;
+    if (state.u?.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        await plineWithContinuation('A field of force surrounds you!');
+        return;
+    }
+    if (!await erodeWornArmor(state)) await plineWithContinuation('Your skin itches.');
+    else monstersForgetHeroResistance(M_SEEN_MAGR, state);
+}
+
+// C mcastu.c:mcast_weaken_you().
+async function mcastWeakenYou(monster: Monster, ctx: McastuSpellContext): Promise<boolean> {
+    const { state } = ctx;
+    if (state.u?.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        await ctx.publish(formatFeltMessage('momentarily weakened.', state));
+        return false;
+    }
+    await ctx.publish('You suddenly feel weaker!');
+    const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+    let lossSides = Math.max(1, monsterLevel - 6);
+    if (heroHasHalfSpellDamage(state)) lossSides = Math.trunc((lossSides + 1) / 2);
+    const amount = ctx.rollOne(lossSides);
+    ctx.calls.push(`rnd(${lossSides})`);
+    const killer = monsterSpellDeathReason(monster, 'strength loss');
+    const died = await loseHeroStrength(amount, killer, {
+        state,
+        publish: ctx.publish,
+        deathCause: `killed by ${killer}`,
+        random: range => {
+            ctx.calls.push(`rn2(${range})`);
+            return ctx.random(range);
+        },
+        die: ctx.strengthLossDeath(killer),
+    });
+    if (!died) monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    return died;
+}
+
+// C mcastu.c:mcast_disappear().  mon_set_minvis() repaints the caster's
+// square, and a spot no longer spotted keeps its remembered-I glyph.
+async function mcastDisappear(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    const { state } = ctx;
+    if (canSeeMonster(monster)) {
+        await ctx.publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${
+            heroCanSeeInvisible(state) ? 'becomes transparent' : 'disappears'}!`);
+    }
+    setMonsterPermanentInvisibility(monster);
+    await newsym(monster.mx, monster.my);
+    if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
+        await map_invisible(monster.mx, monster.my);
+}
+
+// C mcastu.c:mcast_stun_you().
+async function mcastStunYou(ctx: McastuSpellContext): Promise<void> {
+    const { state } = ctx;
+    const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
+    const alreadyStunned = !!state.u.stunned || (state.u.stunnedTurns ?? 0) > 0;
+    let duration = 1;
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        if (!alreadyStunned)
+            await ctx.publish(formatFeltMessage('momentarily disoriented.', state));
+    } else {
+        await ctx.publish(alreadyStunned ? 'You struggle to keep your balance.' : 'You reel...');
+        const dexterity = currentAttribute(A_DEX, state);
+        const dice = dexterity < 12 ? 6 : 4;
+        duration = ctx.rollDice(dice, 4);
+        ctx.calls.push('d(' + dice + ',4)');
+        if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
+        duration += state.u?.stunnedTurns ?? 0;
+    }
+    if (!!state.u.stunnedTurns !== !!duration) state.context.botl = true;
+    state.u.stunnedTurns = duration;
+    state.u.stunned = duration > 0;
+    if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
+}
+
+// C mcastu.c:mcast_spell() MCAST_HASTE_SELF: mon_adjust_speed(mtmp, 1, 0).
+async function mcastHasteSelf(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    const effect = monsterHasteSelfEffect(monster, ctx.state);
+    if (effect.message) await ctx.publish(effect.message);
+}
+
+// C mcastu.c:mcast_psi_bolt().
+async function mcastPsiBolt(dmg: number, ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    if (state.u.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        dmg = Math.trunc((dmg + 1) / 2);
+    } else {
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+    const head = heroHeadName(state);
+    const effectLineDismissal = await ctx.publish(
+        dmg <= 5 ? `You get a slight ${head}ache.`
+            : dmg <= 10 ? 'Your brain is on fire!'
+                : dmg <= 20 ? `Your ${head} suddenly aches painfully!`
+                    : `Your ${head} suddenly aches very painfully!`,
+    );
+    return { dmg, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_open_wounds().
+async function mcastOpenWounds(dmg: number, ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    if (state.u.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        dmg = Math.trunc((dmg + 1) / 2);
+    } else {
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+    const effectLineDismissal = await ctx.publish(
+        dmg <= 5 ? 'Your skin itches badly for a moment.'
+            : dmg <= 10 ? 'Wounds appear on your body!'
+                : dmg <= 20 ? 'Severe wounds appear on your body!'
+                    : 'Your body is covered with painful wounds!',
+    );
+    return { dmg, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_geyser().  This discards castmu()'s level-scaled spell
+// pre-roll and rolls a fresh physical 8d6: half physical damage applies,
+// half spell damage and elemental resistances do not.
+async function mcastGeyser(ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    const effectLineDismissal = await ctx.publish('A sudden geyser slams into you from nowhere!');
+    const originalDamage = ctx.rollDice(8, 6);
+    ctx.calls.push('d(8,6)');
+    const dmg = state.u.halfPhysicalDamage
+        ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
+    return { dmg, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_fire_pillar().
+async function mcastFirePillar(ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    const effectLineDismissal = await ctx.publish('A pillar of fire strikes all around you!');
+    const originalDamage = ctx.rollDice(8, 6);
+    ctx.calls.push('d(8,6)');
+    const fireResistant = !!state.u.fireResistance;
+    if (fireResistant) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_FIRE, state);
+    } else monstersForgetHeroResistance(M_SEEN_FIRE, state);
+    let dmg = fireResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(state))
+        dmg = Math.trunc((dmg + 1) / 2);
+
+    if (clearHeroSliming(state)) {
+        await ctx.publish('The slime that covers you is burned away!');
+    }
+    // burnarmor() retries until it hits a worn slot; it keeps the global
+    // die, as the deferred resolver did.
+    await burnHeroArmorByFire(state, ctx.publish, ctx.calls, rn2);
+    const items = await destroyFireInventory(originalDamage, {
+        state,
+        publish: ctx.publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied) return { dmg: 0, died: true, effectLineDismissal };
+    await igniteItems(state.inventory, {
+        state,
+        publish: ctx.publish,
+    });
+    await applyRayFloorFeatures('fire', state.u.ux, state.u.uy, state, {
+        rayNoun: 'spell', heroCaused: false, publish: ctx.publish,
+    });
+    if (state.program_state.gameover) return { dmg: 0, died: true, effectLineDismissal };
+    return { dmg, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_lightning().
+async function mcastLightning(ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    const effectLineDismissal = await ctx.publish('A bolt of lightning strikes down at you from above!');
+    const reflection = heroReflectionSource(state);
+    if (reflection) {
+        await ctx.publish(`It bounces off your ${reflection.noun}.`);
+        discoverHeroReflectionSource(reflection, state);
+    }
+    const originalDamage = ctx.rollDice(8, 6);
+    ctx.calls.push('d(8,6)');
+    const shockResistant = !!state.u.shockResistance;
+    if (reflection || shockResistant)
+        await shieldeff(state.u.ux, state.u.uy, state);
+    if (reflection) {
+        monstersObserveHeroResistance(M_SEEN_REFL, state);
+        return { dmg: 0, died: false, effectLineDismissal };
+    }
+    if (shockResistant) {
+        monstersForgetHeroResistance(M_SEEN_REFL, state);
+        monstersObserveHeroResistance(M_SEEN_ELEC, state);
+    } else monstersForgetHeroResistance(M_SEEN_ELEC | M_SEEN_REFL, state);
+    let dmg = shockResistant ? 0 : originalDamage;
+    if (heroHasHalfSpellDamage(state))
+        dmg = Math.trunc((dmg + 1) / 2);
+
+    const items = await destroyElectricInventory(originalDamage, {
+        state,
+        publish: ctx.publish,
+        die: finishHeroDeathAfterMonsterMessage,
+    });
+    if (items.heroDied) return { dmg: 0, died: true, effectLineDismissal };
+    await applyRayFloorFeatures('lightning', state.u.ux, state.u.uy, state, {
+        rayNoun: 'spell', heroCaused: false, publish: ctx.publish,
+    });
+    if (state.program_state.gameover) return { dmg: 0, died: true, effectLineDismissal };
+
+    const flashDuration = ctx.rollOne(100);
+    ctx.calls.push('rnd(100)');
+    await flashBurn(flashDuration, true, { state, publish: ctx.publish });
+    return { dmg, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_blind_you().
+async function mcastBlindYou(ctx: McastuSpellContext): Promise<number | null | undefined> {
+    const { state } = ctx;
+    const eye = heroEyeName(state);
+    const dismissal = await ctx.publish(`Scales cover your ${
+        heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`);
+    await makeBlinded(heroHasHalfSpellDamage(state) ? 100 : 200,
+        { state, talk: false, publish: ctx.publish });
+    if (!heroIsBlind(state)) await ctx.publish('Your vision clears.');
+    return dismissal;
+}
+
+// C mcastu.c:mcast_paralyze().  The paralysis duration doubles as the
+// mdamageu() damage; the nomul() inside already ends any run.
+async function mcastParalyze(monster: Monster, ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
+    const { state } = ctx;
+    const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
+    const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+    let duration = resisted ? 1 : 4 + monsterLevel;
+    if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
+    let effectLineDismissal: number | null | undefined = null;
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        if (!heroHasInvoluntaryDelay(state))
+            effectLineDismissal = await ctx.publish('You stiffen briefly.');
+    } else {
+        if (!heroHasInvoluntaryDelay(state))
+            effectLineDismissal = await ctx.publish('You are frozen in place!');
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+    nomul(-duration, state);
+    state._helplessReason = 'paralyzed by a monster';
+    state._helplessDoneMessage = null;
+    return { dmg: duration, died: false, effectLineDismissal };
+}
+
+// C mcastu.c:mcast_confuse_you().  make_confused() commits before its
+// explicit feedback pline, so a pager forced by that line already shows
+// Conf; monstunseesu() follows the line.
+async function mcastConfuseYou(monster: Monster, ctx: McastuSpellContext): Promise<void> {
+    const { state } = ctx;
+    if (state.u?.antimagic) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+        await ctx.publish(formatFeltMessage('momentarily dizzy.', state));
+        return;
+    }
+    const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+    let duration = monsterLevel;
+    if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
+    const alreadyConfused = (state.u.confusionTurns ?? 0) > 0;
+    if (!state.u.confusionTurns && duration) state.context.botl = true;
+    state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
+    await ctx.publish(formatFeltMessage(
+        heroIsHallucinating(state)
+            ? alreadyConfused ? 'trippier!' : 'trippy!'
+            : alreadyConfused ? 'more confused!' : 'confused!',
+        state,
+    ));
+    monstersForgetHeroResistance(M_SEEN_MAGR, state);
 }
 
 // mdamageu() subtracts from the active body. Keep raw HP for tty's -1
@@ -222,158 +704,6 @@ export function applyHeroSpellDamage(
     attack.appliedDamage = damage;
     attack.rehumanize = hpKey === 'mh' && state.u.mh < 1;
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
-}
-
-// Resume the selected mcast_spell() effect after its visible message.
-export function resumeDeferredHeroSpell(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollOne: RollOne = rnd,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSpellEffect) return null;
-    attack.deferredSpellEffect = false;
-    if (attack.spell === 'paralyze') {
-        const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
-        const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        let duration = resisted ? 1 : 4 + monsterLevel;
-        if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-        nomul(-duration, state);
-        state._helplessReason = 'paralyzed by a monster';
-        state._helplessDoneMessage = null;
-        applyHeroSpellDamage(attack, duration, state);
-        attack.paralyzed = true;
-        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
-        return attack;
-    }
-    if (attack.spell === 'confuse-you') {
-        const antimagic = !!state.u?.antimagic;
-        if (!antimagic) {
-            const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-            let duration = monsterLevel;
-            if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-            if (!state.u.confusionTurns && duration) state.context.botl = true;
-            state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
-        }
-        attack.appliedDamage = 0;
-        attack.confusedHero = !antimagic;
-        return attack;
-    }
-    if (attack.spell === 'cure-self') {
-        const healing = d(3, 6);
-        action.calls.push('d(3,6)');
-        const monster = action.monster;
-        monster.mhp = Math.min(
-            monster.mhpmax ?? monster.mhp ?? healing,
-            (monster.mhp ?? 0) + healing,
-        );
-        attack.appliedDamage = 0;
-        attack.healedMonster = healing;
-        return attack;
-    }
-    if (attack.spell === 'disappear') {
-        const monster = action.monster;
-        setMonsterPermanentInvisibility(monster);
-        attack.monsterDisappeared = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'weaken-you') {
-        attack.appliedDamage = 0;
-        if (state.u?.antimagic) return attack;
-        const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-        let lossSides = Math.max(1, monsterLevel - 6);
-        if (heroHasHalfSpellDamage(state)) lossSides = Math.trunc((lossSides + 1) / 2);
-        const amount = rollOne(lossSides);
-        action.calls.push(`rnd(${lossSides})`);
-        attack.deferredStrengthLoss = {
-            amount,
-            killer: monsterSpellDeathReason(action.monster, 'strength loss'),
-        };
-        return attack;
-    }
-    if (attack.spell === 'summon-monsters') {
-        attack.deferredSummonMonsters = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'death-touch') {
-        attack.deferredDeathTouch = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'clone-wizard') {
-        attack.deferredCloneWizard = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'haste-self') {
-        attack.deferredHasteSelf = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'aggravation') {
-        attack.deferredAggravation = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'stun-you') {
-        const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
-        let duration = 1;
-        if (!resisted) {
-            const dexterity = currentAttribute(A_DEX, state);
-            const dice = dexterity < 12 ? 6 : 4;
-            duration = d(dice, 4);
-            action.calls.push('d(' + dice + ',4)');
-            if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-            duration += state.u?.stunnedTurns ?? 0;
-        }
-        if (!!state.u.stunnedTurns !== !!duration) state.context.botl = true;
-        state.u.stunnedTurns = duration;
-        state.u.stunned = duration > 0;
-        attack.stunnedHero = true;
-        attack.stunDuration = duration;
-        attack.appliedDamage = 0;
-        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
-        return attack;
-    }
-    if (attack.spell === 'destroy-armor') {
-        attack.deferredDestroyArmor = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'fire-pillar') {
-        attack.deferredFirePillar = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'lightning') {
-        attack.deferredLightningSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'insects') {
-        attack.deferredInsectSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'curse-items') {
-        attack.deferredCurseItems = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (attack.spell === 'geyser') {
-        attack.deferredGeyserSpell = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
-    if (!attack.spell || !['psi-bolt', 'open-wounds'].includes(attack.spell)) {
-        attack.unimplementedSpellEffect = true;
-        return attack;
-    }
-    applyHeroSpellDamage(attack, attack.effectDamage ?? attack.damage ?? 0, state);
-    return attack;
 }
 
 export function heroCanSeeInvisible(state: PlayingGameState) {
@@ -517,7 +847,6 @@ export async function movementSpellSelections(
             cast: true,
             damageType,
             directed: false,
-            deferredSpellEffect: true,
         };
     }
     return null;
@@ -556,45 +885,6 @@ async function monsterSummonSpellEffect(
     return effect;
 }
 
-export async function resolveDeferredHeroSummonMonsters(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredSummonMonsters) return null;
-    const effect = await monsterSummonSpellEffect(action.monster, state);
-    attack.summonedMonsters = effect.created || [];
-    attack.deferredSummonMonsters = false;
-    return effect;
-}
-
-export async function beginDeferredHeroCloneWizard(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard || attack.cloneWizard)
-        return null;
-    const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
-    if (clone) attack.cloneWizard = clone;
-    else attack.deferredCloneWizard = false;
-    return clone;
-}
-
-export async function finishDeferredHeroCloneWizard(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard) return null;
-    const clone = attack.cloneWizard;
-    if (!clone) return null;
-    await finishWizardClone(clone, state, random, action.calls);
-    attack.deferredCloneWizard = false;
-    return clone;
-}
-
 function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
     const speed = adjustMonsterSpeed(monster, 1);
     const message = speed.changed && speed.canDescribe && !state.in_mklev
@@ -602,371 +892,6 @@ function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
         ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
         : null;
     return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
-}
-
-export function resolveDeferredHeroHasteSelf(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredHasteSelf) return null;
-    const effect = monsterHasteSelfEffect(action.monster, state);
-    attack.hasteSelf = effect;
-    attack.deferredHasteSelf = false;
-    return effect;
-}
-
-export function resolveDeferredHeroAggravation(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-) {
-    const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-spell' || !attack.deferredAggravation) return null;
-    const affected = aggravateMonsters(state, random);
-    attack.aggravatedMonsters = affected;
-    attack.deferredAggravation = false;
-    return affected;
-}
-
-// Resume a successful castmu(FALSE,FALSE) after its casting line has crossed
-// the tty boundary.  The source effect can create actors, so it remains async
-// and only then returns to dochug() for the second distfleeck/phase-four tail.
-export async function resumeDeferredMovementSpell(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    random: RandomBelow = rn2,
-    rollOne: RollOne = rnd,
-    rollDice: RollDice = d,
-    publish: PublishMonsterMessage = plineWithContinuation,
-) {
-    const movement = action?.movement;
-    const spellCast = movement?.spellCast;
-    if (!movement?.deferredAfterMovementSpell || !spellCast?.deferredSpellEffect) return null;
-
-    let effect: MonsterSpellEffect = { count: 0, created: [], message: null };
-    if (spellCast.spell === 'clone-wizard') {
-        await publish('Double Trouble...');
-        const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
-        if (clone) {
-            await finishWizardClone(clone, state, random, action.calls);
-            effect = { count: 1, created: [clone], message: null };
-        }
-    } else if (spellCast.spell === 'cure-self') {
-        if (action.monster.mhp < action.monster.mhpmax) {
-            if (canSeeMonster(action.monster))
-                await publish(`${canonicalMonsterName(action.monster, { state, capitalized: true })} looks better.`);
-            action.monster.mhp = Math.min(action.monster.mhpmax, action.monster.mhp + rollDice(3, 6));
-        }
-    } else if (spellCast.spell === 'aggravation') {
-        await publish(formatFeltMessage('that monsters are aware of your presence.', state));
-        aggravateMonsters(state, random);
-    } else if (spellCast.spell === 'insects') {
-        effect = await summonMonsterInsects(action.monster, state);
-    } else if (spellCast.spell === 'summon-monsters') {
-        effect = await monsterSummonSpellEffect(action.monster, state);
-    } else if (spellCast.spell === 'haste-self') {
-        effect = {
-            ...effect,
-            ...monsterHasteSelfEffect(action.monster, state),
-        };
-    } else if (spellCast.spell === 'disappear') {
-        const monster = action.monster;
-        if (canSeeMonster(monster)) {
-            const canSeeInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
-            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${
-                canSeeInvisible ? 'becomes transparent' : 'disappears'}!`);
-        }
-        setMonsterPermanentInvisibility(monster);
-        await newsym(monster.mx, monster.my);
-        if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
-            await map_invisible(monster.mx, monster.my);
-    } else {
-        throw new Error(`Directed spell ${spellCast.spell} reached the undirected spell effect`);
-    }
-
-    if (effect.message) await publish(effect.message);
-    spellCast.deferredSpellEffect = false;
-    movement.deferredAfterMovementSpell = false;
-    movement.spellEffect = effect;
-    movement.postMoveStatus = MMOVE_DONE;
-    movement.movementStage = 'dochug';
-    await finishDochugAfterMovement(
-        action.monster,
-        movement,
-        state,
-        random,
-        rollOne,
-        rollDice,
-        action.calls,
-        requireDochugContext(action),
-    );
-    return effect;
-}
-
-// mcastu.c:castmu() elemental spells use spell protection and floor effects;
-// they never enter hitmu()'s armor cancellation or contact/passive tail.
-export async function resolveDeferredHeroDirectSpell(
-    action: MonsterMovementAction, attack: HeroSpellAttack, state: PlayingGameState,
-    publish: typeof plineWithContinuation, random: RandomBelow, rollDice: RollDice,
-): Promise<void> {
-    const type = attack.damageType;
-    if (type !== AD_FIRE && type !== AD_COLD && type !== AD_MAGM)
-        throw new Error(`Unsupported direct monster spell damage type: ${type}`);
-    attack.deferredSpellEffect = false;
-    const resisted = type === AD_FIRE ? !!state.u.fireResistance
-        : type === AD_COLD ? !!state.u.coldResistance : !!state.u.antimagic;
-    let damage = resisted ? 0 : (attack.damage ?? 0);
-    if (resisted) {
-        await shieldeff(state.u.ux, state.u.uy, state);
-        await publish(type === AD_MAGM ? 'The missiles bounce off!' : 'But you resist the effects.');
-    } else if (type === AD_MAGM) {
-        // Native replaces its already-halved pre-roll with fresh missile
-        // damage. Half_spell_damage is not applied to this second roll.
-        const count = Math.trunc(action.monster.m_lev / 2) + 1;
-        damage = rollDice(count, 6);
-        action.calls.push(`d(${count},6)`);
-    }
-    const resistance = seenResistanceForDamage(type);
-    if (resisted) monstersObserveHeroResistance(resistance, state);
-    else monstersForgetHeroResistance(resistance, state);
-
-    if (type === AD_FIRE && clearHeroSliming(state))
-        await publish('The slime that covers you is burned away!');
-    if (type === AD_MAGM) {
-        const engraving = engravingAt(state.u.ux, state.u.uy, state.level);
-        if (engraving) {
-            const wear = rollDice(6, 6);
-            action.calls.push('d(6,6)');
-            wipeEngravingAt(state.u.ux, state.u.uy, engraving.text.length + wear, true, state.level);
-        }
-    }
-    await applyRayFloorFeatures(type === AD_FIRE ? 'fire' : type === AD_COLD ? 'cold' : 'magic',
-        state.u.ux, state.u.uy, state, {
-            rayNoun: 'spell', heroCaused: false, publish,
-            random: limit => {
-                action.calls.push(`rn2(${limit})`);
-                return random(limit);
-            },
-        });
-    attack.appliedDamage = 0;
-    if (damage && !state.program_state.gameover) applyHeroSpellDamage(attack, damage, state);
-}
-
-export async function prepareMonsterSpellResistance(attack: HeroSpellAttack, state: PlayingGameState): Promise<void> {
-    if (!attack.spell || !['psi-bolt', 'open-wounds', 'stun-you', 'paralyze', 'confuse-you', 'weaken-you'].includes(attack.spell))
-        return;
-    const resisted = state.u.antimagic
-        || (attack.spell === 'stun-you' || attack.spell === 'paralyze') && heroHasFreeAction(state);
-    if (resisted) {
-        await shieldeff(state.u.ux, state.u.uy, state);
-        monstersObserveHeroResistance(M_SEEN_MAGR, state);
-    } else if (attack.spell === 'psi-bolt' || attack.spell === 'open-wounds') {
-        monstersForgetHeroResistance(M_SEEN_MAGR, state);
-    }
-}
-
-export async function resolveDeferredHeroFirePillar(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
-    publish: typeof plineWithContinuation,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredFirePillar) return;
-    const originalDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const fireResistant = !!(game.u.fireResistance);
-    if (fireResistant) {
-        await shieldeff(game.u.ux, game.u.uy, game);
-        monstersObserveHeroResistance(M_SEEN_FIRE, game);
-    } else monstersForgetHeroResistance(M_SEEN_FIRE, game);
-    let appliedDamage = fireResistant ? 0 : originalDamage;
-    if (heroHasHalfSpellDamage(game))
-        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
-
-    if (clearHeroSliming(game)) {
-        await publish(
-            'The slime that covers you is burned away!',
-        );
-    }
-    await burnHeroArmorByFire(game, publish, action.calls, rn2);
-    const items = await destroyFireInventory(originalDamage, {
-        state: game,
-        publish,
-        die: finishHeroDeathAfterMonsterMessage,
-    });
-    if (items.heroDied) return;
-    await igniteItems(game.inventory, {
-        state: game,
-        publish,
-    });
-    await applyRayFloorFeatures('fire', game.u.ux, game.u.uy, game, {
-        rayNoun: 'spell', heroCaused: false, publish,
-    });
-    if (game.program_state.gameover) return;
-
-    applyHeroSpellDamage(heroAttack, appliedDamage, game);
-    heroAttack.deferredFirePillar = false;
-}
-
-export async function resolveDeferredHeroLightningSpell(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
-    publish: typeof plineWithContinuation,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredLightningSpell) return;
-    const reflection = heroReflectionSource(game);
-    if (reflection) {
-        await publish(`It bounces off your ${reflection.noun}.`);
-        discoverHeroReflectionSource(reflection, game);
-    }
-    const originalDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const shockResistant = !!game.u.shockResistance;
-    if (reflection || shockResistant)
-        await shieldeff(game.u.ux, game.u.uy, game);
-    if (reflection) {
-        monstersObserveHeroResistance(M_SEEN_REFL, game);
-        heroAttack.appliedDamage = 0;
-        heroAttack.reflectedLightning = true;
-        heroAttack.deferredLightningSpell = false;
-        return;
-    }
-    if (shockResistant) {
-        monstersForgetHeroResistance(M_SEEN_REFL, game);
-        monstersObserveHeroResistance(M_SEEN_ELEC, game);
-    } else monstersForgetHeroResistance(M_SEEN_ELEC | M_SEEN_REFL, game);
-    let appliedDamage = shockResistant ? 0 : originalDamage;
-    if (heroHasHalfSpellDamage(game))
-        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
-
-    const items = await destroyElectricInventory(originalDamage, {
-        state: game,
-        publish,
-        die: finishHeroDeathAfterMonsterMessage,
-    });
-    if (items.heroDied) return;
-    await applyRayFloorFeatures('lightning', game.u.ux, game.u.uy, game, {
-        rayNoun: 'spell', heroCaused: false, publish,
-    });
-    if (game.program_state.gameover) return;
-
-    const flashDuration = rnd(100);
-    action.calls.push('rnd(100)');
-    await flashBurn(flashDuration, true, { state: game, publish });
-
-    applyHeroSpellDamage(heroAttack, appliedDamage, game);
-    heroAttack.deferredLightningSpell = false;
-}
-
-export async function resolveDeferredHeroInsectSpell(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredInsectSpell) return;
-    const result = await summonMonsterInsects(action.monster, game);
-    if (result.message) await plineWithContinuation(result.message);
-    heroAttack.summonedInsects = result.created;
-    heroAttack.deferredInsectSpell = false;
-}
-
-export async function resolveDeferredHeroDeathTouch(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
-    publish: typeof plineWithContinuation,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredDeathTouch) return;
-    const u = game.u || {};
-    const monsterLevel = action.monster?.m_lev
-        ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
-    const polymorphed = Upolyd(u);
-    const form = polymorphed ? u.umonnum : null;
-    const nonliving = form !== null && Number.isInteger(form)
-        && monsterIsNonliving(form);
-    const demon = form !== null && Number.isInteger(form)
-        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
-    if (nonliving || demon) {
-        await publish('You seem no deader than before.');
-        heroAttack.deferredDeathTouch = false;
-        return;
-    }
-
-    const antimagic = !!u.antimagic;
-    let succeeds = false;
-    if (!antimagic) {
-        const sides = Math.max(1, monsterLevel);
-        const successRoll = rn2(sides);
-        action.calls.push('rn2(' + sides + ')');
-        succeeds = successRoll > 12;
-    }
-    if (!succeeds) {
-        if (antimagic) {
-            await shieldeff(u.ux, u.uy, game);
-            monstersObserveHeroResistance(M_SEEN_MAGR, game);
-        }
-        await publish("Lucky for you, it didn't work!");
-        heroAttack.deferredDeathTouch = false;
-        return;
-    }
-    if (heroIsHallucinating(game)) {
-        await publish('You have an out of body experience.');
-        monstersForgetHeroResistance(M_SEEN_MAGR, game);
-        heroAttack.deferredDeathTouch = false;
-        return;
-    }
-
-    heroAttack.heroDied = await touchHeroWithDeath(action.monster, game, publish, (count, sides) => {
-        action.calls.push(`d(${count},${sides})`);
-        return d(count, sides);
-    });
-    if (!heroAttack.heroDied) monstersForgetHeroResistance(M_SEEN_MAGR, game);
-    heroAttack.deferredDeathTouch = false;
-}
-
-export async function resolveDeferredHeroDestroyArmor(
-    heroAttack: HeroSpellAttack,
-): Promise<void> {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredDestroyArmor) return;
-    const antimagic = !!game.u?.antimagic;
-    if (antimagic) {
-        await shieldeff(game.u.ux, game.u.uy, game);
-        monstersObserveHeroResistance(M_SEEN_MAGR, game);
-        await plineWithContinuation('A field of force surrounds you!');
-        heroAttack.deferredDestroyArmor = false;
-        return;
-    }
-
-    if (!await erodeWornArmor(game))
-        await plineWithContinuation('Your skin itches.');
-    else monstersForgetHeroResistance(M_SEEN_MAGR, game);
-    heroAttack.deferredDestroyArmor = false;
-}
-
-export async function resolveDeferredHeroCurseItems(heroAttack: {
-    deferredCurseItems?: boolean;
-    cursedInventory?: Awaited<ReturnType<typeof rndcurse>>;
-}): Promise<void> {
-    if (!heroAttack?.deferredCurseItems) return;
-    heroAttack.cursedInventory = await rndcurse({
-        publish: plineWithContinuation,
-    });
-    heroAttack.deferredCurseItems = false;
-}
-
-// C mcastu.c:mcast_geyser() discards castmu()'s level-scaled spell pre-roll
-// and rolls a fresh physical 8d6.  Half physical damage applies; half spell
-// damage and elemental resistances do not.
-export function resolveDeferredHeroGeyser(
-    action: MonsterAction, heroAttack: HeroSpellAttack,
-): void {
-    const game = requireInitializedGame();
-    if (!heroAttack?.deferredGeyserSpell) return;
-    const originalDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const appliedDamage = game.u.halfPhysicalDamage
-        ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
-    applyHeroSpellDamage(heroAttack, appliedDamage, game);
-    heroAttack.deferredGeyserSpell = false;
 }
 
 // C mcastu.c:touch_of_death(). Entered from uhitm.c:mhitm_ad_deth()'s hero

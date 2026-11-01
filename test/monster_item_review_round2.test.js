@@ -5,10 +5,10 @@ import { canSeeMonster } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginMonsterHeroAttack, completeHeroAttackSlot } from '../js/mhitu.js';
+import { beginMonsterHeroAttack, completeHeroAttackSlot, presentMonsterAttackEffects, } from '../js/mhitu.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { finishDeferredMonsterMiscItem, prepareMonsterItemUse, useMonsterDefensiveItem } from '../js/muse.js';
-import { rollDeferredHeroSpellDamage, summonMonsterInsects } from '../js/mcastu.js';
+import { summonMonsterInsects } from '../js/mcastu.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { IRON_SHOES, KICKING_BOOTS, SPEED_BOOTS, LEASH, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -191,19 +191,25 @@ void test('a successful aggravation spell aimed at a misplaced hero still explai
     caster.mcansee = 0;
     const sleeper = await createMonsterAt('orc', 15, 10, NO_MINVENT);
     sleeper.msleeping = 1;
-    installPagerInput(resetInputState(), { expected: /lich|misses|spell/, limit: 8 });
     const calls = [];
     const initiation = await beginMonsterHeroAttack(caster, game, limit => limit - 1, () => 1, () => 1, calls);
     const action = { monster: caster, calls,
         movement: { oldx: 10, oldy: 10, x: 10, y: 10, moved: false, ...initiation } };
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /lich|misses|spell/, limit: 8 });
     for (let slot = 0; slot < 6 && action.movement.heroAttackSequence?.current?.kind !== 'hero-spell'; slot++)
         await completeHeroAttackSlot(action, game, limit => limit - 1);
-    const attack = rollDeferredHeroSpellDamage(action, game);
+    // C mcastu.c:castmu() publishes the aggravation line from inside
+    // mcast_spell()'s one awaited transaction; the misplaced caster still
+    // explains the effect and deals no damage.
+    const attack = action.movement.heroAttackSequence?.current;
     assert.equal(attack?.kind, 'hero-spell');
-    assert.equal(attack?.spell, 'aggravation');
-    assert.equal(attack?.damage, 0);
-    assert.equal(attack?.spellEffectMessage, 'You feel that monsters are aware of your presence.');
+    const presented = await presentMonsterAttackEffects(action, game);
+    const text = `${messages.join('\n')}\n${game._pending_message ?? ''}`;
     assert.equal(game.u.uhp, 500);
+    assert.match(text, /You feel that monsters are aware of your presence\./);
 });
 void test('a cursed leash makes a teleporting pet yelp, wake a nearby sleeper, and interrupt running', async () => {
     const level = await freshObjectRoom({ heroX: 14, heroY: 10 });

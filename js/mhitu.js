@@ -41,7 +41,7 @@ import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, } from './monmove.js';
 import { attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, resolveMonsterSpitAtHero, } from './mthrowu.js';
-import { beginDeferredHeroCloneWizard, finishDeferredHeroCloneWizard, chooseMonsterSpell, resolveDeferredHeroAggravation, resolveDeferredHeroCurseItems, resolveDeferredHeroDeathTouch, resolveDeferredHeroDestroyArmor, resolveDeferredHeroDirectSpell, resolveDeferredHeroFirePillar, resolveDeferredHeroGeyser, resolveDeferredHeroHasteSelf, resolveDeferredHeroInsectSpell, resolveDeferredHeroLightningSpell, resolveDeferredHeroSummonMonsters, resumeDeferredHeroSpell, rollDeferredHeroSpellDamage, prepareMonsterSpellResistance, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay, } from './mcastu.js';
+import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay, } from './mcastu.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveDeferredHeroItemTheft, addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, startHeroSliming } from './slime.js';
@@ -338,149 +338,34 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                                 : heroIsDisplaced(game) && misplaced ? ' at your displaced image' : ' at you';
                         await publishSpellMessage(`${caster} casts a spell${target}!`);
                     }
-                    if (heroAttack.deferredSpellDamage)
-                        rollDeferredHeroSpellDamage(action, game, rollDice);
-                    await prepareMonsterSpellResistance(heroAttack, game);
-                    let effectMessage = heroAttack.spellEffectMessage;
-                    if (heroAttack.spell === 'cure-self'
-                        && canSeeMonster(monster)) {
-                        effectMessage = `${visibleMonsterSubject(monster)} looks better.`;
-                    }
-                    if (heroAttack.spell === 'death-touch') {
-                        const pronoun = monsterSubjectPronoun(monster, { state: game });
-                        effectMessage = 'Oh no, ' + pronoun
-                            + "'s using the touch of death!";
-                    }
-                    if (heroAttack.spell === 'disappear'
-                        && canSeeMonster(monster)) {
-                        const seesInvisible = !!(game.u?.seeInvisible
-                            || (game.u.seeInvisibleTurns !== undefined && game.u.seeInvisibleTurns > 0));
-                        effectMessage = `${visibleMonsterSubject(monster)} suddenly ${seesInvisible
-                            ? 'becomes transparent' : 'disappears'}!`;
-                    }
-                    // mcast_confuse_you() commits make_confused() before
-                    // its explicit feedback pline.  If that line forces
-                    // the older cast line through tty, the pager already
-                    // paints Conf; other selected spell effects retain
-                    // their post-message state ordering.
-                    if (heroAttack.spell === 'confuse-you')
-                        resumeDeferredHeroSpell(action, game);
-                    const effectDismissal = effectMessage
-                        ? await publishSpellMessage(effectMessage)
-                        : null;
-                    if (heroAttack.spell === 'confuse-you' && !game.u.antimagic)
-                        monstersForgetHeroResistance(M_SEEN_MAGR, game);
-                    if (heroAttack.deferredSpellEffect) {
-                        if (heroAttack.spell === 'blind-you') {
-                            heroAttack.deferredSpellEffect = false;
-                            heroAttack.appliedDamage = 0;
-                            await makeBlinded(heroHasHalfSpellDamage(game) ? 100 : 200, { state: game, talk: false, publish: publishSpellMessage });
-                            if (!heroIsBlind(game))
-                                await publishSpellMessage('Your vision clears.');
-                        }
-                        else if (heroAttack.spell)
-                            resumeDeferredHeroSpell(action, game);
-                        else
-                            await resolveDeferredHeroDirectSpell(action, heroAttack, game, publishSpellMessage, random, rollDice);
-                    }
-                    if (heroAttack.deferredStrengthLoss) {
-                        const { amount, killer } = heroAttack.deferredStrengthLoss;
-                        delete heroAttack.deferredStrengthLoss;
-                        const died = await loseHeroStrength(amount, killer, {
-                            state: game,
-                            publish: publishSpellMessage,
-                            deathCause: `killed by ${killer}`,
-                            random: range => {
-                                action.calls.push(`rn2(${range})`);
-                                return rn2(range);
-                            },
-                            die: (options) => options.killer !== killer
-                                ? finishHeroDeathAfterMonsterMessage(options)
-                                : finishMonsterAttackDeath(monster, {
-                                    attribution: {
-                                        kind: 'death-inflicted-by', killer,
-                                        announcesDeath: true,
-                                    },
-                                    pagerOwned: paging.pagerOwned,
-                                }),
-                        });
-                        if (died) {
-                            heroDied = true;
-                            break;
-                        }
-                        monstersForgetHeroResistance(M_SEEN_MAGR, game);
-                    }
-                    if (heroAttack.deferredFirePillar)
-                        await resolveDeferredHeroFirePillar(action, heroAttack, publishSpellMessage);
-                    if (game.program_state.gameover)
-                        return { heroDied: true };
-                    if (heroAttack.deferredLightningSpell)
-                        await resolveDeferredHeroLightningSpell(action, heroAttack, publishSpellMessage);
-                    if (game.program_state.gameover)
-                        return { heroDied: true };
-                    if (heroAttack.deferredInsectSpell)
-                        await resolveDeferredHeroInsectSpell(action, heroAttack);
-                    if (heroAttack.deferredCurseItems)
-                        await resolveDeferredHeroCurseItems(heroAttack);
-                    if (heroAttack.deferredSummonMonsters) {
-                        const summoned = await resolveDeferredHeroSummonMonsters(action, game);
-                        if (summoned?.message)
-                            await publishSpellMessage(summoned.message);
-                    }
-                    if (heroAttack.deferredCloneWizard) {
-                        await publishSpellMessage('Double Trouble...');
-                        await beginDeferredHeroCloneWizard(action, game);
-                        await finishDeferredHeroCloneWizard(action, game);
-                    }
-                    if (heroAttack.deferredHasteSelf) {
-                        const haste = resolveDeferredHeroHasteSelf(action, game);
-                        if (haste?.message)
-                            await publishSpellMessage(haste.message);
-                    }
-                    if (heroAttack.deferredAggravation)
-                        resolveDeferredHeroAggravation(action, game);
-                    if (heroAttack.deferredDeathTouch) {
-                        await resolveDeferredHeroDeathTouch(action, heroAttack, publishSpellMessage);
-                        if (heroAttack.heroDied)
-                            return { heroDied: true };
-                    }
-                    if (heroAttack.deferredDestroyArmor)
-                        await resolveDeferredHeroDestroyArmor(heroAttack);
-                    if (heroAttack.deferredGeyserSpell)
-                        resolveDeferredHeroGeyser(action, heroAttack);
-                    if (heroAttack.paralyzed)
-                        stopRun(game);
-                    if (heroAttack.monsterDisappeared) {
-                        await newsym(monster.mx, monster.my);
-                        if (cansee(monster.mx, monster.my)
-                            && !canSpotMonster(monster)) {
-                            await map_invisible(monster.mx, monster.my);
-                        }
-                    }
-                    if (heroAttack.rehumanize) {
-                        // tty urgent_pline() replaces the effect line
-                        // which forced a pager when that pager was
-                        // escaped, but the spell's state effect proceeds.
-                        if (effectDismissal === 27) {
-                            game._pending_message = '';
-                            game._retained_message = '';
-                        }
-                        const restored = await returnHeroToHumanForm(game);
-                        if (restored.died)
-                            return { heroDied: true };
-                        heroAttack.rehumanize = false;
-                    }
-                    if (heroAttack.heroDied) {
-                        if (await finishMonsterAttackDeath(monster, {
-                            ...(heroAttack.fatalAttribution ? { attribution: heroAttack.fatalAttribution } : {}),
+                    // C mcastu.c:castmu() rolls its level-scaled spell
+                    // damage after the casting line returns from tty,
+                    // then mcast_spell() (or castmu()'s own elemental
+                    // switch) runs the whole effect as one awaited
+                    // transaction in native order.
+                    const spellDied = await castmuSpellEffect(heroAttack, monster, {
+                        state: game,
+                        publish: publishSpellMessage,
+                        random,
+                        rollDice,
+                        rollOne,
+                        calls: action.calls,
+                        fatalDamage: () => finishMonsterAttackDeath(monster, {
                             pagerOwned: paging.pagerOwned,
-                        })) {
-                            heroDied = true;
-                            break;
-                        }
-                        heroAttack.heroDied = false;
-                    }
-                    delete heroAttack.fatalAttribution;
+                        }),
+                        strengthLossDeath: (killer) => options => options.killer !== killer
+                            ? finishHeroDeathAfterMonsterMessage(options)
+                            : finishMonsterAttackDeath(monster, {
+                                attribution: {
+                                    kind: 'death-inflicted-by',
+                                    killer,
+                                    announcesDeath: true,
+                                },
+                                pagerOwned: paging.pagerOwned,
+                            }),
+                    });
+                    if (spellDied || game.program_state.gameover)
+                        return { heroDied: true };
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -1524,9 +1409,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             cast: true,
             spellDice: foundHero ? spellDice : 0,
             spellSides,
-            deferredSpellDamage: true,
             directed,
-            deferredSpellEffect: true,
         };
     }
     if (attackType === AT_ENGL && monster.mspec_used && !alreadyEngulfing) {

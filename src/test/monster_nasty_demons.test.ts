@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2 } from '../js/monster_data.js';
 import { msummon } from '../js/minion.js';
 import { AD_SPEL } from '../js/monster_attack_types.js';
-import { resumeDeferredMovementSpell } from '../js/mcastu.js';
+import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import type { MonsterMovementAction } from '../js/monster_action_types.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -23,26 +23,30 @@ void test('an arch-lich can summon demons through Gehennom summon-nasties', asyn
     lich.muy = game.u.uy;
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
+    const summonedBefore = new Set(game.level.monsters.map(monster => monster.m_id));
+    const messages: string[] = [];
     const action: MonsterMovementAction = {
         monster: lich, calls: [],
         dochugContext: { entryMnum: lich.mnum, range: null, reachesFinalActions: false },
         movement: {
             oldx: lich.mx, oldy: lich.my, x: lich.mx, y: lich.my, moved: false,
-            deferredAfterMovementSpell: true,
             spellCast: {
                 spell: 'summon-monsters', cast: true, damageType: AD_SPEL,
-                directed: false, deferredSpellEffect: true,
+                directed: false,
             },
         },
     };
     initRng(11n);
 
-    const effect = await resumeDeferredMovementSpell(action, game);
+    await mcastSpell(lich, 'summon-monsters', 0, movementSpellContext(lich, game, action.calls, {
+        publish: async message => { messages.push(message); },
+    }));
 
-    assert.ok(effect);
-    assert.ok(effect.count > 0, 'Gehennom summon-nasties must create demons for a lich too');
-    assert.ok(effect.created.every(monster => (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x100));
-    assert.match(effect.message ?? '', /monster.*appears? from nowhere/i);
+    const created = game.level.monsters.filter(monster => !summonedBefore.has(monster.m_id));
+
+    assert.match(messages.join('\n'), /monster.*appears? from nowhere/i);
+    assert.ok(created.length > 0, 'Gehennom summon-nasties must create demons for a lich too');
+    assert.ok(created.every(monster => (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x100));
 });
 
 void test('Wizard-style demon summoning can choose lawful demons without a caster', async () => {

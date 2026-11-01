@@ -165,8 +165,7 @@ import {
     monsterAttackStopsAggressor,
 } from './mhitm.js';
 import {
-    chooseMonsterSpell, heroCanSeeInvisible, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind,
-    monsterSpellUseless, movementSpellSelections, resumeDeferredMovementSpell,
+    heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections,
 } from './mcastu.js';
 import {
     attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName,
@@ -2945,7 +2944,6 @@ export async function takeMonsterTurn(
               y: monster.my,
               moved: false,
               spellCast: movementSpell,
-              deferredAfterMovementSpell: true,
           }
         : null;
     const moved = await moveMonsterAfterTrap(
@@ -3069,7 +3067,7 @@ export async function moveMonsterAfterTrap(
         );
         return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
     }
-    if (!movement.deferredAfterMovementSpell)
+    if (!movement.spellCast?.cast)
         await finishDochugAfterMovement(
             monster,
             movement,
@@ -3335,7 +3333,24 @@ export async function presentMonsterAction(
                 `${visibleMonsterSubject(monster)} casts a spell!`,
             );
         }
-        await resumeDeferredMovementSpell(action, game);
+        // C mcastu.c:castmu(FALSE,FALSE) passes zero damage, so
+        // mcast_spell() runs the undirected effect as one awaited
+        // transaction, then dochug() resumes at its second distfleeck()
+        // and the phase-four tail.
+        await mcastSpell(monster, movement.spellCast.spell, 0,
+            movementSpellContext(monster, game, action.calls));
+        movement.postMoveStatus = MMOVE_DONE;
+        movement.movementStage = 'dochug';
+        await finishDochugAfterMovement(
+            monster,
+            movement,
+            game,
+            rn2,
+            rnd,
+            d,
+            action.calls,
+            requireDochugContext(action),
+        );
         movement = action.movement;
     }
     if (await presentMonsterPostMove(action, game)) return 'stop';
