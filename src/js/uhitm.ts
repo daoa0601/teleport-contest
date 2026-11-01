@@ -1441,7 +1441,9 @@ async function stealGold(
     return escapeAfterTheft(attacker, thiefName, context);
 }
 
-// C uhitm.c:steal_it(). The hero's theft attack takes the target's goods.
+// C uhitm.c:mhitm_ad_sedu(), its monster-vs-monster theft branch: steal a
+// non-cursed item when the thief is tame. The hero branch is steal_it,
+// ported in hero_natural_theft.ts.
 async function stealItem(
     attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
 ): Promise<MonsterCombatEffectResult> {
