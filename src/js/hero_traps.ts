@@ -47,7 +47,7 @@ import { makeConfused } from './hero_mental_status.js';
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { levelTeleport } from './level_teleport.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
-import { heroLiquidEffects } from './hack.js';
+import { applyHeroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { clampHoleDestination } from './hole_destination.js';
 import { shopDig } from './shop_damage.js';
@@ -508,10 +508,11 @@ async function triggerLandmine(trap: Trap, {
         heroCaused: true,
         finishMonsterDeath,
         finishMonsterKill: finishHeroMonsterKill,
-        resolveLiquid: () => heroLiquidEffects({
-            state: game,
-            publish: plineWithContinuation,
-        }),
+        // C trap.c:2590 blow_up_landmine() -> dig.c:838 liquid_flow() ->
+        // dig.c:875 pooleffects(FALSE): a crawl-out of the flooded hole
+        // lands through teleds()' spoteffects(TRUE) (teleport.c:568), the
+        // shared landing-effect entry applyHeroLiquidEffects() supplies.
+        resolveLiquid: () => applyHeroLiquidEffects(plineWithContinuation),
     });
     if (game.program_state.gameover) return;
     if (steedMid && saddle && !hero.usteed) await keepSaddleWithSteedcorpse(steedMid, saddle);

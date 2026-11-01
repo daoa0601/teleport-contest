@@ -4,7 +4,7 @@ import { docrt } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { restoreNaturalMonsterShapes } from './mon.js';
 import { requireInitializedGame } from './gstate.js';
-import { heroLiquidEffects } from './hack.js';
+import { applyHeroLiquidEffects } from './hack.js';
 import { makeDeaf } from './hero_hearing.js';
 import { startHeroSickness, startHeroVomiting } from './hero_illness.js';
 import { makeHallucinated, makeStunned } from './hero_mental_status.js';
@@ -184,6 +184,9 @@ async function increaseIntrinsic({ name, property }, amount, state) {
         await restoreNaturalMonsterShapes(state);
     if ((property === 'waterWalking' || property === 'levitation' || property === 'flying') &&
         state.u.uinwater)
-        await heroLiquidEffects({ state });
+        // C wizcmds.c:1087 pooleffects(FALSE): any relocation out of the
+        // liquid lands through teleds()' spoteffects(TRUE) (teleport.c:568),
+        // which applyHeroLiquidEffects() supplies.
+        await applyHeroLiquidEffects();
 }
 //# sourceMappingURL=wizard_intrinsics.js.map
