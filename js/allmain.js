@@ -30,7 +30,7 @@ import { regenerateHeroHp } from './hero_regeneration.js';
 import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
-import { consumeMonsterItem, resolveDeferredMonsterBreath } from './mthrowu.js';
+import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination, } from './teleport.js';
 import { runDueTimers } from './timer_effects.js';
 import { finishInUseInventory } from './object_cleanup.js';

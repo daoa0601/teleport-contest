@@ -10,7 +10,7 @@ import type { Position, Trap } from './map_types.js';
 import type { rndcurse } from './throne.js';
 import type { finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import type { MonsterSpitResult } from './mthrowu.js';
+import type { MonsterBreathResult, MonsterSpitResult } from './mthrowu.js';
 import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_offensive_types.js';
 import type { AttackMethod, DamageType, AT_EXPL, AT_GAZE, AT_ENGL, AT_WEAP, AT_BREA, AT_SPIT } from './monster_attack_types.js';
 import type { HeroMonsterWeaponVolley } from './monster_projectile_types.js';
@@ -273,9 +273,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     revealUnderMessage?: string | null;
     poison?: { attribute: number; fatal?: number; chance?: number } | null;
     effectMessage?: string | null;
-    theftResolved?: boolean;
-    deferredItemTheft?: boolean;
-    monsterDisappeared?: boolean;
     /** gulpmu()'s damage die, rolled before the swallow prose. */
     engulfDamage?: number;
     engulfOldX?: number;
@@ -303,35 +300,13 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     rehumanize?: boolean;
 }
 
-export type HeroBreath = {
-    nativeResult: number;
-    attempted?: boolean;
-} & (
-    | { launched: false; cough?: boolean; damageType?: number; dice?: number; sides?: number }
-    | {
-          launched: true;
-          damageType: number;
-          dice: number;
-          sides: number;
-          targetX: number;
-          targetY: number;
-          x: number;
-          y: number;
-          dx: number;
-          dy: number;
-          deferredRay: boolean;
-          finished?: boolean;
-          heroDied?: boolean;
-          cough?: never;
-      }
-);
 
 export type HeroProjectile = HeroMonsterWeaponVolley;
 
 export type HeroAttack =
     | HeroContactAttack
     | HeroSpellAttack
-    | (HeroAttackProgress & { kind: 'hero-breath'; breath: HeroBreath })
+    | (HeroAttackProgress & { kind: 'hero-breath'; breath: MonsterBreathResult })
     | (HeroAttackProgress & { kind: 'hero-spit'; spit: MonsterSpitResult })
     | (HeroAttackProgress & { kind: 'hero-projectile'; projectile: HeroProjectile })
     | (HeroAttackProgress & {

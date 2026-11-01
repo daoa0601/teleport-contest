@@ -15,7 +15,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type {
     RandomBelow, RollOne, RollDice, PublishMonsterMessage, MonsterCallLog, AttackTuple, MonsterAttackPaging,
     MonsterAction, MonsterMovementAction, MonsterMovement, MonsterMovementCapabilities, MonsterMoveCandidate,
-    DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, HeroBreath, MonsterMiscItem,
+    DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, MonsterMiscItem,
     MonsterAttackInitiation, MonsterMoveResult, MonsterTurnResult, MonsterDamageOptions,
     ImmediateMonsterTrapOptions, MonsterTrapResumeOptions, MonsterEngulfOptions, MonsterTrapEvent,
     MonsterRollingBoulderEvent, MonsterDistressEvent,

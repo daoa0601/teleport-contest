@@ -1342,9 +1342,9 @@ src/js/mkmaze.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""3""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
 src/js/mkmaze.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
-src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
-src/js/mthrowu.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
-src/js/mthrowu.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
+src/js/mthrowu.ts	resolveMonsterBreathAtHero	random	"[""18""]"	constant
+src/js/mthrowu.ts	resolveMonsterBreathAtHero	random	"[""3""]"	constant
+src/js/mthrowu.ts	resolveMonsterBreathAtHero	rollOne	"[""20""]"	constant
 src/js/mthrowu.ts	throwMonsterProjectile	random	"[""3""]"	constant
 src/js/mthrowu.ts	throwMonsterProjectile	random	"[""3""]"	constant
 src/js/mthrowu.ts	throwMonsterProjectile	random	"[""5""]"	constant
