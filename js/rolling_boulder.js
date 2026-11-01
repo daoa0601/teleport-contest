@@ -2,7 +2,7 @@ import { seeTrap } from './trap.js';
 // C trap.c:launch_obj(), ROLL styles. Each square resolves its occupants,
 // traps and floor effects before the next square or final placement.
 import { heroHasCarriedArtifactFlag } from './artifacts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { DOOR, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LANDMINE, LEVEL_TELEP, M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { heroHasInvoluntaryDelay } from '../js/command_state.js';
+import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { D_CLOSED, DOOR, LAVAWALL, POOL, STONE, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';

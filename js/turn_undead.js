@@ -1,7 +1,7 @@
 import { requirePlayingGame } from './gstate.js';
 // The priest and knight #turn command.
 // C ref: pray.c doturn() and maybe_turn_mon_iter().
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { hallucinatedDeityName } from './alignment.js';
 import { A_WIS, BOLT_LIM, MAXULEV, } from './const.js';

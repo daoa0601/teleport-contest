@@ -1,5 +1,5 @@
 // C rumors.c: rumor delivery and Oracle consultations.
-import { setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
 import { ACH_ORCL, BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED, MD_PAD_BOGONS, MD_PAD_RUMORS } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

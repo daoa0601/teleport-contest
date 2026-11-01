@@ -84,9 +84,9 @@ import { freeInventoryObject, finishInventoryRemoval } from './hero_inventory.js
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident } from './shk.js';
 import { unlinkObject } from './object_location.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import {
-    heroHasInvoluntaryDelay, nomul, pendingArmorAction,
-} from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { pendingArmorAction } from './do_wear.js';
+import { nomul } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { touchPetrifies } from './stoning.js';
@@ -759,4 +759,16 @@ export async function releaseMonsterInventory(monster: Monster, state: GameState
     }
     if (show && cansee(x, y)) await newsym(x, y);
     return dropped;
+}
+
+// C steal.c:thiefdead(), called by mon.c:m_detach() for death or removal.
+// Keep the armor-removal delay, but replace the theft and recovery message.
+export function armorThiefGone(monster: Monster, state: GameState = game): void {
+    const theft = state._armorTheft;
+    if (!theft || theft.thief !== monster) return;
+    theft.thief = null;
+    if (state._afterMove?.kind === 'steal') {
+        state._afterMove = { kind: 'unstolen-armor' };
+        state._helplessDoneMessage = null;
+    }
 }

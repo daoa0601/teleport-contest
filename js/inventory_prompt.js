@@ -14,7 +14,7 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUD
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
 import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './wield.js';
-import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
+import { rememberObjectChoice, takeRepeatCommand } from './cmd.js';
 import { keyText } from './prevmsg.js';
 import { putMessageHistory } from './tty_topline.js';
 const CANCELLED = { cancelled: true, object: null, none: false, count: null };

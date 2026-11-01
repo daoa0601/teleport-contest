@@ -7,7 +7,8 @@ import {
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
-import { commandResultCancelled, commandResultFailed, nomul } from './command_state.js';
+import { commandResultCancelled, commandResultFailed } from './cmd.js';
+import { nomul } from './hack.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './pline.js';
 import { displayLiquidName } from './display.js';

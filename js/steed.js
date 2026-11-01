@@ -52,7 +52,7 @@ import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalRe
 import { heroCouldMoveOntoBoulder } from './boulder_push.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { heroHasInvoluntaryDelay } from '../js/command_state.js';
+import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { POOL, ROOM, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';

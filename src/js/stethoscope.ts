@@ -31,9 +31,7 @@ import { vision_note_blocker_change } from './vision.js';
 import { heroHasFreeHand } from './engrave.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { commandResultCancelled } from './command_state.js';
-
-export async function useStethoscope(object: GameObject): Promise<boolean> {
+import { commandResultCancelled } from './cmd.js';export async function useStethoscope(object: GameObject): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;
     const holder = hero.ustuck;

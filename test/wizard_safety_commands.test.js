@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
-import { readCommandInput } from '../js/command_input.js';
+import { readCommandInput } from '../js/cmd.js';
 import { applyNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';
 import { PanicTermination } from '../js/panic_termination.js';

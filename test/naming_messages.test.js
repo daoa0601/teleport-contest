@@ -18,7 +18,7 @@ import { restartAmuletStrangulation } from '../js/hero_strangulation.js';
 import { pushKeys } from '../js/input.js';
 import { liftObject } from '../js/lift_object.js';
 import { lightRoom, lightWieldedArtifact } from '../js/light.js';
-import { probeObject } from '../js/magic_probe.js';
+import { probeObject } from '../js/zap.js';
 import { applyMonsterGolemEffects } from '../js/mon.js';
 import { AD_COLD, AD_FIRE } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

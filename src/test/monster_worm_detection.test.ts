@@ -6,7 +6,7 @@ import { glyphAt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { InputGate, bindInputGate } from '../js/input.js';
-import { detectMonsters } from '../js/magic_detection.js';
+import { detectMonsters } from '../js/detect.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -1,6 +1,6 @@
 // C objnam.c:doname_base(), worn and held object annotations.
 
-import { pendingArmorAction } from './command_state.js';
+import { pendingArmorAction } from './do_wear.js';
 import { artifactEmitsLight, artifactGlowColor } from './artifacts.js';
 import { artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
 import { heroHandName } from './body_parts.js';

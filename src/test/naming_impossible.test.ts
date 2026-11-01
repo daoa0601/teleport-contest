@@ -9,7 +9,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { moreUntilDismissed } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { containerContents } from '../js/container_contents.js';
+import { containerContents } from '../js/end.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';

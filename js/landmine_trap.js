@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_landmine().
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
-import { setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';

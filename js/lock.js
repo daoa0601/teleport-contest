@@ -4,7 +4,7 @@ import { currency } from './currency.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, isok, } from './const.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { BAG_OF_TRICKS } from './object_data.js';
 import { doloot } from './pickup.js';

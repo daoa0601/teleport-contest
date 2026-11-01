@@ -1,4 +1,4 @@
-import type { CommandBinding } from './command_types.js';
+import type { CommandBinding } from './cmd.js';
 import type { MapLocation } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameMap } from './game.js';

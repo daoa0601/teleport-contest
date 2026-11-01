@@ -11,7 +11,8 @@ import { heroIsHallucinating } from './senses.js';
 import { isIceAt } from './terrain_properties.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { endVoluntaryMultiTurn, nomul, currentMulti } from './command_state.js';
+import { currentMulti } from './cmd.js';
+import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { heroStomachName } from './body_parts.js';
 import {
     adjustAttribute, currentAttribute, exerciseAttribute,

@@ -4,7 +4,7 @@ import {
     DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS,
     NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS,
 } from './command_data.js';
-import type { NativeCommand } from './command_types.js';
+import type { NativeCommand } from './cmd.js';
 
 export interface KeyBinding {
     key: number;

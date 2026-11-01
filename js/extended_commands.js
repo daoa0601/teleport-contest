@@ -1,8 +1,8 @@
 // C cmd.c:extcmds_match(), extcmd_via_menu(), doextlist().
 import { COLNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY, PICK_ONE, ROWNO } from './const.js';
-import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
+import { COMMAND_DESCRIPTIONS } from './cmd.js';
 import { NATIVE_COMMAND_FLAGS as flags, NATIVE_COMMANDS } from './command_data.js';
-import { visibleCommandKey } from './command_keys.js';
+import { visibleCommandKey } from './cmd.js';
 import { game } from './gstate.js';
 import { getLine } from './query.js';
 import { addMenuHeading } from './windows.js';

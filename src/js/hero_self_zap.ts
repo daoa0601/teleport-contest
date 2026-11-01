@@ -32,7 +32,6 @@ import { heroSpecies } from './hero_species.js';
 import { heroStatusLine } from './hero_status.js';
 import { hitObjectWithWand } from './immediate_zap.js';
 import { lightDamage, igniteItems } from './light.js';
-import { probeObjectChain } from './magic_probe.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
 import { cancelObjectMagic } from './object_cancellation.js';
@@ -61,8 +60,7 @@ import { burnHeroArmorByFire } from './trap.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
-import { learnWand } from './zap.js';
-import { destroyInventoryByElement } from './zap.js';
+import { destroyInventoryByElement, learnWand, probeObjectChain } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');

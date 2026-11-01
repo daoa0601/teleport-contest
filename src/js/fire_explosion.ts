@@ -1,6 +1,6 @@
 import type { GameObject } from './object_types.js';
 import type { ExplosionOptions } from './explosion.js';
-import type { MagicDamageResult } from './magic_types.js';
+import type { MagicDamageResult } from './zap.js';
 
 export interface FireExplosionOptions extends ExplosionOptions {
     rollDice?: typeof d;

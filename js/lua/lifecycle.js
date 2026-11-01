@@ -1,6 +1,6 @@
 import { COLNO, ROWNO } from '../const.js';
 import { LUA_SOURCES } from '../generated/lua_sources.js';
-import { commandKeyDescription } from '../command_keys.js';
+import { commandKeyDescription } from '../cmd.js';
 import { impossible } from '../diagnostics.js';
 import { applyNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';

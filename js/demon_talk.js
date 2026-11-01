@@ -3,7 +3,8 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';

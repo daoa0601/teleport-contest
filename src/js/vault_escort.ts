@@ -17,7 +17,7 @@ import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { carriedGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormSticks } from './hero_species.js';
-import { heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { monsterName } from './do_name.js';

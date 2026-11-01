@@ -1,5 +1,5 @@
 // C apply.c:use_figurine(). Placement is shared with the timer owner.
-import { commandResultCancelled, setMulti } from './command_state.js';
+import { commandResultCancelled, setMulti } from './cmd.js';
 import { Is_airlevel, Is_waterlevel } from './const.js';
 import { map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';

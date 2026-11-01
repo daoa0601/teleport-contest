@@ -1,7 +1,7 @@
 // C hack.c:air_turbulence()/water_turbulence() and mkmaze.c:water_friction().
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, Is_airlevel, Is_waterlevel, isok } from './const.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroCanSwim } from './hack.js';

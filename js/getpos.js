@@ -16,8 +16,8 @@ import { cansee } from './vision.js';
 import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
-import { visibleCommandKey } from './command_keys.js';
+import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
+import { visibleCommandKey } from './cmd.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { showDisclosureOverlay } from './windows.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key

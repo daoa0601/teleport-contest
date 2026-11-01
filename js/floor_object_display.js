@@ -11,7 +11,7 @@ import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from '.
 import { flush_screen } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { readEngravingAt } from './engrave.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
 import { windowOrigin } from './tty_menu.js';
 import { objectDescription } from './object_description.js';

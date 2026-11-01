@@ -3,7 +3,7 @@
 // pickup.c fatal_corpse_mistake(), trap.c instapetrify(),
 // potion.c make_stoned(), and timeout.c stoned_dialogue().
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn, nomul } from './command_state.js';
+import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';

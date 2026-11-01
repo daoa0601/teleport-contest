@@ -57,7 +57,7 @@ import { observeDistantObjectForNaming } from './objnam.js';
 import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, } from './zap.js';
 import { cansee } from './vision.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI, } from './const.js';
 import { newsym } from './display.js';
 import { recalculateTelepathyRange } from './worn.js';

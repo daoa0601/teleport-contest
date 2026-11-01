@@ -6,7 +6,7 @@ import {
 } from './const.js';
 import { newsym } from './display.js';
 import { pline } from './pline.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';

@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHandName } from './body_parts.js';
 import { heroSpecies } from './hero_species.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';

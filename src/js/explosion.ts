@@ -53,8 +53,8 @@ import type { MessagePublisher } from './pline.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import type { PropertyName } from './property_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './magic_types.js';
-import { rayDamageType } from './magic_types.js';
+import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './zap.js';
+import { rayDamageType } from './zap.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance,

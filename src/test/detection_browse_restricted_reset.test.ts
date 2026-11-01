@@ -7,7 +7,7 @@ import {
 } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { detectObjects } from '../js/magic_detection.js';
+import { detectObjects } from '../js/detect.js';
 import { POT_HEALING, SPE_DETECT_TREASURE } from '../js/object_data.js';
 import { floorObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

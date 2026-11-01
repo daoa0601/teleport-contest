@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { nomul } from '../js/command_state.js';
+import { nomul } from '../js/hack.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

@@ -45,9 +45,10 @@ import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel, scheduleLevelChange } from './level_change.js';
+import { makeStunned } from './hero_mental_status.js';
 import { deleteTrap } from './trap.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap, tryMonsterTrapEscape } from './trap.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -1244,5 +1245,53 @@ export async function teleportMonsterByHero(monster, { state = game, giveFeedbac
         }
     }
     return !!await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
+}
+// Magic portals under the hero.
+// C ref: teleport.c domagicportal().
+function dungeonName(level) {
+    return level ? game.dungeons[level.dnum]?.dname ?? '' : '';
+}
+function isTutorialLevel(level) {
+    return dungeonName(level) === 'The Tutorial';
+}
+async function addPortalStun() {
+    const hero = game.u;
+    const alreadyStunned = !!(hero.stunned
+        || (hero.stunnedTurns ?? 0) > 0);
+    await makeStunned((hero.stunnedTurns ?? 0) + 3, { talk: false });
+    return alreadyStunned ? 'You feel dizzier.' : 'You feel slightly dizzy.';
+}
+export async function activateMagicPortal(trap, gotoLevel) {
+    requirePlayingGame(game);
+    // C teleport.c:domagicportal() (1450-1451): a buried ball surfaces
+    // before the leashed-follower check, so it comes back up even when the
+    // portal attempt then shudders.
+    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL)
+        await buriedBallToPunishment(game);
+    if (!await bringLeashedFollowers()) {
+        await plineWithContinuation('You shudder for a moment.');
+        return;
+    }
+    const { uz, uz0 } = game.u;
+    if (uz0 && (uz.dnum !== uz0.dnum || uz.dlevel !== uz0.dlevel))
+        return;
+    await plineWithContinuation('You activated a magic portal!');
+    if (In_endgame(game.u?.uz) && !game.u?.uhave?.amulet) {
+        await plineWithContinuation(formatFeltMessage('dizzy for a moment, but nothing happens...'));
+        return;
+    }
+    if (!trap.dst)
+        throw new Error('Magic portal has no destination.');
+    const leavingTutorial = isTutorialLevel(game.u?.uz)
+        && !isTutorialLevel(trap.dst);
+    // C schedule_goto(): every entry, including a knockback hurtle, defers
+    // the real level change. domove() still needs the departure level to
+    // wear its engravings.
+    // deferred_goto() prints dizziness after that movement tail finishes.
+    const preMessage = leavingTutorial ? 'Resuming regular play.' : await addPortalStun();
+    scheduleLevelChange([trap.dst, {
+            arrival: leavingTutorial ? 'stairs' : 'portal',
+        }], gotoLevel ?? undefined, preMessage);
+    game.context.move = 1;
 }
 //# sourceMappingURL=teleport.js.map

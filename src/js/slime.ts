@@ -3,7 +3,7 @@
 // slimed_to_death(), uhitm.c mhitm_ad_slim().
 
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, PLNMSG_OK_DONT_DIE, TIMEOUT, TURNED_SLIME,

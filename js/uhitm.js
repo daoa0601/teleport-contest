@@ -26,7 +26,8 @@ import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribu
 import { heroCanBeBlindedByContact, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroLegName } from './body_parts.js';
 import { A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, FAINTED, G_NOCORPSE, Is_airlevel, Is_waterlevel, isok, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MSLOW, NON_PM, POOL, RLOC_MSG, RLOC_NOMSG, STRAT_WAITFORU, STONING, Upolyd, WATER, W_AMUL, W_ARMH, W_SADDLE, } from './const.js';
-import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { nomul } from './hack.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff, } from './display.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -46,7 +47,6 @@ import { damageHeroFromMonster } from './hero_damage.js';
 import { igniteItems } from './light.js';
 import { applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, grantMonsterCorpseIntrinsic, grantMonsterIntrinsic, healMonster, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
-import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { monsterSelfTouch } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
@@ -68,7 +68,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import { stealHeroQuestObject, stealHeroGold, stealFromHero } from './steal.js';
 import { sessionIsNight } from './ambient_sounds.js';
-import { infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction, } from './mhitu.js';
+import { infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, magicNegation, poisonAttackNoun, resolveHeroSeduction, } from './mhitu.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { hurtleMonster, staggerVerb, willMonsterHurtle } from './dothrow.js';
@@ -2778,5 +2778,12 @@ export async function petrifyMonsterDefender(monster, { publish = plineWithConti
 export function monsterWeaponStrengthBonus(monster, random = rn2) {
     const gloves = (monster.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
     return gloves?.otyp === GAUNTLETS_OF_POWER ? 3 + random(4) : 0;
+}
+// C uhitm.c:mhitm_mgc_atk_negated(): a cancelled attacker never lands its
+// special attack; otherwise magic_negation() on the defender decides.
+export function specialAttackNegated(attacker, defender, { state = game, random = rn2, } = {}) {
+    if (attacker !== state.u && attacker.mcan)
+        return true;
+    return random(10) < 3 * magicNegation(defender, state);
 }
 //# sourceMappingURL=uhitm.js.map

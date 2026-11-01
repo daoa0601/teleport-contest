@@ -43,7 +43,7 @@ import { showEnlightenment } from './insight.js';
 import { fruitName } from './fruit.js';
 import { loseHeroHp } from './hero_damage.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
-import { detectMonsters } from './magic_detection.js';
+import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, exerciseAttribute, exerciseWisdom, } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';

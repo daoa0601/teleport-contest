@@ -4,7 +4,7 @@ import test from 'node:test';
 import { addBuriedObject } from '../js/buried_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { detectObjects } from '../js/magic_detection.js';
+import { detectObjects } from '../js/detect.js';
 import { BLACK_OPAL, SPE_DETECT_TREASURE } from '../js/object_data.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -6,7 +6,7 @@ import { CORR, IRONBARS, MM_ANGRY, MM_NOGRP, NO_MINVENT, TER_OBJ } from '../js/c
 import { glyphAt, map_object, newsym, randomDisplayMonsterName, transientMonsterGlyph, transientObjectGlyph, } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { browseDetectionMap, clearDetectionMap, mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/magic_map_display.js';
+import { browseDetectionMap, clearDetectionMap, mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/detect.js';
 import { displaceMonster } from '../js/mhitm.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/mon.js';
 import { monsterName } from '../js/do_name.js';

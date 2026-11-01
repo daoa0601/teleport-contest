@@ -4,7 +4,7 @@ import { MAGIC_PORTAL, TT_BURIEDBALL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { LEASH } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
-import { activateMagicPortal } from '../js/magic_portal.js';
+import { activateMagicPortal } from '../js/teleport.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { buryFloorObjectsAt } from '../js/buried_object.js';
 import { punishHero } from '../js/punishment.js';

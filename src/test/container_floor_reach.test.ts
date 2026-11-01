@@ -8,7 +8,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
-import { ableToLoot } from '../js/container_location.js';
+import { ableToLoot } from '../js/pickup.js';
 
 void test('floor looting at a pit edge identifies the unreachable bottom of the pit', async () => {
     const level = freshPlayableRoom();

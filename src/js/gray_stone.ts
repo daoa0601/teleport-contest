@@ -1,7 +1,5 @@
 // C apply.c:use_stone() and touchstone_ok().
-import { commandResultCancelled } from './command_state.js';
-
-
+import { commandResultCancelled } from './cmd.js';
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 import { plineWithContinuation } from './pline.js';

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { DAGGER } from '../js/object_data.js';
-import { chargeDestroyedShopContent, settleDestroyedShopCharges } from '../js/container_impact.js';
+import { chargeDestroyedShopContent, settleDestroyedShopCharges } from '../js/dokick.js';
 import { SACK } from '../js/object_data.js';
 import { shopObjectUnitCost, stolenValue } from '../js/shk.js';
 import { flush_screen } from '../js/display.js';

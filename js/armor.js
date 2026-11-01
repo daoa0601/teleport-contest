@@ -1,6 +1,7 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
-import { pendingArmorAction, setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
+import { pendingArmorAction } from './do_wear.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';

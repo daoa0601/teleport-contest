@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { continueHeroDigging, ensureDiggingContext } from '../js/hero_digging.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { resetInputState } from '../js/input.js';
-import { browseDetectionMap } from '../js/magic_map_display.js';
+import { browseDetectionMap } from '../js/detect.js';
 import { LARGE_BOX, PICK_AXE, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { repairShopDamage } from '../js/shk.js';

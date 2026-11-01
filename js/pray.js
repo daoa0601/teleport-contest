@@ -1,7 +1,7 @@
 // Prayer decisions and the three-turn prayer occupation.
 // C pray.c:can_pray(), dopray(), prayer_done(), and pleased().
 import { formatFeltMessage } from './hero_speech.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { displayColorName } from './display.js';
 import { flushPendingTopline } from './tty_topline.js';

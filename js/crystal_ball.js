@@ -4,7 +4,7 @@ import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETEC
 import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { canSpotMonster, currentBoulderSymbol, displayColorName, glyphAt, magic_map_background, map_invisible, } from './display.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -15,8 +15,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { makeConfused, makeHallucinated } from './hero_mental_status.js';
 import { heroPolyGender } from './hero_species.js';
-import { detectMonsters, detectObjects } from './magic_detection.js';
-import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './magic_map_display.js';
+import { browseDetectionMap, detectMonsters, detectObjects, redisplayDetectionMap, unconstrainMap, } from './detect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_SYMBOLS } from './mondata.js';
 import { revealMonsterAppearance } from './mon.js';

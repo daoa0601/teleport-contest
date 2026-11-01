@@ -16,7 +16,7 @@ import { iceDescriptionAt } from './dungeon_feature.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNo } from './query.js';
-import { visibleCommandKey } from './command_keys.js';
+import { commandResultCancelled, describeCommandKey, keyText, rememberCommandKey, showKeyBindings, takeRepeatCommand, visibleCommandKey, } from './cmd.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
@@ -39,11 +39,10 @@ import { findDrawbridgeAt } from './dbridge.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
-import { promptDirection, readDirectionKey, restoreCommandMap } from './tty_prompts.js';
-import { commandResultCancelled } from './command_state.js';
-import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { promptDirection, promptKey, readDirectionKey, restoreCommandMap } from './tty_prompts.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
-import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { showExtendedCommandList } from './extended_commands.js';
 import { option_help } from './options.js';
 import { doextversion } from './extversion.js';
@@ -313,6 +312,44 @@ export async function objectAtMonsterDescription(monster, state = game, { glyph 
         ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
         : glyphAt(monster.mx, monster.my, state);
     return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
+}
+// C pager.c:dowhatdoes().
+export async function whatDoesCommand() {
+    if (!game._whatdoesShown) {
+        await pline(`Ask about '&' or '?' to get more info.${game.iflags.altmeta ? '  (For ESC, type it twice.)' : ''}`);
+        game._whatdoesShown = true;
+    }
+    const readKey = async (prompt) => {
+        const queued = takeRepeatCommand();
+        if (queued)
+            return queued.kind === 'key' ? queued.key : 27;
+        await flushPendingTopline();
+        const key = await promptKey(prompt);
+        rememberCommandKey(key);
+        return key;
+    };
+    let key = await readKey('What command? ');
+    if (key === 27 && game.iflags.altmeta) {
+        key = await readKey('] ');
+        if (key !== 27)
+            key |= 128;
+    }
+    // Native key lookup, key text, and numeric diagnostics use unsigned char.
+    key &= 255;
+    const description = describeCommandKey(key);
+    if (description === null)
+        await pline(`No such command '${visibleCommandKey(key)}', char code ${key} (0${key.toString(8).padStart(3, '0')} or 0x${key.toString(16).padStart(2, '0')}).`);
+    else {
+        if (key === 38 || key === 63) {
+            await showTextWindow(KEY_HELP);
+            await restoreCommandMap();
+        }
+        const [first = '', second] = description.split('\n');
+        await pline(`${keyText(key).padEnd(8)}${first}${second ? ',' : '.'}`);
+        if (second)
+            await plineWithContinuation(`${keyText(key).padEnd(8)}${second}.`);
+    }
+    game.context.move = 0;
 }
 // ---------------------------------------------------------------------------
 // C pager.c:self_lookat(), look_at_monster(), monhealthdescr(). Native

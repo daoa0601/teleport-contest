@@ -2,7 +2,7 @@
 // C ref: artifact.c Mb_hit().
 import { setHeroGrip } from './hero_grip.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { heroSpecies } from './hero_species.js';
@@ -10,13 +10,11 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
-import { probeMonster } from './magic_probe.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
-import { cancelMonster } from './zap.js';
-import { monsterResistsEffect } from './zap.js';
+import { cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {
     const enchantment = magicbaneEnchantment(object);

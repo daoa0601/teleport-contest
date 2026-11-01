@@ -3,7 +3,7 @@ import { seeTrap } from './trap.js';
 
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsHallucinating } from './senses.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { artifactById } from './artifacts.js';
 import { makeMonsterFlee } from './monmove.js';
 import { heroIsPunished } from './ball.js';

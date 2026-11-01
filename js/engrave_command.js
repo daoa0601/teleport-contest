@@ -3,7 +3,7 @@
 // doengrave_sfx_item(), doengrave_sfx_item_WAN(), doengrave_ctx_verb(),
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
-import { commandResultCancelled, commandResultFailed, setMulti } from './command_state.js';
+import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';

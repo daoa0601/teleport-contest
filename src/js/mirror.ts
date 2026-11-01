@@ -6,7 +6,8 @@ import {
 import { currentAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroFaceName, monsterStomachName } from './body_parts.js';
-import { commandResultCancelled, nomul } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
+import { nomul } from './hack.js';
 import { canSeeMonster, displayColorName, howMonsterSeen } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requireGameLevel } from './gstate.js';

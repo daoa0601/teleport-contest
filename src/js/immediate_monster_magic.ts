@@ -17,7 +17,6 @@ import { releaseHold, releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks } from './hero_species.js';
 import { isSteadfast } from './uhitm.js';
-import { probeMonster } from './magic_probe.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './mimic.js';
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
@@ -46,15 +45,14 @@ import { landFloorObject } from './floor_effects.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { hotPursuitShopkeeper } from './shk.js';
-import { adjustSpellDamage } from './zap.js';
+import {
+    adjustSpellDamage, affectMonsterSpeed, cancelMonster, learnWand, makeMonsterInvisible,
+    monsterResistsEffect, polymorphMonsterFromMagic, probeMonster,
+} from './zap.js';
 import { surfaceName } from './terrain_name.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import { learnWand } from './zap.js';
-import {
-    cancelMonster, makeMonsterInvisible, polymorphMonsterFromMagic, monsterResistsEffect, affectMonsterSpeed,
-} from './zap.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterHasDrainResistance } from './mondata.js';
 

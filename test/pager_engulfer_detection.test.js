@@ -3,7 +3,7 @@ import test from 'node:test';
 import { farlookLocationDescription } from '../js/pager.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/magic_map_display.js';
+import { mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/detect.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C pager.c:look_at_monster() keeps ", swallowing you" for an engulfer

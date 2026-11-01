@@ -145,7 +145,7 @@ import { heroStomachName } from './body_parts.js';
 import { loseHeroHp } from './hero_damage.js';
 import type { MonsterStoningCureResult } from './muse.js';
 import { prepareVaultGuardDeath } from './vault_guard.js';
-import { armorThiefGone } from './command_state.js';
+import { armorThiefGone } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { ShopGameState } from './shop_types.js';
 import { objectResistsDestruction } from './object_state.js';

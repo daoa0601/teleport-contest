@@ -28,7 +28,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
 import { stopHeroOccupation } from './occupation.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { setMonsterMalign } from './makemon.js';

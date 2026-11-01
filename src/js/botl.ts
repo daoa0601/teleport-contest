@@ -46,7 +46,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { nearCapacity } from './weight.js';
 import { activeObjectSymbols, objectClassForType, objectClassSymbol } from './display.js';
 import { rankOf } from './quest_pager.js';
-import { heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsSick } from './hero_illness.js';
 import { heroIsUnconscious } from './hero_sleep.js';
 import { heroFormSticks } from './hero_species.js';

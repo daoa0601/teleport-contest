@@ -34,7 +34,7 @@ import { monsterName } from './do_name.js';
 import { artifactById } from './artifacts.js';
 import { heroMoveBlockedBetween } from './hack.js';
 import { dropBall } from './ball.js';
-import { containerImpactDamage } from './container_impact.js';
+import { containerImpactDamage } from './dokick.js';
 import { currentAttribute } from './attrib.js';
 import {
     canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym,

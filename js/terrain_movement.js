@@ -7,7 +7,7 @@ import { classifyStatusTerrain } from './hack.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, PIT, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { captureLevitationState, clearLevitationMasks, levitationAtWill, propertyIsActive, propertyIsBlocked, refreshMovementProperties, setPropertyTerrainBlocked, } from './properties.js';

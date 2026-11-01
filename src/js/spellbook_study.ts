@@ -4,7 +4,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { A_INT, A_WIS } from './const.js';
 import { askTeleportDestination } from './teleport.js';
 import { impossible } from './diagnostics.js';

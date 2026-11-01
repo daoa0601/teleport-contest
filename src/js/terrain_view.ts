@@ -12,7 +12,7 @@ import type { DisplayGlyph } from './display.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './magic_map_display.js';
+import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './detect.js';
 import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './steed.js';
 import { visibleRegionAt } from './regions.js';

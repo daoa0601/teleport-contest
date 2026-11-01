@@ -3,7 +3,7 @@ import type { ChoiceMenuEntry } from './windows.js';
 // C refs: pickup.c use_container(), in_container(), out_container().
 
 import { makePlural } from './object_grammar.js';
-import { containerContents } from './container_contents.js';
+import { containerContents } from './end.js';
 import { bot } from './botl.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
@@ -11,7 +11,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { touchArtifactByHero } from './artifacts.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
@@ -66,9 +66,11 @@ import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
-import { addShopObjectToBill, currentShopResident, costlySpot, stolenValue, sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shk.js';
+import {
+    addShopObjectToBill, currentShopResident, costlySpot, stolenValue, sellHeroDroppedObject,
+    setSellDisposition, warnAboutRemovedPick, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL,
+} from './shk.js';
 import { currency } from './currency.js';
-import { warnAboutRemovedPick } from './container_shop.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
     showDisclosureOverlay, showMultiSelectWindow, showTextWindow,

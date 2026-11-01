@@ -33,14 +33,14 @@ import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, paranoidQuery, promptYesNoQuit } from './query.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
-import { visibleCommandKey } from './command_keys.js';
+import { visibleCommandKey } from './cmd.js';
 import {
     inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail,
     objectNeedsFullIdentification,
 } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
-import { setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
 import { makeWish } from './wish.js';
 import { polymorphHero } from './polyself.js';
 import { createParticularMonster } from './read_creation.js';
@@ -62,7 +62,7 @@ import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { withMonsterNoticesBlocked } from './hack.js';
-import { mapMagicLevel } from './magic_mapping.js';
+import { mapMagicLevel } from './detect.js';
 import { dungeonDepth } from './hacklib.js';
 import { specialDisplayName } from './dungeon.js';
 import { addInventoryItem } from './u_init.js';

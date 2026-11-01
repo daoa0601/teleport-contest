@@ -5,7 +5,7 @@ import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NON_PM } from './const.js';
 import { canSeeMonster, canSpotMonster, shieldeff } from './display.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
-import { specialAttackNegated } from './magic_negation.js';
+import { specialAttackNegated } from './uhitm.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
 import { changeMonsterForm } from './mon.js';
 import { monsterName, namelessMonsterName } from './do_name.js';

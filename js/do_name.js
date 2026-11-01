@@ -6,9 +6,9 @@
 // individual_naming.ts (do_oname), object_call.ts (docall) and
 // floor_naming.ts (namefloorobj).
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, W_SADDLE, } from './const.js';
-import { clearCannedCommands } from './command_state.js';
+import { clearCannedCommands } from './cmd.js';
 import { takeCommandKey, takeCommandPosition } from './input.js';
-import { takeRepeatCommand } from './command_repeat.js';
+import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { nameFloorObject } from './floor_naming.js';
 import { renameDiscoveredType } from './o_init.js';
@@ -29,7 +29,7 @@ import { heroBeautyDescription } from './mirror.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName, } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
-import { visibleCommandKey } from './command_keys.js';
+import { visibleCommandKey } from './cmd.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
