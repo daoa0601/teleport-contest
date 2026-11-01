@@ -5,7 +5,7 @@ import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_GENOD, MV_KNOWS_EGG } from '../js/const.js';
+import { G_GENOD, MV_KNOWS_EGG, OBJECT_TIMER_KIND } from '../js/const.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from '../js/egg.js';
@@ -17,9 +17,7 @@ import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { EGG } from '../js/object_data.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { addCreatedInventoryItem } from '../js/u_init.js';
-import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { objectWeight } from '../js/weight.js';

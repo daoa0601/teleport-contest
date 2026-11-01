@@ -3,140 +3,84 @@
 // water_damage(), and erode_obj().
 
 import { formatSeenMessage } from './hero_speech.js';
-import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE,
-    LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP,
-    MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP,
-    ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD,
-    SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
-    Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
-    W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok,
-} from './const.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
-import { cansee, couldsee } from './vision.js';
+import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName } from './objnam.js';
+import { cansee, couldsee, vision_recalc } from './vision.js';
 import { endObjectBurn } from './light.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { getObjectLocation } from './object_location.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid, MONSTER_ATTACKS } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { isPoolAt, levelHasCeiling, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
-import { objectOwnershipPrefix } from './shk.js';
-import { monsterWieldedWeapon } from './weapon.js';
-import {
-    BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
-    FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
-    MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
-    RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE,
-} from './object_data.js';
-import { erodeObject } from './object_erosion.js';
+import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject } from './shk.js';
+import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
+import { BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, OBJECT_SUBTYPE, CORPSE, DART } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
-import { blankNovel } from './object_cancellation.js';
-import { displayColorName, displayLiquidName } from './display.js';
-import { objectResistsDestruction } from './object_state.js';
-import { objectMaterial } from './object_material.js';
+import { displayColorName, displayLiquidName, canSeeMonster, canSpotMonster, map_trap, newsym } from './display.js';
+import { objectResistsDestruction, getObjectLocation, blankNovel } from './zap.js';
+import { objectMaterial } from './o_init.js';
 import { impossible } from './diagnostics.js';
-import { stopAllObjectTimers } from './object_timers.js';
-import { d, rnl, rn2, rnd } from './rng.js';
+import { stopAllObjectTimers } from './timeout.js';
+import { d, rnl, rn2, rnd, rn2Display } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import { plineWithContinuation, type MessagePublisher } from './pline.js';
-import { canSeeMonster, canSpotMonster, map_trap, newsym } from './display.js';
+import type { ImmediateMonsterTrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { dryTowel, wetTowel } from './towel.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Trap } from './map_types.js';
-import type {
-    ImmediateMonsterTrapOptions, MonsterMovement, MonsterMovementAction,
-    MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions,
-    PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow,
-} from './monster_action_types.js';
 import { verbForSubject } from './object_grammar.js';
-import type { MonsterDeathOptions } from './mon.js';
-import {
-    applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance,
-} from './anti_magic_trap.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster } from './mon.js';
+import type { MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions, MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult, PetrificationContactOptions, PetrificationOptions } from './mon.js';
+import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
 import { beginMonsterFireTrap, finishMonsterFireTrap } from './fire_trap.js';
-import {
-    beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume,
-} from './landmine_trap.js';
-import { AD_PHYS } from './monster_attack_types.js';
-import { monsterWearsIronShoes } from './monworn.js';
+import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume } from './landmine_trap.js';
+import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
+import { monsterWearsIronShoes, removeObjectFromMonsterInventory } from './monworn.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
-import {
-    beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume,
-} from './projectile_trap.js';
-import {
-    beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume,
-} from './sleep_gas_trap.js';
+import { beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume } from './projectile_trap.js';
+import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume } from './sleep_gas_trap.js';
 import { beginMonsterSqueakyBoard, finishMonsterSqueakyBoard } from './squeaky_board_trap.js';
-import {
-    beginMonsterVibratingSquare, finishMonsterVibratingSquare,
-} from './vibrating_square_trap.js';
+import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from './vibrating_square_trap.js';
 import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymorph_trap.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
 import { finishMonsterWebTrap } from './web_trap.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance } from './mondata.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import {
-    teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal,
-    teleportMonsterToRandomLevel,
-} from './teleport.js';
+import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { canFallThrough } from './mklev.js';
-import { monsterName as canonicalMonsterName } from './do_name.js';
-import { monsterResistsSleep } from './mondata.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
-import { monsterHasFireResistance } from './mondata.js';
-import { monsterHasStoneResistance } from './mondata.js';
-import {
-    finishMonsterKilled, finishMonsterPetrification, monsterSubject,
-    restoreShapechanger, turnGolemToStone,
-} from './mon.js';
-import type {
-    MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions,
-    MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult,
-    PetrificationContactOptions, PetrificationOptions,
-} from './mon.js';
-import { CORPSE } from './object_data.js';
+import { monsterName as canonicalMonsterName, monsterName } from './do_name.js';
 import { touchPetrifies } from './stoning.js';
-import { corpseName } from './objnam.js';
-import { unwieldMonsterWeapon } from './weapon.js';
 import { useMonsterStoningCure } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct } from './end.js';
-import { requirePlayingGame } from './gstate.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { clearPitConnections } from './pit_connections.js';
-import { TRAPNUM, TRAP_EXPLANATIONS, Upolyd } from './const.js';
 import { experienceRankIndex } from './exper.js';
-import { rn2Display } from './rng.js';
 import { mksobj } from './mkobj.js';
 import { objectWeight } from './weight.js';
 import { buryObject } from './buried_object.js';
 import { placeObject, stack_object } from './floor_object.js';
-import { requireLiveGame } from './gstate.js';
 import { monsterAtPosition } from './steed.js';
-import { DART } from './object_data.js';
-import { sellHeroDroppedObject } from './shk.js';
 import { resetHeroTrap } from './terrain_movement.js';
-import { TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
-import { monsterName } from './do_name.js';
 import { rewardMonsterRescue } from './untrap.js';
-import { vision_recalc } from './vision.js';
-import { wakeMonster } from './mon.js';
+import { heroSpecies } from './hero_species.js';
+import { hasCarriedProperty, hasWornProperty } from './properties.js';
+import { possessiveName } from './hacklib.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
@@ -2164,4 +2108,276 @@ async function activateTrap(target: TrapTarget, hero: boolean, trap: Trap, state
         || action.movement.actorLeftLevel || action.movement.actorDied
         || action.movement.moved;
     return result(!!changed, noticed, state);
+}
+
+// Item erosion and acid damage. C trap.c:erode_obj(), acid_damage(),
+// uhitm.c:erode_armor(), and mhitm.c:rustm().
+
+export type ErosionKind = 'burn' | 'rust' | 'rot' | 'corrosion' | 'crack';
+export type ErosionResult = 'nothing' | 'greased' | 'damaged' | 'destroyed';
+export interface ErosionOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+    luckRandom?: typeof rnl;
+    verbose?: boolean;
+    grease?: boolean;
+    destroy?: boolean;
+    pay?: boolean;
+    displayName?: string | null;
+    position?: Position;
+}
+interface ErosionRule {
+    field: 'oeroded' | 'oeroded2';
+    verb: string;
+    past: string;
+    cause: string;
+}
+interface ObjectView {
+    hero: boolean;
+    carrier: Monster | null;
+    monsterVisible: boolean;
+    plural: boolean;
+    name: string;
+    visible: boolean;
+}
+function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
+    return defender === state.u;
+}
+const WEAPON_CLASS = 2;
+const ARMOR_CLASS = 3;
+const TOOL_CLASS = 6;
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
+const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
+const EROSION: Record<ErosionKind, ErosionRule> = {
+    burn: { field: 'oeroded', verb: 'smoulder', past: 'burnt', cause: 'heat' },
+    rust: { field: 'oeroded', verb: 'rust', past: 'rusted', cause: 'oxidation' },
+    rot: { field: 'oeroded2', verb: 'rot', past: 'rotten', cause: 'decay' },
+    corrosion: { field: 'oeroded2', verb: 'corrode', past: 'corroded', cause: 'corrosion' },
+    crack: { field: 'oeroded', verb: 'crack', past: 'cracked', cause: 'impact' },
+};
+export async function erodeAttackingWeapon(defender: Hero | Monster, weapon: GameObject | null | undefined, {
+    state = game, random = rn2, ...options
+}: ErosionOptions = {}) {
+    if (!weapon) return;
+    const species = isHeroDefender(defender, state) ? heroSpecies(state) : defender.mnum;
+    const attacks = MONSTER_ATTACKS[species];
+    if (!attacks) throw new RangeError(`Unknown monster species: ${species}`);
+    const hasDamage = (type: number) => attacks.some(attack => attack[1] === type);
+    const kind = hasDamage(AD_CORR) ? 'corrosion'
+        : hasDamage(AD_RUST) ? 'rust'
+            : hasDamage(AD_FIRE) && species !== PM_STEAM_VORTEX ? 'burn' : null;
+    if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
+        await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
+    }
+}
+export async function erodeArmor(defender: Hero | Monster, kind: ErosionKind, {
+    state = game, random = rn2, ...options
+}: ErosionOptions = {}): Promise<ErosionResult> {
+    const layers = [
+        [W_ARMH], [W_ARMC, W_ARM, W_ARMU], [W_ARMS], [W_ARMG], [W_ARMF],
+    ];
+    const inventory = isHeroDefender(defender, state) ? state.inventory : (defender.minvent ?? []);
+    for (;;) {
+        const slot = random(5);
+        const masks = layers[slot];
+        if (!masks) throw new RangeError(`Invalid armor erosion slot: ${slot}`);
+        let object: GameObject | undefined;
+        for (const mask of masks) {
+            object = inventory.find(item => (item.owornmask ?? 0) & mask);
+            if (object) break;
+        }
+        const result = object
+            ? await erodeObject(object, kind, {
+                ...options, state, random, verbose: slot === 1,
+            }) : 'nothing';
+        if (slot === 1 || result !== 'nothing') return result;
+    }
+}
+export async function damageObjectWithAcid(object: GameObject | null | undefined, {
+    state = game, publish = plineWithContinuation, random = rn2, ...options
+}: ErosionOptions = {}) {
+    if (!object) return;
+    if (object.where === 'inventory' && inventoryResists('corrosion', state, random)) return;
+    if (object.greased) {
+        await protectWithGrease(object, null, state, publish, random);
+    } else if (object.oclass === SCROLL_CLASS && object.otyp !== SCR_BLANK_PAPER) {
+        const view = objectView(object, state, options.position);
+        if (!heroIsBlind(state) && (view.hero || view.monsterVisible))
+            await publish(`${objectSubject(view, state)} ${view.plural ? 'fade' : 'fades'}.`);
+        object.otyp = SCR_BLANK_PAPER;
+        object.spe = 0;
+        object.dknown = false;
+        if (object.name) object.name = 'scroll of blank paper';
+        if (object.plural) object.plural = 'scrolls of blank paper';
+    } else {
+        await erodeObject(object, 'corrosion', {
+            ...options, state, publish, random, verbose: true,
+        });
+    }
+}
+// C trap.c:erode_obj().
+export async function erodeObject(object: GameObject | null | undefined, kind: ErosionKind, {
+    state = game,
+    publish = plineWithContinuation,
+    random = rn2,
+    luckRandom = rnl,
+    verbose = false,
+    grease = true,
+    destroy = false,
+    pay = false,
+    displayName = null,
+    position,
+}: ErosionOptions = {}): Promise<ErosionResult> {
+    if (!object) return 'nothing';
+    const rule = EROSION[kind];
+    if (!rule) throw new TypeError(`Unknown erosion: ${kind}`);
+    if (object.where === 'inventory' && inventoryResists(kind, state, random)) return 'nothing';
+    const view = objectView(object, state, position, displayName);
+    const agreement = view.plural ? 'are' : 'is';
+    if (grease && kind !== 'burn' && kind !== 'rot' && object.greased) {
+        await protectWithGrease(object, view, state, publish, random);
+        return 'greased';
+    }
+    if (!erosionMatters(object)) return 'nothing';
+    const tell = verbose && state.flags.verbose !== false;
+    if (!objectIsVulnerableToErosion(object, kind, state) || (object.oerodeproof && object.rknown)) {
+        if (tell && (view.hero || view.monsterVisible)) {
+            await publish(
+                `${objectSubject(view, state)} ${agreement} not affected by ${rule.cause}.`,
+            );
+        }
+        return 'nothing';
+    }
+    if (object.oerodeproof || (object.blessed && luckRandom(4) === 0)) {
+        if (state.flags.verbose !== false
+            && (verbose || object.oerodeproof) && view.visible) {
+            await publish(
+                `Somehow, ${objectSubject(view, state, false)} ${agreement} not affected by the ${rule.cause}.`,
+            );
+        }
+        if (object.oerodeproof) object.rknown = true;
+        return 'nothing';
+    }
+    const erosion = object[rule.field] ?? 0;
+    const verb = rule.verb + (view.plural ? '' : 's');
+    if (erosion < 3) {
+        const adverb = erosion === 2 ? ' completely' : erosion ? ' further' : '';
+        if (view.visible) await publish(`${objectSubject(view, state)} ${verb}${adverb}!`);
+        if (pay) await chargeAlteredUnpaidObject(object, rule.past, state);
+        object[rule.field] = erosion + 1;
+        if (view.hero) state._armorClassDirty = true;
+        return 'damaged';
+    }
+    if (destroy) {
+        object.in_use = true;
+        const action = kind === 'crack'
+            ? view.plural ? 'shatter' : 'shatters' : `${verb} away`;
+        if (view.visible) await publish(`${objectSubject(view, state)} ${action}!`);
+        if (pay) await chargeAlteredUnpaidObject(object, rule.past, state);
+        if (object.owornmask) {
+            if (view.hero) {
+                await removeWornHeroItem(object, state);
+                if (state.program_state?.gameover) return 'destroyed';
+            } else if (view.carrier) {
+                await removeObjectFromMonsterInventory(
+                    view.carrier, object, state, { publish },
+                );
+            } else {
+                object.owornmask = 0;
+            }
+        }
+        await delobj(object, state);
+        return 'destroyed';
+    }
+    if (tell && view.visible) {
+        const sense = view.hero && heroIsBlind(state) ? 'feel' : 'look';
+        await publish(
+            `${objectSubject(view, state)} ${sense}${view.plural ? '' : 's'} completely ${rule.past}.`,
+        );
+    }
+    return 'nothing';
+}
+function objectCanBurn(object: GameObject, state: GameState) {
+    if ([TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(object.otyp)
+        || OBJECT_PROPERTY[object.otyp] === 'fireResistance') return false;
+    const material = objectMaterial(object, state);
+    return (material <= 8 && material !== 1) || material === 18;
+}
+export function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>) {
+    return [WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS].includes(object.oclass)
+        || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0);
+}
+export function objectIsVulnerableToErosion(object: GameObject, kind: ErosionKind, state: GameState = game) {
+    const material = objectMaterial(object, state);
+    if (kind === 'burn') return objectCanBurn(object, state);
+    if (kind === 'rust') return material === 11;
+    if (kind === 'corrosion') return material === 11 || material === 13;
+    if (kind === 'rot') return (material <= 8 && material !== 1) || material === 10;
+    return material === 19 && object.oclass === ARMOR_CLASS;
+}
+function inventoryResists(kind: ErosionKind, state: GameState, random: typeof rn2) {
+    if (kind !== 'burn' && kind !== 'corrosion') return false;
+    const property = kind === 'burn' ? 'fireResistance' : 'acidResistance';
+    if (hasWornProperty(property, state) || hasCarriedProperty(property, null, state))
+        return random(100) < 99;
+    return kind === 'burn' && state.uarmc?.otyp === DWARVISH_CLOAK
+        && random(100) < 90;
+}
+async function protectWithGrease(
+    object: GameObject, view: ObjectView | null, state: GameState,
+    publish: MessagePublisher, random: typeof rn2,
+) {
+    if (view && (view.hero || view.monsterVisible)) {
+        // Native grease feedback appends 's even when the name ends in s.
+        const subject = view.monsterVisible && view.carrier
+            ? `${monsterName(view.carrier, { state, capitalized: true })}'s ${view.name}`
+            : objectSubject(view, state);
+        await publish(
+            `${subject} ${view.plural ? 'are' : 'is'} protected by the layer of grease!`,
+        );
+    } else if (!view) {
+        const carrier = objectCarrier(object, state);
+        // acid_damage supplies no name; grease_protect names the object only
+        // inside this feedback guard, so silent protection cannot reveal it.
+        if (object.where === 'inventory' || (carrier && canSeeMonster(carrier))) {
+            await publish(`${ownedObjectAction(object, 'are', state)} protected by the layer of grease!`);
+        }
+    }
+    if (random(2) === 0) {
+        object.greased = false;
+        if (object.where === 'inventory') await publish('The grease dissolves.');
+    }
+}
+function objectCarrier(object: GameObject, state: GameState): Monster | null {
+    if (object.where !== 'minvent') return null;
+    return state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
+        : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
+}
+function objectView(object: GameObject, state: GameState,
+    position: Position = { x: object.ox, y: object.oy }, displayName: string | null = null): ObjectView {
+    const hero = object.where === 'inventory';
+    const carrier = objectCarrier(object, state);
+    const monsterVisible = !!carrier && !hero
+        && canSeeMonster(carrier);
+    const { x, y } = position;
+    const floorVisible = !hero && !carrier && cansee(x, y)
+        && (!isPoolAt(x, y, state) || (!!state.u.uinwater
+            && Math.max(Math.abs(state.u.ux - x), Math.abs(state.u.uy - y)) <= 1));
+    let name = displayName ?? objectCombatName(object, { state });
+    if (!hero && !monsterVisible) name = name.replace(/^the /iu, '');
+    const plural = verbForSubject(name, 'are') === 'are';
+    return {
+        hero, carrier, monsterVisible, plural, name,
+        visible: hero || monsterVisible || floorVisible,
+    };
+}
+function objectSubject(view: ObjectView, state: GameState, capitalized = true): string {
+    if (view.hero) return `${capitalized ? 'Your' : 'your'} ${view.name}`;
+    if (view.monsterVisible && view.carrier) {
+        const owner = monsterName(view.carrier, { state, capitalized });
+        return `${possessiveName(owner)} ${view.name}`;
+    }
+    return `${capitalized ? 'The' : 'the'} ${view.name}`;
 }

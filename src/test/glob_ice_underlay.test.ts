@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DB_ICE, DRAWBRIDGE_UP } from '../js/const.js';
+import { DB_ICE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopAllObjectTimers } from '../js/object_timers.js';
+import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

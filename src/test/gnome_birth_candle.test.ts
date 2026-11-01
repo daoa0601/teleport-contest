@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MM_NOMSG } from '../js/const.js';
+import { MM_NOMSG, OBJECT_TIMER_KIND } from '../js/const.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { TALLOW_CANDLE, WAX_CANDLE } from '../js/object_data.js';
-import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const lit of [false, true]) {

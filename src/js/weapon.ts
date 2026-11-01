@@ -2,7 +2,7 @@
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
 
-import { bypassObject } from './object_bypass.js';
+import { bypassObject } from './worn.js';
 import {
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
     NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING,
@@ -84,7 +84,7 @@ import {
     monsterSpeciesHatesSilver,
 } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
 import type { ArtifactDefender } from './artifacts.js';
 import { isPoolAt } from './terrain_properties.js';

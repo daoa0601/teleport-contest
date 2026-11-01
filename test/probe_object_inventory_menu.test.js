@@ -4,7 +4,7 @@ import { buryFloorObjectsAt } from '../js/buried_object.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { probeObject } from '../js/zap.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { DIAMOND, SACK, WAN_PROBING } from '../js/object_data.js';
 import { applyWandEffect } from '../js/zap.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

@@ -1,13 +1,12 @@
 // Class-specific details appended by objnam.c:doname_base(). Equipment,
 // object identity, quantities, and shop prices have separate owners.
-import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_MALE, CORPSTAT_RANDOM, MV_KNOWS_EGG, W_SADDLE, W_TOOL, } from './const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_MALE, CORPSTAT_RANDOM, MV_KNOWS_EGG, W_SADDLE, W_TOOL, OBJECT_TIMER_KIND } from './const.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE, LEASH, MAGIC_LAMP, OBJECT_CHARGED, OBJECT_COST, OIL_LAMP, POT_OIL, STATUE, TALLOW_CANDLE, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
-import { OBJECT_TIMER_KIND } from './object_timers.js';
 const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;

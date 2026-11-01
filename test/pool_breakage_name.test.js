@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

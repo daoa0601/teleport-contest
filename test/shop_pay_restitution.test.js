@@ -9,7 +9,7 @@ import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 for (const gold of [49, 50, 100]) {
     void test(`a robbed angry keeper accepts restitution only when ${gold} gold covers half the loss`, async () => {
         await freshObjectRoom();

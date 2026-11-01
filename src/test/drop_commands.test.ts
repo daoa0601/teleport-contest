@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { CORPSE } from '../js/object_data.js';
-import { SINK as SINK_TERRAIN } from '../js/const.js';
+import { SINK as SINK_TERRAIN, OBJECT_TIMER_KIND } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
@@ -21,9 +21,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { addBuriedObject } from '../js/buried_object.js';
-import {
-    OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer,
-} from '../js/object_timers.js';
+import { objectTimers, scheduleObjectTimer } from '../js/timeout.js';
 
 const DAGGER = OBJECT_NAMES.indexOf('dagger');
 const LOADSTONE = OBJECT_NAMES.indexOf('loadstone');

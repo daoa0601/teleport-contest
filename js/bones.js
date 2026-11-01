@@ -24,7 +24,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { purgeDeadMonsters } from './mon.js';
 import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
-import { restoreLevelTimers } from './object_timers.js';
+import { restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions } from './regions.js';
 import { fixShopDamage } from './shk.js';
 import { restoreEngravings, sanitizeEngravings } from './engrave.js';

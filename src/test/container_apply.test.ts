@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { W_AMUL } from '../js/const.js';
+import { W_AMUL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -26,7 +26,7 @@ import {
     WAN_CANCELLATION,
 } from '../js/object_data.js';
 import { installPolymorphedHero } from './support/hero-state.js';
-import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer } from '../js/object_timers.js';
+import { objectTimers, scheduleObjectTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buryFloorObjectsAt, buryObject, unearthFloorObjectsAt } from '../js/buried_object.js';
-import { DB_FLOOR, DRAWBRIDGE_UP, POOL, ROOM, TT_BURIEDBALL } from '../js/const.js';
+import { DB_FLOOR, DRAWBRIDGE_UP, POOL, ROOM, TT_BURIEDBALL, LEVEL_TIMER_KIND } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { applyFloorEffects } from '../js/floor_effects.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -17,12 +17,11 @@ import {
     POT_HEALING,
     ROCK,
 } from '../js/object_data.js';
-import { LEVEL_TIMER_KIND, levelTimers } from '../js/object_timers.js';
-import { deleteObject } from '../js/object_delete.js';
+import { levelTimers } from '../js/timeout.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
-import { addShopObjectToBill } from '../js/shk.js';
+import { addShopObjectToBill, deleteObject } from '../js/shk.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

@@ -69,9 +69,9 @@ do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/do_wear.ts:removeWornIt
 do_wear.c	dotakeoff	dragon scales are	composed	src/js/do_wear.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
 do_wear.c	unknown_type	Unknown type of	diagnostic	impossible() format for an unrecognized armor otyp; developer diagnostic.
 dogmove.c	dog_invent	edog->apport > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
-dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
-dokick.c	really_kick_object	n't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dokick.c	really_kick_object	It comes loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dokick.c	really_kick_object	n't come loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
 dungeon.c	br_string2	One way stairs down	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
 dungeon.c	br_string2	One way stairs up	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
@@ -596,5 +596,5 @@ worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonste
 worn.c	mon_break_armor	a ripping sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
 zap.c	bhito	a defibrillator.	composed	src/js/immediate_zap.ts:reviveFloorCorpse; An unseen revival heard by a nondeaf hallucinating Healer selects a defibrillator and appends the period.
 zap.c	blank_novel	obj->otyp == SPE_BLANK_PAPER	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-zap.c	poly_obj	is furious!	composed	src/js/object_polymorph.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shk.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
+zap.c	poly_obj	is furious!	composed	src/js/zap.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shk.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
 zap.c	zapyourself	self with a death ray	composed	src/js/hero_self_zap.ts:zapHeroWithObject; Selects himself or herself before " with a death ray"; killer format NO_KILLER_PREFIX as in native.

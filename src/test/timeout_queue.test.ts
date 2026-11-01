@@ -2,10 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { EGG } from '../js/object_data.js';
-import {
-    claimNextDueObjectTimer, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
-    scheduleLevelTimer, scheduleObjectTimer,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, scheduleLevelTimer, scheduleObjectTimer } from '../js/timeout.js';
+import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -20,8 +20,8 @@ import { placeObject, placeObjectSynchronously, remove_object } from './floor_ob
 import { adjustHeroAlignment } from './alignment.js';
 import { changeHeroLuck } from './attrib.js';
 import { costlySpot, shopClaimsObject } from './shk.js';
-import { breakObjectAtLocation } from './object_breakage.js';
-import { getObjectLocation } from './object_location.js';
+import { breakObjectAtLocation } from './dothrow.js';
+import { getObjectLocation } from './zap.js';
 import { objectName } from './objnam.js';
 import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';

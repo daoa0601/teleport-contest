@@ -10,7 +10,7 @@ import { MONSTER_FLAGS1 } from './monster_data.js';
 import { hideHeroUnder } from './mon.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { corpseName } from './objnam.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { stopHeroOccupation } from './occupation.js';
 export async function rotCorpse(corpse, state = game) {
     requireLiveGame(state);

@@ -30,9 +30,7 @@ import {
 } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
-import {
-    blessObjectState, curseObject, uncurseObjectState,
-} from './object_state.js';
+import { blessObjectState, curseObject, uncurseObjectState } from './mkobj.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 import { d, rn1, rn2, rnd } from './rng.js';

@@ -6,7 +6,7 @@ import { deleteEngraving, engravingAt } from './engrave.js';
 import type { GameState } from './game_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { BOULDER } from './object_data.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { deleteTrap } from './trap.js';
 import type { SpecialSelection } from './selvar.js';
 

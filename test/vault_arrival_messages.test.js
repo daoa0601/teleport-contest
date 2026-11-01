@@ -6,7 +6,7 @@ import { glyphAt } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { invault } from '../js/vault.js';
 import { answerPrompts } from './support/input-boundaries.js';

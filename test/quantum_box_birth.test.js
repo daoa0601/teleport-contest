@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, LARGE_BOX } from '../js/object_data.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { objectWeight } from '../js/weight.js';
 import { createMonsterAt } from './support/monsters.js';

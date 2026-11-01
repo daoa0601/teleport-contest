@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { handleFoodAdmission } from '../js/nonfood_eating.js';
 import { AMULET_OF_YENDOR, APPLE, DAGGER, EGG, GOLD_PIECE, LARGE_BOX, LEATHER_ARMOR, OBJECT_NAMES, RIN_SLOW_DIGESTION, SCR_IDENTIFY, TALLOW_CANDLE, POT_HEALING, } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { objectQuantity } from '../js/object_stack.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';

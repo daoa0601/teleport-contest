@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { buryObject } from '../js/buried_object.js';
 import { rhack } from '../js/cmd.js';
-import { CORPSTAT_INIT, ICE, ICED_POOL, POOL } from '../js/const.js';
+import { CORPSTAT_INIT, ICE, ICED_POOL, POOL, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from '../js/const.js';
 import { digHole } from '../js/digging_terrain.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
@@ -17,9 +17,7 @@ import { nameToMonster } from '../js/mondata.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { BOULDER, CORPSE, ROCK } from '../js/object_data.js';
-import {
-    objectTimers, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, scheduleLevelTimer,
-} from '../js/object_timers.js';
+import { objectTimers, scheduleLevelTimer } from '../js/timeout.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { startRun } from '../js/runmode.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { fallWithIronBall } from '../js/ball.js';
-import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY } from '../js/const.js';
+import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY, OBJECT_TIMER_KIND } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
@@ -16,9 +16,7 @@ import {
     AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE,
     HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH,
 } from '../js/object_data.js';
-import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer, stopAllObjectTimers,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { poisonHero } from '../js/poison.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

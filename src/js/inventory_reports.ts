@@ -25,7 +25,7 @@ import { currency } from './currency.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './gold.js';
 import { currentShopResident, shopkeeperInOwnShop, unpaidObjectCost, reportShopFinances } from './shk.js';
-import { objectsInTimerGraph } from './object_timers.js';
+import { objectsInTimerGraph } from './timeout.js';
 import {
     MENU_FULL, MENU_PARTIAL, PICK_ONE, SORTLOOT_INUSE,
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, W_WEAPONS,

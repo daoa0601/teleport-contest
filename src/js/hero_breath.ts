@@ -22,7 +22,6 @@ import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { igniteItems } from './light.js';
 import {
@@ -37,7 +36,7 @@ import { applyHeroGolemEffects, heroMonsterForm } from './polyself.js';
 import { poisonHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { clearHeroSliming } from './slime.js';
-import { burnHeroArmorByFire } from './trap.js';
+import { burnHeroArmorByFire, erodeArmor, damageObjectWithAcid } from './trap.js';
 import {
     destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from './zap.js';

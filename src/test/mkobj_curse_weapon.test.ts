@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { curseObject } from '../js/object_state.js';
+import { curseObject } from '../js/mkobj.js';
 import { DAGGER, POT_WATER } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';

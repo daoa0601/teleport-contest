@@ -51,7 +51,7 @@ import { sellHeroDroppedObject, makeShopkeeperHappy } from './shk.js';
 import { OBJECT_COST } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectCombatName } from './objnam.js';
-import { shipObject } from './object_migration.js';
+import { shipObject } from './dokick.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { requireInitializedGame } from './gstate.js';
 import { applyFloorEffects } from './floor_effects.js';

@@ -10,7 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { EGG, ROCK } from './object_data.js';
-import { stopAllObjectTimers } from './object_timers.js';
+import { stopAllObjectTimers } from './timeout.js';
 import { d } from './rng.js';
 import { objectWeight } from './weight.js';
 

@@ -1,7 +1,7 @@
 import { currency } from './currency.js';
 // Object burial and buried-object ownership.
 // C refs: dig.c bury_an_obj()/bury_objs() and dungeon.c earth_sense().
-import { CORR, ROOM, TT_BURIEDBALL, Upolyd } from './const.js';
+import { CORR, ROOM, TT_BURIEDBALL, Upolyd, OBJECT_TIMER_KIND } from './const.js';
 import { heroFootName } from './body_parts.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -18,14 +18,13 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { releaseObjectLeash } from './leash_apply.js';
 import { maybeUnhideAt } from './mon.js';
 import { shopkeeperName } from './shknam.js';
-import { costlySpot, stolenValue } from './shk.js';
-import { deleteObject } from './object_delete.js';
+import { costlySpot, stolenValue, deleteObject } from './shk.js';
 import { endObjectBurn } from './light.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { BOULDER, CORPSE, HEAVY_IRON_BALL, LEASH, POT_OIL, ROCK, } from './object_data.js';
-import { objectMaterial } from './object_material.js';
-import { objectResistsDestruction } from './object_state.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
+import { objectMaterial } from './o_init.js';
+import { objectResistsDestruction } from './zap.js';
+import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn1, rnd } from './rng.js';
 const POTION_CLASS = 8;
 const COIN_CLASS = 12;

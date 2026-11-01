@@ -6,7 +6,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { selectMonsterRangedWeapon } from '../js/weapon.js';
 import { DART } from '../js/object_data.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshRangedCombatRoom } from './support/ranged-combat.js';

@@ -43,13 +43,13 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { vision_recalc } from './vision.js';
-import { consumeObjectCharge } from './object_charge.js';
+import { consumeObjectCharge } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
 import { dismountHero } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { objectTypeKnown, addShopDamage } from './shk.js';
+import { objectTypeKnown, addShopDamage, deleteObject } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
@@ -64,7 +64,6 @@ import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
     LARGE_BOX, CHEST, POT_OIL,
 } from './object_data.js';
-import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { isBimanualObject } from './object_properties.js';
 import {

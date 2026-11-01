@@ -1,59 +1,58 @@
-import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
-// invent.js — Inventory display and look-here commands.
-// C ref: invent.c — ddoinv(), display_inventory(), dolook().
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription } from './object_description.js';
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
-import { consumeHallucinatedMenuObjectGlyph, docrt, flush_screen } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, docrt, flush_screen, newsym } from './display.js';
 import { bot, formatStrength } from './botl.js';
 import { clearMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu } from './tty_topline.js';
 import { pline, plineWithContinuation, setTopline } from './pline.js';
-import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
+import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import { nhgetch, readchar } from './input.js';
 import { chooseInventoryObject, compactInventoryLetters, reassignInventoryLetters } from './inventory_prompt.js';
 import { commandResultCancelled, commandResultFailed } from './cmd.js';
 import { assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { ynSingleKey } from './tty_prompts.js';
 import { keyText } from './prevmsg.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
+import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit } from './const.js';
+import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
-import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
-import { ammunitionMatchesLauncher, isBlade } from './object_properties.js';
+import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, ammunitionMatchesLauncher, isBlade } from './object_properties.js';
 import { isTwoWeaponObject } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
 import { isEdibleFood } from './food_selection.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack, freeInventoryObject } from './hero_inventory.js';
 import { objectWeight } from './weight.js';
 import { lookHere } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap.js';
+import { trapName, objectIsVulnerableToErosion } from './trap.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
-import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot } from './shk.js';
+import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject } from './shk.js';
+import { maybeUnhideAt } from './mon.js';
+import { rn2 } from './rng.js';
+import { objectResistsDestruction } from './zap.js';
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
@@ -1187,5 +1186,40 @@ export async function doadjust(selected = null, splitting = null) {
     if (bumped)
         await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
+}
+// C invent.c:consume_obj_charge(). Billing can suspend before charge removal.
+export async function consumeObjectCharge(object, { maybeUnpaid = true, state = game, } = {}) {
+    requireLiveGame(state);
+    if (maybeUnpaid)
+        await chargeUnpaidUsage(object, { state });
+    object.spe--;
+}
+// C invent.c:1428-1433 delobj(): normal object deletion (if unpaid, it
+// remains on the bill).
+export async function delobj(object, state = game, random = rn2) {
+    await delobjCore(object, false, state, random);
+}
+// C invent.c:1435-1462 delobj_core().  `force` is the Rider-revival path.
+export async function delobjCore(object, force, state = game, random = rn2) {
+    requireLiveGame(state);
+    /* obj_resists(obj,0,0) protects the Amulet, the invocation tools,
+     * and Rider corpses; the ordinary path still consumes its rn2(100)
+     * roll at zero probability (objectResistsDestruction does not skip
+     * the call), so deletion RNG parity is preserved. */
+    if (!force && objectResistsDestruction(object, 0, 0, random)) {
+        object.in_use = false; /* in case caller has set this */
+        return;
+    }
+    const updateMap = object.where === 'floor';
+    if (object.where === 'inventory')
+        await freeInventoryObject(object, state);
+    else
+        unlinkObject(object, state);
+    if (updateMap) {
+        /* floor object's coordinates are always up to date */
+        await maybeUnhideAt(object.ox, object.oy, state);
+        await newsym(object.ox, object.oy);
+    }
+    await deleteObject(object, state);
 }
 //# sourceMappingURL=invent.js.map

@@ -18,7 +18,7 @@ import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './object_call.js';
-import { erodeObject } from './object_erosion.js';
+import { erodeObject } from './trap.js';
 import { learnObjectType } from './object_knowledge.js';
 import { OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
     LENSES, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, requireObjectData } from './object_data.js';

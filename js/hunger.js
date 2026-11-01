@@ -3,7 +3,7 @@
 import { finishHeroHelplessness } from './allmain.js';
 import { nearCapacity } from './weight.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { game, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { propertyIsActive } from './properties.js';

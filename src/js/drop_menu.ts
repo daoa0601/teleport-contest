@@ -6,7 +6,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { dropHeroObject } from './hero_drop.js';
 import { selectInventoryObject } from './invent.js';
-import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { LOADSTONE } from './object_data.js';
 import { objectDescription } from './object_description.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';

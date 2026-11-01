@@ -7,7 +7,7 @@ import {
     OILSKIN_SACK, SACK, WAN_CANCELLATION,
 } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 // C mkobj.c:mkbox_cnts(): a box's contents are drawn after its lock state,

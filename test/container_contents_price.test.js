@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { CHEST, CLUB } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';

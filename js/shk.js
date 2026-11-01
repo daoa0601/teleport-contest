@@ -8,20 +8,19 @@
 import { heroLocomotion } from './hero_locomotion.js';
 import { recorderLocalHour } from './calendar.js';
 import { impossible } from './diagnostics.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
+import { pline, plineWithContinuation, verbalize } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
-import { SHOP_TYPES, saleable } from './shknam.js';
+import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION, monsterHasNoLimbs, MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './hero_species.js';
 import { monsterName } from './do_name.js';
-import { possessiveName, depth, distmin } from './hacklib.js';
+import { possessiveName, depth, distmin, dist2, pointsOnline } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
-import { shopkeeperName, shopStocksObject } from './shknam.js';
 import { containedGold, hiddenGold } from './gold.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { pline, plineWithContinuation, verbalize } from './pline.js';
 import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { rn2, rnd } from './rng.js';
@@ -30,24 +29,20 @@ import { heroGoldAmount, monsterGoldAmount, heroGoldObject, detachHeroGold } fro
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { publishMonsterWake, angerWatchGuards, removeMonsterFromGame, mnearto } from './mon.js';
+import { publishMonsterWake, angerWatchGuards, removeMonsterFromGame, mnearto, resistConflict } from './mon.js';
 import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, LL_ACHIEVE, G_GONE, isok, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, D_LOCKED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER } from './const.js';
 import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership, roomForIndex } from './room.js';
 import { searchSpecial } from './mkroom.js';
-import { intemple } from './priest.js';
+import { intemple, moveSpecial, specialMoverSeesHero } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH } from './object_data.js';
 import { learnObjectType, recordObjectPriceQuote, observeObject } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
-import { deallocateObject, stopObjectTimers, deleteObject } from './object_delete.js';
-import { getObjectLocation, unlinkObject } from './object_location.js';
-import { objectsInTimerGraph } from './object_timers.js';
+import { getObjectLocation } from './zap.js';
+import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
 import { performMonsterTurn } from './monmove.js';
-import { dist2, pointsOnline } from './hacklib.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { moveSpecial, specialMoverSeesHero } from './priest.js';
-import { resistConflict } from './mon.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './armor.js';
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
@@ -56,9 +51,9 @@ import { heroHasConflict } from './hero_conflict.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { dropHeroInventoryForBones } from './bones_death.js';
 import { recordGameLogEvent } from './gamelog.js';
-import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { releaseAllMonsterLeashes, releaseObjectLeash } from './leash_apply.js';
 import { makemonAt } from './makemon.js';
-import { SPBOOK_CLASS, FOOD_CLASS } from './mklev.js';
+import { SPBOOK_CLASS } from './mklev.js';
 import { paymentObjectDescription, objectDescription } from './object_description.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
@@ -84,7 +79,7 @@ import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { pickingAt } from './lock.js';
-import { linkObjectToMonsterInventory, mksobj } from './mkobj.js';
+import { linkObjectToMonsterInventory, mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
@@ -92,6 +87,8 @@ import { moveMonsterNextToHero } from './teleport.js';
 import { deleteTrap, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
+import { maybeResetPick } from './lock_context.js';
+import { bookDisappears } from './spellbook_study.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -280,6 +277,62 @@ export function objectPriceAdjustment(object, oid, state = game) {
     if (!known && !glassGem)
         return ((oid % 4) === 0) ? 1 : 0;
     return 0;
+}
+const FOOD_CLASS = 7;
+async function clearEquipment(object, state) {
+    await removeHeroEquipment(object, state);
+    object.owornmask = 0;
+    object.worn = false;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+}
+// C eat.c:396-403 food_disappears(): stop being the meal in progress.
+// Timers are stopped for every freed object further below.
+function clearVictualReference(object, state) {
+    if (state.context?.victual?.piece === object)
+        state.context.victual = null;
+}
+export async function deleteObjectContents(container, state = game) {
+    for (const object of [...(container?.contents || [])])
+        await deleteObject(object, state);
+    if (container) {
+        container.contents = [];
+        container.owt = objectWeight(container);
+    }
+}
+// C shk.c:1185-1275 obfree().  A billed object is not freed: without a
+// merge target it stays as a used-up bill entry; with one, the sink-owned
+// billing branch reconciles the survivor's bill before deallocation.
+export async function deleteObject(object, state = game, { mergeInto = null } = {}) {
+    if (!object || object.where === 'gone')
+        return false;
+    bookDisappears(object, { state });
+    if (object.otyp === LEASH && object.leashmon)
+        releaseObjectLeash(object, state);
+    if (object.oclass === FOOD_CLASS)
+        clearVictualReference(object, state);
+    await deleteObjectContents(object, state);
+    maybeResetPick(object, state);
+    unlinkObject(object, state);
+    // C obj_stop_timers() runs cleanup even when the object stays on a bill.
+    stopObjectTimers(object, state);
+    const billing = reconcileObjectDeletionBill(object, mergeInto, state);
+    if (billing === 'retained')
+        return true;
+    if (billing === 'blocked')
+        return false;
+    // C shk.c:1254-1264: when an object that is NOT on the bill is merged
+    // away, the survivor takes over its identity number if the outgoing
+    // one carried the unknown-item price surcharge and the survivor's did
+    // not, so the merged stack keeps the higher price.
+    if (mergeInto && billing === 'unbilled'
+        && objectPriceAdjustment(object, object.o_id, state)
+            > objectPriceAdjustment(mergeInto, mergeInto.o_id, state)) {
+        mergeInto.o_id = object.o_id;
+    }
+    await clearEquipment(object, state);
+    return deallocateObject(object, state);
 }
 export function shopObjectUnitCost(object, resident = null, state = game) {
     let cost = shopGetPrice(object, false, state) || 5;

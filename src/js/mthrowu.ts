@@ -24,7 +24,7 @@ import { heroHasFreeHand } from './engrave.js';
 import { monsterWeaponSwingVerb } from './mhitu.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj } from './mkobj.js';
+import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { objectWeight, calcCapacity } from './weight.js';
 import type { GameObject } from './object_types.js';
@@ -63,7 +63,6 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous,
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter,
 } from './monster_data.js';
-import { unlinkObject } from './object_location.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import {
@@ -75,7 +74,8 @@ import { monsterSentenceSubject } from './ambient_sounds.js';
 import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
 } from './weapon.js';
-import { delobj, deleteObject } from './object_delete.js';
+import { delobj } from './invent.js';
+import { deleteObject } from './shk.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_PROPERTY,
     OBJECT_SUBTYPE, TALLOW_CANDLE, WAN_FIRE, WAN_STRIKING, WAX_CANDLE,
@@ -83,8 +83,8 @@ import {
 import { dropObjectAtHero } from './object_drop.js';
 import { makePlural, withIndefiniteArticle, verbForSubject } from './object_grammar.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
-import { shipObject } from './object_migration.js';
+import { objectMaterial } from './o_init.js';
+import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
 import { splitObjectStack } from './object_stack.js';
 import {

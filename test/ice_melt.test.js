@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BEAR_TRAP, DBWALL, DB_ICE, DB_MOAT, DB_FLOOR, DB_NORTH, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, POOL, TT_BEARTRAP, } from '../js/const.js';
+import { BEAR_TRAP, DBWALL, DB_ICE, DB_MOAT, DB_FLOOR, DB_NORTH, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, POOL, TT_BEARTRAP, LEVEL_TIMER_KIND } from '../js/const.js';
 import { buryObject } from '../js/buried_object.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
@@ -12,7 +12,7 @@ import { pushKeys } from '../js/input.js';
 import { BEARTRAP, BELL_OF_OPENING, BOULDER, GOLD_PIECE } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { levelTimers, LEVEL_TIMER_KIND } from '../js/object_timers.js';
+import { levelTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';

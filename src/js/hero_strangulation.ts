@@ -15,7 +15,7 @@ import { game } from './gstate.js';
 import { heroHasNoHead, heroIsBreathless } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { AMULET_OF_STRANGULATION } from './object_data.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { learnObjectType } from './object_knowledge.js';
 import { refreshProperty } from './properties.js';
 import { rn2 } from './rng.js';

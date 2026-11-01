@@ -57,7 +57,7 @@ import {
 } from './object_data.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { cancelDonning, dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
 import { isFlimsyObject } from './object_properties.js';
 import {

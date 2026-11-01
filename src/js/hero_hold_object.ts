@@ -14,7 +14,7 @@ import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
-import { unlinkObject } from './object_location.js';
+import { unlinkObject } from './mkobj.js';
 import { observeObject } from './object_knowledge.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';

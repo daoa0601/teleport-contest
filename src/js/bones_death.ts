@@ -1,6 +1,6 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 
-import { clearBypasses } from './object_bypass.js';
+import { clearBypasses } from './worn.js';
 import { DISMOUNT_BONES, PARANOID_BONES } from './const.js';
 import { paranoidQuery } from './query.js';
 import { monsterHasMapPosition } from './steed.js';
@@ -23,17 +23,15 @@ import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
 import { bonesLevelExists, deleteBonesLevel, saveBonesLevel } from './bones.js';
 import { makemonAt } from './makemon.js';
-import { createCorpstatAt, mkcorpstat, mksobj } from './mkobj.js';
+import { createCorpstatAt, mkcorpstat, mksobj, curseObjectState, addObjectToContainer } from './mkobj.js';
 import { monsterCanCarryObject } from './mon.js';
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './leash_apply.js';
 import { setMonsterGivenName } from './do_name.js';
-import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
-import { curseObjectState } from './object_state.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, MONSTER_HAS_WEAPON_ATTACK } from './monster_data.js';
-import { objectNoLongerHeldSynchronously } from './object_release.js';
+import { objectNoLongerHeldSynchronously } from './do.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { unpunishHero } from './punishment.js';

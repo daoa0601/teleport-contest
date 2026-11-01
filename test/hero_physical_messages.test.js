@@ -10,7 +10,7 @@ import { captureHeroPhysicalObjectName, captureHeroProjectileName, captureUnpois
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ARROW, BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NAMES, ROCK, SLIME_MOLD, SMALL_SHIELD, SPEAR, TOWEL, WAN_FIRE, } from '../js/object_data.js';
-import { deleteObject } from '../js/object_delete.js';
+import { deleteObject } from '../js/shk.js';
 import { setMonsterSpecies } from '../js/mondata.js';
 import { terrainCommand } from '../js/terrain_view.js';
 import { rayMissMessage } from '../js/ray_hit_message.js';

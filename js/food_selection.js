@@ -13,7 +13,7 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_PROPERTY, OBJECT_UNIQUE, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { objectQuantity } from './object_stack.js';
 import { observeObjectForNaming } from './objnam.js';
 import { dropObjectAtHero } from './object_drop.js';

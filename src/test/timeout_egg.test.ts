@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { G_EXTINCT, MV_KNOWS_EGG } from '../js/const.js';
+import { G_EXTINCT, MV_KNOWS_EGG, OBJECT_TIMER_KIND } from '../js/const.js';
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from '../js/egg.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';
-import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
+import { claimNextDueObjectTimer, scheduleObjectTimer } from '../js/timeout.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { freshObjectRoom } from './support/object-room.js';

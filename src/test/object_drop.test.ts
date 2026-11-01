@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { dropObjectAtHero, hitFloorWithObject } from '../js/object_drop.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, OBJECT_NAMES, POT_OIL, STATUE } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 
 const MEATBALL = OBJECT_NAMES.indexOf('meatball');
 const PURPLE_WORM = 'purple worm';

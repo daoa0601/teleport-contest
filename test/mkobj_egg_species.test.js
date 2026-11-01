@@ -5,7 +5,8 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';
-import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('changing a buried egg species preserves its organic rot deadline', async () => {

@@ -14,7 +14,7 @@ import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, isok, IS_FURNITURE, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { commandSafetyPrevention } from './do.js';
@@ -40,7 +40,7 @@ import { currency } from './currency.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { getObjectClassBounds } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { getObjectLocation } from './object_location.js';
+import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the

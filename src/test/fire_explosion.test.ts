@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createFireExplosion } from '../js/fire_explosion.js';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { POT_OIL } from '../js/object_data.js';

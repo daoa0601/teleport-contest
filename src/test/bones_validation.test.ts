@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeBonesPayload } from '../js/bones_validation.js';
 import { GameMap, makeLocation } from '../js/game.js';
-import { createObjectBase } from '../js/object_constructor.js';
+import { createObjectBase } from '../js/mkobj.js';
 import { CHEST, FOOD_RATION, ROCK } from '../js/object_data.js';
 import { encodeSavedGraph } from '../js/saved_graph.js';
 

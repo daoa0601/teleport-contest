@@ -16,7 +16,7 @@ import {
     LEATHER_ARMOR, OBJECT_NAMES, RIN_SLOW_DIGESTION, SCR_IDENTIFY,
     TALLOW_CANDLE, POT_HEALING,
 } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { objectQuantity } from '../js/object_stack.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';

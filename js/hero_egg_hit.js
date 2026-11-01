@@ -10,7 +10,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { monsterName } from './do_name.js';
 import { monsterTypeName } from './monster_data.js';
 import { petrifyMonsterFromContact } from './trap.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { EGG } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
 import { touchPetrifies } from './stoning.js';

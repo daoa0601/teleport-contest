@@ -7,7 +7,7 @@ import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { A_CON, A_STR, ICE, W_WEP } from '../js/const.js';
+import { A_CON, A_STR, ICE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
 import {
     finishGlobTimer, runClaimedGlobTimer,
 } from '../js/glob.js';
@@ -17,15 +17,12 @@ import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
-import { shipObject } from '../js/object_migration.js';
+import { shipObject } from '../js/dokick.js';
 import {
     GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
 } from '../js/object_data.js';
-import {
-    claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers,
-    scheduleObjectTimer, stopAllObjectTimers,
-} from '../js/object_timers.js';
+import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { nearCapacity, objectWeight } from '../js/weight.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { addInventoryItem } from '../js/u_init.js';

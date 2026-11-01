@@ -12,7 +12,7 @@ import {
 import { canSpotMonster, feel_newsym, map_invisible, newsym, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { makePetWary } from './dog.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue } from './shk.js';
 import { game, requireGameLevel } from './gstate.js';

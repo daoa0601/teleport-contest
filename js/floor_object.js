@@ -6,11 +6,12 @@ import { newsym } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { BOULDER, CORPSE } from './object_data.js';
 import { costlyAdjacent, costlySpot, findObjectOwner } from './shk.js';
-import { createdObjectNoLongerHeld, objectNoLongerHeld, objectNoLongerHeldSynchronously, } from './object_release.js';
+import { createdObjectNoLongerHeld, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
 import { block_point, vision_note_blocker_change } from './vision.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
-import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
+import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
+import { OBJECT_TIMER_KIND } from './const.js';
 import { maybeUnhideAt } from './mon.js';
 // Corpse rot and revival take twice as long while the body is on ice.
 export function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {

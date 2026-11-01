@@ -3,12 +3,7 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 // C invent.c:dfeature_at(), stairs.c:stairs_description(), pager.c:ice_descr().
 
 import { deityName } from './alignment.js';
-import {
-    ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR,
-    DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR,
-    FOUNTAIN, GRAVE, ICE, IRONBARS, IS_FURNITURE, IS_LAVA, IS_POOL,
-    PLNMSG_BACK_ON_GROUND, SINK, STONE, THRONE, TREE,
-} from './const.js';
+import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, IS_FURNITURE, IS_LAVA, IS_POOL, PLNMSG_BACK_ON_GROUND, SINK, STONE, THRONE, TREE, LEVEL_TIMER_KIND } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { displayLiquidName } from './display.js';
@@ -20,7 +15,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Stairway } from './map_types.js';
 import { dungeonDepth } from './hacklib.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { LEVEL_TIMER_KIND, levelTimers } from './object_timers.js';
+import { levelTimers } from './timeout.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';

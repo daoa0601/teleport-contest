@@ -66,13 +66,12 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import type {
     MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationDeathHandler, PetrificationOptions,
 } from './mon.js';
-import { monsterSelfTouch } from './trap.js';
+import { monsterSelfTouch, erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid, type ErosionKind } from './trap.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { splitMonster } from './potion.js';
 import { showMonsterArtifactFallbackHit, drainMonsterEnergy } from './mhitm.js';
-import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
-import { linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, set_corpsenm } from './mkobj.js';
+import { linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, set_corpsenm, deallocateObject } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, removeObjectFromMonsterInventory } from './monworn.js';
 import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import {
@@ -117,12 +116,10 @@ import { petFoodNutrition } from './pet_eating.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, DUNCE_CAP, IRON_SHOES, LOADSTONE, OBJECT_DESCRIPTIONS, OBJECT_NAMES,
 } from './object_data.js';
-import { deallocateObject } from './object_delete.js';
 import { cloneHeroMonsterForm } from './mklev.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { observeObjectForNaming, objectCombatName, ownedObjectAction } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
-import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import {
     applyHeroGolemEffects, heroHasProtectionFromShapeChangers, heroIsUnchanging, heroMonsterForm, polymonHero,
@@ -140,10 +137,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { attrcurse } from './throne.js';
 import { spendHeroNutrition } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
-import {
-    destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement,
-    monsterResistsEffect,
-} from './zap.js';
+import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement, monsterResistsEffect, drainObjectEnchantment } from './zap.js';
 import {
     applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy, isHumanWereMonster, isWereMonster, wereChange,
 } from './were.js';
@@ -174,7 +168,6 @@ import type { rnd as RndType } from './rng.js';
 import type { Hero } from './hero_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterAttack } from './data_types.js';
-import type { ErosionKind } from './object_erosion.js';
 import type { HeroPoisonOptions } from './poison.js';
 import { artifactDamageBonus, artifactEmitsLight, artifactStrikesShade } from './artifacts.js';
 import { P_AXE, W_ARMG, WT_IRON_BALL_INCR } from './const.js';

@@ -31,7 +31,7 @@ import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mkobj.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { monsterDeathCount } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';

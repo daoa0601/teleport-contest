@@ -1,8 +1,5 @@
 // C zap.c:melt_ice(). Await the complete terrain, object, and occupant effect.
-import {
-    BEAR_TRAP, DB_ICE, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL,
-    MAGIC_PORTAL, MOAT, POOL, LANDMINE, VIBRATING_SQUARE,
-} from './const.js';
+import { BEAR_TRAP, DB_ICE, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, MAGIC_PORTAL, MOAT, POOL, LANDMINE, VIBRATING_SQUARE, LEVEL_TIMER_KIND } from './const.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { applyHeroLocationEffects } from './hack.js';
@@ -19,7 +16,7 @@ import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
 import { monsterAtPosition } from './steed.js';
 import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
+import { stopLevelTimer } from './timeout.js';
 import { objectName } from './objnam.js';
 import { isPoolAt } from './terrain_properties.js';
 import { deleteTrap, convertTrapToObject } from './trap.js';

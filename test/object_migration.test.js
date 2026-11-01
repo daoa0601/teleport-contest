@@ -5,7 +5,7 @@ import { COLNO, HOLE, ROOM, ROWNO, STONE } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { deliverMigratingObjects, impactDrop, shipObject, } from '../js/object_migration.js';
+import { deliverMigratingObjects, impactDrop, shipObject } from '../js/dokick.js';
 import { APPLE, ARROW, CARROT, CHAIN_MAIL, CLUB, MIRROR, ROCK, } from '../js/object_data.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';

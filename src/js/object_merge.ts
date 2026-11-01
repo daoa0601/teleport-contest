@@ -4,27 +4,24 @@
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
-import { LOST_THROWN } from './const.js';
+import { LOST_THROWN, OBJECT_TIMER_KIND } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
     CORPSE, EGG, OBJECT_MERGE, POT_OIL, SCR_MAIL, TALLOW_CANDLE,
     TIN, WAX_CANDLE,
 } from './object_data.js';
-import { deallocateObject, deleteObject, stopObjectTimers } from './object_delete.js';
-import { unlinkObject } from './object_location.js';
-import { billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
+import { unlinkObject, deallocateObject } from './mkobj.js';
+import { billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers, deleteObject } from './shk.js';
 import { announceGlobMerge, startGlobTimeout } from './glob.js';
 import { plineWithContinuation } from './pline.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
-import { assertCreatedObject } from './object_release.js';
+import { assertCreatedObject } from './do.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectWeight } from './weight.js';
-import { erosionMatters } from './object_erosion.js';
+import { erosionMatters } from './trap.js';
 import { isReviver } from './corpse_species.js';
 import { mergeHeroWeaponSlots } from './wield.js';
-import {
-    OBJECT_TIMER_KIND, stopObjectTimer,
-} from './object_timers.js';
+import { stopObjectTimer, stopObjectTimers } from './timeout.js';
 
 const COIN_CLASS = 12;
 const FOOD_CLASS = 7;

@@ -1,6 +1,6 @@
 import { artifactById, nameArtifact } from './artifacts.js';
 import { sanitizeBonesName } from './bones_name.js';
-import { ROOMOFFSET, SHOPBASE } from './const.js';
+import { ROOMOFFSET, SHOPBASE, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -12,9 +12,7 @@ import {
     WAX_CANDLE, YUMI,
 } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
-import { set_corpsenm } from './mkobj.js';
-import { OBJECT_TIMER_KIND } from './object_timers.js';
-import { curseObjectState } from './object_state.js';
+import { set_corpsenm, curseObjectState } from './mkobj.js';
 import { roomForRoomno } from './room.js';
 import { PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
 import { shopkeeperInOwnShop } from './shk.js';

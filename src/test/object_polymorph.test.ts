@@ -16,21 +16,16 @@ import {
     SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { createCorpstatAt, addObjectToContainer } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/mon.js';
-import {
-    createPolymorphMonsterFromPile, do_osshock, obj_unpolyable,
-    poly_obj, polymorphFloorObject, stone_to_flesh_obj,
-} from '../js/object_polymorph.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
-import { addObjectToContainer } from '../js/object_container.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { getObjectLocation } from '../js/object_location.js';
+import { getObjectLocation, createPolymorphMonsterFromPile, do_osshock, obj_unpolyable, poly_obj, polymorphFloorObject, stone_to_flesh_obj } from '../js/zap.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { beginObjectBurn } from '../js/light.js';
-import { objectTimers } from '../js/object_timers.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectTimers } from '../js/timeout.js';
+import { objectMaterial } from '../js/o_init.js';
 import { objectWeight } from '../js/weight.js';
 import { addShopObjectToBill, objectTypeKnown, itemizedShopBill } from '../js/shk.js';
 import { addInventoryObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';

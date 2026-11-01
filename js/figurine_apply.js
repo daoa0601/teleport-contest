@@ -1,13 +1,13 @@
 // C apply.c:use_figurine(). Placement is shared with the timer owner.
 import { commandResultCancelled, setMulti } from './cmd.js';
-import { Is_airlevel, Is_waterlevel } from './const.js';
+import { Is_airlevel, Is_waterlevel, OBJECT_TIMER_KIND } from './const.js';
 import { map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { game, requireLiveGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
-import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { stopObjectTimer } from './timeout.js';
 import { heroIsBlind } from './senses.js';
 import { isPoolAt } from './terrain_properties.js';
 import { promptDirection } from './tty_prompts.js';

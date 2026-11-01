@@ -10,7 +10,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { unlinkObject } from '../js/object_location.js';
+import { unlinkObject } from '../js/mkobj.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';

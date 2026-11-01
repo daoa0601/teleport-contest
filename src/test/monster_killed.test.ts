@@ -19,7 +19,7 @@ import { runMonsterAction } from '../js/monmove.js';
 import {
     AMULET_OF_LIFE_SAVING, CLUB, CORPSE, IRON_CHAIN, QUARTERSTAFF, RIN_CONFLICT, SCR_BLANK_PAPER,
 } from '../js/object_data.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectMaterial } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';

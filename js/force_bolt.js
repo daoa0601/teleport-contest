@@ -8,7 +8,7 @@ import { game } from './gstate.js';
 import { revealMonsterAppearance } from './mon.js';
 import { monsterName } from './do_name.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { breakFloorObject } from './object_breakage.js';
+import { breakFloorObject } from './dothrow.js';
 import { BOULDER, STATUE } from './object_data.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';

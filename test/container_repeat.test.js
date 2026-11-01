@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MENU_FULL, PARANOID_AUTOALL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { APPLE, CHEST, CLUB } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

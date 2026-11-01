@@ -1,13 +1,13 @@
 // C worn.c:mon_set_minvis() and mon_adjust_speed(). Permanent monster
 // invisibility and speed changes.
-import { MFAST, MSLOW } from './const.js';
+import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game } from './gstate.js';
-import { MONSTER_MOVE } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { OBJECT_PROPERTY } from './object_data.js';
 import { naturalMonsterSpeed } from './mon.js';
 import { artifactById } from './artifacts.js';
 import { see_monsters } from './display.js';
-import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, } from './properties.js';
+import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty } from './properties.js';
 // C worn.c:mon_set_minvis(). The map refresh and worm-tail reveal that the
 // native function performs when visibility flips stay with its callers.
 export function setMonsterPermanentInvisibility(monster, permanent = true) {
@@ -79,5 +79,66 @@ export function recalculateTelepathyRange(state) {
         && OBJECT_PROPERTY[object.otyp] === 'telepathy').length;
     const sources = ordinary + Number(hasCarriedProperty('telepathy', null, state));
     state.u.unblind_telepat_range = sources ? 64 * sources : -1;
+}
+// C worn.c:bypass_obj(), bypass_objlist(), nxt_unbypassed_obj/loot(),
+// clear_bypasses(). Marks are shared by inventory traversal and magic.
+const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+export function bypassObject(object, state = game) {
+    object.bypass = true;
+    state.context.bypasses = true;
+}
+// C worn.c:bypass_objlist().
+export function bypassObjectList(objects, on, state = game) {
+    if (on && objects.length)
+        state.context.bypasses = true;
+    for (const object of objects)
+        object.bypass = on;
+}
+// Pass the current chain each time: an action may remove or add objects.
+// A sorted traversal also supplies its original order; stale entries are skipped.
+// C worn.c:nxt_unbypassed_obj().
+export function nextUnbypassedObject(objects, state = game, order = objects) {
+    for (const object of order) {
+        if (object.bypass || !objects.includes(object))
+            continue;
+        bypassObject(object, state);
+        return object;
+    }
+    return null;
+}
+export function clearBypasses(state = game) {
+    for (const column of state.level?.objects ?? [])
+        for (const pile of column ?? [])
+            clearChain(pile);
+    clearChain(state.inventory);
+    clearChain(state.migratingObjects);
+    clearChain(state.level?.buriedObjects);
+    clearChain(state.billObjects);
+    for (const monster of state.level?.monsters ?? []) {
+        if (monster.dead || monster.mhp <= 0)
+            continue;
+        clearChain(monster.minvent ?? monster.inventory);
+        if (monster.mnum !== PM_LONG_WORM)
+            continue;
+        if (monster.mcorpsenm !== undefined)
+            monster.mcorpsenm = NON_PM;
+        if (monster.mextra?.mcorpsenm !== undefined)
+            monster.mextra.mcorpsenm = NON_PM;
+    }
+    for (const monster of state._migratingMonsters ?? [])
+        clearChain(monster.minvent ?? monster.inventory);
+    // A swallowed hero's ball and chain can be outside every object chain.
+    if (state.uball)
+        state.uball.bypass = false;
+    if (state.uchain)
+        state.uchain.bypass = false;
+    state.context.bypasses = false;
+}
+// C worn.c:clear_bypass().
+function clearChain(objects) {
+    for (const object of objects ?? []) {
+        object.bypass = false;
+        clearChain(object.contents);
+    }
 }
 //# sourceMappingURL=worn.js.map

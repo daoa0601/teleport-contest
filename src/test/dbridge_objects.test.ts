@@ -5,7 +5,7 @@ import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { moveObject, placeCreatedObject } from '../js/floor_object.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BELL_OF_OPENING, ROCK, SACK } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

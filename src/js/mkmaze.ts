@@ -7,16 +7,7 @@
 
 import { game, requireGameLevel } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import {
-    AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL,
-    D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines,
-    In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL,
-    IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR,
-    LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL,
-    MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL,
-    TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL,
-    VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok,
-} from './const.js';
+import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok, LEVEL_TIMER_KIND } from './const.js';
 import { BOULDER, STATUE } from './object_data.js';
 import { createPoisonGasCloud } from './regions.js';
 import { heroIsDeaf } from './senses.js';
@@ -29,7 +20,7 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap } from './trap.js';
 import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
-import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
+import { stopLevelTimer } from './timeout.js';
 import { fillSpecialRoom, medusaPetrifiable } from './sp_lev.js';
 import { generateLuaSpecialLevel } from './sp_lev_lua.js';
 import { goodPosition } from './teleport_rules.js';

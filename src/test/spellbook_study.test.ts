@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import {
     AMULET_OF_LIFE_SAVING, GAUNTLETS_OF_POWER, SPE_TURN_UNDEAD,
 } from '../js/object_data.js';
-import { curseObjectState } from '../js/object_state.js';
+import { curseObjectState } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

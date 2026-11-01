@@ -34,29 +34,27 @@ import { placeObject, stack_object } from './floor_object.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation } from './occupation_types.js';
-import { consumeInventoryItem } from './invent.js';
+import { consumeInventoryItem, delobj } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import {
     CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE,
     OBJECT_SUBTYPE,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { deleteObject, delobj } from './object_delete.js';
-import { unlinkObject } from './object_location.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
-import { objectResistsDestruction } from './object_state.js';
+import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool } from './object_properties.js';
 import { CORPSE, ICE_BOX } from './object_data.js';
-import { startCorpseTimeout } from './mkobj.js';
+import { startCorpseTimeout, unlinkObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage } from './shk.js';
+import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
 import { isBlade } from './object_properties.js';
 
 const WEAPON_CLASS = 2;

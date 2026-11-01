@@ -3,7 +3,7 @@ import { W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR
 import { game } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { rnd } from './rng.js';
 const SILVER = 14;
 const ARMOR_SLOTS = new Map([

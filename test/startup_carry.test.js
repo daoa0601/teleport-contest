@@ -1,5 +1,5 @@
 import { uninitializedObject } from './support/game-objects.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import { memoryStorage } from './support/memory-storage.js';
 import test from 'node:test';

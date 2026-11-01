@@ -1,7 +1,7 @@
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
 
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import {
     A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE,
     Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE,

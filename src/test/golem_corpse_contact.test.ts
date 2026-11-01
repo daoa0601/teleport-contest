@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BULLWHIP, CORPSE, SACK } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { feelPetrifyingCorpse, selfTouchPetrifyingWeapons } from '../js/stoning.js';

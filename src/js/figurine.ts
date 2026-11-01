@@ -3,9 +3,7 @@
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
-import {
-    IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok,
-} from './const.js';
+import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './terrain_properties.js';
 import { remove_object } from './floor_object.js';
@@ -18,16 +16,14 @@ import {
 } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject } from './mkobj.js';
-import {
-    OBJECT_TIMER_KIND, scheduleObjectTimer,
-} from './object_timers.js';
+import { scheduleObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
 import { cansee } from './vision.js';
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import type { DueObjectTimer } from './object_timers.js';
+import type { DueObjectTimer } from './timeout.js';
 import { monsterName } from './do_name.js';
 import { objectCombatName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';

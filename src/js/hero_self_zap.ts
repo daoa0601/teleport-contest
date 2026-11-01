@@ -34,7 +34,6 @@ import { hitObjectWithWand } from './immediate_zap.js';
 import { lightDamage, igniteItems } from './light.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
-import { cancelObjectMagic } from './object_cancellation.js';
 import {
     CHEST, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, LARGE_BOX,
     SPE_CANCELLATION, SPE_CONE_OF_COLD, SPE_DETECT_UNSEEN, SPE_DIG,
@@ -60,8 +59,7 @@ import { burnHeroArmorByFire } from './trap.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
-import { destroyInventoryByElement, learnWand, probeObjectChain } from './zap.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { learnWand, cancelObjectMagic, destroyInventoryByElement, probeObjectChain } from './zap.js';import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 const STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');

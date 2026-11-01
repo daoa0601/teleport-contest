@@ -1,5 +1,5 @@
 import { GOLD_PIECE } from '../../js/object_data.js';
-import { deleteObject } from '../../js/object_delete.js';
+import { deleteObject } from '../../js/shk.js';
 import { addCreatedObjectToMonsterInventory } from '../../js/steal.js';
 import { knownObject } from './game-objects.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';

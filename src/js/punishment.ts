@@ -7,7 +7,7 @@ import { plineWithContinuation } from './pline.js';
 import { placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroIsBlind } from './senses.js';
 import { landFloorObject } from './floor_effects.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';

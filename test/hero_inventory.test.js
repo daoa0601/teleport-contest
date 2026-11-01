@@ -10,7 +10,7 @@ import { heroGoldAmount } from '../js/hero_gold.js';
 import { freeInventoryObject } from '../js/hero_inventory.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
-import { doneObjectCleanup } from '../js/object_cleanup.js';
+import { doneObjectCleanup } from '../js/end.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, GOLD_PIECE, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
 import { propertyIsActive } from '../js/properties.js';
 import { addInventoryItem } from '../js/u_init.js';

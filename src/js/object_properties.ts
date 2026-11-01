@@ -11,7 +11,7 @@ import {
     OBJECT_DIR, OBJECT_NAMES, OBJECT_SUBTYPE, TOUCHSTONE, WAR_HAMMER,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { AKLYS_LIM, P_AXE, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';

@@ -1,5 +1,5 @@
 // Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { objectTypeKnown } from './shk.js';
 import { game } from './gstate.js';
 import { SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_ACCESSORY, W_ARMOR, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_TOOL, W_RINGL, W_RINGR, W_AMUL, } from './const.js';

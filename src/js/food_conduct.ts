@@ -12,7 +12,7 @@ import {
     CANDY_BAR, CREAM_PIE, EGG, FORTUNE_COOKIE, LUMP_OF_ROYAL_JELLY, PANCAKE,
 } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { foodObjectName } from './objnam.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';

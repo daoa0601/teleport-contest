@@ -5,9 +5,8 @@ import { SORTLOOT_INUSE, SORTLOOT_LOOT, SORTLOOT_PETRIFY, W_WEP, W_AMUL } from '
 import { game } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { mksobj, set_corpsenm } from '../js/mkobj.js';
+import { mksobj, set_corpsenm, addObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToContainer } from '../js/object_container.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BAG_OF_TRICKS, BOW, CORPSE, DAGGER, DART,
     DIAMOND, FOOD_RATION, GLOB_OF_GRAY_OOZE, ICE_BOX,

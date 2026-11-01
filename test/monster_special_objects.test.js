@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SACK, SPE_BOOK_OF_THE_DEAD, } from '../js/object_data.js';
 import { artifactObject, knownObject } from './support/game-objects.js';

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { ICE } from '../js/const.js';
+import { ICE, LEVEL_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
+import { scheduleLevelTimer } from '../js/timeout.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -8,7 +8,7 @@ import { canSpotMonster } from '../js/display.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { CLUB, LEVITATION_BOOTS } from '../js/object_data.js';
-import { erodeObject } from '../js/object_erosion.js';
+import { erodeObject } from '../js/trap.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

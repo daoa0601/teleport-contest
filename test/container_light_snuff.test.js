@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OIL_LAMP, SACK, WAX_CANDLE } from '../js/object_data.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

@@ -1,6 +1,6 @@
 // Food contact after thitmonst's weapon and successful splash branches.
 // C dothrow.c:thitmonst(), tmiss(FALSE); mondata.h:befriend_with_obj().
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { STRAT_WAITMASK } from './const.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';

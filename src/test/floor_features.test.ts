@@ -4,15 +4,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import {
-    ALTAR, AM_CHAOTIC, AM_SANCTUM, AM_SHRINE, DB_EAST, DB_FLOOR, DB_ICE,
-    DB_LAVA, DB_MOAT, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
-    D_ISOPEN, ICE, LADDER, MOAT, STAIRS,
-} from '../js/const.js';
+import { ALTAR, AM_CHAOTIC, AM_SANCTUM, AM_SHRINE, DB_EAST, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_ISOPEN, ICE, LADDER, MOAT, STAIRS, LEVEL_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dungeonFeatureSentenceAt } from '../js/dungeon_feature.js';
-import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
+import { scheduleLevelTimer } from '../js/timeout.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';

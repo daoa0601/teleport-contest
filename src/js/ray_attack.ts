@@ -3,14 +3,14 @@
 
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { finishMonsterKilled, healMonster, wakeMonster } from './mon.js';
-import { adjustSpellDamage } from './zap.js';
+import { adjustSpellDamage, objectResistsDestruction } from './zap.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './mon.js';
 import { heroFormSticks } from './hero_species.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { burnArmorByFire } from './trap.js';
+import { burnArmorByFire, erodeArmor, damageObjectWithAcid } from './trap.js';
 import { igniteItems } from './light.js';
 import { payForShopDamage } from './shk.js';
 import { endVoluntaryMultiTurn } from './hack.js';
@@ -33,7 +33,6 @@ import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import {
@@ -47,7 +46,6 @@ import {
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH,
     WAN_MAGIC_MISSILE, WAN_LIGHTNING,
 } from './object_data.js';
-import { objectResistsDestruction } from './object_state.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { flashBurn } from './sight_change.js';

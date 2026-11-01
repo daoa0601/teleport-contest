@@ -9,7 +9,7 @@ import {
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

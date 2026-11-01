@@ -2,58 +2,51 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
-import { bypassObjectList, nextUnbypassedObject } from './object_bypass.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, } from './const.js';
-import { objectDirection } from './object_data.js';
+import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
+import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { updateIceObjectTimersAt, placeCreatedObject, stack_object } from './floor_object.js';
+import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
-import { A_STR, A_INT, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING, } from './const.js';
-import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, displayColorName, displayLiquidName, docrt, glyphAt, newsym, randomDisplayMonsterName, shieldeff, unmap_invisible, } from './display.js';
+import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, displayColorName, displayLiquidName, docrt, glyphAt, newsym, randomDisplayMonsterName, shieldeff, unmap_invisible } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
-import { game, requireLiveGame } from './gstate.js';
-import { monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { SHOPBASE } from './const.js';
 import { roomsAt } from './room.js';
 import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { destroyObjectFromMonsterInventory } from './monworn.js';
+import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { loseHeroHp } from './hero_damage.js';
 import { commandResultCancelled } from './cmd.js';
-import { removeHeroAccessory } from './accessory.js';
-import { removeHeroEquipment } from './hero_equipment.js';
+import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
+import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
 import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { consumeInventoryItem, inventoryItemDescription, delobj } from './invent.js';
+import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { igniteItems, lightDamage, lightRoom } from './light.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { deleteFloorTrap, maketrap, randomEngraving } from './mklev.js';
+import { deleteFloorTrap, maketrap, randomEngraving, CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters } from './trap.js';
 import { makePlural, withIndefiniteArticle, armorUsesPairGrammar } from './object_grammar.js';
-import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, monsterIsPlayerMonster, monsterIsWhirly, } from './monster_data.js';
-import { CHEST, DWARVISH_CLOAK, EGG, GLOB_OF_GREEN_SLIME, LARGE_BOX, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, TIN, WAN_LIGHTNING, WAN_STRIKING, } from './object_data.js';
-import { ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CANCELLATION, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LIGHT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, WAN_WISHING, } from './object_data.js';
-import { learnObjectType, objectClassForType, observeObject } from './object_knowledge.js';
-import { objectResistsDestruction } from './object_state.js';
-import { LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer, } from './object_timers.js';
+import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, monsterIsPlayerMonster, monsterIsWhirly, MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, requireMonsterData, monsterIsRider } from './monster_data.js';
+import { learnObjectType, observeObject, objectClassForType } from './object_knowledge.js';
+import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
@@ -65,49 +58,56 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
-import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown } from './shk.js';
+import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { isContainer } from './container.js';
 import { objectDescription } from './object_description.js';
-import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2, } from './monster_attack_types.js';
+import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { showInventoryWindow } from './windows.js';
-import { definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, } from './objnam.js';
-import { delobj } from './object_delete.js';
+import { definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { requirePlayingGame } from './gstate.js';
-import { BOLT_LIM } from './const.js';
-import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt } from './mon.js';
-import { revealMonsterAppearance } from './mon.js';
-import { setMonsterPermanentInvisibility } from './worn.js';
+import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance } from './mon.js';
+import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { expelHero, holdingMonsterName } from './hero_expulsion.js';
-import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
-import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { monsterHitPointsPerLevel, createCritters } from './makemon.js';
+import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import { zapDigWithObject } from './digging_magic.js';
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
 import { impossible } from './diagnostics.js';
 import { changeDoorByMagic } from './door_magic.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { forceDescribeDecor } from './dungeon_feature.js';
-import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving, } from './engrave.js';
+import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
 import { addExperience } from './exper.js';
 import { explode } from './explosion.js';
-import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand, } from './immediate_zap.js';
+import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand } from './immediate_zap.js';
 import { doEnlightenmentEffect, monsterStatusLine } from './insight.js';
 import { gotoLevel } from './level_change.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject } from './mkobj.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
-import { deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, } from './trap.js';
 import { makeWish } from './wish.js';
+import { bot } from './botl.js';
+import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
+import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
+import { objectQuantity, splitObjectStack } from './object_stack.js';
+import { isEyewear, wearEyewear } from './eyewear.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
+import { releaseObjectLeash } from './leash_apply.js';
+import { fractureRock, sokobanGuilt } from './rock_breakage.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { animateStatue } from './statue_trap.js';
+import { vegetarianCorpse } from './food_traits.js';
+import { updateInventoryPresentation } from './u_init.js';
+import { changeBoxLockByMagic } from './box_magic.js';
+import { shopkeeperName } from './shknam.js';
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
@@ -1541,7 +1541,121 @@ export async function affectMonsterSpeed(monster, kind, source, state, options) 
     return observed;
 }
 const POTION_ATTACK_LEVEL = 6;
+// C zap.c:drain_item(). Billing precedes the loss of a charge.
+export async function drainObjectEnchantment(object, { random = rn2, byHero = false, state = game, } = {}) {
+    if (!object || !(object.spe > 0))
+        return false;
+    const weaponTool = object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
+    if (!OBJECT_CHARGED[object.otyp]
+        && ![WEAPON_CLASS, ARMOR_CLASS].includes(object.oclass) && !weaponTool)
+        return false;
+    const artifact = artifactById(object.oartifact);
+    if (artifact?.defense === 'life-drain' || artifact?.carriedDefense === 'life-drain'
+        || objectResistsDestruction(object, 10, 90, random))
+        return false;
+    if (byHero)
+        await chargeAlteredUnpaidObject(object, 'drain', state);
+    object.spe--;
+    object.enchantment = object.spe;
+    if (object.oclass === ARMOR_CLASS && state.inventory.includes(object)
+        && object.owornmask)
+        state._armorClassDirty = true;
+    drainWornBonuses(object, state);
+    if (state.context.botl) {
+        requireLiveGame(state);
+        await bot();
+    }
+    return true;
+}
+function drainWornBonuses(object, state) {
+    const name = OBJECT_NAMES[object.otyp];
+    const worn = object.owornmask ?? 0;
+    const ring = object === (state.uleft || state.u.uleft)
+        || object === (state.uright || state.u.uright);
+    const attributes = [];
+    if (ring && (worn & W_RING)) {
+        if (name === 'gain strength')
+            attributes.push(A_STR);
+        else if (name === 'gain constitution')
+            attributes.push(A_CON);
+        else if (name === 'adornment')
+            attributes.push(A_CHA);
+        else if (name === 'increase accuracy')
+            state.u.uhitinc = (state.u.uhitinc ?? 0) - 1;
+        else if (name === 'increase damage')
+            state.u.udaminc = (state.u.udaminc ?? 0) - 1;
+    }
+    if (ring && name === 'protection') {
+        state._armorClassDirty = true;
+        state.context.botl = true;
+    }
+    if (name === 'helm of brilliance' && (worn & W_ARMH)
+        && object === (state.uarmh || state.u.uarmh))
+        attributes.push(A_INT, A_WIS);
+    if (name === 'gauntlets of dexterity' && (worn & W_ARMG)
+        && object === (state.uarmg || state.u.uarmg))
+        attributes.push(A_DEX);
+    if (!attributes.length)
+        return;
+    state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
+    for (const attribute of attributes)
+        state.u.abon.a[attribute]--;
+    state.context.botl = true;
+}
+const PM_DEATH = 311;
+const PM_FAMINE = 313;
+export function objectResistsDestruction(object, ordinaryChance, artifactChance, random = rn2) {
+    if (!object)
+        return false;
+    if (object.otyp === AMULET_OF_YENDOR
+        || object.otyp === SPE_BOOK_OF_THE_DEAD
+        || object.otyp === CANDELABRUM_OF_INVOCATION
+        || object.otyp === BELL_OF_OPENING
+        || (object.otyp === CORPSE
+            && object.corpsenm !== undefined
+            && object.corpsenm >= PM_DEATH
+            && object.corpsenm <= PM_FAMINE))
+        return true;
+    return random(100) < (object.oartifact || object.artifact
+        ? artifactChance : ordinaryChance);
+}
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+// C zap.c:get_obj_location(). Free and migrating objects have no current
+// location even when their coordinate fields still contain an old square.
+export function getObjectLocation(object, state = game, { contained = false, buried = false } = {}) {
+    switch (object.where) {
+        case 'free':
+        case 'gone':
+        case 'migrating':
+        case 'onbill':
+            return null;
+        case 'inventory':
+            return { x: state.u.ux, y: state.u.uy };
+        case 'floor':
+            return { x: object.ox, y: object.oy };
+        case 'minvent': {
+            const carrier = object.ocarry;
+            if (!carrier)
+                throw new Error(`Monster-carried object ${object.o_id} has no owner`);
+            if (carrier.mx)
+                return { x: carrier.mx, y: carrier.my };
+            break;
+        }
+        case 'buried':
+            if (buried)
+                return { x: object.ox, y: object.oy };
+            break;
+        case 'contained':
+            if (contained) {
+                const container = object.container ||
+                    objectsInTimerGraph(state).find((candidate) => candidate.contents?.includes(object));
+                if (container)
+                    return getObjectLocation(container, state, { contained, buried });
+            }
+            break;
+    }
+    return null;
+}
 function survived(monster) {
     return !monster.dead && (monster.mhp ?? 0) > 0;
 }
@@ -1937,5 +2051,616 @@ async function probedContentsTitle(object, state) {
     else if (unlocked >= 0)
         name = name.replace(' unlocked ', ' trapped unlocked ');
     return name.replace('an trapped ', 'a trapped ');
+}
+// Cancellation changes an actual object, including worn bonuses and timers.
+// C ref: zap.c cancel_item() and blank_novel().
+const SPE_CANCELLATION = OBJECT_NAMES.indexOf('cancellation');
+const POT_SEE_INVISIBLE = OBJECT_NAMES.indexOf('see invisible', 297);
+export async function cancelObjectMagic(object, { state = game } = {}) {
+    const originalType = object.otyp;
+    const objectClass = object.oclass ?? objectClassForType(originalType);
+    removeWornBonuses(object, state);
+    const enchanted = !!object.spe
+        && ([2, 3].includes(objectClass) || isWeaponTool(object));
+    if (OBJECT_MAGIC[originalType] || enchanted
+        || originalType === POT_ACID || originalType === POT_SICKNESS
+        || (originalType === POT_WATER && (object.blessed || object.cursed))
+        || originalType === SPE_NOVEL) {
+        const cancelledCharges = objectClass === 11 || originalType === CRYSTAL_BALL ? -1 : 0;
+        if (object.spe !== cancelledCharges
+            && ![WAN_CANCELLATION, MAGIC_LAMP, CANDELABRUM_OF_INVOCATION].includes(originalType)) {
+            await chargeAlteredUnpaidObject(object, 'cancel', state);
+            object.spe = cancelledCharges;
+            if ('enchantment' in object)
+                object.enchantment = cancelledCharges;
+        }
+        if (objectClass === 9) {
+            await chargeAlteredUnpaidObject(object, 'cancel', state);
+            object.otyp = SCR_BLANK_PAPER;
+            object.spe = 0;
+        }
+        else if (objectClass === 10
+            && originalType !== SPE_CANCELLATION && originalType !== SPE_BOOK_OF_THE_DEAD) {
+            await chargeAlteredUnpaidObject(object, 'cancel', state);
+            object.otyp = SPE_BLANK_PAPER;
+            if (originalType === SPE_NOVEL)
+                blankNovel(object);
+        }
+        else if (objectClass === 8) {
+            await chargeAlteredUnpaidObject(object, originalType !== POT_WATER ? 'cancel'
+                : object.cursed ? 'uncurse' : 'unbless', state);
+            if (originalType === POT_SICKNESS || originalType === POT_SEE_INVISIBLE)
+                object.otyp = POT_FRUIT_JUICE;
+            else {
+                object.otyp = POT_WATER;
+                object.odiluted = 0;
+            }
+        }
+    }
+    if (object.otyp === CORPSE && object.timed
+        && !monsterIsRider({ mnum: object.corpsenm ?? -1 })) {
+        const revival = objectTimers(object).find(timer => timer.kind === OBJECT_TIMER_KIND.REVIVE_MON);
+        if (revival) {
+            stopObjectTimer(object, OBJECT_TIMER_KIND.REVIVE_MON);
+            // C starts a new relative timeout using peek_timer's absolute value.
+            scheduleObjectTimer(object, OBJECT_TIMER_KIND.ROT_CORPSE, (state.moves ?? 1) + revival.deadline, state);
+        }
+    }
+    unblessObjectState(object);
+    uncurseObjectState(object);
+}
+function removeWornBonuses(object, state) {
+    if (object.where !== 'inventory')
+        return;
+    const name = OBJECT_NAMES[object.otyp];
+    const worn = object.owornmask ?? 0;
+    const amount = object.spe ?? 0;
+    const attributes = new Map([
+        ['gain strength', [A_STR, W_RING]], ['gain constitution', [A_CON, W_RING]],
+        ['adornment', [A_CHA, W_RING]], ['gauntlets of dexterity', [A_DEX, W_ARMG]],
+        ['helm of brilliance', [A_INT, W_ARMH]],
+    ]);
+    const bonus = name ? attributes.get(name) : undefined;
+    if (bonus && (worn & bonus[1])) {
+        state.context.botl = true;
+        state.u.abon ||= { a: [0, 0, 0, 0, 0, 0] };
+        state.u.abon.a[bonus[0]] = (state.u.abon.a[bonus[0]] ?? 0) - amount;
+        if (name === 'helm of brilliance')
+            state.u.abon.a[A_WIS] = (state.u.abon.a[A_WIS] ?? 0) - amount;
+    }
+    if ((worn & W_ARMOR) || (name === 'protection' && (worn & W_RING)))
+        state.context.botl = true;
+    if (!(worn & W_RING))
+        return;
+    if (name === 'increase accuracy')
+        state.u.uhitinc = (state.u.uhitinc ?? 0) - amount;
+    if (name === 'increase damage')
+        state.u.udaminc = (state.u.udaminc ?? 0) - amount;
+}
+export function blankNovel(object) {
+    if (object.otyp !== SPE_BLANK_PAPER)
+        throw new TypeError('A blanked novel must be a blank spellbook.');
+    object.novelidx = 0;
+    object.corpsenm = 0;
+    delete object.oname;
+    delete object.name;
+    if (object.oextra)
+        delete object.oextra.oname;
+    for (let current = object; current; current = current.container)
+        current.owt = objectWeight(current);
+}
+// Object transformations, system shock, and material golems.
+// C zap.c:obj_shudders(), do_osshock(), poly_obj(), polyuse(), create_polymon().
+const STRANGE_OBJECT = 0;
+const WEAPON_CLASS = 2, ARMOR_CLASS = 3, AMULET_CLASS = 5;
+const TOOL_CLASS = 6;
+const GEM_CLASS = 13, ROCK_CLASS = 14;
+const WOOD = 8, FLESH = 4, LEATHER = 7, CLOTH = 6, BONE = 9;
+const IRON = 11, METAL = 12, COPPER = 13, SILVER = 14, GOLD = 15;
+const PLATINUM = 16, MITHRIL = 17, GLASS = 19, GEMSTONE = 20, MINERAL = 21;
+const PAPER = 5;
+const LARGEST_INT = 32767;
+const PM_CROCODILE = MONSTER_NAME.indexOf('crocodile');
+const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
+const S_GOLEM = MONSTER_SYMBOL[PM_FLESH_GOLEM];
+const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
+const isBox = (object) => object.otyp === CHEST || object.otyp === LARGE_BOX;
+export async function polymorphFloorObject(object, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (obj_unpolyable(object, { state }))
+        return { affected: false, learned: false };
+    const conduct = state.u.uconduct ??= {};
+    if (!conduct.polypiles)
+        recordGameLogEvent(`polymorphed ${state.flags.female ? 'her' : 'his'} first object`, { state, flags: LL_CONDUCT });
+    conduct.polypiles = (conduct.polypiles || 0) + 1;
+    if (isBox(object))
+        await changeBoxLockByMagic(object, { otyp: WAN_POLYMORPH }, { state });
+    if (obj_shudders(object, { state })) {
+        const cover = state.level.objects[state.u.ux]?.[state.u.uy]?.[0] === object
+            && state.u.uundetected && heroFormHidesUnderObjects(state);
+        const learned = cansee(object.ox, object.oy);
+        await do_osshock(object, { state });
+        if (cover)
+            await maybeUnhideAt(state.u.ux, state.u.uy, state);
+        return { affected: true, learned };
+    }
+    const replacement = await poly_obj(object, STRANGE_OBJECT, { state });
+    if (!replacement)
+        throw new Error(`Floor polymorph lost replacement for object ${object.o_id}`);
+    await newsym(replacement.ox, replacement.oy);
+    return { affected: true, learned: false };
+}
+export function obj_unpolyable(object, { state = game } = {}) {
+    return [WAN_POLYMORPH, SPE_POLYMORPH, POT_POLYMORPH, AMULET_OF_UNCHANGING]
+        .includes(object.otyp) || object === (state.uball || state.u.uball)
+        || object === state.uskin || objectResistsDestruction(object, 5, 95);
+}
+export function obj_shudders(object, { state = game } = {}) {
+    if (state.context.bypasses && object.bypass)
+        return false;
+    let odds = object.oclass === WAND_CLASS || object.cursed ? 3
+        : object.blessed ? 12 : 8;
+    if (objectQuantity(object) > 4)
+        odds = Math.trunc(odds / 2);
+    return !rn2(odds);
+}
+export async function do_osshock(object, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    state.context.obj_zapped = true;
+    if ((state.context.poly_zapped ?? -1) < 0) {
+        const luck = (state.u.uluck || 0) + (state.u.moreluck || 0);
+        for (let remaining = objectQuantity(object); remaining > 0; remaining--) {
+            if (!rn2(luck + 45)) {
+                state.context.poly_zapped = objectMaterial(object, state);
+                break;
+            }
+        }
+    }
+    const quantity = objectQuantity(object);
+    if (quantity > 1) {
+        const split = splitObjectStack(object, rnd(quantity > LARGEST_INT ? 30000 : quantity - 1), state);
+        if (!split)
+            throw new Error(`System shock could not split object ${object.o_id}`);
+        object = split;
+    }
+    await billDestroyedMaterial(object, state);
+    await delobj(object, state);
+}
+export async function poly_obj(object, id = STRANGE_OBJECT, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (object.otyp === BOULDER)
+        sokobanGuilt(state);
+    const where = object.where;
+    let replacement = await createReplacement(object, id, state);
+    finishReplacementType(object, replacement, id, state);
+    replacement.owt = objectWeight(replacement);
+    const location = getObjectLocation(object, state, { contained: true, buried: true });
+    const oldWornMask = (object.owornmask || 0) & ~(W_ART | W_ARTI);
+    if (where === 'inventory')
+        updateInventoryPresentation(replacement);
+    replaceObject(object, replacement, state);
+    if (where === 'inventory') {
+        await finishInventoryRemoval(object, state);
+        if (state.program_state.gameover)
+            return replacement;
+        await prepareInventoryAddition(replacement, state);
+        await finishInventoryAddition(replacement, state);
+        if (oldWornMask)
+            replacement = await replaceWornItem(object, replacement, oldWornMask, state);
+        if (state.program_state.gameover)
+            return replacement;
+    }
+    else if (where === 'floor') {
+        if (!location)
+            throw new Error(`Floor object ${object.o_id} has no location`);
+        if (object.otyp !== BOULDER && replacement.otyp === BOULDER
+            && (isPoolAt(location.x, location.y, state) || isLavaAt(location.x, location.y, state)))
+            await fractureRock(replacement, location.x, location.y, { state, publish: plineWithContinuation });
+        if (object.otyp === BOULDER || replacement.otyp === BOULDER)
+            vision_note_blocker_change(location.x, location.y);
+    }
+    await angerObjectOwner(object, replacement, location, state);
+    await delobj(object, state);
+    return replacement;
+}
+async function createReplacement(object, id, state) {
+    let replacement;
+    if (id === STRANGE_OBJECT) {
+        const magic = object.otyp === UNICORN_HORN && object.degraded_horn
+            ? 0 : OBJECT_MAGIC[object.otyp];
+        replacement = await mkobj(object.oclass, false);
+        for (let attempt = 1; attempt < 3 && OBJECT_MAGIC[replacement.otyp] !== magic; attempt++) {
+            await delobj(replacement, state);
+            replacement = await mkobj(object.oclass, false);
+        }
+    }
+    else {
+        replacement = await mksobj(id, false, false);
+        if ([CORPSE, STATUE, FIGURINE].includes(object.otyp)
+            && [CORPSE, STATUE, FIGURINE].includes(id))
+            set_corpsenm(replacement, representedSpecies(object));
+    }
+    replacement.quan = replacement.quantity = objectQuantity(object);
+    if (object.no_charge === undefined)
+        delete replacement.no_charge;
+    else
+        replacement.no_charge = object.no_charge;
+    if (object.where === 'inventory') {
+        if (object.invlet === undefined)
+            delete replacement.invlet;
+        else
+            replacement.invlet = object.invlet;
+    }
+    if (object.otyp === EGG && object.spe)
+        makeHeroLaidEgg(replacement, state);
+    if ([WAND_CLASS, WEAPON_CLASS, ARMOR_CLASS].includes(replacement.oclass))
+        replacement.spe = object.spe;
+    replacement.recharged = object.recharged || 0;
+    replacement.cursed = !!object.cursed;
+    replacement.blessed = !!object.blessed;
+    copyErosion(object, replacement, state);
+    if (object.otrapped && isBox(replacement))
+        replacement.otrapped = true;
+    if (object.opoisoned && isPoisonableObject(replacement))
+        replacement.opoisoned = true;
+    if (id === STRANGE_OBJECT && object.otyp === CORPSE && object.corpsenm === PM_CROCODILE) {
+        replacement.otyp = LOW_BOOTS;
+        replacement.oclass = ARMOR_CLASS;
+        replacement.spe = replacement.oeroded = 0;
+        replacement.oerodeproof = true;
+        replacement.quan = replacement.quantity = 1;
+        replacement.cursed = false;
+    }
+    if (object.otyp === LEASH && object.leashmon) {
+        if (replacement.otyp === LEASH) {
+            replacement.leashmon = object.leashmon;
+            object.leashmon = 0;
+        }
+        else
+            releaseObjectLeash(object, state);
+    }
+    await deleteObjectContents(replacement, state);
+    return replacement;
+}
+function makeHeroLaidEgg(object, state) {
+    if (object.otyp === EGG)
+        stopObjectTimers(object, state);
+    object.otyp = EGG;
+    object.corpsenm = -1;
+    object.spe = 0;
+    for (let attempt = 0; attempt < 100; attempt++) {
+        const species = hatchableEggSpecies(rn2(MONSTER_NAME.length));
+        if (species >= 0 && !eggSpeciesIsDead(species, state)) {
+            object.spe = 1;
+            set_corpsenm(object, species);
+            return;
+        }
+    }
+}
+function copyErosion(source, target, state) {
+    if (!erosionMatters(target))
+        return;
+    const primary = ['burn', 'rust', 'crack'].some(kind => objectIsVulnerableToErosion(target, kind, state));
+    const secondary = ['corrosion', 'rot'].some(kind => objectIsVulnerableToErosion(target, kind, state));
+    if (primary)
+        target.oeroded = source.oeroded || 0;
+    if (secondary)
+        target.oeroded2 = source.oeroded2 || 0;
+    if (primary || secondary)
+        target.oerodeproof = !!source.oerodeproof;
+}
+function finishReplacementType(source, target, id, state) {
+    if (target.quan > 1 && (!OBJECT_MERGE[target.otyp]
+        || (id === STRANGE_OBJECT && target.quan > rn2(1000))))
+        target.quan = target.quantity = 1;
+    switch (target.oclass) {
+        case TOOL_CLASS:
+            if (target.otyp === MAGIC_LAMP) {
+                target.otyp = OIL_LAMP;
+                target.age = 1500;
+            }
+            else if (target.otyp === MAGIC_MARKER)
+                target.recharged = 1;
+            break;
+        case WAND_CLASS:
+            while ([WAN_WISHING, WAN_POLYMORPH].includes(target.otyp))
+                target.otyp = rndClass(WAN_LIGHT, WAN_LIGHTNING);
+            if (target.recharged < rn2(7))
+                target.recharged++;
+            break;
+        case POTION_CLASS:
+            while (target.otyp === POT_POLYMORPH)
+                target.otyp = rndClass(POT_GAIN_ABILITY, POT_WATER);
+            if (target.otyp === POT_OIL)
+                target.age = source.otyp === POT_OIL ? source.age : MAX_OIL_IN_FLASK;
+            else if (source.otyp === POT_OIL) {
+                if (target.age === source.age)
+                    target.age = state.moves;
+                if (source.age < MAX_OIL_IN_FLASK)
+                    target.odiluted = true;
+            }
+            break;
+        case SPBOOK_CLASS:
+            while (target.otyp === SPE_POLYMORPH)
+                target.otyp = rndClass(getObjectClassBounds(SPBOOK_CLASS).first, SPE_BLANK_PAPER);
+            if (![SPE_BLANK_PAPER, SPE_NOVEL].includes(target.otyp)) {
+                target.spestudied = (source.spestudied || 0) + 1;
+                if (target.spestudied > MAX_SPELL_STUDY) {
+                    target.otyp = SPE_BLANK_PAPER;
+                    target.spestudied = rn2(target.spestudied);
+                }
+            }
+            break;
+        case GEM_CLASS:
+            if (target.quan > rnd(4) && objectMaterial(source, state) === MINERAL
+                && objectMaterial(target, state) !== MINERAL) {
+                target.otyp = ROCK;
+                target.quan = target.quantity = Math.trunc(target.quan / 2);
+            }
+            break;
+    }
+}
+async function replaceWornItem(old, replacement, mask, state) {
+    const twoHanded = isBimanualObject(old);
+    const twoWeapons = !!state.u.twoweap;
+    const oldArmorSlot = armorSlotFor(old.otyp);
+    await removeWornHeroItem(old, state);
+    if (state.program_state.gameover)
+        return replacement;
+    if (mask & W_WEP) {
+        if (twoHanded || !isBimanualObject(replacement) || !state.uarms)
+            await setPrimaryWeapon(replacement, state);
+        if (twoWeapons && state.uwep && !isBimanualObject(state.uwep))
+            setTwoWeaponCombat(true, state);
+    }
+    else if (mask & W_SWAPWEP) {
+        if (twoHanded || !isBimanualObject(replacement))
+            await setSecondaryWeapon(replacement, state);
+        if (twoWeapons && state.uswapwep)
+            setTwoWeaponCombat(true, state);
+    }
+    else if (mask & W_QUIVER) {
+        await setQuiverObject(replacement, state);
+    }
+    else if (oldArmorSlot && oldArmorSlot === armorSlotFor(replacement.otyp)) {
+        wearHeroArmor(replacement, state);
+        await applyArmorOnEffects(replacement, state);
+        return state[oldArmorSlot] ?? null;
+    }
+    else if ((mask & (W_RINGL | W_RINGR))
+        && (replacement.oclass === RING_CLASS || replacement.otyp === MEAT_RING)) {
+        const slot = mask & W_RINGL ? 'uleft' : 'uright';
+        await wearHeroAccessory(replacement, slot, state);
+        return state[slot] ?? null;
+    }
+    else if ((mask & W_AMUL) && replacement.oclass === AMULET_CLASS) {
+        await wearHeroAccessory(replacement, 'uamul', state);
+        return state.uamul ?? null;
+    }
+    else if ((mask & W_TOOL) && isEyewear(replacement)) {
+        await wearEyewear(replacement, { checkHead: false });
+        return state.ublindf ?? null;
+    }
+    return replacement;
+}
+async function angerObjectOwner(old, replacement, location, state) {
+    const shopRelevant = old.unpaid || (replacement && replacement.where !== 'inventory');
+    if (!location || !shopRelevant)
+        return;
+    const { x, y } = location;
+    const keeper = costlySpot(x, y, state)?.resident;
+    if (!keeper || !shopkeeperInOwnShop(keeper, state)
+        || (old.no_charge && !containedBuyCost(old, keeper, { unpaidOnly: false, state })))
+        return;
+    if (keeper.mpeaceful && state.u.ushops?.length
+        && roomsAt(state.level, state.u.ux, state.u.uy, 0)[0]
+            === roomsAt(state.level, keeper.mx, keeper.my, 0)[0]
+        && !costlySpot(state.u.ux, state.u.uy, state)) {
+        await makeAngryShopkeeper(keeper, state);
+    }
+    else {
+        await plineWithContinuation(`${shopkeeperName(keeper, { state, capitalized: true })} ${keeper.mpeaceful ? 'gets angry' : 'is furious'}!`, { noRepeat: !keeper.mpeaceful });
+        if (keeper.mpeaceful)
+            hotPursuitShopkeeper(keeper, state);
+    }
+}
+async function billDestroyedMaterial(object, state) {
+    if (!costlySpot(object.ox, object.oy, state))
+        return;
+    if (state.u.ushops?.length)
+        await addShopObjectToBill(object, state, { ininv: false });
+    else
+        await stolenValue(object, object.ox, object.oy, false, { silent: false, state });
+}
+// C zap.c:polyuse().
+// C zap.c:create_polymon().
+export async function createPolymorphMonsterFromPile(x, y, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const kind = state.context.poly_zapped ?? -1;
+    if (kind < 0)
+        return null;
+    const pile = state.level.objects[x]?.[y] || [];
+    let start = 0;
+    if (state.context.bypasses)
+        while (pile[start]?.bypass)
+            start++;
+    const first = pile[start];
+    if (!first || (start === pile.length - 1 && objectQuantity(first) === 1))
+        return null;
+    const { species, material } = golemForMaterial(kind);
+    const genocided = (state.mvitals?.[species]?.mvflags || 0) & G_GENOD;
+    const monster = await makemonAt(genocided ? null : species, x, y, MM_NOMSG);
+    let remaining = requireMonsterData(MONSTER_BODY_META, species)[0];
+    for (const object of pile.slice(start)) {
+        if (remaining <= 0)
+            break;
+        if ((state.context.bypasses && object.bypass)
+            || object === (state.uball || state.u.uball)
+            || object === (state.uchain || state.u.uchain)
+            || objectResistsDestruction(object, 0, 0))
+            continue;
+        if ((objectMaterial(object, state) === kind) !== (rn2(remaining + 1) !== 0))
+            continue;
+        await billDestroyedMaterial(object, state);
+        remaining -= objectQuantity(object) < LARGEST_INT ? objectQuantity(object) : remaining;
+        await delobj(object, state);
+    }
+    if (monster && cansee(monster.mx, monster.my))
+        await plineWithContinuation(`Some ${material}objects meld, and ${monsterName(monster, { article: 'a', state })} arises from the pile!`);
+    return monster;
+}
+function golemForMaterial(kind) {
+    let name, material;
+    switch (kind) {
+        case IRON:
+        case METAL:
+        case MITHRIL:
+            name = 'iron golem';
+            material = 'metal ';
+            break;
+        case COPPER:
+        case SILVER:
+        case PLATINUM:
+        case GEMSTONE:
+        case MINERAL:
+            name = rn2(2) ? 'stone golem' : 'clay golem';
+            material = 'lithic ';
+            break;
+        case 0:
+        case FLESH:
+            name = 'flesh golem';
+            material = 'organic ';
+            break;
+        case WOOD:
+            name = 'wood golem';
+            material = 'wood ';
+            break;
+        case LEATHER:
+            name = 'leather golem';
+            material = 'leather ';
+            break;
+        case CLOTH:
+            name = 'rope golem';
+            material = 'cloth ';
+            break;
+        case BONE:
+            name = 'skeleton';
+            material = 'bony ';
+            break;
+        case GOLD:
+            name = 'gold golem';
+            material = 'gold ';
+            break;
+        case GLASS:
+            name = 'glass golem';
+            material = 'glassy ';
+            break;
+        case PAPER:
+            name = 'paper golem';
+            material = 'paper ';
+            break;
+        default:
+            name = 'straw golem';
+            material = '';
+    }
+    return { species: MONSTER_NAME.indexOf(name), material };
+}
+// C zap.c:stone_to_flesh_obj(). Animation uses the same owners as traps.
+export async function stone_to_flesh_obj(object, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (![MINERAL, GEMSTONE].includes(objectMaterial(object, state))
+        || objectResistsDestruction(object, 2, 98))
+        return 0;
+    const { x = 0, y = 0 } = getObjectLocation(object, state) || {};
+    let affected = 1, smell = false;
+    if (object.oclass === ROCK_CLASS || object.oclass === TOOL_CLASS) {
+        if (object.otyp === BOULDER) {
+            await poly_obj(object, ENORMOUS_MEATBALL, { state });
+            smell = true;
+        }
+        else if (object.otyp === STATUE || object.otyp === FIGURINE) {
+            const species = representedSpecies(object);
+            const golem = MONSTER_SYMBOL[species] === S_GOLEM;
+            if (!golem && vegetarianCorpse(species)) {
+                await poly_obj(object, MEATBALL, { state });
+                smell = true;
+            }
+            else
+                affected = await animateStoneObject(object, x, y, golem, state);
+        }
+        else
+            affected = 0;
+    }
+    else {
+        const type = object.oclass === RING_CLASS ? MEAT_RING
+            : object.oclass === WAND_CLASS ? MEAT_STICK
+                : object.oclass === GEM_CLASS ? MEATBALL : null;
+        if (type !== null) {
+            await poly_obj(object, type, { state });
+            smell = true;
+        }
+        else
+            affected = 0;
+    }
+    if (smell) {
+        const vegetarian = state.urole.key === 'monk' || !state.u.uconduct?.unvegetarian
+            || !(requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & 0x20000000);
+        await plineWithContinuation(vegetarian
+            ? 'You smell the odor of meat.' : 'You smell a delicious smell.', { noRepeat: true });
+    }
+    await newsym(x, y);
+    return affected;
+}
+async function animateStoneObject(object, x, y, golem, state) {
+    let species = representedSpecies(object);
+    let monster;
+    const flesh = golem && species !== PM_FLESH_GOLEM;
+    if (object.otyp === STATUE) {
+        ({ monster } = await animateStatue(object, x, y, { state, magic: true }));
+    }
+    else {
+        if (flesh)
+            species = PM_FLESH_GOLEM;
+        monster = await makemonAt(species, x, y, NO_MINVENT | MM_NOMSG);
+        if (monster) {
+            const keeper = costlySpot(x, y, state)?.resident;
+            if (keeper && (object.where === 'inventory' ? object.unpaid : !object.no_charge))
+                await stolenValue(object, x, y, !!keeper.mpeaceful, { silent: false, state });
+            stopObjectTimers(object, state);
+            if (object.where === 'inventory')
+                await consumeInventoryItem(object);
+            else
+                await delobj(object, state);
+            if (cansee(monster.mx, monster.my))
+                await plineWithContinuation(`The figurine ${flesh ? 'turns to flesh and ' : ''}animates!`);
+        }
+    }
+    if (monster) {
+        if (MONSTER_SYMBOL[monster.mnum] === S_GOLEM && monster.mnum !== PM_FLESH_GOLEM)
+            await changeMonsterForm(monster, PM_FLESH_GOLEM);
+        return 1;
+    }
+    if (requireMonsterData(MONSTER_GENO, species) & (0x0010 | 0x1000))
+        return 0;
+    for (;;) {
+        const content = object.contents?.[0];
+        if (!content)
+            break;
+        bypassObject(content, state);
+        unlinkObject(content, state);
+        await placeObject(content, x, y, state);
+    }
+    await poly_obj(object, CORPSE, { state });
+    return 1;
+}
+function representedSpecies(object) {
+    if (object.corpsenm === undefined)
+        throw new Error(`Object ${object.o_id} has no represented monster species`);
+    return object.corpsenm;
 }
 //# sourceMappingURL=zap.js.map

@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ROOM, SHOPBASE } from '../js/const.js';
+import { ROOM, SHOPBASE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame, requireGameLevel } from '../js/gstate.js';
 import { igniteItems, transformMagicLampToOilLamp } from '../js/light.js';
 import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, WAX_CANDLE, } from '../js/object_data.js';
-import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc, vision_reset_new_level, } from '../js/vision.js';
 import { applyInventoryObject as applyInventoryA, } from './support/commands.js';

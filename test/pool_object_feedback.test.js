@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { breakFloorObject } from '../js/object_breakage.js';
+import { breakFloorObject } from '../js/dothrow.js';
 import { MIRROR } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

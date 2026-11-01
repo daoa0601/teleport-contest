@@ -14,7 +14,7 @@ import { pline } from '../js/pline.js';
 import {
     findMonsterDefensiveItem, lootMonsterContainer, useMonsterDefensiveItem,
 } from '../js/muse.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { teleportMonsterToRandomLevel } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';

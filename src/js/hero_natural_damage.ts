@@ -38,7 +38,7 @@ import {
 } from './uhitm.js';
 import { drainMonsterEnergy } from './mhitm.js';
 import { teleportMonsterByHero } from './teleport.js';
-import { petrifyMonsterFromContact } from './trap.js';
+import { petrifyMonsterFromContact, erodeArmor } from './trap.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
@@ -46,7 +46,6 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import { OBJECT_NAMES } from './object_data.js';
-import { erodeArmor } from './object_erosion.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';

@@ -15,7 +15,7 @@ import { races } from './roles.js';
 import { objectClassForType } from './object_knowledge.js';
 import { d, rnd, rn2 } from './rng.js';
 import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';

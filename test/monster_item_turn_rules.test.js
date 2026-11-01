@@ -8,7 +8,7 @@ import { lootMonsterContainer, useMonsterDefensiveItem } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { triggerImmediateMonsterTrap } from '../js/trap.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_YENDOR, BUGLE, BULLWHIP, DAGGER, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';

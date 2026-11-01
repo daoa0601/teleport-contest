@@ -4,7 +4,7 @@
 import { setMulti } from './cmd.js';
 import { pendingArmorAction } from './do_wear.js';
 import { finishHeroHelplessness } from './allmain.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
@@ -17,8 +17,8 @@ import { makePlural } from './object_grammar.js';
 import { displayColorName, newsym, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { objectResistsDestruction } from './object_state.js';
-import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
+import { objectResistsDestruction } from './zap.js';
+import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectTypeKnown } from './shk.js';
 import {
@@ -57,7 +57,7 @@ import type { MessagePublisher } from './pline.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { curseObjectState } from './object_state.js';
+import { curseObjectState } from './mkobj.js';
 import type { AttributeIndex } from './attrib.js';
 
 interface ArmorRemovalOptions {

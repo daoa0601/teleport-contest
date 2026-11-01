@@ -34,7 +34,7 @@ import {
     WOODEN_HARP,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
-import { consumeObjectCharge } from './object_charge.js';
+import { consumeObjectCharge } from './invent.js';
 import {
     definiteObjectAction,
     definiteName, ownedObjectName, simpleObjectName,

@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { putIntoContainer, takeFromContainer } from '../js/container.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

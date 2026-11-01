@@ -1,5 +1,5 @@
 // Lua object handles and operations. C nhlobj.c.
-import { isok, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE } from '../const.js';
+import { isok, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, OBJECT_TIMER_KIND } from '../const.js';
 import { buryObject } from '../buried_object.js';
 import { isContainer } from '../container.js';
 import { newsym } from '../display.js';
@@ -8,21 +8,19 @@ import { game } from '../gstate.js';
 import { removeHeroEquipment } from '../hero_equipment.js';
 import { finishInventoryRemoval } from '../hero_inventory.js';
 import { cleanupObjectBurn } from '../light.js';
-import { mkobj, mksobj } from '../mkobj.js';
+import { mkobj, mksobj, addObjectToContainer, unlinkObject } from '../mkobj.js';
 import { MONSTER_NAME } from '../monster_data.js';
-import { addObjectToContainer } from '../object_container.js';
-import { deleteObject } from '../object_delete.js';
-import { unlinkObject } from '../object_location.js';
 import { ARROW, CORPSE, EGG, FIGURINE, STATUE, TIN, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_COLOR, OBJECT_COST, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_INITIAL_KNOWN, OBJECT_LARGE_DAMAGE, OBJECT_MAGIC, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_MERGE, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_NUTRITION, OBJECT_PROB, OBJECT_PROPERTY_ID, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_WEIGHT, } from '../object_data.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from '../object_knowledge.js';
 import { isPoisonableObject } from '../object_properties.js';
-import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, } from '../object_timers.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../u_init.js';
 import { objectWeight } from '../weight.js';
 import { objectTypeForName } from './des.js';
 import { luaInteger } from './arguments.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
+import { deleteObject } from '../shk.js';
+import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer } from '../timeout.js';
 class ObjectHandle extends LuaUserdata {
 }
 const LOCATIONS = {

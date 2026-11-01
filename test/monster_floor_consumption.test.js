@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { changeMonsterForm, consumeMonsterFloorObjects } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, BOULDER, CORPSE, DAGGER, EGG, FOOD_RATION, GLOB_OF_GREEN_SLIME, GOLD_PIECE, OBJECT_WEIGHT, RIN_SLOW_DIGESTION, ROCK, SACK, SCR_IDENTIFY, SCR_SCARE_MONSTER, STATUE, TIN, } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

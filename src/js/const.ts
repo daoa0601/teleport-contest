@@ -1988,6 +1988,24 @@ export const TIMER_FUNC = Object.freeze({
     ROT_CORPSE: 'ROT_CORPSE',
     MELT_ICE_AWAY: 'MELT_ICE_AWAY',
 });
+
+// C include/timeout.h: enum timeout_types. Object and level
+// position timer kinds, shared by the timer queue and its callers.
+export const OBJECT_TIMER_KIND = Object.freeze({
+    ROT_ORGANIC: 'rot-organic',
+    ROT_CORPSE: 'rot-corpse',
+    REVIVE_MON: 'revive-mon',
+    ZOMBIFY_MON: 'zombify-mon',
+    BURN_OBJECT: 'burn-object',
+    HATCH_EGG: 'hatch-egg',
+    SHRINK_GLOB: 'shrink-glob',
+    FIG_TRANSFORM: 'fig-transform',
+} as const);
+
+export const LEVEL_TIMER_KIND = Object.freeze({
+    MELT_ICE_AWAY: 'melt-ice-away',
+} as const);
+
 export const MELT_ICE_AWAY = TIMER_FUNC.MELT_ICE_AWAY;
 
 // Corpse taint/revival age window (src/mkobj.c)

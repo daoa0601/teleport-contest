@@ -5,9 +5,7 @@ import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    CORPSTAT_FEMALE, CORPSTAT_MALE, G_GENOD, MGIVENNAME, MM_NOMSG, NO_MINVENT, PANICLOG,
-} from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_MALE, G_GENOD, MGIVENNAME, MM_NOMSG, NO_MINVENT, PANICLOG, OBJECT_TIMER_KIND } from '../js/const.js';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -15,7 +13,7 @@ import { createToptenObject } from '../js/mkobj.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';
-import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords, SCORE_RECORD_STORAGE_KEY } from '../js/score_records.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

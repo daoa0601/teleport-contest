@@ -13,7 +13,7 @@ import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectMaterial } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { runExtendedCommand } from './support/commands.js';

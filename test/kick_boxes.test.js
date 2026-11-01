@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { CHEST, CLUB, POT_WATER } from '../js/object_data.js';
 import { kickDirection } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';

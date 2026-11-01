@@ -33,7 +33,7 @@ import {
 } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, returnHeroToHumanForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';

@@ -2,7 +2,7 @@
 // C ref: dothrow.c should_mulch_missile().
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SLING, SPRIG_OF_WOLFSBANE, } from './object_data.js';
 import { game } from './gstate.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { rn2, rnl } from './rng.js';
 const P_BOW = 20;
 const P_CROSSBOW = 22;

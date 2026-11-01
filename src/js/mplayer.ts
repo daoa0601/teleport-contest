@@ -3,7 +3,7 @@ import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject } from './makemon.js';
-import { mkobj, mksobj } from './mkobj.js';
+import { mkobj, mksobj, blessObjectState, curseObject } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { setMonsterMalign } from './makemon.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsPlayerMonster } from './monster_data.js';
@@ -23,7 +23,6 @@ import {
     SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN,
     WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL,
 } from './object_data.js';
-import { blessObjectState, curseObject } from './object_state.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';

@@ -14,7 +14,7 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterCorrodesBars, monsterPassesBars } from './mondata.js';
 import { BOULDER, HEAVY_IRON_BALL, OBJECT_WEIGHT, requireObjectData } from './object_data.js';
-import { delobj } from './object_delete.js';
+import { delobj } from './invent.js';
 import { dissolveBars } from './projectile_bars.js';
 import { rnd } from './rng.js';
 import { inTown, roomsAt } from './room.js';

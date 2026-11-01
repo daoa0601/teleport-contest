@@ -9,7 +9,7 @@ import { veganCorpse, vegetarianCorpse } from './food_traits.js';
 import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { CANDY_BAR, CREAM_PIE, EGG, FORTUNE_COOKIE, LUMP_OF_ROYAL_JELLY, PANCAKE, } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { foodObjectName } from './objnam.js';
 const WAX = 2, FLESH = 4, LEATHER = 7, BONE = 9, DRAGON_HIDE = 10;
 const ANIMAL_INGREDIENTS = new Set([PANCAKE, FORTUNE_COOKIE, CREAM_PIE, CANDY_BAR, LUMP_OF_ROYAL_JELLY]);

@@ -1,5 +1,5 @@
 // C insight.c:attributes_enlightenment(). Property order is the native order.
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';

@@ -37,7 +37,7 @@ import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { monsterName, monsterReflexiveAction } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesBars } from './mondata.js';

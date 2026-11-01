@@ -3,20 +3,18 @@
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
-import {
-    G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
-} from './const.js';
+import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './terrain_properties.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { hideMonsterUnder } from './mon.js';
 import { monsterAtPosition } from './steed.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { DueObjectTimer } from './object_timers.js';
+import type { DueObjectTimer } from './timeout.js';
 
 type HatchLocation = {
     kind: 'floor' | 'inventory'; x: number; y: number; carrier: null;
@@ -64,9 +62,7 @@ import {
 } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import {
-    OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopObjectTimer,
-} from './object_timers.js';
+import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';

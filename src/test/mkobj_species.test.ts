@@ -4,7 +4,8 @@ import { game } from '../js/gstate.js';
 import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, FIGURINE, STATUE } from '../js/object_data.js';
-import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
+import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('changing a half-eaten human corpse into a newt preserves the eaten fraction', async () => {

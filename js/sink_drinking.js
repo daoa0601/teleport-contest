@@ -15,7 +15,7 @@ import { makemonNear } from './mklev.js';
 import { mkobj } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { OBJECT_DESCRIPTIONS, POT_WATER, requireObjectData } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';

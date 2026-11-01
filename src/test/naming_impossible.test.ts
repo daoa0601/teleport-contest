@@ -14,7 +14,7 @@ import { loseHeroHp } from '../js/hero_damage.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
 import { LEASH, POT_HEALING, SACK, TIN, TIN_OPENER } from '../js/object_data.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { useTinOpener } from '../js/tin.js';
 import { quoteShopGoods, SELL_DELIBERATE, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition } from '../js/shk.js';
 import { enableRngLog, getRngLog } from '../js/rng.js';

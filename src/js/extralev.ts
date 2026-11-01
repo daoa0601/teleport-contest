@@ -12,10 +12,9 @@ import {
     ARROW, BOW, FAKE_AMULET_OF_YENDOR, FOOD_RATION, MACE, OBJECT_WEIGHT,
     RING_MAIL, TWO_HANDED_SWORD,
 } from './object_data.js';
-import { curseObjectState } from './object_state.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { makemon } from './makemon.js';
-import { mksobj_at } from './mkobj.js';
+import { mksobj_at, curseObjectState } from './mkobj.js';
 import { somex, somey } from './mkroom.js';
 import { add_room, dodoor } from './mklev.js';
 import { isRoom } from './map_types.js';

@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BAG_OF_HOLDING, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

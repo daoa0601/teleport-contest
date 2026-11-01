@@ -5,14 +5,12 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ICE, THEMEROOM } from '../js/const.js';
+import { ICE, THEMEROOM, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE } from '../js/object_data.js';
-import {
-    levelTimers, OBJECT_TIMER_KIND, objectTimers,
-} from '../js/object_timers.js';
+import { levelTimers, objectTimers } from '../js/timeout.js';
 import { levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 

@@ -14,7 +14,7 @@ import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { tryMonsterUnslime } from '../js/muse.js';
 import { CLOAK_OF_PROTECTION, FIRE_HORN, POT_OIL, SCR_FIRE, WAN_FIRE } from '../js/object_data.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { vision_recalc } from '../js/vision.js';

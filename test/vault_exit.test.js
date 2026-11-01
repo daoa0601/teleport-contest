@@ -8,7 +8,7 @@ import { hiddenGold } from '../js/gold.js';
 import { heroGoldAmount } from '../js/hero_gold.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addObjectToContainer } from '../js/object_container.js';
+import { addObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, GOLD_PIECE, LARGE_BOX, POT_HEALING } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';
 import { payVaultGuardOnExit } from '../js/vault_exit.js';

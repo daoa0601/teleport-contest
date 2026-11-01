@@ -28,7 +28,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initializePet } from '../js/dog.js';
 import { installSwallowedHero } from './support/hero-state.js';

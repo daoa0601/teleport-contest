@@ -9,7 +9,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, CLUB, EGG } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { kickFloorObject } from '../js/object_kick.js';
+import { kickFloorObject } from '../js/dokick.js';
 import { initRng } from '../js/rng.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

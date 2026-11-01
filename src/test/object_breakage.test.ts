@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    breakFloorObject, objectBreaksOnImpact,
-} from '../js/object_breakage.js';
+import { breakFloorObject, objectBreaksOnImpact } from '../js/dothrow.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { itemizedShopBill } from '../js/shk.js';
 import { beginObjectBurn } from '../js/light.js';

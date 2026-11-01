@@ -19,7 +19,7 @@ import { LL_ARTIFACT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './ga
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { mkobj, mksobj } from './mkobj.js';
+import { mkobj, mksobj, blessObjectState, uncurseObjectState } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
@@ -30,10 +30,9 @@ import {
     requireObjectData,
 } from './object_data.js';
 import type { GameObject } from './object_types.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject } from './shk.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './object_knowledge.js';
-import { blessObjectState, uncurseObjectState } from './object_state.js';
 import { objectName, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from './properties.js';
 import type { PropertyName } from './property_types.js';

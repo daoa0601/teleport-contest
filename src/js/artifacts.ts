@@ -74,7 +74,7 @@ import {
     OBJECT_UNIQUE,
     requireObjectData,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import {
     MONSTER_FLAGS2,

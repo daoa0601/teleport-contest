@@ -1,5 +1,5 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { isLavaAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
@@ -29,7 +29,7 @@ import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js
 import { applyHeroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { clampHoleDestination } from './hole_destination.js';
-import { shopDig } from './shk.js';
+import { shopDig, deleteObject } from './shk.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
@@ -38,10 +38,9 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, CORPSE, OBJECT_NAMES, ROCK, SADDLE, } from './object_data.js';
-import { deleteObject } from './object_delete.js';
 import { isBimanualObject } from './object_properties.js';
-import { unlinkObject } from './object_location.js';
-import { impactDrop } from './object_migration.js';
+import { unlinkObject } from './mkobj.js';
+import { impactDrop } from './dokick.js';
 import { heroPassesWalls } from './hero_species.js';
 import { d, rn2, rnd } from './rng.js';
 import { artifactById } from './artifacts.js';

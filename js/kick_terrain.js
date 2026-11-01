@@ -26,7 +26,7 @@ import { shopDig } from './shk.js';
 import { sinkBacksUp } from './sink_dipping.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { bringLeashedFollowers } from './teleport.js';
-import { impactDrop } from './object_migration.js';
+import { impactDrop } from './dokick.js';
 import { waterDamageObject } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 import { objectWeight } from './weight.js';

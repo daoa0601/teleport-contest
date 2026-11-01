@@ -18,9 +18,7 @@ import { shopGetPrice, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDrop
 import {
     MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION,
 } from '../js/monster_data.js';
-import {
-    addCreatedObjectToContainer, addObjectToContainer,
-} from '../js/object_container.js';
+import { addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
 import {
     floorObject, knownObject, uninitializedObject,
 } from './support/game-objects.js';

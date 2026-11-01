@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MIGR_WITH_HERO, ROOM } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { deliverMigratingObjects, impactDrop } from '../js/object_migration.js';
+import { deliverMigratingObjects, impactDrop } from '../js/dokick.js';
 import { CLUB, MIRROR, ROCK } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';
 import { dropInventoryObject } from './support/commands.js';

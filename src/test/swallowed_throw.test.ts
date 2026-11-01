@@ -32,7 +32,7 @@ import {
     POT_WATER, ROBE, ROCK,
     SCR_BLANK_PAPER, SPEAR, STATUE, TALLOW_CANDLE, TWO_HANDED_SWORD, WAX_CANDLE,
 } from '../js/object_data.js';
-import { objectTimers } from '../js/object_timers.js';
+import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { throwInventoryObject } from './support/commands.js';

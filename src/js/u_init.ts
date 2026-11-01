@@ -13,7 +13,6 @@ import type { Advancement, AttributeValues, RoleKey } from './roles.js';
 import { useStartingItem } from './starting_equipment.js';
 import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
 import { artifactById } from './artifacts.js';
-import { deallocateObject } from './object_delete.js';
 import { initializeHeroRoomMembership } from './room.js';
 import {
     prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack,
@@ -27,7 +26,7 @@ import { setMonsterMalign } from './makemon.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition } from './mklev.js';
-import { mkobj, mksobj } from './mkobj.js';
+import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
@@ -64,7 +63,7 @@ import { invWeight, objectWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
-import { assertCreatedObject } from './object_release.js';
+import { assertCreatedObject } from './do.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';

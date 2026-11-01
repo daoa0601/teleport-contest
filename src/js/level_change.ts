@@ -13,7 +13,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
-import { restoreLevelTimers } from './object_timers.js';
+import { restoreLevelTimers } from './timeout.js';
 import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory, restoreObjectPetHistory } from './save.js';
 import { restoreLevelLightSources } from './light.js';
@@ -31,7 +31,7 @@ import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { monsterAlignmentType } from './priest.js';
 import { setMonsterMalign } from './makemon.js';
-import { deliverMigratingObjects, impactDrop } from './object_migration.js';
+import { deliverMigratingObjects, impactDrop } from './dokick.js';
 import {
     restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads,
 } from './save.js';

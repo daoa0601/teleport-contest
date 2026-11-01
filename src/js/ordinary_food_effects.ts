@@ -34,7 +34,7 @@ import {
     FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY,
     OBJECT_NAMES, PEAR, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TRIPE_RATION,
 } from './object_data.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { foodObjectName } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { propertyIsActive } from './properties.js';

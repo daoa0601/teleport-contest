@@ -10,7 +10,7 @@ import { requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './object_drop.js';
-import { shipObject } from './object_migration.js';
+import { shipObject } from './dokick.js';
 import { AKLYS, BOOMERANG } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { definiteObjectAction, killerObjectName } from './objnam.js';

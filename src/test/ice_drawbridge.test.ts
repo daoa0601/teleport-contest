@@ -1,13 +1,13 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DBWALL, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_UNDER, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP } from '../js/const.js';
+import { DBWALL, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_UNDER, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, LEVEL_TIMER_KIND } from '../js/const.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
-import { levelTimers, LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
+import { levelTimers, scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';

@@ -1,9 +1,9 @@
 // figurine_timer.js — C carry_obj_effects()/attach_fig_transform_timeout().
-import { G_GENOD } from './const.js';
+import { G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
 import { monsterYoungerForm } from './monster_data.js';
 import { FIGURINE } from './object_data.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
+import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
 function figurineSpeciesGenocided(figurine, state) {
     const mnum = figurine?.corpsenm;

@@ -8,7 +8,7 @@ import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { addObjectToContainer } from './object_container.js';
+import { addObjectToContainer } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';

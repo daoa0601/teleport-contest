@@ -5,17 +5,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import {
-    BURNING, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC,
-    DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
-    Is_earthlevel, Is_juiblex_level, Is_waterlevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT,
-    PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE,
-    W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, def_warnsyms, A_CON,
-    A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING,
-    M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok,
-    ACCESSIBLE, AIR,
-    DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
-} from './const.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_earthlevel, Is_juiblex_level, Is_waterlevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, def_warnsyms, A_CON, A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND } from './const.js';
 import {
     heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove,
     finishBallAndChainMove,
@@ -53,9 +43,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
     MONSTER_ATTACKS, requireMonsterData, monsterIsAmorphous, MONSTER_BODY_META,
 } from './monster_data.js';
-import {
-    AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE,
-} from './object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle } from './objnam.js';
 import {
     heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
@@ -63,7 +51,7 @@ import {
 } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain } from './trap.js';
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
 import {
     heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination,
@@ -123,7 +111,6 @@ import { AT_EXPL } from './monster_attack_types.js';
 import { confusePromptDirection } from './tty_prompts.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
 import { artifactById } from './artifacts.js';
-import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { arriveTravel, captureRunmodeDelay, stopRun } from './runmode.js';
@@ -133,7 +120,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { checkHeroLeashes } from './leash_apply.js';
-import { isPick } from './object_properties.js';
+import { isPick, isFlimsyObject } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget } from './hero_digging.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay } from './shk.js';
@@ -144,6 +131,7 @@ import { announceInvocationSquare } from './invocation.js';
 import { xyToDirection } from './cmd.js';
 import { doopen } from './lock.js';
 import { askTeleportDestination } from './teleport.js';
+import { objectTimers, stopObjectTimer, scheduleObjectTimer } from './timeout.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
@@ -2966,4 +2954,40 @@ export function nomul(value: number, state: GameState = game): void {
 // still need its final callback after the remaining multi becomes zero.
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     nomul(0, state);
+}
+
+// C hack.c:1785-1794.  `violent` marks a kick or throw; a plain drop needs
+// ten times the weight to be noticeable.  The coordinates are the impact
+// object's post-placement position.
+export function impactDisturbsZombies(
+    object: GameObject | null | undefined, violent: boolean, state: GameState = game,
+) {
+    // if object won't make a noticeable impact, let buried zombies rest
+    if (!object || object.owt < (violent ? 10 : 100) || isFlimsyObject(object, game))
+        return;
+    disturbBuriedZombies(object.ox, object.oy, state);
+}
+
+// C hack.c:1796-1813.  Pure timer arithmetic: no RNG, messages, or display,
+// so this stays state-aware rather than live-game locked.
+export function disturbBuriedZombies(x: number, y: number, state: GameState = game) {
+    const moves = state.moves ?? 0;
+    for (const corpse of state.level?.buriedObjects || []) {
+        if (corpse.otyp !== CORPSE)
+            continue;
+        if (Math.abs(corpse.ox - x) > 1 || Math.abs(corpse.oy - y) > 1)
+            continue;
+        const timer = objectTimers(corpse).find(candidate =>
+            candidate.kind === OBJECT_TIMER_KIND.ZOMBIFY_MON);
+        // C peek_timer() returns the absolute deadline; only a deadline of
+        // zero (no timer) leaves the corpse alone.  Due and overdue timers
+        // still qualify and land on the one-turn floor below.
+        if (!timer || timer.deadline <= 0)
+            continue;
+        // C stop_timer() returns the remaining time, possibly negative.
+        const remaining = timer.deadline - moves;
+        stopObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON);
+        scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON,
+            moves + Math.max(1, Math.floor((remaining * 2) / 3)), state);
+    }
 }

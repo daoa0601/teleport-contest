@@ -1,5 +1,5 @@
 // Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
-import { objectMaterial } from './object_material.js';
+import { objectMaterial } from './o_init.js';
 import { objectTypeKnown } from './shk.js';
 import { game } from './gstate.js';
 import type { GameFlags } from './flags.js';

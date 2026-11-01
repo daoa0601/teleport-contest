@@ -10,10 +10,9 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { discardMonsterInventory } from '../js/mkobj.js';
+import { discardMonsterInventory, addObjectToContainer } from '../js/mkobj.js';
 import { dropMonsterObject, dropSpecialMonsterObjects, releaseMonsterInventory } from '../js/steal.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { addObjectToContainer } from '../js/object_container.js';
 import {
     AMULET_OF_YENDOR, CHEST, CRYSKNIFE, GOLD_PIECE, OIL_LAMP, SCR_IDENTIFY,
     SKELETON_KEY, SPEED_BOOTS, WORM_TOOTH,

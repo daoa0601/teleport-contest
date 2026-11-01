@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { useGrayStone } from '../js/gray_stone.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { objectMaterial } from '../js/object_material.js';
+import { objectMaterial } from '../js/o_init.js';
 import {
     ACID_VENOM, BLINDFOLD, DAGGER, DIAMOND, FLINT, GOLD_PIECE, LOADSTONE, LUCKSTONE,
     OBJECT_BASES, OBJECT_NAMES, QUARTERSTAFF, SCR_BLANK_PAPER,
