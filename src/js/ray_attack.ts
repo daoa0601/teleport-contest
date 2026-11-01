@@ -653,19 +653,39 @@ async function finishMonsterRayHit(
         return wakeMonster(monster, { attacked: source.startsWith('hero-') });
     }
     if ((monster.mhp ?? 0) <= 0) {
-        if (hit.disintegrated && visible) {
-            await publish(wornMonsterLifeSaver(monster)
-                ? rayHitMessage(displayName(), monster, { x, y, damage: hit.damage, state })
-                : `${nameTarget()} is disintegrated!`);
-        }
-        if (hit.disintegrated)
+        if (hit.disintegrated) {
+            // zap.c evaluates disintegrate_mon()'s flash_str() argument
+            // before the call, so a hallucinating hero draws one
+            // hallucinated blast name here even when the monster is
+            // unseen or its death message never names the ray.
+            const blastName = displayName();
+            if (visible) {
+                await publish(wornMonsterLifeSaver(monster)
+                    ? rayHitMessage(blastName, monster, { x, y, damage: hit.damage, state })
+                    : `${nameTarget()} is disintegrated!`);
+            }
             await destroyDisintegratedMonsterInventory(monster, state, random);
+            if (source.startsWith('monster-')) {
+                // disintegrate_mon() finishes with monkilled(mon, NULL, ...).
+                await finishMonsterKilled(monster, state, {
+                    damageType: 'disintegration', cause: null, publish, random,
+                });
+                return { heroDied: !!state.program_state?.gameover };
+            }
+            await finishMonsterKill(monster, monster.mx, monster.my, {
+                // disintegrate_mon() always passes XKILL_NOMSG|XKILL_NOCORPSE.
+                noCorpse: true,
+                showKillMessage: false,
+                deathContext,
+            });
+            return { heroDied: !!state.program_state?.gameover };
+        }
         if (source.startsWith('monster-')) {
+            // zap.c's DEADMONSTER branch passes flash_str() to monkilled();
+            // the argument is evaluated even when the message is suppressed.
             const effect = displayName();
             await finishMonsterKilled(monster, state, {
-                damageType: hit.disintegrated ? 'disintegration' : AD_RBRE,
-                cause: hit.disintegrated ? null : effect,
-                publish, random,
+                damageType: AD_RBRE, cause: effect, publish, random,
             });
             return { heroDied: !!state.program_state?.gameover };
         }
@@ -673,7 +693,7 @@ async function finishMonsterRayHit(
             // dobuzz() passes XKILL_NOCORPSE only for burned-up golems;
             // species without corpses still roll treasure and corpse_chance().
             noCorpse: !!hit.noCorpse,
-            showKillMessage: !hit.disintegrated,
+            showKillMessage: true,
             deathContext,
         });
         return { heroDied: !!state.program_state?.gameover };
