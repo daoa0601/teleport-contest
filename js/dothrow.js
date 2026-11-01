@@ -565,6 +565,11 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
         });
         if (trajectory.recoil) {
             await hurtleHero(-actualDx, -actualDy, trajectory.recoil, { verbose: true });
+            // C throwit() recoils after bhit() (dothrow.c:1682); a fatal
+            // hurtle ends in done(), which never returns, so the potion
+            // never hits its target or landing square afterwards.
+            if (state.program_state?.gameover)
+                return true;
         }
         if (flight.destroyed) {
             state.context.move = 1;

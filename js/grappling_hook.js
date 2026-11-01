@@ -207,6 +207,11 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, atta
             await pline(`You are yanked toward the ${surface}!`);
             const from = { x: state.u.ux, y: state.u.uy };
             await hurtle(Math.sign(target.x - state.u.ux), Math.sign(target.y - state.u.uy));
+            // C use_grapple() (apply.c) calls spoteffects(TRUE) only after
+            // hurtle() returns; a fatal hurtle ends in done(), which never
+            // returns, so the landing square never fires its effects.
+            if (state.program_state.gameover)
+                return { spentTime: true };
             // C use_grapple() runs spoteffects(TRUE) after hurtle(): the
             // landing square still triggers its trap and autopickup.
             await finishDestinationSpotEffects({
