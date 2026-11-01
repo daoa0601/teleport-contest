@@ -463,9 +463,12 @@ export async function retreatCovetousMonster(
 // direction; then a branch stairway in any direction; then stairs or a
 // ladder in the other direction. Null when only a portal reaches the level.
 export function chooseStairs(dir: boolean, state: PlayingGameState | ShopGameState): Stairway | null {
-    const up = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
     const stairs: Stairway[] = [];
     for (let stair = state.stairs; stair; stair = stair.next) stairs.push(stair);
+    // With no stairway at all, C's stairway_find_type_dir() loop never runs;
+    // skip builds_up() too, which needs an initialized dungeon list.
+    if (!stairs.length) return null;
+    const up = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
     return stairs.find(stair => !stair.isladder && stair.up === up)
         ?? stairs.find(stair => stair.isladder && stair.up === up)
         ?? stairs.find(stair => stair.tolev.dnum !== state.u.uz.dnum)

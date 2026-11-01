@@ -30,7 +30,7 @@ import { monsterAtPosition } from './steed.js';
 import { setMonsterMalign } from './makemon.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { removeMonsterFromGame } from './mon.js';
-import { FOOD_CLASS, S_MIMIC } from './mklev.js';
+import { S_MIMIC } from './mklev.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Room } from './map_types.js';
@@ -804,7 +804,10 @@ export function shopkeeperName(
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
-// Object class codes of the stock table; C objclass.h.
+// Object class codes of the stock table; C objclass.h. Local like the
+// other class-code owners: a top-level table must not read mklev.js
+// through the mklev <-> shknam import cycle.
+const FOOD_CLASS = 7;
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
