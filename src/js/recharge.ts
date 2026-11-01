@@ -2,7 +2,6 @@
 // C read.c:charge_ok(), recharge(), stripspe(), wand_explode().
 
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
-import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_STR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, SPE_LIM,
@@ -137,7 +136,9 @@ export async function rechargeRing(ring: GameObject, blessing: number, state: Ga
         const damage = physicalDamage(rollOne(3 * Math.abs(ring.spe)), state);
         await consumeInventoryItem(ring, state);
         if (state.program_state.gameover) return { damage: 0, heroDied: true };
-        findArmorClass(state);
+        // C read.c:recharge() explodes the ring without find_ac(); the
+        // worn-ring removal (Ring_gone) already recomputed a protection
+        // ring's AC, and moveloop's once-per-input find_ac() catches up.
         const heroDied = await loseHeroHp(damage, 'exploding ring', { state, publish, die });
         return { damage, heroDied };
     }
@@ -150,7 +151,9 @@ export async function rechargeRing(ring: GameObject, blessing: number, state: Ga
     ring.spe += adjustment;
     if (slot) await wearHeroAccessory(ring, slot, state);
     if (state.program_state.gameover) return { damage: 0, heroDied: true };
-    findArmorClass(state);
+    // C read.c:recharge()'s spin path never calls find_ac(); Ring_off
+    // and Ring_on only recompute for a protection ring with nonzero
+    // enchantment, and moveloop's once-per-input find_ac() catches up.
     if (adjustment > 0 && ring.unpaid) updateUnpaidObjectPrice(ring, state);
     ring.spe = Math.max(-SPE_LIM, Math.min(ring.spe, SPE_LIM));
     return { damage: 0, heroDied: false };
