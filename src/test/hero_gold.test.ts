@@ -1,4 +1,3 @@
-import { monsterGoldAmount } from '../js/shop_money.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -7,14 +6,11 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import {
-    detachHeroGold, heroGoldAmount, heroGoldObject,
-} from '../js/hero_gold.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject, monsterGoldAmount } from '../js/hero_gold.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mkgold } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
-import { addShopObjectToBill, billForObject } from '../js/shk.js';
-import { buyShopBillItem } from '../js/shop_payment.js';
+import { addShopObjectToBill, billForObject, buyShopBillItem } from '../js/shk.js';
 import { carriedGold } from './support/gold-arena.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';

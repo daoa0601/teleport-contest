@@ -26,7 +26,7 @@ import { applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { payForShopDamage } from './shop_damage.js';
+import { payForShopDamage } from './shk.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, } from './zap.js';

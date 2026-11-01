@@ -51,6 +51,11 @@ export function heroGoldAmount(state) {
     const object = heroGoldObject(state);
     return object ? quantity(object) : 0;
 }
+// C hack.c:money_cnt() over a monster's minvent; C callers shk.c:4046,
+// shk.c:5586, priest.c:614.
+export function monsterGoldAmount(monster) {
+    return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
+}
 export function addHeroGoldObject(state, incoming) {
     if (!incoming)
         return { object: heroGoldObject(state), merged: false };

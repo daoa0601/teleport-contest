@@ -7,7 +7,7 @@ import { CANDELABRUM_OF_INVOCATION } from '../js/object_data.js';
 import { SHOPBASE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { sellHeroDroppedObject } from '../js/shop_sell.js';
+import { sellHeroDroppedObject } from '../js/shk.js';
 import { knownObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';

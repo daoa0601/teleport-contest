@@ -279,6 +279,7 @@ export const SCR_CREATE_MONSTER = 329;
 export const SCR_GENOCIDE = 331;
 export const SCR_LIGHT = 332;
 export const SCR_TELEPORTATION = 333;
+export const SCR_FOOD_DETECTION = 335;
 export const SCR_IDENTIFY = 336;
 export const SCR_MAGIC_MAPPING = 337;
 export const SCR_AMNESIA = 338;

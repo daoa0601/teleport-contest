@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { shopkeeperRepairsDamage } from '../js/shop_damage.js';
+import { shopkeeperRepairsDamage } from '../js/shk.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createStaffedShop } from './support/shop.js';

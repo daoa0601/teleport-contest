@@ -11,7 +11,7 @@ import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { burnArmorByFire } from './trap.js';
 import { igniteItems } from './light.js';
-import { payForShopDamage } from './shop_damage.js';
+import { payForShopDamage } from './shk.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';

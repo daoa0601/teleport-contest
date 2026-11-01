@@ -6,7 +6,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { getRumor } from './mklev.js';
 import { heroIsBlind } from './senses.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { moneyToMonster } from './shop_damage.js';
+import { moneyToMonster } from './shk.js';
 import { currency } from './currency.js';
 import { monsterName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';

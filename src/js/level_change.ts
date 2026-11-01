@@ -62,8 +62,7 @@ import {
 } from './ball.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
 import { heroHasOlfaction } from './polyself.js';
-import { checkSpecialRoom, setShopResidency } from './shk.js';
-import { fixShopDamage } from './shop_damage.js';
+import { checkSpecialRoom, setShopResidency, fixShopDamage } from './shk.js';
 import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall,
     onQuestStart, okToQuest,

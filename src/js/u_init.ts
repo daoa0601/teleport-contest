@@ -1,7 +1,7 @@
 // u_init.js — Initial hero, pet, inventory, and attribute setup.
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 
-import { objectTypeKnown } from './shk.js';
+import { objectTypeKnown, pickedContainer } from './shk.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { createHeroState } from './hero_types.js';
@@ -13,7 +13,6 @@ import type { Advancement, AttributeValues, RoleKey } from './roles.js';
 import { useStartingItem } from './starting_equipment.js';
 import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
 import { artifactById } from './artifacts.js';
-import { pickedContainer } from './shop_loss.js';
 import { deallocateObject } from './object_delete.js';
 import { initializeHeroRoomMembership } from './room.js';
 import {

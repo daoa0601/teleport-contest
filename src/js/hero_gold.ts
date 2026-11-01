@@ -14,6 +14,7 @@ import { nextIdent } from './ident.js';
 import { delobj } from './object_delete.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
+import type { Monster } from './monster_types.js';
 
 type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'u' | 'moves' | 'context'>;
 
@@ -69,6 +70,14 @@ export function heroGoldAmount(state: Pick<GameState, 'inventory'>): number {
     const object = heroGoldObject(state);
     return object ? quantity(object) : 0;
 }
+
+// C hack.c:money_cnt() over a monster's minvent; C callers shk.c:4046,
+// shk.c:5586, priest.c:614.
+
+export function monsterGoldAmount(monster: Monster): number {
+    return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
+}
+
 
 export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObject | null | undefined): GoldAddition {
     if (!incoming) return { object: heroGoldObject(state), merged: false };

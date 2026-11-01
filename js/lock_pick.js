@@ -25,7 +25,7 @@ import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2 } from './rng.js';
 import { roomsAt } from './room.js';
 import { heroIsBlind } from './senses.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage } from './shk.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { promptDirection } from './tty_prompts.js';

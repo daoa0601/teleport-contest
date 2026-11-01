@@ -19,13 +19,8 @@ import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import {
     ARROW, DAGGER, BOULDER, CHAIN_MAIL, LAND_MINE, LEASH, LOCK_PICK, POT_FRUIT_JUICE,
 } from '../js/object_data.js';
-import {
-    addShopDamage, makeAngryShopkeeper, pacifyShopkeeper,
-    payForShopDamage, repairShopDamage, rileShopkeeper, setPaidShopkeeper,
-    shopDig, shopkeeperRepairsDamage,
-} from '../js/shop_damage.js';
 import { createMonsterAt } from './support/monsters.js';
-import { checkSpecialRoom } from '../js/shk.js';
+import { checkSpecialRoom, addShopDamage, makeAngryShopkeeper, pacifyShopkeeper, payForShopDamage, repairShopDamage, rileShopkeeper, setPaidShopkeeper, shopDig, shopkeeperRepairsDamage } from '../js/shk.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { syncBlindness } from '../js/senses.js';

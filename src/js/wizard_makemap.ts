@@ -21,8 +21,7 @@ import { killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame } from 
 import { MONSTER_GENO } from './monster_data.js';
 import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
-import { checkSpecialRoom } from './shk.js';
-import { setPaidShopkeeper } from './shop_damage.js';
+import { checkSpecialRoom, setPaidShopkeeper } from './shk.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { vision_reset_new_level } from './vision.js';
 import { collectLevelFollowers } from './dog.js';

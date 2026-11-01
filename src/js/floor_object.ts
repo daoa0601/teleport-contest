@@ -8,11 +8,10 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { BOULDER, CORPSE } from './object_data.js';
-import { costlyAdjacent, costlySpot } from './shk.js';
+import { costlyAdjacent, costlySpot, findObjectOwner } from './shk.js';
 import {
     createdObjectNoLongerHeld, objectNoLongerHeld, objectNoLongerHeldSynchronously,
 } from './object_release.js';
-import { findObjectOwner } from './shop_loss.js';
 import { vision_note_blocker_change } from './vision.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';

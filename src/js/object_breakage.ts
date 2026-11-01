@@ -29,11 +29,7 @@ import {
 } from './potion_hit.js';
 import { d, rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import {
-    costlySpot, insideShopRoomAt, settleThrownShopObject,
-} from './shk.js';
-import { stolenValue } from './shop_loss.js';
-import { makeAngryShopkeeper } from './shop_damage.js';
+import { costlySpot, insideShopRoomAt, settleThrownShopObject, stolenValue, makeAngryShopkeeper } from './shk.js';
 import { cansee } from './vision.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

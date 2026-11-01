@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { browseDetectionMap } from '../js/magic_map_display.js';
 import { LARGE_BOX, PICK_AXE, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { repairShopDamage } from '../js/shop_damage.js';
+import { repairShopDamage } from '../js/shk.js';
 import { floatHeroUp } from '../js/terrain_movement.js';
 import { openHoldingTrap } from '../js/trap_magic.js';
 import { untrap } from '../js/untrap.js';

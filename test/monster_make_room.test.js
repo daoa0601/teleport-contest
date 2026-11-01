@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { BOULDER } from '../js/object_data.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
-import { mnearto } from '../js/shop_damage.js';
+import { mnearto } from '../js/mon.js';
 import { requireShopGame } from '../js/shop_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

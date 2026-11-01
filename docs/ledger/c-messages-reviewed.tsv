@@ -439,13 +439,13 @@ rumors.c	rumor_check	T start=	diagnostic	#wizrumorcheck wizard-mode audit of the
 rumors.c	rumor_check	rumors not accessible.	dead	Native unreachable with an intact install: the line needs the rumors dlb file to be missing or rejected by init_rumors, and the recorder ships readable rumor data. The port embeds the rumors.
 rumors.c	save_oracles	oracle-oracle_cnt	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:save_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
 rumors.c	save_oracles	oracle-oracle_loc	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:save_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
-shk.c	menu_pick_pay_items	Used up item	composed	src/js/shop_pay_command.ts:paymentMenu; Heading `${group === used ? 'Used up' : 'Unpaid'} item${group.length > 1 ? 's' : ''}:` matches the ibill plural rule.
+shk.c	menu_pick_pay_items	Used up item	composed	src/js/shk.ts:paymentMenu; Heading `${group === used ? 'Used up' : 'Unpaid'} item${group.length > 1 ? 's' : ''}:` matches the ibill plural rule.
 shk.c	reject_purchase	intact_quan < billed_quan	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-shk.c	sellobj	sold some items inside	composed	src/js/shop_sell.ts:sellHeroDroppedObject; The first explicit cash sale selects some items inside when only part of a container contents is owned by the hero and the container itself has no offer, as sellobj() does.
-shk.c	shk_chat	that business is bad.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
-shk.c	shk_chat	that business is good.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
-shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
-shk.c	u_left_shop	!  Please pay before leaving.	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
+shk.c	sellobj	sold some items inside	composed	src/js/shk.ts:sellHeroDroppedObject; The first explicit cash sale selects some items inside when only part of a container contents is owned by the hero and the container itself has no offer, as sellobj() does.
+shk.c	shk_chat	that business is bad.	composed	src/js/shk.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
+shk.c	shk_chat	that business is good.	composed	src/js/shk.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
+shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shk.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
+shk.c	u_left_shop	!  Please pay before leaving.	composed	src/js/shk.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
 shknam.c	nameshk	has_eshk(mtmp)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 shknam.c	nameshk	names_avail > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 shknam.c	shkinit	Room at (	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
@@ -596,5 +596,5 @@ worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonste
 worn.c	mon_break_armor	a ripping sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
 zap.c	bhito	a defibrillator.	composed	src/js/immediate_zap.ts:reviveFloorCorpse; An unseen revival heard by a nondeaf hallucinating Healer selects a defibrillator and appends the period.
 zap.c	blank_novel	obj->otyp == SPE_BLANK_PAPER	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-zap.c	poly_obj	is furious!	composed	src/js/object_polymorph.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shop_damage.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
+zap.c	poly_obj	is furious!	composed	src/js/object_polymorph.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shk.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
 zap.c	zapyourself	self with a death ray	composed	src/js/hero_self_zap.ts:zapHeroWithObject; Selects himself or herself before " with a death ray"; killer format NO_KILLER_PREFIX as in native.

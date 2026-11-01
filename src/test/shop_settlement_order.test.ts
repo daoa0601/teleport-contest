@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { DAGGER } from '../js/object_data.js';
-import { settleShopkeepersOnExit, finishShopkeeperRepossession } from '../js/shop_settlement.js';
+import { settleShopkeepersOnExit, finishShopkeeperRepossession } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

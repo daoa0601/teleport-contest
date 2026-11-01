@@ -8,8 +8,7 @@ import { MONSTER_BODY_META, MONSTER_FLAGS1, requireMonsterData } from './monster
 import { CORPSE, EGG, GOLD_PIECE, OBJECT_NUTRITION, TIN, requireObjectData } from './object_data.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
-import { chargeAlteredUnpaidObject } from './shk.js';
-import { SELL_DONTSELL, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
+import { chargeAlteredUnpaidObject, SELL_DONTSELL, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { fleshPetrifies } from './stoning.js';
 import { addInventoryItem } from './u_init.js';
 import type { GameState } from './game_state.js';

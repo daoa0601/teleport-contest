@@ -47,11 +47,9 @@ import { objectWeight } from './weight.js';
 import { heroHasFreeHand, willWeld } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
-import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
-import { stolenValue } from './shop_loss.js';
+import { addShopObjectToBill, currentShopResident, costlySpot, stolenValue, sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shk.js';
 import { currency } from './currency.js';
 import { warnAboutRemovedPick } from './container_shop.js';
-import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, SORTLOOT_INVLET, } from './const.js';
 export const CONTAINER_TYPES = new Set([

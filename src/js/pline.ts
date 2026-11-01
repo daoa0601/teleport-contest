@@ -65,6 +65,11 @@ export async function pline_mon(monster: Monster | Hero, message: string): Promi
 export async function pline(msg: string): Promise<void> {
     await plineWithContinuation(msg);
 }
+// C pline.c:verbalize(): the message goes out wrapped in quotes.
+export async function verbalize(message: string): Promise<void> {
+    await pline(`"${message}"`);
+}
+
 
 // C pline.c:vpline(). Await the window port before recording the last message.
 export async function plineWithContinuation(msg: string, {

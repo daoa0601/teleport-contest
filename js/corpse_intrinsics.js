@@ -76,7 +76,7 @@ export function chooseCorpseIntrinsic(mnum) {
         selected = null;
     return selected;
 }
-function intrinsicPossible(property, mnum) {
+export function intrinsicPossible(property, mnum) {
     const resistance = RESISTANCES.findIndex(resistance => resistance === property);
     if (resistance >= 0)
         return !!(requireMonsterData(MONSTER_CONVEYS, mnum) & (1 << resistance));

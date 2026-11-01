@@ -28,7 +28,7 @@ import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js
 import { applyHeroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
 import { clampHoleDestination } from './hole_destination.js';
-import { shopDig } from './shop_damage.js';
+import { shopDig } from './shk.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';

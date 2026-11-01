@@ -22,7 +22,7 @@ import { delobj } from './object_delete.js';
 import { dissolveBars } from './projectile_bars.js';
 import { rnd } from './rng.js';
 import { inTown, roomsAt } from './room.js';
-import { addShopDamage, payForShopDamage } from './shop_damage.js';
+import { addShopDamage, payForShopDamage } from './shk.js';
 import { vision_note_blocker_change } from './vision.js';
 
 const M1_METALLIVORE = 0x80000000;

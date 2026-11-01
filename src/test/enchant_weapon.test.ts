@@ -14,8 +14,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { unpaidObjectCost } from '../js/shk.js';
-import { itemizedShopBill } from '../js/shop_payment.js';
+import { unpaidObjectCost, itemizedShopBill } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { objectWeight } from '../js/weight.js';

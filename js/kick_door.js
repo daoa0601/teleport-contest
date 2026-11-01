@@ -13,7 +13,7 @@ import { monsterName } from './do_name.js';
 import { rn2, rnl } from './rng.js';
 import { inTown, roomsAt } from './room.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { addShopDamage, payForShopDamage } from './shop_damage.js';
+import { addShopDamage, payForShopDamage } from './shk.js';
 import { couldsee, vision_note_blocker_change } from './vision.js';
 import { angerWatchGuards, isWatch } from './mon.js';
 export async function kickDoor(x, y, average, responses) {

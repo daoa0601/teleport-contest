@@ -27,8 +27,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
-import { healMonster, monsterIndexByName, speciesWasGenocided, } from './mon.js';
-import { mnearto } from './shop_damage.js';
+import { healMonster, monsterIndexByName, speciesWasGenocided, mnearto } from './mon.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
@@ -388,7 +387,7 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
         if (expelled.died)
             return 'blocked';
     }
-    const stairs = chooseRetreatStairs(monster, state);
+    const stairs = chooseStairs(!!(monster.m_id % 2), state);
     monster.mavenge = 1;
     const amulet = (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
     const staysInTower = insideWizardTower(healingX, healingY, state)
@@ -416,12 +415,19 @@ export async function retreatCovetousMonster(monster, state, random = rn2, rollO
     }
     return 'harass';
 }
-function chooseRetreatStairs(monster, state) {
-    const forward = !!(monster.m_id % 2);
-    const up = dungeonBuildsUp(state.u.uz, state) ? forward : !forward;
+// C wizard.c:choose_stairs(): a flee spot for covetous monsters or a rally
+// point for guardians (Kops). C prefers stairs, then a ladder, in the travel
+// direction; then a branch stairway in any direction; then stairs or a
+// ladder in the other direction. Null when only a portal reaches the level.
+export function chooseStairs(dir, state) {
     const stairs = [];
     for (let stair = state.stairs; stair; stair = stair.next)
         stairs.push(stair);
+    // With no stairway at all, C's stairway_find_type_dir() loop never runs;
+    // skip builds_up() too, which needs an initialized dungeon list.
+    if (!stairs.length)
+        return null;
+    const up = dungeonBuildsUp(state.u.uz, state) ? dir : !dir;
     return stairs.find(stair => !stair.isladder && stair.up === up)
         ?? stairs.find(stair => stair.isladder && stair.up === up)
         ?? stairs.find(stair => stair.tolev.dnum !== state.u.uz.dnum)

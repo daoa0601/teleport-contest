@@ -42,7 +42,7 @@ import { isAxe, isPick, willWeld } from './weapon_type.js';
 import { unblock_point, vision_note_blocker_change } from './vision.js';
 // Peer dig modules; see docs/porting-status.md handoff for the split.
 import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';
-import { addShopDamage, payForShopDamage, shopDig, } from './shop_damage.js';
+import { addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 const PM_EARTH_ELEMENTAL = MONSTER_NAME.indexOf('earth elemental');
 const PM_XORN = MONSTER_NAME.indexOf('xorn');

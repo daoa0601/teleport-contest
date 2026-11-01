@@ -28,7 +28,7 @@ import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
 import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelRegions } from './regions.js';
-import { fixShopDamage } from './shop_damage.js';
+import { fixShopDamage } from './shk.js';
 import { restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { nextIdent } from './ident.js';

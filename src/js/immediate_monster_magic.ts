@@ -45,7 +45,7 @@ import { objectName, simpleObjectTypeName } from './objnam.js';
 import { landFloorObject } from './floor_effects.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { hotPursuitShopkeeper } from './shop_damage.js';
+import { hotPursuitShopkeeper } from './shk.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { surfaceName } from './terrain_name.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';

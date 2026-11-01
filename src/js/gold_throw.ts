@@ -46,9 +46,8 @@ import {
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { MONSTER_FLAGS2, monsterDigests, monsterIsWhirly } from './monster_data.js';
-import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { sellHeroDroppedObject } from './shop_sell.js';
+import { sellHeroDroppedObject, makeShopkeeperHappy } from './shk.js';
 import { OBJECT_COST } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectCombatName } from './objnam.js';

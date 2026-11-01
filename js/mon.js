@@ -2,7 +2,7 @@ import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, req
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { isAccessibleAt, isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir, levelHasCeiling, } from './terrain_properties.js';
 import { canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition, } from './monmove.js';
-import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, } from './const.js';
+import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP } from './const.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster, monsterKillLineVisible, unmap_invisible, swallowed, } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -17,7 +17,7 @@ import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer } from './objec
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { dealWithMonsterOvercrowding, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
-import { reportMonsterTeleportRestriction, monsterTeleportRestricted, findNearbyMonsterPosition, } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction, monsterTeleportRestricted, findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, monsterWearsGloves } from './trap.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
@@ -64,7 +64,6 @@ import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
 import { makePlural } from './object_grammar.js';
-import { hotPursuitShopkeeper, finishShopkeeperDeparture } from './shop_damage.js';
 import { releaseHeroFromMonster, expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { bypassObject, clearBypasses } from './object_bypass.js';
@@ -72,7 +71,7 @@ import { finishScheduledLevelChange } from './level_change.js';
 import { moveVaultGuard } from './vault.js';
 import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { recordAchievement } from './achievements.js';
-import { SHOP_TYPES } from './shop_data.js';
+import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './buried_object.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { meldNearbyFloorGlobs } from './glob.js';
@@ -94,7 +93,7 @@ import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './corpse_intrinsics.
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { inventoryItemDescription } from './invent.js';
-import { shopkeeperInOwnShop } from './shk.js';
+import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
@@ -2175,6 +2174,46 @@ export async function detachMonsterFromLevel(monster, state = game, { dueToDeath
     if (state.context.polearm?.hitmonId === monster.m_id)
         state.context.polearm.hitmonId = null;
 }
+// C mon.c mnearto(): bring the monster to <x,y>; shove any resident of the
+// destination aside when moveOther is set. A resident without room uses
+// the endgame's overcrowding rules or waits in limbo elsewhere.
+export async function mnearto(monster, x, y, state, { moveOther = false, flags = RLOC_NOMSG } = {}) {
+    if (monster.mx === x && monster.my === y
+        && monsterAtPosition(state.level, x, y) === monster)
+        return 1;
+    let othermon = null;
+    if (moveOther) {
+        const candidate = monsterAtPosition(state.level, x, y);
+        if (candidate && candidate !== monster) {
+            othermon = candidate;
+            // C mon_leaving_level() keeps a worm's body nodes for the nested
+            // relocation and redraws the vacated square.
+            await detachMonsterFromLevel(othermon, state, { stayLinked: true });
+            othermon.mstate = (othermon.mstate ?? 0) | MON_OFFMAP;
+        }
+    }
+    let newx = x;
+    let newy = y;
+    if (!goodPosition(newx, newy, { kind: 'monster', monster }, { state })) {
+        const near = findNearbyMonsterPosition(monster.mnum, newx, newy, { state });
+        if (!near) {
+            if (othermon)
+                await dealWithMonsterOvercrowding(othermon, state);
+            return 0;
+        }
+        newx = near.x;
+        newy = near.y;
+    }
+    await relocateMonsterTo(monster, newx, newy, { state, flags });
+    if (moveOther && othermon) {
+        const replaced = await mnearto(othermon, x, y, state, { moveOther: false, flags });
+        if (!replaced)
+            await dealWithMonsterOvercrowding(othermon, state);
+        return 2;
+    }
+    return 1;
+}
+// ---------------------------------------------------------- shk anger state
 // C mon.c:dmonsfree(), called after movement and before saving a level.
 // A dead guard stays linked while its temporary corridor needs cleanup.
 export function purgeDeadMonsters(level) {

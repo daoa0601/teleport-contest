@@ -69,7 +69,6 @@ import {
     teleportHeroAtWill,
 } from './teleport.js';
 import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
-import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { vision_recalc, vision_reset, couldsee } from './vision.js';
 import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, OVERLOADED } from './weight.js';
 import {
@@ -119,7 +118,6 @@ import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.j
 import { strikeIronBarsWithWeapon } from './projectile_bars.js';
 import { fightSeenWebWithForce } from './hero_web_fight.js';
 import { wormCrossesBetween } from './worm.js';
-import { dopay } from './shop_pay_command.js';
 import { AT_EXPL } from './monster_attack_types.js';
 import { confusePromptDirection } from './tty_prompts.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
@@ -137,7 +135,7 @@ import { checkHeroLeashes } from './leash_apply.js';
 import { isPick } from './weapon_type.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget } from './hero_digging.js';
-import { objectTypeKnown, tendedShop } from './shk.js';
+import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay } from './shk.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { announceInvocationSquare } from './invocation.js';
 

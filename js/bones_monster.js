@@ -14,10 +14,9 @@ import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
 import { roomForRoomno } from './room.js';
-import { pacifyShopkeeper } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { relocateMonsterTo } from './teleport.js';
-import { setShopResidency } from './shk.js';
+import { setShopResidency, pacifyShopkeeper } from './shk.js';
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
 const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');

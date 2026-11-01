@@ -27,7 +27,7 @@ import {
     clearMessageWindow, displayMessageWindow, flushPendingTopline, resetToplineClip,
 } from './tty_topline.js';
 import { vision_recalc } from './vision.js';
-import { shopkeeperKillerName } from './shk.js';
+import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, type ShopExitOutcome } from './shk.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
 import { containerContents } from './container_contents.js';
@@ -71,8 +71,6 @@ import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
-import type { ShopExitOutcome } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';

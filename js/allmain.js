@@ -60,7 +60,6 @@ import { observeBucForNaming, observeObject, recordObjectEncounter, recordObject
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction, } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
-import { fixShopDamage } from './shop_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { unlinkObject } from './object_location.js';
@@ -128,7 +127,7 @@ import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './hunger.js';
 import { monsterAlignmentType } from './priest.js';
 import { moveElementalBubbles } from './elemental.js';
-import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident } from './shk.js';
+import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, fixShopDamage } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
