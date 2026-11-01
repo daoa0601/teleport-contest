@@ -10,21 +10,20 @@ import { freshObjectRoom } from './support/object-room.js';
 
 // A cockatrice has a 1d3 AD_PHYS bite and one 0d0 AD_STON touch.  C
 // uhitm.c:mhitm_ad_ston()'s mhitu branch draws rn2(3) before its hissing or
-// grimace line and rn2(10) (or a new moon) before do_stone_u(); a successful
-// do_stone_u() sets mhm.done, so mhitu.c:hitmu() returns before
-// mhitm_knockback() and its two chance draws.  The next attack's stoning
-// gate therefore draws rn2(3) immediately after the petrifying touch's
-// rn2(10): with the shared dice script below, the second attack's touch
-// draws the script value that a knockback pair would otherwise have
-// consumed, hisses again, and cannot start a second countdown.
-void test('a stoning touch that starts petrification ends its slot before knockback', async () => {
+// grimace line and rn2(10) (or a new moon) before do_stone_u().  A
+// successful do_stone_u() sets mhm.done, but mhitu.c:hitmu() calls
+// mhitm_knockback() (two chance draws) before it returns on mhm.done.
+// With the shared dice script below, those two draws take the 1s after the
+// petrifying touch, so the next attack's bite knockback takes the next pair
+// and its touch reaches the 0 that makes it hiss again.
+void test('a petrifying touch still rolls knockback before the next attack', async () => {
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     cockatrice.msleeping = 0;
     cockatrice.mux = game.u.ux;
     cockatrice.muy = game.u.uy;
-    const rolls = [1, 1, 0, 0, 1, 1, 0, 1, 1];
+    const rolls = [1, 1, 0, 0, 1, 1, 1, 1, 0, 1];
     let rollIndex = 0;
     const stoningDice = (limit: number) => {
         const value = rolls[rollIndex++] ?? 1;
@@ -50,8 +49,7 @@ void test('a stoning touch that starts petrification ends its slot before knockb
     const prose = `${messages.join('\n')}\n${game._pending_message ?? ''}`;
     const hissings = prose.match(/hissing!/g) ?? [];
     assert.equal(hissings.length, 2,
-        `each attack's touch hisses under its own one-in-three gate\n${prose}`);
-    assert.equal(game.u.stonedTurns, 5,
-        'only the first petrifying touch starts the countdown');
+        `the second touch hisses only after the first touch's knockback draws\n${prose}`);
+    assert.equal(game.u.stonedTurns, 5, 'only the first petrifying touch starts the countdown');
     assert.equal(game.u.uhp, 98, 'each attack costs only its bite damage');
 });
