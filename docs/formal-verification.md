@@ -190,13 +190,18 @@ every seed from 0 to 20 inside one process (worst run 6.2 s). The claims,
 domains, and outputs are unchanged: an `unsat` answer from either
 configuration is an ordinary Z3 proof, and `sat`/`unknown` results still
 return immediately from the producing solver. A regression test runs the
-whole `rnl` claim under seeds 0 through 20 with a bounded per-query budget
-and asserts only that every seed proves; before the change it failed in
-three of three processes (one obligation reaching the per-query timeout
-each time), and after it every seed proves in a few seconds -- a fragile
-layout costs the probe budget once, not a 120-second timeout. A second test
-drives a genuine tuned-solver timeout (a one-millisecond probe budget) and
-checks that the default configuration still returns both proofs and models.
+whole `rnl` claim under seeds 0 through 20 through the production query
+pipeline and asserts only that every seed proves -- it cannot reproduce a
+fragile memory layout on demand, but it keeps the staged configuration
+honest for every seed, with no speed expectation. On the pre-change
+configuration the same sweep failed in three of three processes on one
+machine (one obligation reaching the per-query timeout each time) and twice
+on Linux CI, while passing on other hosts; after the change every seed
+proves in a few seconds -- a fragile layout costs the probe budget once,
+not a 120-second timeout. A second test first asserts that a one-millisecond
+budget really makes the tuned configuration give up on its two propositions
+(guarding against a vacuous pass), then checks that the default
+configuration answers a genuine z3 `unknown` with both proofs and models.
 
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.

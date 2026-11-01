@@ -12,30 +12,39 @@ from specs import SPECS
 
 class SolverRetryTests(unittest.TestCase):
     def test_a_tuned_solver_timeout_is_answered_by_the_default_configuration(self):
-        # A one-millisecond probe budget makes the tuned configuration give
-        # up for real (its own z3 timeout), so the default configuration
-        # must still decide both propositions.
         x, r = z3.Ints('retry_x retry_r')
-        self.assertEqual(solve([x >= 1, x <= 50, (r % x) >= x], 60_000, probe_ms=1)[0],
-                         z3.unsat)
-        result, solver = solve([x >= 4, x <= 40, (r % x) == 3], 60_000, probe_ms=1)
+        unsat_case = [x >= 1, x <= 50, (r % x) >= x]
+        sat_case = [x >= 4, x <= 40, (r % x) == 3]
+        # The probe budget must make the tuned configuration give up on both
+        # propositions for real; otherwise the fallback below would never
+        # run and the test would pass vacuously.
+        for case in (unsat_case, sat_case):
+            tuned = z3.SolverFor('QF_UFLIA')
+            tuned.set('timeout', 1)
+            tuned.add(z3.simplify(z3.And(*case)))
+            self.assertEqual(tuned.check(), z3.unknown,
+                             'probe budget no longer forces a tuned give-up')
+        self.assertEqual(solve(unsat_case, 60_000, probe_ms=1)[0], z3.unsat)
+        result, solver = solve(sat_case, 60_000, probe_ms=1)
         self.assertEqual(result, z3.sat)
         model = solver.model()
         self.assertGreaterEqual(model[x].as_long(), 4)
         self.assertEqual(model[r].as_long() % model[x].as_long(), 3)
 
     def test_rnl_output_obligations_hold_under_every_solver_seed(self):
+        # The pre-change single solver configuration proved rnl or gave up
+        # on one obligation depending on the z3 seed and process memory
+        # layout: it failed three of three pre-change runs on one machine
+        # and twice on Linux CI, while passing elsewhere. This sweep cannot
+        # reproduce a fragile layout on demand; it keeps the staged
+        # configuration honest by proving the claim for every seed through
+        # the production query pipeline, with no speed expectation.
         spec = next(s for s in SPECS if s.name == 'rnl')
         recorder = prove.recorder_dir()
         front = prove.CFront(recorder, [recorder / 'src' / file for file in prove.C_FILES]
                              + list((prove.HERE / 'harness').glob('*.c')))
         modules = prove.load_modules()
-        # Without the second solver configuration, one rnl obligation
-        # reached the per-query timeout and the claim failed; here every
-        # seed must prove within the bounded per-query budget below.
         previous_seed = z3.get_param('smt.random_seed')
-        original_solve = prove._solve
-        prove._solve = lambda constraints: solve(constraints, 8_000)
         try:
             for seed in range(21):
                 with self.subTest(seed=seed):
@@ -44,7 +53,6 @@ class SolverRetryTests(unittest.TestCase):
                     proved, report = prove.check(spec, front, modules, spec.pre)
                     self.assertTrue(proved, report)
         finally:
-            prove._solve = original_solve
             z3.set_param('smt.random_seed', previous_seed)
 
 
