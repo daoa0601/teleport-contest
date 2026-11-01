@@ -2240,7 +2240,7 @@ interface UnslimeContext {
 type SlimeCure = { kind: 'breath' } | { kind: 'item'; object: GameObject } | { kind: 'trap'; trap: Trap };
 export interface MonsterUnslimeResult { cured: boolean; heroDied: boolean }
 
-// C muse.c:munslime().
+// C muse.c:munslime() and muse_unslime(): select the cure, then apply it.
 export async function tryMonsterUnslime(monster: Monster, {
     state = game, byHero = false, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd,
 }: MonsterUnslimeOptions = {}): Promise<MonsterUnslimeResult> {
@@ -2254,9 +2254,10 @@ export async function tryMonsterUnslime(monster: Monster, {
     let visible = canSeeMonster(monster);
     if (visible) {
         const subject = monsterName(monster, { state, capitalized: true });
-        // C muse.c:green_mon(): judge green by the display color.
-        const green = !heroIsHallucinating(state)
-            && [CLR_GREEN, CLR_BRIGHT_GREEN].includes(MONSTER_COLOR[monster.mnum] ?? -1);
+            // C muse.c:green_mon() judges green by the display color;
+            // hcolor(NH_GREEN) names the color, hallucination included.
+            const green = !heroIsHallucinating(state)
+                && [CLR_GREEN, CLR_BRIGHT_GREEN].includes(MONSTER_COLOR[monster.mnum] ?? -1);
         await publish(`${subject} starts turning ${green ? 'into ooze' : displayColorName('green', state)}.`);
     }
     adjustMonsterSpeed(monster, -4);
