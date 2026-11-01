@@ -1882,3 +1882,4 @@ noises	dist2	inlined	reportMonsterCombatNoise compares (mx-ux)^2+(my-uy)^2 > 15,
 peacefuls_respond	quest_info	inlined	quest_info(MS_LEADER) and gu.urole.guardnum read directly as urole.ldrnum/guardnum in reactHumanoidBystander (mon.ts)
 qst_guardians_respond	quest_info	inlined	quest_info(MS_GUARDIAN) read directly as urole.guardnum in angerQuestGuardiansAfterAttack (mon.ts)
 wake_nearto_core	dist2	inlined	monstersNear filters dx*dx+dy*dy < distance inline (mon.ts wakeMonstersNearWithMessages)
+newgame	reset_glyphmap	inlined	glyph appearance is computed at render (cmapSymbolAppearance and the rogue-color path in display.ts:1907-1994) instead of precomputed glyphmap tables, so a new game has no cache to reset
