@@ -1,6 +1,6 @@
 import { GOLD_PIECE } from '../../js/object_data.js';
 import { deleteObject } from '../../js/object_delete.js';
-import { addCreatedObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { addCreatedObjectToMonsterInventory } from '../../js/steal.js';
 import { knownObject } from './game-objects.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';

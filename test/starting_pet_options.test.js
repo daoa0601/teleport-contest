@@ -4,7 +4,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
 import { freshObjectRoom } from './support/object-room.js';

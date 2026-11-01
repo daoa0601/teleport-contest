@@ -6,7 +6,7 @@ import { COLNO, HOLE, LADDER, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_RANDOM, MIGR_S
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet, collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/dog.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { resetInputState } from '../js/input.js';

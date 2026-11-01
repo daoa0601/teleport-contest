@@ -10,7 +10,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { applyMonsterPolymorphTrap } from '../js/polymorph_trap.js';
 import { createStaffedShop } from './support/shop.js';
 import { createMonsterAt } from './support/monsters.js';

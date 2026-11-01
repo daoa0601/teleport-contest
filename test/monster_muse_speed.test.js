@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { A_WIS, MFAST, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { POT_SPEED, WAN_SPEED_MONSTER } from '../js/object_data.js';
 import { recordObjectKnowledge } from '../js/object_knowledge.js';
 import { initRng } from '../js/rng.js';

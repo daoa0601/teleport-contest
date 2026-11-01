@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { P_RIDING, P_UNSKILLED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { DIAMOND } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';

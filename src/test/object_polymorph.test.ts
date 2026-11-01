@@ -24,7 +24,7 @@ import {
 } from '../js/object_polymorph.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { getObjectLocation } from '../js/object_location.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { wearHeroAccessory } from '../js/accessory.js';

@@ -6,7 +6,7 @@ import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 const FLAMING = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander'].map((name) => MONSTER_NAME.indexOf(name)));
 const WEB_TEARERS = new Set([

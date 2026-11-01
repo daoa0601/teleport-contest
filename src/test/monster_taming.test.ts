@@ -8,7 +8,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj, set_corpsenm } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CARROT, CORPSE, DAGGER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, OBJECT_NAMES, SPE_CHARM_MONSTER, TRIPE_RATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';

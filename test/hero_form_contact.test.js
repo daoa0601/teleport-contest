@@ -9,7 +9,7 @@ import { releaseHeroGrip } from '../js/hero_expulsion.js';
 import { heroGrabMisses, showHeroSilverContact } from '../js/hero_form_contact.js';
 import { resetInputState } from '../js/input.js';
 import { AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { getObjectClassBounds, OBJECT_MATERIAL } from '../js/object_data.js';
 import { objectMaterial } from '../js/object_material.js';
 import { initRng } from '../js/rng.js';

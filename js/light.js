@@ -10,7 +10,8 @@ import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { definiteObjectAction, minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, PLNMSG_OBJ_GLOWS, } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName } from './display.js';
@@ -253,6 +254,27 @@ export async function snuffLitObject(object, state = game, publish = plineWithCo
     }
     endObjectBurn(object, state);
     return true;
+}
+// C apply.c:snuff_lit(), for the inventory enclosed by an engulfing actor.
+export async function snuffMonsterInventoryLights(defender, state, publish) {
+    for (const object of defender.minvent || defender.inventory || []) {
+        if (!object.lamplit)
+            continue;
+        const lamp = [OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL].includes(object.otyp);
+        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+        const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
+        if (!lamp && !candle && !candelabrum)
+            continue;
+        if (cansee(defender.mx, defender.my)) {
+            if (lamp)
+                await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
+            else {
+                const many = candle ? object.quan > 1 : object.spe > 1;
+                await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+            }
+        }
+        endObjectBurn(object, state);
+    }
 }
 // C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
 // object is part of the native effect, including its construction draws.

@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, NO_WEAPON_WANTED } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { EXPENSIVE_CAMERA, POT_ACID, WAN_STRIKING } from '../js/object_data.js';
 import { dopray } from '../js/pray.js';
 import { heroIsBlind } from '../js/senses.js';

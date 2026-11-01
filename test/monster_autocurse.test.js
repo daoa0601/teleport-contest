@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { checkMonsterGearNextTurn, reassessMonsterArmor } from '../js/monworn.js';
 import { DUNCE_CAP } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

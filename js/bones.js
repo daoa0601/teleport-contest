@@ -32,7 +32,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
-import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
+import { restoreMonsterInventoryOwnership } from './mkobj.js';
 import { ageStoresFuel } from './container.js';
 import { specialLevelAt } from './dungeon.js';
 import { ICE_BOX, SLIME_MOLD } from './object_data.js';

@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterIsMindless } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';

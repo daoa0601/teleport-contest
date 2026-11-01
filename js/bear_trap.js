@@ -9,7 +9,7 @@ import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
 const PM_BUGBEAR = MONSTER_NAME.indexOf('bugbear');

@@ -92,7 +92,7 @@ import {
 } from './teleport.js';
 import { canFallThrough } from './mklev.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
-import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterName as canonicalMonsterName } from './do_name.js';
 import { monsterResistsSleep } from './monster_sleep.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import {

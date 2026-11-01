@@ -14,7 +14,7 @@ import { monsterDigests } from './monster_data.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { inventoryItemDescription } from './invent.js';
 import { objectMonsterName, ownedObjectAction, observeObjectForNaming, } from './objnam.js';
-import { possessiveName } from './monster_name.js';
+import { possessiveName } from './hacklib.js';
 import { objectIsUnpaid } from './shk.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';

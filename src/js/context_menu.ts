@@ -13,7 +13,7 @@ import { GlyphOffset } from './glyph_numbers.js';
 import { isContainer } from './container.js';
 import { monsterCanBeSaddled } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { BOULDER, CREDIT_CARD, LOCK_PICK, SADDLE, SKELETON_KEY } from './object_data.js';
 import { observeObjectForNaming } from './objnam.js';
 import { monsterSaddle } from './steed.js';

@@ -4,8 +4,7 @@
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import {
-    A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS,
-    IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit,
+    A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit,
 } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -17,16 +16,15 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
 import {
-    AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC,
-    AD_FIRE, AD_PHYS,
+    AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
 } from './monster_attack_types.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE,
-    monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly,
+    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal,
+    monsterIsWhirly,
 } from './monster_data.js';
 import {
-    BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH,
-    MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+    BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE,
+    WAX_CANDLE,
 } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
@@ -43,9 +41,9 @@ import { resetOccupations } from './occupation_reset.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
-import { releaseAllMonsterLeashes } from './monster_leash.js';
-import { monsterName } from './monster_name.js';
 import { petrifyMonsterImmediately } from './trap.js';
+import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { monsterName } from './do_name.js';
 import { ownedObjectName, objectNameIsPlural } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';

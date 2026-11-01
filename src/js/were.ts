@@ -27,13 +27,13 @@ import {
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
-import { sessionIsNight } from './monster_sound.js';
+import { sessionIsNight } from './ambient_sounds.js';
 import { heroIsDeaf } from './senses.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { withIndefiniteArticle, makePlural } from './object_grammar.js';
-import { monsterGrowlSound } from './monster_sound.js';
+import { monsterGrowlSound } from './ambient_sounds.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

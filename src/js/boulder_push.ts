@@ -28,7 +28,7 @@ import { randomTeleportDepth } from './level_teleport.js';
 import type { Trap } from './map_types.js';
 import { MONSTER_FLAGS2, monsterIsNoncorporeal } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import type { Monster } from './monster_types.js';
 import { BOULDER } from './object_data.js';
 import { disturbBuriedZombies } from './object_impact.js';

@@ -9,7 +9,7 @@ import { consumeInventoryItem } from './invent.js';
 import { cloneMonster } from './monster_clone.js';
 import { MONSTER_NAME, monsterIsUnsolid } from './monster_data.js';
 import { hurtleMonster } from './monster_hurtle.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { isLauncherAmmunition, isMissileObject } from './object_properties.js';

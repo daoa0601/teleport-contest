@@ -4,7 +4,7 @@ import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, LAVAPOOL, M_AP_OBJECT, MM_NOGRP, MM_NO
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWouldConsumeItem } from '../js/monmove.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import { placeMonsterAt } from '../js/monster_location.js';

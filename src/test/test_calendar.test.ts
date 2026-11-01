@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixedCalendar } from '../js/allmain.js';
 import { recorderIsLeapDay } from '../js/calendar.js';
 import { game } from '../js/gstate.js';
-import { sessionIsNight } from '../js/monster_sound.js';
+import { sessionIsNight } from '../js/ambient_sounds.js';
 import { freshGame } from './support/game-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { prepareHeroStartup } from './support/startup.js';

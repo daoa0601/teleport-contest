@@ -13,7 +13,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { summonMinion } from './minion.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { propertyIsActive, wornObjectGrantsProperty } from './properties.js';
 import { heroIsPunished } from './ball.js';
 import { punishHero } from './punishment.js';

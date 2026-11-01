@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SINK, S_LDWASHER } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { initRng } from '../js/rng.js';
 import { syncDeafness } from '../js/senses.js';
 import { kickDirection } from './support/commands.js';

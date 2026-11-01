@@ -3,7 +3,8 @@
 // create_des_coder(), load_special(), and the themed-room Lua sessions
 // that mklev.c makerooms() drives.
 import { game, requireGameLevel } from './gstate.js';
-import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
+import { discardMonsterInventory } from './mkobj.js';
+import { dropSpecialMonsterObjects } from './steal.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';

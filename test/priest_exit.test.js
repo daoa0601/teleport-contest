@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { clearNonlocalPriestsOnExit } from '../js/priest.js';
 import { knownObject } from './support/game-objects.js';

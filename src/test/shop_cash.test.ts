@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE, DAGGER } from '../js/object_data.js';
-import { addCreatedObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addCreatedObjectToMonsterInventory } from '../js/steal.js';
 import { knownObject, addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

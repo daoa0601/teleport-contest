@@ -16,7 +16,7 @@ import { floorObject, uninitializedObject, unopenedCatBox } from './support/game
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObjectsAt } from './support/level-state.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 
 const FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');

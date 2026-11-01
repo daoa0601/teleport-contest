@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/monmove.js';
+import { moveMonsterForHeroAttack, takeMonsterTurn } from '../js/monmove.js';
 import { MMOVE_DONE, MMOVE_NOMOVES, MMOVE_NOTHING, MM_NOGRP, NO_MINVENT, POLY_TRAP, POOL, ROOM } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
@@ -9,8 +9,7 @@ import { makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { pickUpMonsterFloorObject } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { takeMonsterTurn } from '../js/monmove.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, DAGGER, GOLD_PIECE, SACK, SCR_BLANK_PAPER, WAN_STRIKING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

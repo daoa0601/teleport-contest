@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { CORPSE, POT_SLEEPING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

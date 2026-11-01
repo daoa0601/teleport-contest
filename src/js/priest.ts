@@ -8,16 +8,16 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordTempleOverview } from './dungeon.js';
-import type { GameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
-import { deityName } from './alignment.js';
+import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { canSeeMonster, canSpotMonster, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, randomDisplayMonsterIdentity } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
@@ -27,37 +27,31 @@ import { cansee, couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import {
-    A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED,
-    MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS,
-    Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE,
-    ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
+    A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL,
+    ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL,
+    In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
-import { breakMonsterBoulder } from './monmove.js';
-import { moveMonsterAggress } from './monmove.js';
+import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { checkSpecialRoom, shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsDisplaced } from './armor.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import type { PlayingGameState } from './game_state.js';
-import type {
-    MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne,
-} from './monster_action_types.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { monsterName } from './do_name.js';
+import type { MonsterArticle } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
+import { indefiniteArticlePrefix } from './object_grammar.js';
 import { makemon, makemonAt } from './makemon.js';
 import { mksobj, mkobj } from './mkobj.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
-import {
-    AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE,
-    CLOAK_OF_PROTECTION, ROBE,
-} from './object_data.js';
+import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
 import { SPBOOK_no_NOVEL, xdir, ydir } from './mklev.js';
 
 const M2_MINION = 0x00001000;
@@ -267,6 +261,47 @@ export function priestAlignment(priest: Monster | null | undefined): number {
         ?? minionData(priest)?.min_align ?? A_NONE;
     if (alignment === A_NONE) return A_NONE;
     return Math.sign(alignment);
+}
+
+// C priest.c:priestname().
+export function priestName(monster: Monster, { article, hallucinating, invisible, state, exact }: {
+    article: MonsterArticle; hallucinating: boolean; invisible: boolean; state: GameState; exact: boolean;
+}): string {
+    const aligned = monster.mnum === PM_ALIGNED_CLERIC;
+    const high = monster.mnum === PM_HIGH_CLERIC;
+    // Even a priest whose hallucinated species is replaced by "poohbah"
+    // consumes rndmonnam, and its proper-name marker still controls "the".
+    const identity = hallucinating ? randomDisplayMonsterIdentity() : null;
+    let name = identity?.name || monsterTypeName(monster.mnum, monster.female);
+    if (monster.ispriest || aligned || high)
+        name = hallucinating ? 'poohbah' : monster.female ? 'priestess' : 'priest';
+    let prefix = '';
+    if (article !== 'none' && !identity?.personal) {
+        if (article === 'your' || (article === 'a' && high)) article = 'the';
+        prefix = article === 'the' ? 'the ' : indefiniteArticlePrefix(name);
+    }
+    if (invisible) {
+        if (prefix === 'a ') prefix = 'an ';
+        prefix += 'invisible ';
+    }
+    const minion = monster.emin || monster.mextra?.emin;
+    if (monster.isminion && !minion)
+        throw new Error(`Minion ${monster.m_id} has no minion data for its title.`);
+    if (monster.isminion && minion?.renegade) {
+        if (prefix === 'an ' && !invisible) prefix = 'a ';
+        prefix += 'renegade ';
+    }
+    if (monster.ispriest || aligned) {
+        if (high) prefix += hallucinating ? 'grand ' : 'high ';
+    } else if (monster.mtame && name.toLowerCase() === 'angel') {
+        prefix += 'guardian ';
+    }
+    const nearby = Math.abs(monster.mx - state.u.ux) <= 1
+        && Math.abs(monster.my - state.u.uy) <= 1;
+    if (exact || hallucinating || !high || !Is_astralevel(state.u.uz)
+        || nearby || state.program_state?.gameover)
+        name += ` of ${hallucinatedDeityName(priestAlignment(monster), state, hallucinating)}`;
+    return prefix + name;
 }
 
 export function priestIsCoaligned(priest: Monster, state: GameState = game): boolean {

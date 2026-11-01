@@ -78,6 +78,14 @@ export function ingSuffix(verb) {
 export function upstart(text) {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
+// C hacklib.c:s_suffix(). The possessive of a name or noun phrase.
+export function possessiveName(name) {
+    if (name.toLowerCase() === 'it')
+        return name + 's';
+    if (name.toLowerCase() === 'you')
+        return name + 'r';
+    return name + (name.endsWith('s') ? "'" : "'s");
+}
 // C hack.h:online2() via the onlineu() macro. Two squares are online when
 // they share a row, a column, or a perfect diagonal.
 export function pointsOnline(x0, y0, x1, y1) {

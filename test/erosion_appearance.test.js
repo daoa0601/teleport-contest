@@ -7,7 +7,7 @@ import { gameLogEvents } from '../js/gamelog.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { damageObjectWithAcid, erodeObject } from '../js/object_erosion.js';
 import { DAGGER, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LEATHER_GLOVES, OBJECT_NAMES, YELLOW_DRAGON_SCALES, } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addInventoryObject, artifactObject, uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { possessiveName } from './monster_name.js';
+import { possessiveName } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './object_grammar.js';
 import { heroIsBlind } from './senses.js';
 import type { AlignmentName } from './roles.js';

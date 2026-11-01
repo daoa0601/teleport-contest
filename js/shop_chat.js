@@ -1,6 +1,8 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
-import { monsterName, monsterObjectPronoun, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { monsterObjectPronoun, monsterSubjectPronoun } from './mondata.js';
+import { shopkeeperName } from './shknam.js';
 import { heroArmName } from './body_parts.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { currency } from './currency.js';

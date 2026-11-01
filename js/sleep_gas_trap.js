@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 export async function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible = !monsterResistsSleep(monster) &&

@@ -4,7 +4,7 @@ import { RUST_TRAP, W_ARMH } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';

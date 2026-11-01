@@ -9,7 +9,7 @@ import { unlinkObject } from './object_location.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { objectResistsDestruction } from './object_state.js';
 import { reconcileObjectDeletionBill, objectPriceAdjustment } from './shk.js';
-import { releaseObjectLeash } from './monster_leash.js';
+import { releaseObjectLeash } from './leash_apply.js';
 import { maybeUnhideAt } from './mon.js';
 import { objectWeight } from './weight.js';
 import { bookDisappears } from './spellbook_study.js';

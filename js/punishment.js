@@ -9,7 +9,7 @@ import { landFloorObject } from './floor_effects.js';
 import { delobj } from './object_delete.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { mkobj } from './mkobj.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { HEAVY_IRON_BALL } from './object_data.js';
 import { heroMonsterForm } from './polyself.js';

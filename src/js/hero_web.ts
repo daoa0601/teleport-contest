@@ -27,7 +27,7 @@ import {
     MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal,
     monsterIsWhirly,
 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import {
     AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL,
 } from './monster_attack_types.js';

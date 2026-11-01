@@ -16,7 +16,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { verbForSubject } from './object_grammar.js';
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';

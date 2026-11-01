@@ -33,7 +33,8 @@ import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
 import type { DrawbridgeOptions, DrawbridgeSquare } from './drawbridge_terrain.js';
-import { monsterName, monsterSubjectPronoun } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { monsterSubjectPronoun } from './mondata.js';
 
 type DrawbridgeEntity = Position & { species: number; active: boolean } & (
     { hero: true; actor: Hero } | { hero: false; actor: Monster }

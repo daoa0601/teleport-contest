@@ -19,7 +19,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { pushKeys } from '../js/input.js';
 import { makeMonsterFlee } from '../js/monmove.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';

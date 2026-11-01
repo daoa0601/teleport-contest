@@ -46,9 +46,9 @@ import { objectIsHardHelmet, dragonFormForArmor } from './armor.js';
 import {
     findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
-import {
-    monsterName, monsterObjectPronoun, monsterReflexiveAction, monsterSubjectPronoun, possessiveName,
-} from './monster_name.js';
+import { monsterName, monsterReflexiveAction } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterObjectPronoun, monsterSubjectPronoun } from './mondata.js';
 import { dist2, distmin, depth, ledgerNo } from './hacklib.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import {
@@ -89,9 +89,9 @@ import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } fro
 import { heroHandName } from './body_parts.js';
 import { placeObjectSynchronously, sweepFloorPile } from './floor_object.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import {
-    addObjectToMonsterInventory, destroyObjectFromMonsterInventory, forgetObjectKnowledge,
-} from './monster_inventory.js';
+import { forgetObjectKnowledge } from './mkobj.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './object_drop.js';
 import {
     definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural,

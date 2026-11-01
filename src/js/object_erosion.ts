@@ -17,9 +17,10 @@ import { objectMaterial } from './object_material.js';
 import { heroSpecies } from './hero_species.js';
 import { AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import {
     DWARVISH_CLOAK, OBJECT_PROPERTY,
     OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE,

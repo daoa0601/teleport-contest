@@ -20,7 +20,7 @@ import { runDueTimers } from '../js/timer_effects.js';
 import { objectWeight } from '../js/weight.js';
 import { billForObject } from '../js/shk.js';
 import { createMonsterAt } from './support/monsters.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { holdAnotherObject } from '../js/hero_hold_object.js';

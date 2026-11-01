@@ -9,7 +9,7 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { make_grave } from './mklev.js';
 import { monsterTypeName } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { rn2 } from './rng.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { findVaultGuard } from './vault_guard.js';

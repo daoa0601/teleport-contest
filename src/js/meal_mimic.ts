@@ -11,7 +11,7 @@ import type { Monster } from './monster_types.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { GOLD_PIECE, ORANGE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { mimicObjectName } from './objnam.js';

@@ -6,7 +6,8 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { monstersInFmonOrder, wakeMonster } from './mon.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { monsterIsMindFlayer, monsterIsMindless, monsterIsTelepathic, } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 export function heroCanMindBlast(state = game) {

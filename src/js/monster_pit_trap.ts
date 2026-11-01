@@ -11,7 +11,7 @@ import {
     MONSTER_FLAGS1, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { rnd } from './rng.js';
 import { finishMonsterTrapDeath, monsterSelfTouch, monsterTrapVisibility, seeTrap } from './trap.js';
 import { levelHasCeiling } from './terrain_properties.js';

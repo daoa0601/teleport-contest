@@ -15,7 +15,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { noticeAllMonsters } from '../js/monster_notices.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';

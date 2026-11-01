@@ -17,7 +17,7 @@ import { findMonsterNearPosition } from './mklev.js';
 import { monsterAtPosition } from './monster_location.js';
 import { relocateMonsterTo } from './teleport.js';
 import { MONSTER_FLAGS2, MONSTER_SIZE, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';

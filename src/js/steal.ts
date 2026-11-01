@@ -1,7 +1,9 @@
-// Hero item theft by monsters.
-// C ref: steal.c — steal(), stealarm(), worn_item_removal().
+// Hero item theft by monsters, and monster inventory acquisition and release.
+// C ref: steal.c — steal(), stealarm(), worn_item_removal(), mpickobj(),
+// stealamulet(), maybe_absorb_item(), mdrop_obj(), mdrop_special_objs(),
+// relobj().
 
-import { game, requireInitializedGame } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -9,36 +11,47 @@ import type {
     HeroContactAttack, MonsterAction, MonsterCallLog, RandomBelow,
 } from './monster_action_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { rn2, rnd } from './rng.js';
+import type { rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
 import {
     M_ATTK_AGR_DONE, M_ATTK_AGR_DIED, LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM,
     TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_WEAPONS,
+    LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE,
 } from './const.js';
-import { RLOC_MSG } from './const.js';
-import { LOST_STOLEN } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { heroFootName, monsterFootName } from './body_parts.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { heroFootName, monsterFootName, heroHandName } from './body_parts.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsAnimal, monsterIsSlithy,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL,
+    monsterCanEngulf, monsterIsAnimal, monsterIsSlithy, monsterTypeName,
 } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { AD_SEDU, AD_SITM, AD_SSEX } from './monster_attack_types.js';
-import { BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
+import {
+    BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_BIMANUAL, OBJECT_NAMES,
+    AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
+    FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
+} from './object_data.js';
 import { OBJECT_DELAY } from './object_data.js';
 import {
-    observeObjectForNaming, ownedObjectName,
+    definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
+    observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
 } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { impossible } from './diagnostics.js';
+import { rn2 } from './rng.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { objectShedsLight, snuffLightSource } from './light.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dist2 } from './hacklib.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { roomsAt } from './room.js';
 import { openHoldingTrap } from './trap_magic.js';
 import { armorSimpleName, stopDonning } from './armor.js';
 import { removeHeroEquipment } from './hero_equipment.js';
@@ -46,16 +59,34 @@ import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { monsterCanCarryObject } from './monster_carry.js';
-import { releaseObjectLeash } from './monster_leash.js';
-import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
+import { releaseObjectLeash } from './leash_apply.js';
+import {
+    assertCreatedObject,
+} from './object_release.js';
+import {
+    forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory,
+    unlinkMonsterObject,
+} from './mkobj.js';
+import type { MonsterPickupOptions } from './mkobj.js';
+import {
+    removeObjectFromMonsterInventory, updateMonsterEquipment,
+} from './monworn.js';
+import { deleteObject } from './object_delete.js';
+import { landFloorObject } from './floor_effects.js';
+import { inventoryItem } from './u_init.js';
+import { cansee } from './vision.js';
+import { petDroppableObject } from './dog.js';
+import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifacts.js';
+import { objectResistsDestruction } from './object_state.js';
+import { relocateObjectRandomly } from './object_teleport.js';
+import { freeInventoryObject, finishInventoryRemoval } from './hero_inventory.js';
+import { costlySpot, removeObjectAndContentsFromBill, currentShopResident } from './shk.js';
 import { unlinkObject } from './object_location.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import {
     heroHasInvoluntaryDelay, nomul, pendingArmorAction,
 } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
-import { removeObjectAndContentsFromBill, currentShopResident } from './shk.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './trap.js';
@@ -498,4 +529,271 @@ async function fleeWithGold(
     if (!await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
     await makeMonsterFlee(monster, { state, announce: false, publish, random, rollOne });
+}
+
+// C steal.c:mpickobj(). Carrying effects precede merging; engulfing snuffs
+// the surviving object.
+async function prepareMonsterPickup(
+    monster: Monster, object: GameObject, state: GameState,
+): Promise<boolean> {
+    if (state._thrownObject === object) state._thrownObject = null;
+    else if (state._kickedObject === object) state._kickedObject = null;
+    removeObjectAndContentsFromBill(object, state);
+    const snuff = objectShedsLight(object) && monsterCanEngulf(monster);
+    if (snuff && state.u.uswallow && state.u.ustuck === monster && !heroIsBlind(state)) {
+        observeObjectForNaming(object, { state });
+        const noun = objectName(object, state);
+        const name = definiteName(object.quan > 1 ? pluralizeObjectNoun(object, noun) : noun, state);
+        const subject = name.charAt(0).toUpperCase() + name.slice(1);
+        await plineWithContinuation(`${subject} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out.`);
+    }
+    object.no_charge = false;
+    if (!monster.mtame && monster !== state.u?.ustuck
+        && !canSeeMonster(monster)) {
+        forgetObjectKnowledge(object);
+    }
+    if (!monster.mtame) {
+        if (object.how_lost === LOST_THROWN) object.how_lost = LOST_STOLEN;
+        else if (object.how_lost === LOST_DROPPED) object.how_lost = LOST_NONE;
+    }
+    attachCursedFigurineTimer(object, state);
+    return snuff;
+}
+
+// C steal.c:mpickobj().
+export async function addObjectToMonsterInventory(
+    monster: Monster | null | undefined, object: GameObject | null | undefined,
+    state: GameState = game, { atFront = true }: MonsterPickupOptions = {},
+): Promise<GameObject | null> {
+    requireLiveGame(state);
+    if (!monster) return null;
+    if (!object) {
+        await impossible(`monster (${monsterTypeName(monster.mnum, !!monster.female)}) taking or picking up nothing?`, { state });
+        return null;
+    }
+    if (object === state.uball || object === state.uchain) {
+        const part = object === state.uchain ? 'chain' : 'ball';
+        await impossible(`monster (${monsterTypeName(monster.mnum, !!monster.female)}) taking or picking up attached ${part} (${simpleObjectName(object, state)})?`, { state });
+        return null;
+    }
+    const extinguish = await prepareMonsterPickup(monster, object, state);
+    const carried = await linkObjectToMonsterInventory(monster, object, { atFront, state });
+    if (extinguish && monster.mx > 0) snuffLightSource(monster.mx, monster.my, state);
+    return carried;
+}
+
+export async function addCreatedObjectToMonsterInventory(
+    monster: Monster, object: GameObject, state: GameState = game,
+    { atFront = true }: MonsterPickupOptions = {},
+): Promise<GameObject | null> {
+    assertCreatedObject(object, state);
+    const extinguish = await prepareMonsterPickup(monster, object, state);
+    const carried = await linkCreatedObjectToMonsterInventory(monster, object, { atFront, state });
+    if (extinguish && monster.mx > 0) snuffLightSource(monster.mx, monster.my, state);
+    return carried;
+}
+
+// C steal.c:stealamulet() and worn_item_removal().
+export async function stealHeroQuestObject(
+    monster: Monster, state: PlayingGameState, publish: MessagePublisher,
+    random: typeof rn2, rollOne: typeof rnd,
+): Promise<void> {
+    const object = chooseQuestTheftTarget(monster, state, rollOne);
+    if (!object) return;
+    if ((object === state.uarm || object === state.uarmu) && state.uarmc)
+        await removeForQuestTheft(monster, state.uarmc, state, publish);
+    if (object === state.uarmu && state.uarm)
+        await removeForQuestTheft(monster, state.uarm, state, publish);
+    if ((object === state.uarmg || (object === state.uright || object === state.uleft) && state.uarmg)
+        && state.uwep) {
+        if (state.u.twoweap && state.uswapwep)
+            await removeForQuestTheft(monster, state.uswapwep, state, publish);
+        if (state.uwep) await removeForQuestTheft(monster, state.uwep, state, publish);
+    }
+    if ((object === state.uright || object === state.uleft) && state.uarmg)
+        await removeForQuestTheft(monster, state.uarmg, state, publish);
+    if (object.owornmask) await removeForQuestTheft(monster, object, state, publish);
+    if (state.program_state.gameover) return;
+    if (object.unpaid)
+        removeObjectAndContentsFromBill(object, state, { resident: currentShopResident(state) });
+    unlinkObject(object, state);
+    await finishInventoryRemoval(object, state);
+    if (state.program_state.gameover) return;
+    observeObjectForNaming(object, { state });
+    const name = await inventoryItemDescription(object);
+    await addObjectToMonsterInventory(monster, object, state);
+    await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} steals ${name}!`);
+    if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x02000000)
+        && !await reportMonsterTeleportRestriction(monster, { state, publish }))
+        await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
+    await reportHeroEncumbrance(state);
+}
+
+function chooseQuestTheftTarget(monster: Monster, state: PlayingGameState, rollOne: typeof rnd): GameObject | undefined {
+    let candidates = state.inventory.filter(object => artifactById(object.oartifact, state)?.questArtifact);
+    if (!candidates.length) {
+        const possessions = state.u.uhave;
+        const [real, fake] = possessions.amulet ? [AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR]
+            : possessions.bell ? [BELL_OF_OPENING, BELL]
+            : possessions.book ? [SPE_BOOK_OF_THE_DEAD, 0]
+            : possessions.menorah ? [CANDELABRUM_OF_INVOCATION, 0] : [0, 0];
+        if (!real) return undefined;
+        candidates = state.inventory.filter(object => object.otyp === real
+            || object.otyp === fake && !monster.iswiz);
+    }
+    return candidates[candidates.length > 1 ? rollOne(candidates.length) - 1 : 0];
+}
+
+async function removeForQuestTheft(
+    monster: Monster, object: GameObject, state: PlayingGameState, publish: MessagePublisher,
+): Promise<void> {
+    observeObjectForNaming(object, { state });
+    const description = (await inventoryItemDescription(object))
+        .replace(/^(?:the|an|a) /, object === state.uchain ? 'the ' : 'your ')
+        .replace(' (being worn)', '').replace(' (alternate weapon; not wielded)', '')
+        .replace(/ \(on (left|right) hand\)/, ' (from $1 hand)');
+    const mask = object.owornmask ?? 0;
+    const verb = mask & W_WEAPONS ? 'disarms' : mask & W_ACCESSORY ? 'removes' : 'takes off';
+    await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} ${verb} ${description}.`);
+    await removeWornHeroItem(object, state);
+}
+
+// C steal.c:maybe_absorb_item(). A mimic can take a carried or flying item.
+const ABSORB_ROCK_CLASS = 14;
+
+export async function maybeAbsorbItem(
+    monster: Monster, object: GameObject, state: GameState = game,
+    ordinaryChance = 50, artifactChance = 10,
+): Promise<void> {
+    if (object === state.uball || object === state.uchain || object.oclass === ABSORB_ROCK_CLASS
+        || objectResistsDestruction(object, 100 - ordinaryChance, 100 - artifactChance)
+        || !monsterCanTouchArtifact(monster, object, state)) return;
+
+    if (object.where === 'inventory') {
+        if (object.owornmask) await removeWornHeroItem(object, state);
+        if (state.program_state.gameover) return;
+        if (object.unpaid)
+            removeObjectAndContentsFromBill(object, state, { resident: currentShopResident(state) });
+        observeObjectForNaming(object, { state });
+        const name = ownedObjectName(object, state, { capitalized: false });
+        if (cansee(monster.mx, monster.my)) {
+            const subject = monsterName(monster, { capitalized: true, augmentIt: true, state });
+            await plineWithContinuation(`${subject} pulls ${name} away from you and absorbs ${object.quan > 1 ? 'them' : 'it'}!`);
+        } else {
+            const hand = heroHandName(state);
+            const hands = OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand;
+            const subject = name.charAt(0).toUpperCase() + name.slice(1);
+            await plineWithContinuation(`${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} pulled from your ${hands}!`);
+        }
+        await freeInventoryObject(object, state);
+        if (state.program_state.gameover) return;
+        await reportHeroEncumbrance(state);
+    } else if (canSpotMonster(monster)) {
+        observeObjectForNaming(object, { state });
+        const subject = monsterName(monster, { capitalized: true, state });
+        await plineWithContinuation(`${subject} absorbs ${ownedObjectName(object, state, { capitalized: false })}!`);
+    }
+    await addObjectToMonsterInventory(monster, object, state);
+}
+
+interface MonsterDropOptions {
+    verbosely?: boolean;
+    publish?: MessagePublisher;
+    random?: (limit: number) => number;
+}
+
+interface MonsterInventoryReleaseOptions extends Omit<MonsterDropOptions, 'verbosely'> {
+    isPet?: boolean;
+    show?: boolean;
+}
+
+// C steal.c:mdrop_obj().
+export async function dropMonsterObject(monster: Monster, object: GameObject, state: GameState = game, {
+    verbosely = false, publish = plineWithContinuation, random = rn2,
+}: MonsterDropOptions = {}): Promise<GameObject | null> {
+    requireLiveGame(state);
+    const level = requireGameLevel(state);
+    const x = monster.mx, y = monster.my;
+    const worn = object.owornmask ?? 0;
+    const name = await distantDropObjectName(object, state);
+    if (!await removeObjectFromMonsterInventory(monster, object, state, {
+        doExtrinsics: false, silently: true, publish,
+    })) return null;
+    if ((worn & W_SADDLE) && monster.mtame && !object.unpaid
+        && costlySpot(x, y, state)
+        && roomsAt(level, state.u.ux, state.u.uy, SHOPBASE)
+            .includes(level.at(x, y)?.roomno ?? 0)) {
+        object.no_charge = true;
+    }
+    if (verbosely && cansee(x, y))
+        await publish(`${monsterName(monster, { state, capitalized: true })} drops ${name}.`);
+    const landed = await landFloorObject(object, x, y, {
+        state, publish, random,
+    });
+    // Losing a saddle can kill its rider. Keep the dropped item in the world
+    // before dismounting, so a resulting bones file can include it.
+    if (!state.program_state?.gameover && monster.mhp > 0 && worn)
+        await updateMonsterEquipment(monster, object, false, state, {
+            silently: true, publish,
+        });
+    return landed;
+}
+
+async function distantDropObjectName(object: GameObject, state: GameState): Promise<string> {
+    observeDistantObjectForNaming(object, state);
+    return await inventoryItemDescription(inventoryItem(object));
+}
+
+// C steal.c:mdrop_special_objs().
+export async function dropSpecialMonsterObjects(monster: Monster, state: GameState = game, {
+    publish = plineWithContinuation, random = rn2,
+}: Omit<MonsterDropOptions, 'verbosely'> = {}): Promise<GameObject[]> {
+    requireLiveGame(state);
+    const questArtifact = artifactByName(state.urole?.artifactName);
+    const dropped: GameObject[] = [];
+    for (const object of [...(monster.minvent || monster.inventory || [])]) {
+        if (!objectResistsDestruction(object, 0, 0, random)
+            && !(questArtifact && object.oartifact === questArtifact.id)) continue;
+        if (monster.mx) {
+            const landed = await dropMonsterObject(monster, object, state, { publish, random });
+            if (landed) dropped.push(landed);
+        } else {
+            await removeObjectFromMonsterInventory(monster, object, state, {
+                silently: true, publish,
+            });
+            await relocateObjectRandomly(object, { state, publish, random });
+            if (object.where !== 'gone') dropped.push(object);
+        }
+    }
+    return dropped;
+}
+
+// C steal.c:relobj(). Pets keep their worn gear and useful tools.
+export async function releaseMonsterInventory(monster: Monster, state: GameState = game, {
+    isPet = false, show = true, publish = plineWithContinuation, random = rn2,
+}: MonsterInventoryReleaseOptions = {}): Promise<GameObject[]> {
+    requireLiveGame(state);
+    const gameWasOver = state.program_state.gameover;
+    const x = monster.mx, y = monster.my;
+    const inventory = () => monster.minvent || monster.inventory || [];
+    const gold = monster.isgd && inventory().find(object => object.otyp === GOLD_PIECE);
+    if (gold) {
+        if (canSpotMonster(monster)) {
+            const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
+            await publish(`${owner} gold ${canSeeMonster(monster)
+                ? 'vanishes' : 'seems to vanish'}.`);
+        }
+        unlinkMonsterObject(monster, gold);
+        await deleteObject(gold, state);
+    }
+    const dropped: GameObject[] = [];
+    for (let object; (object = isPet ? petDroppableObject(monster) : inventory()[0]);) {
+        const landed = await dropMonsterObject(monster, object, state, {
+            verbosely: isPet && state.flags?.verbose !== false, publish, random,
+        });
+        if (landed) dropped.push(landed);
+        if (!gameWasOver && state.program_state.gameover) return dropped;
+    }
+    if (show && cansee(x, y)) await newsym(x, y);
+    return dropped;
 }

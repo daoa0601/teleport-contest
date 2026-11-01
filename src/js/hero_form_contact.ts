@@ -6,7 +6,8 @@ import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import {
     MONSTER_FLAGS1, monsterHasHead, monsterIsMindless, monsterIsUnsolid,
 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { seductionCompatibility } from './seduction_compatibility.js';

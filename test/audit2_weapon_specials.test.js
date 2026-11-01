@@ -14,7 +14,7 @@ import { ensureHeroSkills, weaponSkillDamageBonus, weaponSkillHitBonus, } from '
 import { rollPhysicalWeaponDamage } from '../js/weapon_damage.js';
 import { weaponHitBonus } from '../js/weapon_accuracy.js';
 import { selectHandToHandWeapon, selectMonsterRangedWeapon, } from '../js/monster_weapon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';

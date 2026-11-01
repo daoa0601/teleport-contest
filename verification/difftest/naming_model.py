@@ -17,7 +17,7 @@ NAMING_LOCATIONS = [
     ('objnam.c:an()/the()', 'objnam.js:withIndefiniteArticle/definiteName'),
     ('objnam.c:xname_flags', 'objnam.js:objectName via objectCombatName'),
     ('objnam.c:doname_base', 'object_description.js:objectDescription'),
-    ('do_name.c:x_monnam', 'monster_name.js:monsterName'),
+    ('do_name.c:x_monnam', 'do_name.js:monsterName'),
 ]
 NAMING_BASE = len(TARGETS) + 6  # first naming target index (12)
 

@@ -8,7 +8,7 @@ import { PIT, SPIKED_PIT, TT_PIT } from '../js/const.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createSaddledSteed } from './support/monsters.js';

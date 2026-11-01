@@ -15,7 +15,7 @@ import { insideRoom } from './room.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';
 import { createToptenObject, mkgold, mkobj, mkobj_at, mksobj, mksobj_at, } from './mkobj.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterAtPosition } from './monster_location.js';
 import { objectWeight } from './weight.js';

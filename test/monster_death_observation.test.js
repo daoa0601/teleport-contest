@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';
 import { pushKeys } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

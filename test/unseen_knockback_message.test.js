@@ -4,7 +4,7 @@ import { NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { installPolymorphedHero } from './support/hero-state.js';

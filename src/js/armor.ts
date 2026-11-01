@@ -77,7 +77,7 @@ export interface ArmorErosionDescription {
 
 type ArmorBonusSource = Pick<GameObject, 'otyp'>
     & Partial<Pick<GameObject, 'spe' | 'enchantment' | 'oeroded' | 'oeroded2'>>;
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import {
     captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,

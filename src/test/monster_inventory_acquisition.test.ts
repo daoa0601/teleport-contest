@@ -22,9 +22,9 @@ import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { finishDeferredMonsterMiscItem } from '../js/muse.js';
 import { commitPetPickup } from '../js/dogmove.js';
-import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory,
-} from '../js/monster_inventory.js';
+import { linkObjectToMonsterInventory } from '../js/mkobj.js';
+import { removeObjectFromMonsterInventory } from '../js/monworn.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE,
     GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS,

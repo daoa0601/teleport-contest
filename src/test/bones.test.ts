@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    artifactByName, initializeArtifacts, nameArtifact,
-} from '../js/artifacts.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import {
     CORR, FOUNTAIN, G_EXTINCT, HOLE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, SHOPBASE, STONE,
 } from '../js/const.js';
@@ -20,11 +18,11 @@ import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { beginMonsterMove } from '../js/monmove.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
-import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import {
-    AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR,
-    FOOD_RATION, POT_HEALING, ROCK, STATUE, TRIPE_RATION,
+    AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR, FOOD_RATION, POT_HEALING, ROCK, STATUE,
+    TRIPE_RATION,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';

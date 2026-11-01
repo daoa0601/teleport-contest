@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { useMonsterOffensiveItem } from '../js/muse.js';
 import { WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

@@ -17,7 +17,7 @@ import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { deleteObject } from './object_delete.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { possessiveName } from './monster_name.js';
+import { possessiveName } from './hacklib.js';
 import { tinDetails } from './tin.js';
 import { isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';

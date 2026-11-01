@@ -30,7 +30,7 @@ import {
     requireMonsterData,
 } from './monster_data.js';
 import { paranoidQuery } from './query.js';
-import { monsterName, monsterLeashName } from './monster_name.js';
+import { monsterName, monsterLeashName } from './do_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { wakeAttackedMonster } from './mon.js';
 

@@ -21,7 +21,7 @@ import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';

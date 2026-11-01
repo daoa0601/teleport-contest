@@ -19,7 +19,9 @@ import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_
 import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_SUBTYPE, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { objectIsHardHelmet, dragonFormForArmor } from './armor.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport_rules.js';
-import { monsterName, monsterObjectPronoun, monsterReflexiveAction, monsterSubjectPronoun, possessiveName, } from './monster_name.js';
+import { monsterName, monsterReflexiveAction } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterObjectPronoun, monsterSubjectPronoun } from './mondata.js';
 import { dist2, distmin, depth, ledgerNo } from './hacklib.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displayColorName, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, randomDisplayMonsterName, shieldeff, show_glyph_cell, transientMonsterGlyph, } from './display.js';
@@ -46,7 +48,9 @@ import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } fro
 import { heroHandName } from './body_parts.js';
 import { placeObjectSynchronously, sweepFloorPile } from './floor_object.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { addObjectToMonsterInventory, destroyObjectFromMonsterInventory, forgetObjectKnowledge, } from './monster_inventory.js';
+import { forgetObjectKnowledge } from './mkobj.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun, } from './objnam.js';
 import { ceilingName, surfaceName } from './terrain_name.js';

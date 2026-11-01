@@ -9,7 +9,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { addObjectToContainer } from './object_container.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';

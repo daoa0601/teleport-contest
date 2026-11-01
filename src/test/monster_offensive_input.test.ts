@@ -6,8 +6,8 @@ import {
 } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { setMonsterGivenName } from '../js/do_name.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { WAN_STRIKING } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';

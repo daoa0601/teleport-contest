@@ -7,7 +7,7 @@ import { heroLegName } from './body_parts.js';
 import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB } from './const.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { promptYesNo } from './query.js';

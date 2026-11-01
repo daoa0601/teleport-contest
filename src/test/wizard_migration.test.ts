@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 import { AMULET_OF_YENDOR, DAGGER } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { knownObject } from './support/game-objects.js';
 
 void test('#migratemons stops reading the count at the first nonnumeric character', async () => {

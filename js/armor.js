@@ -37,7 +37,7 @@ import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
 import { A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';

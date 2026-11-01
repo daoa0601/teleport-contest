@@ -31,7 +31,7 @@ import {
     monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks,
 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
 import { objectMaterial } from './object_material.js';

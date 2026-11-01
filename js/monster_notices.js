@@ -10,7 +10,7 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { impossible } from './diagnostics.js';
 // C include/monflag.h: M1_HIDE (is_hider) and M2_PNAME (type_is_pname).
 const M1_HIDE = 0x100;

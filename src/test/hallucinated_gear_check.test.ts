@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { checkMonsterGearNextTurn, initializeMonsterArmor, reassessMonsterArmor } from '../js/monworn.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

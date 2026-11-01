@@ -44,7 +44,7 @@ import { clearAreaCells, vision_note_blocker_change } from './vision.js';
 import { recordDiscoveredRoom, recordMappedOverviewState } from './dungeon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap_name.js';

@@ -16,7 +16,7 @@ import { makePlural } from './object_grammar.js';
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';

@@ -13,7 +13,7 @@ import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { probeMonster } from './magic_probe.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import { cancelMonster } from './zap.js';
 import { monsterResistsEffect } from './zap.js';

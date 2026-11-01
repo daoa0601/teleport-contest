@@ -13,7 +13,7 @@ import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS, AT_ENGL, } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, OIL_LAMP } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

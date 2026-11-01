@@ -9,7 +9,7 @@ import { heroSpecies } from './hero_species.js';
 import { inventoryItemDescription } from './invent.js';
 import { lightWieldedArtifact } from './light.js';
 import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
-import { shopkeeperName } from './monster_name.js';
+import { shopkeeperName } from './shknam.js';
 import { AKLYS, BATTLE_AXE, CORPSE, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { corpseName, killerObjectName, objectCombatName, observeObjectForNaming } from './objnam.js';

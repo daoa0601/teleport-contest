@@ -126,7 +126,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { dissolveBars } from './projectile_bars.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
 import { delobj } from './object_delete.js';
 import {
     vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero,
@@ -185,10 +185,10 @@ import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import {
-    monsterName as canonicalMonsterName, monsterPossessive, shopkeeperName, monsterName, possessiveName,
-    visibleMonsterSubject,
-} from './monster_name.js';
+import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterPossessive } from './mondata.js';
+import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import {

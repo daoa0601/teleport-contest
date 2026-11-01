@@ -22,7 +22,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { SPE_CONE_OF_COLD, SPE_MAGIC_MISSILE } from './object_data.js';
 import { walkPathCells } from './path_walk.js';
 import { paintRayCell } from './ray.js';

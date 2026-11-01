@@ -19,7 +19,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
-import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterName as canonicalMonsterName } from './do_name.js';
 
 interface TrapVisibility {
     trap: Trap;

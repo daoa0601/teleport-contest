@@ -7,7 +7,7 @@ import { placeObject } from './floor_object.js';
 import { game } from './gstate.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { monsterTypeName } from './monster_data.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { deleteObject } from './object_delete.js';

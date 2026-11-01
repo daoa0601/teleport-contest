@@ -48,7 +48,7 @@ const changes = {
     naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
     naming_doname: ['object_description.js', "if (object.greased)\n        prefix.push('greased');",
         "if (object.greased)\n        prefix.push('sleazy');"],
-    naming_monnam: ['monster_name.js', "if (invisible)\n        adjectives += 'invisible ';",
+    naming_monnam: ['do_name.js', "if (invisible)\n        adjectives += 'invisible ';",
         "if (invisible)\n        adjectives += 'unseen ';"],
     naming_string_draw: ['object_grammar.js', 'export function makePlural(value) {',
         "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],

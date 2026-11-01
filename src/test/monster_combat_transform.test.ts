@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { AD_POLY, AD_SLIM, AD_TLPT, AT_TUCH } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, SCR_FIRE, WAN_FIRE } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';

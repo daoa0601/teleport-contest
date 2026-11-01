@@ -13,7 +13,7 @@ import { gotoLevel } from '../js/level_change.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { monstersInFmonOrder } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR, CARROT, GOLD_PIECE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

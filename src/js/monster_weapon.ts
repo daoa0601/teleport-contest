@@ -26,9 +26,10 @@ import {
     MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,
 } from './monster_data.js';
 import { monsterCanTouchObject } from './monster_carry.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
-import { monsterName, monsterPossessive as perceivedPossessivePronoun } from './monster_name.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { unlinkMonsterObject } from './mkobj.js';
+import { monsterName } from './do_name.js';
+import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
+import { monsterSentenceSubject } from './ambient_sounds.js';
 import {
     AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE,
     CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,

@@ -3,7 +3,7 @@
 import { game, requireGameLevel } from './gstate.js';
 import { canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
 import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL, isok, } from './const.js';

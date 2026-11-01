@@ -16,7 +16,7 @@ import {
 import type { FinishHeroDeathOptions, KillerFormat } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { paranoidQuery } from './query.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

@@ -3,7 +3,7 @@ import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/monster_sound.js';
+import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/ambient_sounds.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('night uses the local hour after the recorder inherits summer daylight saving', context => {

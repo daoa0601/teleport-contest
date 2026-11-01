@@ -28,7 +28,7 @@ import {
     monsterHatesSilver, monsterIsShade, monsterIsUnsolid, requireMonsterData,
 } from './monster_data.js';
 import { tryUnarmedStagger } from './monster_hurtle.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, YA, YUMI } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';

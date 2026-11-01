@@ -17,7 +17,7 @@ import {
 import type { DamageType } from '../js/monster_attack_types.js';
 import type { AttackTuple } from '../js/monster_action_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, OIL_LAMP } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

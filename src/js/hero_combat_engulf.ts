@@ -1,16 +1,15 @@
 // Hero-versus-monster engulfing and delayed digestion.
 // C uhitm.c:gulpum()/start_engulf()/end_engulf(), eat.c:Finish_digestion().
 import {
-    A_CON, DIED, DOOR, D_CLOSED, D_LOCKED, G_NOCORPSE, IRONBARS,
-    IS_OBSTRUCTED, IS_TREE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS,
+    A_CON, DIED, DOOR, D_CLOSED, D_LOCKED, G_NOCORPSE, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_DEF_DIED,
+    M_ATTK_HIT, M_ATTK_MISS,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroStomachName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { applyCorpsePostEffects } from './corpse_eating.js';
 import {
-    canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell,
-    transientMonsterGlyph,
+    canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell, transientMonsterGlyph,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -22,18 +21,16 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { updateHeroHunger } from './hunger.js';
 import { applyMonsterGolemEffects, changeMonsterForm, resolveMonsterCorpseChance } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';
 import {
-    AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
-} from './monster_attack_types.js';
-import {
-    MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE,
-    monsterDigests, monsterEnfolds, monsterIsAnimal, monsterIsRider,
-    monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData,
+    MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds,
+    monsterIsAnimal, monsterIsRider, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData,
 } from './monster_data.js';
 import { drainMonsterEnergy } from './mhitm.js';
-import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
-import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
-import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
+import { snuffMonsterInventoryLights } from './light.js';
+import { monsterName, namelessMonsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroIsUnchanging } from './polyself.js';
 import { d, rn2 } from './rng.js';
@@ -45,7 +42,9 @@ import type { MessagePublisher } from './pline.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
+import {
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
+} from './mondata.js';
 
 interface HeroCombatEngulfOptions {
     state?: GameState;

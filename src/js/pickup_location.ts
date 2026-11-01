@@ -12,7 +12,8 @@ import { game } from './gstate.js';
 import {
     MONSTER_SYMBOL, monsterDigests,
 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import {
     heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm,
 } from './polyself.js';

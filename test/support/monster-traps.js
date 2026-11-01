@@ -1,4 +1,4 @@
-import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../../js/steal.js';
 import { addTrap } from './level-state.js';
 import { createMonsterAt, equipMonsterObject } from './monsters.js';
 import { freshObjectRoom } from './object-room.js';

@@ -4,7 +4,7 @@ import { NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { GOLD_PIECE } from '../js/object_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

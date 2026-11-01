@@ -2,10 +2,11 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsMindFlayer,
-    monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly,
-    monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE,
+    MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid,
+    monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
+    monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS,
+    monsterIsVampireShifter,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
@@ -18,8 +19,9 @@ import {
     M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON,
     M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP,
 } from './const.js';
-import { game } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
+import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import type { ArtifactDefense } from './data_types.js';
 import type { GameState } from './game_state.js';
@@ -28,6 +30,8 @@ import type { PropertyName } from './property_types.js';
 import { roles } from './roles.js';
 import { makeSingular } from './object_grammar.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
+import { canSpotMonster } from './display.js';
+import { heroIsHallucinating } from './senses.js';
 
 import type { GameObject } from './object_types.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
@@ -676,4 +680,48 @@ export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boo
     return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
         && monster.mnum !== PM_STONE_GOLEM_POLY
         && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
+}
+
+interface PronounOptions {
+    state?: GameState;
+    random?: (limit: number) => number;
+    noIt?: boolean;
+}
+
+type PronounGender = 0 | 1 | 2 | 3;
+const POSSESSIVE_PRONOUNS: readonly [string, string, string, string] = ['his', 'her', 'its', 'their'];
+const SUBJECT_PRONOUNS: readonly [string, string, string, string] = ['he', 'she', 'it', 'they'];
+const OBJECT_PRONOUNS: readonly [string, string, string, string] = ['him', 'her', 'it', 'them'];
+const PRONOUN_G_UNIQ = 0x1000;
+const PRONOUN_M2_NEUTER = 0x00040000;
+const PRONOUN_M2_PNAME = 0x00080000;
+
+// C mondata.c:pronoun_gender(), the mhis()/mhim() macros in include/you.h.
+// Hallucination precedes visibility and sex and uses the core RNG.
+export function monsterPossessive(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): string {
+    return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
+}
+
+export function monsterSubjectPronoun(monster: Monster, { state = game, noIt = false }: Pick<PronounOptions, 'state' | 'noIt'> = {}): string {
+    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
+}
+
+// The same perceived gender, in the object case.
+export function monsterObjectPronoun(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): string {
+    return OBJECT_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
+}
+
+export function monsterPronounGender(monster: Monster, { state = game, random = rn2, noIt = false }: PronounOptions = {}): PronounGender {
+    requireLiveGame(state);
+    if (heroIsHallucinating(state)) {
+        const gender = random(4);
+        if (gender === 0 || gender === 1 || gender === 2 || gender === 3) return gender;
+        throw new RangeError(`Invalid hallucinated pronoun gender: ${gender}`);
+    }
+    if ((!noIt && !canSpotMonster(monster)) || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_NEUTER))
+        return 2;
+    return monsterIsHumanoid(monster.mnum)
+        || ((MONSTER_GENO[monster.mnum] ?? 0) & PRONOUN_G_UNIQ)
+        || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_PNAME)
+        ? monster.female ? 1 : 0 : 2;
 }

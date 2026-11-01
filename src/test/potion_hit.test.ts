@@ -17,8 +17,8 @@ import {
 import {
     applySupportedPotionVapor, hitMonsterWithSupportedPotion,
 } from '../js/potion_hit.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { parseNethackrc } from '../js/options.js';
 import { initRng } from '../js/rng.js';

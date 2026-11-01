@@ -3,7 +3,7 @@
 // mkveggy_at, shkinit and stock_room. Room and shop selection live in
 // mkroom.ts (mkroom.c mkshop); shopkeeper runtime behavior lives in shk.ts.
 
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
     CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN,
@@ -11,11 +11,14 @@ import {
     SDOOR, SHOPBASE,
 } from './const.js';
 import { convertSecretDoor } from './detect.js';
-import { SHOP_TYPES } from './shop_data.js';
+import { RANDOM_SHOP_TYPES, SHOP_TYPES } from './shop_data.js';
 import { specialLevelAt } from './dungeon.js';
 import { roomsAt } from './room.js';
 import { insideShopRoomAt } from './shk.js';
 import { newsym } from './display.js';
+import { heroIsHallucinating } from './senses.js';
+import { formatMonsterName } from './do_name.js';
+import type { MonsterNameOptions } from './do_name.js';
 import { makeEngravingAt } from './engrave.js';
 import { makemon, mkclass } from './makemon.js';
 import { depth as depth_of_level, ledgerNo } from './hacklib.js';
@@ -27,9 +30,8 @@ import { mksobj, mksobj_at, mkobj_at } from './mkobj.js';
 import { objectMaterial } from './object_material.js';
 import { setTinVariety } from './tin.js';
 import { objectWeight } from './weight.js';
-import {
-    addObjectToMonsterInventory, linkObjectToMonsterInventory,
-} from './monster_inventory.js';
+import { linkObjectToMonsterInventory } from './mkobj.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './monster_location.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -143,6 +145,28 @@ function assignShopkeeperIdentity(monster: Monster, shopIndex: number): void {
     }
     if (selected === undefined) throw new Error('Shopkeeper name selection did not choose a name.');
     shopkeeper.shknam = selected.slice(0, PL_NSIZ - 1);
+}
+
+// C shknam.c:shkname()/Shknam(). The scratch monster name consumes display
+// RNG before the hallucinated shop type and name consume the core stream.
+export function shopkeeperName(
+    monster: Monster,
+    { state = game, capitalized = false }: Pick<MonsterNameOptions, 'state' | 'capitalized'> = {},
+): string {
+    requireLiveGame(state);
+    formatMonsterName(monster, state, {
+        article: 'your', suppressIt: true, suppressShopkeeper: true,
+    });
+    let raw = monster.eshk?.shknam || monster.name || 'shopkeeper';
+    if (heroIsHallucinating(state) && !state.program_state?.gameover) {
+        const shop = RANDOM_SHOP_TYPES[rn2(RANDOM_SHOP_TYPES.length)];
+        if (!shop) throw new RangeError('Shop-name selection is outside the shop table.');
+        const name = shop.names[rn2(shop.names.length)];
+        if (name === undefined) throw new RangeError('Shopkeeper name selection is outside its name table.');
+        raw = name;
+    }
+    const name = /^[^A-Za-z]/.test(raw) ? raw.slice(1) : raw;
+    return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
 export function getShopItem(shopIndex: number): number {

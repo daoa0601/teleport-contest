@@ -9,7 +9,7 @@ import { createMonsterAt } from '../../test/support/monsters.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from '../../js/object_grammar.js';
 import { objectCombatName, objectAction, definiteName, observeObjectForNaming } from '../../js/objnam.js';
 import { objectDescription } from '../../js/object_description.js';
-import { monsterName, namelessMonsterName } from '../../js/monster_name.js';
+import { monsterName, namelessMonsterName } from '../../js/do_name.js';
 import { oinit } from '../../js/mklev.js';
 import { W_SADDLE, MM_ANGRY, NO_MINVENT } from '../../js/const.js';
 

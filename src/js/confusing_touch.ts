@@ -7,7 +7,7 @@ import { canSeeMonster, displayColorName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { makePlural } from './object_grammar.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';

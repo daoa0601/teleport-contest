@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { browseDetectionMap, clearDetectionMap, mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/magic_map_display.js';
 import { displaceMonster } from '../js/mhitm.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/mon.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { CHEST, POT_WATER } from '../js/object_data.js';

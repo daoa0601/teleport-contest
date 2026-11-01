@@ -1,7 +1,7 @@
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { requirePlayingGame } from './gstate.js';
+import { requirePlayingGame, game } from './gstate.js';
 // Point-target effects of immediate wands and spells, including broken wands.
 // C ref: zap.c bhitm(). Direction and range belong to the caller.
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, W_SADDLE } from './const.js';
@@ -12,7 +12,6 @@ import { abusePet } from './dog.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';
 import { hitMonsterWithForce } from './force_bolt.js';
-import { game } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { releaseHold, releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -24,21 +23,21 @@ import { revealMimicIdentity } from './mimic.js';
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless,
-    monsterIsUndead, monsterIsVampireShifter,
+    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless, monsterIsUndead,
+    monsterIsVampireShifter,
 } from './monster_data.js';
 import { hurtleMonster } from './monster_hurtle.js';
-import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { teleportMonsterByHero } from './teleport.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { setMimicAppearance, monsterHitPointsPerLevel } from './makemon.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import {
-    BOULDER, CHEST, FIGURINE, LARGE_BOX, OBJECT_COLOR, OBJECT_NAMES, POT_POLYMORPH,
-    SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER,
-    SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, STATUE, WAN_CANCELLATION,
-    WAN_LIGHT, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SLOW_MONSTER,
-    WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
+    BOULDER, CHEST, FIGURINE, LARGE_BOX, OBJECT_COLOR, OBJECT_NAMES, POT_POLYMORPH, SPE_EXTRA_HEALING,
+    SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY,
+    SPE_TURN_UNDEAD, STATUE, WAN_CANCELLATION, WAN_LIGHT, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP,
+    WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectName, simpleObjectTypeName } from './objnam.js';
@@ -52,13 +51,11 @@ import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic
 import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
 import { learnWand } from './wand_charge.js';
-import { cancelMonster } from './zap.js';
+import {
+    cancelMonster, makeMonsterInvisible, polymorphMonsterFromMagic, monsterResistsEffect, affectMonsterSpeed,
+} from './zap.js';
 import { finishMonsterEating } from './dogmove.js';
-import { makeMonsterInvisible } from './zap.js';
-import { polymorphMonsterFromMagic } from './zap.js';
 import { monsterHasDrainResistance } from './mondata.js';
-import { monsterResistsEffect } from './zap.js';
-import { affectMonsterSpeed } from './zap.js';
 
 const WAN_OPENING = OBJECT_NAMES.indexOf('opening');
 const WAN_LOCKING = OBJECT_NAMES.indexOf('locking');

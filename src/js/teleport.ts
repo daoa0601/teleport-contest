@@ -24,7 +24,7 @@ import { announceInvocationSquare } from './invocation.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './monster_notices.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
-import { leashAttachedToMonster, releaseMonsterLeash } from './monster_leash.js';
+import { leashAttachedToMonster, releaseMonsterLeash } from './leash_apply.js';
 import { rn2, rnd } from './rng.js';
 import {
     GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR,
@@ -48,7 +48,7 @@ import { findObjectOwner, onBillEntry, stolenValue } from './shop_loss.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import {
     findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted,
@@ -75,7 +75,7 @@ import type { Position, Rectangle, Trap } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from './monster_action_types.js';
-import { publishMonsterYelp } from './monster_sound.js';
+import { publishMonsterYelp } from './ambient_sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 

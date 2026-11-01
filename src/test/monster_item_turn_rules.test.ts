@@ -5,7 +5,7 @@ import { LEVEL_TELEP, MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_WEP } from '.
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { lootMonsterContainer, useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import { addObjectToContainer } from '../js/object_container.js';

@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { AD_MAGM, AD_SPC2 } from './monster_attack_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { d, rn2, rnd } from './rng.js';
 import { displayRayName } from './ray_name.js';

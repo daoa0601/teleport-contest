@@ -12,7 +12,7 @@ import { runClaimedObjectBurnTimer } from './light.js';
 import {
     finishBuriedZombieTimer, runClaimedObjectRotTimer,
 } from './mklev.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND } from './object_timers.js';
 import type { DueObjectTimer } from './object_timers.js';
 import type { CorpseRevivalTimerEvent } from './corpse_revival.js';

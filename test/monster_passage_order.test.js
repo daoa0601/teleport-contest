@@ -6,7 +6,7 @@ import { DOOR, D_ISOPEN, D_LOCKED, IRONBARS, MMOVE_DONE, MM_NOGRP, NO_MINVENT, W
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, SKELETON_KEY } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';

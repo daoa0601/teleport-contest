@@ -19,7 +19,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';
 import { nameToMonster } from '../js/mondata.js';
-import { removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
+import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { NO_MINVENT } from '../js/const.js';
 import { initRng } from '../js/rng.js';

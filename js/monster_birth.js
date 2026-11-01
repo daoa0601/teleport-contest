@@ -7,7 +7,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { interruptOccupationForMonster } from './monmove.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';
 import { monsterEmitsLight } from './vision.js';

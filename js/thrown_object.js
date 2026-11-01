@@ -6,7 +6,7 @@ import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js'
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { artifactById } from './artifacts.js';
 import { heroMoveBlockedBetween } from './hack.js';
 import { dropBall } from './ball.js';
@@ -21,7 +21,7 @@ import { costlySpot } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';

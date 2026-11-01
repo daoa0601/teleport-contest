@@ -28,7 +28,7 @@ import { placeObject, stack_object } from './floor_object.js';
 import { containerImpactDamage } from './container_impact.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { dropBall } from './ball.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { deleteObject } from './object_delete.js';
 import { stolenValue } from './shop_loss.js';
 import { sellHeroDroppedObject } from './shop_sell.js';

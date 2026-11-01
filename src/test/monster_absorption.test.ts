@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maybeAbsorbItem } from '../js/monster_item_absorption.js';
+import { maybeAbsorbItem } from '../js/steal.js';
 import { BOULDER, DAGGER, TWO_HANDED_SWORD } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';

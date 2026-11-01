@@ -7,8 +7,8 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makemonAt } from './makemon.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { setMonsterGivenName } from './monster_given_name.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { setMonsterGivenName } from './do_name.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES,

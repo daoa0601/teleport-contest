@@ -43,7 +43,7 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { setHeroTrap } from './hero_traps.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';

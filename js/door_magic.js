@@ -9,7 +9,8 @@ import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.
 import { plineWithContinuation } from './pline.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroIsDeaf } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';

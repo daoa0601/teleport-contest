@@ -26,12 +26,11 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './monster_location.js';
-import {
-    monsterName, monsterPossessive, monsterReflexiveAction, monsterSubjectPronoun,
-    possessiveName,
-} from './monster_name.js';
+import { monsterName, monsterReflexiveAction } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { learnObjectType } from './object_knowledge.js';
 import { minimalObjectName } from './objnam.js';

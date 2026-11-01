@@ -9,7 +9,7 @@ import { finishGlobTimer, runClaimedGlobTimer } from './glob.js';
 import { meltIce } from './ice.js';
 import { runClaimedObjectBurnTimer } from './light.js';
 import { finishBuriedZombieTimer, runClaimedObjectRotTimer, } from './mklev.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND } from './object_timers.js';
 import { cansee } from './vision.js';
 // C timeout.c:run_timers().

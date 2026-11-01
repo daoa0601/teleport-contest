@@ -1,7 +1,7 @@
 // Monster state saved in bones levels.
 // C refs: bones.c:savebones()/getbones().
 
-import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterGivenName } from './do_name.js';
 import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NOMSG } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';

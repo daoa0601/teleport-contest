@@ -30,7 +30,7 @@ import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');

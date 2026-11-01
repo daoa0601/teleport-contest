@@ -22,8 +22,8 @@ import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
-import { monsterName } from './monster_name.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { monsterName } from './do_name.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import {
     HELM_OF_OPPOSITE_ALIGNMENT, LONG_SWORD, MAGIC_MARKER, getObjectClassBounds,
     OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, SPE_BLANK_PAPER,

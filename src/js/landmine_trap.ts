@@ -23,7 +23,7 @@ import { rn2, rnd } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
-import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { monsterName as canonicalMonsterName } from './do_name.js';
 
 export interface MonsterLandMineEvent {
     kind: 'land-mine';

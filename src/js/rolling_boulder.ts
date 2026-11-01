@@ -4,9 +4,8 @@ import { seeTrap } from './trap.js';
 import { heroHasCarriedArtifactFlag } from './artifacts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import {
-    DOOR, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_STWALL,
-    IS_TREE, LANDMINE, LEVEL_TELEP, M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP,
-    is_hole, is_pit, isok,
+    DOOR, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LANDMINE, LEVEL_TELEP,
+    M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP, is_hole, is_pit, isok,
 } from './const.js';
 import { canSpotMonster, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -26,9 +25,10 @@ import { randomTeleportDepth } from './level_teleport.js';
 import type { Position } from './map_types.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName, monsterObjectPronoun } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { monsterObjectPronoun } from './mondata.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import type { Monster } from './monster_types.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';

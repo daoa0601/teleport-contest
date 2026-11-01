@@ -19,7 +19,7 @@ import {
     redisplayDetectionMap, unconstrainMap,
 } from './magic_map_display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { GOLD_PIECE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { objectClassForType, OBJECT_CLASS_NAMES, observeObject, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';

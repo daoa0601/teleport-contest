@@ -1,5 +1,5 @@
 import { monsterAtPosition } from '../js/monster_location.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_DEX, STONE, WEB, W_ARM, W_ARMC, W_SADDLE, W_WEP, } from '../js/const.js';

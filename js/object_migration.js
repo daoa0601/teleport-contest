@@ -15,7 +15,7 @@ import { maybeResetPick } from './lock_context.js';
 import { unlinkObject } from './object_location.js';
 import { maybeUnhideAt, angerWatchGuards } from './mon.js';
 import { hotPursuitShopkeeper } from './shop_damage.js';
-import { shopkeeperName } from './monster_name.js';
+import { shopkeeperName } from './shknam.js';
 import { corpseName, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { currency } from './currency.js';
 import { costlySpot, objectIsUnpaid } from './shk.js';

@@ -30,10 +30,9 @@ import {
     senseWithTelepathy,
 } from './display.js';
 import { cansee } from './vision.js';
-import {
-    monsterName, monsterName as canonicalMonsterName, monsterObjectPronoun,
-    monsterSubjectPronoun, possessiveName, visibleMonsterSubject,
-} from './monster_name.js';
+import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
+import { possessiveName } from './hacklib.js';
+import { monsterObjectPronoun, monsterSubjectPronoun } from './mondata.js';
 import { monsterMissMessage } from './monster_miss.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL,
@@ -141,7 +140,7 @@ import {
 } from './weapon_damage.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { CORPSE, OBJECT_NAMES } from './object_data.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterSentenceSubject } from './ambient_sounds.js';
 import {
     applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies,
 } from './stoning.js';
@@ -173,7 +172,8 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { inventoryItemDescription } from './invent.js';
-import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
+import { linkObjectToMonsterInventory } from './mkobj.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { unlinkObject } from './object_location.js';
 import { promptYesNo } from './query.js';

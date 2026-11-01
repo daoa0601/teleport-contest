@@ -17,7 +17,7 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { unlinkMonsterObject } from './mkobj.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
 } from './object_timers.js';
@@ -28,7 +28,7 @@ import type { GameObject, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './object_timers.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { objectCombatName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';

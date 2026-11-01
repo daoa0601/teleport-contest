@@ -4,8 +4,7 @@ import { performMonsterTurn } from '../js/monmove.js';
 import { farlookLocationDescription } from '../js/pager_description.js';
 import { CORR, IRONBARS, MM_ANGRY, MM_NOGRP, NO_MINVENT, TER_OBJ } from '../js/const.js';
 import {
-    glyphAt, map_object, newsym, randomDisplayMonsterName,
-    transientMonsterGlyph, transientObjectGlyph,
+    glyphAt, map_object, newsym, randomDisplayMonsterName, transientMonsterGlyph, transientObjectGlyph,
 } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -14,7 +13,7 @@ import {
 } from '../js/magic_map_display.js';
 import { displaceMonster } from '../js/mhitm.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/mon.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { CHEST, POT_WATER } from '../js/object_data.js';

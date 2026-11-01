@@ -10,8 +10,9 @@ import {
     monsterIsShade, monsterIsWhirly,
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { destroyObjectFromMonsterInventory } from './monworn.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon } from './monster_weapon.js';
 import { BOOMERANG, KATANA, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';

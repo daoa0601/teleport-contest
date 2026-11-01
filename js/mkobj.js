@@ -14,12 +14,12 @@ import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
 import { In_quest, Is_rogue_level, isok, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, } from './const.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, } from './object_data.js';
+import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { forgetTempleEntry } from './priest.js';
 import { copyPetData, copyShopkeeperData } from './mon.js';
-import { artifactExistCount, createRandomArtifact } from './artifacts.js';
+import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, } from './object_timers.js';
 import { objectWeight } from './weight.js';
 import { curseObjectState } from './object_state.js';
@@ -32,6 +32,11 @@ import { rndClass } from './objnam.js';
 import { undeadToCorpse } from './mon.js';
 import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './object_inscription.js';
+import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
+import { assertCreatedObject } from './object_release.js';
+import { deleteObject } from './object_delete.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
+import { plineWithContinuation } from './pline.js';
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -776,5 +781,118 @@ export function saveMonsterTraits(monster) {
     if (monster.epri)
         saved.epri = { ...monster.epri };
     return saved;
+}
+// C mkobj.c:clear_dknown().
+const DESCRIPTION_UNKNOWN_CLASSES = new Set([
+    2, // WEAPON_CLASS
+    4, // RING_CLASS
+    6, // TOOL_CLASS
+    8, // POTION_CLASS
+    9, // SCROLL_CLASS
+    10, // SPBOOK_CLASS
+    11, // WAND_CLASS
+    13, // GEM_CLASS
+    17, // VENOM_CLASS
+]);
+// C mkobj.c:clear_dknown().
+export function clearDescriptionKnowledge(object) {
+    const isGlob = object.otyp >= GLOB_OF_GRAY_OOZE
+        && object.otyp <= GLOB_OF_BLACK_PUDDING;
+    const descriptionNeedsObservation = DESCRIPTION_UNKNOWN_CLASSES.has(object.oclass)
+        || (object.otyp >= ELVEN_SHIELD && object.otyp <= ORCISH_SHIELD)
+        || object.otyp === SHIELD_OF_REFLECTION
+        || !!OBJECT_MERGE[object.otyp];
+    object.dknown = isGlob || !descriptionNeedsObservation;
+}
+// C mkobj.c:unknow_object().
+export function forgetObjectKnowledge(object) {
+    clearDescriptionKnowledge(object);
+    object.bknown = false;
+    delete object.buc;
+    object.rknown = false;
+    object.cknown = false;
+    object.lknown = false;
+    object.tknown = false;
+    object.known = !OBJECT_USES_KNOWN[object.otyp];
+}
+// C mkobj.c:add_to_minv(). Acquisition effects belong to mpickobj, not raw
+// linkage.
+function linkMonsterObject(monster, object, inventory, atFront) {
+    if (atFront)
+        inventory.unshift(object);
+    else
+        inventory.push(object);
+    monster.minvent = monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
+    object.where = 'minvent';
+    object.ocarry = monster;
+    // C add_to_minv leaves the former floor coordinates unchanged.
+    object.carrierMid = monster.m_id ?? null;
+    return object;
+}
+export async function linkObjectToMonsterInventory(monster, object, { atFront = true, state = game } = {}) {
+    requireLiveGame(state);
+    if (!monster || !object)
+        return null;
+    if (object.where !== 'free')
+        throw new Error('add_to_minv requires a free object');
+    const inventory = monster.minvent || monster.inventory || [];
+    const existing = inventory.find(candidate => mergable(candidate, object, state));
+    return existing ? await mergeObjectStacks(existing, object, state)
+        : linkMonsterObject(monster, object, inventory, atFront);
+}
+export async function linkCreatedObjectToMonsterInventory(monster, object, { atFront = true, state = game } = {}) {
+    assertCreatedObject(object, state);
+    const inventory = monster.minvent || monster.inventory || [];
+    const existing = inventory.find(candidate => mergable(candidate, object, state));
+    return existing ? await mergeCreatedObjectStacks(existing, object, state)
+        : linkMonsterObject(monster, object, inventory, atFront);
+}
+// C mkobj.c:obj_extract_self(): only unlink the object. Worn items must go
+// through removeObjectFromMonsterInventory() to update the monster and its
+// equipment.
+export function unlinkMonsterObject(monster, object) {
+    if (!monster || !object)
+        return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    const index = inventory.indexOf(object);
+    if (index < 0)
+        return false;
+    inventory.splice(index, 1);
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
+    object.ocarry = null;
+    delete object.carrierMid;
+    object.where = 'free';
+    return true;
+}
+// C mon.c:replmon()/restore.c:restmonchn(): ownership follows the current
+// actor instance, including while that actor has left the map but still
+// carries its drops.
+export function restoreMonsterInventoryOwnership(monster) {
+    for (const object of monster.minvent || monster.inventory || []) {
+        object.ocarry = monster;
+        object.carrierMid = monster.m_id;
+    }
+}
+// C mkobj.c:discard_minvent().
+export async function discardMonsterInventory(monster, uncreateArtifacts, state = game, { publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    const discarded = [];
+    for (;;) {
+        const object = (monster.minvent || monster.inventory || [])[0];
+        if (!object)
+            break;
+        if (!await removeObjectFromMonsterInventory(monster, object, state, {
+            silently: true, publish,
+        }))
+            return discarded;
+        if (uncreateArtifacts && object.oartifact)
+            uncreateArtifact(object, state);
+        await deleteObject(object, state);
+        discarded.push(object);
+    }
+    return discarded;
 }
 //# sourceMappingURL=mkobj.js.map

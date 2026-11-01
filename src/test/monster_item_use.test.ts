@@ -7,7 +7,7 @@ import { canSeeMonster, glyphAt } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     checkMonsterWandBackfire, presentMonsterHornUse,
     presentMonsterScrollRead, presentMonsterWandUse,

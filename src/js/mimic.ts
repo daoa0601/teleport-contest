@@ -15,7 +15,7 @@ import type { MessagePublisher } from './pline.js';
 import { objectAtMonsterDescription } from './monster_birth.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind } from './senses.js';
 import { wakeMonster } from './mon.js';

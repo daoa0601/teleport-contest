@@ -10,7 +10,7 @@ import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW } from '../js/monster_attack_types.js';
 import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, } from '../js/mhitm.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { hideMonsterUnder } from '../js/mon.js';
 import { APPLE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

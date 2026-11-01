@@ -24,7 +24,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
-import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterGivenName } from './do_name.js';
 import { wieldMonsterWeapon } from './monster_weapon.js';
 import { ensureHeroSkills } from './skills.js';
 import { rn2 } from './rng.js';

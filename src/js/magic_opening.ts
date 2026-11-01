@@ -13,7 +13,7 @@ import { clearAreaCells, cansee, vision_note_blocker_change } from './vision.js'
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { expelHero } from './hero_expulsion.js';
 import { revealSecretDoor, revealSecretCorridor } from './detect.js';
 import { triggerBoobyTrap } from './booby_trap.js';

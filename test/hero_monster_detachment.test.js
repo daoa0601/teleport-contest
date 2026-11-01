@@ -10,7 +10,7 @@ import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { dodiscovered } from '../js/o_init.js';
 import { BOULDER, CORPSE, DWARVISH_CLOAK, IRON_SHOES, LEASH, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

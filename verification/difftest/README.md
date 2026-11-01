@@ -308,7 +308,7 @@ the shared RNG stream and log comparison.
 | `articles` | `objnam.c:an()` and `objnam.c:the()` | `object_grammar.js:withIndefiniteArticle`, `objnam.js:definiteName` |
 | `xname` | `objnam.c:xname_flags` (CXN_NORMAL) plus `an()`/`the()`/`aobjnam(obj, NULL)` wrappers | `objnam.js:objectCombatName`/`objectAction` (corpse species suppressed for the `xname` field, kept for `aobjnam`) |
 | `doname` | `objnam.c:doname_base(obj, 0)` | `object_description.js:objectDescription` |
-| `x_monnam` | `do_name.c:x_monnam` | `monster_name.js:monsterName`, or `namelessMonsterName` for `SUPPRESS_NAME` |
+| `x_monnam` | `do_name.c:x_monnam` | `do_name.js:monsterName`, or `namelessMonsterName` for `SUPPRESS_NAME` |
 
 String targets compare only the returned strings and the (empty) RNG
 consumption. `xname`/`doname` also compare the observed object projection

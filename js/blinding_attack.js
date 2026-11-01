@@ -16,7 +16,7 @@ import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { plineWithContinuation } from './pline.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 const M1_NOEYES = 0x00001000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');

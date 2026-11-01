@@ -13,7 +13,7 @@ import {
     AD_BLND, AD_COLD, AD_CONF, AD_DRLI, AD_FIRE, AD_PHYS, AD_RUST,
     AD_SLEE, AD_SLOW, AD_STUN, AD_TLPT, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP,
 } from '../js/monster_attack_types.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, OBJECT_NAMES, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

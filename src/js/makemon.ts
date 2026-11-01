@@ -8,11 +8,11 @@ import {
     A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS,
     GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines,
     In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level,
-    Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EMIN, MM_EPRI, MM_FEMALE, MM_IGNOREWATER,
-    MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER,
-    M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG,
-    STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, isok, G_EXTINCT, MGIVENNAME,
-    P_SABER, P_SHORT_SWORD,
+    Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK,
+    MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR,
+    SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO,
+    isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD,
 } from './const.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
@@ -22,11 +22,14 @@ import { game, requireGameLevel } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { nextIdent } from './ident.js';
 import { beginObjectBurn } from './light.js';
-import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm } from './mkobj.js';
+import {
+    mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory,
+    restoreMonsterInventoryOwnership,
+} from './mkobj.js';
 import { occupied } from './mkroom.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { finishMonsterBirth } from './monster_birth.js';
-import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
+import { ensureMinionData } from './minion.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
@@ -35,7 +38,8 @@ import {
     requireMonsterData,
 } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
-import { monsterName, monsterSubjectPronoun } from './monster_name.js';
+import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
+import { monsterSubjectPronoun } from './mondata.js';
 import { setMonsterSpecies } from './monster_species.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import {
@@ -54,11 +58,8 @@ import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState } from './monster_types.js';
 
-import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
 import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
-import {
-    addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership,
-} from './monster_inventory.js';
+import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { initializeMonsterWormBody } from './monster_worm.js';
@@ -2176,4 +2177,45 @@ export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | nu
     }
     growth.applied = true;
     return true;
+}
+
+// C makemon.c:makemon() allocates requested role records without appointing
+// the monster to that role. The caller fills them before setting role flags.
+export function allocateMonsterBirthExtensions(monster: Monster, flags: number): void {
+    if (!(flags & (MM_EDOG | MM_EGD | MM_EMIN | MM_EPRI | MM_ESHK))) return;
+    monster.mcorpsenm = -1;
+    // Native allocation precedes next_ident(), while the actor's ID is zero.
+    const parentmid = 0;
+    if (flags & MM_EDOG) {
+        monster.edog = {
+            parentmid, droptime: 0, dropdist: 0, apport: 0, whistletime: 0,
+            hungrytime: 0, ogoal: { x: 0, y: 0 }, abuse: 0, revivals: 0,
+            mhpmax_penalty: 0, killed_by_u: 0,
+        };
+    }
+    if (flags & MM_EMIN) ensureMinionData(monster).parentmid = parentmid;
+    if (flags & MM_EPRI) {
+        monster.epri = {
+            parentmid, shroom: 0, shralign: 0, shrpos: { x: 0, y: 0 },
+            shrlevel: { dnum: 0, dlevel: 0 }, cheapskate_count: 0,
+            intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
+        };
+    }
+    if (flags & MM_ESHK) {
+        monster.eshk = {
+            parentmid, shoproom: 0, shoptype: 0, shoplevel: { dnum: 0, dlevel: 0 },
+            shd: { x: 0, y: 0 }, shk: { x: 0, y: 0 }, shknam: '',
+            bill: [], billct: 0, billUnavailable: true,
+            credit: 0, debit: 0, loan: 0, robbed: 0, surcharge: 0,
+            following: 0, customer: '', visitct: 0, dismiss_kops: false,
+            break_seq: 0, seq_peaceful: 0,
+        };
+    }
+    if (flags & MM_EGD) {
+        monster._egd = {
+            gdlevel: { dnum: 0, dlevel: 0 }, gddone: 0,
+            ogx: 0, ogy: 0, gdx: 0, gdy: 0, vault: null,
+            warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
+        };
+    }
 }

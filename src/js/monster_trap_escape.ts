@@ -14,7 +14,7 @@ import { monsterTrapVisibility, seeTrap } from './trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 
 const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;

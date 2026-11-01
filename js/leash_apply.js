@@ -1,18 +1,20 @@
-// C apply.c:use_leash() and use_leash_core().
+// C apply.c:use_leash(), use_leash_core(), m_unleash(), o_unleash(),
+// get_mleash(), leashable() and unleash_all().
 import { isok } from './const.js';
-import { canSpotMonster, map_invisible, unmap_invisible } from './display.js';
-import { plineWithContinuation as pline } from './pline.js';
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { canSeeMonster, canSpotMonster, map_invisible, unmap_invisible } from './display.js';
+import { plineWithContinuation as pline, plineWithContinuation } from './pline.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
-import { monsterCanBeLeashed, releaseMonsterLeash } from './monster_leash.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterLeashName, monsterName, possessiveName } from './monster_name.js';
+import { monsterLeashName, monsterName } from './do_name.js';
+import { monsterPossessive } from './mondata.js';
+import { possessiveName } from './hacklib.js';
 import { LEASH } from './object_data.js';
 import { promptDirection } from './tty_prompts.js';
 import { rn2, rnd } from './rng.js';
-import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './monster_sound.js';
+import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
 export async function useLeash(leash) {
     const hero = game.u;
     if (hero.uswallow) {
@@ -146,5 +148,58 @@ export async function checkHeroLeashes(oldX, oldY) {
         if (game.program_state.gameover)
             return;
     }
+}
+const M1_NOLIMBS = 0x00006000;
+const M1_NOHEAD = 0x00008000;
+const M1_UNSOLID = 0x00100000;
+const LEASH_PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
+// C apply.c:leashable().  A head is enough to leash a limbless monster.
+export function monsterCanBeLeashed(monster) {
+    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
+    const hasNoLimbs = (flags & M1_NOLIMBS) === M1_NOLIMBS;
+    return monster?.mnum !== LEASH_PM_LONG_WORM
+        && !(flags & M1_UNSOLID)
+        && (!hasNoLimbs || !(flags & M1_NOHEAD));
+}
+// C apply.c:get_mleash().
+export function leashAttachedToMonster(monster, state = game) {
+    return (state.inventory || []).find(object => object.otyp === LEASH && object.leashmon === monster?.m_id) || null;
+}
+// C apply.c:o_unleash(). The leash need not be in inventory.
+export function releaseObjectLeash(leash, state = game) {
+    const monster = requireGameLevel(state).monsters.find(candidate => candidate.m_id === leash.leashmon);
+    if (monster)
+        monster.mleashed = 0;
+    leash.leashmon = 0;
+}
+// C apply.c:m_unleash().
+export function releaseMonsterLeash(monster, state = game) {
+    const leash = leashAttachedToMonster(monster, state);
+    if (leash)
+        leash.leashmon = 0;
+    monster.mleashed = 0;
+    return leash;
+}
+// C apply.c:m_unleash() with feedback.
+export async function releaseMonsterLeashWithFeedback(monster, { state = game, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    if (canSeeMonster(monster)) {
+        const name = monsterName(monster, { capitalized: true, state });
+        const possessive = monsterPossessive(monster, { state });
+        await publish(`${name} pulls free of ${possessive} leash!`);
+    }
+    else {
+        await publish('Your leash falls slack.');
+    }
+    return releaseMonsterLeash(monster, state);
+}
+// C apply.c:unleash_all().
+export function releaseAllMonsterLeashes(state = game) {
+    const attachedLeashes = (state.inventory || []).filter(object => object.otyp === LEASH && object.leashmon);
+    for (const monster of state.level?.monsters || [])
+        monster.mleashed = 0;
+    for (const leash of attachedLeashes)
+        leash.leashmon = 0;
+    return attachedLeashes.length;
 }
 //# sourceMappingURL=leash_apply.js.map

@@ -46,7 +46,8 @@ import {
 import { weaponDescription } from './weapon_description.js';
 import { isAmmunition, isWetTowel } from './weapon_type.js';
 import { emptyHandedDescription } from './weapon_readiness.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { monsterDigests } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import { heroHidingStatus } from './hero_hide.js';

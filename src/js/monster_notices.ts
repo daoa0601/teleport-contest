@@ -12,7 +12,7 @@ import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import { MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { impossible } from './diagnostics.js';

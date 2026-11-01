@@ -7,7 +7,7 @@ import { impossible } from './diagnostics.js';
 import { game, requireLiveGame } from './gstate.js';
 import { set_corpsenm } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { setMonsterGivenName } from './monster_given_name.js';
+import { setMonsterGivenName } from './do_name.js';
 import { roles } from './roles.js';
 import { rn2, rnd } from './rng.js';
 import { loadScoreRecords } from './score_records.js';

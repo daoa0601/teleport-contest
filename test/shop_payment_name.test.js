@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
-import { shopkeeperName } from '../js/monster_name.js';
+import { shopkeeperName } from '../js/shknam.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

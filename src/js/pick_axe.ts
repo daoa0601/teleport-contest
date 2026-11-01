@@ -56,7 +56,7 @@ import type { Hero } from './hero_types.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 
 export interface PickAxeDirection {
     dx: number;

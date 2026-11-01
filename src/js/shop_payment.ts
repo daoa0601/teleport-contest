@@ -20,7 +20,7 @@ import { definiteName, simpleObjectName, simpleObjectNameWithArticle } from './o
 import { plineWithContinuation } from './pline.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { heroIsDeaf } from './senses.js';
-import { shopkeeperName } from './monster_name.js';
+import { shopkeeperName } from './shknam.js';
 import { unlinkObject } from './object_location.js';
 import { deallocateObject } from './object_delete.js';
 import { impossible } from './diagnostics.js';

@@ -7,7 +7,7 @@ import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterTypeName, } from './monster_data.js';
-import { distantMonsterName, monsterName } from './monster_name.js';
+import { distantMonsterName, monsterName } from './do_name.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { visibleRegionAt } from './regions.js';

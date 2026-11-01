@@ -14,7 +14,7 @@ import { game } from './gstate.js';
 import { probeObject } from './magic_probe.js';
 import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
-import { monsterName, namelessMonsterName } from './monster_name.js';
+import { monsterName, namelessMonsterName } from './do_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { cancelObjectMagic } from './object_cancellation.js';
 import { BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';

@@ -5,12 +5,12 @@ import { MM_NOMSG, W_SADDLE, W_WEP } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
 import { makemonAt } from '../../js/makemon.js';
 import { nameToMonster } from '../../js/mondata.js';
-import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../../js/steal.js';
 import { initializePet } from '../../js/dog.js';
 import { SADDLE } from '../../js/object_data.js';
 import { putSaddleOnMonster } from '../../js/steed.js';
 import { knownObject } from './game-objects.js';
-import { applyMonsterEquipmentProperties } from '../../js/monster_equipment.js';
+import { applyMonsterEquipmentProperties } from '../../js/monworn.js';
 
 export interface SaddledSteedOptions {
     x?: number;

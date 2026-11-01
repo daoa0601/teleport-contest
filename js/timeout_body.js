@@ -2,7 +2,7 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_LEVEL, requireMonsterData } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { rnd } from './rng.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';

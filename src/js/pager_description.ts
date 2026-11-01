@@ -21,7 +21,7 @@ import { lookGlyphAt, mapFeatureDescription, quotedEngraving, unseenCreatureDesc
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { decodeMixedLiteral } from './windows.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { lookAtMonster, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { iceDescriptionAt } from './dungeon_feature.js';

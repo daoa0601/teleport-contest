@@ -166,9 +166,9 @@ src/js/lock.ts	doopen	rnl	"[""20""]"	constant
 src/js/apply.ts	dorub	rn2	"[""2""]"	constant
 src/js/apply.ts	dorub	rn2	"[""3""]"	constant
 src/js/apply.ts	dorub	rn2	"[""500""]"	constant
-src/js/apply.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
-src/js/apply.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
-src/js/apply.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
+src/js/hack.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
+src/js/hack.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
+src/js/hack.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""100""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""2""]"	constant
 src/js/coin_flip.ts	flipCoin	rn2	"[""dexterity""]"	invariant
@@ -712,12 +712,12 @@ src/js/kick_terrain.ts	kickTree	rn2	"[""6""]"	constant
 src/js/kick_terrain.ts	kickTree	rn2	"[""fruits.length""]"	constant
 src/js/kick_terrain.ts	kickTree	rnl	"[""4""]"	constant
 src/js/kick_terrain.ts	kickTree	rnl	"[""7""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""2""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""2""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""3""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""4""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""4""]"	constant
-src/js/knockback.ts	tryKnockback	random	"[""chance""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""2""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""2""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""3""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""4""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""4""]"	constant
+src/js/uhitm.ts	tryKnockback	random	"[""chance""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""3""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""Math.max(1, bodyWeight + 1)""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	rollOne	"[""16""]"	constant
@@ -1218,12 +1218,12 @@ src/js/mklev.ts	randomEngraving	rn2	"[""4""]"	constant
 src/js/sp_lev.ts	randomSpecialDoorMask	rn2	"[""states.length""]"	constant
 src/js/sp_lev.ts	randomSpecialTrapType	rnd	"[""TRAPNUM - 1""]"	constant
 src/js/sp_lev.ts	replaceLuaTerrain/selection.forEachXMajor argument 1	rn2	"[""100""]"	constant
-src/js/mklev.ts	rogueCorrCell	rn2	"[""50""]"	constant
-src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
-src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
-src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
-src/js/mklev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
-src/js/mklev.ts	rogueMiniwalk	rn2	"[""dirs.length""]"	guarded
+src/js/extralev.ts	rogueCorrCell	rn2	"[""50""]"	constant
+src/js/extralev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
+src/js/extralev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
+src/js/extralev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
+src/js/extralev.ts	rogueMiniwalk	rn2	"[""10""]"	constant
+src/js/extralev.ts	rogueMiniwalk	rn2	"[""dirs.length""]"	guarded
 src/js/extralev.ts	roguecorr	rn2	"[""dest.dx""]"	unproved
 src/js/extralev.ts	roguecorr	rn2	"[""dest.dy""]"	unproved
 src/js/extralev.ts	roguecorr	rn2	"[""source.dx""]"	unproved
@@ -1376,9 +1376,9 @@ src/js/trap.ts	triggerMonsterTrap	rnl	"[""5""]"	constant
 src/js/wizard.ts	aggravateMonsters	random	"[""5""]"	constant
 src/js/mon.ts	angerMonster	rnd	"[""5""]"	constant
 src/js/mon.ts	maybeHumanoidGasp	rn2	"[""HUMANOID_GASP_EXCLAMATIONS.length""]"	constant
-src/js/monster_sound.ts	publishMonsterGrowl	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/monster_sound.ts	publishMonsterWhimper	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
-src/js/monster_sound.ts	publishMonsterYelp	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/ambient_sounds.ts	publishMonsterGrowl	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/ambient_sounds.ts	publishMonsterWhimper	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
+src/js/ambient_sounds.ts	publishMonsterYelp	rn2	"[""HALLUCINATED_GROWL_VERBS.length""]"	constant
 src/js/mon.ts	reactHumanoidBystander	rn2	"[""10""]"	constant
 src/js/mon.ts	reactHumanoidBystander	rn2	"[""5""]"	constant
 src/js/mon.ts	reactHumanoidBystander	rn2	"[""50""]"	constant
@@ -1433,17 +1433,17 @@ src/js/mhitm.ts	applyMonsterContactPassive	random	"[""6""]"	constant
 src/js/muse.ts	lootMonsterContainer	random	"[""10""]"	constant
 src/js/muse.ts	lootMonsterContainer	random	"[""contents.length + 1""]"	constant
 src/js/muse.ts	lootMonsterContainer	random	"[""contents.length""]"	unproved
-src/js/monster_conversation.ts	deathReply	rn2	"[""10""]"	constant
-src/js/monster_conversation.ts	deathReply	rn2	"[""3""]"	constant
-src/js/monster_conversation.ts	humanoidReply	rn2	"[""2""]"	constant
-src/js/monster_conversation.ts	humanoidReply	rn2	"[""3""]"	constant
-src/js/monster_conversation.ts	humanoidReply	rn2	"[""4""]"	constant
-src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""13""]"	constant
-src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""3""]"	constant
-src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""3""]"	constant
-src/js/monster_conversation.ts	publishMonsterConversation	rn2	"[""4""]"	constant
-src/js/monster_conversation.ts	select	rn2	"[""messages.length""]"	unproved
-src/js/monster_conversation.ts	vampireReply	rn2	"[""2""]"	constant
+src/js/ambient_sounds.ts	deathReply	rn2	"[""10""]"	constant
+src/js/ambient_sounds.ts	deathReply	rn2	"[""3""]"	constant
+src/js/ambient_sounds.ts	humanoidReply	rn2	"[""2""]"	constant
+src/js/ambient_sounds.ts	humanoidReply	rn2	"[""3""]"	constant
+src/js/ambient_sounds.ts	humanoidReply	rn2	"[""4""]"	constant
+src/js/ambient_sounds.ts	publishMonsterConversation	rn2	"[""13""]"	constant
+src/js/ambient_sounds.ts	publishMonsterConversation	rn2	"[""3""]"	constant
+src/js/ambient_sounds.ts	publishMonsterConversation	rn2	"[""3""]"	constant
+src/js/ambient_sounds.ts	publishMonsterConversation	rn2	"[""4""]"	constant
+src/js/ambient_sounds.ts	select	rn2	"[""messages.length""]"	unproved
+src/js/ambient_sounds.ts	vampireReply	rn2	"[""2""]"	constant
 src/js/wizard.ts	retreatCovetousMonster	random	"[""3 + Math.trunc(monster.mhp / 10)""]"	unproved
 src/js/wizard.ts	retreatCovetousMonster	rollOne	"[""8""]"	constant
 src/js/wizard.ts	publishMonsterCuss	random	"[""minion ? 100 : 5""]"	constant
@@ -1520,10 +1520,10 @@ src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""2"", ""6""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""3"", ""4""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/monster_gaze.ts	resolveMonsterGaze	rollOne	"[""3""]"	constant
-src/js/monster_given_name.ts	randomGhostName	rn2	"[""7""]"	constant
-src/js/monster_given_name.ts	randomGhostName	rn2	"[""GHOST_NAMES.length""]"	constant
-src/js/monster_given_name.ts	roguePlayerName	rn2	"[""2""]"	constant
-src/js/monster_given_name.ts	roguePlayerName	rn2	"[""3""]"	constant
+src/js/do_name.ts	randomGhostName	rn2	"[""7""]"	constant
+src/js/do_name.ts	randomGhostName	rn2	"[""GHOST_NAMES.length""]"	constant
+src/js/do_name.ts	roguePlayerName	rn2	"[""2""]"	constant
+src/js/do_name.ts	roguePlayerName	rn2	"[""3""]"	constant
 src/js/steal.ts	someGold	random	"[""gold - minimum + 1""]"	guarded
 src/js/steal.ts	stealHeroGold	random	"[""5""]"	constant
 src/js/steal.ts	stealHeroGold	random	"[""5""]"	constant
@@ -1581,10 +1581,10 @@ src/js/monmove.ts	useMonsterMindBlast	random	"[""2""]"	constant
 src/js/monmove.ts	useMonsterMindBlast	random	"[""2""]"	constant
 src/js/monmove.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
 src/js/monmove.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
-src/js/monster_name.ts	formatMonsterName	rn2	"[""2""]"	constant
-src/js/monster_name.ts	monsterPronounGender	random	"[""4""]"	constant
-src/js/monster_name.ts	shopkeeperName	rn2	"[""RANDOM_SHOP_TYPES.length""]"	unproved
-src/js/monster_name.ts	shopkeeperName	rn2	"[""shop.names.length""]"	unproved
+src/js/do_name.ts	formatMonsterName	rn2	"[""2""]"	constant
+src/js/mondata.ts	monsterPronounGender	random	"[""4""]"	constant
+src/js/shknam.ts	shopkeeperName	rn2	"[""RANDOM_SHOP_TYPES.length""]"	unproved
+src/js/shknam.ts	shopkeeperName	rn2	"[""shop.names.length""]"	unproved
 src/js/uhitm.ts	resolveNurseContact	random	"[""13""]"	constant
 src/js/uhitm.ts	resolveNurseContact	random	"[""13""]"	constant
 src/js/uhitm.ts	resolveNurseContact	random	"[""3""]"	constant
@@ -1631,7 +1631,7 @@ src/js/mon.ts	selectDoppelgangerFormOnce	rn2	"[""SPECIAL_PM""]"	constant
 src/js/mon.ts	selectSandestinForm	rn2	"[""7""]"	constant
 src/js/mon.ts	shapechangerGender	rn2	"[""10""]"	constant
 src/js/zap.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
-src/js/monster_quest_theft.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
+src/js/steal.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
 src/js/zap.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
 src/js/monster_return.ts	returnDeadKop	rollOne	"[""5""]"	constant
 src/js/mhitu.ts	exchangeAdornmentRings	random	"[""20""]"	constant
@@ -1652,7 +1652,7 @@ src/js/monster_self_explosion.ts	resolveMonsterSelfExplosion	d	"[""(MONSTER_LEVE
 src/js/monster_self_explosion.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/monster_self_explosion.ts	resolveMonsterSelfExplosion	d	"[""dice"", ""sides""]"	unproved
 src/js/monster_self_explosion.ts	resolveMonsterSelfExplosion	rnd	"[""damage""]"	unproved
-src/js/monster_sound.ts	publishMonsterNoise	rn2	"[""2""]"	constant
+src/js/ambient_sounds.ts	publishMonsterNoise	rn2	"[""2""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""2""]"	constant
 src/js/mon.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/monster_spell_insects.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded

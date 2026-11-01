@@ -19,7 +19,8 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_SYMBOL,
 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { displayRayName } from './ray_name.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';

@@ -7,7 +7,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { doeat } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { CRAM_RATION, DAGGER } from '../js/object_data.js';
 import { addInventoryObject, uninitializedObject } from './support/game-objects.js';

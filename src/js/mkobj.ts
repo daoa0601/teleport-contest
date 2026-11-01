@@ -35,6 +35,7 @@ import {
     KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE,
     LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
     objectDirection, POT_OIL, BELL_OF_OPENING,
+    ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import {
     MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL,
@@ -46,7 +47,7 @@ import { forgetTempleEntry } from './priest.js';
 import { copyPetData, copyShopkeeperData } from './mon.js';
 
 import type { PetData, SavedMonsterTraits, ShopkeeperData } from './monster_types.js';
-import { artifactExistCount, createRandomArtifact } from './artifacts.js';
+import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer,
 } from './object_timers.js';
@@ -61,6 +62,12 @@ import { rndClass } from './objnam.js';
 import { undeadToCorpse } from './mon.js';
 import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './object_inscription.js';
+import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
+import { assertCreatedObject } from './object_release.js';
+import { deleteObject } from './object_delete.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
+import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;
@@ -772,5 +779,140 @@ export function saveMonsterTraits(monster: Monster | null | undefined): SavedMon
     if (monster.emin) saved.emin = { ...monster.emin };
     if (monster.epri) saved.epri = { ...monster.epri };
     return saved;
+}
+
+export interface MonsterPickupOptions {
+    atFront?: boolean;
+}
+
+interface MonsterLinkOptions extends MonsterPickupOptions {
+    state?: GameState;
+}
+
+// C mkobj.c:clear_dknown().
+const DESCRIPTION_UNKNOWN_CLASSES = new Set([
+    2,  // WEAPON_CLASS
+    4,  // RING_CLASS
+    6,  // TOOL_CLASS
+    8,  // POTION_CLASS
+    9,  // SCROLL_CLASS
+    10, // SPBOOK_CLASS
+    11, // WAND_CLASS
+    13, // GEM_CLASS
+    17, // VENOM_CLASS
+]);
+
+// C mkobj.c:clear_dknown().
+export function clearDescriptionKnowledge(object: GameObject): void {
+    const isGlob = object.otyp >= GLOB_OF_GRAY_OOZE
+        && object.otyp <= GLOB_OF_BLACK_PUDDING;
+    const descriptionNeedsObservation = DESCRIPTION_UNKNOWN_CLASSES.has(object.oclass)
+        || (object.otyp >= ELVEN_SHIELD && object.otyp <= ORCISH_SHIELD)
+        || object.otyp === SHIELD_OF_REFLECTION
+        || !!OBJECT_MERGE[object.otyp];
+    object.dknown = isGlob || !descriptionNeedsObservation;
+}
+
+// C mkobj.c:unknow_object().
+export function forgetObjectKnowledge(object: GameObject): void {
+    clearDescriptionKnowledge(object);
+    object.bknown = false;
+    delete object.buc;
+    object.rknown = false;
+    object.cknown = false;
+    object.lknown = false;
+    object.tknown = false;
+    object.known = !OBJECT_USES_KNOWN[object.otyp];
+}
+
+// C mkobj.c:add_to_minv(). Acquisition effects belong to mpickobj, not raw
+// linkage.
+function linkMonsterObject(
+    monster: Monster, object: GameObject, inventory: GameObject[], atFront: boolean,
+): GameObject {
+    if (atFront) inventory.unshift(object);
+    else inventory.push(object);
+    monster.minvent = monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
+    object.where = 'minvent';
+    object.ocarry = monster;
+    // C add_to_minv leaves the former floor coordinates unchanged.
+    object.carrierMid = monster.m_id ?? null;
+    return object;
+}
+
+export async function linkObjectToMonsterInventory(
+    monster: Monster | null | undefined, object: GameObject | null | undefined,
+    { atFront = true, state = game }: MonsterLinkOptions = {},
+): Promise<GameObject | null> {
+    requireLiveGame(state);
+    if (!monster || !object) return null;
+    if (object.where !== 'free')
+        throw new Error('add_to_minv requires a free object');
+    const inventory = monster.minvent || monster.inventory || [];
+    const existing = inventory.find(candidate => mergable(candidate, object, state));
+    return existing ? await mergeObjectStacks(existing, object, state)
+        : linkMonsterObject(monster, object, inventory, atFront);
+}
+
+export async function linkCreatedObjectToMonsterInventory(
+    monster: Monster, object: GameObject,
+    { atFront = true, state = game }: MonsterLinkOptions = {},
+): Promise<GameObject | null> {
+    assertCreatedObject(object, state);
+    const inventory = monster.minvent || monster.inventory || [];
+    const existing = inventory.find(candidate => mergable(candidate, object, state));
+    return existing ? await mergeCreatedObjectStacks(existing, object, state)
+        : linkMonsterObject(monster, object, inventory, atFront);
+}
+
+// C mkobj.c:obj_extract_self(): only unlink the object. Worn items must go
+// through removeObjectFromMonsterInventory() to update the monster and its
+// equipment.
+export function unlinkMonsterObject(
+    monster: Monster | null | undefined, object: GameObject | null | undefined,
+): boolean {
+    if (!monster || !object) return false;
+    const inventory = monster.minvent || monster.inventory || [];
+    const index = inventory.indexOf(object);
+    if (index < 0) return false;
+
+    inventory.splice(index, 1);
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
+    object.ocarry = null;
+    delete object.carrierMid;
+    object.where = 'free';
+    return true;
+}
+
+// C mon.c:replmon()/restore.c:restmonchn(): ownership follows the current
+// actor instance, including while that actor has left the map but still
+// carries its drops.
+export function restoreMonsterInventoryOwnership(monster: Monster): void {
+    for (const object of monster.minvent || monster.inventory || []) {
+        object.ocarry = monster;
+        object.carrierMid = monster.m_id;
+    }
+}
+
+// C mkobj.c:discard_minvent().
+export async function discardMonsterInventory(monster: Monster, uncreateArtifacts: boolean, state: GameState = game, {
+    publish = plineWithContinuation,
+}: { publish?: MessagePublisher } = {}): Promise<GameObject[]> {
+    requireLiveGame(state);
+    const discarded: GameObject[] = [];
+    for (;;) {
+        const object = (monster.minvent || monster.inventory || [])[0];
+        if (!object) break;
+        if (!await removeObjectFromMonsterInventory(monster, object, state, {
+            silently: true, publish,
+        })) return discarded;
+        if (uncreateArtifacts && object.oartifact) uncreateArtifact(object, state);
+        await deleteObject(object, state);
+        discarded.push(object);
+    }
+    return discarded;
 }
 

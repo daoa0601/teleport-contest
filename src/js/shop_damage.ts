@@ -14,18 +14,19 @@ import { propertyIsActive } from './properties.js';
 // svl.level.damagelist.  New records are prepended like the C list.
 
 import { deleteTrap } from './trap_lifecycle.js';
-import { monsterPossessive, shopkeeperName } from './monster_name.js';
+import { monsterPossessive } from './mondata.js';
+import { shopkeeperName } from './shknam.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { unplaceBallAndChain, placeBallAndChain, heroIsPunished } from './ball.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { canSpotMonster, canSeeMonster, canSenseMonster, newsym, map_invisible } from './display.js';
+import { canSpotMonster, canSeeMonster, canSenseMonster, newsym, map_invisible, flush_screen } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
-import type { ShopDamage, Trap } from './map_types.js';
+import type { ShopDamage, Trap, MapLocation } from './map_types.js';
 import { hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type { ShopGameState, Shopkeeper } from './shop_types.js';
 import { dist2 } from './hacklib.js';
@@ -36,26 +37,19 @@ import { finishInventoryRemoval } from './hero_inventory.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { impossible } from './diagnostics.js';
 import { currency } from './currency.js';
-import { flush_screen } from './display.js';
 import { promptYesNo } from './query.js';
-import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,
-} from './monster_data.js';
-import { mksobj } from './mkobj.js';
-import { dropSpecialMonsterObjects } from './monster_drop.js';
+import { linkObjectToMonsterInventory, mksobj } from './mkobj.js';
+import { addObjectToMonsterInventory, dropSpecialMonsterObjects } from './steal.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { detachMonsterFromLevel, removeMonsterFromGame } from './mon.js';
 import { monsterAtPosition } from './monster_location.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
-import {
-    BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK,
-} from './object_data.js';
+import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { placeObject, remove_object } from './floor_object.js';
 import {
-    afterShopkeeperMove, costlyAdjacent, costlySpot, currentShopResident,
-    removeObjectAndContentsFromBill, removeOneObjectFromBill, shopResident,
-    shopkeeperInOwnShop,
+    afterShopkeeperMove, costlyAdjacent, costlySpot, currentShopResident, removeObjectAndContentsFromBill,
+    removeOneObjectFromBill, shopResident, shopkeeperInOwnShop,
 } from './shk.js';
 import { objectName } from './objnam.js';
 import { rn2 } from './rng.js';
@@ -63,17 +57,13 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectWeight } from './weight.js';
-import type { MapLocation } from './map_types.js';
 import {
-    MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG,
-    BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL,
-    SDOOR,
-    LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE, SPIKED_PIT,
-    SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS,
-    isok,
+    MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR,
+    IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, SDOOR, LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE,
+    SPIKED_PIT, SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS, isok,
 } from './const.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { publishMonsterGrowl, publishMonsterYelp } from './monster_sound.js';
+import { publishMonsterGrowl, publishMonsterYelp } from './ambient_sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 
 // C include/monflag.h enum msound: animal noises end at MS_ANIMAL, and any

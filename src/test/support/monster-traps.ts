@@ -1,7 +1,7 @@
 import type { Monster } from '../../js/monster_types.js';
 import type { Trap } from '../../js/map_types.js';
 import type { ObjectRoomOptions } from './object-room.js';
-import { addObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../../js/steal.js';
 import { addTrap } from './level-state.js';
 import { createMonsterAt, equipMonsterObject } from './monsters.js';
 import { freshObjectRoom } from './object-room.js';

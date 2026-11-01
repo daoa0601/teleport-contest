@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { respondMedusa } from '../js/monster_gaze.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { setMonsterGivenName } from '../js/do_name.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { feelPetrifyingCorpse } from '../js/stoning.js';

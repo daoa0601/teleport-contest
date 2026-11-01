@@ -15,7 +15,7 @@ import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded } from './sight_change.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './hunger.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';

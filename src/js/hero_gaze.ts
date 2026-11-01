@@ -25,7 +25,8 @@ import {
     AD_CONF, AD_FIRE, AT_GAZE,
 } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptYesNo } from './query.js';
 import { d, rn2 } from './rng.js';

@@ -6,14 +6,19 @@ import { adjustHeroAlignment } from './alignment.js';
 import { changeHeroLuck } from './attrib.js';
 import { uncreateArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName } from './do_name.js';
+import { possessiveName } from './hacklib.js';
 import { heroIsHallucinating } from './senses.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { LL_KILLEDPET, recordGameLogEvent } from './gamelog.js';
-import { MONSTER_GENO, monsterTypeName } from './monster_data.js';
+import {
+    MONSTER_GENO, monsterTypeName, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman,
+    monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian,
+    monsterIsUnicorn,
+} from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './hero_species.js';
 import { landFloorObject } from './floor_effects.js';
@@ -28,40 +33,18 @@ import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import {
-    MONSTER_FLAGS2,
-    MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
-    monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
-    monsterIsQuestGuardian, monsterIsUnicorn,
-} from './monster_data.js';
-import {
-    monsterDeathCount,
-} from './monster_vitals.js';
-import {
-    addObjectToMonsterInventory,
-} from './monster_inventory.js';
-import {
-    BOULDER, FIGURINE, OBJECT_BIMANUAL,
-} from './object_data.js';
+import { monsterDeathCount } from './monster_vitals.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { BOULDER, FIGURINE, OBJECT_BIMANUAL } from './object_data.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import {
-    angerQuestGuardiansAfterLeaderDeath,
-    createMonsterRemains,
-    describeStoneEngulferEscape,
-    detachDeadMonster,
-    finishMonsterLiquidDeath,
-    levelAllowsMonsterDeathDrops,
-    monsterBodyCrumbles,
-    monsterBodyCrumblesMessage,
-    monsterDeathSquareAllowsObjects,
-    monsterDeathSwallower,
-    monsterLeavesCorpse,
-    prepareMonsterPetrification,
-    resolveMonsterDeathExplosion,
-    rollMonsterDeathExplosion,
+    angerQuestGuardiansAfterLeaderDeath, createMonsterRemains, describeStoneEngulferEscape, detachDeadMonster,
+    finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage,
+    monsterDeathSquareAllowsObjects, monsterDeathSwallower, monsterLeavesCorpse, prepareMonsterPetrification,
+    resolveMonsterDeathExplosion, rollMonsterDeathExplosion,
 } from './mon.js';
 
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a

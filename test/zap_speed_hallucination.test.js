@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MFAST } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { monsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/do_name.js';
 import { WAN_SPEED_MONSTER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { dozap } from '../js/zap.js';

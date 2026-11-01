@@ -7,7 +7,7 @@ import { setTopline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { useMonsterDefensiveItem } from '../js/muse.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

@@ -13,7 +13,7 @@ import {
     CANDELABRUM_OF_INVOCATION,
 } from './object_data.js';
 import { stopRun } from './runmode.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { definiteObjectAction } from './objnam.js';
 
 function heroPositionDescription(): string {

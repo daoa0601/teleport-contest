@@ -12,7 +12,7 @@ import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import {
     MONSTER_FLAGS1,
     MONSTER_FLAGS2,

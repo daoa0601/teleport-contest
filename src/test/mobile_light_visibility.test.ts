@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { beginObjectBurn } from '../js/light.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { cansee, hasLightSources, vision_recalc, vision_reset } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';

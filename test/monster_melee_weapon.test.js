@@ -6,7 +6,7 @@ import { pline } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';

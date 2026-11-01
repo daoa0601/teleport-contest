@@ -6,7 +6,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from '../js/shop_settlement.js';

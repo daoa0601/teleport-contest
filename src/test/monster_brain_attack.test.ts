@@ -3,8 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS,
-    MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_AMUL, W_ARMH,
+    M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_AMUL, W_ARMH,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -13,7 +12,7 @@ import { resolveMonsterBrainAttack } from '../js/uhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import type { MonsterDeathHandler } from '../js/mon.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, DUNCE_CAP, HELMET, STATUE } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { knownObject } from './support/game-objects.js';

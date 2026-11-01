@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterHasKey } from '../js/monmove.js';
 import type { Monster } from '../js/monster_types.js';
 

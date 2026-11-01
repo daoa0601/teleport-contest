@@ -7,8 +7,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { monsterName } from '../js/monster_name.js';
-import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { monsterName } from '../js/do_name.js';
+import { addObjectToMonsterInventory } from '../js/steal.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { selectHandToHandWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import {

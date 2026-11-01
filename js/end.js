@@ -15,7 +15,7 @@ import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
-import { monsterName } from './monster_name.js';
+import { monsterName } from './do_name.js';
 import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';

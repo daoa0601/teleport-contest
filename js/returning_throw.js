@@ -8,7 +8,7 @@ import { plineWithContinuation } from './pline.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { shipObject } from './object_migration.js';
 import { AKLYS, BOOMERANG } from './object_data.js';
