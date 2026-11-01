@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { castChainLightning } from '../js/spell_attack_effects.js';
+import { castChainLightning } from '../js/spell.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';

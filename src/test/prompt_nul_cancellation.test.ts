@@ -8,7 +8,7 @@ import { inventoryReport } from '../js/inventory_reports.js';
 import { CRYSTAL_BALL, DAGGER, SPE_FORCE_BOLT } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { selectSpellToCast } from '../js/spell_menu.js';
+import { selectSpellToCast } from '../js/spell.js';
 import { promptDirection } from '../js/tty_prompts.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';

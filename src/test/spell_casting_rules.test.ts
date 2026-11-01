@@ -19,7 +19,7 @@ import { forceLearnSpell } from '../js/spell.js';
 import {
     checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess,
     rejectCasting,
-} from '../js/spell_casting_rules.js';
+} from '../js/spell.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

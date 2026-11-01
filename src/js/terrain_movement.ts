@@ -3,7 +3,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { classifyStatusTerrain } from './status_terrain.js';
+import { classifyStatusTerrain } from './hack.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 
 import {

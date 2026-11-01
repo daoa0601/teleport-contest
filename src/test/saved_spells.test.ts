@@ -8,7 +8,7 @@ import {
 import { saveGame, restoreGame } from '../js/save.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { selectSpellToCast } from '../js/spell_menu.js';
+import { selectSpellToCast } from '../js/spell.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -16,7 +16,7 @@ import { levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasPerm
 import { heroDetectsMonsters } from '../js/senses.js';
 import { switchHeroTerrain } from '../js/terrain_movement.js';
 import { castSpell } from '../js/spell.js';
-import { applyPotionSpell } from '../js/spell_potion_effects.js';
+import { applyPotionSpell } from '../js/spell.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

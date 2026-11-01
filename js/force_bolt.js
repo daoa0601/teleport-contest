@@ -14,7 +14,7 @@ import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { d, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { adjustSpellDamage } from './spell_damage.js';
+import { adjustSpellDamage } from './zap.js';
 import { cansee } from './vision.js';
 import { wakeAttackedMonster } from './mon.js';
 import { monsterResistsEffect } from './zap.js';

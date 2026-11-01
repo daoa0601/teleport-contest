@@ -52,8 +52,7 @@ import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './m
 import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
-import { castSpell } from './spell.js';
-import { spellSkillType } from './spell_school.js';
+import { castSpell, spellSkillType } from './spell.js';
 import { ensureHeroSkills } from './skills.js';
 import { depth } from './hacklib.js';
 import { gotoLevel } from './level_change.js';

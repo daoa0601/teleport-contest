@@ -14,9 +14,9 @@ import { objectDirection } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { updateIceObjectTimersAt, placeCreatedObject, stack_object } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
-import { heroHasArtifactDefense } from './artifacts.js';
-import { exerciseAttribute, exerciseWisdom } from './attrib.js';
-import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING, } from './const.js';
+import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
+import { A_STR, A_INT, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING, } from './const.js';
 import { canSeeMonster, displayColorName, displayLiquidName, docrt, glyphAt, newsym, shieldeff, unmap_invisible, } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
@@ -1782,5 +1782,26 @@ export function monsterResistsEffect(monster, attackLevel, random = rn2) {
         defenseLevel = monsterIsPlayerMonster(monster.mnum) ? game.u.ulevel ?? 1 : 1;
     const resistance = MONSTER_MAGIC_RESISTANCE[monster?.mnum] ?? 0;
     return random(100 + attackLevel - defenseLevel) < resistance;
+}
+// C youprop.h:Half_spell_damage, including carried artifact extrinsics.
+// zap.c:4584-4586 halves wand and spell damage through this property.
+export function heroHasHalfSpellDamage(state = game) {
+    return !!(state.u?.halfSpellDamage
+        || (state.u?.halfSpellDamageTurns ?? 0) > 0
+        || heroHasCarriedArtifactFlag('SPFX_HSPDAM', state));
+}
+// C zap.c:spell_damage_bonus().
+export function adjustSpellDamage(damage, state = game) {
+    const intelligence = currentAttribute(A_INT, state) ?? 10;
+    const level = state.u?.ulevel ?? 1;
+    if (intelligence <= 9)
+        return damage > 1 ? Math.max(1, damage - 3) : damage;
+    if (intelligence <= 13 || level < 5)
+        return damage;
+    if (intelligence <= 18)
+        return damage + 1;
+    if (intelligence <= 24 || level < 14)
+        return damage + 2;
+    return damage + 3;
 }
 //# sourceMappingURL=zap.js.map

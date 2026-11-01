@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { AMULET_OF_REFLECTION, SPE_CONE_OF_COLD, SPE_FIREBALL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { castChainLightning, castSkilledElementalSpell } from '../js/spell_attack_effects.js';
+import { castChainLightning, castSkilledElementalSpell } from '../js/spell.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';

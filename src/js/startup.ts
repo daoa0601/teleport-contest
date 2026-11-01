@@ -2,6 +2,7 @@
 // C refs: allmain.c:newgame(), o_init.c:init_objects(), role.c:role_init(),
 // dungeon.c:init_dungeons(), u_init.c:u_init_misc().
 
+import { SPE_LIGHT } from './object_data.js';
 import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
@@ -9,7 +10,7 @@ import { initializeArtifacts } from './artifacts.js';
 import { rn2, rnd } from './rng.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { ensureQuestStatus } from './quest.js';
-import type { QuestStatus } from './game_state.js';
+import type { GameState, QuestStatus } from './game_state.js';
 import type { Role } from './roles.js';
 import { initializeMonsterVitals } from './allmain.js';
 
@@ -41,6 +42,14 @@ function questMonsterGender(species: number): number {
     if (flags & M2_FEMALE) return 1;
     if (flags & M2_MALE) return 0;
     return rn2(100) < 50 ? 1 : 0;
+}
+
+// C role.c:role_init() (line 2088) gives a Cleric's light spell the clerical
+// school: objects[SPE_LIGHT].oc_skill = P_CLERIC_SPELL for Role_if(PM_CLERIC).
+// The generated object table stays immutable so a later non-Priest keeps
+// divination, so the override is applied where the school is read.
+export function roleInitClericLightSchool(otyp: number, state: GameState): boolean {
+    return otyp === SPE_LIGHT && state.urole?.key === 'priest';
 }
 
 // This is the part of newgame() that runs before level creation. Role

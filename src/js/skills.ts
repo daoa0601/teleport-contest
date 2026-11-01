@@ -16,7 +16,7 @@ import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';
 import { rn2 } from './rng.js';
-import { spellSkillType } from './spell_school.js';
+import { spellSkillType } from './spell.js';
 import type { GameState } from './game_state.js';
 import type { HeroSkill } from './hero_types.js';
 import type { RoleKey } from './roles.js';

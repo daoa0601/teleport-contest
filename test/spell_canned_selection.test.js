@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SPE_FORCE_BOLT, SPE_HEALING } from '../js/object_data.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { selectSpellToCast } from '../js/spell_menu.js';
+import { selectSpellToCast } from '../js/spell.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a queued spell letter selects its memorized spell in full menu mode', async () => {
     await freshObjectRoom({ role: 'wizard', moves: 1 });

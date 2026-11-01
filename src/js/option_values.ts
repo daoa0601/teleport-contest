@@ -6,8 +6,8 @@ import { planInventoryOrder } from './object_sort.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { decodeOptionEscapes } from './option_escapes.js';
-import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './status_hilite_parse.js';
-import { resetStatusHilites } from './status_hilites.js';
+import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './botl.js';
+import { resetStatusHilites } from './botl.js';
 
 export function textOptionValue(name: string): string | null {
     switch (name) {

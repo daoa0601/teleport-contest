@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { flush_screen } from './display.js';
 import { COLNO, MAX_TYPE, ROWNO } from './const.js';
-import { classifyStatusTerrain } from './status_terrain.js';
+import { classifyStatusTerrain } from './hack.js';
 // C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
 export function startRun(dx, dy, g = game, mode = 1) {
     g._runState = {

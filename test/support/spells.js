@@ -1,7 +1,7 @@
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { P_BASIC } from '../../js/const.js';
 import { forceLearnSpell } from '../../js/spell.js';
-import { spellSkillType } from '../../js/spell_school.js';
+import { spellSkillType } from '../../js/spell.js';
 import { flushPendingTopline } from '../../js/tty_topline.js';
 import { resetInputState } from '../../js/input.js';
 import { adjustWeaponSkillSlots, advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance, useHeroSkill, } from '../../js/skills.js';

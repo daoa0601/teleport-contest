@@ -3,8 +3,8 @@ import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { visibleCommandKey } from './command_keys.js';
 import { autoUnlockFlags } from './lock_pick.js';
-import { statusVersion } from './status_version.js';
-import { statusConditionOptions } from './status_conditions.js';
+import { statusVersion } from './version.js';
+import { statusConditionOptions } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {
     MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_ONE,

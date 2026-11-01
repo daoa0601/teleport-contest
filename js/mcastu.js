@@ -29,7 +29,7 @@ import { plineWithContinuation } from './pline.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { d, rn2, rnd } from './rng.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { setMonsterPermanentInvisibility } from './worn.js';

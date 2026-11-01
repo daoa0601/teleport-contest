@@ -77,7 +77,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { roomsAt } from './room.js';
-import { heroHasHalfSpellDamage } from './spell_damage.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
 import { randomTeleportDepth } from './level_teleport.js';

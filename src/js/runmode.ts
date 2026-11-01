@@ -7,7 +7,7 @@ import type { DirectionalRunMode, DirectionalRunState } from './command_types.js
 import type { TerminalCell } from './terminal.js';
 import { flush_screen } from './display.js';
 import { COLNO, MAX_TYPE, ROWNO } from './const.js';
-import { classifyStatusTerrain } from './status_terrain.js';
+import { classifyStatusTerrain } from './hack.js';
 
 // C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
 export function startRun(dx: number, dy: number, g: GameState = game, mode: DirectionalRunMode = 1): DirectionalRunState {

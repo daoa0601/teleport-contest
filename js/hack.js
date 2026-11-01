@@ -4,7 +4,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, def_warnsyms, A_CON, A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_earthlevel, Is_juiblex_level, Is_waterlevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, def_warnsyms, A_CON, A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove, } from './ball.js';
 import { displayLiquidName, docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_location, terrain_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { impossible } from './diagnostics.js';
@@ -1922,6 +1922,49 @@ export function applyHeroLiquidEffects(publish = plineWithContinuation, { entry 
             publish, pick,
         }),
     });
+}
+// rm.h xFLOOR..xWATERWALL: the extra terrain pseudo-types classify_terrain()
+// assigns (rm.h:100-107), indexing botl.c terrain_descr[] from MAX_TYPE on.
+const FLOOR = 39, GROUND = 40, OPEN_DOOR = 41, SHUT_DOOR = 42, SWAMP = 43, SUBMERGED = 44, SEA = 45, WATER_WALL = 46;
+// C hack.c:classify_terrain().
+export function classifyStatusTerrain(state) {
+    const typ = terrainType(state);
+    if (typ === state.iflags.terrain_typ)
+        return;
+    state.iflags.terrain_typ = typ;
+    if (state.flags.terrainstatus && !state.context.run)
+        state.context.botl = true;
+}
+function terrainType(state) {
+    const hero = state.u;
+    const location = state.level?.at(hero.ux, hero.uy);
+    if (!location)
+        return MAX_TYPE;
+    if (hero.uinwater)
+        return SUBMERGED;
+    // Native uses lastseentyp so blindness and disguised furniture cannot
+    // reveal the real terrain through this optional field.
+    const typ = location.lastseentyp ?? STONE;
+    switch (typ) {
+        case STONE: return state.level?.flags.arboreal ? TREE : STONE;
+        case CORR:
+        case ROOM: return Is_earthlevel(hero.uz) ? GROUND : FLOOR;
+        case DOOR:
+            if (location.doormask & D_ISOPEN)
+                return OPEN_DOOR;
+            return location.doormask & (D_CLOSED | D_LOCKED | D_TRAPPED) ? SHUT_DOOR : DOOR;
+        case DRAWBRIDGE_UP: {
+            const under = drawbridgeUnderlyingType(location.drawbridgemask ?? 0);
+            return under === STONE ? GROUND : under;
+        }
+        case MOAT:
+            if (state.medusa_level && hero.uz?.dnum === state.medusa_level.dnum
+                && hero.uz.dlevel === state.medusa_level.dlevel)
+                return SEA;
+            return Is_juiblex_level(hero.uz) ? SWAMP : MOAT;
+        case WATER: return Is_waterlevel(hero.uz) ? WATER : WATER_WALL;
+        default: return typ;
+    }
 }
 // C hack.c:spoteffects(TRUE) also applies when expulsion or a body change leaves
 // the hero on the same square. It does not count as a movement attempt.

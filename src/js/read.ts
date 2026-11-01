@@ -80,7 +80,7 @@ import { createPoisonGasCloud } from './regions.js';
 import { sokobanGuilt } from './rock_breakage.js';
 import { drainHeroWeaponSkills } from './skills.js';
 import { burnAwayHeroSlime } from './slime.js';
-import { loseHeroSpellMemory } from './spell_memory.js';
+import { loseHeroSpellMemory } from './spell.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';

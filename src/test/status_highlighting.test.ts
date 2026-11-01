@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { clearStatusHilites, resetStatusHilites } from '../js/status_hilites.js';
+import { clearStatusHilites, resetStatusHilites } from '../js/botl.js';
 import { addExperience } from '../js/exper.js';
 import type { StatusHiliteRule } from '../js/flags.js';
 import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_EXP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE,
