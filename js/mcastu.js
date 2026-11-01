@@ -8,7 +8,6 @@ import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, monsterIsNonliving, } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, } from './display.js';
 import { requireInitializedGame } from './gstate.js';
 import { currentAttribute } from './attrib.js';
@@ -46,6 +45,7 @@ import { msummon } from './minion.js';
 import { heroEyeCount, heroEyeName, heroHeadName, } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { dist2 } from './hacklib.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './mondata.js';
 const M1_SEE_INVIS = 0x01000000;
 export const MCF_INDIRECT = 0x01;
 const MCF_SIGHT = 0x02;

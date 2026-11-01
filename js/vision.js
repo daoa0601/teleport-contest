@@ -6,7 +6,8 @@ import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED
 import { newsym } from './display.js';
 import { noticeAllMonsters } from './monster_notices.js';
 import { BOULDER } from './object_data.js';
-import { MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { heroIsInvisible } from './hero_invisibility.js';
 import { objectLightRadius } from './light.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { isMoatAt, isPoolAt } from './terrain_properties.js';
@@ -1044,6 +1045,14 @@ export function couldsee(x, y) {
     if (y < 0 || y >= ROWNO || x < 0 || x >= COLNO)
         return false;
     return !!((game.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
+}
+// C ref: vision.h m_canseeu(m). Assumes that if the hero has a clear line of
+// sight to the monster's location and the hero is visible, the monster could
+// see the hero; it deliberately does not test the monster's blindness.
+const M1_SEE_INVIS = 0x01000000;
+export function monsterHasLineOfSightToHero(monster, state = game) {
+    return (!heroIsInvisible(state) || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+        && !state.u.uinwater && couldsee(monster.mx, monster.my);
 }
 // State-aware couldsee() for modules that run against either the live game
 // or a focused unit state. COULD_SEE is bit 0 of the vision buffer. Focused

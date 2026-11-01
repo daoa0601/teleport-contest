@@ -69,7 +69,6 @@ import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
-import { monstersObserveHeroResistance } from './monster_perception.js';
 import {
     blessObjectState, curseObjectState, unblessObjectState,
     uncurseObjectState,
@@ -96,6 +95,7 @@ import { heroFormSticks } from './hero_species.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { putMonsterToSleep } from './monster_sleep.js';
 import { objectAction, objectCombatName, definiteObjectAction } from './objnam.js';
+import { monstersObserveHeroResistance } from './mondata.js';
 
 export type PotionWakeResult = { heroDied?: boolean } | void;
 export type PotionWakeMonster = (monster: Monster) => PotionWakeResult | Promise<PotionWakeResult>;
@@ -284,7 +284,6 @@ const HALLUCINATED_BOTTLE_NAMES = [
     'teapot', 'keg', 'bucket', 'thermos', 'amphora', 'wineskin', 'parcel',
     'bowl', 'ampoule',
 ];
-
 
 // potion.c:bottlename() is shared by hero- and monster-thrown impacts.  The
 // selector callback lets source-turn planners retain their own RNG ledger.

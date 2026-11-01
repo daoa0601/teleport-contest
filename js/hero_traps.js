@@ -67,7 +67,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
 import { feelTrap, finishImmediateMonsterTrap, seeTrap, splashLitObject, trapTriggeredByFloor, triggerImmediateMonsterTrap, waterDamageObject, } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
@@ -84,6 +83,7 @@ import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, 
 import { askTeleportDestination } from './teleport.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
 const S_MIMIC = 13;

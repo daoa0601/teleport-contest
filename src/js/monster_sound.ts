@@ -22,7 +22,7 @@ import { rn2 } from './rng.js';
 import {
     MONSTER_NAME, MONSTER_FLAGS1, MONSTER_SOUND,
 } from './monster_data.js';
-import { sameMonsterRace } from './monster_race.js';
+import { sameMonsterRace } from './mondata.js';
 
 const MS_SILENT = 0;
 const MS_BARK = 1;

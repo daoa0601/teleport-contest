@@ -3,7 +3,6 @@ import test from 'node:test';
 import { LARGEST_INT, MFAST, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_ARMG, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { speciesCanBlow } from '../js/monster_anatomy.js';
 import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
@@ -20,6 +19,7 @@ import { objectWeight } from '../js/weight.js';
 import { artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { speciesCanBlow } from '../js/mondata.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function interestRoom(species = 'goblin') {
     await freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true } });

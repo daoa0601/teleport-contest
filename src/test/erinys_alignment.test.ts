@@ -10,7 +10,6 @@ import { rollMonsterPoolReaction } from '../js/mon.js';
 import { attackMonsterWithMonster } from '../js/mhitm.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { monsterDistressEvents } from '../js/mon.js';
-import { monsterHasLineOfSightToHero } from '../js/monster_perception.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { monsterFliesOrFloats } from '../js/terrain_properties.js';
@@ -21,6 +20,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { monsterHasLineOfSightToHero } from '../js/vision.js';
 
 void test('erinyes begin seeing an invisible hero above five alignment abuse', async () => {
     await freshObjectRoom();

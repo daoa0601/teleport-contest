@@ -41,8 +41,7 @@ import {
 } from './monworn.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
-import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
+import { monsterIsScaredAt, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { setMimicAppearance } from './makemon.js';

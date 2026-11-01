@@ -10,7 +10,6 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import {
     AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
@@ -52,6 +51,7 @@ import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mons
 import {
     clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation,
 } from './hero_strangulation.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './mondata.js';
 
 const ACCESSORY_SLOTS = [
     { slot: 'uleft', mask: W_RINGL, label: 'left-ring' },

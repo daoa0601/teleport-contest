@@ -35,7 +35,6 @@ import { lightDamage, igniteItems } from './light.js';
 import { probeObjectChain } from './magic_probe.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { cancelObjectMagic } from './object_cancellation.js';
 import {
     CHEST, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, LARGE_BOX,
@@ -64,6 +63,7 @@ import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
 import { learnWand } from './wand_charge.js';
 import { destroyInventoryByElement } from './zap.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 const STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');

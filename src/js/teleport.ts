@@ -47,7 +47,6 @@ import {
     placeBallAndChain, unplaceBallAndChain,
 } from './ball.js';
 
-
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple } from './priest.js';
 
@@ -56,10 +55,9 @@ import { makeAngryShopkeeper } from './shop_damage.js';
 import { findObjectOwner, onBillEntry, stolenValue } from './shop_loss.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt } from './mon.js';
-import { interruptOccupationForMonster } from './monmove.js';
+import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './monster_name.js';
 import { publishMonsterYelp } from './monster_anger.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import { couldsee } from './vision.js';
 import {

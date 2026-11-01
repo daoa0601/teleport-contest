@@ -16,13 +16,13 @@ import { respondMedusa } from './monster_gaze.js';
 import type { MonsterGazeOptions } from './monster_gaze.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { monsterName } from './monster_name.js';
-import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import { stopHeroOccupation } from './occupation.js';
 import { templeRoomAt } from './priest.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
 
 // C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 export async function respondToImmediateMagic(monster: Monster, state: GameState = game, {

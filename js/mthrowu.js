@@ -43,7 +43,6 @@ import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun, monsterPossessive, possessiveName, } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
-import { requirePerceivedHero, seenResistanceForDamage } from './monster_perception.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './monster_resistance.js';
 import { monsterSentenceSubject } from './monster_sound.js';
@@ -78,6 +77,8 @@ import { snuffThrownCandle } from './thrown_object.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { plineWithContinuation } from './pline.js';
+import { requirePerceivedHero } from './monmove.js';
+import { seenResistanceForDamage } from './mondata.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }

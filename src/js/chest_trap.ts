@@ -23,7 +23,6 @@ import type { MessagePublisher } from './pline.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { staggerVerb } from './monster_hurtle.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import {
     delobj, deleteObjectContents,
 } from './object_delete.js';
@@ -38,6 +37,7 @@ import { makeAngryShopkeeper } from './shop_damage.js';
 import { stolenValue } from './shop_loss.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory } from './zap.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;

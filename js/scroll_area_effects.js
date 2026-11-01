@@ -14,7 +14,6 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { consumeInventoryItem } from './invent.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { OBJECT_INITIAL_KNOWN, SCR_AMNESIA, SCR_EARTH, SCR_FIRE, SCR_STINKING_CLOUD } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { propertyIsActive } from './properties.js';
@@ -29,6 +28,7 @@ import { loseHeroSpellMemory } from './spell_memory.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { cansee } from './vision.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 export async function applyAreaScrollEffect(source, { state = game, finishHeroDeath = defaultHeroDeath, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

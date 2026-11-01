@@ -24,7 +24,7 @@ import {
 } from './properties.js';
 import { syncBlindness } from './senses.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { speciesCanBlow } from './monster_anatomy.js';
+import { speciesCanBlow } from './mondata.js';
 
 const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');

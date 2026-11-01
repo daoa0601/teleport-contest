@@ -32,10 +32,10 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterWearsTorsoArmor, petrifyMonsterImmediately } from './monster_stoning.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { stopHeroOccupation } from './occupation.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { vision_recalc } from './vision.js';
 import { rn2, rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
+import { setMonsterApparentHeroPosition } from './monmove.js';
 
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;

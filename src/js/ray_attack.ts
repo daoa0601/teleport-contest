@@ -15,7 +15,6 @@ import { igniteItems } from './light.js';
 import { payForShopDamage } from './shop_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
-import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import {
     EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE,
     M_SEEN_REFL, STRAT_WAITMASK,
@@ -25,7 +24,7 @@ import { artifactById } from './artifacts.js';
 import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { cansee } from './vision.js';
+import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
 import { finishMonsterKilled } from './monster_death.js';
@@ -34,7 +33,6 @@ import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
@@ -88,6 +86,7 @@ import type { Position } from './map_types.js';
 import type { RayFloorKind, RayFloorResult } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 export type RayDirection = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n' | '<' | '>';
 export interface NativeRayResult { used: boolean; heroDied: boolean; hits: number; }

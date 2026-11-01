@@ -57,7 +57,6 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { splitMonster } from './monster_clone.js';
-import { monsterCombatDefense } from './monster_combat_defense.js';
 import { rejectMonsterShadeContact, showMonsterArtifactFallbackHit } from './monster_combat_messages.js';
 import { resolveMonsterCorpseChance, finishMonsterKilled } from './monster_death.js';
 import { removeMonsterFromGame } from './monster_departure.js';
@@ -65,7 +64,7 @@ import { drainMonsterEnergy } from './monster_energy.js';
 import { erodeArmor, erodeAttackingWeapon, erodeObject, damageObjectWithAcid } from './object_erosion.js';
 import { grantMonsterCorpseIntrinsic, grantMonsterIntrinsic } from './monster_corpse_intrinsic.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
-import { makeMonsterFlee } from './monmove.js';
+import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import {
     AD_ACID, AD_CONF, AD_COLD, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DRCO, AD_DRDX,
     AD_DRIN, AD_DREN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL,
@@ -81,15 +80,12 @@ import {
     monsterIsUndead, monsterTypeName,
     requireMonsterData,
 } from './monster_data.js';
-import { monsterFireDescription } from './monster_fire_description.js';
+import { monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import {
     monsterName, monsterName as displayedMonsterName, monsterPossessive, namelessMonsterName,
     possessiveName,
 } from './monster_name.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, setMonsterApparentHeroPosition,
-    monsterHasLineOfSightToHero,
-} from './monster_perception.js';
+import { monsterHasLineOfSightToHero } from './vision.js';
 import {
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance,
     monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,

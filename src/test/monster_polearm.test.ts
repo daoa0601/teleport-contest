@@ -7,7 +7,6 @@ import { rhack } from '../js/cmd.js';
 import { NO_MINVENT, STONE, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { attackHeroWithPolearm } from '../js/mthrowu.js';
 import { LANCE, OBJECT_NAMES } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
@@ -17,6 +16,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { setMonsterApparentHeroPosition } from '../js/monmove.js';
 
 async function soldierWithLance(x: number, y: number) {
     const soldier = await createMonsterAt('soldier', x, y, NO_MINVENT);

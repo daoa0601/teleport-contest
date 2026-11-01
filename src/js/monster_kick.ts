@@ -2,7 +2,7 @@
 // C refs: dokick.c:kick_monster() and kickdmg().
 
 import { monsterName } from './monster_name.js';
-import { makeMonsterFlee } from './monmove.js';
+import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
@@ -27,7 +27,6 @@ import { abusePet } from './dog.js';
 import { A_CON, A_DEX, W_ARMF } from './const.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { specialContactDamage } from './contact_damage.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { couldsee } from './vision.js';
 import { newsym, unmap_invisible } from './display.js';
 import {

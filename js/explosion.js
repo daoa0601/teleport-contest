@@ -21,7 +21,6 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, mons
 import { finishMonsterKilled } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistsEffect, } from './monster_resistance.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, } from './object_data.js';
@@ -36,6 +35,7 @@ import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInvento
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './mondata.js';
 const WAND_CLASS = 11;
 const SCROLL_CLASS = 9;
 const RAY = 3;

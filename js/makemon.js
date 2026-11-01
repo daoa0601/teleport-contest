@@ -24,7 +24,6 @@ import { adjustedMonsterLevel, isHomeElemental, newMonsterHitPoints, } from './m
 import { addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, } from './monster_inventory.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
-import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { initialShapechangedBirth } from './monster_polymorph.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { giveMonsterStartingObject } from './monster_starting_inventory.js';
@@ -49,6 +48,7 @@ import { objectWeight } from './weight.js';
 import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear, } from './mklev.js';
 import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
+import { setMonsterApparentHeroPosition } from './monmove.js';
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;

@@ -45,7 +45,6 @@ import { migrateMonsterOffLevel } from './monster_migration.js';
 import { growMonster } from './monster_growth.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { trapName } from './trap_name.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, } from './dungeon.js';
@@ -76,7 +75,6 @@ import { hitObjectWithWand } from './immediate_zap.js';
 import { wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, } from './monster_death.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { monsterHasAcidResistance, monsterHasStoneResistance, monsterResistsEffect, } from './monster_resistance.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -104,13 +102,11 @@ import { monsterKnowsTrap, monsterLearnsTrap } from './trap_knowledge.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
 import { heroSpecies } from './hero_species.js';
-import { speciesCanBlow } from './monster_anatomy.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explode } from './explosion.js';
-import { sameMonsterRace } from './monster_race.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { willWeld } from './weapon_type.js';
@@ -119,6 +115,7 @@ import { impossible } from './diagnostics.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { consumeMonsterItem } from './mthrowu.js';
 import { monsterWantsFloorObject } from './monmove.js';
+import { monsterLocomotion, monstersForgetHeroResistance, monstersObserveHeroResistance, speciesCanBlow, sameMonsterRace, } from './mondata.js';
 // ---------------------------------------------------------------------------
 // Shared muse.c constants.
 // ---------------------------------------------------------------------------

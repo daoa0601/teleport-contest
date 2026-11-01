@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { moveMonsterForHeroAttack } from '../js/monmove.js';
+import { moveMonsterForHeroAttack, setMonsterApparentHeroPosition } from '../js/monmove.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { DOOR, D_ISOPEN, D_LOCKED, IRONBARS, MMOVE_DONE, MM_NOGRP, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { DAGGER, SKELETON_KEY } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';

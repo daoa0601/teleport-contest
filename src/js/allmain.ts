@@ -75,9 +75,6 @@ import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap } from './trap_magic.js';
 import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
-} from './monster_perception.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { finishScheduledLevelChange } from './level_change.js';
 import { findArtifact } from './artifacts.js';
@@ -152,7 +149,6 @@ import {
     OBJECT_BIMANUAL, OBJECT_NAMES,
 } from './object_data.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import {
     observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName,
@@ -301,6 +297,12 @@ import { resolveMonsterContactEffect } from './uhitm.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { nhTimeout } from './timeout.js';
 import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
+import {
+    monstersForgetHeroResistance,
+    monstersObserveHeroResistance,
+    seenResistanceForDamage,
+    monsterLocomotion,
+} from './mondata.js';
 
 interface TurnMaintenance {
     sourceTurn: number;
@@ -1133,7 +1135,6 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     return { kind: 'regions', sourceTurn: game.moves, capacity };
 }
 
-
 async function advanceWorldTurn(): Promise<void> {
     const game = requireInitializedGame();
     const initialPhase = await beginInitialTurnMaintenance();
@@ -1264,7 +1265,6 @@ export async function finishHeroHelplessness(
         break;
     }
 }
-
 
 // allmain.c:u_calc_moveamt() clamps a negative movement balance after every
 // global allocation.  Without this, a slow polymorph can carry the action

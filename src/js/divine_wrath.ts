@@ -20,9 +20,6 @@ import { summonMinion } from './minion.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance,
-} from './monster_perception.js';
-import {
     monsterHasDisintegrationResistance, monsterHasShockResistance,
 } from './monster_resistance.js';
 import { propertyIsActive, wornObjectGrantsProperty } from './properties.js';
@@ -35,6 +32,7 @@ import { rn2, rnz } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const GOD_VOICES = ['booms out', 'thunders', 'rings out', 'booms'];
 const S_HUMAN = 53;

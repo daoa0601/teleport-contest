@@ -18,7 +18,6 @@ import { makemonNear } from './mklev.js';
 import { mkobj } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { deleteObject } from './object_delete.js';
 import { OBJECT_DESCRIPTIONS, POT_WATER, requireObjectData } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
@@ -31,6 +30,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { breakSinkAt } from './sink_terrain.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');

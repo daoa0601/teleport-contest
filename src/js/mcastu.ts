@@ -35,9 +35,6 @@ import {
 } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
-} from './monster_perception.js';
-import {
     canSeeMonster,
     canSpotMonster,
     map_invisible,
@@ -107,6 +104,11 @@ import {
 } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { dist2 } from './hacklib.js';
+import {
+    monstersForgetHeroResistance,
+    monstersObserveHeroResistance,
+    seenResistanceForDamage,
+} from './mondata.js';
 
 const M1_SEE_INVIS = 0x01000000;
 export const MCF_INDIRECT = 0x01;
