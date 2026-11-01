@@ -1,7 +1,8 @@
-// shknam.js — shopkeeper identity and shop stocking.
-// C ref: shknam.c — good_shopdoor, nameshk, get_shop_item, shkveg and
-// mkveggy_at, shkinit and stock_room. Room and shop selection live in
-// mkroom.ts (mkroom.c mkshop); shopkeeper runtime behavior lives in shk.ts.
+// shknam.js — the shknam.c owner: the generated shtypes table, shopkeeper
+// identity and names, shop stock selection (get_shop_item, shkveg,
+// mkveggy_at, shkinit, stock_room) and the saleable()/veggy_item() stock
+// test. Room and shop selection live in mkroom.ts (mkroom.c mkshop);
+// shopkeeper runtime behavior lives in shk.ts.
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import { CORR, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DUST, HEALTHY_TIN, In_mines, IS_ROOM, MM_ESHK, PL_NSIZ, ROOM, RLOC_NOMSG, ROOMOFFSET, SDOOR, SHOPBASE, } from './const.js';

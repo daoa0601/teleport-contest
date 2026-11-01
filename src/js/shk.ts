@@ -1,12 +1,14 @@
+// shk.js — the shk.c owner: shop billing and pricing, payment (dopay and
+// the itemized bill), selling, theft and damage settlement, the shopkeeper
+// anger/repair lifecycle, shop entry/exit policy, chat and price quotes.
+// C refs beyond shk.c: hack.c move_update()/check_special_room() in the
+// entry policy below. Lua/mklev owns room construction and initial stock
+// (shknam.ts); this module owns the live relationship among room, resident,
+// customer, and hero.
+
 import { heroLocomotion } from './hero_locomotion.js';
 import { recorderLocalHour } from './calendar.js';
 import { impossible } from './diagnostics.js';
-// shk.js — Runtime shop ownership and entry policy.
-// C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
-// shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
-// initial stock; this module owns the live relationship among room, resident,
-// customer, and hero.
-
 import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
