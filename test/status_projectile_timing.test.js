@@ -8,7 +8,7 @@ import { doeat } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { throwMonsterProjectile } from '../js/monster_throw.js';
+import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { CRAM_RATION, DAGGER } from '../js/object_data.js';
 import { addInventoryObject, uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

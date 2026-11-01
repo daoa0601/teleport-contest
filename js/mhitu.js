@@ -32,7 +32,7 @@ import { returnHeroToHumanForm } from './polyself.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, resumeDeferredSpecialAttack, presentMonsterPickups, presentMonsterPostMove, } from './monmove.js';
-import { attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, } from './mthrowu.js';
+import { attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath, resolveMonsterSpitAtHero, } from './mthrowu.js';
 import { beginDeferredHeroCloneWizard, finishDeferredHeroCloneWizard, chooseMonsterSpell, resolveDeferredHeroAggravation, resolveDeferredHeroCurseItems, resolveDeferredHeroDeathTouch, resolveDeferredHeroDestroyArmor, resolveDeferredHeroDirectSpell, resolveDeferredHeroFirePillar, resolveDeferredHeroGeyser, resolveDeferredHeroHasteSelf, resolveDeferredHeroInsectSpell, resolveDeferredHeroLightningSpell, resolveDeferredHeroSummonMonsters, resumeDeferredHeroSpell, rollDeferredHeroSpellDamage, prepareMonsterSpellResistance, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, } from './mcastu.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
@@ -75,7 +75,6 @@ import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdStun, tryKnockback, } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
-import { resolveMonsterSpitAtHero } from './monster_spit.js';
 import { unplaceBallAndChain } from './ball.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).

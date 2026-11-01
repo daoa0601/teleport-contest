@@ -7,7 +7,7 @@ import { NO_MINVENT, STONE, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
-import { attackHeroWithPolearm } from '../js/monster_polearm.js';
+import { attackHeroWithPolearm } from '../js/mthrowu.js';
 import { LANCE, OBJECT_NAMES } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';

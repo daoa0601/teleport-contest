@@ -76,6 +76,7 @@ import {
 } from './monmove.js';
 import {
     attackHeroWithRangedWeapon, maybeBreatheAtHero, resolveDeferredMonsterBreath,
+    resolveMonsterSpitAtHero,
 } from './mthrowu.js';
 import {
     beginDeferredHeroCloneWizard,
@@ -156,7 +157,6 @@ import {
 } from './uhitm.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
-import { resolveMonsterSpitAtHero } from './monster_spit.js';
 import { unplaceBallAndChain } from './ball.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack

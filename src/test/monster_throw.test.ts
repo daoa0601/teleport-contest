@@ -8,12 +8,12 @@ import {
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { resolveMonsterCombatThrow } from '../js/monster_combat_throw.js';
+import { resolveMonsterCombatThrow } from '../js/mthrowu.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { monsterVolleyCount, readyRangedMonsterWeapon, throwMonsterProjectile,
-    throwMonsterWeaponAtMonster } from '../js/monster_throw.js';
+    throwMonsterWeaponAtMonster } from '../js/mthrowu.js';
 import { selectMonsterRangedWeapon } from '../js/monster_weapon.js';
 import { AMULET_OF_LIFE_SAVING, ARROW, BOULDER, BOW, CREAM_PIE,
     DAGGER, DART, EGG, ELVEN_ARROW, ELVEN_BOW,

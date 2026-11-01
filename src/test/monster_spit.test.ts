@@ -12,7 +12,7 @@ import { resetInputState } from '../js/input.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { AT_SPIT } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
-import { resolveMonsterCombatSpit, resolveMonsterSpitAtHero } from '../js/monster_spit.js';
+import { resolveMonsterCombatSpit, resolveMonsterSpitAtHero } from '../js/mthrowu.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { performPetRangedAttack } from '../js/dogmove.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, HELMET } from '../js/object_data.js';

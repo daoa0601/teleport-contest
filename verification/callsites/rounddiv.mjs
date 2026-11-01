@@ -65,7 +65,7 @@ for (const label of ['js/polyself.js', 'js/eat.js']) {
     visit(source);
 }
 // monmulti's port inlines its positive-denominator rounding.
-const label = 'js/monster_throw.js';
+const label = 'js/mthrowu.js';
 const source = ts.createSourceFile(label, readFileSync(resolve(repo, label), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
 function inlineVolley(node, owner = '') {
     if (ts.isFunctionDeclaration(node)) owner = node.name?.text || owner;

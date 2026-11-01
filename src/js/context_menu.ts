@@ -18,7 +18,7 @@ import { BOULDER, CREDIT_CARD, LOCK_PICK, SADDLE, SKELETON_KEY } from './object_
 import { observeObjectForNaming } from './objnam.js';
 import { monsterSaddle } from './steed.js';
 import { couldsee } from './vision.js';
-import { blockingTerrain } from './monster_ranged_alignment.js';
+import { blockingTerrain } from './mthrowu.js';
 import { heroTestMove } from './hack.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,

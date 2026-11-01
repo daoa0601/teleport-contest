@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
-import { returnMonsterWeapon } from '../js/monster_returning_weapon.js';
+import { returnMonsterWeapon } from '../js/mthrowu.js';
 import { AKLYS } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

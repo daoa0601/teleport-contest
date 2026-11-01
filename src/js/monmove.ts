@@ -99,7 +99,10 @@ import {
     monsterSpellUseless,
     movementSpellSelections,
 } from './mcastu.js';
-import { monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero } from './monster_ranged_alignment.js';
+import {
+    attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero,
+    objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero,
+} from './mthrowu.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { finishPetEating } from './pet_eating.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
@@ -109,17 +112,11 @@ import {
 } from './monster_hiding.js';
 import { finishMonsterWebTrap } from './web_trap.js';
 import {
-    objectTypeName,
-    readyRangedMonsterWeapon,
-    throwMonsterWeaponAtHero,
-} from './monster_throw.js';
-import {
     monsterWieldedWeapon,
     selectMonsterRangedWeapon,
     swingMonsterWeapon,
     wieldMonsterWeapon,
 } from './monster_weapon.js';
-import { attackHeroWithPolearm } from './monster_polearm.js';
 import {
     ammunitionMatchesLauncher,
     isPick,

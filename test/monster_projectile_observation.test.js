@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { throwMonsterProjectile } from '../js/monster_throw.js';
+import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { ELVEN_DAGGER } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';

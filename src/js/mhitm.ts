@@ -42,9 +42,9 @@ import {
 } from './monster_weapon.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { selectAttack } from './attack_selection.js';
-import { resolveMonsterCombatThrow } from './monster_combat_throw.js';
-import { resolveMonsterCombatBreath } from './monster_combat_breath.js';
-import { resolveMonsterCombatSpit } from './monster_spit.js';
+import {
+    resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow,
+} from './mthrowu.js';
 import { resolveMonsterCombatGaze } from './monster_combat_gaze.js';
 import { resolveMonsterCombatExplosion } from './monster_combat_explosion.js';
 import { resolveMonsterCombatEngulf } from './monster_combat_engulf.js';

@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { AD_FIRE, AD_RBRE, AD_SLEE, AT_BREA } from '../js/monster_attack_types.js';
-import { resolveMonsterCombatBreath } from '../js/monster_combat_breath.js';
+import { resolveMonsterCombatBreath } from '../js/mthrowu.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
