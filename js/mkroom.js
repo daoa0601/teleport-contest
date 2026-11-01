@@ -10,7 +10,7 @@ import { rn2, rnd, rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { AIR, ALTAR, AM_SHRINE, ANTHOLE, ANY_SHOP, ANY_TYPE, BARRACKS, BEEHIVE, BLCORNER, BRCORNER, CLOUD, COCKNEST, CORR, COURT, CROSSWALL, LEPREHALL, DBWALL, DOOR, DRAWBRIDGE_DOWN, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS, IS_DOOR, IS_FURNITURE, IS_ROOM, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, MM_ASLEEP, MM_NOGRP, MORGUE, OROOM, POOL, ROOM, ROOMOFFSET, SHOPBASE, SDOOR, SINK, SPACE_POS, STAIRS, STONE, SWAMP, TEMPLE, TDWALL, THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, ZOO, isok, Align2amask, In_endgame, A_NONE, G_GONE, } from './const.js';
 import { CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE, } from './object_data.js';
-import { RANDOM_SHOP_TYPES } from './shop_data.js';
+import { RANDOM_SHOP_TYPES } from './shknam.js';
 import { insideRoom } from './room.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';

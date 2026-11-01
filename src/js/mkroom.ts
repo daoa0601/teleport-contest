@@ -22,7 +22,7 @@ import {
 import {
     CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE,
 } from './object_data.js';
-import { RANDOM_SHOP_TYPES } from './shop_data.js';
+import { RANDOM_SHOP_TYPES } from './shknam.js';
 import { insideRoom } from './room.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';

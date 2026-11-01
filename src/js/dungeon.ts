@@ -15,7 +15,7 @@ import {
 } from './const.js';
 import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
 import { getLine } from './query.js';
-import { SHOP_TYPES } from './shop_data.js';
+import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { questLeaderName } from './quest_pager.js';

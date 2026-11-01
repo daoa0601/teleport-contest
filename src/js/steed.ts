@@ -47,7 +47,7 @@ import { heroHandName, heroLegName } from './body_parts.js';
 import { heroHasFreeHand, isPolearm } from './weapon_type.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { wormCrossesBetween } from './worm.js';
-import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
+import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';

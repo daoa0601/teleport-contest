@@ -9,41 +9,40 @@ import { impossible } from './diagnostics.js';
 import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
-import { SHOP_TYPES } from './shop_data.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
+import { SHOP_TYPES } from './shknam.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
-import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
-import { shopkeeperName } from './shknam.js';
+import { possessiveName, depth } from './hacklib.js';
+import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
+import { shopkeeperName, shopStocksObject } from './shknam.js';
 import { containedGold } from './gold.js';
 import { containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer, shopClaimsObject, shopGetPrice, shopkeeperIsMuted, stolenValue, } from './shop_loss.js';
-import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, shopStocksObject, } from './shop_sell.js';
+import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, rouseShopkeeper } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { currency } from './currency.js';
-import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
-import { rn2 } from './rng.js';
+import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming } from './objnam.js';
+import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { publishMonsterWake } from './mon.js';
-import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, } from './const.js';
-import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { publishMonsterWake, angerWatchGuards, removeMonsterFromGame } from './mon.js';
+import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, MORGUE, OROOM, PL_NSIZ, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, LL_ACHIEVE, G_GONE, isok, MM_NOMSG, LOW_PM, DOOR, D_BROKEN } from './const.js';
+import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership, roomForIndex } from './room.js';
 import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
-import { recordDiscoveredRoom } from './dungeon.js';
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, } from './object_data.js';
-import { learnObjectType, recordObjectPriceQuote } from './object_knowledge.js';
+import { recordDiscoveredRoom, dungeonBuildsUp } from './dungeon.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR } from './object_data.js';
+import { learnObjectType, recordObjectPriceQuote, observeObject } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
-import { moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, } from './shop_damage.js';
+import { moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, setPaidShopkeeper, hotPursuitShopkeeper, addUpBill, homeShopkeeper } from './shop_damage.js';
 import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
-import { leaveHeroShop } from './shop_departure.js';
 import { performMonsterTurn } from './monmove.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -51,16 +50,31 @@ import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { resistConflict } from './mon.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './armor.js';
-import { monsterHandName } from './body_parts.js';
+import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { shopkeeperRepairsDamage } from './shop_damage.js';
 import { heroHasConflict } from './hero_conflict.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { dropHeroInventoryForBones } from './bones_death.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { makemonAt } from './makemon.js';
+import { SPBOOK_CLASS } from './mklev.js';
+import { paymentObjectDescription, objectDescription } from './object_description.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { cansee } from './vision.js';
+import { showDisclosureOverlay } from './windows.js';
+import { monsterGoldAmount } from './shop_money.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
 const M2_PNAME = 0x00080000;
+// Object class codes used by the sale and naming paths; C objclass.h.
+const WEAPON_CLASS = 2;
+const ARMOR_CLASS = 3;
+const SCROLL_CLASS = 9;
 function sameLevel(a, b) {
     return (a?.dnum ?? 0) === (b?.dnum ?? 0)
         && (a?.dlevel ?? 1) === (b?.dlevel ?? 1);
@@ -1403,6 +1417,552 @@ function furniturePresent(room, furniture) {
         }
     }
     return false;
+}
+const kopSpecies = ['Keystone Kop', 'Kop Sergeant', 'Kop Lieutenant', 'Kop Kaptain']
+    .map(name => MONSTER_NAME.indexOf(name));
+// An empty room list denotes stepping onto the shop boundary. An actual
+// departed room denotes leaving outright, including departure to a new level.
+export async function leaveHeroShop(roomnos, { newLevel = false, state = game } = {}) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const hero = state.u;
+    const leaving = roomnos.length > 0;
+    if (!leaving && (!state.level.at(hero.ux, hero.uy)?.edge
+        || state.level.at(hero.ux0, hero.uy0)?.edge))
+        return;
+    const keeper = shopResident(leaving ? roomnos[0] : hero.ushops0[0], state);
+    if (!keeper || !shopkeeperInOwnShop(keeper, state))
+        return;
+    const shop = keeper.eshk;
+    if (!(shop.bill?.length || shop.billct) && !shop.debit)
+        return;
+    if (!leaving && !shopkeeperIsMuted(keeper)) {
+        const calm = !shop.surcharge;
+        if (!heroIsDeaf(state)) {
+            await plineWithContinuation(`"${state.plname}!  ${calm
+                ? 'Please pay before leaving.' : "Don't you leave without paying!"}"`);
+        }
+        else {
+            await plineWithContinuation(`${shopkeeperName(keeper, { state, capitalized: true })} ${calm
+                ? 'points out' : 'makes it clear'} that you need to pay before leaving${calm ? '.' : '!'}`);
+        }
+        return;
+    }
+    if (await robShop(keeper, state))
+        await callKops(keeper, !newLevel && !!state.level.at(hero.ux0, hero.uy0)?.edge, state);
+}
+// C shk.c:remote_burglary(): bill first, then pursue from the distant shop.
+export async function remoteBurglary(x, y, state = game) {
+    requireLiveGame(state);
+    requireShopGame(state);
+    const keeper = shopResident(roomsAt(state.level, x, y, SHOPBASE)[0], state);
+    if (!keeper || !shopkeeperInOwnShop(keeper, state))
+        return;
+    if (!keeper.eshk.billct && !keeper.eshk.debit)
+        return;
+    if (await robShop(keeper, state))
+        await callKops(keeper, false, state);
+}
+async function robShop(keeper, state) {
+    await rouseShopkeeper(keeper);
+    const shop = keeper.eshk;
+    let total = (shop.bill || []).reduce((sum, entry) => sum + entry.price * entry.bquan, 0)
+        + (shop.debit || 0);
+    const credit = shop.credit || 0;
+    if (credit >= total) {
+        await plineWithContinuation(`Your credit of ${credit} ${currency(credit, { state })} is used to cover your shopping bill.`);
+        total = 0;
+    }
+    else {
+        await plineWithContinuation('You escaped the shop without paying!');
+        total -= credit;
+    }
+    setPaidShopkeeper(keeper, state);
+    if (!total)
+        return false;
+    shop.robbed = (shop.robbed || 0) + total;
+    await plineWithContinuation(`You stole ${total} ${currency(total, { state })} worth of merchandise.`);
+    const shopType = SHOP_TYPES[shop.shoptype - SHOPBASE];
+    if (!shopType)
+        throw new Error(`Shopkeeper ${keeper.m_id} has invalid shop type ${shop.shoptype}`);
+    recordGameLogEvent(`stole ${total} ${currency(total, { state })} worth of merchandise from ${possessiveName(shopkeeperName(keeper, { state }))} ${shopType.name}`, {
+        state,
+        flags: LL_ACHIEVE,
+    });
+    if (!state.urole || !state.u.ualign)
+        throw new Error('Shop robbery requires hero role and alignment');
+    if (state.urole.key !== 'rogue')
+        adjustHeroAlignment(-Math.sign(state.u.ualign.type), state);
+    hotPursuitShopkeeper(keeper, state);
+    return true;
+}
+async function callKops(keeper, nearShop, state) {
+    const deaf = heroIsDeaf(state);
+    if (!deaf)
+        await plineWithContinuation('An alarm sounds!');
+    const noKops = kopSpecies.every(species => (state.mvitals?.[species]?.mvflags ?? 0) & G_GONE);
+    const guardsResponded = await angerWatchGuards(deaf);
+    if (!guardsResponded && noKops) {
+        if (state.flags.verbose && !deaf)
+            await plineWithContinuation('But no one seems to respond to it.');
+        return;
+    }
+    if (noKops)
+        return;
+    const stairs = pursuitStairs(state);
+    if (nearShop) {
+        if (state.flags.verbose)
+            await plineWithContinuation('The Keystone Kops appear!');
+        await makeKops({ x: state.u.ux, y: state.u.uy }, state);
+        return;
+    }
+    if (state.flags.verbose)
+        await plineWithContinuation('The Keystone Kops are after you!');
+    if (stairs && isok(stairs.sx, stairs.sy))
+        await makeKops({ x: stairs.sx, y: stairs.sy }, state);
+    if (state.program_state.gameover)
+        return;
+    await makeKops({ x: keeper.mx, y: keeper.my }, state);
+}
+function pursuitStairs(state) {
+    const stairs = [];
+    for (let stair = state.stairs; stair; stair = stair.next)
+        stairs.push(stair);
+    if (!stairs.length)
+        return null;
+    const up = dungeonBuildsUp(state.u.uz, state);
+    return stairs.find(stair => !stair.isladder && !!stair.up === up)
+        || stairs.find(stair => stair.isladder && !!stair.up === up)
+        || stairs.find(stair => stair.tolev.dnum !== state.u.uz.dnum)
+        || stairs.find(stair => !stair.isladder && !!stair.up !== up)
+        || stairs.find(stair => stair.isladder && !!stair.up !== up)
+        || null;
+}
+async function makeKops(origin, state) {
+    let position = origin;
+    const count = Math.abs(depth(state.u.uz, state.dungeons)) + rnd(5);
+    const ranks = [count, Math.trunc(count / 3) + 1, Math.trunc(count / 6), Math.trunc(count / 9)];
+    for (const [rank, rankCount] of ranks.entries()) {
+        if (!rankCount)
+            break;
+        const species = kopSpecies[rank];
+        if (species === undefined)
+            throw new Error(`Kop rank ${rank} has no monster species`);
+        if ((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
+            continue;
+        for (let remaining = rankCount; remaining > 0; remaining--) {
+            // Native enexto moves the center even if makemon later fails.
+            const next = findNearbyMonsterPosition(species, position.x, position.y, { state });
+            if (next) {
+                position = next;
+                await makemonAt(species, position.x, position.y, MM_NOMSG);
+                if (state.program_state.gameover)
+                    return;
+            }
+        }
+    }
+}
+// C shk.c:shopper_financial_report().
+export async function reportShopFinances() {
+    const room = insideShopRoomAt(game, game.u.ux, game.u.uy);
+    let current = room ? shopResident(room.roomno) : null;
+    if (current && !current.eshk.credit && !shopDebt(current)) {
+        await plineWithContinuation('You have no credit or debt in here.');
+        current = null;
+    }
+    for (let pass = current ? 0 : 1; pass <= 1; pass++) {
+        for (const keeper of [...(game.level?.monsters ?? [])].reverse()) {
+            if (!keeper.isshk || keeper.dead || keeper.mhp <= 0 || !hasShopkeeperData(keeper))
+                continue;
+            if (!keeper.mpeaceful && !keeper.eshk.surcharge)
+                rileShopkeeper(keeper);
+            if ((keeper !== current) !== !!pass)
+                continue;
+            const credit = keeper.eshk.credit ?? 0;
+            if (credit) {
+                const shop = SHOP_TYPES[keeper.eshk.shoptype - SHOPBASE];
+                if (!shop)
+                    throw new Error(`Shopkeeper ${keeper.m_id} has no shop type.`);
+                await plineWithContinuation(`You have ${credit} ${currency(credit)} credit at ${possessiveName(shopkeeperName(keeper))} ${shop.name}.`);
+            }
+            else if (keeper === current) {
+                await plineWithContinuation('You have no credit in here.');
+            }
+            const debt = shopDebt(keeper);
+            if (debt) {
+                await plineWithContinuation(`You owe ${shopkeeperName(keeper)} ${debt} ${currency(debt)}.`);
+            }
+            else if (keeper === current) {
+                await plineWithContinuation("You don't owe any gold here.");
+            }
+        }
+    }
+}
+function shopDebt(keeper) {
+    return addUpBill(keeper) + (keeper.eshk.debit ?? 0);
+}
+export async function settleShopkeepersOnExit(outcome, { silent = false, publish = plineWithContinuation, random = rn2 } = {}) {
+    if (outcome === 'escaped')
+        return false;
+    requireShopGame(game);
+    game._shopRepossession = { shopkeeper: null, location: { x: 0, y: 0 } };
+    const first = preferredShopkeeper();
+    const options = { croaked: outcome !== 'quit', silent, publish, random };
+    let count = 0;
+    let taken = false;
+    if (first)
+        taken = await inheritHeroInventory(first, ++count, options);
+    for (const keeper of exitShopkeepers()) {
+        const local = shopkeeperIsLocal(keeper);
+        if (keeper !== first) {
+            const claimed = await inheritHeroInventory(keeper, ++count, options);
+            taken = taken || claimed;
+        }
+        // Bones must not retain a keeper whose shop belongs to another level.
+        if (!local)
+            await removeMonsterFromGame(keeper);
+    }
+    return taken;
+}
+// C shk.c:finish_paybill().
+export async function finishShopkeeperRepossession() {
+    const repository = game._shopRepossession;
+    const keeper = repository?.shopkeeper ?? null;
+    let { x, y } = repository?.location ?? { x: 0, y: 0 };
+    if (!isok(x, y)) {
+        if (keeper)
+            await impossible(`finish_paybill: bad location <${x},${y}>.`, { state: game });
+        ({ x, y } = heroRepositoryPosition());
+    }
+    releaseAllMonsterLeashes(game);
+    const money = heroGoldAmount(game);
+    if (keeper && money)
+        await moneyToMonster(keeper, money);
+    await dropHeroInventoryForBones(x, y);
+}
+function preferredShopkeeper() {
+    let resident = null;
+    let creditor = null;
+    let hostile = null;
+    let localKeeper = null;
+    for (const keeper of exitShopkeepers()) {
+        const shop = keeper.eshk;
+        const local = shopkeeperIsLocal(keeper);
+        if (local && game.u.ushops?.includes(shop.shoproom)) {
+            if (!resident || shopkeeperHasDebt(keeper))
+                resident = keeper;
+        }
+        else if (shopkeeperHasDebt(keeper)) {
+            creditor ??= keeper;
+        }
+        else if (shop.following || !keeper.mpeaceful) {
+            hostile ??= keeper;
+        }
+        else if (local) {
+            localKeeper ??= keeper;
+        }
+    }
+    return resident ?? creditor ?? hostile ?? localKeeper;
+}
+// C next_shkp(FALSE). Capture the list before this pass because mongone()
+// removes its current member while the native loop retains the next pointer.
+function* exitShopkeepers() {
+    for (const keeper of [...(game.level?.monsters ?? [])].reverse()) {
+        if (keeper.dead || keeper.mhp <= 0 || !keeper.isshk)
+            continue;
+        if (!hasShopkeeperData(keeper))
+            throw new Error('Shopkeeper lacks shop history.');
+        if (!keeper.mpeaceful && !keeper.eshk.surcharge)
+            rileShopkeeper(keeper);
+        yield keeper;
+    }
+}
+async function inheritHeroInventory(keeper, count, options) {
+    const { croaked, silent, publish, random } = options;
+    const shop = keeper.eshk;
+    const heroInShop = !!game.u.ushops?.includes(shop.shoproom);
+    keeper.minvis = 0;
+    keeper.perminvis = 0;
+    if (count > 1) {
+        if (cansee(keeper.mx, keeper.my) && croaked && !silent) {
+            const shake = monsterHasHead(keeper) && !random(2)
+                ? `, shakes ${monsterPossessive(keeper, { noIt: true, random })} ${monsterHeadName(keeper.mnum)},`
+                : '';
+            await publish(`${shopkeeperName(keeper, { capitalized: true })} ${monsterIsHelpless(keeper) ? 'wakes up, ' : ''}looks at your corpse${shake} and ${shopkeeperInOwnShop(keeper) ? 'sighs' : 'disappears'}.`);
+        }
+        await returnShopkeeperHome(keeper);
+        return completeShopSettlement(keeper, heroInShop);
+    }
+    if (heroInShop && shopkeeperInOwnShop(keeper) && !shopkeeperHasDebt(keeper)
+        && keeper.mpeaceful && !shop.following && (game.u.ugrave_arise ?? -1) < LOW_PM) {
+        const taken = game.inventory.length > 0;
+        if (taken && !silent)
+            await publish(`${shopkeeperName(keeper, { capitalized: true })} gratefully inherits all your possessions.`);
+        return completeShopSettlement(keeper, taken);
+    }
+    let loss = 0;
+    const owed = shopkeeperHasDebt(keeper);
+    if (owed) {
+        if (heroInShop && shopkeeperInOwnShop(keeper))
+            loss = addUpBill(keeper) + (shop.debit ?? 0);
+        loss = Math.max(loss, shop.robbed ?? 0);
+    }
+    let taken = false;
+    if (shop.following || !keeper.mpeaceful || owed) {
+        if (game.inventory.length > 0) {
+            const money = heroGoldAmount(game);
+            const adjacent = dist2(keeper.mx, keeper.my, game.u.ux, game.u.uy) <= 2;
+            const takes = `${monsterIsHelpless(keeper) ? 'wakes up and ' : ''}${adjacent ? '' : 'comes and '}takes`;
+            if (loss > money || !loss || heroInShop) {
+                shop.robbed = Math.max(0, (shop.robbed ?? 0) - money);
+                if (money > 0)
+                    await moneyToMonster(keeper, money);
+                if (!silent)
+                    await publish(`${shopkeeperName(keeper, { capitalized: true })} ${takes} all your possessions.`);
+                taken = true;
+            }
+            else {
+                await moneyToMonster(keeper, loss);
+                if (!silent) {
+                    const customer = (shop.customer ?? '').slice(0, PL_NSIZ) === game.plname.slice(0, PL_NSIZ);
+                    await publish(`${shopkeeperName(keeper, { capitalized: true })} ${takes} the ${loss} ${currency(loss, { random })} ${customer ? 'you ' : ''}owed ${monsterObjectPronoun(keeper, { noIt: true })}.`);
+                }
+                pacifyShopkeeper(keeper);
+                shop.following = 0;
+                shop.robbed = 0;
+            }
+        }
+        await returnShopkeeperHome(keeper);
+    }
+    return completeShopSettlement(keeper, taken);
+}
+async function returnShopkeeperHome(keeper) {
+    requireShopGame(game);
+    if (monsterIsHelpless(keeper)) {
+        keeper.msleeping = 0;
+        keeper.mfrozen = 0;
+        keeper.mcanmove = 1;
+    }
+    if (!shopkeeperInOwnShop(keeper))
+        await homeShopkeeper(keeper, game);
+}
+function completeShopSettlement(keeper, taken) {
+    setPaidShopkeeper(keeper);
+    if (taken && !game._shopRepossession?.shopkeeper) {
+        let location = heroRepositoryPosition();
+        if (!game.u.ushops?.includes(keeper.eshk.shoproom)
+            || costlyAdjacent(keeper, location.x, location.y)) {
+            const { shk: home, shd: door } = keeper.eshk;
+            location = {
+                x: home.x + Math.sign(home.x - door.x),
+                y: home.y + Math.sign(home.y - door.y),
+            };
+        }
+        game._shopRepossession = { shopkeeper: keeper, location };
+    }
+    return taken;
+}
+function heroRepositoryPosition() {
+    return { x: game.u.ux || game.u.ux0, y: game.u.ux ? game.u.uy : game.u.uy0 };
+}
+function shopkeeperHasDebt(keeper) {
+    const shop = keeper.eshk;
+    return !!(shop.billct || shop.debit || shop.robbed);
+}
+function shopkeeperIsLocal(keeper) {
+    const level = keeper.eshk.shoplevel;
+    const heroLevel = game.u.uz;
+    return !!heroLevel && level.dnum === heroLevel.dnum && level.dlevel === heroLevel.dlevel;
+}
+export async function nameShopTransaction(keeper, object, describe, { publish, state }) {
+    let wasUnknown = !object.dknown;
+    observeObject(object, state);
+    if (!OBJECT_MAGIC[object.otyp] && shopStocksObject(keeper.eshk.shoptype, object)
+        && ([WEAPON_CLASS, ARMOR_CLASS, SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass) || object.otyp === MIRROR)) {
+        wasUnknown ||= !objectTypeKnown(object, state);
+        learnObjectType(object.otyp, state);
+    }
+    observeObjectForNaming(object, { state });
+    const name = await paymentObjectDescription(object, object.quan, { state });
+    if (wasUnknown) {
+        const subject = name.charAt(0).toUpperCase() + name.slice(1);
+        await publish(`${subject}; you ${describe(object.quan > 1 ? 'them' : 'it')}`);
+    }
+    else {
+        await publish(`You ${describe(name)}`);
+    }
+}
+export async function quoteShopGoods() {
+    if (heroIsBlind() || heroIsDeaf())
+        return false;
+    const spot = costlySpot(game.u.ux, game.u.uy);
+    if (!spot || !spot.resident.mpeaceful || shopkeeperIsMuted(spot.resident))
+        return false;
+    const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== 12) ?? [];
+    if (!goods.length)
+        return false;
+    const quotes = [];
+    for (const object of goods) {
+        let cost = object.no_charge || object === game.uball || object === game.uchain
+            ? 0 : shopObjectUnitCost(object, spot.resident);
+        const contentsOnly = !cost;
+        if (object.contents?.length)
+            cost += containedBuyCost(object, spot.resident, { unpaidOnly: false });
+        if (object.globby)
+            cost *= objectPricingUnits(object);
+        observeObjectForNaming(object);
+        const name = `${cost && contentsOnly ? 'the contents of ' : ''}${await objectDescription(object)}`;
+        const each = object.quan > 1 ? ' each' : '';
+        quotes.push({ object, cost, contentsOnly, each, name,
+            line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` });
+    }
+    const quote = quotes[0];
+    if (!quote)
+        throw new Error('Shop goods disappeared during a price quote.');
+    if (quotes.length > 1) {
+        await showDisclosureOverlay(['Fine goods for sale:', '', ...quotes.map(item => item.line)], { restoreUnderlay: true });
+    }
+    else if (!quote.cost) {
+        await plineWithContinuation(`"${capitalize(quote.line)}!"`);
+    }
+    else {
+        const name = `${quote.contentsOnly ? 'the contents of ' : ''}${await objectDescription(quote.object)}`;
+        await plineWithContinuation(`"${capitalize(name)}, price ${quote.cost} ${currency(quote.cost)}${quote.each}${quote.contentsOnly ? '.' : embellish(quote.object, quote.cost)}"`);
+    }
+    return true;
+}
+function capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+// C shk.c:shk_embellish().
+function embellish(object, cost) {
+    if (!rn2(3)) {
+        let choice = rn2(5);
+        if (!choice)
+            choice = cost < 100 ? 1 : cost < 500 ? 2 : 3;
+        switch (choice) {
+            case 4:
+                if (cost < 10)
+                    break;
+                if (object.oclass === 7)
+                    return ", gourmets' delight!";
+                if (objectTypeKnown(object) ? OBJECT_MAGIC[object.otyp]
+                    : [4, 5, 8, 9, 10, 11].includes(object.oclass))
+                    return ', painstakingly developed!';
+                return ', superb craftsmanship!';
+            case 3: return ', finest quality.';
+            case 2: return ', an excellent choice.';
+            case 1: return ', a real bargain.';
+        }
+    }
+    else if (object.oartifact)
+        return ', one of a kind!';
+    return '.';
+}
+const IZCHAK_SPEAKS = [
+    "says: 'These shopping malls give me a headache.'",
+    "says: 'Slow down.  Think clearly.'",
+    "says: 'You need to take things one at a time.'",
+    "says: 'I don't like poofy coffee... give me Colombian Supremo.'",
+    "says that getting the devteam's agreement on anything is difficult.",
+    "says that he has noticed those who serve their deity will prosper.",
+    "says: 'Don't try to steal from me - I have friends in high places!'",
+    "says: 'You may well need something from this shop in the future.'",
+    'comments about the Valley of the Dead as being a gateway.',
+];
+export async function chatWithShopkeeper(monster, state = game) {
+    if (!monster.isshk) {
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} asks whether you've seen any untended shops recently.`);
+        return;
+    }
+    if (!hasShopkeeperData(monster))
+        throw new Error('A shopkeeper needs its shop data to discuss business.');
+    const shop = monster.eshk;
+    const name = () => shopkeeperName(monster, { state, capitalized: true });
+    const speaking = !heroIsDeaf(state) && !shopkeeperIsMuted(monster);
+    const subject = () => monsterSubjectPronoun(monster, { state, noIt: true });
+    let message;
+    if (!monster.mpeaceful) {
+        message = `${name()} ${speaking ? 'mentions' : 'indicates'} how much ${subject()} dislikes ${shop.robbed ? 'non-paying' : 'rude'} customers.`;
+    }
+    else if (shop.following) {
+        if (shop.customer !== state.plname) {
+            if (speaking)
+                await plineWithContinuation(`"${shopGreeting(monster, state)} ${state.plname}!  I was looking for ${shop.customer}."`);
+            shop.following = 0;
+            return;
+        }
+        message = speaking ? `"${shopGreeting(monster, state)} ${state.plname}!  Didn't you forget to pay?"`
+            : `${name()} taps you on the ${heroArmName(state)}.`;
+    }
+    else if (shop.billct) {
+        const total = addUpBill(monster) + (shop.debit ?? 0);
+        message = `${name()} ${speaking ? 'says' : 'indicates'} that your bill comes to ${total} ${currency(total, { state })}.`;
+    }
+    else if (shop.debit) {
+        message = `${name()} ${speaking ? 'reminds you' : 'indicates'} that you owe ${monsterObjectPronoun(monster, { state, noIt: true })} ${shop.debit} ${currency(shop.debit, { state })}.`;
+    }
+    else if (shop.credit) {
+        message = `${name()} encourages you to use your ${shop.credit} ${currency(shop.credit, { state })} of credit.`;
+    }
+    else if (shop.robbed) {
+        message = `${name()} ${speaking ? 'complains' : 'indicates concern'} about a recent robbery.`;
+    }
+    else if (shop.surcharge) {
+        message = `${name()} ${speaking ? 'warns you' : 'indicates'} that ${subject()} is watching you carefully.`;
+    }
+    else {
+        const money = monsterGoldAmount(monster);
+        if (money < 50 || money > 4000) {
+            message = `${name()} ${speaking ? money < 50 ? 'complains' : 'says' : 'indicates'} that business is ${money < 50 ? 'bad' : 'good'}.`;
+        }
+        else {
+            if (!speaking)
+                return;
+            const izchak = !heroIsHallucinating(state)
+                && inTown(state.level, monster.mx, monster.my)
+                && shop.shknam?.replace(/^[^A-Za-z]/, '') === 'Izchak';
+            message = izchak ? `${shopkeeperName(monster, { state })} ${IZCHAK_SPEAKS[rn2(IZCHAK_SPEAKS.length)]}`
+                : `${name()} talks about the problem of shoplifters.`;
+        }
+    }
+    await plineWithContinuation(message);
+}
+export function shopkeeperBlockingDoor(x, y, state = game) {
+    if (state.level?.at(x, y)?.typ !== DOOR)
+        return null;
+    const keeper = keeperForEntrance(x, y, state);
+    if (!keeper || keeper.eshk.shoproom !== state.u.ushops?.[0])
+        return null;
+    const shop = keeper.eshk;
+    return keeper.mx === shop.shk.x && keeper.my === shop.shk.y
+        && shop.shd.x === x && shop.shd.y === y && !monsterIsHelpless(keeper)
+        && (shop.debit || shop.billct || shop.robbed) ? keeper : null;
+}
+export function shopkeeperBlockingEntry(x, y, state = game) {
+    const door = state.level?.at(state.u.ux, state.u.uy);
+    if (door?.typ !== DOOR || door.doormask !== D_BROKEN)
+        return null;
+    const keeper = keeperForEntrance(x, y, state);
+    if (!keeper || monsterIsHelpless(keeper))
+        return null;
+    const { shk: home, shd: entrance } = keeper.eshk;
+    if (entrance.x !== state.u.ux || entrance.y !== state.u.uy
+        || keeper.mx !== home.x || keeper.my !== home.y
+        || !(Math.abs(x - home.x) === 1 || Math.abs(y - home.y) === 1))
+        return null;
+    return propertyIsActive('invisible', state) || state.u.usteed
+        || state.inventory.some(object => object.otyp === PICK_AXE || object.otyp === DWARVISH_MATTOCK)
+        ? keeper : null;
+}
+function keeperForEntrance(x, y, state) {
+    const roomno = roomsAt(state.level, x, y, SHOPBASE)[0];
+    // These two pinned C functions pass the encoded room number straight
+    // to IS_SHOP(), which indexes rooms[] without removing ROOMOFFSET.
+    if (roomno === undefined || (roomForIndex(state.level, roomno)?.rtype ?? 0) < SHOPBASE)
+        return null;
+    const keeper = shopResident(roomno, state);
+    return keeper && shopkeeperInOwnShop(keeper, state) ? keeper : null;
 }
 // C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.
 // Chooses a goal before move_special() selects a square.

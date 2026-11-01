@@ -69,7 +69,6 @@ import {
     teleportHeroAtWill,
 } from './teleport.js';
 import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
-import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { vision_recalc, vision_reset, couldsee } from './vision.js';
 import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, OVERLOADED } from './weight.js';
 import {
@@ -137,7 +136,7 @@ import { checkHeroLeashes } from './leash_apply.js';
 import { isPick } from './weapon_type.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget } from './hero_digging.js';
-import { objectTypeKnown, tendedShop } from './shk.js';
+import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { announceInvocationSquare } from './invocation.js';
 

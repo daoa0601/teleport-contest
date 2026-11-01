@@ -1,6 +1,6 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
 import { moneyToMonster } from './shop_damage.js';
-import { nameShopTransaction } from './shop_speech.js';
+import { nameShopTransaction } from './shk.js';
 import { promptYesNo } from './query.js';
 import { currency } from './currency.js';
 import { QBUFSZ } from './const.js';

@@ -3,25 +3,24 @@ import { currency } from './currency.js';
 // plus sellobj_state()'s command disposition.
 import { objectMaterial } from './object_material.js';
 import { monsterGoldAmount, moneyToHero } from './shop_money.js';
-import { nameShopTransaction } from './shop_speech.js';
+import { nameShopTransaction } from './shk.js';
 import { objectDescription } from './object_description.js';
 import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
 import { monsterPossessive } from './mondata.js';
-import { shopkeeperName } from './shknam.js';
+import { shopkeeperName, saleable } from './shknam.js';
 import { canSpotMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { requireShopGame } from './shop_types.js';
 import { containedGold } from './gold.js';
 import { recordObjectPriceQuote, } from './object_knowledge.js';
-import { CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN, } from './object_data.js';
+import { OBJECT_COST, OBJECT_NAMES } from './object_data.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
 import { objectIsCandle, objectPricingUnits, shopGetPrice, shopkeeperIsMuted, } from './shop_loss.js';
 import { monsterIsHelpless } from './mondata.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { promptYesNoAllQuit } from './query.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -35,26 +34,7 @@ const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
-const POT_FRUIT_JUICE = OBJECT_NAMES.indexOf('fruit juice');
-const POT_BOOZE = OBJECT_NAMES.indexOf('booze');
-const POT_WATER = OBJECT_NAMES.indexOf('water');
-const POT_HEALING = OBJECT_NAMES.indexOf('healing');
-const POT_FULL_HEALING = OBJECT_NAMES.indexOf('full healing');
-const POT_OIL = OBJECT_NAMES.indexOf('oil');
-const ICE_BOX = OBJECT_NAMES.indexOf('ice box');
-const LEATHER_GLOVES = OBJECT_NAMES.indexOf('leather gloves');
-const ELVEN_CLOAK = OBJECT_NAMES.indexOf('elven cloak');
-const SCR_FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');
-const LUMP_OF_ROYAL_JELLY = OBJECT_NAMES.indexOf('lump of royal jelly');
-const WAX_CANDLE = OBJECT_NAMES.indexOf('wax candle');
-const TALLOW_CANDLE = OBJECT_NAMES.indexOf('tallow candle');
-const BRASS_LANTERN = OBJECT_NAMES.indexOf('brass lantern');
-const OIL_LAMP = OBJECT_NAMES.indexOf('oil lamp');
-const MAGIC_LAMP = OBJECT_NAMES.indexOf('magic lamp');
 const CANDELABRUM_OF_INVOCATION = OBJECT_NAMES.indexOf('Candelabrum of Invocation');
-const WAN_LIGHT = OBJECT_NAMES.indexOf('light', 410);
-const SCR_LIGHT = OBJECT_NAMES.indexOf('light', 323);
-const SPE_LIGHT = OBJECT_NAMES.indexOf('light', 366);
 const DUNCE_CAP = 94;
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 const BILLSZ = 200; // C include/mextra.h
@@ -84,80 +64,6 @@ function moneyAmount(amount, state) {
 }
 function goldPieces(amount) {
     return `${amount} gold piece${amount === 1 ? '' : 's'}`;
-}
-// ---- saleable(): C shknam.c:805 over the shtypes stock table ------------
-const VEGETARIAN_PSEUDO = Symbol('vegetarian');
-const SHOP_STOCK = [
-    null, // general store: RANDOM_CLASS stocks everything
-    [{ class: ARMOR_CLASS }, { class: WEAPON_CLASS }],
-    [{ class: SCROLL_CLASS }, { class: SPBOOK_CLASS }],
-    [{ class: POTION_CLASS }],
-    [{ class: WEAPON_CLASS }, { class: ARMOR_CLASS }],
-    [{ class: FOOD_CLASS }, { otyp: POT_FRUIT_JUICE }, { otyp: POT_BOOZE },
-        { otyp: POT_WATER }, { otyp: ICE_BOX }],
-    [{ class: 4 }, { class: GEM_CLASS }, { class: 5 }],
-    [{ class: WAND_CLASS }, { otyp: LEATHER_GLOVES },
-        { otyp: ELVEN_CLOAK }],
-    [{ class: TOOL_CLASS }],
-    [{ class: SPBOOK_CLASS }, { class: SCROLL_CLASS }],
-    [{ veggy: VEGETARIAN_PSEUDO }, { otyp: POT_FRUIT_JUICE },
-        { otyp: POT_HEALING }, { otyp: POT_FULL_HEALING },
-        { otyp: SCR_FOOD_DETECTION }, { otyp: LUMP_OF_ROYAL_JELLY }],
-    [{ otyp: WAX_CANDLE }, { otyp: TALLOW_CANDLE },
-        { otyp: BRASS_LANTERN }, { otyp: OIL_LAMP }, { otyp: MAGIC_LAMP },
-        { otyp: POT_OIL }, { otyp: WAN_LIGHT }, { otyp: SCR_LIGHT },
-        { otyp: SPE_LIGHT }],
-];
-const S_BLOB = 2, S_JELLY = 10, S_FUNGUS = 32, S_VORTEX = 22, S_LIGHT = 25, S_GHOST = 54, S_ELEMENTAL = 31, S_PUDDING = 42, S_GOLEM = 55;
-const PM_STALKER = MONSTER_NAME.indexOf('stalker');
-const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
-const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
-const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');
-// C mondata.h vegan()/vegetarian() over monster symbols; noncorporeal()
-// is exactly S_GHOST (wraiths are unsolid but not vegan).
-function veganSpecies(mnum) {
-    const symbol = MONSTER_SYMBOL[mnum];
-    if (symbol === undefined)
-        return false;
-    return [S_BLOB, S_JELLY, S_FUNGUS, S_VORTEX, S_LIGHT].includes(symbol)
-        || symbol === S_GHOST
-        || (symbol === S_ELEMENTAL && mnum !== PM_STALKER)
-        || (symbol === S_GOLEM && mnum !== PM_FLESH_GOLEM
-            && mnum !== PM_LEATHER_GOLEM);
-}
-function vegetarianSpecies(mnum) {
-    return veganSpecies(mnum)
-        || (MONSTER_SYMBOL[mnum] === S_PUDDING
-            && mnum !== PM_BLACK_PUDDING);
-}
-// C shknam.c:380 veggy_item().
-function veggyItem(object) {
-    if (object.oclass !== FOOD_CLASS)
-        return false;
-    if (objectMaterial(object.otyp) === 3 || object.otyp === EGG)
-        return true;
-    // C marks spinach tins with corpsenm NON_PM (-1).
-    if (object.otyp === TIN && object.corpsenm === -1)
-        return object.spe === 1; // 0 = empty, 1 = spinach
-    if (object.otyp === TIN || object.otyp === CORPSE) {
-        return typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm)
-            && object.corpsenm >= 0
-            && object.corpsenm < MONSTER_NAME.length
-            && vegetarianSpecies(object.corpsenm);
-    }
-    return false;
-}
-// Pure stock-membership test (probabilities are generation-only in C).
-export function shopStocksObject(shoptype, object) {
-    const stock = SHOP_STOCK[shoptype - SHOPBASE];
-    if (stock == null)
-        return true;
-    return stock.some(entry => 'veggy' in entry ? veggyItem(object)
-        : 'class' in entry ? object.oclass === entry.class
-            : object.otyp === entry.otyp);
-}
-function saleable(resident, object) {
-    return shopStocksObject(resident?.eshk?.shoptype ?? SHOPBASE, object);
 }
 // ---- pricing: C shk.c:set_cost() over the shared pure price owner ------
 // Charisma and surcharge never enter the sell price.

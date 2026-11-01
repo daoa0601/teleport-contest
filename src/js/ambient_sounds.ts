@@ -19,7 +19,6 @@ import {
 } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { quoteShopGoods } from './shop_price_quote.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace } from './mondata.js';
@@ -38,7 +37,6 @@ import { recorderLocalHour } from './calendar.js';
 import { currency } from './currency.js';
 import { roles } from './roles.js';
 import { stopRun } from './runmode.js';
-import { chatWithShopkeeper } from './shop_chat.js';
 import { chatWithQuestCharacter } from './quest.js';
 import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumor.js';
@@ -54,7 +52,7 @@ import { talkToPriest } from './priest_talk.js';
 import { aggravateMonsters, publishMonsterCuss } from './wizard.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { shopkeeperInOwnShop } from './shk.js';
+import { shopkeeperInOwnShop, quoteShopGoods, chatWithShopkeeper } from './shk.js';
 import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
 

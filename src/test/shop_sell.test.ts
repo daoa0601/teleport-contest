@@ -16,8 +16,9 @@ import { HUNGRY, WEAK } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import {
     SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDroppedObject,
-    setSellDisposition, shopOfferForObject, shopStocksObject,
+    setSellDisposition, shopOfferForObject,
 } from '../js/shop_sell.js';
+import { shopStocksObject } from '../js/shknam.js';
 import type { SellDisposition } from '../js/shop_sell.js';
 import { shopGetPrice } from '../js/shop_loss.js';
 import {

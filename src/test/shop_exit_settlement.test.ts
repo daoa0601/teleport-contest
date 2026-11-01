@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
-import { finishShopkeeperRepossession, settleShopkeepersOnExit } from '../js/shop_settlement.js';
+import { finishShopkeeperRepossession, settleShopkeepersOnExit } from '../js/shk.js';
 import type { Shopkeeper } from '../js/shop_types.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

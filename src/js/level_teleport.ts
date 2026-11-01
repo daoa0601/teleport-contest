@@ -18,7 +18,7 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { rn2, rnd, rnl } from './rng.js';
-import { leaveHeroShop } from './shop_departure.js';
+import { leaveHeroShop } from './shk.js';
 import { bringLeashedFollowers, heroControlsTeleport } from './teleport.js';
 import { surfaceName } from './terrain_name.js';
 

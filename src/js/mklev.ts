@@ -52,7 +52,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1 } from './rng.js';
-import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shop_data.js';
+import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
 import {
     GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM,
     CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL,
