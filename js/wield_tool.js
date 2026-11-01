@@ -7,7 +7,7 @@ import { objectCombatName, ownedObjectName } from './objnam.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { willWeld, readyHeroWeapon, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './wield.js';
 import { stopTwoWeaponCombat } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall, } from './polyself.js';
@@ -18,7 +18,9 @@ function isWeapon(object) {
     return object.oclass === 2;
 }
 function isTwoHanded(object) {
-    return !!OBJECT_BIMANUAL[object.otyp];
+    // C wield.c:wield_tool() checks bimanual(obj) at both the welded message
+    // and the shield refusal.
+    return isBimanualObject(object);
 }
 function weldedPrimary(state) {
     const primary = state.uwep || state.u?.uwep || null;

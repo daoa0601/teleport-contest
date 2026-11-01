@@ -35,9 +35,10 @@ import {
 } from './monster_data.js';
 import {
     ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT,
-    HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_PROPERTY,
+    HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_DELAY, OBJECT_PROPERTY,
     SADDLE, requireObjectData,
 } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import {
     AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE,
     W_WEP,
@@ -198,7 +199,7 @@ function monsterWearSlots(monster: Monster): MonsterArmorSlot[] {
         slots.push('uarmu');
     if (canWearSuit || monsterWrappingAllowed(monster.mnum)) slots.push('uarmc');
     slots.push('uarmh');
-    if (!weapon || !OBJECT_BIMANUAL[weapon.otyp]) slots.push('uarms');
+    if (!weapon || !isBimanualObject(weapon)) slots.push('uarms');
     slots.push('uarmg');
     if (!monsterIsSlithy(monster.mnum)
         && !monsterIsCentaur(monster.mnum)) slots.push('uarmf');
@@ -311,7 +312,7 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
     if (slot === 'uarmu' && ((monster.misc_worn_check ?? 0) & W_ARM))
         return null;
     const mask = SLOT_MASK[slot];
-    if (slot === 'uarms' && monster.mw && OBJECT_BIMANUAL[monster.mw.otyp]) return null;
+    if (slot === 'uarms' && isBimanualObject(monster.mw)) return null;
     const { old, best } = bestForSlot(monster, slot, creation, state);
     if (!best || best === old) return null;
 

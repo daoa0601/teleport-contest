@@ -7,8 +7,9 @@ import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, nomul } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid } from './monster_data.js';
-import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
+import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
+import { isBimanualObject } from './object_properties.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { recordRandom } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies } from './hero_species.js';
@@ -131,9 +132,9 @@ async function putOnAccessoryObject(object) {
     const weapon = game.uwep;
     const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
     const discoveredWeld = !!weapon && !weapon.bknown;
-    if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
+    if (weapon && (ringSlot === primary || isBimanualObject(weapon))
         && isWeldedPrimary(weapon)) {
-        const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
+        const handName = isBimanualObject(weapon) ? makePlural(heroHandName(game)) : heroHandName(game);
         await pline(`You cannot free your weapon ${handName} to put on the ring.`);
         game.context.move = discoveredWeld ? 1 : 0;
         return;

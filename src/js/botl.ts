@@ -34,7 +34,7 @@ import {
 } from './monster_data.js';
 import {
     AKLYS, AMULET_OF_GUARDING, CLOAK_OF_PROTECTION, CREAM_PIE, GOLD_PIECE,
-    OBJECT_BIMANUAL, OBJECT_SUBTYPE, RIN_PROTECTION,
+    OBJECT_SUBTYPE, RIN_PROTECTION,
 } from './object_data.js';
 import { roles } from './roles.js';
 import type { Monster } from './monster_types.js';
@@ -57,7 +57,7 @@ import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
 import { armorSimpleName } from './armor.js';
 import { artifactById } from './artifacts.js';
-import { isWeaponTool } from './object_properties.js';
+import { isBimanualObject } from './object_properties.js';
 import { weaponDescription } from './weapon.js';
 import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
@@ -475,8 +475,7 @@ export function weaponStatus(state: GameState): string {
         text = weaponDescription(weapon);
         if (text.toLowerCase() === 'food' && weapon.otyp === CREAM_PIE) text = 'pie';
     }
-    const twoHanded = (weapon.oclass === 2 || isWeaponTool(weapon))
-        && OBJECT_BIMANUAL[weapon.otyp] && !text.startsWith('2')
+    const twoHanded = isBimanualObject(weapon) && !text.startsWith('2')
         && !text.toLowerCase().startsWith('two');
     text = text.charAt(0).toUpperCase() + text.slice(1);
     return `${twoHanded ? '2H-' : ''}${text.replace(/ /g, '-')}`;

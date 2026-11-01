@@ -15,9 +15,9 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterIsHelpless } from './mondata.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
-import { BOOMERANG, KATANA, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
+import { BOOMERANG, KATANA, OBJECT_SUBTYPE } from './object_data.js';
 import { objectMaterial } from './object_material.js';
-import { isFlimsyObject, isMissileObject, isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isFlimsyObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { objectResistsDestruction } from './object_state.js';
 import { objectQuantity } from './object_stack.js';
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
@@ -159,7 +159,7 @@ function shatterCandidate(
         return null;
     const samuraiKatana = state.urole.key === 'samurai' && weapon.otyp === KATANA
         && !(state.uarms || state.u.uarms);
-    if (!OBJECT_BIMANUAL[weapon.otyp] && !samuraiKatana) return null;
+    if (!isBimanualObject(weapon) && !samuraiKatana) return null;
     const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? P_NONE);
     if (skill === P_NONE) return null;
     const proficiency = ensureHeroSkills(state)?.[skill];

@@ -13,7 +13,7 @@ import { heroSpecies } from './hero_species.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';
-import { OBJECT_BIMANUAL } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import {
     objectHasPersonalName, objectName, objectNameIsPlural,
@@ -81,8 +81,8 @@ export async function canBeginTwoWeaponCombat(state: GameState): Promise<boolean
             plural ? "aren't" : "isn't a"} suitable ${slot} weapon${object.quan === 1 ? '' : 's'}.`);
         return false;
     }
-    if (OBJECT_BIMANUAL[primary.otyp] || OBJECT_BIMANUAL[secondary.otyp]) {
-        const object = OBJECT_BIMANUAL[primary.otyp] ? primary : secondary;
+    if (isBimanualObject(primary) || isBimanualObject(secondary)) {
+        const object = isBimanualObject(primary) ? primary : secondary;
         await plineWithContinuation(`${weaponName(object, state)} isn't one-handed.`);
         return false;
     }

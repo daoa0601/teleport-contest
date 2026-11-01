@@ -7,9 +7,9 @@ import { P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_R
 import { displayColorName } from './display.js';
 import { game } from './gstate.js';
 import { equipmentLightDescription } from './light.js';
-import { AKLYS, MEAT_RING, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
+import { AKLYS, MEAT_RING, OBJECT_SUBTYPE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isLauncherAmmunition, isMissileObject, isWeaponTool } from './object_properties.js';
 import { heroIsBlind } from './senses.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 const WEAPON_CLASS = 2;
@@ -49,7 +49,7 @@ export function heldObjectDescription(item, { state = game, primaryHandDetail = 
     let description = '';
     if (mask & W_WEP) {
         if (usesPrimaryHandPhrase(item, state)) {
-            const hand = isBimanual(item) ? makePlural(heroHandName(state))
+            const hand = isBimanualObject(item) ? makePlural(heroHandName(state))
                 : `${state.u.rightHanded === false ? 'left' : 'right'} ${heroHandName(state)}`;
             const action = item.otyp === AKLYS ? 'tethered to'
                 : isTwoWeaponPrimary(item, state) ? 'wielded in' : 'weapon in';
@@ -118,10 +118,6 @@ function usesPrimaryHandPhrase(item, state) {
 }
 function isTwoWeaponPrimary(item, state) {
     return item === (state.uwep || state.u.uwep) && !!state.u.twoweap;
-}
-function isBimanual(item) {
-    return (item.oclass === WEAPON_CLASS || item.oclass === TOOL_CLASS)
-        && !!OBJECT_BIMANUAL[item.otyp];
 }
 function quiverDescription(item) {
     switch (item.oclass) {

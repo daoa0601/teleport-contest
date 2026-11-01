@@ -30,7 +30,7 @@ import {
 import { makePlural } from './object_grammar.js';
 import { AD_SITM } from './monster_attack_types.js';
 import {
-    BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_BIMANUAL, OBJECT_NAMES,
+    BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES,
     AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
     FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
@@ -39,6 +39,7 @@ import {
     definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
 } from './objnam.js';
+import { isBimanualObject } from './object_properties.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroIsBlind } from './senses.js';
 import { impossible } from './diagnostics.js';
@@ -296,7 +297,7 @@ export async function stealFromHero(
             // C welded() reveals the curse even when the other hand is free.
             weapon.bknown = true;
             const primaryRing = game.u.rightHanded === false ? game.uleft : game.uright;
-            stuck = object === primaryRing || !!OBJECT_BIMANUAL[weapon.otyp];
+            stuck = object === primaryRing || !!isBimanualObject(weapon);
         }
         if (stuck || !monsterCanCarryObject(monster, object, game, draw)) return refuse();
     }
@@ -643,7 +644,7 @@ export async function maybeAbsorbItem(
             await plineWithContinuation(`${subject} pulls ${name} away from you and absorbs ${object.quan > 1 ? 'them' : 'it'}!`);
         } else {
             const hand = heroHandName(state);
-            const hands = OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand;
+            const hands = isBimanualObject(object) ? makePlural(hand) : hand;
             const subject = name.charAt(0).toUpperCase() + name.slice(1);
             await plineWithContinuation(`${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} pulled from your ${hands}!`);
         }

@@ -528,6 +528,8 @@ export async function prepareKick({
         clumsy = true;
     } else {
         const armor = state.uarm || state.u?.uarm;
+        // C dokick.c:253 reads objects[uarm->otyp].oc_bulky raw; the
+        // oc_bulky armor flag shares the oc_big bit with oc_bimanual.
         const bulky = armor && OBJECT_BIMANUAL[armor.otyp];
         if (bulky && currentAttribute(A_DEX, state) < rnd(25)) clumsy = true;
     }

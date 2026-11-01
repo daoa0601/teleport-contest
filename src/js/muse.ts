@@ -31,10 +31,11 @@ import {
     monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, speciesEatsCorpses,
 } from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
+import { isBimanualObject } from './object_properties.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING,
     BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN,
-    GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_DIR,
+    GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, OBJECT_DIR,
     OBJECT_SUBTYPE, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING,
     POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS,
     POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER,
@@ -1799,7 +1800,7 @@ export async function useMonsterBullwhip(
     const whip = seen ? 'The bullwhip' : 'A whip';
     const weapon = definiteName(objectCombatName(target, { state, includeCorpseSpecies: false }), state);
     const hand = heroHandName(state);
-    const hands = OBJECT_BIMANUAL[target.otyp] ? makePlural(hand) : hand;
+    const hands = isBimanualObject(target) ? makePlural(hand) : hand;
     if (seen)
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} flicks a bullwhip towards your ${hands}!`);
     if (target.otyp === HEAVY_IRON_BALL) {

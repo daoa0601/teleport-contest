@@ -28,8 +28,9 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS2, requireMonsterData } from './monster_d
 import {
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, BOULDER, FUMBLE_BOOTS,
     GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS,
-    LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES,
+    LOADSTONE, OBJECT_NAMES,
 } from './object_data.js';
+import { isBimanualObject } from './object_properties.js';
 import { makePlural } from './object_grammar.js';
 import { ownedObjectAction } from './objnam.js';
 import { uncurseObjectState } from './object_state.js';
@@ -139,7 +140,7 @@ export function worstCursedItem(state: GameState = game): GameObject | null {
     }
     const weapon = state.uwep;
     const welded = weapon && isWeldedPrimary(weapon, state) ? weapon : null;
-    if (welded && (state.uright || OBJECT_BIMANUAL[welded.otyp])) return welded;
+    if (welded && (state.uright || isBimanualObject(welded))) return welded;
     for (const slot of ['uarmg', 'uarms', 'uarmc', 'uarm', 'uarmh', 'uarmf',
         'uarmu', 'uamul', 'uleft', 'uright', 'ublindf'] as const) {
         const object = state[slot];
