@@ -2111,27 +2111,27 @@ src/js/sacrifice.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
 src/js/sacrifice.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
 src/js/sacrifice.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
 src/js/sacrifice.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
-src/js/scroll_area_effects.ts	amnesiaEffect	rn2	"[""2""]"	constant
-src/js/scroll_area_effects.ts	amnesiaEffect	rnd	"[""source.blessed ? 3 : 5""]"	constant
-src/js/scroll_area_effects.ts	fireEffect	rn1	"[""3"", ""3""]"	constant
-src/js/scroll_armor_effects.ts	destroyArmor	rn1	"[""10"", ""10""]"	constant
-src/js/scroll_armor_effects.ts	destroyArmor	rn2	"[""cursed.length""]"	guarded
-src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""7""]"	constant
-src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""armor.spe""]"	guarded
-src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""power""]"	guarded
-src/js/scroll_armor_effects.ts	enchantArmor	rnd	"[""power""]"	guarded
-src/js/scroll_effects.ts	chargingEffect	d	"[""source.blessed ? 6 : 4"", ""4""]"	constant
-src/js/scroll_effects.ts	confuseMonsterEffect	rn1	"[""8"", ""2""]"	constant
-src/js/scroll_effects.ts	confuseMonsterEffect	rnd	"[""100""]"	constant
-src/js/scroll_effects.ts	confuseMonsterEffect	rnd	"[""100""]"	constant
-src/js/scroll_effects.ts	confuseMonsterEffect	rnd	"[""2""]"	constant
-src/js/scroll_effects.ts	identifyEffect	rn2	"[""5""]"	constant
-src/js/scroll_effects.ts	identifyEffect	rn2	"[""5""]"	constant
-src/js/scroll_effects.ts	magicMappingEffect	rnd	"[""30""]"	constant
-src/js/scroll_effects.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
-src/js/scroll_effects.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
-src/js/scroll_effects.ts	scrollEffect	rn2	"[""73""]"	constant
-src/js/scroll_effects.ts	scrollEffect	rnd	"[""4""]"	constant
+src/js/read.ts	amnesiaEffect	rn2	"[""2""]"	constant
+src/js/read.ts	amnesiaEffect	rnd	"[""source.blessed ? 3 : 5""]"	constant
+src/js/read.ts	fireEffect	rn1	"[""3"", ""3""]"	constant
+src/js/read.ts	destroyArmor	rn1	"[""10"", ""10""]"	constant
+src/js/read.ts	destroyArmor	rn2	"[""cursed.length""]"	guarded
+src/js/read.ts	enchantArmor	rn2	"[""7""]"	constant
+src/js/read.ts	enchantArmor	rn2	"[""armor.spe""]"	guarded
+src/js/read.ts	enchantArmor	rn2	"[""power""]"	guarded
+src/js/read.ts	enchantArmor	rnd	"[""power""]"	guarded
+src/js/read.ts	chargingEffect	d	"[""source.blessed ? 6 : 4"", ""4""]"	constant
+src/js/read.ts	confuseMonsterEffect	rn1	"[""8"", ""2""]"	constant
+src/js/read.ts	confuseMonsterEffect	rnd	"[""100""]"	constant
+src/js/read.ts	confuseMonsterEffect	rnd	"[""100""]"	constant
+src/js/read.ts	confuseMonsterEffect	rnd	"[""2""]"	constant
+src/js/read.ts	identifyEffect	rn2	"[""5""]"	constant
+src/js/read.ts	identifyEffect	rn2	"[""5""]"	constant
+src/js/read.ts	magicMappingEffect	rnd	"[""30""]"	constant
+src/js/read.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
+src/js/read.ts	randomlyBlessOrCurse	rn2	"[""2""]"	constant
+src/js/read.ts	scrollEffect	rn2	"[""73""]"	constant
+src/js/read.ts	scrollEffect	rnd	"[""4""]"	constant
 src/js/selvar.ts	random_wdir	rn2	"[""4""]"	constant
 src/js/selvar.ts	selection_do_gradient	rn2	"[""spread""]"	constant
 src/js/selvar.ts	selection_do_randline	rn2	"[""roughness""]"	guarded
@@ -2393,25 +2393,25 @@ src/js/untrap.ts	rewardMonsterRescue	random	"[""3""]"	constant
 src/js/vault.ts	maintainVaultResidence	rn2	"[""deaths * deaths""]"	guarded
 src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
 src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
-src/js/wand_break.ts	breakWand	d	"[""1 + wand.spe"", ""6""]"	unproved
-src/js/wand_break.ts	breakWand	rnd	"[""3""]"	constant
-src/js/wand_break.ts	breakWand	rnd	"[""damage""]"	unproved
-src/js/wand_break.ts	digWithBrokenWand	rn2	"[""wand.spe""]"	unproved
-src/js/wand_charge.ts	backfireWand	d	"[""wand.spe + 2"", ""6""]"	unproved
-src/js/wand_charge.ts	zappable	rn2	"[""121""]"	constant
-src/js/wand_effects.ts	applyWandEffect	rn2	"[""8""]"	constant
-src/js/wand_effects.ts	strikeOrLockVertically	rn2	"[""3""]"	constant
-src/js/wand_effects.ts	strikeOrLockVertically	rnd	"[""objectIsHardHelmet(state.uarmh || state.u.uarmh) ? 2 : 6""]"	constant
-src/js/wand_effects.ts	zapWithoutDirection	rn2	"[""21""]"	constant
-src/js/wand_effects.ts	zapWithoutDirection	rn2	"[""23""]"	constant
-src/js/wand_effects.ts	zapWithoutDirection	rn2	"[""5""]"	constant
-src/js/wand_effects.ts	zapWithoutDirection	rn2	"[""7""]"	constant
-src/js/wand_terrain_magic.ts	cancelMagicTrap	d	"[""3"", ""6""]"	constant
-src/js/wand_terrain_magic.ts	probeTerrain	rn2	"[""4""]"	constant
-src/js/wand_terrain_magic.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
-src/js/wand_terrain_magic.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
-src/js/wand_terrain_magic.ts	zapEngraving	d	"[""2"", ""4""]"	constant
-src/js/wand_terrain_magic.ts	zapEngraving	d	"[""2"", ""4""]"	constant
+src/js/apply.ts	breakWand	d	"[""1 + wand.spe"", ""6""]"	unproved
+src/js/apply.ts	breakWand	rnd	"[""3""]"	constant
+src/js/apply.ts	breakWand	rnd	"[""damage""]"	unproved
+src/js/apply.ts	digWithBrokenWand	rn2	"[""wand.spe""]"	unproved
+src/js/zap.ts	backfireWand	d	"[""wand.spe + 2"", ""6""]"	unproved
+src/js/zap.ts	zappable	rn2	"[""121""]"	constant
+src/js/zap.ts	applyWandEffect	rn2	"[""8""]"	constant
+src/js/zap.ts	strikeOrLockVertically	rn2	"[""3""]"	constant
+src/js/zap.ts	strikeOrLockVertically	rnd	"[""objectIsHardHelmet(state.uarmh || state.u.uarmh) ? 2 : 6""]"	constant
+src/js/zap.ts	zapWithoutDirection	rn2	"[""21""]"	constant
+src/js/zap.ts	zapWithoutDirection	rn2	"[""23""]"	constant
+src/js/zap.ts	zapWithoutDirection	rn2	"[""5""]"	constant
+src/js/zap.ts	zapWithoutDirection	rn2	"[""7""]"	constant
+src/js/zap.ts	cancelMagicTrap	d	"[""3"", ""6""]"	constant
+src/js/zap.ts	probeTerrain	rn2	"[""4""]"	constant
+src/js/engrave.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
+src/js/engrave.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
+src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
+src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/weapon_accuracy.ts	rangedTargetHitBonus	random	"[""10""]"	constant
 src/js/weapon_damage.ts	monsterWeaponStrengthBonus	random	"[""4""]"	constant
 src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant

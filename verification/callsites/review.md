@@ -165,7 +165,7 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/orc_raid.ts:69` createOrcRaid | constant | `mkmaze.c:798 stolen_booty` |
 | `src/js/polyself.ts:1417` pickFormFromClass | guarded | `makemon.c:1982 mkclass_poly` |
 | `src/js/potion.ts:2276` mixPotions | guarded | `potion.c:2441 potion_dip` |
-| `src/js/scroll_armor_effects.ts:86` enchantArmor | guarded | `read.c:1114 seffect_enchant_armor` |
+| `src/js/read.ts:313` enchantArmor | guarded | `read.c:1114 seffect_enchant_armor` |
 | `src/js/selvar.ts:266` selection_rndcoord | guarded | `selvar.c:283 selection_rndcoord` |
 | `src/js/shk.ts` payForShopDamage | guarded | `shk.c:5173 pay_for_damage` |
 | `src/js/sink_drinking.ts:98` drinkSink | invariant | `fountain.c:594 drinksink` |

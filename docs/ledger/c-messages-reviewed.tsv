@@ -1,7 +1,7 @@
 # file	owner	piece	verdict	reason
 # Keys and piece escapes match c-messages.tsv. A shared key covers every native literal with that file, owner and longest fixed piece.
 # Composed reasons start with src/js/FILE.ts:FUNCTION (preferred) or :LINE; every such location is checked.
-apply.c	do_break_wand	self by breaking a wand	composed	src/js/wand_break.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
+apply.c	do_break_wand	self by breaking a wand	composed	src/js/apply.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
 apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
 apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
 artifact.c	artifact_hit	blade drains your	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
@@ -357,7 +357,7 @@ priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js
 read.c	do_class_genocide	What class of monsters do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'class of monsters' plus the cmdassist suffix.
 read.c	do_genocide	What type of monster do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'type of monster' plus the cmdassist suffix.
 read.c	recharge	clockwise for a moment.	composed	src/js/recharge.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
-read.c	seffect_enchant_armor	for a while, then	composed	src/js/scroll_armor_effects.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
+read.c	seffect_enchant_armor	for a while, then	composed	src/js/read.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
 report.c	dobugreport	Unable to send bug report.  Please visit	out-of-scope	Requires submit_web_report() to launch a host reporting process and fail; #bugreport is also NOFUZZERCMD, rejected during recorded debug_fuzzer games.
 restore.c	restgamestate	Saved game was not yours.	out-of-scope	Compares a native savefile uid with the host getuid(); browser saves have no OS ownership metadata.
 restore.c	restore_menu	Never mind (quit)	out-of-scope	This row belongs to restore_menu() after get_saved_games() discovers native saves in the host save directory; native save-directory discovery is outside the browser runtime.
