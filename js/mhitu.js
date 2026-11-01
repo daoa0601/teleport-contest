@@ -870,7 +870,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 // shared knockback and damage tail.
                 if (heroAttack.effect === 'rust-natural') {
                     if (Upolyd(game.u) && game.u.umonnum === PM_IRON_GOLEM) {
-                        paging.pagerOwned ||= await resolveErosionFormRehumanization(heroAttack, 'You rust!');
+                        const rehumanizePager = await resolveErosionFormRehumanization(heroAttack, 'You rust!');
+                        paging.pagerOwned ||= rehumanizePager;
                         if (heroAttack.heroDied)
                             contactTailPending = false;
                     }
@@ -884,7 +885,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 if (heroAttack.effect === 'decay-natural') {
                     if (Upolyd(game.u)
                         && (game.u.umonnum === PM_LEATHER_GOLEM || game.u.umonnum === PM_WOOD_GOLEM)) {
-                        paging.pagerOwned ||= await resolveErosionFormRehumanization(heroAttack, 'You rot!');
+                        const rehumanizePager = await resolveErosionFormRehumanization(heroAttack, 'You rot!');
+                        paging.pagerOwned ||= rehumanizePager;
                         if (heroAttack.heroDied)
                             contactTailPending = false;
                     }
