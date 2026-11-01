@@ -23,7 +23,6 @@ import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } fro
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { sendMonsterToLimbo } from './monster_migration.js';
 import { discardMonsterInventory } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
@@ -102,6 +101,7 @@ import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_prop
 import { addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
 import { beginLuaThemerooms, callLuaThemerooms, generateLuaSpecialLevel, themerooms_generate } from './sp_lev_lua.js';
+import { sendMonsterToLimbo } from './mon.js';
 
 
 // mklev.js — regular level generation.

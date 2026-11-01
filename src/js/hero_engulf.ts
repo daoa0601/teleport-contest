@@ -45,7 +45,6 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { monsterName } from './monster_name.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { ownedObjectName, objectNameIsPlural } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -56,6 +55,7 @@ import { dismountHero } from './steed.js';
 import { touchPetrifies } from './stoning.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc } from './vision.js';
+import { monsterHasStoneResistance } from './mondata.js';
 
 export interface HeroEngulfOptions {
     state?: GameState;

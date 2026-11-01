@@ -8,7 +8,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { publishMonsterConversation } from './monster_conversation.js';
 import { recorderLocalHour } from './calendar.js';
-import { canSpotMonster, glyphAt, map_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { monsterName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -19,10 +19,10 @@ import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumor.js';
 import { roles } from './roles.js';
 import { rn2 } from './rng.js';
-import {
-    MONSTER_NAME, MONSTER_FLAGS1, MONSTER_SOUND,
-} from './monster_data.js';
+import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_SOUND } from './monster_data.js';
 import { sameMonsterRace } from './mondata.js';
+import { PLNMSG_GROWL } from './const.js';
+import { stopRun } from './runmode.js';
 
 const MS_SILENT = 0;
 const MS_BARK = 1;
@@ -239,4 +239,88 @@ function looksLikeGecko(monster: Monster, state: GameState): boolean {
     if (monster.mnum === PM_LONG_WORM) return false;
     const glyph = glyphAt(monster.mx, monster.my, state);
     return glyph?.kind === 'monster' && glyph.mnum === PM_GECKO;
+}
+
+// C sounds.c:h_sounds[] — hallucinated noise verbs, shared by growl(),
+// yelp() and whimper().
+const HALLUCINATED_GROWL_VERBS = [
+    'beep', 'boing', 'sing', 'belche', 'creak', 'cough',
+    'rattle', 'ululate', 'pop', 'jingle', 'sniffle', 'tinkle',
+    'eep', 'clatter', 'hum', 'sizzle', 'twitter', 'wheeze',
+    'rustle', 'honk', 'lisp', 'yodel', 'coo', 'burp', 'moo',
+    'boom', 'murmur', 'oink', 'quack', 'rumble', 'twang',
+    'toot', 'gargle', 'hoot', 'warble',
+];
+
+// C sounds.c:vtense() third-person verb ending for monster noises.
+function thirdPersonSoundVerb(verb: string) {
+    return /(?:s|sh|ch|x|z)$/.test(verb) ? `${verb}es` : `${verb}s`;
+}
+
+// C sounds.c:growl(). The sounds of a seriously abused pet, including the
+// player attacking it.
+export async function publishMonsterGrowl(monster: Monster) {
+    const sound = questMonsterSound(monster.mnum);
+    if (monster.msleeping || !monster.mcanmove || !sound)
+        return game._lastPlineKind === PLNMSG_GROWL;
+
+    const verb = heroIsHallucinating()
+        ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
+        : monsterGrowlSound(monster);
+    if (!verb) throw new Error('Missing hallucinated growl verb.');
+    const noticed = canSeeMonster(monster) || !heroIsDeaf();
+    if (noticed) {
+        await plineWithContinuation(
+            `${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}!`,
+        );
+        game._lastPlineKind = PLNMSG_GROWL;
+        if (game.context.run) stopRun();
+    }
+    await wakeMonstersNearWithMessages(
+        monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 18,
+    );
+    return game._lastPlineKind === PLNMSG_GROWL;
+}
+
+// C sounds.c:yelp(). The sounds of mistreated pets.
+export async function publishMonsterYelp(monster: Monster) {
+    const sound = questMonsterSound(monster.mnum);
+    if (monster.msleeping || !monster.mcanmove || !sound) return;
+
+    const deaf = heroIsDeaf();
+    const ordinaryVerb = new Map([
+        [MS_BARK, deaf ? 'recoil' : 'yelp'],
+        [MS_MEW, deaf ? 'arch' : 'yowl'],
+        [MS_ROAR, deaf ? 'bluff' : 'snarl'],
+        [MS_GROWL, deaf ? 'recoil' : 'yelp'],
+        [MS_SQEEK, deaf ? 'quiver' : 'squeal'],
+        [MS_SQAWK, deaf ? 'thrash' : 'screak'],
+        [MS_WAIL, deaf ? 'cringe' : 'wail'],
+    ]).get(sound);
+    const verb = heroIsHallucinating()
+        ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
+        : ordinaryVerb;
+    if (!verb) return;
+
+    await plineWithContinuation(
+        `${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}!`,
+    );
+    if (game.context.run) stopRun();
+    await wakeMonstersNearWithMessages(
+        monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 12,
+    );
+}
+
+// C sounds.c:whimper(). The sounds of distressed pets.
+export async function publishMonsterWhimper(monster: Monster) {
+    const sound = questMonsterSound(monster.mnum);
+    if (monster.msleeping || !monster.mcanmove || !sound) return;
+    const verb = heroIsHallucinating()
+        ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
+        : sound === MS_MEW || sound === MS_GROWL ? 'whimper'
+            : sound === MS_BARK ? 'whine' : sound === MS_SQEEK ? 'squeal' : null;
+    if (!verb) return;
+    await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}.`);
+    if (game.context.run) stopRun();
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 6);
 }

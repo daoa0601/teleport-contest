@@ -14,10 +14,10 @@ import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '.
 import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { poly_obj } from './object_polymorph.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
 import { rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { monsterResistsEffect } from './zap.js';
 
 interface PolymorphTrapBase {
     kind: 'polymorph-trap';

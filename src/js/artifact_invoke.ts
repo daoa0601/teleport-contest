@@ -60,13 +60,13 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { showPagedPickOneMenu } from './windows.js';
-import { migrateMonsterToLevel } from './monster_migration.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { couldsee } from './vision.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './hero_hold_object.js';
+import { migrateMonsterToLevel } from './mon.js';
 
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };

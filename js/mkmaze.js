@@ -14,7 +14,6 @@ import { plineWithContinuation } from './pline.js';
 import { requireInitializedGame } from './gstate.js';
 import { monsterAtPosition } from './monster_location.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { sendMonsterToLimbo } from './monster_migration.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
@@ -35,6 +34,7 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { GEM_CLASS, NO_TRAP, PM_MINOTAUR, RANDOM_CLASS, countLevelFeatures, is_branchlev, maketrap, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir, } from './mklev.js';
 import { createOrcRaid } from './orc_raid.js';
 import { isRoom } from './map_types.js';
+import { sendMonsterToLimbo } from './mon.js';
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua
 // terrain operation requested SET_LIT_NOCHANGE.  Callers may subsequently

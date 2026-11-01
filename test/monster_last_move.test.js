@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MON_FLOOR, MON_MIGRATING, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { updateMonsterLastMove } from '../js/monster_migration.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { updateMonsterLastMove } from '../js/dog.js';
 // C dog.c:update_mlstmv() uses mon.c:iter_mons(), including its admission rules.
 void test('level departure anchors catchup only for living monsters on the floor', async () => {
     await freshObjectRoom();

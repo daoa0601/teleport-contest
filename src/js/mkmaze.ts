@@ -25,7 +25,6 @@ import { requireInitializedGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './monster_location.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { sendMonsterToLimbo } from './monster_migration.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
@@ -58,6 +57,7 @@ import type {
     StairRegion,
 } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
+import { sendMonsterToLimbo } from './mon.js';
 
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
 // side-effects; in particular, every lava form becomes lit even when the Lua

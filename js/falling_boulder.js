@@ -12,7 +12,6 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mkobj.js';
-import { wakeMonster } from './monster_anger.js';
 import { MONSTER_FLAGS1, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUnsolid, requireMonsterData } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -26,6 +25,7 @@ import { rn1 } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { wakeMonster } from './mon.js';
 const M1_WALLWALK = 0x00000008;
 export async function dropBoulderOnHero({ state = game, confused = false, helmetProtects = true, heroCaused = true, skipSwallower = false, finishHeroDeath = defaultHeroDeath, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
     requireLiveGame(state);

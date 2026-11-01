@@ -47,8 +47,8 @@ import { AD_POLY } from './monster_attack_types.js';
 import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { growMonster } from './monster_growth.js';
 import { healMonster } from './mon.js';
+import { growMonster } from './makemon.js';
 
 export interface DropObjectOptions {
     impact?: boolean;

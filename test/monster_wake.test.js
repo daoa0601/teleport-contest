@@ -4,9 +4,9 @@ import { M_AP_F_DKNOWN, M_AP_MONSTER, M_AP_NOTHING, POOL, } from '../js/const.js
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { nameToMonster } from '../js/mondata.js';
-import { wakeMonster } from '../js/monster_anger.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { wakeMonster } from '../js/mon.js';
 void test('waking a monster-disguised mimic does not reveal it', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

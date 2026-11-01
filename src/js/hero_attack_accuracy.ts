@@ -12,8 +12,6 @@ import { heroSeductionCompatibility } from './hero_form_contact.js';
 import { heroSpecies } from './hero_species.js';
 import { AT_CLAW, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, requireMonsterData } from './monster_data.js';
-import { wakeAttackedMonster } from './monster_anger.js';
-import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { monsterName } from './monster_name.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { rn2 } from './rng.js';
@@ -26,6 +24,8 @@ import type { AttackTuple, RandomBelow } from './monster_action_types.js';
 import type { AttackMethod } from './monster_attack_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { wakeAttackedMonster } from './mon.js';
+import { adjustedMonsterLevel } from './makemon.js';
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;

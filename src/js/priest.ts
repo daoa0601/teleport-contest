@@ -17,7 +17,6 @@ import { heroSpineName } from './body_parts.js';
 import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { angerMonster, wakeMonster } from './monster_anger.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -35,7 +34,7 @@ import {
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { dist2, pointsOnline } from './hacklib.js';
-import { mfndpos, monAllowFlags, resistConflict } from './mon.js';
+import { mfndpos, monAllowFlags, resistConflict, angerMonster, wakeMonster } from './mon.js';
 import { breakMonsterBoulder } from './monmove.js';
 import { moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';

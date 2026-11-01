@@ -8,7 +8,6 @@ import { createEarthquake } from '../js/earthquake.js';
 import { breatheInDirection } from '../js/breath_ray.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AD_COLD, AT_BREA } from '../js/monster_attack_types.js';
@@ -18,6 +17,7 @@ import { checkSpecialRoom } from '../js/shk.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { cancelMonster } from '../js/zap.js';
 
 async function knownMonsterDisguise() {
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);

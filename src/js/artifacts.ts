@@ -86,14 +86,9 @@ import {
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { monsterAlignmentType } from './monster_alignment.js';
-import {
-    monsterHasColdResistance,
-    monsterHasDrainResistance,
-    monsterHasFireResistance,
-    monsterHasShockResistance,
-} from './monster_resistance.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { roles } from './roles.js';
+import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
 
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;

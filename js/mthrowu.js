@@ -31,7 +31,6 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
-import { angerAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
 import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2, } from './monster_attack_types.js';
@@ -44,7 +43,6 @@ import { monsterName, monsterObjectPronoun, monsterPossessive, possessiveName, }
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './monster_resistance.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './monster_weapon.js';
@@ -78,7 +76,8 @@ import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from '.
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { plineWithContinuation } from './pline.js';
 import { requirePerceivedHero } from './monmove.js';
-import { seenResistanceForDamage } from './mondata.js';
+import { seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
+import { angerAttackedMonster } from './mon.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }

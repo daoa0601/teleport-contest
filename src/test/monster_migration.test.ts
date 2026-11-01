@@ -8,19 +8,13 @@ import {
     COLNO, HOLE, LADDER, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, ROOM, ROWNO, VWALL, NO_MINVENT,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { initializePet } from '../js/dog.js';
-import { collectLevelFollowers } from '../js/monster_followers.js';
+import { initializePet, collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/dog.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import {
-    deliverMigratingMonsters,
-    migrateMonsterOffLevel,
-    sendMonsterToLimbo,
-} from '../js/monster_migration.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { resurrectWizard } from '../js/wizard.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -30,6 +24,7 @@ import { createStaffedShop } from './support/shop.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
+import { sendMonsterToLimbo } from '../js/mon.js';
 
 function enterDestinationLevel() {
     const cache = game._levelCache?.get('0:2');

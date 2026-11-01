@@ -46,7 +46,6 @@ import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
 import { MONSTER_FLAGS2, monsterDigests, monsterIsWhirly } from './monster_data.js';
-import { finishMonsterEating } from './monster_eating.js';
 import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { sellHeroDroppedObject } from './shop_sell.js';
@@ -69,6 +68,7 @@ import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { offerThrownFood } from './thrown_food.js';
 import { applyThrowSlip } from './throw_state.js';
+import { finishMonsterEating } from './dogmove.js';
 
 const M2_MERC = 0x00000200;
 const M2_GREEDY = 0x10000000;

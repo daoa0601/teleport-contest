@@ -10,9 +10,6 @@ import {
     monsterIsUndead, monsterIsVampireShifter,
 } from './monster_data.js';
 import {
-    monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
-} from './monster_resistance.js';
-import {
     AMULET_OF_STRANGULATION, APPLE, BANANA, CARROT, CLOVE_OF_GARLIC, CORPSE,
     EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LUMP_OF_ROYAL_JELLY, MEATBALL,
     MEAT_RING, MEAT_STICK, RIN_SLOW_DIGESTION, SLIME_MOLD, TIN, TRIPE_RATION,
@@ -24,7 +21,10 @@ import type { GameState } from './game_state.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { sameMonsterRace } from './mondata.js';
+import {
+    sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance,
+    monsterHasStoneResistance,
+} from './mondata.js';
 
 export const DOGFOOD = 0;
 export const CADAVER = 1;

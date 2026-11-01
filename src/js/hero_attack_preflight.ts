@@ -25,7 +25,6 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { stumbleOntoMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL,
     requireMonsterData,
@@ -33,6 +32,7 @@ import {
 import { paranoidQuery } from './query.js';
 import { monsterName, monsterLeashName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { wakeAttackedMonster } from './mon.js';
 
 export interface AppliedWeaponAttackOptions {
     state?: GameState;

@@ -10,8 +10,7 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { monstersInFmonOrder } from './mon.js';
-import { wakeMonster } from './monster_anger.js';
+import { monstersInFmonOrder, wakeMonster } from './mon.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {
     monsterIsMindFlayer, monsterIsMindless, monsterIsTelepathic,

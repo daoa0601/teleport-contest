@@ -9,12 +9,12 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import { ensureDiggingContext, isDigging } from './hero_digging.js';
-import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
+import { angerWatchGuards } from './mon.js';
 
 const WATCH = new Set(['watchman', 'watch captain']);
 

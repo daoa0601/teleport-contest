@@ -8,10 +8,10 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { monsterName } from './monster_name.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { makePlural } from './object_grammar.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
+import { monsterResistsEffect } from './zap.js';
 
 // C uhitm.c:nohandglow().
 export async function confuseTouchedMonster(monster: Monster, { state = game }: { state?: GameState } = {}) {

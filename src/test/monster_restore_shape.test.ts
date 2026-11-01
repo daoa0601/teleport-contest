@@ -10,10 +10,8 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { createCorpstatAt } from '../js/mkobj.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
-import { beginMonsterMealMimicry } from '../js/monster_meal_mimicry.js';
 import { changeMonsterForm, restoreMonsterShape } from '../js/monster_polymorph.js';
 import { CORPSE, RIN_PROTECTION_FROM_SHAPE_CHANGERS, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -25,6 +23,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoomLevel } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { cancelMonster } from '../js/zap.js';
+import { beginMonsterMealMimicry } from '../js/dogmove.js';
 
 void test('restoring a chameleon re-enables shape changes after protection was removed elsewhere', async () => {
     const savedLevel = await freshObjectRoom();

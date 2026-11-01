@@ -16,7 +16,6 @@ import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalRe
 import { triggerHeroTrap } from './hero_traps.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { angerMonster, wakeMonster } from './monster_anger.js';
 import { monsterWearsTorsoArmor, petrifyMonsterFromContact, } from './monster_stoning.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName, } from './monster_data.js';
 import { BOULDER } from './object_data.js';
@@ -35,6 +34,7 @@ import { switchHeroTerrain } from './terrain_movement.js';
 import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
+import { angerMonster, wakeMonster } from './mon.js';
 const M1_WALLWALK = 0x00000008;
 const HUMAN_WEIGHT = 1450;
 function heroForm() {

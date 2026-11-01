@@ -2,9 +2,7 @@
 // C refs: exper.c pluslvl()/experience()/more_experienced(), mon.c xkilled().
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { heroResistsLifeDrain } from './monster_resistance.js';
 import { finishHeroDeath } from './end.js';
-import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { currentAttribute } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
@@ -17,6 +15,8 @@ import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, }
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty, } from './properties.js';
 import { adjustWeaponSkillSlots } from './skills.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
+import { heroResistsLifeDrain } from './mondata.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
 const NORMAL_SPEED = 12;
 const LARGEST_INT = 32767;
 // C exper.c:newuexp().

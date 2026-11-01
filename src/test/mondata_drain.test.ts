@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, W_ARM, W_WEP } from '../js/const.js';
-import { monsterHasDrainResistance } from '../js/monster_resistance.js';
 import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { monsterHasDrainResistance } from '../js/mondata.js';
 
 void test('wielding Excalibur protects a living monster from life drain', async () => {
     await freshObjectRoom();

@@ -6,8 +6,6 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterIsDisplacer, monsterIsRider, requireMonsterData, } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import { finishMonsterEating } from './monster_eating.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
@@ -15,6 +13,8 @@ import { monsterName, monsterPossessive } from './monster_name.js';
 import { monsterPolymorphsWhenStoned, petrifyMonsterAttacker, } from './monster_stoning.js';
 import { rn2 } from './rng.js';
 import { touchPetrifies } from './stoning.js';
+import { finishMonsterEating } from './dogmove.js';
+import { monsterHasStoneResistance } from './mondata.js';
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 // C mon.c:mm_displacement().
 export function monsterDisplacementFlags(aggressor, defender) {

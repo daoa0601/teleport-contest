@@ -1,6 +1,5 @@
 import { changePreferredFruit } from '../js/fruit.js';
 import { createMonsterAt } from './support/monsters.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +10,7 @@ import { AMULET_OF_YENDOR, BELL_OF_OPENING, BOULDER, CORPSE, DAGGER, DIAMOND, FA
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 for (const [type, expected] of [
     [WAN_FIRE, 'a wand of fire'], [SCR_IDENTIFY, 'a scroll of identify'],
     [SPE_FORCE_BOLT, 'a spellbook of force bolt'], [DAGGER, 'a dagger'],

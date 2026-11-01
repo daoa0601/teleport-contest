@@ -34,8 +34,7 @@ import { countLevelFeatures, deleteFloorTrap, makemonNear, splitHeroMonsterForm 
 import { mkgold, mksobj } from './mkobj.js';
 import { placeCreatedObject } from './floor_object.js';
 import { rndClass } from './objnam.js';
-import { resolveMonsterLiquid } from './mon.js';
-import { angerWatchGuards } from './monster_anger.js';
+import { resolveMonsterLiquid, angerWatchGuards } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';

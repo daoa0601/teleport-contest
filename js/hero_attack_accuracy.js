@@ -10,14 +10,14 @@ import { heroSeductionCompatibility } from './hero_form_contact.js';
 import { heroSpecies } from './hero_species.js';
 import { AT_CLAW, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, requireMonsterData } from './monster_data.js';
-import { wakeAttackedMonster } from './monster_anger.js';
-import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { monsterName } from './monster_name.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { rn2 } from './rng.js';
 import { weaponSkillHitBonus } from './skills.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { nearCapacity } from './weight.js';
+import { wakeAttackedMonster } from './mon.js';
+import { adjustedMonsterLevel } from './makemon.js';
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
 export async function findHeroMeleeHitThreshold(monster, method, weapon, { firstAttack, state = game }) {

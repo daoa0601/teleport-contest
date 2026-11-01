@@ -1,27 +1,41 @@
 // C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
+import { monsterName } from './monster_name.js';
 import { displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
-import { setMonsterMalign } from './monster_alignment.js';
-import { Is_astralevel, MAGIC_PORTAL, M_AP_MONSTER, STRAT_WAITFORU, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
-import { aggravateMonsters } from './monster_anger.js';
+import { setMonsterMalign, monsterAlignmentType } from './monster_alignment.js';
+import { BOLT_LIM, Is_astralevel, isok, MAGIC_PORTAL, M_AP_MONSTER, MM_NOWAIT, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR, STRAT_PLAYER, STRAT_WAITFORU, STRAT_WAITMASK, } from './const.js';
 import { msummon } from './minion.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { rndcurse } from './throne.js';
-import { insideWizardTower } from './dungeon.js';
+import { dungeonBuildsUp, insideWizardTower } from './dungeon.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { mksobj } from './mkobj.js';
-import { linkObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { recordRandom } from './monster_action_types.js';
-import { MONSTER_NAME } from './monster_data.js';
-import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './monster_migration.js';
+import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './dog.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { FAKE_AMULET_OF_YENDOR } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { definiteObjectAction } from './objnam.js';
+import { definiteObjectAction, observeDistantObjectForNaming } from './objnam.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { monsterAtPosition } from './monster_location.js';
+import { questMonsterFlags3 } from './role_monsters.js';
+import { expelHero } from './hero_expulsion.js';
+import { healMonster } from './mon.js';
+import { mnearto } from './shop_damage.js';
+import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
+import { monsterTeleportRestricted } from './teleport_rules.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { deliverCommonQuestInsult } from './quest_pager.js';
+import { remove_object } from './floor_object.js';
+import { objectDescription } from './object_description.js';
+import { priestIsInOwnTemple } from './priest.js';
+import { shopkeeperInOwnShop } from './shk.js';
+import { cansee } from './vision.js';
 const WIZARD = 285;
 // C wizard.c:amulet(). Called once per global turn while carrying the Amulet.
 export async function amuletTurn(state) {
@@ -217,5 +231,264 @@ export async function finishWizardClone(clone, state, random, calls) {
     }
     await newsym(clone.mx, clone.my);
     return clone;
+}
+// C wizard.c:aggravate().
+export function aggravateMonsters(state = game, random = rn2) {
+    const heroInsideTower = insideWizardTower(state.u?.ux, state.u?.uy, state);
+    const awakened = [];
+    // Native fmon visits the most recently created monster first.
+    for (const monster of Array.from(state.level?.monsters || []).reverse()) {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+            continue;
+        if (insideWizardTower(monster.mx, monster.my, state)
+            !== heroInsideTower)
+            continue;
+        const wasSleeping = !!monster.msleeping;
+        const wasWaiting = !!((monster.mstrategy ?? 0)
+            & (STRAT_WAITFORU | STRAT_APPEARMSG));
+        monster.mstrategy = (monster.mstrategy ?? 0)
+            & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
+        monster.msleeping = 0;
+        let unfroze = false;
+        if (!monster.mcanmove && random(5) === 0) {
+            monster.mfrozen = 0;
+            monster.mcanmove = 1;
+            unfroze = true;
+        }
+        if (wasSleeping || wasWaiting || unfroze)
+            awakened.push(monster);
+    }
+    return awakened;
+}
+// Artifact selection and pursuit for covetous monsters.
+// C wizard.c:strategy(), target_on(), and tactics()'s target branches.
+const WANTS_AMULET = 1;
+const WANTS_BELL = 2;
+const WANTS_BOOK = 4;
+const WANTS_CANDELABRUM = 8;
+const WANTS_ARTIFACT = 16;
+export function chooseCovetousStrategy(monster, state) {
+    const { strategy, goal } = decideCovetousStrategy(monster, state);
+    if (goal)
+        monster.mgoal = goal;
+    const target = strategy.kind === 'target' ? strategy.target : null;
+    const flags = strategy.kind === 'heal' ? STRAT_HEAL
+        : target ? target.mask | (target.kind === 'hero' ? STRAT_PLAYER
+            : target.kind === 'floor' ? STRAT_GROUND : STRAT_MONSTR) : 0;
+    monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | flags;
+    return strategy;
+}
+function decideCovetousStrategy(monster, state) {
+    if (shopkeeperInOwnShop(monster, state) || priestIsInOwnTemple(monster, state))
+        return { strategy: { kind: 'harass' }, goal: undefined };
+    const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
+    if (health < 1 || health > 3 || health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor')
+        return { strategy: { kind: 'heal' }, goal: undefined };
+    const masks = state.context.made_amulet ? [WANTS_AMULET] : [];
+    masks.push(...(state.u.uevent?.invoked
+        ? [WANTS_ARTIFACT, WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM]
+        : [WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM, WANTS_ARTIFACT]));
+    let goal;
+    for (const mask of masks) {
+        if (!(questMonsterFlags3(monster.mnum, state) & mask))
+            continue;
+        const target = findCovetousTarget(monster, mask, state);
+        if (target) {
+            return { strategy: { kind: 'target', target }, goal: { ...target.position } };
+        }
+        goal = { x: 0, y: 0 };
+    }
+    return { strategy: { kind: health < 3 ? 'heal' : 'harass' }, goal };
+}
+function findCovetousTarget(monster, mask, state) {
+    if (!(questMonsterFlags3(monster.mnum, state) & mask))
+        return null;
+    const matches = (object) => objectMatchesTarget(object, mask, state);
+    if (!(monster.minvent ?? []).some(matches)) {
+        if (heroHasTarget(mask, state))
+            return { kind: 'hero', position: { x: state.u.ux, y: state.u.uy }, mask };
+        const floor = state.level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? []))
+            .filter(matches).sort((a, b) => (b._fobjOrder ?? 0) - (a._fobjOrder ?? 0))[0];
+        if (floor)
+            return { kind: 'floor', position: { x: floor.ox, y: floor.oy }, mask, object: floor };
+        // other_mon_has_arti() considers the first fmon carrier before the
+        // Amulet exception; it does not search past an excluded carrier.
+        const carrier = [...state.level.monsters].reverse().find(candidate => candidate !== monster && (candidate.minvent ?? []).some(matches));
+        if (carrier && (mask !== WANTS_AMULET || !carrier.iswiz && !priestIsInOwnTemple(carrier, state)))
+            return { kind: 'monster', position: { x: carrier.mx, y: carrier.my }, mask };
+    }
+    return null;
+}
+function objectMatchesTarget(object, mask, state) {
+    if (mask === WANTS_AMULET)
+        return object.otyp === AMULET_OF_YENDOR;
+    if (mask === WANTS_BELL)
+        return object.otyp === BELL_OF_OPENING;
+    if (mask === WANTS_BOOK)
+        return object.otyp === SPE_BOOK_OF_THE_DEAD;
+    if (mask === WANTS_CANDELABRUM)
+        return object.otyp === CANDELABRUM_OF_INVOCATION;
+    return !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
+}
+function heroHasTarget(mask, state) {
+    const owns = state.u.uhave;
+    if (mask === WANTS_AMULET)
+        return !!owns?.amulet;
+    if (mask === WANTS_BELL)
+        return !!owns?.bell;
+    if (mask === WANTS_BOOK)
+        return !!owns?.book;
+    if (mask === WANTS_CANDELABRUM)
+        return !!owns?.menorah;
+    return !!owns?.questart;
+}
+export async function pursueCovetousTarget(monster, target, state) {
+    const { x, y } = target.position;
+    if (!target.mask || !isok(x, y))
+        return 'continued';
+    const restricted = monsterTeleportRestricted(monster, state);
+    if (restricted && Math.max(Math.abs(monster.mx - x), Math.abs(monster.my - y)) > 1)
+        return 'continued';
+    if (target.kind === 'hero' || x === state.u.ux && y === state.u.uy) {
+        await approachTarget(monster, x, y, restricted, state);
+        return 'continued';
+    }
+    if (target.kind === 'floor') {
+        const occupant = monsterAtPosition(state.level, x, y);
+        if (occupant && occupant !== monster)
+            return 'blocked-ground';
+        await relocateMonsterTo(monster, x, y, { state });
+        if (cansee(monster.mx, monster.my)) {
+            const subject = monsterName(monster, { state, capitalized: true });
+            observeDistantObjectForNaming(target.object, state);
+            const object = await objectDescription(target.object, { state });
+            await plineWithContinuation(`${subject} picks up ${object}.`);
+        }
+        remove_object(target.object, state);
+        await addObjectToMonsterInventory(monster, target.object, state, { atFront: true });
+        return 'continued';
+    }
+    await approachTarget(monster, x, y, restricted, state);
+    return 'continued';
+}
+async function approachTarget(monster, x, y, restricted, state) {
+    const oldx = monster.mx, oldy = monster.my;
+    if (restricted || !await mnearto(monster, x, y, state, { flags: RLOC_MSG }))
+        await relocateMonsterTo(monster, oldx, oldy, { state });
+}
+// C wizard.c:tactics(STRAT_HEAL), including choose_stairs() and the
+// fall-through to harassment when the monster cannot heal at a distance.
+export async function retreatCovetousMonster(monster, state, random = rn2, rollOne = rnd) {
+    monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | STRAT_HEAL;
+    let healingX = monster.mx, healingY = monster.my;
+    if (state.u.uswallow && state.u.ustuck === monster) {
+        const expelled = await expelHero(monster, { state, random, rollOne });
+        if (expelled.died)
+            return 'blocked';
+    }
+    const stairs = chooseRetreatStairs(monster, state);
+    monster.mavenge = 1;
+    const amulet = (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
+    const staysInTower = insideWizardTower(healingX, healingY, state)
+        || (monster.iswiz && !stairs && !amulet);
+    if (staysInTower) {
+        if (!monsterTeleportRestricted(monster, state)
+            && random(3 + Math.trunc(monster.mhp / 10)) === 0)
+            await randomMonsterRelocation(monster, { state, random, rollOne, flags: RLOC_MSG });
+    }
+    else if (stairs && (healingX !== stairs.sx || healingY !== stairs.sy)) {
+        if (!monsterTeleportRestricted(monster, state)
+            && !await mnearto(monster, stairs.sx, stairs.sy, state, { moveOther: true, flags: RLOC_MSG })) {
+            // Expulsion may have moved the monster since tactics() saved this square.
+            await relocateMonsterTo(monster, healingX, healingY, { state, random, rollOne });
+            return 'blocked';
+        }
+        healingX = monster.mx;
+        healingY = monster.my;
+    }
+    // tactics() updates its cached position only when retreating to stairs.
+    const dx = healingX - state.u.ux, dy = healingY - state.u.uy;
+    if (dx * dx + dy * dy > BOLT_LIM * BOLT_LIM && monster.mhp <= monster.mhpmax - 8) {
+        healMonster(monster, rollOne(8));
+        return 'recovered';
+    }
+    return 'harass';
+}
+function chooseRetreatStairs(monster, state) {
+    const forward = !!(monster.m_id % 2);
+    const up = dungeonBuildsUp(state.u.uz, state) ? forward : !forward;
+    const stairs = [];
+    for (let stair = state.stairs; stair; stair = stair.next)
+        stairs.push(stair);
+    return stairs.find(stair => !stair.isladder && stair.up === up)
+        ?? stairs.find(stair => stair.isladder && stair.up === up)
+        ?? stairs.find(stair => stair.tolev.dnum !== state.u.uz.dnum)
+        ?? stairs.find(stair => !stair.isladder && stair.up !== up)
+        ?? stairs.find(stair => stair.isladder && stair.up !== up)
+        ?? null;
+}
+// C wizard.c:cuss(), shared by monster turns and sounds.c:domonnoise().
+const M2_MINION = 0x00001000;
+const WIZARD_CUSS_INSULTS = [
+    'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
+    'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
+    'footpad', 'imbecile', 'knave', 'maledict', 'miscreant', 'niddering',
+    'poltroon', 'rattlepate', 'reprobate', 'scapegrace', 'varlet', 'villein',
+    'wittol', 'worm', 'wretch',
+];
+const WIZARD_CUSS_MALEDICTIONS = [
+    'Hell shall soon claim thy remains,',
+    'I chortle at thee, thou pathetic',
+    'Prepare to die, thou',
+    'Resistance is useless,',
+    'Surrender or die, thou',
+    'There shall be no mercy, thou',
+    'Thou shalt repent of thy cunning,',
+    'Thou art as a flea to me,',
+    'Thou art doomed,',
+    'Thy fate is sealed,',
+    'Verily, thou shalt be one dead',
+];
+export async function publishMonsterCuss(monster, state, random = rn2) {
+    if (heroIsDeaf(state))
+        return;
+    const minion = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MINION);
+    const extension = monster.emin ?? monster.mextra?.emin;
+    if (monster.iswiz) {
+        await plineWithContinuation(selectWizardCussMessage(monster, state, random));
+    }
+    else if (minion && monsterAlignmentType(monster) === 1
+        && !(monster.isminion && extension?.renegade)) {
+        await deliverCommonQuestInsult('angel_cuss', state);
+    }
+    else if (!random(minion ? 100 : 5)) {
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true, state })} casts aspersions on your ancestry.`);
+    }
+    else {
+        await deliverCommonQuestInsult('demon_cuss', state);
+    }
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, 25, state);
+}
+function selectWizardCussMessage(monster, game, roll) {
+    if (roll(5) === 0)
+        return monsterName(monster, { capitalized: true, state: game }) + ' laughs fiendishly.';
+    if (game.u?.uhave?.amulet
+        && roll(WIZARD_CUSS_INSULTS.length) === 0) {
+        return '"Relinquish the amulet, '
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
+    }
+    if ((game.u?.uhp ?? 1) < 5 && roll(2) === 0) {
+        const line = roll(2)
+            ? 'Even now thy life force ebbs, '
+            : 'Savor thy breath, ';
+        const suffix = line.startsWith('Savor')
+            ? ', it be thy last!' : '!';
+        return '"' + line
+            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)]
+            + suffix + '"';
+    }
+    if ((monster.mhp ?? 1) < 5 && roll(2) === 0)
+        return roll(2) ? '"I shall return."' : '"I\'ll be back."';
+    return '"' + WIZARD_CUSS_MALEDICTIONS[roll(WIZARD_CUSS_MALEDICTIONS.length)] + ' ' + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
 }
 //# sourceMappingURL=wizard.js.map

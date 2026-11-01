@@ -14,7 +14,6 @@ import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero
 import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
-import { tameMonster } from './monster_taming.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty,
@@ -25,6 +24,7 @@ import { rn1, rnd } from './rng.js';
 import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
+import { tameMonster } from './dog.js';
 
 const M2_NEUTER = 0x00040000;
 

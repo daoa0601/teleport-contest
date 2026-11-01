@@ -3,11 +3,11 @@ import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STRAT_CLOSE, STRAT_WAITFORU } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterAlignmentType, setMonsterMalign } from '../js/monster_alignment.js';
-import { chooseCovetousStrategy } from '../js/monster_covetous_target.js';
-import { tameMonster } from '../js/monster_taming.js';
 import { BELL_OF_OPENING } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { chooseCovetousStrategy } from '../js/wizard.js';
+import { tameMonster } from '../js/dog.js';
 void test('the Tourist nemesis is hostile and waits for the hero instead of approaching as a leader', async () => {
     await freshObjectRoom({ role: 'tourist' });
     const nemesis = await createMonsterAt('Master of Thieves', 12, 10, MM_NOGRP | NO_MINVENT);

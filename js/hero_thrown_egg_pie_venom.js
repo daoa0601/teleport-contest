@@ -6,11 +6,11 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { prepareHeroThrownTarget } from './thrown_object.js';
 import { offerThrownFood } from './thrown_food.js';
+import { wakeAttackedMonster } from './mon.js';
 const EGG_PIE_AND_VENOM_TYPES = new Set([EGG, CREAM_PIE, BLINDING_VENOM, ACID_VENOM]);
 export function isHeroThrownEggPieOrVenom(object) {
     return !!object && EGG_PIE_AND_VENOM_TYPES.has(object.otyp);

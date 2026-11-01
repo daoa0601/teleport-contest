@@ -13,7 +13,6 @@ import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY,
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveDamage } from './uhitm.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './monster_resistance.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { petrifyMonsterAttacker } from './monster_stoning.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -25,6 +24,7 @@ import { monsterReflectionSource } from './ray.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { contactIsProtected } from './stoning.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
 const M1_NOEYES = 0x00001000;
 const M1_SEE_INVIS = 0x01000000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');

@@ -20,15 +20,15 @@ import { mklev } from './mklev.js';
 import { killGenocidedMonsters } from './mon.js';
 import { MONSTER_GENO } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { collectLevelFollowers } from './monster_followers.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
-import { deliverMigratingMonsters } from './monster_migration.js';
 import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { checkSpecialRoom } from './shk.js';
 import { setPaidShopkeeper } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { vision_reset_new_level } from './vision.js';
+import { collectLevelFollowers } from './dog.js';
+import { deliverMigratingMonsters } from './dog.js';
 
 const G_UNIQ = 0x1000;
 

@@ -9,7 +9,6 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { countLevelFeatures } from './mklev.js';
-import { angerWatchGuards } from './monster_anger.js';
 import { LONG_SWORD } from './object_data.js';
 import { blessObjectState, curseObject } from './object_state.js';
 import { inTown } from './room.js';
@@ -17,6 +16,7 @@ import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';
 import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { angerWatchGuards } from './mon.js';
 
 export async function dipFountainSword(object: GameObject, location: MapLocation): Promise<boolean> {
     requirePlayingGame(game);

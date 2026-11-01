@@ -3,9 +3,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { heroResistsLifeDrain } from './monster_resistance.js';
 import { finishHeroDeath } from './end.js';
-import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { currentAttribute } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
@@ -31,6 +29,8 @@ import type { IntrinsicOrigin } from './property_types.js';
 import type { RoleKey } from './roles.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import type { LevelAbility } from './innate_abilities.js';
+import { heroResistsLifeDrain } from './mondata.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
 
 interface ExperienceOptions {
     state?: GameState;

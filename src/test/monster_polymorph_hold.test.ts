@@ -7,7 +7,6 @@ import { flush_screen, swallowed } from '../js/display.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME, monsterCanEngulf } from '../js/monster_data.js';
 import { NO_MINVENT, PIT } from '../js/const.js';
-import { monsterHasStoneResistance } from '../js/monster_resistance.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, EGG, POT_POLYMORPH } from '../js/object_data.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -16,13 +15,14 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { dropInventoryObject, throwInventoryObject } from './support/commands.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { monsterHasStoneResistance } from '../js/mondata.js';
+import { cancelMonster } from '../js/zap.js';
 
 async function messageLine() {
     await flush_screen();

@@ -4,11 +4,11 @@ import test from 'node:test';
 import { MIGR_EXACT_XY, MIGR_RANDOM, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { initRng } from '../js/rng.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/dog.js';
 
 for (const warning of [false, true]) {
     for (const mode of [MIGR_EXACT_XY, MIGR_RANDOM]) {

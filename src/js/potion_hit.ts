@@ -54,14 +54,10 @@ import {
     MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL,
     monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
 } from './monster_data.js';
-import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
 import {
     AD_ACID, AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
 import { finishMonsterKilled } from './monster_death.js';
-import {
-    monsterHasAcidResistance, monsterHasPoisonResistance,
-} from './monster_resistance.js';
 import {
     adjustMonsterSpeed, monsterSpeedMessage,
 } from './monster_speed.js';
@@ -95,7 +91,10 @@ import { heroFormSticks } from './hero_species.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { putMonsterToSleep } from './monster_sleep.js';
 import { objectAction, objectCombatName, definiteObjectAction } from './objnam.js';
-import { monstersObserveHeroResistance } from './mondata.js';
+import {
+    monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasPoisonResistance,
+} from './mondata.js';
+import { polymorphMonsterFromMagic } from './zap.js';
 
 export type PotionWakeResult = { heroDied?: boolean } | void;
 export type PotionWakeMonster = (monster: Monster) => PotionWakeResult | Promise<PotionWakeResult>;

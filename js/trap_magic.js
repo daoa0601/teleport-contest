@@ -10,11 +10,11 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { gotoLevel } from './level_change.js';
 import { triggerImmediateMonsterTrap, finishImmediateMonsterTrap } from './trap.js';
-import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
 import { rewardMonsterRescue } from './untrap.js';
 import { rn2 } from './rng.js';
 import { cansee, vision_recalc } from './vision.js';
+import { wakeMonster } from './mon.js';
 function targetTrap(target, state) {
     const hero = target === state.u || target === state.u.usteed;
     if (!hero && !('mnum' in target))

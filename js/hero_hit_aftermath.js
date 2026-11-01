@@ -1,9 +1,9 @@
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
-import { angerWatchGuards, isWatch } from './monster_anger.js';
 import { ghodHitsu } from './priest.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
+import { angerWatchGuards, isWatch } from './mon.js';
 // Capture before damage or wakeup changes peacefulness, species, or residency.
 export function shouldAngerGuardsAfterHeroHit(monster) {
     return !!monster.mpeaceful

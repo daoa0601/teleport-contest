@@ -10,7 +10,6 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import { SPE_TURN_UNDEAD, WAN_UNDEAD_TURNING } from '../js/object_data.js';
 import { castSpell } from '../js/spell.js';
 import { learnSpell } from './support/spells.js';
@@ -19,6 +18,7 @@ import { chargedWand, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 
 const PM_TROLL = 220;
 

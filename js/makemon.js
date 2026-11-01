@@ -3,9 +3,9 @@
 // m_initinv, set_mimic_sym, create_critters.
 import { armorBonus } from './armor.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EMIN, MM_EPRI, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, isok, } from './const.js';
+import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EMIN, MM_EPRI, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, isok, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSenseMonster, newsym } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './display.js';
 import { level_difficulty, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -17,21 +17,22 @@ import { occupied } from './mkroom.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { finishMonsterBirth } from './monster_birth.js';
 import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
-import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, requireMonsterData, } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterTypeName, requireMonsterData, } from './monster_data.js';
+import { initialShapechangedBirth } from './monster_polymorph.js';
+import { monsterDeathCount } from './monster_vitals.js';
+import { monsterName, monsterSubjectPronoun } from './monster_name.js';
+import { setMonsterSpecies } from './monster_species.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, OBJECT_WEIGHT, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
 import { hideMonsterUnder } from './mon.js';
-import { adjustedMonsterLevel, isHomeElemental, newMonsterHitPoints, } from './monster_hit_points.js';
 import { addCreatedObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, } from './monster_inventory.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
-import { initialShapechangedBirth } from './monster_polymorph.js';
-import { propagateMonsterSpecies } from './monster_population.js';
-import { giveMonsterStartingObject } from './monster_starting_inventory.js';
 import { initializeMonsterWormBody } from './monster_worm.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem, } from './muse.js';
+import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem } from './muse.js';
 import { addCreatedObjectToContainer } from './object_container.js';
-import { AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, OBJECT_WEIGHT, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { rndClass } from './objnam.js';
@@ -39,13 +40,13 @@ import { deliverOrcRaidLoot } from './orc_raid.js';
 import { registerQuestLeader } from './quest.js';
 import { createParticularMonster } from './read_creation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound, } from './role_monsters.js';
+import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { inTown, roomForIndex } from './room.js';
 import { maybeGiveDomesticSaddle } from './steed.js';
 import { goodPosition } from './teleport_rules.js';
 import { block_point, visionCellBlocksLight } from './vision.js';
 import { objectWeight } from './weight.js';
-import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear, } from './mklev.js';
+import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear } from './mklev.js';
 import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
@@ -1790,5 +1791,398 @@ export async function createCritters(count, mnum = null, neverAsk = false) {
             known = true;
     }
     return known;
+}
+const GOLEM_HIT_POINTS = new Map([
+    ['straw golem', 20],
+    ['paper golem', 20],
+    ['rope golem', 30],
+    ['gold golem', 60],
+    ['leather golem', 40],
+    ['wood golem', 50],
+    ['flesh golem', 40],
+    ['clay golem', 70],
+    ['stone golem', 100],
+    ['glass golem', 80],
+    ['iron golem', 120],
+]);
+// C makemon.c:golemhp().
+export function golemHitPoints(mnum) {
+    if (MONSTER_SYMBOL[mnum] !== 55)
+        return null;
+    const name = MONSTER_NAME[mnum];
+    return name === undefined ? null : GOLEM_HIT_POINTS.get(name) ?? null;
+}
+// C makemon.c:is_home_elemental(). The hero and other monsters use this rule.
+export function isHomeElemental(mnum) {
+    const name = MONSTER_NAME[mnum];
+    if (name === undefined)
+        return false;
+    switch (name) {
+        case 'air elemental': return Is_airlevel(game.u.uz);
+        case 'earth elemental': return Is_earthlevel(game.u.uz);
+        case 'fire elemental': return Is_firelevel(game.u.uz);
+        case 'water elemental': return Is_waterlevel(game.u.uz);
+        default: return false;
+    }
+}
+// C ref: makemon.c:adj_lev(). Creation and polymorph share the live level.
+export function adjustedMonsterLevel(mnum) {
+    const baseLevel = MONSTER_LEVEL[mnum] ?? 0;
+    if (mnum === PM_WIZARD_OF_YENDOR) {
+        const deaths = monsterDeathCount(mnum);
+        return Math.min(49, baseLevel + deaths);
+    }
+    if (baseLevel > 49)
+        return 50;
+    let adjusted = baseLevel;
+    const depthDelta = level_difficulty() - baseLevel;
+    if (depthDelta < 0)
+        adjusted--;
+    else
+        adjusted += Math.trunc(depthDelta / 5);
+    const heroDelta = (game.u?.ulevel ?? 1) - baseLevel;
+    if (heroDelta > 0)
+        adjusted += Math.trunc(heroDelta / 4);
+    const upperLimit = Math.min(49, Math.trunc(3 * baseLevel / 2));
+    return Math.min(upperLimit, Math.max(0, adjusted));
+}
+// C ref: makemon.c:newmonhp().
+export function newMonsterHitPoints(mnum) {
+    const rawLevel = MONSTER_LEVEL[mnum] ?? 0;
+    let level = adjustedMonsterLevel(mnum);
+    const fixedGolemHp = golemHitPoints(mnum);
+    let hp;
+    let minimumBase = 0;
+    if (fixedGolemHp != null) {
+        hp = fixedGolemHp;
+    }
+    else if (mnum >= 311 && mnum <= 313) {
+        minimumBase = 10;
+        hp = d(10, 8);
+    }
+    else if (rawLevel > 49) {
+        hp = 2 * (rawLevel - 6);
+        level = Math.trunc(hp / 4);
+    }
+    else if (MONSTER_SYMBOL[mnum] === 30 && mnum >= 143) {
+        minimumBase = level;
+        hp = In_endgame(game.u?.uz) ? 8 * level : 4 * level + d(level, 4);
+    }
+    else if (!level) {
+        minimumBase = 1;
+        hp = rnd(4);
+    }
+    else {
+        minimumBase = level;
+        hp = d(level, 8);
+        if (isHomeElemental(mnum))
+            hp *= 3;
+    }
+    if (minimumBase && hp === minimumBase)
+        hp++;
+    return { level, hp };
+}
+export function monsterHitPointsPerLevel(monster, { rollOne = rnd, randomBelow = rn2, } = {}) {
+    const mnum = monster.mnum;
+    const speciesLevel = MONSTER_LEVEL[mnum] ?? 0;
+    let hitPoints = rollOne(8);
+    const fixedGolemHitPoints = golemHitPoints(mnum);
+    if (fixedGolemHitPoints != null && speciesLevel > 0) {
+        hitPoints = Math.trunc(fixedGolemHitPoints / speciesLevel);
+    }
+    else if (speciesLevel > 49) {
+        hitPoints = 4 + rollOne(4);
+    }
+    else if (MONSTER_SYMBOL[mnum] === 30 && mnum >= 143) {
+        hitPoints = 4 + randomBelow(5);
+    }
+    else if (!(monster.m_lev > 0)) {
+        hitPoints = rollOne(4);
+    }
+    return hitPoints;
+}
+// Species birth counts and extinction.
+// C refs: makemon.c:propagate() and mbirth_limit().
+const G_UNIQ_POPULATION = 0x1000;
+const MAXMONNO = 120;
+const PM_NAZGUL = MONSTER_NAME.indexOf('Nazgul');
+// Admission uses the previous count and flags. Ordinary makemon() ignores
+// the result and can explicitly create extinct species; ghostly restoration
+// rejects them and must not tally a rejected actor.
+export function propagateMonsterSpecies(species, tally, ghostly, state = game) {
+    state.mvitals ||= [];
+    const vital = state.mvitals[species] ||= { mvflags: 0, born: 0, died: 0 };
+    const next = speciesAfterBirth(species, vital, tally, ghostly);
+    vital.born = next.born;
+    vital.mvflags = next.mvflags;
+    return next.admitted;
+}
+function speciesAfterBirth(species, vital, tally, ghostly) {
+    const limit = monsterBirthLimit(species);
+    const previousBorn = vital.born ?? 0;
+    const previousFlags = vital.mvflags ?? 0;
+    const admitted = previousBorn < limit && !(previousFlags & G_GONE);
+    const born = tally && previousBorn < 255 && (!ghostly || admitted)
+        ? previousBorn + 1 : previousBorn;
+    const generation = MONSTER_GENO[species] ?? 0;
+    const unique = !!(generation & G_UNIQ_POPULATION);
+    const exhausted = born >= limit && !(generation & G_NOGEN);
+    const extinct = (unique && species !== PM_HIGH_CLERIC) || exhausted;
+    const mvflags = previousFlags | (extinct ? G_EXTINCT : 0);
+    return { admitted, born, mvflags };
+}
+// C makemon.c:mbirth_limit().
+export function monsterBirthLimit(species) {
+    return species === PM_NAZGUL ? 9 : species === PM_ERINYS ? 3 : MAXMONNO;
+}
+// C makemon.c:mongets()/mkmonmoney(), also used after ordinary monster birth.
+export async function giveMonsterStartingObject(monster, type) {
+    if (!type)
+        return null;
+    const object = await mksobj(type, true, false);
+    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+    if (MONSTER_SYMBOL[monster.mnum] === 56) {
+        if (object.blessed) {
+            object.blessed = false;
+            object.cursed = true;
+        }
+    }
+    else if ((flags & 0x1000) && monsterAlignmentType(monster) === 1) {
+        object.cursed = false;
+        object.spe = Math.max(0, object.spe);
+        object.oerodeproof = true;
+        object.oeroded = object.oeroded2 = 0;
+        object.orotten = object.odiluted = object.norevive = false;
+    }
+    else if (monsterIsPlayerMonster(monster.mnum) && object.oclass === 2
+        && (OBJECT_SUBTYPE[type] ?? 0) >= P_SHORT_SWORD
+        && (OBJECT_SUBTYPE[type] ?? 0) <= P_SABER) {
+        object.spe = 3 + rn2(4);
+    }
+    if (type === CANDELABRUM_OF_INVOCATION) {
+        object.spe = 0;
+        object.age = 0;
+        object.lamplit = false;
+        object.blessed = object.cursed = false;
+    }
+    else if (type === BELL_OF_OPENING) {
+        object.blessed = object.cursed = false;
+    }
+    else if (type === SPE_BOOK_OF_THE_DEAD) {
+        object.blessed = false;
+        object.cursed = true;
+    }
+    if (flags & 0x800) {
+        if (object.oclass === 2)
+            object.spe = Math.max(1, object.spe);
+        else if (object.oclass === 3)
+            object.spe = Math.max(0, object.spe);
+    }
+    await addCreatedObjectToMonsterInventory(monster, object, game);
+    return object.where === 'gone' ? null : object;
+}
+export async function giveMonsterStartingGold(monster, amount) {
+    if (amount <= 0)
+        return;
+    const gold = await mksobj(GOLD_PIECE, false, false);
+    gold.quan = gold.quantity = amount;
+    gold.owt = objectWeight(gold);
+    await linkCreatedObjectToMonsterInventory(monster, gold);
+}
+const M2_SHAPESHIFTER = 0x00004000;
+const M1_HUMANOID = 0x00020000;
+const S_GOLEM = 55;
+const PM_KILLER_BEE = 1;
+const PM_QUEEN_BEE = 5;
+const PM_AIR_ELEMENTAL_GROWTH = 154;
+const PM_FIRE_ELEMENTAL_GROWTH = 155;
+const PM_EARTH_ELEMENTAL_GROWTH = 156;
+const PM_WATER_ELEMENTAL_GROWTH = 157;
+function sameLevel(left, right) {
+    return !!left && !!right
+        && left.dnum === right.dnum
+        && left.dlevel === right.dlevel;
+}
+// C makemon.c:is_home_elemental() against an explicit state; grow_up()
+// honors the caller's state rather than the global game.
+function isHomeElementalAt(mnum, state) {
+    const level = state.u?.uz;
+    if (mnum === PM_AIR_ELEMENTAL_GROWTH)
+        return sameLevel(level, state.air_level);
+    if (mnum === PM_FIRE_ELEMENTAL_GROWTH)
+        return sameLevel(level, state.fire_level);
+    if (mnum === PM_EARTH_ELEMENTAL_GROWTH)
+        return sameLevel(level, state.earth_level);
+    if (mnum === PM_WATER_ELEMENTAL_GROWTH)
+        return sameLevel(level, state.water_level);
+    return false;
+}
+function targetSpecies(mnum, killedMonster) {
+    if (!killedMonster && mnum === PM_KILLER_BEE)
+        return PM_QUEEN_BEE;
+    return MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+}
+function resultingGender(monster, newType) {
+    const flags = MONSTER_FLAGS2[newType] ?? 0;
+    if (flags & M2_MALE)
+        return false;
+    if (flags & M2_FEMALE)
+        return true;
+    return !!monster.female;
+}
+function growthMessage(monster, newType, oldFemale, newFemale, state) {
+    const gender = oldFemale !== newFemale ? newFemale ? 'female ' : 'male ' : '';
+    const newName = gender + monsterTypeName(newType, newFemale);
+    const subject = monsterName(monster, {
+        state, article: 'your', capitalized: true,
+        suppressSaddle: !!MGIVENNAME(monster) || monster === state.u.usteed,
+    });
+    const verb = oldFemale !== newFemale
+        ? 'changes into'
+        : (MONSTER_FLAGS1[newType] ?? 0) & M1_HUMANOID
+            ? 'becomes' : 'grows up into';
+    return `${subject} ${verb} ${withIndefiniteArticle(newName)}.`;
+}
+function genocidedGrowthMessage(monster, newType, state) {
+    const subject = monsterName(monster, { state });
+    // grow_up announces death before changing species or gender.
+    const newName = monsterTypeName(newType, monster.female);
+    const pronoun = monsterSubjectPronoun(monster, { state });
+    const fate = monsterIsNonliving(newType) ? 'expires' : 'dies';
+    return `As ${subject} grows up into ${withIndefiniteArticle(newName)}, ${pronoun} ${fate}!`;
+}
+function recordRoll(calls, text) {
+    if (calls)
+        calls.push(text);
+}
+function growthFromKill(monster, victim, state, rollOne, random, calls) {
+    const level = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+    let hpThreshold = level ? level * 8 : 4;
+    if (level && MONSTER_SYMBOL[monster.mnum] === S_GOLEM) {
+        hpThreshold = (Math.trunc((monster.mhpmax ?? 1) / 10) + 1)
+            * 10 - 1;
+    }
+    else if (level && isHomeElementalAt(monster.mnum, state)) {
+        hpThreshold *= 3;
+    }
+    const victimLevel = victim.m_lev ?? MONSTER_LEVEL[victim.mnum] ?? 0;
+    const range = victimLevel + 1;
+    let maximum = rollOne(range);
+    recordRoll(calls, `rnd(${range})`);
+    if ((monster.mhpmax ?? 1) + maximum > hpThreshold + 1) {
+        maximum = Math.max(hpThreshold + 1 - (monster.mhpmax ?? 1), 0);
+    }
+    let current = 0;
+    if (maximum > 1) {
+        current = random(maximum);
+        recordRoll(calls, `rn2(${maximum})`);
+    }
+    return { maximum, current, hpThreshold };
+}
+function growthWithoutKill(rollOne, calls) {
+    const increase = rollOne(8);
+    recordRoll(calls, 'rnd(8)');
+    return { maximum: increase, current: increase, hpThreshold: 0 };
+}
+export function growMonster(monster, { victim = null, state = game, rollOne = rnd, random = rn2, calls = null, } = {}) {
+    if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
+        return { alive: false, changedSpecies: false };
+    const oldType = monster.mnum;
+    const oldFemale = !!monster.female;
+    const oldLevel = monster.m_lev ?? MONSTER_LEVEL[oldType] ?? 0;
+    const newType = targetSpecies(oldType, victim);
+    const oldSpeciesLevel = MONSTER_LEVEL[oldType] ?? 0;
+    const targetLevel = MONSTER_LEVEL[newType] ?? oldSpeciesLevel;
+    const increase = victim
+        ? growthFromKill(monster, victim, state, rollOne, random, calls)
+        : growthWithoutKill(rollOne, calls);
+    monster.mhpmax = (monster.mhpmax ?? monster.mhp ?? 1)
+        + increase.maximum;
+    monster.mhp = (monster.mhp ?? 1) + increase.current;
+    if (monster.mhpmax <= increase.hpThreshold) {
+        return {
+            alive: true,
+            changedSpecies: false,
+            leveled: false,
+            maxIncrease: increase.maximum,
+            currentIncrease: increase.current,
+        };
+    }
+    let levelLimit = victim ? Math.trunc(3 * oldSpeciesLevel / 2) : 50;
+    if (oldType !== newType && targetLevel > levelLimit)
+        levelLimit = targetLevel;
+    if (monsterIsPlayerMonster(oldType))
+        levelLimit = 30;
+    else if (levelLimit < 5)
+        levelLimit = 5;
+    else if (levelLimit > 49)
+        levelLimit = oldSpeciesLevel > 49 ? 50 : 49;
+    monster.m_lev = (monster.m_lev ?? oldSpeciesLevel) + 1;
+    let speciesChange = null;
+    if (monster.m_lev >= targetLevel && newType !== oldType) {
+        const newFemale = resultingGender(monster, newType);
+        const genocided = !!((state.mvitals?.[newType]?.mvflags ?? 0) & G_GENOD);
+        const message = !canSpotMonster(monster) ? '' : genocided
+            ? genocidedGrowthMessage(monster, newType, state)
+            : growthMessage(monster, newType, oldFemale, newFemale, state);
+        speciesChange = { genocided, newFemale, message };
+        levelLimit = monster.m_lev;
+    }
+    if (speciesChange?.genocided)
+        return {
+            ...speciesChange,
+            alive: false,
+            changedSpecies: true,
+            oldType,
+            newType,
+            leveled: monster.m_lev > oldLevel,
+            maxIncrease: increase.maximum,
+            currentIncrease: increase.current,
+        };
+    if (monster.m_lev > levelLimit) {
+        monster.m_lev--;
+        if (monster.mhpmax === increase.hpThreshold + 1)
+            monster.mhpmax--;
+    }
+    monster.mhpmax = Math.min(monster.mhpmax, 400);
+    monster.mhp = Math.min(monster.mhp, monster.mhpmax);
+    const totals = {
+        leveled: monster.m_lev > oldLevel,
+        maxIncrease: increase.maximum,
+        currentIncrease: increase.current,
+    };
+    if (!speciesChange)
+        return {
+            ...totals,
+            alive: true,
+            changedSpecies: false,
+            genocided: false,
+            oldType,
+            newType: oldType,
+            newFemale: oldFemale,
+            message: null,
+        };
+    return {
+        ...totals,
+        ...speciesChange,
+        alive: !speciesChange.genocided,
+        changedSpecies: true,
+        oldType,
+        newType,
+    };
+}
+export function finishMonsterGrowth(monster, growth) {
+    if (!growth?.changedSpecies || growth.applied)
+        return false;
+    setMonsterSpecies(monster, growth.newType);
+    // Fatal growth calls mondied before the normal form-change tail.
+    if (!growth.genocided) {
+        if (monster.cham === growth.oldType
+            && ((MONSTER_FLAGS2[growth.newType] ?? 0) & M2_SHAPESHIFTER))
+            monster.cham = growth.newType;
+        monster.female = growth.newFemale;
+    }
+    growth.applied = true;
+    return true;
 }
 //# sourceMappingURL=makemon.js.map

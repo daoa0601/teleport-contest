@@ -30,8 +30,6 @@ import { gainGuardianAngel } from './guardian_angel.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
-import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, setShopResidency, sendMonsterToLimbo, } from './monster_migration.js';
-import { collectLevelFollowers } from './monster_followers.js';
 import { restoreMonsterCover, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
@@ -46,7 +44,7 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
-import { killGenocidedMonsters } from './mon.js';
+import { killGenocidedMonsters, sendMonsterToLimbo } from './mon.js';
 import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { resetTrapSetting } from './trap_setting.js';
@@ -57,7 +55,7 @@ import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
 import { heroHasOlfaction } from './polyself.js';
-import { checkSpecialRoom } from './shk.js';
+import { checkSpecialRoom, setShopResidency } from './shk.js';
 import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './mkmaze.js';
@@ -67,6 +65,8 @@ import { buriedBallToPunishment } from './buried_object.js';
 import { resurrectWizard } from './wizard.js';
 import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster } from './dog.js';
+import { collectLevelFollowers } from './dog.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
 export function scheduleLevelChange(args, changeLevel = gotoLevel, preMessage = '') {

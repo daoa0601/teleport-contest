@@ -39,12 +39,10 @@ import { currency } from './currency.js';
 import { flush_screen } from './display.js';
 import { promptYesNo } from './query.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
-import { publishMonsterGrowl, publishMonsterYelp } from './monster_anger.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { mksobj } from './mkobj.js';
-import { migrateMonsterOffLevel } from './monster_migration.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -76,6 +74,8 @@ import {
     isok,
 } from './const.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
+import { publishMonsterGrowl, publishMonsterYelp } from './monster_sound.js';
+import { migrateMonsterOffLevel } from './dog.js';
 
 // C include/monflag.h enum msound: animal noises end at MS_ANIMAL, and any
 // voice at or above MS_HUMANOID can hold a conversation.

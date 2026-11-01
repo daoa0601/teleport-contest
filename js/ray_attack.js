@@ -1,13 +1,12 @@
 // Native wand, spell, and breath rays.
 // C refs: zap.c ubuzz(), dobuzz(), zhitm(), and zhitu().
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import { healMonster } from './mon.js';
+import { healMonster, wakeMonster } from './mon.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { heroFormSticks } from './hero_species.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { finishMonsterEating } from './monster_eating.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { burnArmorByFire } from './trap.js';
 import { igniteItems } from './light.js';
@@ -23,7 +22,6 @@ import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
 import { finishMonsterKilled } from './monster_death.js';
-import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
@@ -35,7 +33,6 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits, monsterResistsEffect, } from './monster_resistance.js';
 import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, } from './monster_attack_types.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH, WAN_MAGIC_MISSILE, WAN_LIGHTNING, } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
@@ -45,10 +42,11 @@ import { flashBurn } from './sight_change.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { realRayName, displayRayName } from './ray_name.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster, rayMonsterAt, runRay, } from './ray.js';
-import { applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, } from './zap.js';
+import { applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect } from './zap.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits, } from './mondata.js';
+import { finishMonsterEating } from './dogmove.js';
 // zhitm uses this value to request disintegration from its caller.
 const MAGIC_COOKIE = 1000;
 const MR_FIRE = 0x01;

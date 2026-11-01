@@ -23,7 +23,6 @@ import { hideMonsterUnder } from './mon.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
-import { newMonsterHitPoints } from './monster_hit_points.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { landFloorObject } from './floor_effects.js';
 import {
@@ -43,8 +42,7 @@ import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
 import { monsterIsScaredAt, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { finishMonsterEating } from './monster_eating.js';
-import { setMimicAppearance } from './makemon.js';
+import { setMimicAppearance, newMonsterHitPoints } from './makemon.js';
 import { smellUnseenMonster } from './monster_smell.js';
 import { isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
@@ -65,6 +63,7 @@ import type { GameState } from './game_state.js';
 import type { MonsterSelfTouchResult, PetrificationDeathHandler } from './monster_stoning.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { finishMonsterEating } from './dogmove.js';
 
 export interface MonsterFormChangeOptions {
     showMessage?: boolean;

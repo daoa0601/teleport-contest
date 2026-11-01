@@ -3,7 +3,6 @@ import test from 'node:test';
 import { MIGR_RANDOM, NO_MINVENT, ROOM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_YENDOR, SACK } from '../js/object_data.js';
@@ -12,6 +11,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishSpellTurn } from './support/monster-spells.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { migrateMonsterOffLevel } from '../js/dog.js';
 for (const newestHasAmulet of [false, true]) {
     void test(`resurrection recalls the latest migrated Wizard${newestHasAmulet ? ' without the Amulet' : ''}`, async () => {
         await freshObjectRoom({ hero: { deafTurns: 100 } });

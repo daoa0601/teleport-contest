@@ -13,7 +13,7 @@ HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
-    'js/artifact_data.js', 'js/monster_hit_points.js', 'js/hero_species.js',
+    'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
     'js/monster_vitals.js', 'js/dungeon.js', 'js/monster_speed.js',
 )
 
@@ -75,7 +75,7 @@ STATE_SPECS += [
                         s['u.umonnum'] == s['u.umonster']], ('u.acurr.a[3]',)))],
          mutants=[(HIT_BONUS, 'adjustedMonsterLevel(heroSpecies(state)) - 3',
                    'adjustedMonsterLevel(heroSpecies(state)) - 2'),
-                  ('js/monster_hit_points.js', 'monsterDeathCount(mnum);', 'monsterDeathCount(mnum + 1);')]),
+                  ('js/makemon.js', 'monsterDeathCount(mnum);', 'monsterDeathCount(mnum + 1);')]),
 ]
 
 

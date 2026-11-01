@@ -10,7 +10,6 @@ import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { migrateMonsterOffLevel } from './monster_migration.js';
 import {
     CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES,
     LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY,
@@ -22,6 +21,7 @@ import { randomTypeByDescription } from './wish_lookup.js';
 import { deallocateObject } from './object_delete.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import { migrateMonsterOffLevel } from './dog.js';
 
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');

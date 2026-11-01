@@ -83,7 +83,6 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
-import { aggravateMonsters } from './monster_anger.js';
 import { heroIsBlinded, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import {
@@ -95,7 +94,7 @@ import {
     requireDochugContext,
 } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
-import { finishWizardClone, monsterSpellHasAggravatables } from './wizard.js';
+import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } from './wizard.js';
 import { msummon } from './minion.js';
 import {
     heroEyeCount,

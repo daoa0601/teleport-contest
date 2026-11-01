@@ -9,11 +9,11 @@ import { specialAttackNegated } from './magic_negation.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { teleportHero } from './teleport.js';
 import { cansee } from './vision.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { Monster } from './monster_types.js';
+import { monsterResistsEffect } from './zap.js';
 
 const M1_TPORT = 0x02000000;
 const M2_SHAPESHIFTER = 0x00004000;

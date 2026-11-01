@@ -20,8 +20,7 @@ import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
-import { angerAttackedMonster } from './monster_anger.js';
-import { monstersInFmonOrder } from './mon.js';
+import { monstersInFmonOrder, angerAttackedMonster } from './mon.js';
 import {
     AD_CONF, AD_FIRE, AT_GAZE,
 } from './monster_attack_types.js';

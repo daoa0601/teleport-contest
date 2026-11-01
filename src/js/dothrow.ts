@@ -48,7 +48,6 @@ import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
 } from './gold_throw.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -69,6 +68,7 @@ import {
 } from './swallowed_throw.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 
 const M2_ROCKTHROW = 0x08000000;
 

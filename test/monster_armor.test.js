@@ -5,7 +5,6 @@ import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance } from '../js/monster_resistance.js';
 import { adjustMonsterSpeed } from '../js/monster_speed.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
 import { ALCHEMY_SMOCK, ELVEN_SHIELD, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
@@ -14,6 +13,7 @@ import { hitMonsterWithRay } from '../js/zap.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance } from '../js/mondata.js';
 void test('worn dragon scales protect a monster from cold or sleep', async () => {
     for (const element of ['white', 'orange']) {
         await freshObjectRoom();

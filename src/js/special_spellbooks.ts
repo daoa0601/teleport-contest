@@ -21,7 +21,6 @@ import {
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monstersInFmonOrder } from './mon.js';
-import { tameMonster } from './monster_taming.js';
 import { novelTitle } from './novel_titles.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORPSE } from './object_data.js';
@@ -35,6 +34,7 @@ import { cansee } from './vision.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { tameMonster } from './dog.js';
 
 interface SpecialBookOptions { state?: GameState; }
 interface UndeadCreationOptions extends SpecialBookOptions { reviveCorpses?: boolean; flags?: number; }

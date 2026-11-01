@@ -16,7 +16,6 @@ import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { consumeInventoryItem } from './invent.js';
-import { aggravateMonsters } from './monster_anger.js';
 import { tryCallObjectType } from './object_call.js';
 import { erodeObject } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -36,6 +35,7 @@ import { createMemorizedSpell } from './spell.js';
 import { currentSpellKnowledge } from './spell_casting_rules.js';
 import { teleportHero } from './teleport.js';
 import { rndcurse } from './throne.js';
+import { aggravateMonsters } from './wizard.js';
 const MAX_SPELLS = 52;
 const MAX_STUDIES = 3;
 export async function studyBook(book, { state = game } = {}) {

@@ -6,12 +6,12 @@ import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
 import { initializeArtifacts } from './artifacts.js';
-import { initializeMonsterVitals } from './monster_population.js';
 import { rn2, rnd } from './rng.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { ensureQuestStatus } from './quest.js';
 import type { QuestStatus } from './game_state.js';
 import type { Role } from './roles.js';
+import { initializeMonsterVitals } from './allmain.js';
 
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;

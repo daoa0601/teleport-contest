@@ -11,12 +11,12 @@ import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { probeMonster } from './magic_probe.js';
-import { cancelMonster } from './monster_cancellation.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { AT_MAGC } from './monster_attack_types.js';
+import { cancelMonster } from './zap.js';
+import { monsterResistsEffect } from './zap.js';
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {
     const enchantment = magicbaneEnchantment(object);

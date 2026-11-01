@@ -2,13 +2,12 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
-import { tameMonster } from './monster_taming.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { makePetWary } from './dog.js';
+import { makePetWary, tameMonster } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
@@ -27,7 +26,6 @@ import { removeMonsterFromGame } from './monster_departure.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency } from './shk.js';
 import { stolenValue } from './shop_loss.js';
-import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import { destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, } from './monster_inventory.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
@@ -37,6 +35,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement, } from './revival_species.js';
+import { restoreMonsterTraits } from './zap.js';
 function requireCorpseSpecies(corpse) {
     if (typeof corpse.corpsenm !== 'number')
         throw new TypeError('Corpse revival requires a monster species.');

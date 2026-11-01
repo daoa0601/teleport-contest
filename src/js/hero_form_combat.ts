@@ -26,7 +26,6 @@ import {
     AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC,
     AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead,
     monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks,
@@ -46,6 +45,7 @@ import type { Position } from './map_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { wakeAttackedMonster } from './mon.js';
 
 const S_KOBOLD = 11;
 const S_ORC = 15;

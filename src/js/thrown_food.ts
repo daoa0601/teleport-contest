@@ -4,13 +4,13 @@ import { objectMaterial } from './object_material.js';
 import { STRAT_WAITMASK } from './const.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
-import { tameMonster } from './monster_taming.js';
 import { BANANA, CORPSE } from './object_data.js';
 import { ACCFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { tameMonster } from './dog.js';
 
 const PM_MONKEY = MONSTER_NAME.indexOf('monkey');
 const PM_APE = MONSTER_NAME.indexOf('ape');

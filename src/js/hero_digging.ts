@@ -40,10 +40,9 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { dist2, isok } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { makemonAt } from './makemon.js';
+import { makemonAt, adjustedMonsterLevel } from './makemon.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, OBJECT_BIMANUAL, ORANGE, PEAR,

@@ -14,11 +14,11 @@ import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
 import { stumbleOntoMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 import { monsterName, monsterLeashName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { wakeAttackedMonster } from './mon.js';
 const M1_CONCEAL = 0x00000080;
 const S_EEL = 57;
 const DISGUISE_TYPES = new Set([

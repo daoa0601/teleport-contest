@@ -2,7 +2,7 @@
 import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemonAt } from './makemon.js';
+import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject } from './makemon.js';
 import { mkobj, mksobj } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { setMonsterMalign } from './monster_alignment.js';
@@ -11,7 +11,6 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { addCreatedObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterRank } from './monster_name.js';
-import { giveMonsterStartingGold, giveMonsterStartingObject } from './monster_starting_inventory.js';
 import type { Monster } from './monster_types.js';
 import { monsterMightThrowWeapon } from './monster_weapon.js';
 import { initializeMonsterArmor } from './monworn.js';

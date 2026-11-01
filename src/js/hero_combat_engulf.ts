@@ -36,10 +36,6 @@ import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
-import {
-    monsterHasAcidResistance, monsterHasColdResistance,
-    monsterHasFireResistance, monsterHasShockResistance,
-} from './monster_resistance.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroIsUnchanging } from './polyself.js';
 import { d, rn2 } from './rng.js';
@@ -51,6 +47,7 @@ import type { MessagePublisher } from './pline.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
 
 interface HeroCombatEngulfOptions {
     state?: GameState;

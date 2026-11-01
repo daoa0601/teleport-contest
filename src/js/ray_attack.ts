@@ -2,13 +2,12 @@
 // C refs: zap.c ubuzz(), dobuzz(), zhitm(), and zhitu().
 
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import { healMonster } from './mon.js';
+import { healMonster, wakeMonster } from './mon.js';
 import { adjustSpellDamage } from './spell_damage.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { heroFormSticks } from './hero_species.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { finishMonsterEating } from './monster_eating.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { burnArmorByFire } from './trap.js';
 import { igniteItems } from './light.js';
@@ -28,7 +27,6 @@ import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
 import { finishMonsterKilled } from './monster_death.js';
-import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
@@ -43,11 +41,6 @@ import {
     monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import {
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
-    monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
-    monsterResistanceBits, monsterResistsEffect,
-} from './monster_resistance.js';
 import {
     AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE,
     AD_MAGM, AD_RBRE, AD_SLEE,
@@ -68,10 +61,7 @@ import {
     monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster,
     rayMonsterAt, runRay,
 } from './ray.js';
-import {
-    applyRayFloorFeatures, destroyMonsterInventoryByElement,
-    INVENTORY_DAMAGE,
-} from './zap.js';
+import { applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect } from './zap.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -86,7 +76,12 @@ import type { Position } from './map_types.js';
 import type { RayFloorKind, RayFloorResult } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance,
+    monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance,
+    monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits,
+} from './mondata.js';
+import { finishMonsterEating } from './dogmove.js';
 
 export type RayDirection = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n' | '<' | '>';
 export interface NativeRayResult { used: boolean; heroDied: boolean; hits: number; }

@@ -11,13 +11,13 @@ import { initializePet } from '../js/dog.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { angerMonster, wakeMonster } from '../js/monster_anger.js';
 import { DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { angerMonster, wakeMonster } from '../js/mon.js';
 
 async function topline() {
     await flush_screen();

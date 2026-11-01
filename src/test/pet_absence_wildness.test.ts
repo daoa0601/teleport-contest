@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { initializePet } from '../js/dog.js';
+import { initializePet, catchUpMonster } from '../js/dog.js';
 import { game } from '../js/gstate.js';
-import { catchUpMonster } from '../js/monster_migration.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

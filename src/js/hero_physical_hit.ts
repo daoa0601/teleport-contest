@@ -23,7 +23,6 @@ import { prepareHeroWeaponContact } from './hero_weapon_contact.js';
 import { resolveHeroJoust, rollHeroJoust, tryHeroPuddingSplit } from './hero_weapon_impact.js';
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';
 import { tryKnockback } from './uhitm.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHatesLight,
     monsterHatesSilver, monsterIsShade, monsterIsUnsolid, requireMonsterData,
@@ -44,6 +43,7 @@ import type { HeroPhysicalHitOptions, HeroPhysicalHitResult } from './hero_physi
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { wakeAttackedMonster } from './mon.js';
 
 interface ActivePhysicalHit extends Omit<HeroPhysicalHitOptions, 'state' | 'publish' | 'finishMonsterDeath' | 'twoHits' | 'target'> {
     state: PlayingGameState;

@@ -8,7 +8,6 @@ import {
     A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
     Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK,
 } from './const.js';
-import { tameMonster } from './monster_taming.js';
 import { canSeeMonster, newsym, shieldeff } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -25,7 +24,6 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { displayRayName } from './ray_name.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
-import { monsterResistsEffect } from './monster_resistance.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {
@@ -44,9 +42,10 @@ import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { promptDirection } from './tty_prompts.js';
-import { zapRayWithObject } from './zap.js';
+import { zapRayWithObject, monsterResistsEffect } from './zap.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { tameMonster } from './dog.js';
 
 export type InstrumentOptions = NonNullable<Parameters<typeof playTune>[2]>;
 type InstrumentEffectResult = { heroDied: boolean } | void;

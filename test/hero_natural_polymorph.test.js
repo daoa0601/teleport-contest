@@ -7,7 +7,6 @@ import { applyHeroNaturalPolymorph } from '../js/hero_natural_polymorph.js';
 import { resetInputState } from '../js/input.js';
 import { magicNegation } from '../js/magic_negation.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
-import { cancelMonster } from '../js/monster_cancellation.js';
 import { monsterHasMagicResistance } from '../js/anti_magic_trap.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';
 import { plineWithContinuation } from '../js/pline.js';
@@ -18,6 +17,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { cancelMonster } from '../js/zap.js';
 async function polymorphRoom() {
     await freshObjectRoom({ flags: { verbose: true } });
     installPolymorphedHero('genetic engineer');

@@ -23,7 +23,6 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
-import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -31,13 +30,12 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun, possessiveName } from './monster_name.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
-import { hideHeroUnder, maybeUnhideAt } from './mon.js';
+import { hideHeroUnder, maybeUnhideAt, angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -72,6 +70,7 @@ import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './mondata.js';
 
 export interface ScatterOptions {
     state?: GameState;

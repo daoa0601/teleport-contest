@@ -4,9 +4,9 @@ import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { A_LAWFUL } from './const.js';
 import { game } from './gstate.js';
-import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, } from './object_properties.js';
 import { rn2, rnd } from './rng.js';
+import { monsterHasPoisonResistance } from './mondata.js';
 function hitUsesPoison(weapon, mode, dieRoll) {
     const poisonedMissile = mode === 'thrown' && weapon.opoisoned
         && (isLauncherAmmunition(weapon) || isMissileObject(weapon))

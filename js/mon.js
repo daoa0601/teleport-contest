@@ -1,46 +1,40 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
-import { game, requireInitializedGame } from './gstate.js';
-import { finishEnvironmentalMonsterDeath } from './monster_death.js';
-import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
-import { canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, } from './monmove.js';
-import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, MGIVENNAME, M_AP_TYPE, PLNMSG_HIDE_UNDER, ROOM, Is_rogue_level, is_pit, } from './const.js';
+import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
+import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from './monster_death.js';
+import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir, levelHasCeiling, } from './terrain_properties.js';
+import { canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, } from './monmove.js';
+import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, } from './const.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, displayLiquidName, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { splitMonster } from './monster_clone.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasNoHands, monsterIsHuman, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterYoungerForm, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
 import { changeMonsterForm, decideMonsterShapeChange } from './monster_polymorph.js';
-import { monsterName } from './monster_name.js';
-import { monsterHasFireResistance } from './monster_resistance.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, } from './mondata.js';
 import { AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, PICK_AXE, TIN, } from './object_data.js';
-import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer, } from './object_timers.js';
+import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer } from './object_timers.js';
 import { d, rn2, rnd } from './rng.js';
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport.js';
-import { reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction, monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { monsterTrapIsHarmless, trapAt, waterDamageChain } from './trap.js';
-import { formatSeenMessage } from './hero_speech.js';
-import { canSenseMonster } from './display.js';
-import { requireGameLevel, requireLiveGame } from './gstate.js';
-import { setMimicAppearance } from './makemon.js';
-import { monsterHasMapPosition } from './monster_location.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
-import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, } from './objnam.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import { setMimicAppearance, growMonster, finishMonsterGrowth } from './makemon.js';
+import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
+import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
-import { levelHasCeiling } from './terrain_properties.js';
 import { thawObject } from './container.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
-import { AD_POLY } from './monster_attack_types.js';
+import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE } from './monster_attack_types.js';
 import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
-import { growMonster } from './monster_growth.js';
-import { addObjectToMonsterInventory, removeObjectFromMonsterInventory, } from './monster_inventory.js';
+import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './object_material.js';
-import { beginMonsterMealMimicry } from './monster_meal_mimicry.js';
-import { possessiveName } from './monster_name.js';
+import { beginMonsterMealMimicry, finishMonsterEating } from './dogmove.js';
 import { prepareMonsterPetrification, turnGolemToStone } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
@@ -48,45 +42,45 @@ import { splitObjectStack } from './object_stack.js';
 import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { surfaceName } from './terrain_name.js';
-import { dist2 } from './hacklib.js';
+import { dist2, pointsOnline } from './hacklib.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
-import { cansee } from './vision.js';
-import { AD_COLD, AD_ELEC, AD_FIRE, AT_NONE } from './monster_attack_types.js';
+import { cansee, couldsee, hasLightSources, vision_recalc } from './vision.js';
 import { adjustMonsterSpeed, mcalcmove, monsterSpeedMessage } from './monster_speed.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterSentenceSubject, publishMonsterGrowl } from './monster_sound.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { isZombieMaker, zombieForm } from './corpse_species.js';
+import { isReviver, isZombieMaker, zombieForm } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel } from './dungeon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, } from './mondata.js';
 import { wormCrossesBetween } from './monster_worm.js';
-import { monsterAtPosition } from './monster_location.js';
 import { monsterDisplacementFlags } from './monster_displacement.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './armor.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt } from './regions.js';
 import { currentMonsterLoad } from './monster_carry.js';
-import { pointsOnline } from './hacklib.js';
 import { monsterKnowsTrap } from './trap_knowledge.js';
 import { hasTrack } from './track.js';
-import { inHeroSanctuary } from './priest.js';
+import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { roomsAt } from './room.js';
 import { impossible } from './diagnostics.js';
 import { wereChange } from './were.js';
 import { badRockForMonster } from './hack.js';
-import { finishMonsterGrowth } from './monster_growth.js';
-import { canSpotMonster } from './display.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
+import { publishMonsterWake } from './monster_wake.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { questMonsterSound } from './role_monsters.js';
+import { makePlural } from './object_grammar.js';
+import { hotPursuitShopkeeper } from './shop_damage.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { dropSpecialMonsterObjects } from './monster_drop.js';
+import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { clearBypasses } from './object_bypass.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishScheduledLevelChange } from './level_change.js';
-import { hasLightSources, vision_recalc } from './vision.js';
 import { moveVaultGuard } from './vault.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { reassessMonsterArmor } from './monworn.js';
-import { NORMAL_SPEED } from './const.js';
-import { presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, } from './monmove.js';
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
@@ -1240,5 +1234,356 @@ export async function moveMonsters() {
     finally {
         game.context.mon_moving = previousMonsterMoving;
     }
+}
+// C mon.c:copy_mextra() deep-copies pet and shopkeeper history when monster
+// traits are saved with a corpse or restored from one.
+export function copyPetData(value) {
+    return { ...value, ogoal: { ...value.ogoal } };
+}
+export function copyShopkeeperData(value) {
+    const copy = { ...value };
+    if (value.bill)
+        copy.bill = value.bill.map(item => ({ ...item }));
+    return copy;
+}
+// C mon.c:KEEPTRAITS(). Corpses keep their monster's traits when it was a
+// shopkeeper or pet, a unique or reviver, the quest leader, or a seducer.
+const G_UNIQ = 0x1000;
+export function corpseKeepsMonsterTraits(monster, questLeaderId = 0) {
+    if (!monster)
+        return false;
+    return !!monster.isshk
+        || (monster.mtame ?? 0) > 0
+        || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
+        || isReviver(monster.mnum)
+        || (!!questLeaderId && monster.m_id === questLeaderId)
+        || monsterHasSeductionAttack(monster.mnum);
+}
+// Monster anger, alarm sounds, and peaceful bystander reactions.
+// C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards(),
+// qst_guardians_respond(), and the quest-leader branch of mondied().
+const M1_HUMANOID = 0x00020000;
+const MS_CUSS = 34;
+const MS_HUMANOID = 25;
+const MS_GUARDIAN = 38;
+const MS_PRIEST = 41;
+const HUMANOID_GASP_SOUNDS = new Set([
+    22, // MS_IMITATE
+    25, // MS_HUMANOID
+    26, // MS_ARREST
+    27, // MS_SOLDIER
+    28, // MS_GUARD
+    30, // MS_NURSE
+    31, // MS_SEDUCE
+    36, // MS_LEADER
+    38, // MS_GUARDIAN
+    39, // MS_SELL
+    40, // MS_ORACLE
+    41, // MS_PRIEST
+    43, // MS_BOAST
+]);
+const CONDITIONAL_GASP_SOUNDS = new Set([
+    3, // MS_ROAR
+    4, // MS_BELLOW
+    11, // MS_GRUNT
+    20, // MS_LAUGH
+    23, // MS_WERE
+    24, // MS_ORC
+    29, // MS_DJINNI
+    32, // MS_VAMPIRE
+    42, // MS_SPELL
+]);
+const HUMANOID_GASP_EXCLAMATIONS = [
+    'Gasp!', 'Uh-oh.', 'Oh my!', 'What?', 'Why?',
+];
+const WATCH_NAMES = new Set(['watchman', 'watch captain']);
+export function isWatch(monster) {
+    return WATCH_NAMES.has(MONSTER_NAME[monster?.mnum] || '');
+}
+function maybeHumanoidGasp(observer) {
+    requirePlayingGame(game);
+    let sound = questMonsterSound(observer.mnum);
+    if ((sound === MS_GUARDIAN && observer.mnum !== game.urole.guardnum)
+        || (sound === MS_PRIEST && !priestIsCoaligned(observer)))
+        return null;
+    const minion = observer.emin || observer.mextra?.emin;
+    if (sound === MS_CUSS && minion
+        && (priestIsCoaligned(observer) ? !minion.renegade : minion.renegade)) {
+        sound = MS_HUMANOID;
+    }
+    if (CONDITIONAL_GASP_SOUNDS.has(sound)) {
+        if (MONSTER_SYMBOL[observer.mnum] !== MONSTER_SYMBOL[game.u.umonnum])
+            return null;
+    }
+    else if (!HUMANOID_GASP_SOUNDS.has(sound)) {
+        return null;
+    }
+    const exclamation = HUMANOID_GASP_EXCLAMATIONS[rn2(HUMANOID_GASP_EXCLAMATIONS.length)];
+    const name = monsterName(observer, { capitalized: true });
+    return exclamation === 'Gasp!'
+        ? { text: `${name} gasps`, needsPeriod: true }
+        : { text: `${name} exclaims "${exclamation}"`, needsPeriod: false };
+}
+async function reactHumanoidBystander(observer, attackedSpecies) {
+    requirePlayingGame(game);
+    if (isWatch(observer)) {
+        await plineWithContinuation('"Halt!  You\'re under arrest!"');
+        await angerWatchGuards(heroIsDeaf(game));
+        return;
+    }
+    let exclaimed = false;
+    let message = '';
+    let needsPeriod = false;
+    if (!heroIsDeaf(game) && rn2(5) === 0) {
+        const gasp = maybeHumanoidGasp(observer);
+        if (gasp) {
+            message = gasp.text;
+            needsPeriod = gasp.needsPeriod;
+            exclaimed = true;
+        }
+    }
+    if (observer.isshk || observer.ispriest
+        || (observer.mnum === game.urole.ldrnum
+            && attackedSpecies !== game.urole.guardnum)) {
+        if (exclaimed)
+            await plineWithContinuation(`${message} then shrugs.`);
+        return;
+    }
+    if ((MONSTER_LEVEL[observer.mnum] ?? 0) < rn2(10)
+        && observer.mnum !== game.urole.guardnum) {
+        const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
+        await makeMonsterFlee(observer, {
+            turns: rn2(50) + 25, first: true, announce: !exclaimed,
+        });
+        if (exclaimed && game.flags?.verbose !== false && !alreadyFleeing) {
+            message += ' and then turns to flee.';
+            needsPeriod = false;
+        }
+        else if (!exclaimed) {
+            exclaimed = true;
+        }
+    }
+    if (message) {
+        await plineWithContinuation(`${message}${needsPeriod ? '.' : ''}`);
+    }
+    if ((observer.mtame ?? 0) > 0)
+        return;
+    observer.mpeaceful = 0;
+    observer.mstrategy = (observer.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    adjustHeroAlignment(-1);
+    if (!exclaimed) {
+        await plineWithContinuation(`${monsterName(observer, { capitalized: true })} gets angry!`);
+    }
+}
+// C mon.c:angry_guards().
+export async function angerWatchGuards(silent, { state = game, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    let count = 0;
+    let adjacentCount = 0;
+    let seenCount = 0;
+    let sleepingCount = 0;
+    for (const guard of Array.from(state.level?.monsters || []).reverse()) {
+        if (!guard || guard.dead || (guard.mhp ?? 1) <= 0
+            || !guard.mpeaceful || !isWatch(guard))
+            continue;
+        count++;
+        if (canSpotMonster(guard) && guard.mcanmove !== 0) {
+            const dx = Math.abs((guard.mx ?? 0) - (state.u?.ux ?? 0));
+            const dy = Math.abs((guard.my ?? 0) - (state.u?.uy ?? 0));
+            if (dx <= 1 && dy <= 1 && (dx !== 0 || dy !== 0))
+                adjacentCount++;
+            else
+                seenCount++;
+        }
+        if (guard.msleeping || (guard.mfrozen ?? 0) > 0) {
+            sleepingCount++;
+            guard.msleeping = 0;
+            guard.mfrozen = 0;
+        }
+        guard.mpeaceful = 0;
+    }
+    if (!count || silent)
+        return count > 0;
+    if (sleepingCount) {
+        await publish(sleepingCount === 1
+            ? 'The guard wakes up.' : 'The guards wake up.');
+    }
+    if (adjacentCount) {
+        await publish(adjacentCount === 1
+            ? 'The guard gets angry!' : 'The guards get angry!');
+    }
+    else if (seenCount) {
+        await publish(seenCount === 1
+            ? 'An angry guard is approaching!'
+            : 'Angry guards are approaching!');
+    }
+    else {
+        const message = formatHeardMessage(count === 1
+            ? "the shrill sound of a guard's whistle."
+            : "the shrill sound of guards' whistles.", state);
+        if (message)
+            await publish(message);
+    }
+    return true;
+}
+// C mon.c:peacefuls_respond().
+async function reactPeacefulBystanders(attackedMonster) {
+    if (!attackedMonster || game.context?.mon_moving
+        || game.underwater || game.u?.uinwater)
+        return;
+    const heroInvisible = heroIsInvisible(game);
+    const attackedSpecies = attackedMonster.mnum;
+    const monsters = Array.from(game.level?.monsters || []).reverse();
+    for (const observer of monsters) {
+        const flags = MONSTER_FLAGS1[observer?.mnum] ?? 0;
+        if (!observer || observer === attackedMonster || observer.dead
+            || (observer.mhp ?? 1) <= 0 || !observer.mpeaceful
+            || observer.msleeping
+            || observer.mcansee === 0 || observer.mcansee === false
+            || (flags & M1_MINDLESS)
+            || !couldsee(observer.mx, observer.my))
+            continue;
+        if (heroInvisible && !(flags & M1_SEE_INVIS))
+            continue;
+        if ((flags & M1_HUMANOID) || observer.isshk || observer.ispriest) {
+            await reactHumanoidBystander(observer, attackedSpecies);
+            continue;
+        }
+        if (!monsterGrowthFamilyMatch(attackedMonster.mnum, observer.mnum))
+            continue;
+        if (rn2(3) !== 0)
+            continue;
+        let exclaimed = false;
+        if (rn2(4) === 0)
+            exclaimed = await publishMonsterGrowl(observer);
+        if (rn2(6) === 0)
+            continue;
+        const alreadyFleeing = !!(observer.mflee || observer.mfleetim);
+        await makeMonsterFlee(observer, {
+            turns: rn2(25) + 15, first: true, announce: !exclaimed,
+        });
+        if (exclaimed && !alreadyFleeing)
+            await plineWithContinuation('And then starts to flee.');
+    }
+}
+// C mon.c:qst_guardians_respond().
+async function angerQuestGuardiansAfterAttack(monster) {
+    requirePlayingGame(game);
+    if (monster.mnum !== game.urole?.ldrnum)
+        return;
+    const guardians = (game.level?.monsters || []).filter(candidate => !candidate.dead && (candidate.mhp ?? 1) > 0
+        && candidate.mnum === game.urole?.guardnum
+        && candidate.mpeaceful);
+    for (const guardian of guardians)
+        guardian.mpeaceful = 0;
+    const visibleCount = guardians.filter(guardian => canSeeMonster(guardian)).length;
+    if (!visibleCount || heroIsHallucinating())
+        return;
+    let name = monsterTypeName(game.urole.guardnum);
+    if (visibleCount > 1)
+        name = makePlural(name);
+    const verb = visibleCount > 1 ? 'appear' : 'appears';
+    await plineWithContinuation(`The ${name} ${verb} to be angry too...`);
+}
+// C mon.c mondied(): killing the quest leader angers its guardians.
+export async function angerQuestGuardiansAfterLeaderDeath() {
+    for (const guardian of Array.from(game.level?.monsters || []).reverse()) {
+        if (!guardian.dead && (guardian.mhp ?? 1) > 0
+            && guardian.mnum === game.urole?.guardnum
+            && guardian.mpeaceful) {
+            await angerMonster(guardian, { attacked: true });
+        }
+    }
+}
+// C mon.c:setmangry().
+export async function angerMonster(monster, { attacked = false } = {}) {
+    if (!monster)
+        return;
+    requirePlayingGame(game);
+    const { ux, uy } = game.u;
+    if (attacked && hasCompletedEngraving('Elbereth', ux, uy)
+        && (monsterIsScaredAt(monster, game, ux, uy) || monster.mpeaceful)) {
+        await plineWithContinuation(formatFeltMessage('like a hypocrite.'));
+        adjustHeroAlignment(game.u.ualign.record > 5 ? -5 : -rnd(5));
+        if (!heroIsBlind())
+            await plineWithContinuation('The engraving beneath you fades.');
+        deleteEngravingAt(ux, uy);
+    }
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    if (!monster.mpeaceful || (monster.mtame ?? 0) > 0)
+        return;
+    monster.mpeaceful = 0;
+    adjustHeroAlignment(monster.ispriest
+        ? (priestIsCoaligned(monster, game) ? -5 : 2)
+        : -1);
+    const humanoid = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HUMANOID)
+        || monster.isshk || monster.isgd;
+    if (humanoid) {
+        if (couldsee(monster.mx, monster.my)) {
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} gets angry!`);
+        }
+    }
+    else {
+        await publishMonsterGrowl(monster);
+    }
+    await angerQuestGuardiansAfterAttack(monster);
+    await reactPeacefulBystanders(monster);
+}
+export function angerAttackedMonster(monster) {
+    return angerMonster(monster, { attacked: true });
+}
+// C mon.c:wakeup().
+export async function wakeMonster(monster, { attacked = false } = {}) {
+    if (!monster)
+        return { heroDied: false };
+    const wasSleeping = !!monster.msleeping;
+    await publishMonsterWake(monster, attacked);
+    monster.msleeping = 0;
+    const appearance = M_AP_TYPE(monster);
+    if (appearance !== M_AP_NOTHING) {
+        if (appearance !== M_AP_MONSTER)
+            await revealMonsterAppearance(monster);
+    }
+    else if (game.context.forcefight && !game.context.mon_moving
+        && monster.mundetected) {
+        monster.mundetected = 0;
+        await newsym(monster.mx, monster.my);
+    }
+    await finishMonsterEating(monster);
+    if (!attacked)
+        return { heroDied: false };
+    requirePlayingGame(game);
+    const wasPeaceful = !!monster.mpeaceful;
+    if (wasSleeping)
+        await publishMonsterGrowl(monster);
+    await angerMonster(monster, { attacked: true });
+    if (wasPeaceful && monster.ispriest
+        && templeRoomAt(game, monster.mx, monster.my)) {
+        const retaliation = await ghodHitsu(monster);
+        if (retaliation.heroDied)
+            return retaliation;
+    }
+    if (wasPeaceful && monster.isshk && !game.u.ushops.length)
+        hotPursuitShopkeeper(monster);
+    return { heroDied: false };
+}
+export function wakeAttackedMonster(monster) {
+    return wakeMonster(monster, { attacked: true });
+}
+// C mon.c:m_into_limbo(). The Wizard's failed resurrection returns here.
+export async function sendMonsterToLimbo(monster, state = game) {
+    monster.mstate = (monster.mstate ?? 0) | MON_LIMBO;
+    return await migrateMonsterToLevel(monster, { ...currentDungeonLevel(state) }, state, {
+        kind: 'limbo-migration', mode: MIGR_APPROX_XY,
+    });
+}
+// C mon.c:migrate_mon(): release holds and protected items before the
+// ordinary migrate_to_level() transaction loses the old map position.
+export async function migrateMonsterToLevel(monster, destination, state = game, { kind = 'level-migration', mode = MIGR_RANDOM, } = {}) {
+    if (monster.mx) {
+        await releaseHeroFromMonster(monster, { state });
+        await dropSpecialMonsterObjects(monster, state);
+    }
+    return await migrateMonsterOffLevel(monster, state, { dst: destination }, { kind, mode });
 }
 //# sourceMappingURL=mon.js.map

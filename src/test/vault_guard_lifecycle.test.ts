@@ -11,7 +11,6 @@ import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFF
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
-import { sendMonsterToLimbo } from '../js/monster_migration.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';
@@ -22,7 +21,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { killGenocidedMonster } from '../js/mon.js';
+import { killGenocidedMonster, sendMonsterToLimbo } from '../js/mon.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/monster_death.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

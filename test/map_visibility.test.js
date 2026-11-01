@@ -10,7 +10,6 @@ import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { OIL_LAMP, POT_OIL } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -21,6 +20,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { migrateMonsterOffLevel } from '../js/dog.js';
 for (const lightSource of ['yellow light', 'carried lamp']) {
     void test(`waiting reveals floor illuminated by a moving ${lightSource}`, async () => {
         freshTurnRoom({ left: 8, right: 20, top: 10, bottom: 10 });

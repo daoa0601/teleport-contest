@@ -5,9 +5,7 @@ import { G_GENOD, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
-import {
-    finishMonsterGrowth, growMonster,
-} from '../js/monster_growth.js';
+import { finishMonsterGrowth, growMonster } from '../js/makemon.js';
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;

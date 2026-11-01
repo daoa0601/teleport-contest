@@ -21,7 +21,6 @@ import { heroIsStrangled } from './hero_strangulation.js';
 import { updateHeroHunger } from './hunger.js';
 import { applyLevitationPotion } from './levitation_potion.js';
 import { detectMonsters, detectObjects } from './magic_detection.js';
-import { aggravateMonsters } from './monster_anger.js';
 import { monsterAtPosition } from './monster_location.js';
 import {
     POT_RESTORE_ABILITY, POT_FRUIT_JUICE, POT_SEE_INVISIBLE, POT_SPEED,
@@ -38,6 +37,7 @@ import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
 import { applyPotionBodyEffect } from './potion_body_effects.js';
 import { applyPotionMentalEffect } from './potion_mental_effects.js';
+import { aggravateMonsters } from './wizard.js';
 
 // C potion.c:peffect_speed().
 // C potion.c:peffect_invisibility().

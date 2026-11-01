@@ -33,10 +33,8 @@ import { currency } from './currency.js';
 import { flush_screen } from './display.js';
 import { promptYesNo } from './query.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
-import { publishMonsterGrowl, publishMonsterYelp } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, } from './monster_data.js';
 import { mksobj } from './mkobj.js';
-import { migrateMonsterOffLevel } from './monster_migration.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -54,6 +52,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { objectWeight } from './weight.js';
 import { MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, SDOOR, LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE, SPIKED_PIT, SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS, isok, } from './const.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
+import { publishMonsterGrowl, publishMonsterYelp } from './monster_sound.js';
+import { migrateMonsterOffLevel } from './dog.js';
 // C include/monflag.h enum msound: animal noises end at MS_ANIMAL, and any
 // voice at or above MS_HUMANOID can hold a conversation.
 const MS_ANIMAL = 17;

@@ -26,7 +26,6 @@ import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
@@ -61,6 +60,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { DirectionSelection } from './tty_prompts.js';
+import { wakeAttackedMonster } from './mon.js';
 
 type WhipDirection = Pick<DirectionSelection, 'dx' | 'dy' | 'dz'>;
 type WhipAttack = (monster: Monster, x: number, y: number) => boolean | Promise<boolean>;

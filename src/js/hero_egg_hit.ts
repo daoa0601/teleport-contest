@@ -12,7 +12,6 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { monsterName } from './monster_name.js';
 import { monsterTypeName } from './monster_data.js';
-import { monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { deleteObject } from './object_delete.js';
 import { EGG } from './object_data.js';
@@ -25,6 +24,7 @@ import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { HeroObjectContactResult } from './hero_object_contact.js';
+import { monsterHasStoneResistance } from './mondata.js';
 
 export interface HeroEggHitOptions {
     state?: GameState;

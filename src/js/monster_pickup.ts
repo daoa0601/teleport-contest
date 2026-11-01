@@ -10,7 +10,6 @@ import { monsterCanTouchObject, monsterCarryAmount } from './monster_carry.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterWantsFloorObject } from './monmove.js';
-import { monsterCouldReachItem } from './monster_item_reach.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
 import type { RandomBelow } from './monster_action_types.js';
@@ -24,6 +23,7 @@ import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { touchPetrifies } from './stoning.js';
+import { monsterCouldReachItem } from './dogmove.js';
 
 const PM_LIZARD = MONSTER_NAME.indexOf('lizard');
 const S_NYMPH = 14;

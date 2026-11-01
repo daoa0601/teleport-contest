@@ -1,6 +1,5 @@
 import { initRng } from '../js/rng.js';
 import { requireScreenRow } from './support/screen.js';
-import { saveMonsterTraits } from '../js/monster_traits.js';
 import { initializePet } from '../js/dog.js';
 import { createMonsterAt } from './support/monsters.js';
 import { aligns } from '../js/roles.js';
@@ -35,6 +34,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { saveMonsterTraits } from '../js/mkobj.js';
 async function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     await freshObjectRoom({
         ...room,

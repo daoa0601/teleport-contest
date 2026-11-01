@@ -20,7 +20,6 @@ import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerAttackedMonster } from './monster_anger.js';
 import { abuseKickedPet, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterName } from './monster_name.js';
@@ -47,6 +46,7 @@ import { kickDoor } from './kick_door.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { kickFloorObject } from './object_kick.js';
+import { angerAttackedMonster } from './mon.js';
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');

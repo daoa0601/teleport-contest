@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { abusePetAfterHeroHit, initializePet } from '../js/dog.js';
+import { abusePetAfterHeroHit, initializePet, catchUpMonster, migrateMonsterOffLevel } from '../js/dog.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
-import { catchUpMonster, migrateMonsterOffLevel } from '../js/monster_migration.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { LEASH } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

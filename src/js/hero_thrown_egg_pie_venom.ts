@@ -6,7 +6,6 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
-import { wakeAttackedMonster } from './monster_anger.js';
 import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { prepareHeroThrownTarget } from './thrown_object.js';
@@ -18,6 +17,7 @@ import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { wakeAttackedMonster } from './mon.js';
 
 export type HeroThrownFoodVenomResult =
     | { heroDied: true; hit?: never; consumed?: never; result?: never }

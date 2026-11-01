@@ -7,9 +7,9 @@ import { game } from '../js/gstate.js';
 import { AD_PHYS, AT_BITE } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage } from '../js/mhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { growMonster } from '../js/monster_growth.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { growMonster } from '../js/makemon.js';
 
 void test('a pet that grows after a kill is introduced as your adult companion', async () => {
     await freshObjectRoom();
