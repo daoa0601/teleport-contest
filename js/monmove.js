@@ -122,7 +122,7 @@ import { ceilingName } from './terrain_name.js';
 import { inventoryItemDescription } from './invent.js';
 import { learnWand } from './wand_charge.js';
 import { advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects, } from './mhitu.js';
-import { beginMonsterPitTrap, resumeDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap, } from './trap.js';
+import { beginMonsterPitTrap, finishDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap, } from './trap.js';
 import { tryCallObjectType } from './object_call.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport_rules.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
@@ -1252,17 +1252,16 @@ export function setMonsterApparentHeroPosition(monster, state, random, calls = n
     monster.muy = heroY;
     return true;
 }
-async function moveHostile(monster, state, random, rollDice, rollOne, calls, capabilities, options = {}) {
+async function moveHostile(monster, state, random, rollDice, rollOne, calls, capabilities) {
     const oldx = monster.mx;
     const oldy = monster.my;
     // monmove.c:m_move() refreshes the apparent target before every actor
     // specialization, including shk_move(), pri_move(), and gd_move().  This
     // second refresh is RNG-visible for an invisible or displaced hero and
     // can update retained mux/muy before the special actor returns.
-    if (!options.afterRestrictedTenguTeleport)
-        setMonsterApparentHeroPosition(monster, state, random, calls);
+    setMonsterApparentHeroPosition(monster, state, random, calls);
     requirePerceivedHero(monster);
-    if (!monster.wormno && !options.afterRestrictedTenguTeleport && monsterIsCovetous(monster)
+    if (!monster.wormno && monsterIsCovetous(monster)
         && monster.mgoal && isok(monster.mgoal.x, monster.mgoal.y)) {
         const intruder = monsterAtPosition(state.level, monster.mgoal.x, monster.mgoal.y);
         if (intruder && intruder !== monster
@@ -1276,7 +1275,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             };
         }
     }
-    if (!monster.wormno && !options.afterRestrictedTenguTeleport) {
+    if (!monster.wormno) {
         const priestMovement = await movePriest(monster, state, random, rollDice, rollOne, calls);
         if (priestMovement)
             return priestMovement;
@@ -1291,32 +1290,34 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     });
     // monmove.c:m_move() gives every tengu its innate one-in-five teleport
     // probe before swallowed-state and ordinary candidate movement.  A
-    // noteleport level rejects the relocation only after that draw.
-    // Relocation feedback completes before the ordinary postmov() tail.
-    if (!monster.wormno && !options.afterRestrictedTenguTeleport && monster.mnum === PM_TENGU) {
+    // noteleport level rejects the relocation only after that draw;
+    // tele_restrict() emits its refusal line, then m_move() continues into
+    // ordinary destination selection below.
+    if (!monster.wormno && monster.mnum === PM_TENGU) {
         const wantsTeleport = recordRandom(random, calls, 5) === 0;
-        if (wantsTeleport && !monster.mcan) {
-            if (monsterTeleportRestricted(monster, state)) {
-                // tele_restrict() emits its line before m_move() chooses an
-                // ordinary destination or dochug() performs the trailing
-                // distfleeck().  Return a continuation so tty can suspend at
-                // that precise source boundary.
-                return {
-                    oldx,
-                    oldy,
-                    x: oldx,
-                    y: oldy,
-                    moved: false,
-                    deferredAfterRestrictedTenguTeleport: true,
-                };
+        if (wantsTeleport && !monster.mcan
+            && !await reportMonsterTeleportRestriction(monster, { state })) {
+            const randomRelocation = (monster.mhp ?? 0) < 7 ||
+                !!monster.mpeaceful ||
+                recordRandom(random, calls, 2) !== 0;
+            let relocation;
+            if (randomRelocation) {
+                relocation = await randomMonsterRelocation(monster, {
+                    state,
+                    calls,
+                    random,
+                    rollOne,
+                    flags: RLOC_MSG,
+                });
             }
             else {
-                const randomRelocation = (monster.mhp ?? 0) < 7 ||
-                    !!monster.mpeaceful ||
-                    recordRandom(random, calls, 2) !== 0;
-                let relocation;
-                if (randomRelocation) {
-                    relocation = await randomMonsterRelocation(monster, {
+                const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, {
+                    state,
+                    random,
+                    calls,
+                });
+                if (destination) {
+                    relocation = await relocateMonsterTo(monster, destination.x, destination.y, {
                         state,
                         calls,
                         random,
@@ -1324,31 +1325,15 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
                         flags: RLOC_MSG,
                     });
                 }
-                else {
-                    const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, {
-                        state,
-                        random,
-                        calls,
-                    });
-                    if (destination) {
-                        relocation = await relocateMonsterTo(monster, destination.x, destination.y, {
-                            state,
-                            calls,
-                            random,
-                            rollOne,
-                            flags: RLOC_MSG,
-                        });
-                    }
-                }
-                return finishMovement(relocation || {
-                    oldx,
-                    oldy,
-                    x: oldx,
-                    y: oldy,
-                    moved: false,
-                    tenguTeleportFailed: true,
-                }, MMOVE_MOVED, 'postmov');
             }
+            return finishMovement(relocation || {
+                oldx,
+                oldy,
+                x: oldx,
+                y: oldy,
+                moved: false,
+                tenguTeleportFailed: true,
+            }, MMOVE_MOVED, 'postmov');
         }
     }
     if (state?.u?.uswallow && state.u.ustuck !== monster && !monster?.mflee) {
@@ -1706,13 +1691,14 @@ export async function completeMonsterOffensiveAction(action, state, random = rn2
         state._deferVisibleMonsterContact = previousDeferral;
     }
 }
+// wizard.c:tactics(), STRAT_HEAL fall-through and STRAT_NONE: an occasional
+// mnexto() beside the hero; dochug() continues after the arrival line.
 async function runCovetousHarassTactics(monster, state, random, calls) {
     if (monsterTeleportRestricted(monster, state) ||
         recordRandom(random, calls, monster.mflee ? 33 : 5) !== 0) {
-        return null;
+        return;
     }
-    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
-    return relocation ? { ...relocation, deferredCovetousRelocation: true } : null;
+    await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
 async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls) {
     if (![94, 96].includes(monster?.mnum) ||
@@ -1771,6 +1757,9 @@ function holdsUpMonsterWeb(x, y, state) {
             return stairs.up;
     return false;
 }
+// mon.c:hideunder(), awaited at its monmove.c:postmov() call site: the
+// "You see ..." line pages before the square is repainted, and postmov()
+// continues into after_shk_move() and the dochug() tail afterwards.
 async function postMoveHideUnder(monster, movement, state, random, calls) {
     const originalSpecies = requireMovementCapabilities(movement).species;
     const hidesUnder = !!((MONSTER_FLAGS1[originalSpecies] ?? 0) & M1_CONCEAL);
@@ -1778,16 +1767,8 @@ async function postMoveHideUnder(monster, movement, state, random, calls) {
     if (!hidesUnder && !eel)
         return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
-    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0)) {
-        const concealment = beginMonsterHideUnder(monster, state);
-        if (concealment.message) {
-            movement.hideUnder = concealment;
-            movement.deferredAfterHideUnder = true;
-            return;
-        }
-        if (concealment.undetected !== concealment.oldUndetected)
-            await newsym(monster.mx, monster.my);
-    }
+    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0))
+        await finishMonsterHideUnder(monster, beginMonsterHideUnder(monster, state), state);
     // postmov() redraws even when hideunder() leaves concealment unchanged
     // or the monster skips the attempt. Hallucinations need that refresh.
     await newsym(monster.mx, monster.my);
@@ -1881,7 +1862,9 @@ function movementHasEnded(movement) {
         movement.actorDied ||
         movement.postMoveStatus === MMOVE_DIED);
 }
-export async function completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, dochugContext, { trapAlreadyHandled = false } = {}) {
+// C monmove.c:postmov().  The door, trap, tunneling, and hiding feedback
+// belongs here, awaited inline in C order after the actor's move.
+export async function completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, dochugContext) {
     if (movement.deferredAfterSpecialAttack)
         return movement;
     if (monster.dead ||
@@ -1904,31 +1887,42 @@ export async function completeMovedMonsterAction(monster, movement, state, rando
         await noticeMonster(monster, state);
     }
     if (movement.postMoveStatus === MMOVE_MOVED) {
-        if (!trapAlreadyHandled) {
-            const capabilities = requireMovementCapabilities(movement);
-            const shift = await shiftMonsterForDoor(monster, state, {
-                previousPosition: { x: movement.oldx, y: movement.oldy },
-                wasSeen: capabilities.wasSeen, wasSpotted: capabilities.wasSpotted,
-            });
-            if (shift.died || shift.heroDied) {
-                movement.actorDied = shift.died;
-                movement.heroDied = shift.heroDied;
-                movement.postMoveStatus = MMOVE_DIED;
-                movement.actionCompleted = true;
+        const capabilities = requireMovementCapabilities(movement);
+        const shift = await shiftMonsterForDoor(monster, state, {
+            previousPosition: { x: movement.oldx, y: movement.oldy },
+            wasSeen: capabilities.wasSeen, wasSpotted: capabilities.wasSpotted,
+        });
+        if (shift.died || shift.heroDied) {
+            movement.actorDied = shift.died;
+            movement.heroDied = shift.heroDied;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+            return movement;
+        }
+        if (state === game)
+            await newsym(movement.oldx, movement.oldy);
+        movement.postMoveOldSquarePainted = true;
+        await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
+        if (movement.deferredAfterMonsterTrap) {
+            // C trap.c:mintrap(): the trap's message, escape roll, and
+            // effect completions run inline here, before postmov() continues
+            // with the door, tunneling, and floor tails.
+            const event = movement.trap;
+            if (!event)
+                throw new Error('A deferred monster trap must retain its event');
+            const outcome = await finishDeferredMonsterTrap(monster, movement, event, state, calls, { random, rollDice, rollOne, describeMonster: visibleMonsterSubject });
+            if (outcome === 'hero-died')
+                return movement;
+            if (outcome === 'killed') {
+                // C postmov() repaints the destination before returning
+                // MMOVE_DIED for a trap that killed the actor.
+                await newsym(movement.x, movement.y);
                 return movement;
             }
-            if (state === game)
-                await newsym(movement.oldx, movement.oldy);
-            movement.postMoveOldSquarePainted = true;
-            await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
         }
-        if (movement.deferredAfterMonsterTrap)
-            return movement;
         if (movementHasEnded(movement) || state.program_state.gameover)
             return movement;
-        if (!trapAlreadyHandled)
-            requireMovementCapabilities(movement).species = monster.mnum;
-        const capabilities = requireMovementCapabilities(movement);
+        requireMovementCapabilities(movement).species = monster.mnum;
         if (movement.postMoveWasVisible === undefined)
             throw new Error('Door handling requires the pre-trap destination visibility');
         const passage = await resolveMonsterDoorPassage(monster, state, {
@@ -2023,8 +2017,6 @@ export async function completeMovedMonsterAction(monster, movement, state, rando
 async function finishMonsterFloorTail(monster, movement, state, random, rollDice, rollOne, calls, dochugContext) {
     await maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls);
     await postMoveHideUnder(monster, movement, state, random, calls);
-    if (movement.deferredAfterHideUnder)
-        return;
     if (monster.isshk) {
         if (!hasShopkeeperData(monster))
             throw new Error('A shopkeeper must retain its shop state');
@@ -2032,157 +2024,139 @@ async function finishMonsterFloorTail(monster, movement, state, random, rollDice
     }
     await finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext);
 }
-// Native m_move(monster, 0), before any deferred movement presentation.
-// A direct caller owns no dochug prelude or post-move attack continuation.
+// Native m_move(monster, 0), including its leading mintrap() escape attempt
+// for an already-trapped actor.  A direct caller owns no dochug prelude or
+// post-move attack continuation beyond the m_move tail itself.
 export async function beginMonsterMove(monster, state = requireInitializedGame(), random = rn2, rollDice = d, rollOne = rnd) {
-    const calls = DISCARDED_CALL_LOG;
-    if (monster.mtrapped) {
-        return {
-            monster, calls,
-            movement: {
-                oldx: monster.mx, oldy: monster.my,
-                x: monster.mx, y: monster.my, moved: false,
-                escapingTrap: true,
-            },
-        };
-    }
-    const turn = await moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, calls, undefined, null);
+    const turn = await moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, DISCARDED_CALL_LOG, undefined, null);
     return { monster, ...turn };
 }
 // First non-combat slice of monmove.c:dochug(), m_move(), and dog_move().
 // distfleeck() always draws the brave-gremlin roll; ordinary starting actors
 // then choose and own a live adjacent destination before the post-move draw.
-export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d, rollOne = rnd, options = {}) {
+export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d, rollOne = rnd) {
     const calls = DISCARDED_CALL_LOG;
-    const dochugContext = options.dochugContext ?? {
+    const dochugContext = {
         entryMnum: monster.mnum,
         range: null,
         reachesFinalActions: false,
     };
-    if (!options.afterCovetousRelocation) {
-        // monmove.c:dochug() erodes text beneath every awake, mobile actor
-        // before confusion/fleeing checks and the first set_apparxy().
-        wipeEngravingAt(monster.mx, monster.my, 1, false, state?.level);
-        // Status recovery and fleeing checks happen before movement. Do not
-        // repeat them when a message pauses a later covetous relocation.
-        if (monster.mconf && recordRandom(random, calls, 50) === 0)
-            monster.mconf = 0;
-        if (monster.mstun && recordRandom(random, calls, 10) === 0)
-            monster.mstun = 0;
-        if (monster.mflee) {
-            const teleports = recordRandom(random, calls, 40) === 0 &&
-                !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT) &&
-                !monster.iswiz &&
-                !monsterTeleportRestricted(monster, state);
-            if (teleports) {
-                const relocation = await randomMonsterRelocation(monster, {
-                    state,
-                    calls,
-                    random,
-                    rollOne,
-                    flags: RLOC_MSG,
-                });
-                if (relocation)
-                    await stashLeprechaunGold(monster, state, limit => recordRandom(random, calls, limit));
-                return {
-                    calls,
-                    dochugContext,
-                    movement: relocation
-                        ? {
-                            ...relocation,
-                            fleeingRelocation: true,
-                        }
-                        : {
-                            oldx: monster.mx,
-                            oldy: monster.my,
-                            x: monster.mx,
-                            y: monster.my,
-                            moved: false,
-                            fleeingTeleportFailed: true,
-                        },
-                };
-            }
-        }
-        const response = await respondToImmediateMagic(monster, state, { random, rollDice, rollOne, calls });
-        if (response?.heroDied || monster.dead || monster.mhp <= 0) {
+    // monmove.c:dochug() erodes text beneath every awake, mobile actor
+    // before confusion/fleeing checks and the first set_apparxy().
+    wipeEngravingAt(monster.mx, monster.my, 1, false, state?.level);
+    // Status recovery and fleeing checks happen before movement.
+    if (monster.mconf && recordRandom(random, calls, 50) === 0)
+        monster.mconf = 0;
+    if (monster.mstun && recordRandom(random, calls, 10) === 0)
+        monster.mstun = 0;
+    if (monster.mflee) {
+        const teleports = recordRandom(random, calls, 40) === 0 &&
+            !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT) &&
+            !monster.iswiz &&
+            !monsterTeleportRestricted(monster, state);
+        if (teleports) {
+            const relocation = await randomMonsterRelocation(monster, {
+                state,
+                calls,
+                random,
+                rollOne,
+                flags: RLOC_MSG,
+            });
+            if (relocation)
+                await stashLeprechaunGold(monster, state, limit => recordRandom(random, calls, limit));
             return {
                 calls,
                 dochugContext,
-                movement: {
-                    oldx: monster.mx,
-                    oldy: monster.my,
-                    x: monster.mx,
-                    y: monster.my,
-                    moved: false,
-                    actorDied: !!monster.dead || monster.mhp <= 0,
-                    heroDied: !!response?.heroDied,
-                    postMoveStatus: MMOVE_DIED,
-                },
-            };
-        }
-        if (monster.mflee &&
-            !(monster.mfleetim ?? 0) &&
-            (monster.mhp ?? 0) === (monster.mhpmax ?? 0) &&
-            recordRandom(random, calls, 25) === 0) {
-            monster.mflee = 0;
-        }
-        if (state.u.ustuck === monster && monster.mpeaceful && !monster.mconf
-            && !heroHasConflict(state)) {
-            const heroDied = await releaseMonsterHold(monster, { state, random, rollOne });
-            return {
-                calls, dochugContext,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
-                    moved: false, actionCompleted: true, heroDied,
-                },
+                movement: relocation
+                    ? {
+                        ...relocation,
+                        fleeingRelocation: true,
+                    }
+                    : {
+                        oldx: monster.mx,
+                        oldy: monster.my,
+                        x: monster.mx,
+                        y: monster.my,
+                        moved: false,
+                        fleeingTeleportFailed: true,
+                    },
             };
         }
     }
-    if (!options.afterCovetousRelocation) {
-        setMonsterApparentHeroPosition(monster, state, random, calls);
-        let tacticsMovement = null;
-        if (monsterIsCovetous(monster)) {
-            const strategy = chooseCovetousStrategy(monster, state);
-            if (strategy.kind === 'heal') {
-                const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
-                if (retreat === 'harass')
-                    tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
-            }
-            else if (strategy.kind === 'target') {
-                const result = await pursueCovetousTarget(monster, strategy.target, state);
-                if (result === 'blocked-ground' && recordRandom(random, calls, 5) === 0
-                    && !monsterTeleportRestricted(monster, state)) {
-                    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
-                    if (relocation)
-                        tacticsMovement = { ...relocation, deferredCovetousRelocation: true };
-                }
-            }
-            else {
-                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
-            }
-        }
-        if (state.program_state.gameover) {
-            return {
-                calls, dochugContext,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
-                    moved: false, heroDied: true,
-                },
-            };
-        }
-        if (monsterIsCovetous(monster) && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
-            return {
-                calls, dochugContext,
-                movement: {
-                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
-                    moved: false, actorLeftLevel: true,
-                },
-            };
-        if (tacticsMovement)
-            return { calls, dochugContext, movement: tacticsMovement };
+    const response = await respondToImmediateMagic(monster, state, { random, rollDice, rollOne, calls });
+    if (response?.heroDied || monster.dead || monster.mhp <= 0) {
+        return {
+            calls,
+            dochugContext,
+            movement: {
+                oldx: monster.mx,
+                oldy: monster.my,
+                x: monster.mx,
+                y: monster.my,
+                moved: false,
+                actorDied: !!monster.dead || monster.mhp <= 0,
+                heroDied: !!response?.heroDied,
+                postMoveStatus: MMOVE_DIED,
+            },
+        };
     }
-    // dochug() refreshes perception after tactics, including when relocation
-    // feedback pauses the turn before it checks distance and attacks.
+    if (monster.mflee &&
+        !(monster.mfleetim ?? 0) &&
+        (monster.mhp ?? 0) === (monster.mhpmax ?? 0) &&
+        recordRandom(random, calls, 25) === 0) {
+        monster.mflee = 0;
+    }
+    if (state.u.ustuck === monster && monster.mpeaceful && !monster.mconf
+        && !heroHasConflict(state)) {
+        const heroDied = await releaseMonsterHold(monster, { state, random, rollOne });
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true, heroDied,
+            },
+        };
+    }
+    setMonsterApparentHeroPosition(monster, state, random, calls);
+    // wizard.c:tactics().  A covetous relocation has already awaited its
+    // arrival line; dochug() continues from the new position.
+    if (monsterIsCovetous(monster)) {
+        const strategy = chooseCovetousStrategy(monster, state);
+        if (strategy.kind === 'heal') {
+            const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
+            if (retreat === 'harass')
+                await runCovetousHarassTactics(monster, state, random, calls);
+        }
+        else if (strategy.kind === 'target') {
+            const result = await pursueCovetousTarget(monster, strategy.target, state);
+            if (result === 'blocked-ground' && recordRandom(random, calls, 5) === 0
+                && !monsterTeleportRestricted(monster, state)) {
+                await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
+            }
+        }
+        else {
+            await runCovetousHarassTactics(monster, state, random, calls);
+        }
+    }
+    if (state.program_state.gameover) {
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, heroDied: true,
+            },
+        };
+    }
+    if (monsterIsCovetous(monster) && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+        return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actorLeftLevel: true,
+            },
+        };
+    // dochug() refreshes perception after tactics, before it checks the
+    // hero's distance and scariness.
     if (monsterIsCovetous(monster))
         setMonsterApparentHeroPosition(monster, state, random, calls);
     let range = await checkMonsterHeroRange(monster, { state, random, rollOne });
@@ -2348,24 +2322,37 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
             deferredAfterMovementSpell: true,
         }
         : null;
-    if (!movement && monster.mtrapped) {
-        return {
-            calls,
-            dochugContext,
-            movement: {
-                oldx: monster.mx,
-                oldy: monster.my,
-                x: monster.mx,
-                y: monster.my,
-                moved: false,
-                escapingTrap: true,
-            },
-        };
-    }
     const moved = await moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, calls, dochugContext, movement);
     return { ...moved, dochugContext };
 }
 export async function moveMonsterAfterTrap(monster, state, random, rollDice, rollOne, calls, dochugContext, movement) {
+    // monmove.c:m_move(): an already-trapped actor gets one mintrap()
+    // escape attempt, with its pull-free line awaited inline, before any
+    // eating, hiding, or destination work.
+    if (!movement && monster.mtrapped) {
+        const oldx = monster.mx;
+        const oldy = monster.my;
+        await tryMonsterTrapEscape(monster, state, {
+            random,
+            publish: plineWithContinuation,
+            describeMonster: visibleMonsterSubject,
+        });
+        if (monster.mtrapped) {
+            // Trap_Caught_Mon: m_move() returns MMOVE_NOTHING without
+            // postmov(); dochug() still owns the trailing distfleeck()
+            // and a possible attack from inside the trap.
+            const held = {
+                oldx, oldy,
+                x: monster.mx, y: monster.my,
+                moved: false,
+                trapped: true,
+                postMoveStatus: MMOVE_NOTHING,
+                movementStage: 'dochug',
+            };
+            await finishDochugAfterMovement(monster, held, state, random, rollOne, rollDice, calls, dochugContext);
+            return { calls, movement: held, ...(dochugContext ? { dochugContext } : {}) };
+        }
+    }
     if (!movement && monster.meating !== undefined && monster.meating > 0) {
         if (--monster.meating === 0)
             await finishMonsterEating(monster, state);
@@ -2423,57 +2410,12 @@ export async function moveMonsterAfterTrap(monster, state, random, rollDice, rol
                 movement = await moveHostile(monster, state, random, rollDice, rollOne, calls, postMoveCapabilities);
         }
         movement.postMoveCapabilities = postMoveCapabilities;
-        if (movement.deferredAfterRestrictedTenguTeleport)
-            return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
         await completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, dochugContext);
         return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
     }
     if (!movement.deferredAfterMovementSpell)
         await finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext);
     return { calls, movement, ...(dochugContext ? { dochugContext } : {}) };
-}
-// Resume m_move() immediately after tele_restrict() has emitted the visible
-// failed-teleport line.  The same actor still owns ordinary destination
-// selection, postmov(), the second distfleeck(), and any phase-four attack.
-export async function resumeDeferredRestrictedTenguTeleport(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    const deferred = action?.movement;
-    if (!deferred?.deferredAfterRestrictedTenguTeleport)
-        return action;
-    const movement = await moveHostile(action.monster, state, random, rollDice, rollOne, action.calls, requireMovementCapabilities(deferred), { afterRestrictedTenguTeleport: true });
-    if (deferred.postMoveCapabilities)
-        movement.postMoveCapabilities = deferred.postMoveCapabilities;
-    action.movement = movement;
-    await completeMovedMonsterAction(action.monster, movement, state, random, rollDice, rollOne, action.calls, action.dochugContext);
-    return action;
-}
-// Resume dochug() after rloc_to_core() has tried to emit the covetous
-// monster's arrival line.  pline() can suspend there on an older topline, so
-// the second set_apparxy(), distfleeck(), and contact attack must remain
-// unconsumed until the tty pager is dismissed.
-export async function resumeDeferredCovetousRelocation(action, state, random = rn2, rollDice = d, rollOne = rnd) {
-    if (!action?.movement?.deferredCovetousRelocation)
-        return action;
-    const continuation = await takeMonsterTurn(action.monster, state, random, rollDice, rollOne, {
-        afterCovetousRelocation: true,
-        dochugContext: requireDochugContext(action),
-    });
-    action.calls.push(...continuation.calls);
-    action.movement = continuation.movement;
-    return action;
-}
-export async function resumeDeferredMonsterHideUnder(action, state, random = rn2, rollOne = rnd, rollDice = d) {
-    const movement = action?.movement;
-    if (!movement?.deferredAfterHideUnder)
-        return action;
-    delete movement.deferredAfterHideUnder;
-    await newsym(action.monster.mx, action.monster.my);
-    if (action.monster.isshk) {
-        if (!hasShopkeeperData(action.monster))
-            throw new Error('A shopkeeper must retain its shop state');
-        await afterShopkeeperMove(action.monster, state);
-    }
-    await finishDochugAfterMovement(action.monster, movement, state, random, rollOne, rollDice, action.calls, action.dochugContext);
-    return action;
 }
 export async function runMonsterAction(monster, state, random = rn2, rollDice = d, rollOne = rnd) {
     const calls = DISCARDED_CALL_LOG;
@@ -2625,66 +2567,18 @@ export async function beginMonsterDochug(monster, state, random = rn2, rollDice 
     calls.push(...actionCalls);
     return { monster, calls, movement, dochugContext };
 }
-async function resumeTrappedMonster(action) {
-    const game = requireInitializedGame();
-    if (!action.movement?.escapingTrap)
-        return;
-    game._deferVisibleMonsterContact = true;
-    try {
-        await resumeDeferredMonsterTrap(action, game, {
-            publish: plineWithContinuation,
-            describeMonster: visibleMonsterSubject,
-        });
-    }
-    finally {
-        game._deferVisibleMonsterContact = false;
-    }
-}
-async function presentMonsterHiding(action) {
-    const game = requireInitializedGame();
-    const { monster, movement } = action;
-    const concealment = movement.hideUnder;
-    if (!concealment)
-        return;
-    await finishMonsterHideUnder(monster, concealment, game);
-    await resumeDeferredMonsterHideUnder(action, game);
-    delete movement.hideUnder;
-}
-// Trap, door, tunneling, and hiding feedback belongs to postmov(), before
-// returning to either dochug() or the hero's out-of-sequence movement caller.
+// Trap, door, tunneling, and hiding feedback belongs to postmov(), which the
+// movement owners await inline.  This repaints the squares postmov() left
+// unpainted when an earlier phase returned before its redraw, for callers
+// that resolve a movement transaction outside the ordinary turn driver.
 export async function presentMonsterPostMove(action, game) {
-    let movement = action.movement;
-    // C postmov() repaints the old square before mintrap(), but delays
-    // the destination newsym() until the trap's message has returned.
-    // A pager on the prior topline must still show the floor object.
-    // dog_move() can return MMOVE_MOVED without a step; postmov() still
-    // repaints the old square and runs mintrap() there.
-    const deferredTrapDestination = !!((movement?.moved
-        || movement?.postMoveOldSquarePainted) && movement?.trap);
-    const deferredHideUnderDestination = !!(movement?.moved
-        && movement?.hideUnder?.message);
+    const movement = action.movement;
     if (movement?.moved || movement?.postMoveOldSquarePainted) {
         if (!movement.postMoveOldSquarePainted)
             await newsym(movement.oldx, movement.oldy);
-        if (!movement.postMoveDestinationPainted
-            && !deferredTrapDestination && !deferredHideUnderDestination)
+        if (!movement.postMoveDestinationPainted)
             await newsym(movement.x, movement.y);
     }
-    if (movement.deferredAfterMonsterTrap) {
-        const event = movement.trap;
-        if (!event)
-            throw new Error('Deferred monster trap requires its event.');
-        await resumeDeferredMonsterTrap(action, game, {
-            publish: plineWithContinuation,
-            describeMonster: visibleMonsterSubject,
-        });
-        if ('heroDied' in event && event.heroDied)
-            return true;
-        movement = action.movement;
-    }
-    if (deferredTrapDestination && !movement.postMoveDestinationPainted)
-        await newsym(movement.x, movement.y);
-    await presentMonsterHiding(action);
     return !!game.program_state.gameover || !!movement.heroDied;
 }
 async function presentMonsterMoveMessage(action, game) {
@@ -2692,37 +2586,11 @@ async function presentMonsterMoveMessage(action, game) {
     if (movement?.message)
         await plineWithContinuation(movement.message);
 }
-async function presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen) {
-    const monster = action.monster;
-    let movement = action.movement;
-    // C monmove.c:m_move() calls tele_restrict() immediately after a
-    // tengu's one-in-five innate teleport probe.  The rejected probe is
-    // an ordinary pline producer; retaining it here lets a later actor's
-    // prose force the same tty continuation boundary.
-    if (movement?.deferredAfterRestrictedTenguTeleport) {
-        if (actorWasOpticallySeen) {
-            await plineWithContinuation(`A mysterious force prevents ${monsterName(monster)} from teleporting!`);
-        }
-        // The resumed m_move() can still reach dochug()'s contact attack;
-        // its hit line must page before damage and knockback, as on the
-        // ordinary path.
-        const previousDeferral = game._deferVisibleMonsterContact;
-        game._deferVisibleMonsterContact = true;
-        try {
-            await resumeDeferredRestrictedTenguTeleport(action, game);
-        }
-        finally {
-            game._deferVisibleMonsterContact = previousDeferral;
-        }
-        movement = action.movement;
-    }
-}
 // C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
 // Resolve that movement transaction before the hero tests its new position;
 // no movement ration, dochug prelude, or dochug attack tail belongs here.
 export async function moveMonsterForHeroAttack(monster, state = requireInitializedGame()) {
     requireLiveGame(state);
-    const wasSeen = canSeeMonster(monster);
     const previousDeferral = state._deferVisibleMonsterContact;
     state._deferVisibleMonsterContact = true;
     let action;
@@ -2732,8 +2600,6 @@ export async function moveMonsterForHeroAttack(monster, state = requireInitializ
     finally {
         state._deferVisibleMonsterContact = previousDeferral;
     }
-    await resumeTrappedMonster(action);
-    await presentRestrictedMonsterTeleport(action, state, wasSeen);
     let heroDied = await presentMonsterPostMove(action, state);
     if (!heroDied)
         heroDied = (await presentMonsterAttackEffects(action, state)).heroDied;
@@ -2746,7 +2612,7 @@ export async function moveMonsterForHeroAttack(monster, state = requireInitializ
 }
 // Complete the same action and message phases for scheduled turns and
 // direct dochug() calls. The caller owns movement rations and dochugw().
-export async function presentMonsterAction(action, game, actorWasOpticallySeen) {
+export async function presentMonsterAction(action, game) {
     if (game.program_state?.gameover)
         return 'stop';
     if (game._questExpulsionPending) {
@@ -2764,31 +2630,10 @@ export async function presentMonsterAction(action, game, actorWasOpticallySeen) 
     if (action.movement?.usedMisc?.kind === 'item-result'
         && action.movement.usedMisc.nativeResult !== 0)
         return 'next-monster';
-    await resumeTrappedMonster(action);
     let { monster, movement } = action;
     // A fleeing teleport spends this actor's turn, even if no destination was found.
     if (movement?.fleeingRelocation || movement?.fleeingTeleportFailed)
         return 'next-monster';
-    await presentRestrictedMonsterTeleport(action, game, actorWasOpticallySeen);
-    movement = action.movement;
-    if (movement?.deferredCovetousRelocation) {
-        // tactics() has completed relocation and its input pauses.
-        // Resume range checks and attacks from the new position.
-        game._deferVisibleMonsterContact = true;
-        try {
-            await resumeDeferredCovetousRelocation(action, game);
-        }
-        finally {
-            game._deferVisibleMonsterContact = false;
-        }
-        await resumeTrappedMonster(action);
-        movement = action.movement;
-        if (movement?.usedDefense)
-            return 'next-monster';
-        if (movement?.usedMisc?.kind === 'item-result'
-            && movement.usedMisc.nativeResult !== 0)
-            return 'next-monster';
-    }
     if (movement?.spellCast?.cast) {
         // dochug() chooses the movement spell after covetous tactics,
         // so a resumed relocation can still produce this casting phase.
@@ -2923,13 +2768,12 @@ export async function presentMonsterAction(action, game, actorWasOpticallySeen) 
 // C monmove.c:dochug(). Shop entry gives its keeper an immediate action,
 // including resumed messages and attacks, without movemon()'s per-turn work.
 export async function performMonsterTurn(monster, state = requireInitializedGame()) {
-    const wasSeen = canSeeMonster(monster);
     const previousDeferral = state._deferVisibleMonsterContact;
     try {
         state._deferVisibleMonsterContact = true;
         const action = await beginMonsterDochug(monster, state);
         state._deferVisibleMonsterContact = false;
-        await presentMonsterAction(action, state, wasSeen);
+        await presentMonsterAction(action, state);
     }
     finally {
         state._deferVisibleMonsterContact = previousDeferral;

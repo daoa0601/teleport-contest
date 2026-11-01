@@ -59,7 +59,7 @@ import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX,
 import { findArtifact } from './artifacts.js';
 import { observeBucForNaming, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType, } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
-import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction, } from './monmove.js';
+import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction, } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
 import { fixShopDamage } from './shop_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';

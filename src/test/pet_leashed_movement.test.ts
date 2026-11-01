@@ -43,7 +43,10 @@ void test('a leashed dog whines when its route crosses a harmful trap', async ()
 
     await beginMonsterMove(dog, game, limit => Math.min(1, limit - 1));
 
-    assert.match(game._lastPlineMessage ?? '', /little dog whines\./);
+    // C dogmove.c prints the whine during route selection; postmov()'s
+    // mintrap() then announces the dart inside the same m_move() call.
+    assert.match(game._toplines ?? '', /little dog whines\./);
+    assert.match(game._lastPlineMessage ?? '', /little dog is almost hit by a dart!/);
     assert.equal(dog.mx, 11);
 });
 

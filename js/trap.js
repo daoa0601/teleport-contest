@@ -59,7 +59,6 @@ import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_kno
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { monsterResistsSleep } from './monster_sleep.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
-import { completeMovedMonsterAction, moveMonsterAfterTrap, requireMovementCapabilities, } from './monmove.js';
 import { monsterHasFireResistance } from './mondata.js';
 import { monsterHasStoneResistance } from './mondata.js';
 import { finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, } from './mon.js';
@@ -1073,7 +1072,6 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
         x: monster?.mx,
         y: monster?.my,
         moved: false,
-        immediateTrap: true,
         forcedTrapLanding: force,
         forcedTrapBungle: forceBungle,
     };
@@ -1096,17 +1094,6 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
     const event = await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish);
     return { monster, movement, event, calls };
 }
-// Finish the m_move()/postmov() tail which was interrupted by a deferred
-// trap effect presentation. This is the continuation m_move() would have
-// run synchronously in C.
-async function continueAfterMonsterTrap(action, state, random, rollDice, rollOne, calls) {
-    if (action.movement?.immediateTrap)
-        return action;
-    if (action.movement.postMoveStatus === MMOVE_MOVED)
-        requireMovementCapabilities(action.movement).species = action.monster.mnum;
-    await completeMovedMonsterAction(action.monster, action.movement, state, random, rollDice, rollOne, calls, action.dochugContext, { trapAlreadyHandled: true });
-    return action;
-}
 // Complete mintrap() for a source effect without running a movement tail.
 // C mintrap() gives an already trapped monster its escape roll whatever the
 // caller's flags, so a monster caught mid-hurtle rolls again on landing.
@@ -1120,54 +1107,50 @@ export async function finishImmediateMonsterTrap(action, state = requireInitiali
     });
     return action;
 }
-// Resume a deferred monster trap event: the trapped monster's escape roll,
-// the deferred trap-effect completions, and the m_move() tail that follows.
-export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
+// Resume a deferred monster trap event staged by a source effect's
+// immediate mintrap() call: the trapped actor's escape roll and any staged
+// trap-effect completion, without a movement tail.
+export async function resumeDeferredMonsterTrap(action, state, options = {}) {
     const movement = action?.movement;
     if (movement?.escapingTrap) {
         await tryMonsterTrapEscape(action.monster, state, {
-            random,
-            publish,
-            ...(describeMonster ? { describeMonster } : {}),
+            random: options.random ?? rn2,
+            publish: options.publish ?? plineWithContinuation,
+            ...(options.describeMonster ? { describeMonster: options.describeMonster } : {}),
         });
         delete movement.escapingTrap;
-        if (!movement.immediateTrap) {
-            const held = action.monster.mtrapped
-                ? {
-                    ...movement,
-                    trapped: true,
-                    postMoveStatus: MMOVE_NOTHING,
-                    movementStage: 'dochug',
-                }
-                : null;
-            const next = await moveMonsterAfterTrap(action.monster, state, random, rollDice, rollOne, action.calls, action.dochugContext, held);
-            action.movement = next.movement;
-        }
         return action;
     }
     const event = movement?.trap;
     if (!movement?.deferredAfterMonsterTrap)
         return action;
+    if (!event)
+        throw new Error('A deferred monster trap must retain its event');
+    await finishDeferredMonsterTrap(action.monster, movement, event, state, action.calls || DISCARDED_CALL_LOG, options);
+    return action;
+}
+// Finish the trap-effect completion which triggerMonsterTrap() staged for
+// mintrap()'s caller, then trap.c:3831-3837's "appears" reveal of a newly
+// caught hider.  Updates the movement's death fields and reports whether the
+// actor died, left the level, or the hero died.
+export async function finishDeferredMonsterTrap(monster, movement, event, state, calls, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, describeMonster, finishDeath = (victim, options) => finishEnvironmentalMonsterDeath(victim, state, options), } = {}) {
     delete movement.deferredAfterMonsterTrap;
-    const calls = action.calls || DISCARDED_CALL_LOG;
     const recordedRandom = (range) => recordRandom(random, calls, range);
     const recordedRollOne = (range) => {
         const result = rollOne(range);
         calls.push(`rnd(${range})`);
         return result;
     };
-    if (!event)
-        throw new Error('A deferred monster trap must retain its event');
     switch (event.kind) {
         case 'web-trap':
-            await finishMonsterWebTrap(action.monster, event.trap, {
+            await finishMonsterWebTrap(monster, event.trap, {
                 state,
                 publish,
                 ...(describeMonster ? { subject: describeMonster } : {}),
             });
             break;
         case 'bear-trap':
-            await finishMonsterBearTrap(action.monster, event, state, {
+            await finishMonsterBearTrap(monster, event, state, {
                 publish,
                 random,
                 rollDice,
@@ -1175,14 +1158,14 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             });
             break;
         case 'rust-trap':
-            await finishMonsterRustTrap(action.monster, event, state, {
+            await finishMonsterRustTrap(monster, event, state, {
                 publish,
                 random: recordedRandom,
             });
             break;
         case 'projectile-trap':
         case 'spent-projectile-trap':
-            await finishMonsterProjectileTrap(action.monster, event, state, {
+            await finishMonsterProjectileTrap(monster, event, state, {
                 publish,
                 random,
                 rollOne: recordedRollOne,
@@ -1191,7 +1174,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             break;
         case 'anti-magic-drain':
         case 'anti-magic-damage': {
-            const death = await finishMonsterAntiMagicTrap(action.monster, event, state, {
+            const death = await finishMonsterAntiMagicTrap(monster, event, state, {
                 random,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
@@ -1207,7 +1190,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             break;
         }
         case 'fire-trap':
-            await finishMonsterFireTrap(action.monster, event, state, {
+            await finishMonsterFireTrap(monster, event, state, {
                 publish,
                 random,
                 rollOne,
@@ -1218,7 +1201,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             // A victim relocated by the blast meets mintrap(FORCETRAP) at
             // its new square, which may end its stay on this level.
             const relocated = { action: null };
-            await finishMonsterLandMine(action.monster, event, state, {
+            await finishMonsterLandMine(monster, event, state, {
                 finishDeath,
                 publish,
                 random: recordedRandom,
@@ -1241,12 +1224,12 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             if (nested?.actorLeftLevel && !movement.heroDied) {
                 movement.actorLeftLevel = true;
                 movement.actionCompleted = true;
-                return action;
+                return 'left-level';
             }
             break;
         }
         case 'pit-trap':
-            await finishMonsterPitTrap(action.monster, event, {
+            await finishMonsterPitTrap(monster, event, {
                 publish,
                 random,
                 rollOne: recordedRollOne,
@@ -1256,26 +1239,26 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             break;
         case 'falling-rock':
         case 'spent-rock-trap':
-            await finishMonsterRockTrap(action.monster, event, state, {
+            await finishMonsterRockTrap(monster, event, state, {
                 publish,
                 random,
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'sleep-gas':
-            await finishMonsterSleepGasTrap(action.monster, event, {
+            await finishMonsterSleepGasTrap(monster, event, {
                 state,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'squeaky-board':
-            await finishMonsterSqueakyBoard(action.monster, event, state, {
+            await finishMonsterSqueakyBoard(monster, event, state, {
                 publish,
             });
             break;
         case 'vibrating-square':
-            await finishMonsterVibratingSquare(action.monster, event, {
+            await finishMonsterVibratingSquare(monster, event, {
                 state,
                 publish,
             });
@@ -1302,12 +1285,12 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
     }
     // C trap.c:3831-3837: a monster newly caught by the trap cannot stay
     // hidden under an object; a first sighting reports that it appears.
-    if (!action.monster.dead && (action.monster.mhp ?? 0) > 0
-        && action.monster.mtrapped) {
-        const alreadySpotted = canSpotMonster(action.monster);
-        await maybeUnhideAt(action.monster.mx, action.monster.my, state);
-        if (!alreadySpotted && canSeeMonster(action.monster)) {
-            await publish(`${canonicalMonsterName(action.monster, {
+    if (!monster.dead && (monster.mhp ?? 0) > 0
+        && monster.mtrapped) {
+        const alreadySpotted = canSpotMonster(monster);
+        await maybeUnhideAt(monster.mx, monster.my, state);
+        if (!alreadySpotted && canSeeMonster(monster)) {
+            await publish(`${canonicalMonsterName(monster, {
                 state, capitalized: true, article: 'a',
             })} appears.`);
         }
@@ -1316,16 +1299,15 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
         || ('death' in event && event.death?.heroDied)
         || state.program_state.gameover) {
         movement.heroDied = true;
-        return action;
+        return 'hero-died';
     }
     if ('killed' in event && event.killed) {
         movement.actorDied = true;
         movement.postMoveStatus = MMOVE_DIED;
         movement.actionCompleted = true;
-        return action;
+        return 'killed';
     }
-    await continueAfterMonsterTrap(action, state, random, rollDice, rollOne, calls);
-    return action;
+    return 'finished';
 }
 // ── C trap.c:mselftouch() and minstapetrify(). Falling can force
 // contact even through gloves; newcham() only calls mselftouch()

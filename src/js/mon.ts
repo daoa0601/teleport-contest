@@ -1397,7 +1397,6 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             await vision_recalc(0);
         }
         if (game.context.bypasses) clearBypasses(game);
-        const actorWasOpticallySeen = canSeeMonster(actor);
         const liquid = await resolveMonsterLiquid(actor, game, {
             announce: plineWithContinuation,
             finishDeath: finishMonsterLiquidDeath,
@@ -1418,7 +1417,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         } finally {
             game._deferVisibleMonsterContact = false;
         }
-        const presented = await presentMonsterAction(action, game, actorWasOpticallySeen);
+        const presented = await presentMonsterAction(action, game);
         if (presented === 'stop') return false;
         if (presented === 'next-monster') continue;
         if (action.conflictFight) continue;
