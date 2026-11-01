@@ -178,10 +178,12 @@ export async function createBonesFromDeath(
     }
 
     if (game.flags?.debug) {
-        const save = (game.flags.paranoia_bits ?? 0) & PARANOID_BONES
-            ? await paranoidQuery(true, 'Save bones?')
-            : await promptDeathQuestion('Save bones?') === 'y';
-        if (!save) return false;
+        // end.c:1366 asks paranoid_query(ParanoidBones, "Save bones?");
+        // its non-paranoid branch is yn_function(prompt, ynchars, 'n', FALSE)
+        // (cmd.c:5645), which neither pops nor feeds the command queue.
+        if (!await paranoidQuery(
+            !!((game.flags.paranoia_bits ?? 0) & PARANOID_BONES), 'Save bones?',
+        )) return false;
     }
     clearBypasses();
     if (bonesLevelExists()) {

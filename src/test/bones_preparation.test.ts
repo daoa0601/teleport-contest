@@ -14,6 +14,9 @@ import { punishHero } from '../js/punishment.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
+import { resetInputState } from '../js/input.js';
+import { promptYesNo } from '../js/query.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -130,8 +133,17 @@ void test('wizard replacement keeps old bones when the storage backend cannot un
     assert.equal(saveBonesLevel(), true);
     const leash = await addInventoryObject(LEASH);
 
-    assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), false);
+    const input = resetInputState();
+    const saved = await answerPrompts(
+        createBonesFromDeath('killed by a kobold', promptYesNo),
+        input,
+        [
+            { prompt: /Save bones\? \[yn\] \(n\)/, keys: ['y'] },
+            { prompt: /Replace it\? \[yn\] \(n\)/, keys: ['y'] },
+        ],
+    );
 
+    assert.equal(saved, false);
     assert.equal(leash.where, 'inventory');
     assert.match(game._pending_message, /Cannot unlink old bones/);
 });

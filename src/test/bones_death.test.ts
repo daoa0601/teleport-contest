@@ -2,8 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones_death.js';
+import { resetInputState } from '../js/input.js';
+import { promptYesNo } from '../js/query.js';
 import {
     BURNING,
+    DIED,
     FOUNTAIN,
     G_GENOD,
     GRAVE,
@@ -36,6 +39,7 @@ import { initRng } from '../js/rng.js';
 import { races, roles } from '../js/roles.js';
 import { objectWeight } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -330,4 +334,35 @@ void test('dropped death gear is cursed unless the native roll spares it', async
         assert.equal(!!ration.cursed, cursedRation, `ration curse on seed ${seed}`);
         assert.equal(!!ration.blessed, !cursedRation, `ration blessing on seed ${seed}`);
     }
+});
+
+// end.c:1366 asks the wizard-mode bones question through
+// paranoid_query(ParanoidBones, "Save bones?"); with paranoia off its
+// non-paranoid branch is yn_function(prompt, ynchars, 'n', FALSE)
+// (cmd.c:5645), so cmdq_pop() never runs (cmd.c:5496) and the question
+// waits for a fresh key even while a canned apply command is queued.
+void test('a wizard death asks Save bones? with a fresh key and keeps a canned command queued', async () => {
+    freshPlayableRoom({
+        seed: 61n,
+        hero: { uz: { dnum: 0, dlevel: 9 } },
+    });
+    requirePlayingGame(game);
+    init_objects();
+    game.storage = memoryStorage();
+    game.flags.debug = true;
+    game._canMakeBones = true;
+    game.plname = 'Canner';
+    setHeroRemainsFromDeath(DIED);
+    game._cannedCommands = [{ kind: 'apply', invlet: 'e' }];
+
+    const input = resetInputState();
+    const saved = await answerPrompts(
+        createBonesFromDeath('killed by a wraith', promptYesNo),
+        input,
+        [{ prompt: /Save bones\? \[yn\] \(n\)/, keys: ['n'] }],
+    );
+
+    assert.equal(saved, false, 'answering n must skip the bones file');
+    assert.deepEqual(game._cannedCommands, [{ kind: 'apply', invlet: 'e' }],
+        'the canned command must survive the question');
 });
