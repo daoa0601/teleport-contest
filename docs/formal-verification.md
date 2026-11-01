@@ -170,6 +170,30 @@ do not escape, cached contradictions do not cross domains, and changing an
 entry constraint changes feasibility. No proof domain, logging mode, safety
 obligation, probe or mutant was removed.
 
+**Solver robustness.** `rnl`'s per-path-pair output-equality obligations sit
+close to the search limit of both z3 configurations: the identical
+proposition was proved or timed out depending only on the z3 random seed,
+accumulated AST state, or process memory layout, and the Linux CI build hit
+the timeout twice in a row under the default configuration (the branch's own
+macOS runs proved `rnl` in about a second). A query dump confirmed the branch
+and the integration base construct byte-identical `rnl` propositions, so the
+port edits were not the cause. Later reproduction showed the fragility is not
+one-sided: layouts that stall the default configuration prove instantly under
+the tuned one, and a reproduced layout stalled the tuned configuration on the
+same claim instead. `solve()` therefore runs every proposition under the
+`QF_UFLIA` logic-tuned configuration with a five-second probe budget first,
+then the default configuration with the full budget, and finally the tuned
+configuration with the full budget; whichever answers decides. The tuned
+configuration discharged all 144 distinct `rnl` propositions in at most 0.3 s
+for every seed from 0 to 7. The claims, domains, and outputs are unchanged:
+an `unsat` answer from either configuration is an ordinary Z3 proof, and
+`sat`/`unknown` results still return immediately from the producing solver.
+A regression test runs the whole `rnl` claim under seeds 0 through 20 and
+bounds each run at 45 seconds; before the change it failed in three of three
+processes (one obligation reaching the per-query timeout each time), and
+after it every seed proves in a few seconds -- a fragile layout costs the
+probe budget once, not a 120-second timeout.
+
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.
 Counterexample searches now check the same output conditions separately for
