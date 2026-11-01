@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
@@ -44,7 +44,8 @@ import { monsterSubjectPronoun, monsterPassesBars } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
-import { heroHasFreeHand, isPolearm } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
+import { isPolearm } from './object_properties.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';

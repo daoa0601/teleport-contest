@@ -38,7 +38,7 @@ import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { heroStrengthDamageBonus } from './weapon_damage.js';
+import { heroStrengthDamageBonus } from './weapon.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';

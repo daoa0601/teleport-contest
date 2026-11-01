@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { EXPENSIVE_CAMERA, MIRROR } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

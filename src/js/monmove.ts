@@ -72,7 +72,7 @@ import {
     revealAggravatingMonster, finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination,
     findMonsterDefensiveItem, useMonsterDefensiveItem, useMonsterMiscItem,
 } from './muse.js';
-import { monsterHasMagicKey } from './artifact.js';
+import { monsterHasMagicKey } from './artifacts.js';
 import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
@@ -149,7 +149,8 @@ import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js'
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
+import { trapName } from './trap.js';
 import {
     isAccessibleAt, monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt,
 } from './terrain_properties.js';
@@ -177,8 +178,10 @@ import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon,
 } from './weapon.js';
 import { swingMonsterWeapon } from './mhitu.js';
-import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
-import { trapName } from './trap_name.js';
+import { ammunitionMatchesLauncher, isPick, isPolearm } from './object_properties.js';
+import { returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { willWeld } from './wield.js';
+import { monsterWeaponStrengthBonus } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -231,7 +234,6 @@ import {
 } from './regions.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies } from './stoning.js';
 import { monsterReflectsRay } from './ray.js';
-import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
 import { talkToDemon } from './demon_talk.js';
@@ -1142,7 +1144,6 @@ export async function heroEveryturnEffect(
     return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
 }
 
-
 // C ref: monmove.c:m_avoid_kicked_loc().  dokick() retains its directed
 // target through the elapsed monster turn, so a cooperative monster which
 // can see does not immediately occupy the square the hero just kicked.
@@ -1435,7 +1436,6 @@ export async function stopMonsterHeldByHero(monster: Monster, state: PlayingGame
     );
     return true;
 }
-
 
 // C monmove.c:m_balks_at_approaching().  A nearby monster which can still
 // use a ranged attack does not blindly close to melee range.  Ordinary

@@ -6,7 +6,7 @@ import { BEAR_TRAP, DOOR, D_CLOSED, D_TRAPPED, M_AP_FURNITURE, M_AP_OBJECT, PIT,
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { BEARTRAP, BOULDER, CHEST, OBJECT_NAMES, QUARTERSTAFF } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, } from './support/game-objects.js';
 import { addTrap, floorObjectsAt, } from './support/level-state.js';

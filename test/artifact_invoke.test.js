@@ -3,7 +3,7 @@ import { requireScreenRow } from './support/screen.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { invokeArtifactPower } from '../js/artifact_invoke.js';
+import { invokeArtifactPower } from '../js/artifacts.js';
 import { artifactByName } from '../js/artifacts.js';
 import { A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

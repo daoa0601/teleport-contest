@@ -2,9 +2,10 @@
 // C artifact.c:retouch_object(), untouchable(), retouch_equipment().
 
 import {
-    artifactInvokeIsActive, deactivateArtifactProperty,
-} from './artifact_invoke.js';
-import { touchArtifactByHero } from './artifact_touch.js';
+    artifactInvokeIsActive,
+    deactivateArtifactProperty,
+    touchArtifactByHero,
+} from './artifacts.js';
 import { artifactBaneApplies, artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, DISMOUNT_THROWN, IS_ALTAR, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';

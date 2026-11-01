@@ -8,7 +8,8 @@ import { game } from '../js/gstate.js';
 import {
     DAGGER, PICK_AXE, RED_DRAGON_SCALE_MAIL, RIN_PROTECTION, SPEAR, TRIDENT,
 } from '../js/object_data.js';
-import { rangedTargetHitBonus, weaponHitBonus } from '../js/weapon_accuracy.js';
+import { rangedTargetHitBonus } from '../js/dothrow.js';
+import { weaponHitBonus } from '../js/weapon.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

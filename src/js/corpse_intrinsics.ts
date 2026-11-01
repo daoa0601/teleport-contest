@@ -22,7 +22,7 @@ import {
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import type { GameState } from './game_state.js';
 
 interface CorpseIntrinsicOptions { state?: GameState; }

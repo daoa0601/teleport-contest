@@ -22,9 +22,8 @@ import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './object_location.js';
-import {
-    isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
-} from './weapon_slots.js';
+import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
     A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE,
@@ -43,7 +42,6 @@ import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';
-import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
 import { applyHeroLocationEffects } from './hack.js';
 

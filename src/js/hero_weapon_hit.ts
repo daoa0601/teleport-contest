@@ -11,7 +11,7 @@ import { rnd, rn2 } from './rng.js';
 import { monsterSpeciesSticks } from './monster_data.js';
 import { showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { isWeaponTool } from './object_properties.js';
-import { isAxe, isBlade } from './weapon_type.js';
+import { isAxe, isBlade } from './object_properties.js';
 import { cutWorm } from './worm.js';
 
 interface HeroWeaponHitOptions {
@@ -29,7 +29,6 @@ export interface HeroWeaponHitResult {
     survived: boolean;
     heroDied: boolean;
 }
-
 
 export async function resolveHeroWeaponHit(
     monster: Monster, x: number, y: number, weapon: GameObject | null,

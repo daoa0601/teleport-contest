@@ -17,7 +17,7 @@ import {
 } from './const.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
 import { splitObjectStack } from './object_stack.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
 import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';

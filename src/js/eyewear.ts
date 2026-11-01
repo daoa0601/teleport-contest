@@ -3,7 +3,7 @@
 
 import { armorOffMessage } from './armor.js';
 import { W_TOOL } from './const.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { setWornArtifactProperties } from './artifacts.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -15,7 +15,7 @@ import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';
 import { toggleBlindness } from './sight_change.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';

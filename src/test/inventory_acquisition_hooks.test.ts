@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DART } from '../js/object_data.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';

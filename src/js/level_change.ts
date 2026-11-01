@@ -2,7 +2,8 @@ import { setHeroGrip } from './hero_grip.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { seeTrap } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
+import { resetTrapSetting } from './apply.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
@@ -51,7 +52,6 @@ import { monsterDeathCount } from './mon.js';
 import { killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
-import { resetTrapSetting } from './trap_setting.js';
 import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
 import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
 import { nearCapacity } from './weight.js';

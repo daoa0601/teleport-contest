@@ -11,7 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, TIN } from '../js/object_data.js';
 import { startHeroSliming } from '../js/slime.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

@@ -4,8 +4,7 @@
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { artifactById } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
-import { deactivateArtifactProperty } from './artifact_invoke.js';
-import { setCarriedArtifactProperties } from './artifact_properties.js';
+import { deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -30,7 +29,7 @@ import {
 } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 
 const SCROLL_CLASS = 9;
 const COIN_CLASS = 12;

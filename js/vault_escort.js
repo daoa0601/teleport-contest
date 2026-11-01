@@ -23,7 +23,7 @@ import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard, setVaultTerrainFlags, } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';

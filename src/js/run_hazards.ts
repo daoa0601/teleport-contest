@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 
 export function knownRunTrap(x: number, y: number, state: GameState): Trap | undefined {
     return state.level?.traps.find(trap => trap.tx === x && trap.ty === y

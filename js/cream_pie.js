@@ -11,7 +11,7 @@ import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind, } from './senses.js';
 import { chargeAlteredUnpaidObject, } from './shk.js';
 import { makeBlinded } from './sight_change.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { splitObjectStack } from './object_stack.js';
 import { unlinkObject } from './object_location.js';
 import { delobj } from './object_delete.js';

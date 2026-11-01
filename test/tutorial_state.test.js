@@ -16,7 +16,7 @@ import { recordObjectCall } from '../js/object_knowledge.js';
 import { objectTimers } from '../js/object_timers.js';
 import { beginObjectBurn } from '../js/light.js';
 import { discardTutorialState } from '../js/tutorial_state.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { startLuaCore } from './support/lua-game.js';

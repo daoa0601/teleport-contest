@@ -3,7 +3,7 @@ import { P_TWO_WEAPON_COMBAT } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isBimanualObject, launcherMatchesAmmo } from './object_properties.js';
 import { useHeroSkill, weaponSkillDamageBonus, weaponSkillType } from './skills.js';
-import { heroStrengthDamageBonus } from './weapon_damage.js';
+import { heroStrengthDamageBonus } from './weapon.js';
 import type { GameState } from './game_state.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { GameObject } from './object_types.js';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyArtifactHit } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifacts.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';

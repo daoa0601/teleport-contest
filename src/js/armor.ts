@@ -25,7 +25,7 @@ import {
     selfTouchPetrifyingWeapons, touchPetrifies,
 } from './stoning.js';
 import { setSlipperyHands } from './towel.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { surfaceName } from './terrain_name.js';
 import { heroFormClings } from './polyself.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
@@ -35,7 +35,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { setWornArtifactProperties } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import {
     AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION,

@@ -16,7 +16,7 @@ import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { d, rnd } from './rng.js';
 import { cansee } from './vision.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 export function captureHeroPhysicalObjectName(object, state = game) {
     if (artifactEmitsLight(object) && object.lamplit && object.oartifact) {
         const artifact = artifactById(object.oartifact, state);

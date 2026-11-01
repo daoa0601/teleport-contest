@@ -9,8 +9,10 @@ import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty } from '../js/properties.js';
 import { artifactByName } from '../js/artifacts.js';
 import {
-    artifactInvokeIsActive, deactivateArtifactProperty, invokeArtifactPower,
-} from '../js/artifact_invoke.js';
+    artifactInvokeIsActive,
+    deactivateArtifactProperty,
+    invokeArtifactPower,
+} from '../js/artifacts.js';
 import { applyLevitationPotion } from '../js/levitation_potion.js';
 import { wearHeroArmor } from '../js/armor.js';
 import {

@@ -12,7 +12,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, CREAM_PIE, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_NAMES, POT_ACID, POT_HEALING, POT_SPEED, ROCK, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

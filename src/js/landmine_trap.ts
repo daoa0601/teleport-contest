@@ -23,7 +23,7 @@ import {
     beginMonsterPitTrap, finishMonsterPitTrap, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap,
 } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
-import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
+import { monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 
 export interface MonsterLandMineEvent {

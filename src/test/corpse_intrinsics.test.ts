@@ -26,7 +26,7 @@ import { wearHeroArmor } from '../js/armor.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { resetInputState } from '../js/input.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 
 void test('a leprechaun steals a small purse, keeps the gold, and flees without cancelling claw damage', async () => {
     const level = await freshObjectRoom();

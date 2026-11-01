@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { vision_recalc } from '../js/vision.js';

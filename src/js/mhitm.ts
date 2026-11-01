@@ -70,7 +70,7 @@ import {
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
-import { weaponHitBonus } from './weapon_accuracy.js';
+import { weaponHitBonus } from './weapon.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
@@ -1303,7 +1303,6 @@ async function petrifyingEffect(
 function effectResult(damage: number, nativeResult = M_ATTK_MISS, heroDied = false): MonsterCombatEffectResult {
     return { damage, nativeResult, heroDied, done: false };
 }
-
 
 // C mhitm.c:mdamagem()'s AD_DGST tail: meal effects that run only after
 // monkilled() confirms the swallowed target died.

@@ -7,7 +7,7 @@ import { msummon, summonMinion } from '../js/minion.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

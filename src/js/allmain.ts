@@ -53,7 +53,7 @@ import {
     setMulti,
 } from './command_state.js';
 import { dosounds, sessionIsNight } from './ambient_sounds.js';
-import { warnWithMasterKey } from './artifact_warning.js';
+import { warnWithMasterKey, applyArtifactHit } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
@@ -73,7 +73,6 @@ import {
     monsterLocomotion,
 } from './mondata.js';
 import { resolveMonsterWeaponContact, tryKnockback, resolveMonsterContactEffect } from './uhitm.js';
-import { applyArtifactHit } from './artifact_hit.js';
 import {
     MONSTER_GENO, monsterIsAnimal, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE,
     MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterTypeName,
@@ -96,7 +95,7 @@ import {
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { openHoldingTrap } from './trap_magic.js';
+import { openHoldingTrap } from './trap.js';
 import {
     AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK,
 } from './monster_attack_types.js';
@@ -113,7 +112,7 @@ import {
 } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import { unlinkObject } from './object_location.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { reassessMonsterArmor } from './monworn.js';

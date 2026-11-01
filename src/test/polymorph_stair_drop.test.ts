@@ -6,7 +6,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { LONG_SWORD, ROCK } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { cansee, vision_recalc } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';

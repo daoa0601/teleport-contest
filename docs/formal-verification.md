@@ -81,10 +81,10 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 | `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 0.9 s |
 | `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 4×2 | 1.0 s |
 | `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.3 s |
-| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 8×8 | 0.5 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 8×8 | 0.5 s |
 | `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 24×17 | 1.9 s |
 | `acurr:all` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 5.6 s |
-| `dbon:all` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
+| `dbon:all` | `weapon.c:dbon` ↔ `weapon.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
 | `abon:forms` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 43.6 s |
 | `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 415.6 s |
 | `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `monster_speed.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 175.5 s |

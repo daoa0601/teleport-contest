@@ -7,7 +7,7 @@
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject } from './mkobj.js';
 import { isRoom } from './map_types.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies } from './makemon.js';

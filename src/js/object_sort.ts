@@ -22,7 +22,7 @@ import {
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
 import { lootObjectName, observeObjectForNaming } from './objnam.js';
 import { isContainer } from './container.js';
-import { isPolearm } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
 import { heroIsBlind } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { recorderSort } from './recorder_sort.js';

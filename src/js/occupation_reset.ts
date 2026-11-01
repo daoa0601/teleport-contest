@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { resetPick } from './lock_context.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
-import { resetTrapSetting } from './trap_setting.js';
+import { resetTrapSetting } from './apply.js';
 
 export function resetOccupations(state: GameState = game): void {
     resetBulkTakeoff(state);

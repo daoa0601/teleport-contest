@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { HOLE, TRAPDOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
-import { monsterKnowsTrap, monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap } from '../js/mondata.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

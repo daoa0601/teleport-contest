@@ -6,7 +6,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import type { InputGate } from '../js/input.js';
 import { AKLYS, LONG_SWORD, RIN_PROTECTION } from '../js/object_data.js';
 import { setSlipperyHands } from '../js/towel.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';

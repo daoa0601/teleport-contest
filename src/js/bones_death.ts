@@ -17,7 +17,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { setTwoWeaponCombat } from './weapon_slots.js';
+import { setTwoWeaponCombat } from './wield.js';
 import { forgetEngravings, makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';

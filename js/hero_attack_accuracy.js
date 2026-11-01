@@ -14,7 +14,7 @@ import { monsterName } from './do_name.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { rn2 } from './rng.js';
 import { weaponSkillHitBonus } from './skills.js';
-import { weaponHitBonus } from './weapon_accuracy.js';
+import { weaponHitBonus } from './weapon.js';
 import { nearCapacity } from './weight.js';
 import { wakeAttackedMonster } from './mon.js';
 import { adjustedMonsterLevel } from './makemon.js';

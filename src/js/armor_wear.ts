@@ -9,13 +9,13 @@ import {
     monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed,
 } from './monster_data.js';
 import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
-import { isSword } from './weapon_type.js';
+import { isSword } from './object_properties.js';
+import { isWeldedPrimary } from './wield.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { isFlimsyObject } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';
 import { surfaceName } from './terrain_name.js';
-import { isWeldedPrimary } from './weapon_slots.js';
 
 const MZ_SMALL = 1;
 

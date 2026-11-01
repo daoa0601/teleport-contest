@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyArtifactHit } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifacts.js';
 import { NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';

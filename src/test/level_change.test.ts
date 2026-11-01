@@ -18,7 +18,7 @@ import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GL
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

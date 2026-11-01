@@ -11,7 +11,7 @@ import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR, OIL_LAMP, MAGIC_LAMP } 
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { burnArmorByFire, burnHeroArmorByFire } from '../js/trap.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

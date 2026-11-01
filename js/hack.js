@@ -87,7 +87,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { checkHeroLeashes } from './leash_apply.js';
-import { isPick } from './weapon_type.js';
+import { isPick } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget } from './hero_digging.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay } from './shk.js';

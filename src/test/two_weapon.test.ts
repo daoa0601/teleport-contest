@@ -14,7 +14,7 @@ import { initRng } from '../js/rng.js';
 import { FOUNTAIN } from '../js/const.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { readObjectName } from '../js/objnam.js';

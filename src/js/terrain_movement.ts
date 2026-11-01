@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';

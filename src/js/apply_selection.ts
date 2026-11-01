@@ -11,7 +11,7 @@ import {
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { isGrayStone } from './object_properties.js';
-import { isAxe, isPick, isPolearm } from './weapon_type.js';
+import { isAxe, isPick, isPolearm } from './object_properties.js';
 import { objectTypeKnown } from './shk.js';
 import { heroIsHallucinating } from './senses.js';
 import type { GameObject } from './object_types.js';

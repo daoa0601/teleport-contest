@@ -9,7 +9,7 @@ import { monsterAtPosition } from './steed.js';
 import { displayedTrapDescription, quotedEngraving } from './pager_features.js';
 import { lookAtMonster } from './pager_monsters.js';
 import { DEC_TO_UNICODE } from './terminal.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { couldsee } from './vision.js';
 import { displayPagerText } from './pager_help.js';
 import { decodeMixedLiteral } from './windows.js';

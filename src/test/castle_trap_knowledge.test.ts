@@ -4,7 +4,7 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, TRAPDOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

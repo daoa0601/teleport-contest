@@ -20,7 +20,7 @@ import { observeObject } from './object_knowledge.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { chargeAlteredUnpaidObject, objectTypeKnown, updateUnpaidObjectPrice, } from './shk.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 const RING_CLASS = 4;
 const TOOL_CLASS = 6;
 const WAND_CLASS = 11;

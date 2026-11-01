@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { advanceHeroPetrification, startHeroPetrification } from '../js/stoning.js';
 import { advanceHeroSickness, startHeroSickness } from '../js/hero_illness.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { DAGGER, GOLD_PIECE, LONG_SWORD, LUCKSTONE } from '../js/object_data.js';
 import { ENL_GAMEOVERDEAD, M_AP_OBJECT, P_BASIC, POOL, P_DAGGER, P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, } from '../js/const.js';

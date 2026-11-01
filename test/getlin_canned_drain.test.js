@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { moveloop_core } from '../js/allmain.js';
 import { tryCallObjectType } from '../js/object_call.js';
 import { ARROW, BOW, CLUB, WORTHLESS_PIECE_OF_WHITE_GLASS } from '../js/object_data.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C windows.c getlin() drains the one command queue before prompting:

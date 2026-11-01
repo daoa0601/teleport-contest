@@ -12,7 +12,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, CHEST, OBJECT_NAMES, SCR_IDENTIFY } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

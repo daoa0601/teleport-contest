@@ -16,7 +16,7 @@ import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { d, rnd } from './rng.js';
 import { cansee } from './vision.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { HeroPhysicalAttackMode, HeroProjectileVolley } from './hero_physical_types.js';

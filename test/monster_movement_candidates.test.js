@@ -9,7 +9,7 @@ import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js'
 import { createPoisonGasCloud, createSteamCloud } from '../js/regions.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
-import { monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterLearnsTrap } from '../js/mondata.js';
 import { setTrack } from '../js/track.js';
 import { addTrap } from './support/level-state.js';
 import { knownObject } from './support/game-objects.js';

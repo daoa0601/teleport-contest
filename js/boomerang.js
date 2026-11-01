@@ -16,7 +16,7 @@ import { heroIsDeaf } from './senses.js';
 import { snuffThrownCandle } from './thrown_object.js';
 import { CLR_BROWN } from './terminal.js';
 import { cansee } from './vision.js';
-import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 export async function flyBoomerang(object, dx, dy, state, volley) {
     requirePlayingGame(state);
     let direction = xdir.findIndex((x, index) => x === dx && ydir[index] === dy);

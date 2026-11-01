@@ -5,7 +5,7 @@ import { currentShopResident, shopkeeperInOwnShop, shopkeeperIsMuted, shopkeeper
 import { shopkeeperName } from './shknam.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { heroIsDeaf } from './senses.js';
-import { isPick } from './weapon_type.js';
+import { isPick } from './object_properties.js';
 const M1_NOEYES = 0x00001000;
 export async function warnAboutRemovedPick(object, state = game) {
     if (object.unpaid || !isPick(object))

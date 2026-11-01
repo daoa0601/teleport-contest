@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { removeHeroAccessory, wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass } from '../js/armor.js';
 import { currentAttribute } from '../js/attrib.js';
-import { invokeArtifactPower } from '../js/artifact_invoke.js';
+import { invokeArtifactPower } from '../js/artifacts.js';
 import { artifactByName } from '../js/artifacts.js';
 import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

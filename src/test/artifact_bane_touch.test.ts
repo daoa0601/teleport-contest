@@ -9,7 +9,7 @@ import {
     initializeArtifacts,
     nameArtifact,
 } from '../js/artifacts.js';
-import { touchArtifactByHero } from '../js/artifact_touch.js';
+import { touchArtifactByHero } from '../js/artifacts.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

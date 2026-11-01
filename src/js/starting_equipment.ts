@@ -11,8 +11,11 @@ import {
 import type { GameObject } from './object_types.js';
 import { learnInitialSpell } from './spell.js';
 import {
-    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat,
-} from './weapon_slots.js';
+    setPrimaryWeapon,
+    setQuiverObject,
+    setSecondaryWeapon,
+    setTwoWeaponCombat,
+} from './wield.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;

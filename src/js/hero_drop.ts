@@ -10,7 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation } from './pline.js';
 import { canLetGo, freeInventoryObject } from './hero_inventory.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { paranoidQuery } from './query.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { heroHandName, monsterStomachName } from './body_parts.js';
@@ -32,7 +32,6 @@ import { landObjectOnAltar } from './altar_object.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 
 const RING_CLASS = 4;
-
 
 // C do.c:946-962 better_not_try_to_drop_that(): u_safe_from_fatal_corpse()
 // with st_all (pickup.c:273-281) checks gloves and stoning resistance

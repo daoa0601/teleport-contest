@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { STR19, W_WEP } from '../js/const.js';
 import { AKLYS, BOOMERANG, CLUB, CREAM_PIE, HELMET, POT_WATER, ROCK, SCR_IDENTIFY } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

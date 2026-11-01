@@ -12,9 +12,9 @@ import { AKLYS, OBJECT_BIMANUAL } from './object_data.js';
 import { makePlural, makeSingular } from './object_grammar.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoLimbs } from './polyself.js';
-import { isWeldedPrimary, setPrimaryWeapon, setSecondaryWeapon } from './weapon_slots.js';
-import { weaponDescription } from './weapon_description.js';
-import { isSword } from './weapon_type.js';
+import { isWeldedPrimary, setPrimaryWeapon, setSecondaryWeapon } from './wield.js';
+import { weaponDescription } from './weapon.js';
+import { isSword } from './object_properties.js';
 
 export function heroHasSlipperyHands(state: GameState): boolean {
     return !!state.u.glib || (state.u.glibTurns ?? 0) > 0;

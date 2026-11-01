@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { mergeObjectStacks } from '../js/object_merge.js';
 import { ARROW, DAGGER, GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 import { claimNextDueObjectTimer } from '../js/object_timers.js';
 import { runClaimedGlobTimer, startGlobTimeout } from '../js/glob.js';
 import { pushKeys } from '../js/input.js';

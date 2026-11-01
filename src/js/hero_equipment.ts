@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
-import { losePrimaryWeapon, releaseWeaponSlots } from './weapon_slots.js';
+import { losePrimaryWeapon, releaseWeaponSlots } from './wield.js';
 import { unpunishHero } from './punishment.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {

@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { BANANA, BULLWHIP, CREAM_PIE, EUCALYPTUS_LEAF, LUMP_OF_ROYAL_JELLY, POT_OIL, TOUCHSTONE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { isGrayStone } from './object_properties.js';
-import { isAxe, isPick, isPolearm } from './weapon_type.js';
+import { isAxe, isPick, isPolearm } from './object_properties.js';
 import { objectTypeKnown } from './shk.js';
 import { heroIsHallucinating } from './senses.js';
 const WEAPON_CLASS = 2, TOOL_CLASS = 6, POTION_CLASS = 8;

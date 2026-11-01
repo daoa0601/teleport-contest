@@ -12,7 +12,7 @@ import { placeMonsterAt } from '../js/steed.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { monsterKnowsTrap, monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap } from '../js/mondata.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

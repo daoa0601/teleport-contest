@@ -8,9 +8,10 @@ import {
     TWO_HANDED_SWORD, WAN_LIGHT, WAN_LIGHTNING,
 } from '../js/object_data.js';
 import {
-    rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
+    rollPhysicalWeaponDamage,
+    rollPhysicalWeaponDamageAgainstHero,
     shadeBlocksWeaponBaseDamage,
-} from '../js/weapon_damage.js';
+} from '../js/weapon.js';
 import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';

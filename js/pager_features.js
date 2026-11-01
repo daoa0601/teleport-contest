@@ -10,7 +10,7 @@ import { monsterAtPosition } from './steed.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { waterbodyName } from './terrain_name.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 // Looking never reads an engraving: report its saved text, even when the
 // live inscription has since been scuffed or replaced.
 export function quotedEngraving(x, y, name, force = false) {

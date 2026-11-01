@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FIRE_TRAP, PIT } from '../js/const.js';
-import { monsterKnowsTrap, monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap } from '../js/mondata.js';
 void test('learning all traps includes individual traps and the all-traps query', () => {
     const monster = { mtrapseen: 0 };
     monsterLearnsTrap(monster, { ttyp: -1 });

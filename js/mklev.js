@@ -4,7 +4,7 @@ import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corps
 import { oinit } from './o_init.js';
 import { objectMaterial } from './object_material.js';
 import { isRoom } from './map_types.js';
-import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
+import { deleteTrap, finishSokobanIfSolved } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance } from './makemon.js';

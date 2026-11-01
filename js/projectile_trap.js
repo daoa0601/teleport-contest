@@ -1,7 +1,7 @@
 // Arrows and darts fired at monsters by floor traps.
 // C ref: trap.c:trapeffect_arrow_trap() and trapeffect_dart_trap().
 import { AD_PHYS } from './monster_attack_types.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, makeTrapMissile } from './trap.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -14,8 +14,7 @@ import { rn2, rnd } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { makeTrapMissile } from './trap_missile.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 import { monsterName } from './do_name.js';
 async function placeMissile(missile, trap, state) {
     if (state === game)

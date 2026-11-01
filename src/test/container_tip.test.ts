@@ -5,7 +5,7 @@ import { LAVAPOOL } from '../js/const.js';
 import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, DAGGER, HORN_OF_PLENTY, ROCK, SACK,
     WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { nearCapacity, objectWeight, SLT_ENCUMBER, UNENCUMBERED } from '../js/weight.js';
 import { runExtendedCommand } from './support/commands.js';

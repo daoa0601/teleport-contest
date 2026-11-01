@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -16,7 +16,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { APPLE, CHEST, GOLD_PIECE, LARGE_BOX, SACK } from '../js/object_data.js';
-import { detectTraps } from '../js/trap_detection.js';
+import { detectTraps } from '../js/detect.js';
 import { addInventoryObject, floorObject, uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';

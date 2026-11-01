@@ -45,7 +45,7 @@ import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { unlinkMonsterObject } from './mkobj.js';
-import { touchArtifactByHero } from './artifact_touch.js';
+import { touchArtifactByHero } from './artifacts.js';
 import {
     LOADSTONE, GOLD_PIECE, CORPSE, SCR_SCARE_MONSTER,
 } from './object_data.js';
@@ -64,7 +64,6 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-
 
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -584,7 +583,6 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
     return { died };
 }
 
-
 export function orderedPickupObjects(pile: readonly GameObject[]): GameObject[] {
     return sortObjects(pile, { mode: lootSortMode() });
 }
@@ -593,7 +591,6 @@ export function pickupObjectClass(object: GameObject): string {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
 }
-
 
 // C pickup.c:doloot().
 export async function doloot() {

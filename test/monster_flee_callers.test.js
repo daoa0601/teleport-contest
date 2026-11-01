@@ -16,7 +16,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { installHeroWeaponSkills, installPolymorphedHero, installSwallowedHero, } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CLOVE_OF_GARLIC, TOOLED_HORN } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { applyInventoryObject, throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';

@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ARROW, BOW, KATANA, SHORT_SWORD } from '../js/object_data.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';

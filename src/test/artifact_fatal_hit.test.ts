@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArtifactHit } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifacts.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

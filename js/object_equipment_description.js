@@ -1,7 +1,7 @@
 // C objnam.c:doname_base(), worn and held object annotations.
 import { pendingArmorAction } from './command_state.js';
 import { artifactEmitsLight, artifactGlowColor } from './artifacts.js';
-import { artifactGlowVerb, wieldedArtifactWarns } from './artifact_warning.js';
+import { artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
 import { P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { displayColorName } from './display.js';

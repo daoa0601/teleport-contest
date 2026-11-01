@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
 import { hurtleMonster } from '../js/dothrow.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 
 import {

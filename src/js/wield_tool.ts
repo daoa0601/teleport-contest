@@ -11,15 +11,17 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { inventoryItemDescription } from './invent.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
-import { willWeld } from './weapon_type.js';
-import { readyHeroWeapon } from './weapon_readiness.js';
+import {
+    willWeld,
+    readyHeroWeapon,
+    setPrimaryWeapon,
+    setQuiverObject,
+    setSecondaryWeapon,
+} from './wield.js';
 import { stopTwoWeaponCombat } from './two_weapon.js';
 import {
     heroHasNoHands, heroIsVerySmall,
 } from './polyself.js';
-import {
-    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
-} from './weapon_slots.js';
 
 export interface WieldToolOptions {
     swapWeapons?: (() => unknown) | undefined;

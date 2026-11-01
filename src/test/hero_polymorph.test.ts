@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/armor.js';
-import { touchArtifactByHero } from '../js/artifact_touch.js';
+import { touchArtifactByHero } from '../js/artifacts.js';
 import {
     A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB,
 } from '../js/const.js';
@@ -26,7 +26,7 @@ import {
 import { roles, races } from '../js/roles.js';
 import { heroIsSliming, startHeroSliming } from '../js/slime.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { glyphAt } from '../js/display.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';

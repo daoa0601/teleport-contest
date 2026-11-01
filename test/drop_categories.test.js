@@ -7,7 +7,7 @@ import { nhgetch, resetInputState } from '../js/input.js';
 import { CLUB, DAGGER, LOADSTONE } from '../js/object_data.js';
 import { objectDescription } from '../js/object_description.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const count of [1, 2, 3, 4]) {

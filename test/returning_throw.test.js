@@ -4,7 +4,7 @@ import { A_STR, STONE, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AKLYS, BOOMERANG, ROCK, SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { rhack } from '../js/cmd.js';
 import { redrawMap } from '../js/display.js';

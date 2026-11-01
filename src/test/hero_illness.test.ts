@@ -27,7 +27,7 @@ import {
     freshHeroConditionRoom, installPolymorphedHero,
 } from './support/hero-state.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 
 void test('fatal illness worsens and reaches the normal death path', async () => {
     await freshHeroConditionRoom();

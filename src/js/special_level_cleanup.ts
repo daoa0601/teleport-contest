@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import type { SpecialSelection } from './selvar.js';
 
 // C sp_lev.c:remove_boundary_syms(). Mapped crosswalls delimit rooms during

@@ -1,6 +1,6 @@
 // Effects shared by hero- and monster-triggered land mines.
 // C ref: trap.c:blow_up_landmine().
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM, } from './const.js';
 import { displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';

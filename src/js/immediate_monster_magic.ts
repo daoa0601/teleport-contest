@@ -48,7 +48,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { hotPursuitShopkeeper } from './shk.js';
 import { adjustSpellDamage } from './zap.js';
 import { surfaceName } from './terrain_name.js';
-import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
+import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
 import { learnWand } from './zap.js';

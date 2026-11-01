@@ -13,7 +13,7 @@ import { deleteObject } from './object_delete.js';
 import { OBJECT_TIMER_KIND, objectTimers, stopObjectTimer, } from './object_timers.js';
 import { definiteObjectAction, ownedObjectName } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, } from './object_stack.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { addInventoryItem } from './u_init.js';
 import { heroIsPolymorphed, heroIsUnchanging, polymonHero, returnHeroToHumanForm, } from './polyself.js';
 import { rn2, rnd } from './rng.js';

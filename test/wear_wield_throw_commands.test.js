@@ -13,7 +13,7 @@ import { ECMD_CANCEL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, DAGGER, MACE, RIN_PROTECTION } from '../js/object_data.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { carriedGold } from './support/gold-arena.js';
 import { freshObjectRoom } from './support/object-room.js';

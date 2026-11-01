@@ -12,12 +12,12 @@ import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYM
 import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
 import { exceedsActionCapacity } from './weight.js';
-import { isAmmunition, isPolearm, isWetTowel } from './weapon_type.js';
+import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
+import { isWeldedPrimary, setQuiverObject } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { launcherMatchesAmmo } from './object_properties.js';
+import { weaponHitBonus } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
-import { isWeldedPrimary, setQuiverObject } from './weapon_slots.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
@@ -61,7 +61,16 @@ import { updateMonsterRegions } from './regions.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
+import { isPoolAt } from './terrain_properties.js';
+import { artifactToHitBonus } from './artifacts.js';
+import { P_PICK_AXE, P_SPEAR } from './const.js';
+import { monsterHatesBlessings } from './monster_data.js';
+import { HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
 const M2_ROCKTHROW = 0x08000000;
+// C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
+const WEAPON_CLASS = 2;
+const GEM_CLASS = 13;
+const TOOL_CLASS = 6;
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
 async function okToThrow() {
@@ -846,5 +855,33 @@ export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state 
         finishMonsterDeath,
     });
     return { staggered: true, ...hurtle };
+}
+export function rangedTargetHitBonus(object, defender, { state = game, defenderNotices = false, random = rn2, rollOne = rnd, } = {}) {
+    const size = MONSTER_SIZE[defender.mnum];
+    if (size === undefined)
+        throw new RangeError(`Unknown ranged defender species ${defender.mnum}`);
+    let bonus = size - 2;
+    if (defender.msleeping)
+        bonus += 2;
+    const speciesCanMove = MONSTER_MOVE[defender.mnum] !== 0;
+    if (!defender.mcanmove || !speciesCanMove) {
+        bonus += 4;
+        if (defenderNotices && speciesCanMove && random(10) === 0) {
+            defender.mcanmove = 1;
+            defender.mfrozen = 0;
+        }
+    }
+    if (object.otyp === HEAVY_IRON_BALL) {
+        if (object !== state.uball)
+            bonus += 2;
+    }
+    else if (object.otyp === BOULDER) {
+        bonus += 6;
+    }
+    else if (object.oclass === WEAPON_CLASS || object.oclass === GEM_CLASS
+        || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0)) {
+        bonus += weaponHitBonus(object, defender, { state, random, rollOne });
+    }
+    return bonus;
 }
 //# sourceMappingURL=dothrow.js.map

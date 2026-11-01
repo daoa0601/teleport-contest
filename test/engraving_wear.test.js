@@ -14,7 +14,7 @@ import { canLetGo } from '../js/hero_inventory.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_REFLECTION, GOLD_PIECE, LOADSTONE, LONG_SWORD, ROCK, WAR_HAMMER } from '../js/object_data.js';
-import { setPrimaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
 import { kickDirection, throwInventoryObject } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';

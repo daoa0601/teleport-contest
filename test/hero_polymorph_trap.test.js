@@ -15,7 +15,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 for (const protection of ['antimagic', 'unchanging']) {
     void test(`${protection} leaves a revealed polymorph trap in place`, async () => {

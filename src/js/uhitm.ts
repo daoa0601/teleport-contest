@@ -22,7 +22,7 @@
 
 import { armorSimpleName, heroHasDrainResistance, heroHasFreeAction } from './armor.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute,
 } from './attrib.js';
@@ -146,7 +146,7 @@ import {
     applyHeroWereChange, revertHeroWereForm, setHeroLycanthropy, isHumanWereMonster, isWereMonster, wereChange,
 } from './were.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 import { isBluntWeapon, isFlimsyObject, isPermanentlyPoisonedObject, isWeaponTool } from './object_properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { dismountHero } from './steed.js';
@@ -174,6 +174,26 @@ import type { GameObject } from './object_types.js';
 import type { MonsterAttack } from './data_types.js';
 import type { ErosionKind } from './object_erosion.js';
 import type { HeroPoisonOptions } from './poison.js';
+import { artifactDamageBonus, artifactEmitsLight, artifactStrikesShade } from './artifacts.js';
+import { P_AXE, W_ARMG, WT_IRON_BALL_INCR } from './const.js';
+import {
+    CREAM_PIE,
+    GAUNTLETS_OF_POWER,
+    HEAVY_IRON_BALL,
+    OBJECT_LARGE_DAMAGE,
+    OBJECT_SMALL_DAMAGE,
+    OBJECT_SUBTYPE,
+    OBJECT_WEIGHT,
+} from './object_data.js';
+import {
+    monsterHatesBlessings,
+    monsterHatesLight,
+    monsterHatesSilver,
+    monsterIsWooden,
+    monsterSpeciesHatesSilver,
+} from './monster_data.js';
+import { objectClassForType } from './object_knowledge.js';
+import type { ArtifactDefender } from './artifacts.js';
 
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster: Pick<Monster, 'mnum'>): boolean {
@@ -3246,4 +3266,10 @@ export async function petrifyMonsterDefender(monster: Monster, {
     if (visible) await publish(`${monsterSubject(monster)} turns to stone!`);
     const result = await finishMonsterPetrification(monster, { ...options, publish });
     return { ...result, stopped: true, damage: 0 };
+}
+
+// C uhitm.c:mhitm_ad_phys(). Carrying these gloves is not enough.
+export function monsterWeaponStrengthBonus(monster: Pick<Monster, 'minvent'>, random = rn2): number {
+    const gloves = (monster.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
+    return gloves?.otyp === GAUNTLETS_OF_POWER ? 3 + random(4) : 0;
 }

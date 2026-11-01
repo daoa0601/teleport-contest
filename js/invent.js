@@ -29,7 +29,8 @@ import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNa
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
-import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isBlade } from './object_properties.js';
+import { isTwoWeaponObject } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
@@ -47,7 +48,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';

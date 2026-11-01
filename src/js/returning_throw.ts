@@ -20,7 +20,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
 import { addInventoryItemBefore } from './u_init.js';
 import { cansee } from './vision.js';
-import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './wield.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';

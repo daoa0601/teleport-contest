@@ -15,7 +15,7 @@ import type {
 } from './map_types.js';
 import { isRoom } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies } from './makemon.js';

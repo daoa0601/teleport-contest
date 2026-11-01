@@ -27,13 +27,16 @@ import { rejoinObjectStack } from './object_stack.js';
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { skillName } from './skills.js';
-import { weaponDescription } from './weapon_description.js';
+import { weaponDescription } from './weapon.js';
+import {
+    setPrimaryWeapon,
+    setQuiverObject,
+    setSecondaryWeapon,
+    setTwoWeaponCombat,
+} from './wield.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { ceilingName } from './terrain_name.js';
 import { addInventoryItemBefore } from './u_init.js';
-import {
-    setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat,
-} from './weapon_slots.js';
 import {
     isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo,
 } from './object_properties.js';

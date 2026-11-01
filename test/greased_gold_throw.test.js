@@ -4,7 +4,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { fireQuiveredGold } from './support/gold-arena.js';

@@ -12,7 +12,7 @@ import {
 } from '../js/object_data.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';

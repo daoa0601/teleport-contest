@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
-import { setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { startLuaCore } from './support/lua-game.js';

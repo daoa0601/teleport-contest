@@ -39,7 +39,7 @@ import { flashBurn } from './sight_change.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { heroControlsTeleport, teleportHero } from './teleport.js';
 import { burnHeroArmorByFire } from './trap.js';
-import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
+import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
 import { learnWand } from './zap.js';

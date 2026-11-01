@@ -6,7 +6,7 @@ import { I_SPECIAL, W_BALL, W_CHAIN } from './const.js';
 import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import { syncBlindness } from './senses.js';
-import { losePrimaryWeapon, releaseWeaponSlots } from './weapon_slots.js';
+import { losePrimaryWeapon, releaseWeaponSlots } from './wield.js';
 import { unpunishHero } from './punishment.js';
 export async function removeHeroEquipment(object, state = game, { deferArmorClass = false, } = {}) {
     const armorSlot = armorSlotFor(object.otyp);

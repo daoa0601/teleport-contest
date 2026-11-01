@@ -8,7 +8,7 @@ import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, TIMEOUT } from '../js/const.
 import { BLINDFOLD, SCR_IDENTIFY } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';

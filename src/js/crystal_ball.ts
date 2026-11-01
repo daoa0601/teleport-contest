@@ -37,7 +37,7 @@ import { CRYSTAL_BALL } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
-import { detectTraps } from './trap_detection.js';
+import { detectTraps } from './detect.js';
 import { ynSingleKey } from './tty_prompts.js';
 
 const ROCK_CLASS = 14;

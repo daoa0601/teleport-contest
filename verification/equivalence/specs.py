@@ -116,7 +116,7 @@ RNG = 'js/rng.js'
 HACKLIB = 'js/hacklib.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c')
-JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon_damage.js',
+JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
             'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js')
 
 SPECS = [
@@ -184,7 +184,7 @@ NO_GAUNTLETS = [('uarmg', ('game.uarmg', 'game.u.uarmg'))]
 ATTRIB = 'js/attrib.js'
 EXPER = 'js/exper.js'
 CONST = 'js/const.js'
-WEAPON_DAMAGE = 'js/weapon_damage.js'
+WEAPON_DAMAGE = 'js/weapon.js'
 HIT_BONUS = 'js/hero_attack_accuracy.js'
 POLYSELF = 'js/polyself.js'
 

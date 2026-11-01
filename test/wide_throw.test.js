@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE, KATANA, POT_HEALING, SHORT_SWORD, YUMI, YA, } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

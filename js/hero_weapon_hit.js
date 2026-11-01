@@ -8,7 +8,7 @@ import { rnd, rn2 } from './rng.js';
 import { monsterSpeciesSticks } from './monster_data.js';
 import { showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { isWeaponTool } from './object_properties.js';
-import { isAxe, isBlade } from './weapon_type.js';
+import { isAxe, isBlade } from './object_properties.js';
 import { cutWorm } from './worm.js';
 export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit, threshold, armorPenalty, dieRoll, twoHits, confirmationOverridden = false }) {
     requirePlayingGame(game);

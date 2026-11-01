@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

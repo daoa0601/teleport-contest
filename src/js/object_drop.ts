@@ -14,7 +14,7 @@ import type { MessagePublisher } from './pline.js';
 import { newsym, map_object } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';

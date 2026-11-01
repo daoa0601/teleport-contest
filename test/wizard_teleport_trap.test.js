@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { BEAR_TRAP, LEVEL_TELEP, NO_MINVENT, TELEP_TRAP } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterKnowsTrap, monsterLearnsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap, monsterLearnsTrap } from '../js/mondata.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

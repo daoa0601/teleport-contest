@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { CHEST, DART } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';

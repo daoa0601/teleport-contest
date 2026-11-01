@@ -5,6 +5,9 @@ import { game } from './gstate.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_PROPERTY } from './object_data.js';
 import { naturalMonsterSpeed } from './mon.js';
+import { artifactById } from './artifacts.js';
+import { see_monsters } from './display.js';
+import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, } from './properties.js';
 // C worn.c:mon_set_minvis(). The map refresh and worm-tail reveal that the
 // native function performs when visibility flips stay with its callers.
 export function setMonsterPermanentInvisibility(monster, permanent = true) {
@@ -64,5 +67,17 @@ export function monsterSpeedMessage(change, subject, state = game) {
     if (change.amount > 0 || change.speed === MFAST)
         return `${subject} is suddenly moving ${much}faster.`;
     return `${subject} seems to be moving ${much}slower.`;
+}
+// worn.c counts all ordinary worn TELEPAT objects, plus one source for
+// every carried ESP artifact together, regardless of their number.
+// C worn.c:recalc_telepat_range().
+export function recalculateTelepathyRange(state) {
+    const worn = [state.uarm, state.uarmc, state.uarmh, state.uarms,
+        state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,
+        state.uright, state.ublindf, state.uwep, state.uswapwep, state.uquiver];
+    const ordinary = worn.filter(object => object && object.owornmask
+        && OBJECT_PROPERTY[object.otyp] === 'telepathy').length;
+    const sources = ordinary + Number(hasCarriedProperty('telepathy', null, state));
+    state.u.unblind_telepat_range = sources ? 64 * sources : -1;
 }
 //# sourceMappingURL=worn.js.map

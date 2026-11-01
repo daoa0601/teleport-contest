@@ -10,7 +10,7 @@ import { ARROW, BOW, CLUB, CROSSBOW_BOLT, DAGGER, DART, ELVEN_ARROW, GOLD_PIECE,
 import { initRng } from '../js/rng.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { ensureQuestStatus } from '../js/quest.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';

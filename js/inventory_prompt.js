@@ -13,7 +13,7 @@ import { rn2 } from './rng.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, } from './const.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
 import { splitObjectStack } from './object_stack.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
 import { putMessageHistory } from './tty_topline.js';

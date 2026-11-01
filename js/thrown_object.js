@@ -24,7 +24,7 @@ import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
-import { isPick } from './weapon_type.js';
+import { isPick } from './object_properties.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';

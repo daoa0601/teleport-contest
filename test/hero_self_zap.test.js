@@ -18,7 +18,7 @@ import { grantIntrinsicProperty, hasIntrinsicProperty, propertyTimeout, setPrope
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { heroIsBlind } from '../js/senses.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject, unopenedCatBox } from './support/game-objects.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';

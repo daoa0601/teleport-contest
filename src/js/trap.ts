@@ -85,8 +85,7 @@ import {
 import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymorph_trap.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
 import { finishMonsterWebTrap } from './web_trap.js';
-import { trapName } from './trap_name.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import {
@@ -94,7 +93,6 @@ import {
     teleportMonsterToRandomLevel,
 } from './teleport.js';
 import { canFallThrough } from './mklev.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { monsterResistsSleep } from './mondata.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
@@ -116,6 +114,28 @@ import { unwieldMonsterWeapon } from './weapon.js';
 import { useMonsterStoningCure } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct } from './end.js';
+import { requirePlayingGame } from './gstate.js';
+import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
+import { clearPitConnections } from './pit_connections.js';
+import { TRAPNUM, TRAP_EXPLANATIONS, Upolyd } from './const.js';
+import { experienceRankIndex } from './exper.js';
+import { rn2Display } from './rng.js';
+import { mksobj } from './mkobj.js';
+import { objectWeight } from './weight.js';
+import { buryObject } from './buried_object.js';
+import { placeObject, stack_object } from './floor_object.js';
+import { requireLiveGame } from './gstate.js';
+import { monsterAtPosition } from './steed.js';
+import { DART } from './object_data.js';
+import { sellHeroDroppedObject } from './shk.js';
+import { resetHeroTrap } from './terrain_movement.js';
+import { TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
+import { triggerHeroTrap } from './hero_traps.js';
+import { gotoLevel } from './level_change.js';
+import { monsterName } from './do_name.js';
+import { rewardMonsterRescue } from './untrap.js';
+import { vision_recalc } from './vision.js';
+import { wakeMonster } from './mon.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
@@ -1540,7 +1560,6 @@ export async function finishDeferredMonsterTrap(
     return 'finished';
 }
 
-
 // ── C trap.c:mselftouch() and minstapetrify(). Falling can force
 // contact even through gloves; newcham() only calls mselftouch()
 // after the new body has lost its gloves.
@@ -1859,4 +1878,289 @@ export async function tryMonsterTrapEscape(monster: Monster, state: GameState = 
             monster.meating = 5;
         }
     }
+}
+
+// C trap.c:deltrap()/maybe_finish_sokoban(). Callers own actor release,
+// terrain changes, and redraw; raw deletion only removes the trap itself.
+
+export function deleteTrap(trap: Trap, state: GameState = game): void {
+    const level = requireGameLevel(state);
+    clearPitConnections(trap, state);
+    const index = level.traps.indexOf(trap);
+    if (index < 0) throw new Error('deleteTrap: trap is not on the level');
+    level.traps.splice(index, 1);
+    if (trap.ttyp === PIT || trap.ttyp === HOLE) finishSokobanIfSolved(state);
+}
+
+export function finishSokobanIfSolved(state: GameState = game): void {
+    const level = requireGameLevel(state);
+    if (!level.flags.sokoban_rules || state.in_mklev) return;
+    if (level.traps.some(trap => !trap.madeby_u
+        && (trap.ttyp === PIT || trap.ttyp === HOLE))) return;
+
+    level.flags.sokoban_rules = false;
+    requirePlayingGame(state);
+    const dungeon = state.dungeons[state.u.uz.dnum];
+    if (!dungeon) throw new Error('A solved Sokoban level requires its dungeon.');
+    const number = dungeon.entry_lev - state.u.uz.dlevel + 1;
+    recordGameLogEvent(`completed ${number}${ordinalSuffix(number)} Sokoban level`, {
+        state,
+        flags: LL_MINORAC | LL_DUMP,
+    });
+}
+
+// C hacklib.c:ordin().
+function ordinalSuffix(number: number): string {
+    const digit = number % 10;
+    if (digit === 0 || digit > 3 || Math.trunc((number % 100) / 10) === 1) return 'th';
+    return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
+}
+
+// C trap.c:trapname(). Cosmetic trap choices use the display RNG.
+
+const HALLUCINATED_TRAPS = [
+    "bottomless pit",
+    "polymorphism trap",
+    "devil teleporter",
+    "falling boulder trap",
+    "anti-anti-magic field",
+    "weeping gas trap",
+    "queasy board",
+    "electrified web",
+    "owlbear trap",
+    "sand mine",
+    "vacillating triangle",
+    "death trap",
+    "disintegration trap",
+    "ice trap",
+    "monochrome trap",
+    "axeblade trap",
+    "pool of boiling oil",
+    "pool of quicksand",
+    "field of caltrops",
+    "buzzsaw trap",
+    "spiked floor",
+    "revolving wall",
+    "uneven floor",
+    "finger trap",
+    "jack-in-a-box",
+    "yellow snow",
+    "booby trap",
+    "rat trap",
+    "poisoned nail",
+    "snare",
+    "whirlpool",
+    "trip wire",
+    "roach motel (tm)",
+    "negative space",
+    "tensor field",
+    "singularity",
+    "imperial fleet",
+    "black hole",
+    "thermal detonator",
+    "event horizon",
+    "entoptic phenomenon",
+    "sweet-smelling gas vent",
+    "phone booth",
+    "exploding runes",
+    "never-ending elevator",
+    "slime pit",
+    "warp zone",
+    "illusory floor",
+    "pile of poo",
+    "honey trap",
+    "tourist trap",
+    "banana peel",
+    "garden rake",
+    "whoopie cushion",
+    "box and stick trap",
+    "fly trap",
+    "legal trap",
+    "pit of snakes",
+    "pollywog trap",
+    "slippery slope",
+    "thirst trap",
+    "suntrap"
+];
+
+export function trapName(type: number, { ignoreHallucination = false, state = game }: { ignoreHallucination?: boolean; state?: GameState } = {}): string {
+    if (heroIsHallucinating(state) && !ignoreHallucination) {
+        const total = TRAPNUM + HALLUCINATED_TRAPS.length;
+        const index = rn2Display(total + 1);
+        if (index === total) {
+            requirePlayingGame(state);
+            const female = Upolyd(state.u) ? state.u.mfemale : state.flags.female;
+            const names = rn2(3) ? state.urole.name
+                : state.urole.title[experienceRankIndex(state.u.ulevel)];
+            if (!names) throw new Error('The hero role has no title for the current rank.');
+            return `${(female && names.f ? names.f : names.m).slice(0, 27)} trap`.toLowerCase();
+        }
+        if (index >= TRAPNUM) {
+            const name = HALLUCINATED_TRAPS[index - TRAPNUM];
+            if (name === undefined) throw new RangeError(`Invalid hallucinated trap ${index}`);
+            return name;
+        }
+        if (index !== 0) type = index;
+    }
+    const name = TRAP_EXPLANATIONS[type];
+    if (name === undefined) throw new RangeError(`Invalid native trap type ${type}`);
+    return name;
+}
+
+// Arrows and darts created by floor traps.
+// C ref: trap.c t_missile().
+
+// C trap.c:t_missile().
+export async function makeTrapMissile(objectType: number, trap: Pick<Trap, 'tx' | 'ty'>): Promise<GameObject> {
+    const missile = await mksobj(objectType, true, false);
+    missile.quan = missile.quantity = 1;
+    missile.owt = objectWeight(missile);
+    missile.opoisoned = 0;
+    missile.ox = trap.tx;
+    missile.oy = trap.ty;
+    return missile;
+}
+
+// C trap.c:cnv_trap_obj(). Convert a set trap before releasing its occupants.
+
+export async function convertTrapToObject(
+    trap: Trap, objectType: number, count: number, state: GameState = game, { bury = false } = {},
+): Promise<GameObject> {
+    requireLiveGame(state);
+    const object = await mksobj(objectType, true, false);
+    object.quan = object.quantity = count;
+    object.owt = objectWeight(object);
+    if (objectType !== DART) object.opoisoned = 0;
+    await placeObject(object, trap.tx, trap.ty, state);
+    if (bury) {
+        await buryObject(object, state);
+    } else {
+        if (trap.madeby_u) await sellHeroDroppedObject(object, trap.tx, trap.ty, state);
+        await stack_object(object, state);
+    }
+    await newsym(trap.tx, trap.ty);
+    if (state.u.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
+        await resetHeroTrap(true, state);
+        if (state.program_state.gameover) return object;
+    }
+    const monster = monsterAtPosition(requireGameLevel(state), trap.tx, trap.ty);
+    if (monster?.mtrapped) monster.mtrapped = 0;
+    deleteTrap(trap, state);
+    return object;
+}
+
+export interface TrapMagicResult { changed: boolean; noticed: boolean; heroDied: boolean; }
+type TrapTarget = Hero | Monster;
+// Magic releases and activates traps without removing them.
+// C trap.c:openholdingtrap(), closeholdingtrap(), openfallingtrap().
+
+function targetTrap(target: TrapTarget, state: PlayingGameState) {
+    const hero = target === state.u || target === state.u.usteed;
+    if (!hero && !('mnum' in target)) throw new TypeError('Trap magic requires the live hero or a monster.');
+    const x = 'mnum' in target && !hero ? target.mx : state.u.ux;
+    const y = 'mnum' in target && !hero ? target.my : state.u.uy;
+    return { hero, trap: state.level.traps.find(t => t.tx === x && t.ty === y) };
+}
+function result(changed: boolean, noticed: boolean, state: GameState): TrapMagicResult {
+    return { changed, noticed, heroDied: !!state.program_state.gameover };
+}
+
+export async function openHoldingTrap(target: TrapTarget | null | undefined, { state = game }: { state?: GameState } = {}): Promise<TrapMagicResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (!target) return result(false, false, state);
+    const { hero, trap } = targetTrap(target, state);
+    let description;
+    let owner;
+    if (hero && state.u.utrap) {
+        description = new Map([
+            [TT_LAVA, 'molten lava'], [TT_INFLOOR, 'ground'],
+            [TT_BURIEDBALL, 'your anchor'], [TT_BEARTRAP, 'bear trap'],
+            [TT_PIT, 'pit'], [TT_WEB, 'web'],
+        ]).get(state.u.utraptype ?? 0) || 'trap';
+        owner = state.u.utraptype === TT_BURIEDBALL ? ''
+            : trap?.tseen && trap.madeby_u ? 'your ' : 'the ';
+    } else {
+        if (!trap || ![BEAR_TRAP, WEB].includes(trap.ttyp))
+            return result(false, false, state);
+        description = trapName(trap.ttyp, { state });
+        owner = trap.tseen ? trap.madeby_u ? 'your ' : 'the '
+            : /^[aeiou]/i.test(description) ? 'an ' : 'a ';
+    }
+    if (hero) {
+        if (!state.u.utrap) return result(false, false, state);
+        const steed = state.u.usteed;
+        const subject = !steed ? 'You are'
+            : state.u.utraptype === TT_BURIEDBALL
+                ? `You and ${monsterName(steed, { article: 'your', state })} are`
+                : `${monsterName(steed, { capitalized: true, suppressIt: true, state })} is`;
+        // Native prints before reset_utrap(), which can announce levitation.
+        await plineWithContinuation(`${subject} released from ${owner}${description}.`);
+        state.vision_full_recalc = 1;
+        await resetHeroTrap(true, state);
+        if (state.vision_full_recalc) await vision_recalc(0);
+        return result(true, true, state);
+    }
+    if (!('mnum' in target) || !trap) throw new Error('Monster trap release requires a trapped monster.');
+    if (!target.mtrapped) return result(false, false, state);
+    target.mtrapped = 0;
+    let noticed = false;
+    if (canSpotMonster(target)) {
+        noticed = true;
+        await plineWithContinuation(`${monsterName(target, { capitalized: true, state })} is released from ${owner}${description}.`);
+    } else if (trap.tseen && cansee(trap.tx, trap.ty)) {
+        noticed = true;
+        const text = trap.ttyp === WEB ? `Something is released from ${owner}${description}.`
+            : `${owner.charAt(0).toUpperCase()}${owner.slice(1)}${description} opens.`;
+        await plineWithContinuation(text);
+    }
+    if (rn2(2) && Math.max(Math.abs(target.mx - state.u.ux),
+        Math.abs(target.my - state.u.uy)) <= 1)
+        await rewardMonsterRescue(trap, target, { state });
+    return result(true, noticed, state);
+}
+
+export async function closeHoldingTrap(target: TrapTarget | null | undefined, { state = game }: { state?: GameState } = {}): Promise<TrapMagicResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (!target) return result(false, false, state);
+    const { hero, trap } = targetTrap(target, state);
+    if (!trap || ![BEAR_TRAP, WEB].includes(trap.ttyp))
+        return result(false, false, state);
+    return activateTrap(target, hero, trap, state, false);
+}
+
+export async function openFallingTrap(target: TrapTarget | null | undefined, {
+    trapdoorOnly = false, state = game,
+}: { trapdoorOnly?: boolean; state?: GameState } = {}): Promise<TrapMagicResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (!target) return result(false, false, state);
+    const { hero, trap } = targetTrap(target, state);
+    if (!trap || (![TRAPDOOR, ROCKTRAP].includes(trap.ttyp)
+        && (trapdoorOnly || (trap.ttyp !== HOLE && !is_pit(trap.ttyp)))))
+        return result(false, false, state);
+    return activateTrap(target, hero, trap, state, true);
+}
+
+async function activateTrap(target: TrapTarget, hero: boolean, trap: Trap, state: PlayingGameState, falling: boolean): Promise<TrapMagicResult> {
+    if (hero) {
+        if (state.u.utrap) return result(false, false, state);
+        await triggerHeroTrap(trap, {
+            forceTrap: true, noWebMessage: !falling && !!state.u.usteed, gotoLevel,
+        });
+        return result(!!state.u.utrap, true, state);
+    }
+    if (!('mnum' in target)) throw new Error('Monster trap activation requires a monster.');
+    if (target.mtrapped) return result(false, false, state);
+    const noticed = cansee(trap.tx, trap.ty) || canSpotMonster(target);
+    if (falling && (await wakeMonster(target, { attacked: true })).heroDied)
+        return result(false, noticed, state);
+    const action = await triggerImmediateMonsterTrap(target, state, { force: true });
+    await finishImmediateMonsterTrap(action, state);
+    // Native mintrap's nonzero results are caught, dead, or moved.
+    const changed = !!target.mtrapped || (target.mhp ?? 1) <= 0
+        || action.movement.actorLeftLevel || action.movement.actorDied
+        || action.movement.moved;
+    return result(!!changed, noticed, state);
 }

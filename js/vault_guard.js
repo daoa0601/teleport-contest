@@ -7,7 +7,7 @@ import { deleteEngravingAt } from './engrave.js';
 import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { cansee, couldsee, unset_seenv, vision_note_blocker_change } from './vision.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { sendMonsterToLimbo } from './mon.js';

@@ -3,7 +3,7 @@ import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import {
     DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok,
 } from './const.js';
@@ -65,8 +65,8 @@ import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { rangedTargetHitBonus } from './weapon_accuracy.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 
 export interface ScatterOptions {
     state?: GameState;

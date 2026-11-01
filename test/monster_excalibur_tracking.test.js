@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { setTrack } from '../js/track.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { vision_recalc } from '../js/vision.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

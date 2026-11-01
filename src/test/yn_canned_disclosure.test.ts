@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { moveloop_core } from '../js/allmain.js';
 import { FLINT, SLING } from '../js/object_data.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 import { SICK_NONVOMITABLE } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';

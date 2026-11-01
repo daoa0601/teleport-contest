@@ -16,7 +16,7 @@ It currently covers these six entry points:
 | `hack.c:inv_weight` | `weight.js:invWeight` |
 | `hack.c:calc_capacity` | `weight.js:calcCapacity` |
 | `hack.c:near_capacity` | `weight.js:nearCapacity` |
-| `weapon.c:dmgval` | `weapon_damage.js:rollPhysicalWeaponDamage` |
+| `weapon.c:dmgval` | `weapon.js:rollPhysicalWeaponDamage` |
 | `uhitm.c:find_roll_to_hit` | `hero_attack_accuracy.js:findHeroMeleeHitThreshold` |
 
 Run from the worktree root (tested on macOS; requires clang, make, Node and uv):

@@ -13,7 +13,7 @@ import { LARGE_BOX, PICK_AXE, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { repairShopDamage } from '../js/shk.js';
 import { floatHeroUp } from '../js/terrain_movement.js';
-import { openHoldingTrap } from '../js/trap_magic.js';
+import { openHoldingTrap } from '../js/trap.js';
 import { untrap } from '../js/untrap.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

@@ -4,8 +4,8 @@
 apply.c	do_break_wand	self by breaking a wand	composed	src/js/apply.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
 apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
 apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
-artifact.c	artifact_hit	blade drains your	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
-artifact.c	artifact_hit	blade draws the	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+artifact.c	artifact_hit	blade drains your	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+artifact.c	artifact_hit	blade draws the	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 cfgfiles.c	config_erradd	config_error_add:	dead	The prefix needs !config_error_ready and !window_inited together. Recorder startup parses files and NETHACKOPTIONS inside config_error_init() frames; interactive option errors run after window initialization.
 cfgfiles.c	do_write_config_file	All manual customization and comments are removed from the file!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
 cfgfiles.c	do_write_config_file	An error occurred, wrote only partial data (	out-of-scope	Reports a short fwrite() when overwriting the host configuration file; native filesystem partial writes are outside the browser runtime, and recorded games also reject #saveoptions as NOFUZZERCMD.
@@ -548,8 +548,8 @@ vision.c	left_side	row_min != NULL	diagnostic	NHASSERT assertion condition text;
 vision.c	right_side	row_max != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 vision.c	right_side	row_min != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 weapon.c	weapon_hit_bonus	weapon_hit_bonus: bad skill	diagnostic	impossible() format for an out-of-range skill; developer diagnostic.
-wield.c	ready_weapon	dominant left	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
-wield.c	ready_weapon	dominant right	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
+wield.c	ready_weapon	dominant left	composed	src/js/wield.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
+wield.c	ready_weapon	dominant right	composed	src/js/wield.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
 wintty.c	resize_tty	Press a key to continue:	out-of-scope	SIGWINCH terminal-resize continuation prompt; the grader's tty emulation receives no OS signals.
 wintty.c	tty_askname	Until next time then...	out-of-scope	bail() after quitting the SELECTSAVED restore menu; choosing a saved game to restore is save-file I/O the port performs through its storage backend.
 wintty.c	tty_curs	[corner window]	diagnostic	Window-type names for tty_curs()'s panic path; window-port panic.

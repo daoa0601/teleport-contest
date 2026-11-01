@@ -10,7 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { setWornArtifactProperties } from './artifacts.js';
 import {
     AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES,
@@ -26,7 +26,7 @@ import {
     hasIntrinsicProperty, propertyIsBlocked, propertyTimeout,
     refreshMovementProperties, removeWornProperty, setPropertyTimeout,
 } from './properties.js';
-import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
+import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
 import { heroFormFlags, heroHasNoLimbs, heroIsUnchanging } from './polyself.js';
 import { changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.js';

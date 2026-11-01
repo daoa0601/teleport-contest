@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { STATUE_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { monsterKnowsTrap } from '../js/trap_knowledge.js';
+import { monsterKnowsTrap } from '../js/mondata.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 void test('a monster learns a statue trap without activating or revealing it', async () => {
     const { monster, trap, level } = await freshMonsterTrapRoom(STATUE_TRAP);

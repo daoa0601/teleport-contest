@@ -8,7 +8,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { recalculateHeroPhysicalDamage } from '../js/hero_physical_damage.js';
 import { ARROW, BOW, DAGGER, OBJECT_NAMES, TWO_HANDED_SWORD } from '../js/object_data.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills, installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';

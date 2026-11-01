@@ -20,8 +20,7 @@ import { waterbodyName } from './terrain_name.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { waterDamageObject } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { trapName } from './trap_name.js';
+import { deleteTrap, trapName } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 import { startMeltIceTimer } from './zap.js';
 // Bear traps and mines are objects unless explicitly armed or followed by

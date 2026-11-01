@@ -2,7 +2,7 @@
 // C ref: trap.c:trapeffect_rocktrap().
 import { newsym } from './display.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, makeTrapMissile } from './trap.js';
 import { game, requireGameLevel } from './gstate.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
@@ -11,7 +11,6 @@ import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
-import { makeTrapMissile } from './trap_missile.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 const M1_UNSOLID = 0x00100000;
 const M1_WALLWALK = 0x00000008;

@@ -1,5 +1,5 @@
 // Falling and returning weapons have no attacker for artifact_hit().
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 export async function hitHeroWithFallingArtifact(object, baseDamage, options) {
     return applyArtifactHit(object, 'hero', baseDamage, options);
 }

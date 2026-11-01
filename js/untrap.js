@@ -1,16 +1,15 @@
-import { trapName } from './trap_name.js';
+import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { vision_note_blocker_change } from './vision.js';
 import { roomsAt } from './room.js';
 import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
-import { heroHasMagicKey } from './artifact.js';
+import { heroHasMagicKey } from './artifacts.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
@@ -23,7 +22,6 @@ import { abusePet } from './dog.js';
 import { addExperience, checkExperienceLevel, } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
-import { convertTrapToObject } from './trap_object.js';
 import { blocksDiagonalDoor, blocksMove, heroBadRock } from './hack.js';
 import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';
@@ -54,8 +52,8 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { resolveImmediatePetrification, touchPetrifies, } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
 import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight, } from './weight.js';
-import { isBlade } from './weapon_type.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isBlade } from './object_properties.js';
+import { isWeldedPrimary } from './wield.js';
 import { cansee } from './vision.js';
 import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';

@@ -3,7 +3,8 @@
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterEmitsLight } from './vision.js';
-import { weaponDescription } from './weapon_description.js';
+import { weaponDescription } from './weapon.js';
+import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './wield.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { verbForSubject, makePlural } from './object_grammar.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
@@ -51,7 +52,6 @@ import { changeHeroSex, heroFormSticks, heroHasNoHead, heroPolyGender, setHeroSp
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { loseHeroHp } from './hero_damage.js';
-import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './weapon_slots.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
 import { isBeingTakenOff } from './takeoff_state.js';

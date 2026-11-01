@@ -1,4 +1,4 @@
-import { trapName } from './trap_name.js';
+import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
 // Downward digging: viability checks and the terrain a finished dig creates.
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
@@ -7,7 +7,6 @@ import { trapName } from './trap_name.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -50,7 +49,6 @@ export interface DigHoleOptions {
 }
 interface DiggingOptions { state?: GameState }
 
-import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
 import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';
@@ -94,7 +92,7 @@ import { surfaceName } from './terrain_name.js';
 import { feelTrap, finishImmediateMonsterTrap, seeTrap, triggerImmediateMonsterTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
-import { isAxe } from './weapon_type.js';
+import { isAxe } from './object_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';

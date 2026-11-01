@@ -26,7 +26,7 @@ import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { getObjectLocation } from '../js/object_location.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { beginObjectBurn } from '../js/light.js';
 import { objectTimers } from '../js/object_timers.js';

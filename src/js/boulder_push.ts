@@ -46,7 +46,7 @@ import { addShopObjectToBill, billForObject, costlySpot, removeObjectAndContents
 import { reviveNastyAt } from './revive_nasty.js';
 import { surfaceName } from './terrain_name.js';
 import { feelTrap, seeTrap } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { cansee } from './vision.js';
 import { invWeight } from './weight.js';
 
@@ -357,5 +357,4 @@ async function moveBoulder(boulder: GameObject, sx: number, sy: number, rx: numb
             await stolenValue(boulder, sx, sy, true, { silent: false });
     }
 }
-
 

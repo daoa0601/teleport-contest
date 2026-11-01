@@ -28,7 +28,7 @@ import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelRegions } from './regions.js';
 import { fixShopDamage } from './shk.js';
 import { restoreEngravings, sanitizeEngravings } from './engrave.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
 import { restoreMonsterInventoryOwnership } from './mkobj.js';

@@ -20,7 +20,7 @@ import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject, knownObject, } from './support/game-objects.js';
 import { installHeroWeaponSkills, installHumanWerewolfHero, installPolymorphedHero, wearPolymorphControlRing, } from './support/hero-state.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addTrap, floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR, ICE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL } from '../js/const.js';
 import { displayLiquidName } from '../js/display.js';
 import { initRng } from '../js/rng.js';
-import { trapName } from '../js/trap_name.js';
+import { trapName } from '../js/trap.js';
 import { withIndefiniteArticle } from '../js/object_grammar.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

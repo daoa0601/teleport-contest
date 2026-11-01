@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, LONG_SWORD, SHORT_SWORD } from '../js/object_data.js';
 import { P_BASIC, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TERMINAL_COLS } from '../js/const.js';
 import { ensureHeroSkills } from '../js/skills.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { runExtendedCommand } from './support/commands.js';

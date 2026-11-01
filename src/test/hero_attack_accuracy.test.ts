@@ -14,7 +14,7 @@ import {
 import { AD_PHYS, AD_SEDU, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
 import { DAGGER, GOLD_PIECE, LEATHER_ARMOR } from '../js/object_data.js';
 import { races } from '../js/roles.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills, installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';

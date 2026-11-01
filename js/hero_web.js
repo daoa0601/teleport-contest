@@ -2,7 +2,7 @@
 // C refs: cmd.c domonability(), polyself.c dospinweb().
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { feelTrap } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { exerciseAttribute } from './attrib.js';
 import { ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, IS_AIR, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from './const.js';
 import { newsym } from './display.js';

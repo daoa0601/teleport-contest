@@ -6,7 +6,7 @@ import { plineWithContinuation } from './pline.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { game, requireLiveGame } from './gstate.js';
-import { artifactWarningFeedback, wieldedArtifactWarns } from './artifact_warning.js';
+import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
 import { setBallAndChainFelt } from './ball.js';
 import { heroEyeCount, heroEyeName, heroHasEyes } from './body_parts.js';
 import { learnUnseenInventory } from './hero_inventory.js';

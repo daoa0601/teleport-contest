@@ -22,7 +22,7 @@ import { restoreMonsterInventoryOwnership } from './mkobj.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd, AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, ismnum, isok, } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { weaponNeedsBashingMessage } from './weapon_type.js';
+import { weaponNeedsBashingMessage } from './wield.js';
 import { GRAPPLING_HOOK, PICK_AXE, SLIME_MOLD } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';

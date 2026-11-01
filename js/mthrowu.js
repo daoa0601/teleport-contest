@@ -5,12 +5,17 @@
 // breamu(), blocking_terrain(), linedup() and m_lined_up().
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { applyArtifactHit } from './artifact_hit.js';
+import { applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { isPolearm, returningWeaponRangeSquared, willWeld, ammunitionMatchesLauncher, heroHasFreeHand, isAmmunition, monsterWeaponSwingVerb, } from './weapon_type.js';
+import { isPolearm, ammunitionMatchesLauncher, isAmmunition } from './object_properties.js';
+import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, } from './weapon.js';
+import { willWeld } from './wield.js';
+import { heroHasFreeHand } from './engrave.js';
+import { monsterWeaponSwingVerb } from './mhitu.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
 import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj } from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
@@ -70,8 +75,6 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { snuffThrownCandle } from './thrown_object.js';
-import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { plineWithContinuation } from './pline.js';
 import { requirePerceivedHero } from './monmove.js';
 import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';

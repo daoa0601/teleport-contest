@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { curseObject } from '../js/object_state.js';
 import { TWO_HANDED_SWORD } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

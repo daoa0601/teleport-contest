@@ -3,7 +3,7 @@
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
 
 import { monsterHasMapPosition } from './steed.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap, trapName } from './trap.js';
 import {
     RLOC_NOMSG,
     A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED,
@@ -24,7 +24,6 @@ import { displayMessageWindow } from './tty_topline.js';
 import { feel_location, flush_screen, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { monsterName } from './do_name.js';
-import { trapName } from './trap_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState, DiggingContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -57,10 +56,9 @@ import { inTown, roomsAt } from './room.js';
 import { rn2, rnd, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import {
-    heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero,
-} from './weapon_damage.js';
-import { isAxe, isPick, willWeld } from './weapon_type.js';
+import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { isAxe, isPick } from './object_properties.js';
+import { willWeld } from './wield.js';
 import { unblock_point, vision_note_blocker_change } from './vision.js';
 // Peer dig modules; see docs/porting-status.md handoff for the split.
 import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';
@@ -85,7 +83,6 @@ const DIG_TARGETS = ['', 'rock', 'statue', 'boulder', 'door', 'tree'] as const;
 export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
-
 
 function trapAt(x: number, y: number, state: GameState): Trap | null {
     return state.level?.traps?.find(candidate =>

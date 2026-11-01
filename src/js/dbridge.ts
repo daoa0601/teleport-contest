@@ -2,7 +2,7 @@
 // C ref: dbridge.c find_drawbridge(), open_drawbridge(), close_drawbridge().
 
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import {
     DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA,
     DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST,
@@ -41,7 +41,6 @@ export function drawbridgeWallPosition({ x, y, location }: DrawbridgeSquare): Po
     if (direction === DB_EAST) return { x: x + 1, y };
     return { x: x - 1, y };
 }
-
 
 export function drawbridgeWallAt(x: number, y: number, state = game): DrawbridgeSquare | null {
     const level = state.level;

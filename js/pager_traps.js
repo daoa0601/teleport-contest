@@ -5,7 +5,7 @@ import { pline } from './pline.js';
 import { game } from './gstate.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { detectedTrapDisguise } from './pager_features.js';
-import { trapName } from './trap_name.js';
+import { trapName } from './trap.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { commandResultCancelled } from './command_state.js';
 // C pager.c:doidtrap().

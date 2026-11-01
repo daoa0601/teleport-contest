@@ -6,7 +6,7 @@ import { holdAnotherObject } from '../js/hero_hold_object.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE, OIL_LAMP } from '../js/object_data.js';
 import { objectQuantity } from '../js/object_stack.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

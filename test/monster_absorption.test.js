@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { maybeAbsorbItem } from '../js/steal.js';
 import { BOULDER, DAGGER, TWO_HANDED_SWORD } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

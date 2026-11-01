@@ -6,7 +6,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { feelTrap } from './trap.js';
-import { deleteTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
