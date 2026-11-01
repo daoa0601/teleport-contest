@@ -125,6 +125,9 @@ function lootSubclass(object, oclass, seen, discovered) {
     }
     return 1;
 }
+// C invent.c:sortloot_cmp(). The sort keys are computed by the renamed
+// helpers below: inuse_classify() -> inUseRating, invletter_value() ->
+// inventoryLetterValue, loot_xname() -> normalizedLootName.
 function compareLoot(left, right, mode, state) {
     const a = left.object, b = right.object;
     if (mode & SORTLOOT_INUSE)

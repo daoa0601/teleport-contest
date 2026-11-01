@@ -2892,6 +2892,7 @@ export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, 
     await wakeMonstersNearWithMessages(monster.mx, monster.my, 49, state, publish);
     return { mask: monster.mhp > 0 ? M_ATTK_MISS : M_ATTK_AGR_DIED, heroDied: false };
 }
+// C mhitm.c:mswingsm() when a defender is given, mhitu.c:mswings() otherwise.
 export async function swingMonsterWeapon(monster, weapon, state = game, { defender = null, publish = plineWithContinuation, random = rn2, } = {}) {
     if (!state.flags.verbose || heroIsBlind(state)
         || !monsterVisible(monster, state))

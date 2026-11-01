@@ -35,6 +35,8 @@ export function heroBreathAttack(state = game, damageType = null) {
 export function heroAcidBreathAttack(state = game) {
     return heroBreathAttack(state, AD_ACID);
 }
+// C zap.c:zhitu(): the per-element ray switch for the hero; the damage
+// tail is applyRayDamage() with losehp().
 export async function hitHeroWithRay({ state = game, attack = heroBreathAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, die = finishHeroDeath, source = 'hero-breath', sourceMonster = null, name = null, nativeType = null, sourceObject = null, } = {}) {
     if (!attack)
         return { hit: false, damage: 0, heroDied: false };

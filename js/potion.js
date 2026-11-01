@@ -1984,6 +1984,8 @@ async function poof(potion) {
         await tryCallObjectType(potion);
     await consumeInventoryItem(potion);
 }
+// C potion.c:dip_potion_explosion(): a cursed/acid/burning-oil mixture, or
+// a 1-in-10 (1-in-30 over an alchemy smock) roll, explodes.
 async function mixtureExplodes(object, damage) {
     if (!(object.cursed || object.otyp === POT_ACID || object.otyp === POT_OIL && object.lamplit
         || !rn2(game.uarmc?.otyp === ALCHEMY_SMOCK ? 30 : 10)))

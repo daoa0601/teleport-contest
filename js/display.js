@@ -40,6 +40,7 @@ const HALLUCINATED_LIQUIDS = [
     'grey goo', 'pink slime', 'cosmic latte', 'bone oil', 'custard', 'lard',
     'vinegar', 'creosote',
 ];
+// C do_name.c:hliquid(): the hallucinated liquid name.
 export function displayLiquidName(fallback, state = game) {
     if ((!heroIsHallucinating(state) || state.program_state.gameover) && fallback)
         return fallback;

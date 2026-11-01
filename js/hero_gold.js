@@ -47,6 +47,8 @@ function normalizeGoldObject(object, amount = quantity(object)) {
 export function heroGoldObject(state) {
     return (state?.inventory || []).find(object => object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
+// C hack.c:money_cnt() over the hero's inventory: zero gold pieces
+// rather than a missing stack.
 export function heroGoldAmount(state) {
     const object = heroGoldObject(state);
     return object ? quantity(object) : 0;

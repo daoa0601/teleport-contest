@@ -1705,6 +1705,10 @@ export async function publishMonsterWake(monster, interesting = false, state = g
     const alive = monster.mnum === PM_FLESH_GOLEM ? " It's alive!" : '';
     await publish(`${monsterName(monster, { capitalized: true, state })} wakes up${punctuation}${alive}`);
 }
+// C mon.c:wake_nearto_core() (wake_nearto() is this with petCall false):
+// the distance filter (monstersNear), the wake message, indeterminate-sleep
+// clearing, petcall whistles, and the closing disturb_buried_zombies() all
+// live here.
 export async function wakeMonstersNearWithMessages(x, y, distance, state = game, publish = plineWithContinuation, { petCall = false } = {}) {
     requireLiveGame(state);
     for (const monster of monstersNear(x, y, distance, state)) {

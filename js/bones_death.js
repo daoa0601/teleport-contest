@@ -59,6 +59,8 @@ export function monsterLikesObjects(monster) {
     return !!(flags & (M2_GREEDY | M2_JEWELS | M2_COLLECT | M2_MAGIC))
         || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
 }
+// C bones.c:give_to_nearby_mon(): reservoir sampling over the 3x3
+// neighborhood picks the taker.
 function nearbyMonsterForDeathDrop(x, y) {
     let selected = null;
     let candidateCount = 0;

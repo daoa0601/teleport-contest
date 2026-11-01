@@ -21,7 +21,8 @@ export async function putHeroToSleep(turns, { state = game, doneMessage = 'You w
     hero.usleep = state.moves || 1;
     return state._helplessTurns;
 }
-// C youprop.h:Unaware, using the current involuntary-delay representation.
+// C youprop.h:Unaware — gm.multi < 0 && (unconscious() || is_fainted()),
+// using the current involuntary-delay representation.
 export function heroIsUnaware(state = game) {
     return heroHasInvoluntaryDelay(state)
         && (heroIsUnconscious(state) || state.u?.uhs === FAINTED);

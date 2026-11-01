@@ -27,6 +27,9 @@ import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResis
 const M1_NOEYES = 0x00001000;
 const M1_SEE_INVIS = 0x01000000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
+// C mhitu.c:passiveum(): the old form's passive counterattack. assess_dmg()
+// is damageAttacker below; the AD_ENCH branch calls zap.c:drain_item() as
+// drainObjectEnchantment.
 export async function applyHeroFormPassive(monster, oldForm, attackType, { state = game, random = rn2, rollDice = d, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(state);
     const passive = (MONSTER_ATTACKS[oldForm] || []).find(([method]) => method === AT_NONE || method === AT_BOOM);

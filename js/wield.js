@@ -480,7 +480,8 @@ export async function explainTwoWeaponEnd(wasTwoWeapon, state = game) {
         ? 'You are no longer using two weapons at once.'
         : 'You can no longer wield two weapons at once.');
 }
-// C wield.c:ready_weapon(), cant_wield_corpse(), and empty_handed().
+// C wield.c:ready_weapon() and cant_wield_corpse(): the wield messages and
+// the bare-handed petrifying-corpse refusal live in readySelectedWeapon.
 // C wield.c:empty_handed().
 export function emptyHandedDescription(state = game) {
     if (state.uarmg || state.u.uarmg)
@@ -498,6 +499,8 @@ export async function readyHeroWeapon(weapon, state = game) {
         state.context.botl = true;
     return result;
 }
+// C wield.c:cant_wield_corpse(): a bare-handed petrifying-corpse wield
+// announces itself and petrifies instead of installing the weapon.
 async function readySelectedWeapon(weapon, state) {
     requirePlayingGame(state);
     const previous = state.uwep || state.u.uwep;

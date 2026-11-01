@@ -476,6 +476,7 @@ async function probeVertically(source, x, y, state) {
     if (!found)
         await plineWithContinuation('Your probe reveals nothing.');
 }
+// C invent.c:display_binventory(): objects beneath the probed surface.
 async function displayBuriedInventory(x, y, state) {
     const pile = state.level.objects[x]?.[y] || [];
     let underwhat = 'here', count = 0;
@@ -567,6 +568,7 @@ export async function zapMapAt(x, y, source, { state = game } = {}) {
     if (learned)
         learnWand(source, { state });
 }
+// C zap.c:maybe_explode_trap(): cancellation striking a magic trap.
 async function cancelMagicTrap(x, y, source, state) {
     if (![WAN_CANCELLATION, SPE_CANCELLATION].includes(source.otyp))
         return false;
@@ -1000,6 +1002,8 @@ async function evaporatePoolAt(x, y, state, publish, heroCaused) {
     }
     return rangeChange;
 }
+// C zap.c:zap_over_floor() for ray and wand spots; mcastu.c reaches it
+// through mon_spell_hits_spot() for monster fire and lightning spells.
 export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun = 'bolt', random = rn2, heroCaused = true, explodingWand = 0, heroBurnsObjects = heroCaused, publish = plineWithContinuation } = {}) {
     const location = state.level?.at(x, y);
     if (!location)

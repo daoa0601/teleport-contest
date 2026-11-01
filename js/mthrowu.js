@@ -75,7 +75,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { snuffThrownCandle } from './thrown_object.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { requirePerceivedHero } from './monmove.js';
 import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
 function isFiniteNumber(value) {
@@ -277,6 +277,9 @@ async function launchVolley(source, weapon, target, state, { random = rn2, rollO
         const targetName = target ? monsterName(target, {
             state, augmentIt: true, suppressSaddle: !!MGIVENNAME(target),
         }) : '';
+        // C monshoot() anchors the volley line at the shooter's square via
+        // set_msg_xy() so vpline()'s accessiblemsg prefix names it.
+        set_msg_xy(source.mx, source.my);
         await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${target ? ` at ${targetName}` : ''}!`);
     }
     const shots = [];

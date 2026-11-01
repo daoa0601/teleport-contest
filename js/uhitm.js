@@ -1524,6 +1524,8 @@ export async function poisonHeroFromMonster(monster, attackType, { attribute = A
         killer: monsterTypeName(monster.mnum, !!monster.female),
     });
 }
+// C uhitm.c:mhitm_really_poison(): the visible-attacker poison message, the
+// resistant-defender notice, and the deadly 6+rn2(10) damage live here.
 export async function poisonMonsterFromAttack(attacker, defender, attackType, damage, { visible, state = game, random = rn2, publish = plineWithContinuation, }) {
     const attackerSpotted = canSpotMonster(attacker);
     const defenderSpotted = canSpotMonster(defender);
