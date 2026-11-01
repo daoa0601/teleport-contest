@@ -394,7 +394,7 @@ import {
 import {
     poisonAttackAttribute,
     poisonHeroFromMonster,
-} from './monster_poison.js';
+} from './uhitm.js';
 import {
     finishEnvironmentalMonsterDeath,
     finishMonsterKilled,

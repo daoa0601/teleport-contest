@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroContactPassive } from '../js/monster_passive.js';
+import { applyHeroContactPassive } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 // potion.c split_mon(): a spotted monster announces its division, naming

@@ -56,8 +56,8 @@ import { finishInUseInventory } from './object_cleanup.js';
 import { askKeepRestoredSave } from './save.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
-import { touchHeroWithDeath } from './monster_death_touch.js';
-import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
+import { touchHeroWithDeath } from './mcastu.js';
+import { resolveMonsterWeaponContact } from './uhitm.js';
 import { applyArtifactHit } from './artifact_hit.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
@@ -297,7 +297,7 @@ import {
     hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive,
     propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout,
 } from './properties.js';
-import { resolveMonsterContactEffect } from './monster_contact_effects.js';
+import { resolveMonsterContactEffect } from './uhitm.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { nhTimeout } from './timeout.js';
 import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';

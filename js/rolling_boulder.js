@@ -24,7 +24,7 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
-import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';

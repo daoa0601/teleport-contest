@@ -5,7 +5,7 @@ import { M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG,
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { resolveMonsterBrainAttack } from '../js/monster_brain_attack.js';
+import { resolveMonsterBrainAttack } from '../js/uhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';

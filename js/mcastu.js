@@ -21,7 +21,10 @@ import { igniteItems } from './light.js';
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { flashBurn } from './sight_change.js';
 import { rndcurse } from './throne.js';
-import { touchHeroWithDeath } from './monster_death_touch.js';
+import { finishHeroDeath } from './end.js';
+import { KILLED_BY } from './const.js';
+import { returnHeroToHumanForm } from './polyself.js';
+import { loseHeroHp } from './hero_damage.js';
 import { plineWithContinuation } from './pline.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { d, rn2, rnd } from './rng.js';
@@ -876,5 +879,27 @@ export function resolveDeferredHeroGeyser(action, heroAttack) {
         ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredGeyserSpell = false;
+}
+// C mcastu.c:touch_of_death(). Entered from uhitm.c:mhitm_ad_deth()'s hero
+// branch and mcast_death_touch(); spellcasting gates its own immunity and
+// success before calling, Death's natural touch uses the same effect.
+export async function touchHeroWithDeath(monster, state, publish, rollDice = d) {
+    const damage = 50 + rollDice(8, 6);
+    const drain = Math.trunc(damage / 2);
+    await publish(formatFeltMessage('drained...', state));
+    const killer = monsterSpellDeathReason(monster, 'the touch of death');
+    const hero = state.u;
+    if (Upolyd(hero)) {
+        hero.mh = 0;
+        return (await returnHeroToHumanForm(state, { publish })).died;
+    }
+    if (drain >= hero.uhpmax)
+        return finishHeroDeath({ killer, killerFormat: KILLED_BY, deathLineShown: true });
+    const oldHp = hero.uhp;
+    hero.uhpmax = Math.max(hero.ulevel, 3, hero.uhpmax - drain);
+    hero.uhp = Math.min(hero.uhp, hero.uhpmax);
+    state.context.botl = true;
+    const remainingDamage = Math.max(1, damage - (oldHp - hero.uhp));
+    return loseHeroHp(remainingDamage, killer, { state, publish, killerFormat: KILLED_BY });
 }
 //# sourceMappingURL=mcastu.js.map

@@ -68,7 +68,7 @@ import {
 } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
-import { someGold } from './monster_gold_theft.js';
+import { someGold } from './steal.js';
 
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;

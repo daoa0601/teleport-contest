@@ -22,7 +22,7 @@ import { wakeAttackedMonster } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasHead, monsterIsMindless, monsterIsShade, monsterSpeciesHatesSilver, monsterSpeciesSticks, } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
-import { applyHeroContactPassive } from './monster_passive.js';
+import { applyHeroContactPassive } from './uhitm.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { isWeaponTool } from './object_properties.js';

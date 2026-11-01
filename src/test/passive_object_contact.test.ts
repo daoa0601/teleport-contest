@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { requireFixtureGame } from './support/game-state.js';
-import { applyHeroContactPassive } from '../js/monster_passive.js';
+import { applyHeroContactPassive } from '../js/uhitm.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { AT_CLAW } from '../js/monster_attack_types.js';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { applyMonsterPassiveToObject } from '../js/monster_passive.js';
+import { applyMonsterPassiveToObject } from '../js/uhitm.js';
 import { ARROW, CLUB, DAGGER, SHORT_SWORD } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

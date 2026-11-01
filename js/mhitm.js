@@ -3,30 +3,34 @@
 // fightm() applies to attacked monsters and dogmove.c grants to pet targets.
 import { setHeroGrip } from './hero_grip.js';
 import { d, rn2, rnd } from './rng.js';
-import { requireLiveGame } from './gstate.js';
-import { MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterIsShade, monsterIsUnsolid, } from './monster_data.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterTypeName, } from './monster_data.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName as canonicalMonsterName, possessiveName } from './monster_name.js';
+import { monsterName as canonicalMonsterName, possessiveName, monsterName, } from './monster_name.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { monsterWieldedWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon, } from './monster_weapon.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow, } from './mthrowu.js';
 import { resolveMonsterCombatGaze } from './monster_combat_gaze.js';
-import { resolveMonsterCombatExplosion } from './monster_combat_explosion.js';
 import { resolveMonsterCombatEngulf } from './monster_combat_engulf.js';
 import { resolveMonsterCombatDamage } from './monster_combat_damage.js';
 import { tryMonsterPuddingSplit } from './monster_pudding_split.js';
 import { applyMonsterContactPassive } from './monster_contact_passive.js';
-import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, showMonsterGrabFailure, } from './monster_combat_messages.js';
+import { canSeeMonsterCombat, prepareMonsterCombatContact, reportMonsterCombatNoise, revealMonsterCombatDefender, showMonsterCombatMiss, showMonsterGrabFailure, } from './monster_combat_messages.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { createElementalMonsterExplosion } from './explosion.js';
+import { cansee } from './vision.js';
+import { changeMonsterForm } from './monster_polymorph.js';
+import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
+import { healMonster, monstersInFmonOrder, resistConflict } from './mon.js';
 import { plineWithContinuation } from './pline.js';
-import { AD_DGST, AD_DRIN, AD_STCK, AD_WRAP, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_SPIT, AT_TENT, AT_WEAP, } from './monster_attack_types.js';
-import { M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NEED_HTH_WEAPON, NEED_WEAPON, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
+import { AD_COLD, AD_DGST, AD_DRIN, AD_ELEC, AD_FIRE, AD_STCK, AD_WRAP, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_SPIT, AT_TENT, AT_WEAP, } from './monster_attack_types.js';
+import { M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
 import { dist2, distmin } from './hacklib.js';
 import { DISCARDED_CALL_LOG, recordRandom, } from './monster_action_types.js';
-import { monstersInFmonOrder, resistConflict } from './mon.js';
 import { stopMonsterHeldByHero } from './monmove.js';
 import { trapAt } from './trap.js';
 const M2_ELF = 0x00000010;
@@ -384,5 +388,86 @@ export async function fightNearbyMonster(monster, state, random, rollDice, rollO
         return { attack, consumed: !swallowed && !!attack.struck };
     }
     return null;
+}
+export async function resolveMonsterCombatExplosion(attacker, defender, attack, { state = game, visible, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, resolveDamage = (source, target, selected) => resolveMonsterCombatDamage(source, target, selected, { state, visible, publish, random, rollDice, rollOne }), }) {
+    requirePlayingGame(state);
+    if (attacker.mcan)
+        return { mask: M_ATTK_MISS, heroDied: false, damage: 0 };
+    const [, damageType, dice, sides] = attack;
+    if (cansee(attacker.mx, attacker.my)) {
+        await publish(`${monsterName(attacker, { state, capitalized: true })} explodes!`);
+    }
+    else {
+        await reportMonsterCombatNoise(attacker, state, { explosion: true, publish });
+    }
+    if (damageType === AD_FIRE || damageType === AD_COLD || damageType === AD_ELEC) {
+        const damage = dice ? rollDice(dice, sides)
+            : sides ? rollDice((MONSTER_LEVEL[attacker.mnum] ?? 0) + 1, sides) : 0;
+        if (attacker.mhp > 0) {
+            const death = await finishEnvironmentalMonsterDeath(attacker, state, {
+                noCorpse: true, publish, random, rollDice,
+            });
+            if (death.heroDied)
+                return { mask: M_ATTK_AGR_DIED, heroDied: true, damage };
+        }
+        // Death recovery may change the source's form before the blast.
+        const killer = `${possessiveName(monsterTypeName(attacker.mnum, !!attacker.female))} explosion`;
+        const blast = await createElementalMonsterExplosion(attacker.mx, attacker.my, damageType, damage, killer, { state, publish, random });
+        // explmm keeps AGR_DIED even when life saving leaves the source alive.
+        const mask = M_ATTK_AGR_DIED | (defender.mhp <= 0 ? M_ATTK_DEF_DIED : 0);
+        if (blast.heroDied)
+            return { mask, heroDied: true, damage };
+        if (attacker.mtame)
+            await publish('You have a melancholy feeling for a moment, then it passes.');
+        return { mask, heroDied: false, damage };
+    }
+    const outcome = await resolveDamage(attacker, defender, attack);
+    let mask = outcome.nativeResult;
+    if (outcome.heroDied)
+        return { mask, heroDied: true, damage: outcome.damage };
+    if (!(mask & M_ATTK_AGR_DIED)) {
+        const wasLeashed = !!attacker.mleashed;
+        const death = await finishEnvironmentalMonsterDeath(attacker, state, {
+            noCorpse: true, publish, random, rollDice,
+        });
+        if (death.heroDied)
+            return { mask: mask | M_ATTK_AGR_DIED, heroDied: true, damage: outcome.damage };
+        if (death.survived)
+            return { mask, heroDied: false, damage: outcome.damage };
+        mask |= M_ATTK_AGR_DIED;
+        if (wasLeashed)
+            await publish('Your leash falls slack.');
+    }
+    if (attacker.mtame)
+        await publish('You have a melancholy feeling for a moment, then it passes.');
+    return { mask, heroDied: false, damage: outcome.damage };
+}
+const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
+const PM_NURSE = MONSTER_NAME.indexOf('nurse');
+// Called only after monkilled() confirms that the meal died. Wraith growth
+// replaces ordinary victim growth; every other meal permits it afterwards.
+export async function finishMonsterDigestion(attacker, { state, attackerSpecies, defenderSpecies, defenderShapechanger, publish = plineWithContinuation, growAttacker, }) {
+    requireLiveGame(state);
+    if (defenderShapechanger !== undefined && ismnum(defenderShapechanger)) {
+        const change = await changeMonsterForm(attacker, null, state, { showMessage: true, publish });
+        if (change?.heroDied)
+            return { growNormally: false, heroDied: true };
+    }
+    else if (defenderSpecies === PM_GREEN_SLIME
+        && !monsterIsSlimeproof({ mnum: attackerSpecies })) {
+        const change = await changeMonsterForm(attacker, PM_GREEN_SLIME, state, { showMessage: true, publish });
+        if (change?.heroDied)
+            return { growNormally: false, heroDied: true };
+    }
+    else if (defenderSpecies === PM_WRAITH) {
+        const growth = await growAttacker(null);
+        return { growNormally: false, heroDied: growth.heroDied };
+    }
+    else if (defenderSpecies === PM_NURSE) {
+        healMonster(attacker, attacker.mhpmax, 0);
+    }
+    await grantMonsterCorpseIntrinsic(attacker, defenderSpecies, state);
+    return { growNormally: true, heroDied: !!state.program_state.gameover };
 }
 //# sourceMappingURL=mhitm.js.map

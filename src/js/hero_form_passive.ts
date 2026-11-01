@@ -25,7 +25,7 @@ import {
 } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './monster_hurtle.js';
-import { passiveDamage } from './monster_passive.js';
+import { passiveDamage } from './uhitm.js';
 import {
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance,
     monsterHasShockResistance, monsterHasStoneResistance,

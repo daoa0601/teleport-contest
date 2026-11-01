@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { applyMonsterPassiveToObject } from '../js/monster_passive.js';
+import { applyMonsterPassiveToObject } from '../js/uhitm.js';
 import { LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 void test('a disenchanter describes a pair of gloves as one item when draining it', async () => {

@@ -8,7 +8,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { AD_BLND } from './monster_attack_types.js';
-import { applyMonsterCombatBlindness } from './monster_combat_status.js';
+import { applyMonsterCombatBlindness } from './uhitm.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterName, monsterPossessive, possessiveName } from './monster_name.js';

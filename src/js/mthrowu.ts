@@ -65,7 +65,7 @@ import {
     monsterName, monsterObjectPronoun, monsterPossessive, possessiveName,
 } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { applyMonsterPassiveToObject } from './uhitm.js';
 import { requirePerceivedHero, seenResistanceForDamage } from './monster_perception.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import {

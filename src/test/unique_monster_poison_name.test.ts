@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { AT_STNG } from '../js/monster_attack_types.js';
-import { poisonHeroFromMonster } from '../js/monster_poison.js';
+import { poisonHeroFromMonster } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

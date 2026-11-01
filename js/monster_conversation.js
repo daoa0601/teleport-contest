@@ -13,7 +13,7 @@ import { publishMonsterCuss } from './monster_cuss.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsPlayerMonster, monsterTypeName } from './monster_data.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
-import { resolveHeroSeduction } from './monster_seduction.js';
+import { resolveHeroSeduction } from './mhitu.js';
 import { sessionIsNight } from './monster_sound.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { novelTitle } from './novel_titles.js';
