@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { farlookLocationDescription } from '../js/pager_description.js';
+import { farlookLocationDescription } from '../js/pager.js';
 import { W_SADDLE } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

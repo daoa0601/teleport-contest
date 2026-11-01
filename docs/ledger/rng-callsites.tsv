@@ -1878,8 +1878,8 @@ src/js/ordinary_food_effects.ts	applyRottenFood	rnd	"[""10""]"	constant
 src/js/ordinary_food_effects.ts	ordinaryFoodFeedback	rnd	"[""100""]"	constant
 src/js/ordinary_food_effects.ts	tasteTripe	rn1	"[""requireFoodMeal(state).reqtime"", ""14""]"	unproved
 src/js/ordinary_food_effects.ts	tasteTripe	rn2	"[""2""]"	constant
-src/js/pager_features.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
-src/js/pager_features.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
+src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
+src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
 src/js/pick_axe.ts	applyPickAxeDirection	rnd	"[""2""]"	constant
 src/js/pick_axe.ts	attackWithTool	rn2	"[""6""]"	constant
 src/js/pick_axe.ts	attackWithTool	rn2	"[""7""]"	constant
@@ -2438,22 +2438,22 @@ src/js/whistle.ts	blowMagicWhistle	rn2	"[""2""]"	constant
 src/js/whistle.ts	blowMagicWhistle	rn2	"[""2""]"	constant
 src/js/whistle.ts	useWhistle	rn2	"[""49""]"	constant
 src/js/wish.ts	makeWish	rn2	"[""100""]"	constant
-src/js/wish_lookup.ts	parseWishRange	rn2	"[""9""]"	constant
-src/js/wish_lookup.ts	randomTypeByDescription	rn2	"[""total""]"	unproved
-src/js/wish_lookup.ts	randomWeaponBySkill	rn2	"[""matches.length""]"	guarded
-src/js/wish_parse.ts	parseWishNoun	rn2	"[""GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE""]"	constant
-src/js/wish_parse.ts	parseWishText	rn2	"[""3""]"	constant
-src/js/wish_parse.ts	parseWishText	rnd	"[""2""]"	constant
-src/js/wish_species.ts	applyWishSpecies	rn2	"[""5""]"	constant
-src/js/wish_species.ts	applyWishedTinVariety	rn2	"[""4""]"	constant
-src/js/wish_species.ts	wishedGender	rn2	"[""2""]"	constant
-src/js/wish_terrain.ts	tryWizardTerrainWish	rn2	"[""3""]"	constant
-src/js/wish_terrain.ts	tryWizardTerrainWish	rn2	"[""6""]"	constant
+src/js/objnam.ts	parseWishRange	rn2	"[""9""]"	constant
+src/js/objnam.ts	randomTypeByDescription	rn2	"[""total""]"	unproved
+src/js/objnam.ts	randomWeaponBySkill	rn2	"[""matches.length""]"	guarded
+src/js/objnam.ts	parseWishNoun	rn2	"[""GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE""]"	constant
+src/js/objnam.ts	parseWishText	rn2	"[""3""]"	constant
+src/js/objnam.ts	parseWishText	rnd	"[""2""]"	constant
+src/js/objnam.ts	applyWishSpecies	rn2	"[""5""]"	constant
+src/js/objnam.ts	applyWishedTinVariety	rn2	"[""4""]"	constant
+src/js/objnam.ts	wishedGender	rn2	"[""2""]"	constant
+src/js/objnam.ts	tryWizardTerrainWish	rn2	"[""3""]"	constant
+src/js/objnam.ts	tryWizardTerrainWish	rn2	"[""6""]"	constant
 src/js/wizard.ts	amuletTurn	rn2	"[""15""]"	constant
 src/js/wizard.ts	amuletTurn	rn2	"[""40""]"	constant
 src/js/wizard.ts	recallMigratingWizard	rn2	"[""elapsed + 1""]"	unproved
 src/js/wizard.ts	wizardDeadOrGone	random	"[""250""]"	constant
-src/js/wizard_intrinsics.ts	increaseIntrinsic	rn2	"[""2""]"	constant
+src/js/wizcmds.ts	increaseIntrinsic	rn2	"[""2""]"	constant
 src/js/write.ts	findWritingType	rn2	"[""++matches""]"	guarded
 src/js/write.ts	tryWritingNovel	rn2	"[""3""]"	constant
 src/js/write.ts	tryWritingNovel	rn2	"[""3""]"	constant

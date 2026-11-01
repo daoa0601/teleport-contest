@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { showTerrainCodes } from '../js/wizard_terrain.js';
+import { showTerrainCodes } from '../js/wizcmds.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 // C wizcmds.c:wiz_map_levltyp() prints the fountain and sink counts with

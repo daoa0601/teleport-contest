@@ -20,22 +20,15 @@ import { continuePicking } from './lock_pick.js';
 import { resetOccupations } from './occupation_reset.js';
 import { ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
 import { STAIRS, THRONE } from './const.js';
-import { wizIntrinsic } from './wizard_intrinsics.js';
-import { wizTimeoutQueue } from './timeout_queue.js';
-import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import {
-    wizDetect, wizGenesis, wizIdentify, wizKill, wizLevelChange, wizLevelTeleport,
-    wizMap, wizPolyself, wizShowNhuuid, wizTelekinesis, wizWhere, wizWish,
+    showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes,
+    wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill,
+    wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic,
+    wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish,
 } from './wizcmds.js';
-import { wizSmell } from './wizard_smell.js';
-import { showSeenVectors, showVisionFlags, showWallModes } from './wizard_map_inspection.js';
-import { wizRumorCheck } from './wizard_rumor_check.js';
-import { wizCustom } from './wizard_custom.js';
-import { wizBury } from './wizard_bury.js';
-import { wizMigrateMonsters } from './wizard_migration.js';
-import { wizFlipLevel } from './wizard_flip_level.js';
-import { wizMakeMap } from './wizard_makemap.js';
-import { wizardTeleportCommand } from './wizard_teleport.js';
+import { wizBury } from './dig.js';
+import { wizTimeoutQueue } from './timeout_queue.js';
+import { wizardTeleportCommand } from './teleport.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -55,9 +48,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { ESCAPED } from './const.js';
 import { VIBRATING_SQUARE } from './const.js';
 import { surfaceName } from './terrain_name.js';
-import { doFarlook, dohelp, dowhatis } from './pager.js';
-import { lookatDescription } from './pager_description.js';
-import { identifyTrap } from './pager_traps.js';
+import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription } from './pager.js';
 import { GETOBJ_SUGGEST } from './const.js';
 import { monsterName } from './do_name.js';
 import { attackHostileMonster } from './hero_melee.js';
@@ -131,7 +122,7 @@ import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening } from './tin.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
-import { displayHelpFile } from './pager_help.js';
+import { displayHelpFile } from './pager.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
 import {

@@ -14,7 +14,7 @@ import { randomMonsterRelocation } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
-import { farlookLocationDescription } from '../js/pager_description.js';
+import { farlookLocationDescription } from '../js/pager.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { Engine } from '../js/jsmain.js';

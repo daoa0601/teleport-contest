@@ -18,8 +18,7 @@ import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
-import { coordinateDescription } from './pager_lists.js';
-import { farlookLocationDescription, screenDescription } from './pager_description.js';
+import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,

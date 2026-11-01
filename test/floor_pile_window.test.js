@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { farlookLocationDescription } from '../js/pager_description.js';
+import { farlookLocationDescription } from '../js/pager.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { showFloorPile } from '../js/floor_object_display.js';
@@ -8,7 +8,7 @@ import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { APPLE, FOOD_RATION, LEASH } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
-import { screenDescription } from '../js/pager_description.js';
+import { screenDescription } from '../js/pager.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';

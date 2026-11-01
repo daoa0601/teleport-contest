@@ -13,7 +13,7 @@ import { setMonsterMalign } from './makemon.js';
 import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
-import { randomTypeByDescription } from './wish_lookup.js';
+import { randomTypeByDescription } from './objnam.js';
 import { deallocateObject } from './object_delete.js';
 import { migrateMonsterOffLevel } from './dog.js';
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');

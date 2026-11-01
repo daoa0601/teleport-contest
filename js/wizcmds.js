@@ -2,7 +2,7 @@
 // C refs: wizcmds.c wiz_wish()/wiz_polyself()/wiz_genesis()/wiz_detect()/
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
 // wiz_map()/wiz_identify()/wiz_show_nhuuid().
-import { A_WIS, DIED, In_endgame, Invocation_lev, Is_airlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, NHW_MENU, PICK_ANY, POLY_CONTROLLED, } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_mines, In_quest, In_sokoban, In_V_tower, IN_SIGHT, Invocation_lev, Is_airlevel, Is_botlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -48,6 +48,51 @@ import { reassignInventoryLetters } from './inventory_prompt.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { objectTypeKnown } from './shk.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
+import { flipSpecialLevel, flipSpecialLevelRandom } from './sp_lev.js';
+import { yn_function, promptChoice, promptYesNo } from './query.js';
+import { requireInitializedGame } from './gstate.js';
+import { applyHeroLiquidEffects } from './hack.js';
+import { makeDeaf } from './hero_hearing.js';
+import { startHeroSickness, startHeroVomiting } from './hero_illness.js';
+import { makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { propertyIsActive, propertyTimeout, refreshMovementProperties, setPropertyTimeout, } from './properties.js';
+import { rn2 } from './rng.js';
+import { makeBlinded } from './sight_change.js';
+import { setHeroSlimingTimeout } from './slime.js';
+import { setHeroPetrificationTimeout } from './stoning.js';
+import { setSlipperyHands } from './towel.js';
+import { showMultiSelectWindow, showTextWindow } from './windows.js';
+import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain, } from './ball.js';
+import { initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt, } from './dungeon.js';
+import { rewindEngravingsForSave } from './engrave.js';
+import { killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes, smellUnseenMonster, } from './mon.js';
+import { maybeResetPick } from './lock_context.js';
+import { mklev } from './mklev.js';
+import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { deallocateObject } from './object_delete.js';
+import { unlinkObject } from './object_location.js';
+import { checkSpecialRoom, setPaidShopkeeper } from './shk.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { vision_reset_new_level } from './vision.js';
+import { collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from './dog.js';
+import { makemonAt, rndmonstAdj } from './makemon.js';
+import { heroArmName } from './body_parts.js';
+import { heroSpecies } from './hero_species.js';
+import { heroHasOlfaction } from './polyself.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { CmapSymbol } from './glyph_numbers.js';
+import { mayDig } from './hero_digging.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { NO_COLOR } from './terminal.js';
+import { symsetMenuValue } from './options.js';
+import { cmapSymbolByte, objectClassSymbol, rogueColorsActive } from './display.js';
+import { customizedGlyphs } from './glyph_customizations.js';
+import { rumorCheck } from './rumor.js';
+import { depth } from './hacklib.js';
+import { clearHeroTrap } from './hero_traps.js';
+import { deliverSpecialLevelMessages, placeHeroAtRandomArrival, resolveHeroArrivalCollision, } from './level_change.js';
+import { cls, flush_screen, glyphAt, map_invisible } from './display.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
     const verbose = game.flags.verbose;
@@ -526,6 +571,189 @@ export async function wizLevelChange() {
     hero.ulevelmax = hero.ulevel;
     game.context.move = 0;
 }
+// C wizcmds.c:wiz_makemap(), makemap_remove_mons(), makemap_unmakemon();
+// cmd.c:makemap_prepost(). Pets leave before the old level is discarded.
+const G_UNIQ = 0x1000;
+export async function wizMakeMap() {
+    requirePlayingGame(game);
+    game.context.move = 0;
+    if (!game.flags.debug) {
+        await plineWithContinuation("Unavailable command 'wizmakemap'.");
+        return;
+    }
+    const wasInsideTower = insideWizardTower(game.u.ux, game.u.uy);
+    const pets = await removeOldLevelMonsters();
+    if (game.program_state.gameover)
+        return;
+    await discardOldLevel();
+    game._specialLevelPrototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
+    // C's wiz_makemap discards the overview (rm_mapseen) and then mklev()
+    // re-creates an empty record via init_mapseen().
+    initOverviewRecord(game.u.uz, game);
+    await mklev();
+    // C goto_level() keeps bones familiarity local to that arrival;
+    // replacing the current map does not announce familiarity.
+    game._restoredBones = false;
+    await returnToReplacementLevel(pets, wasInsideTower);
+}
+// C wizcmds.c:makemap_remove_mons().
+async function removeOldLevelMonsters() {
+    const pets = await collectLevelFollowers(game, true);
+    // C fmon is newest first, whereas level.monsters appends births.
+    for (const monster of requireGameLevel().monsters.slice().reverse()) {
+        if (monster.mhp <= 0)
+            continue;
+        await unmakeMonster(monster);
+        if (game.program_state.gameover)
+            return pets;
+    }
+    // An away shopkeeper, priest, or guard still owns data about this level.
+    // Remove it even if its destination is elsewhere in the dungeon.
+    for (const monster of [...(game._migratingMonsters ?? [])].reverse()) {
+        if (!belongsToCurrentLevel(monster))
+            continue;
+        game._migratingMonsters = (game._migratingMonsters ?? [])
+            .filter(candidate => candidate !== monster);
+        monster.mstate = ((monster.mstate ?? 0) | MON_OFFMAP)
+            & ~(MON_MIGRATING | MON_LIMBO | MON_ENDGAME_MIGR);
+        requireGameLevel().monsters.push(monster);
+        await unmakeMonster(monster);
+        if (game.program_state.gameover)
+            return pets;
+    }
+    purgeDeadMonsters(requireGameLevel());
+    return pets;
+}
+async function unmakeMonster(monster) {
+    requirePlayingGame(game);
+    const vital = game.mvitals?.[monster.mnum];
+    if (vital) {
+        if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)
+            vital.mvflags &= ~G_EXTINCT;
+        if (vital.born)
+            vital.born--;
+    }
+    // A parked guard may already be dead; its vault is going away too.
+    if (monster.isgd)
+        monster.isgd = 0;
+    else if (monster.mhp <= 0)
+        return;
+    else if (hasShopkeeperData(monster) && sameLevel(monster.eshk.shoplevel, game.u.uz))
+        setPaidShopkeeper(monster);
+    await removeMonsterFromGame(monster);
+}
+function belongsToCurrentLevel(monster) {
+    requirePlayingGame(game);
+    return !!(monster.isshk && sameLevel(monster.eshk?.shoplevel, game.u.uz)
+        || monster.ispriest && sameLevel((monster.epri ?? monster.mextra?.epri)?.shrlevel, game.u.uz)
+        || monster.isgd && sameLevel(monster._egd?.gdlevel, game.u.uz));
+}
+function sameLevel(first, second) {
+    return first?.dnum === second.dnum && first.dlevel === second.dlevel;
+}
+async function discardOldLevel() {
+    requirePlayingGame(game);
+    const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
+    game._overviewRecords?.delete(key);
+    game._levelAnnotations?.delete(key);
+    await revokeLevelPrize();
+    if (heroIsPunished()) {
+        await releaseCarriedBall(game);
+        await unplaceBallAndChain();
+    }
+    maybeResetPick(null);
+    if (sameLevel(game.context.digging?.level, game.u.uz))
+        delete game.context.digging;
+    game._travelTarget = null;
+    if (game.context.polearm)
+        game.context.polearm.hitmonId = null;
+    clearHeroTrap();
+    await checkSpecialRoom({ newLevel: true });
+    game.u.ustuck = null;
+    game.u.uswallow = game.uswallow = 0;
+    game.u.uswldtim = 0;
+    game.u.uinwater = 0;
+    game.u.uundetected = false;
+    // savelev(FREEING) releases level-owned objects without destruction rolls
+    // or uncreating their artifacts. Carried objects have already left.
+    const level = game.level;
+    for (const column of level.objects)
+        for (const pile of column ?? [])
+            for (const object of [...(pile ?? [])])
+                freeLevelObject(object);
+    for (const object of [...(level.buriedObjects ?? [])])
+        freeLevelObject(object);
+    game._levelCache?.delete(key);
+}
+function freeLevelObject(object) {
+    for (const content of [...(object.contents ?? [])])
+        freeLevelObject(content);
+    const { victual, tin, spbook } = game.context;
+    if (victual?.piece === object) {
+        victual.o_id = object.o_id;
+        victual.piece = null;
+    }
+    if (tin?.tin === object) {
+        tin.o_id = object.o_id;
+        tin.tin = null;
+    }
+    if (spbook?.book === object) {
+        spbook.o_id = object.o_id;
+        spbook.book = null;
+    }
+    unlinkObject(object);
+    deallocateObject(object);
+}
+async function revokeLevelPrize() {
+    requirePlayingGame(game);
+    const prototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
+    const achievement = prototype === 'minend' ? ACH_MINE_PRIZE
+        : prototype === 'soko1' ? ACH_SOKO_PRIZE : null;
+    if (achievement === null)
+        return;
+    const earned = game.u.uachieved ?? [];
+    if (earned.some(entry => Math.abs(entry) === achievement)) {
+        game.u.uachieved = earned.filter(entry => Math.abs(entry) !== achievement);
+        await plineWithContinuation(`${achievement === ACH_MINE_PRIZE ? "Mine's-end" : 'Soko-prize'} achievement revoked.`);
+    }
+    const prizes = game.context.achieveo;
+    if (prizes) {
+        if (achievement === ACH_MINE_PRIZE)
+            prizes.mines_prize_oid = 0;
+        else
+            prizes.soko_prize_oid = 0;
+    }
+}
+async function returnToReplacementLevel(pets, wasInsideTower) {
+    requirePlayingGame(game);
+    vision_reset_new_level();
+    await cls();
+    const level = requireGameLevel();
+    const up = !!game.u.uhave.amulet;
+    const stayInsideTower = wasInsideTower && levelIsWizardTower();
+    const region = stayInsideTower
+        ? game._activeSpecialLevel?.downTeleportExclude
+        : up ? level.upTeleportRegion : level.downTeleportRegion;
+    await placeHeroAtRandomArrival(region, !stayInsideTower && up);
+    await deliverMigratingMonsters(game, pets);
+    if (game.program_state.gameover)
+        return;
+    if ((await killGenocidedMonsters()).heroDied)
+        return;
+    await resolveHeroArrivalCollision();
+    game._heroTrack = [];
+    if (heroIsPunished()) {
+        await unplaceBallAndChain();
+        await placeBallAndChain();
+    }
+    await docrt();
+    await flush_screen(1);
+    await deliverSpecialLevelMessages();
+    await checkSpecialRoom();
+    // C cmd.c:makemap_prepost(FALSE) checkpoints the replacement level.
+    if (game.flags.checkpoint ?? true)
+        rewindEngravingsForSave(game.level);
+}
 // C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
 // zero-time debug reveal: it maps traps and engravings first, then maps every
 // background square from all directions while preserving secret doors and
@@ -667,6 +895,568 @@ export async function wizIdentify() {
             primaryHandDetail: inventoryPrimaryHandDetail(item),
         })}.`);
     }
+    game.context.move = 0;
+}
+// C wizcmds.c:wiz_flip_level(): transpose a live map without taking a turn.
+export async function wizFlipLevel() {
+    if (game.flags.debug) {
+        const { answer } = await yn_function('Flip 0=randomly, 1=vertically, 2=horizontally, 3=both:', '0123');
+        if (answer && '0123'.includes(answer)) {
+            if (answer === '0')
+                await flipSpecialLevelRandom(3, true);
+            else
+                await flipSpecialLevel(Number(answer), true);
+            await docrt();
+        }
+        else
+            await plineWithContinuation('Never mind.');
+    }
+    game.context.move = 0;
+}
+// C wizcmds.c:wiz_panic()/wiz_fuzzer(). Both confirmations take no time.
+export async function wizPanic() {
+    requirePlayingGame(game);
+    if (game.iflags.debug_fuzzer) {
+        game.u.uhp = game.u.uhpmax = 1000;
+        game.u.uen = game.u.uenmax = 1000;
+    }
+    else if (await paranoidQuery(true, 'Do you want to call panic() and end your game?')) {
+        await panic('Crash test (#panic).');
+    }
+    game.context.move = 0;
+}
+export async function wizFuzzer() {
+    if (!fuzzerWarningSuppressed()) {
+        await plineWithContinuation('The fuzz tester will make NetHack execute random keypresses.');
+        await plineWithContinuation('There is no conventional way out of this mode.');
+    }
+    if (await paranoidQuery(true, 'Do you want to start fuzz testing?')) {
+        const answer = await promptYesNo('Do you want to call panic() after impossible()?');
+        game.flags.debug_fuzzer = answer === 'n' ? FUZZER_IMPOSSIBLE_CONTINUE : FUZZER_IMPOSSIBLE_PANIC;
+        game.iflags.debug_fuzzer = true;
+    }
+    game.context.move = 0;
+}
+function fuzzerWarningSuppressed() {
+    const version = game.flags.suppress_alert?.match(/^(\d+)\.(\d+)\.(\d+)$/);
+    if (!version)
+        return false;
+    const major = Number(version[1]), minor = Number(version[2]);
+    return major > 3 || major === 3 && minor >= 7;
+}
+// C wizcmds.c:wiz_show_seenv().
+export async function showSeenVectors() {
+    const level = requireGameLevel();
+    const hero = game.u;
+    let start = Math.max(1, hero.ux - Math.floor(COLNO / 4));
+    const stop = Math.min(start + Math.floor(COLNO / 2), COLNO);
+    if (stop - start === Math.floor(COLNO / 2))
+        start++;
+    const lines = [];
+    for (let y = 0; y < ROWNO; y++) {
+        let row = '';
+        for (let x = start; x < stop; x++) {
+            const seen = level.requireAt(x, y).seenv & 0xff;
+            row += x === hero.ux && y === hero.uy ? '@@'
+                : seen ? seen.toString(16).padStart(2, '0') : '  ';
+        }
+        lines.push(row.trimEnd());
+    }
+    await showInspection(lines);
+}
+// C wizcmds.c:wiz_show_vision().
+export async function showVisionFlags() {
+    const hero = game.u;
+    const lines = [`Flags: 0x${COULD_SEE.toString(16)} could see, 0x${IN_SIGHT.toString(16)} in sight, 0x${TEMP_LIT.toString(16)} temp lit`, ''];
+    for (let y = 0; y < ROWNO; y++) {
+        let row = '';
+        for (let x = 1; x < COLNO; x++) {
+            const flags = game.viz_array?.[y]?.[x] ?? 0;
+            row += x === hero.ux && y === hero.uy ? '@' : flags ? String(flags) : ' ';
+        }
+        lines.push(row.trimEnd());
+    }
+    await showInspection(lines);
+}
+// C wizcmds.c:wiz_show_wmodes().
+export async function showWallModes() {
+    const level = requireGameLevel();
+    const hero = game.u;
+    // tty's initial blank line aligns these rows with the normal map.
+    const lines = [''];
+    for (let y = 0; y < ROWNO; y++) {
+        let row = '';
+        for (let x = 1; x < COLNO; x++) {
+            const location = level.requireAt(x, y);
+            row += x === hero.ux && y === hero.uy ? '@'
+                : IS_WALL(location.typ) || location.typ === SDOOR ? String(location.wall_info & WM_MASK)
+                    : location.typ === CORR ? '#'
+                        : IS_ROOM(location.typ) || IS_DOOR(location.typ) ? '.' : 'x';
+        }
+        lines.push(row);
+    }
+    await showInspection(lines);
+}
+async function showInspection(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    game.context.move = 0;
+}
+// C wizcmds.c:wiz_map_levltyp()/wiz_levltyp_legend(), cmd.c:levltyp[].
+const TERRAIN_NAMES = [
+    'stone', 'vertical wall', 'horizontal wall', 'top-left corner wall',
+    'top-right corner wall', 'bottom-left corner wall', 'bottom-right corner wall',
+    'cross wall', 'tee-up wall', 'tee-down wall', 'tee-left wall', 'tee-right wall',
+    'drawbridge wall', 'tree', 'secret door', 'secret corridor', 'pool', 'moat',
+    'water', 'drawbridge up', 'lava pool', 'lava wall', 'iron bars', 'door',
+    'corridor', 'room', 'stairs', 'ladder', 'fountain', 'throne', 'sink', 'grave',
+    'altar', 'ice', 'drawbridge down', 'air', 'cloud', 'unreachable/undiggable',
+];
+// C wizcmds.c:wiz_map_levltyp().
+export async function showTerrainCodes() {
+    const level = requireGameLevel();
+    // tty leaves row zero blank so map rows line up with the normal display.
+    const lines = [''];
+    for (let y = 0; y < ROWNO; y++) {
+        let row = '';
+        for (let x = 1; x < COLNO; x++) {
+            const terrain = level.requireAt(x, y).typ;
+            row += terrain === STONE && !mayDig(x, y) ? '*' : terrainCode(terrain);
+        }
+        if (level.requireAt(0, y).typ !== STONE || mayDig(0, y))
+            row += '!';
+        lines.push(row);
+    }
+    lines.push(terrainLevelDescription().slice(0, COLNO - 1));
+    await showTerrainText(lines);
+}
+// C wizcmds.c:wiz_levltyp_legend().
+export async function showTerrainCodeLegend() {
+    const lines = ['#terrain encodings:', ''];
+    const half = TERRAIN_NAMES.length / 2;
+    const entry = (index) => {
+        const name = TERRAIN_NAMES[index];
+        if (name === undefined)
+            throw new RangeError(`Terrain legend has no entry ${index}`);
+        const code = name.startsWith('unreachable') ? '*' : terrainCode(index);
+        return ` ${code} - ${name.padEnd(28)}`;
+    };
+    for (let index = 0; index < half; index++)
+        lines.push(entry(index) + entry(index + half));
+    await showTerrainText(lines);
+}
+async function showTerrainText(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+}
+function terrainCode(terrain) {
+    return String.fromCharCode(terrain < 10 ? 48 + terrain
+        : terrain < 36 ? 97 + terrain - 10 : 65 + terrain - 36);
+}
+function terrainLevelDescription() {
+    const flags = requireGameLevel().flags;
+    const here = game.u.uz;
+    if (!here)
+        throw new Error('Terrain inspection requires the current dungeon level');
+    const parts = [`D:${here.dnum},L:${here.dlevel}`];
+    const special = [...(game.specialLevels?.entries() ?? [])]
+        .find(([, location]) => sameDungeonLevel(here, location));
+    if (special) {
+        parts.push(`"${specialDisplayName(special[0])}"`);
+        // The pinned dungeon.lua sets only town and roguelike on special levels.
+        if (special[1].flags.town)
+            parts.push('town');
+        if (Is_rogue_level(here))
+            parts.push('roguelike');
+    }
+    if (flags.nfountains)
+        parts.push(`${MAP_SYMBOLS[CmapSymbol.fountain]?.ch}:${flags.nfountains}`);
+    if (flags.nsinks)
+        parts.push(`${MAP_SYMBOLS[CmapSymbol.sink]?.ch}:${flags.nsinks}`);
+    const features = [
+        [flags.has_vault, 'vault'], [flags.has_shop, 'shop'],
+        [flags.has_temple, 'temple'], [flags.has_court, 'throne'],
+        [flags.has_zoo, 'zoo'], [flags.has_morgue, 'morgue'],
+        [flags.has_barracks, 'barracks'], [flags.has_beehive, 'hive'],
+        [flags.has_swamp, 'swamp'], [flags.noteleport, 'noTport'],
+        [flags.hardfloor, 'noDig'], [flags.nommap, 'noMMap'],
+        [!flags.hero_memory, 'noMem'], [flags.shortsighted, 'shortsight'],
+        [flags.graveyard, 'graveyard'], [flags.is_maze_lev, 'maze'],
+        [flags.is_cavernous_lev, 'cave'], [flags.arboreal, 'tree'],
+        [flags.sokoban_rules, 'sokoban-rules'], [Invocation_lev(here), 'invoke'],
+        [levelIsWizardTower(), 'tower'],
+    ];
+    for (const [enabled, label] of features)
+        if (enabled)
+            parts.push(label);
+    parts.push(terrainBranchName());
+    return parts.join(' ');
+}
+function terrainBranchName() {
+    const here = game.u.uz;
+    if (!here)
+        throw new Error('Terrain inspection requires the current dungeon level');
+    if (here.dnum === 0)
+        return 'dungeon';
+    if (In_mines(here))
+        return 'mines';
+    if (In_sokoban(here))
+        return 'sokoban';
+    if (In_quest(here))
+        return 'quest';
+    if (Is_knox_level(here))
+        return 'ludios';
+    if (here.dnum === 1)
+        return 'gehennom';
+    if (In_V_tower(here))
+        return 'vlad';
+    if (In_endgame(here))
+        return 'endgame';
+    return (game.dungeons[here.dnum]?.dname || 'unknown').replace(/^the /i, '');
+}
+// C wizcmds.c:wiz_smell(). The command can sniff visible or unseen actors
+// repeatedly, and updates remembered invisible markers without taking time.
+export async function wizSmell() {
+    requirePlayingGame(game);
+    game.context.move = 0;
+    if (!heroHasOlfaction(game)) {
+        await plineWithContinuation('You are incapable of detecting odors in your present form.');
+        return;
+    }
+    await plineWithContinuation('You can move the cursor to a monster that you want to smell.');
+    let cursor = { x: game.u.ux, y: game.u.uy };
+    for (;;) {
+        await plineWithContinuation('Pick a monster to smell.');
+        const tipShown = await showGetposTip();
+        if (game.flags.verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help');
+            if (helpKey === undefined)
+                throw new Error('Smell targeting requires a getpos.help binding');
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (tipShown)
+            await plineWithContinuation('Move cursor to a monster:');
+        const target = await selectMapPosition({
+            start: cursor, goal: 'a monster',
+            prompt: game._pending_message,
+        });
+        if (!target)
+            return;
+        cursor = target;
+        const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
+        const monster = atHero ? game.u.usteed : monsterAtPosition(game.level, cursor.x, cursor.y);
+        const self = atHero && !monster;
+        const species = self ? heroSpecies(game) : monster?.mnum;
+        const glyph = glyphAt(cursor.x, cursor.y);
+        if (species === undefined) {
+            await plineWithContinuation("You don't smell any monster there.");
+            if (glyph?.kind === 'invisible')
+                await unmap_invisible(cursor.x, cursor.y);
+            continue;
+        }
+        if (self)
+            await plineWithContinuation(`You surreptitiously sniff under your ${heroArmName(game)}.`);
+        if (!await smellUnseenMonster(species, game))
+            await plineWithContinuation(`${self ? 'You seem' : 'That monster seems'} to not give off any smell.`);
+        if (glyph?.kind !== 'monster')
+            await map_invisible(cursor.x, cursor.y);
+    }
+}
+// Hallucination resistance is deliberately omitted: native wiz_intrinsic
+// excludes the exceptional property used by Grayswandir.
+const INTRINSICS = [
+    { name: 'invulnerable', property: 'invulnerable' },
+    { name: 'petrifying', property: 'stoned' },
+    { name: 'becoming slime', property: 'slimed' },
+    { name: 'strangling', property: 'strangled' },
+    { name: 'fatally sick', property: 'sick' },
+    { name: 'stunned', property: 'stunned' },
+    { name: 'confused', property: 'confusion' },
+    { name: 'hallucinating', property: 'hallucination' },
+    { name: 'blinded', property: 'blinded' },
+    { name: 'deafness', property: 'deaf' },
+    { name: 'vomiting', property: 'vomiting' },
+    { name: 'slippery fingers', property: 'glib' },
+    { name: 'wounded legs', property: 'woundedLegs' },
+    { name: 'sleepy', property: 'sleepy' },
+    { name: 'teleporting', property: 'teleportation' },
+    { name: 'polymorphing', property: 'polymorph' },
+    { name: 'levitating', property: 'levitation' },
+    { name: 'very fast', property: 'fast' },
+    { name: 'clairvoyant', property: 'clairvoyant' },
+    { name: 'monster detection', property: 'detectMonsters' },
+    { name: 'see invisible', property: 'seeInvisible' },
+    { name: 'invisible', property: 'invisible' },
+    { name: 'acid resistance', property: 'acidResistance' },
+    { name: 'stoning resistance', property: 'stoneResistance' },
+    { name: 'displaced', property: 'displaced' },
+    { name: 'pass thru walls', property: 'passesWalls' },
+    { name: 'magical breathing', property: 'magicalBreathing' },
+    { name: 'water walking', property: 'waterWalking' },
+    { name: 'fire resistance', property: 'fireResistance' },
+    { name: 'cold resistance', property: 'coldResistance' },
+    { name: 'sleep resistance', property: 'sleepResistance' },
+    { name: 'disintegration resistance', property: 'disintegrationResistance' },
+    { name: 'shock resistance', property: 'shockResistance' },
+    { name: 'poison resistance', property: 'poisonResistance' },
+    { name: 'drain resistance', property: 'drainResistance' },
+    { name: 'sickness resistance', property: 'sicknessResistance' },
+    { name: 'magic resistance', property: 'antimagic' },
+    { name: 'light-induced blindness resistance', property: 'blindResistance' },
+    { name: 'fumbling', property: 'fumbling' },
+    { name: 'voracious hunger', property: 'hunger' },
+    { name: 'telepathic', property: 'telepathy' },
+    { name: 'warning', property: 'warning' },
+    { name: 'warn: monster type or class', property: 'warnOfMonster' },
+    { name: 'warn: undead', property: 'warnUndead' },
+    { name: 'searching', property: 'searching' },
+    { name: 'infravision', property: 'infravision' },
+    { name: 'adorned (+/- Cha)', property: 'adorned' },
+    { name: 'stealthy', property: 'stealth' },
+    { name: 'monster aggravation', property: 'aggravateMonster' },
+    { name: 'conflict', property: 'conflict' },
+    { name: 'jumping', property: 'jumping' },
+    { name: 'teleport control', property: 'teleportControl' },
+    { name: 'flying', property: 'flying' },
+    { name: 'swimming', property: 'swimming' },
+    { name: 'slow digestion', property: 'slowDigestion' },
+    { name: 'half spell damage', property: 'halfSpellDamage' },
+    { name: 'half physical damage', property: 'halfPhysicalDamage' },
+    { name: 'HP regeneration', property: 'regeneration' },
+    { name: 'energy regeneration', property: 'energyRegeneration' },
+    { name: 'extra protection', property: 'protection' },
+    { name: 'protection from shape changers', property: 'protectionFromShapeChangers' },
+    { name: 'polymorph control', property: 'polymorphControl' },
+    { name: 'unchanging', property: 'unchanging' },
+    { name: 'reflecting', property: 'reflection' },
+    { name: 'free action', property: 'freeAction' },
+    { name: 'fixed abilities', property: 'sustainAbility' },
+    { name: 'life will be saved', property: 'lifeSaving' },
+];
+export async function wizIntrinsic() {
+    const state = requireInitializedGame();
+    const items = INTRINSICS.map(intrinsic => {
+        const timeout = propertyTimeout(intrinsic.property, state);
+        return {
+            text: timeout ? `${intrinsic.name.padEnd(27)} [${timeout}]` : intrinsic.name,
+            value: intrinsic,
+            separatorBefore: intrinsic.property === 'fireResistance',
+        };
+    });
+    const selections = await showMultiSelectWindow({
+        title: 'Which intrinsics?',
+        introLines: state.flags.cmdassist !== false
+            ? ['[Precede any selection with a count to increment by other than 30.]']
+            : [],
+        sections: [{ heading: '', items }],
+        omitHeadings: true,
+        pageLocalKeys: true,
+        returnCounts: true,
+    });
+    // Dismissing a full-screen menu redraws vision and can announce a
+    // monster. Keep that notice ahead of the intrinsic feedback.
+    state.context.move = 0;
+    for (const { value, count } of selections) {
+        // tty stores a long count; wiz_intrinsic explicitly narrows it to int.
+        const amount = count === -1 ? 30 : count | 0;
+        if (amount <= 0)
+            continue;
+        await increaseIntrinsic(value, amount, state);
+        if (state.program_state.gameover)
+            return;
+    }
+    await docrt();
+}
+async function increaseIntrinsic({ name, property }, amount, state) {
+    const oldTimeout = propertyTimeout(property, state);
+    const keepsDeadline = property === 'sick' || property === 'slimed' || property === 'stoned';
+    const newTimeout = keepsDeadline && oldTimeout > 0 ? oldTimeout : oldTimeout + amount;
+    if (property === 'blinded') {
+        await makeBlinded(newTimeout, { state });
+    }
+    else if (property === 'deaf') {
+        await makeDeaf(newTimeout, { state });
+    }
+    else if (property === 'hallucination') {
+        await makeHallucinated(newTimeout, { state });
+    }
+    else if (property === 'sick') {
+        await startHeroSickness({
+            state,
+            turns: newTimeout,
+            cause: '#wizintrinsic',
+            type: rn2(2) === 0 ? SICK_VOMITABLE : SICK_NONVOMITABLE,
+        });
+    }
+    else if (property === 'slimed') {
+        await setHeroSlimingTimeout(newTimeout, {
+            state,
+            message: `You are${oldTimeout ? ' still' : ''} turning into slime.`,
+        });
+    }
+    else if (property === 'stoned') {
+        await setHeroPetrificationTimeout(newTimeout, {
+            state,
+            message: `You are${oldTimeout ? ' still' : ''} turning into stone.`,
+            killer: '#wizintrinsic',
+            killerFormat: KILLED_BY,
+        });
+    }
+    else if (property === 'stunned') {
+        await makeStunned(newTimeout, { state });
+    }
+    else if (property === 'vomiting') {
+        startHeroVomiting({ state, turns: newTimeout });
+        await plineWithContinuation(`You are${oldTimeout ? ' still' : ''} vomiting.`);
+    }
+    else {
+        if (property === 'warnOfMonster' && !propertyIsActive(property, state)) {
+            const speciesidx = MONSTER_NAME.indexOf('grid bug');
+            if (speciesidx < 0)
+                throw new Error('The native grid bug species is missing');
+            const warning = (state.context.warntype ||= { obj: 0, polyd: 0, speciesidx: -1 });
+            warning.speciesidx = speciesidx;
+        }
+        if (property === 'glib')
+            setSlipperyHands(newTimeout, state);
+        else
+            setPropertyTimeout(property, newTimeout, state);
+        state.context.botl = true;
+        await plineWithContinuation(`Timeout for ${name} ${oldTimeout ? 'increased by' : 'set to'} ${amount}.`);
+    }
+    if (property === 'levitation' || property === 'flying')
+        refreshMovementProperties(state);
+    else if (property === 'protectionFromShapeChangers')
+        await restoreNaturalMonsterShapes(state);
+    if ((property === 'waterWalking' || property === 'levitation' || property === 'flying') &&
+        state.u.uinwater)
+        // C wizcmds.c:1087 pooleffects(FALSE): any relocation out of the
+        // liquid lands through teleds()' spoteffects(TRUE) (teleport.c:568),
+        // which applyHeroLiquidEffects() supplies.
+        await applyHeroLiquidEffects();
+}
+// C wizcmds.c:wiz_rumor_check(), which calls rumors.c:rumor_check().
+export async function wizRumorCheck() {
+    game.context.move = 0;
+    await rumorCheck();
+    game._pending_message = '';
+    game._retained_message = '';
+}
+// C wizcmds.c:wiz_migrate_mons()/list_migrating_mons(). A negative count
+// moves existing actors; a positive count creates random actors to migrate.
+export async function wizMigrateMonsters() {
+    requirePlayingGame(game);
+    const destination = nextMigrationLevel();
+    await listMigratingMonsters(destination);
+    game.context.move = 0;
+    if (!(destination.dnum || destination.dlevel)) {
+        await plineWithContinuation("Can't get there from here.");
+        return;
+    }
+    const input = await getLine('How many random monsters to migrate to next level? [0]', ch => ch >= ' ');
+    if (!input)
+        return;
+    const count = Number.parseInt(input, 10) || 0;
+    const limit = Math.min(Math.abs(count), (COLNO - 1) * ROWNO);
+    for (let index = 0; index < limit; index++) {
+        // makemon appends here; native fmon prepends each new monster.
+        const monster = count < 0 ? game.level.monsters.at(-1)
+            : await makemonAt(rndmonstAdj(), 0, 0, MM_NOMSG);
+        if (monster)
+            await migrateMonsterOffLevel(monster, game, { dst: destination }, { kind: 'level-migration' });
+    }
+}
+function nextMigrationLevel() {
+    requirePlayingGame(game);
+    if (Is_stronghold(game.u.uz)) {
+        if (!game.valley_level)
+            throw new Error('The Castle has no Valley destination');
+        return game.valley_level;
+    }
+    return Is_botlevel(game.u.uz) ? { dnum: 0, dlevel: 0 }
+        : levelAtDepth(depth(game.u.uz) + 1);
+}
+function migrationGroup(monster, next) {
+    const destination = monster.migrationDestination;
+    if (destination?.dnum === game.u.uz?.dnum && destination?.dlevel === game.u.uz?.dlevel)
+        return 'c';
+    if (destination?.dnum === next.dnum && destination?.dlevel === next.dlevel)
+        return 'n';
+    return 'o';
+}
+// C wizcmds.c:list_migrating_mons().
+// C wizcmds.c:migrsort_cmp().
+async function listMigratingMonsters(next) {
+    const monsters = game._migratingMonsters ?? [];
+    if (!monsters.length) {
+        await plineWithContinuation('No monsters currently migrating.');
+        return;
+    }
+    const counts = { c: 0, n: 0, o: 0 };
+    for (const monster of monsters)
+        counts[migrationGroup(monster, next)]++;
+    await plineWithContinuation(`${counts.c} mon${counts.c === 1 ? '' : 's'} pending for current level, ${counts.n} for next level, ${counts.o} for others.`);
+    const visible = `${counts.c ? 'c' : ''}${counts.n ? 'n' : ''}${counts.o ? 'o' : ''}a q`;
+    const choice = await promptChoice('List which?', ['c', 'n', 'o', 'a', 'q'], 'q', { visibleChoices: visible });
+    if (choice === 'q')
+        return;
+    const selected = monsters.filter(monster => choice === 'a' || migrationGroup(monster, next) === choice);
+    if (!selected.length) {
+        await plineWithContinuation('None.');
+        return;
+    }
+    selected.sort((a, b) => (a.migrationDestination?.dnum ?? 0) - (b.migrationDestination?.dnum ?? 0)
+        || (a.migrationDestination?.dlevel ?? 0) - (b.migrationDestination?.dlevel ?? 0)
+        || a.m_id - b.m_id);
+    const title = choice === 'a' ? 'All migrating monsters:'
+        : `Monster${selected.length === 1 ? '' : 's'} migrating to ${choice === 'c' ? 'current level'
+            : choice === 'n' ? 'next level' : "'other' levels"}:`;
+    await showTextWindow([title, '', ...selected.map(monster => migratingMonsterLine(monster, choice === 'a' || choice === 'o'))]);
+}
+function migratingMonsterLine(monster, showDestination) {
+    let text = `  ${monster.mtame ? 'tame ' : monster.mpeaceful ? 'peaceful ' : ''}${monsterTypeName(monster.mnum, !!monster.female)}`;
+    if (monster.cham !== undefined && monster.cham >= 0)
+        text += `{${monsterTypeName(monster.cham, !!monster.female)}}`;
+    const name = MGIVENNAME(monster);
+    if (name)
+        text += ` named ${name}`;
+    if (showDestination) {
+        const destination = monster.migrationDestination;
+        if (!destination)
+            throw new Error(`Migrating monster ${monster.m_id} has no destination`);
+        text += ` to ${destination.dnum}:${destination.dlevel}`;
+    }
+    if (monster.migrationMode === MIGR_EXACT_XY && monster.migrationSource)
+        text += ` at <${monster.migrationSource.x},${monster.migrationSource.y}>`;
+    return text;
+}
+// C wizcmds.c:wiz_custom()/wizcustom_callback(), glyphs.c:wizcustom_glyphids().
+export async function wizCustom() {
+    const window = tty_create_nhwindow(NHW_MENU);
+    addMenuHeading(window, '    glyph  glyph identifier                             sym   clr customcolor unicode utf8');
+    const rogue = Is_rogue_level(game.u.uz);
+    // reset_glyphmap() also clears Rogue colors unless its active set enables IBM color.
+    const colorEnabled = game.flags.color !== false
+        && (!rogue || rogueColorsActive());
+    for (const glyph of customizedGlyphs()) {
+        const byte = glyph.symbol.kind === 'cmap' ? cmapSymbolByte(glyph.symbol.index)
+            : objectClassSymbol(glyph.symbol.oclass).charCodeAt(0);
+        const baseColor = rogue ? glyph.rogueColor : glyph.baseColor;
+        const color = colorEnabled ? baseColor : NO_COLOR;
+        const customColor = glyph.customColor.toString(16).padStart(11, '0');
+        const unicode = glyph.unicode === null ? ''
+            : `U+${glyph.unicode.toString(16).padStart(4, '0')}`
+                + [...new TextEncoder().encode(String.fromCodePoint(glyph.unicode))]
+                    .map(byte => ` <${byte}>`).join('');
+        const text = `[${String(glyph.glyph).padStart(4, '0')}] ${glyph.id.padEnd(44)} `
+            + `'\\${String(byte).padStart(3, '0')}' ${String(color).padStart(2, '0')} ${customColor} ${unicode}`;
+        tty_add_menu(window, { identifier: glyph.glyph + 1, text });
+    }
+    // The xterm-256color terminal profile advertises 256 available colors.
+    tty_end_menu(window, `#wizcustom: colorcount=256 ${symsetMenuValue()}`);
+    await tty_select_menu(window, PICK_NONE);
+    await tty_destroy_nhwindow(window);
+    await docrt();
     game.context.move = 0;
 }
 //# sourceMappingURL=wizcmds.js.map
