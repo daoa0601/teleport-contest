@@ -140,7 +140,6 @@ import {
 import { objectQuantity } from './object_stack.js';
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
-import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { setSecondaryWeapon } from './weapon_slots.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY } from './object_data.js';
 import { NO_COLOR } from './terminal.js';
@@ -175,7 +174,7 @@ import { dofire, dothrow } from './dothrow.js';
 import {
     doenhance,
 } from './skills.js';
-import { objectTypeKnown, dopay } from './shk.js';
+import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
 import { performPetRangedAttack } from './dogmove.js';
 import { dokick } from './dokick.js';

@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { mksobj } from './mkobj.js';
 import { monsterAtPosition } from './steed.js';
 import { DART } from './object_data.js';
-import { sellHeroDroppedObject } from './shop_sell.js';
+import { sellHeroDroppedObject } from './shk.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { objectWeight } from './weight.js';
