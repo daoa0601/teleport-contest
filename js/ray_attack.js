@@ -550,9 +550,8 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
                 return { heroDied: !!state.program_state?.gameover };
             }
             await finishMonsterKill(monster, monster.mx, monster.my, {
-                // dobuzz() passes XKILL_NOCORPSE only for burned-up golems;
-                // species without corpses still roll treasure and corpse_chance().
-                noCorpse: !!hit.noCorpse,
+                // disintegrate_mon() always passes XKILL_NOMSG|XKILL_NOCORPSE.
+                noCorpse: true,
                 showKillMessage: false,
                 deathContext,
             });
