@@ -106,7 +106,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { snuffThrownCandle } from './thrown_object.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, set_msg_xy } from './pline.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
@@ -341,6 +341,9 @@ async function launchVolley(source: Monster, weapon: GameObject, target: Monster
         const targetName = target ? monsterName(target, {
             state, augmentIt: true, suppressSaddle: !!MGIVENNAME(target),
         }) : '';
+        // C monshoot() anchors the volley line at the shooter's square via
+        // set_msg_xy() so vpline()'s accessiblemsg prefix names it.
+        set_msg_xy(source.mx, source.my);
         await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${
             target ? ` at ${targetName}` : ''}!`);
     }

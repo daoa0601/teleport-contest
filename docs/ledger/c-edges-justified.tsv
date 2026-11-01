@@ -1907,3 +1907,4 @@ mcast_stun_you	make_stunned	inlined	the stun timeout write, the 0<->nonzero botl
 mcast_fire_pillar	burn_away_slime	inlined	clearHeroSliming drops the slimed state and the caller prints the burn-away message (mcastu.ts:563-565); slime.ts burnAwayHeroSlime is the shared timeout.c owner
 missmu	map_invisible	inlined	the attack transaction maps an unseen attacker before projecting its contact line (mhitu.ts:484-497)
 missmu	stop_occupation	inlined	stopHeroOccupation runs after the whole contact transaction, passiveum included (mhitu.ts:919-933)
+monshoot	sgn	inlined	dx/dy are Math.sign(target - source) (mthrowu.ts launchVolley); sgn(x) is -1/0/1 just like Math.sign on these small deltas
