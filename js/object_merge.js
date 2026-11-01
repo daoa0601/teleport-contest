@@ -14,7 +14,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectWeight } from './weight.js';
 import { erosionMatters } from './object_erosion.js';
 import { isReviver } from './corpse_species.js';
-import { mergeHeroWeaponSlots } from './weapon_slots.js';
+import { mergeHeroWeaponSlots } from './wield.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
 const COIN_CLASS = 12;
 const FOOD_CLASS = 7;

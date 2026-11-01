@@ -7,7 +7,7 @@ import { artifactByName, nameArtifact, uncreateArtifact } from '../js/artifacts.
 import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

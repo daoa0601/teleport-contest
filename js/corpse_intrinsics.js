@@ -17,7 +17,7 @@ import { grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty, } from '
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 const M1_TPORT = 0x02000000, M1_TPORT_CNTRL = 0x04000000;
 const M2_GIANT = 0x00002000;
 const TELEPATHIC_SPECIES = new Set([

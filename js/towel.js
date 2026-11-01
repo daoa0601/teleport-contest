@@ -16,7 +16,8 @@ import { possessiveName } from './hacklib.js';
 import { rn2, rn1 } from './rng.js';
 import { heroIsBlinded, setHeroBlindnessTimeout } from './senses.js';
 import { makeBlinded } from './sight_change.js';
-import { heroHasFreeHand, isWetTowel } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
+import { isWetTowel } from './object_properties.js';
 export async function useTowel(object, { state = game } = {}) {
     requireLiveGame(state);
     const result = { spentTime: false, heroDied: false, object };

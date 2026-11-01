@@ -11,7 +11,7 @@ import { triggerImmediateMonsterTrap } from '../js/trap.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { AMULET_OF_YENDOR, BUGLE, BULLWHIP, DAGGER, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

@@ -17,7 +17,8 @@ import { possessiveName } from './hacklib.js';
 import { rn2, rn1 } from './rng.js';
 import { heroIsBlinded, setHeroBlindnessTimeout } from './senses.js';
 import { makeBlinded } from './sight_change.js';
-import { heroHasFreeHand, isWetTowel } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
+import { isWetTowel } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 

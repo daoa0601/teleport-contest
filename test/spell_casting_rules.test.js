@@ -11,7 +11,7 @@ import { AMULET_OF_YENDOR, CHAIN_MAIL, HELMET, OBJECT_NAMES, OBJECT_SPELL_CATEGO
 import { ensureHeroSkills } from '../js/skills.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, } from '../js/spell.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';

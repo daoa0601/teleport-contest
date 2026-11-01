@@ -4,7 +4,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { ARROW, BOW, CHEST, RIN_PROTECTION } from '../js/object_data.js';
 import { moveloop_core } from '../js/allmain.js';
-import { setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { yn_function } from '../js/query.js';
 import { resetInputState } from '../js/input.js';
 import { ynSingleKey } from '../js/tty_prompts.js';

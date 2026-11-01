@@ -59,7 +59,7 @@ import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction, } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import { unlinkObject } from './object_location.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { reassessMonsterArmor } from './monworn.js';

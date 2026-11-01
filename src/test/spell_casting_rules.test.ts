@@ -20,7 +20,7 @@ import {
     checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess,
     rejectCasting,
 } from '../js/spell.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -353,7 +353,6 @@ void test('Knight clerical casting ignores metal suit and helmet penalties', asy
     assert.equal(percentSuccess(clerical), clericalChance);
     assert.ok(percentSuccess(attack) < attackChance);
 });
-
 
 // C spell.c:percent_success() combines the role tables, armor penalties and
 // the special-spell adjustments into one exact percentage; the numbers below

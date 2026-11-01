@@ -26,7 +26,7 @@ import {
 import { roles, races } from '../js/roles.js';
 import { heroIsSliming, startHeroSliming } from '../js/slime.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { glyphAt } from '../js/display.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';

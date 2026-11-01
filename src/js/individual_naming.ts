@@ -22,7 +22,7 @@ import {
 import { playerName } from './player_name.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
-import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
+import { setTwoWeaponCombat, setWieldedArtifactProperties } from './wield.js';
 import type { GameObject } from './object_types.js';
 
 // C do_name.c:do_oname().

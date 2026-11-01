@@ -36,8 +36,9 @@ import { inTown, roomsAt } from './room.js';
 import { rn2, rnd, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
-import { isAxe, isPick, willWeld } from './weapon_type.js';
+import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { isAxe, isPick } from './object_properties.js';
+import { willWeld } from './wield.js';
 import { unblock_point, vision_note_blocker_change } from './vision.js';
 // Peer dig modules; see docs/porting-status.md handoff for the split.
 import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';

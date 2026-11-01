@@ -75,7 +75,7 @@ import { cansee } from './vision.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 import { showInventoryWindow } from './windows.js';
 import { hitMonsterWithRay, adjustSpellDamage } from './zap.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
 import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';

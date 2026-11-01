@@ -12,7 +12,7 @@ import { ownedObjectAction, ownedObjectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills, installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './support/monsters.js';

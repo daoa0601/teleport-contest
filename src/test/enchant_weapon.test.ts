@@ -16,7 +16,7 @@ import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { unpaidObjectCost, itemizedShopBill } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { objectWeight } from '../js/weight.js';
 import { addInventoryObject, addInventoryWeapon, floorObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
@@ -62,7 +62,6 @@ void test('enchant weapon fuses a stack of worm teeth into one uncursed crysknif
     assert.match(await inventoryItemDescription(teeth), /crysknife/);
     assert.equal(game.uwep, teeth);
 });
-
 
 void test('cursed confused enchantment removes proofing without repairing damage', async () => {
     await freshObjectRoom({ hero: { confusionTurns: 5 } });
@@ -339,7 +338,6 @@ void test('degrading an unpaid crysknife charges its old value before transforma
     assert.equal(amountOwed, before);
 });
 
-
 void test('reading without a weapon does not invent a pager when the message fits', async () => {
     await freshObjectRoom();
     requireFixtureGame(game);
@@ -378,7 +376,6 @@ void test('elven weapons warn after an enchantment takes them beyond +5', async 
     assert.match(game._pending_message, /suddenly vibrates unexpectedly/);
 });
 
-
 void test('a beginner gets the strange-feeling message when there is no weapon', async () => {
     await freshObjectRoom();
     requireFixtureGame(game);
@@ -407,7 +404,6 @@ for (const [species, action] of [['wolf', 'pronounce'], ['killer bee', 'cogitate
         assert.match(game._pending_message, new RegExp(`As you ${action} the formula`));
     });
 }
-
 
 void test('a fully identified artifact uses its personal name in enchantment feedback', async () => {
     await freshObjectRoom();
@@ -445,7 +441,6 @@ void test('a tooth transformation does not include a user-supplied individual na
     assert.equal(tooth.otyp, CRYSKNIFE);
 });
 
-
 void test('evaporating an invoked quest weapon ends its power and carried status', async () => {
     let destroyed = 0;
     for (let seed = 1; seed <= 12; seed++) {
@@ -474,7 +469,6 @@ void test('evaporating an invoked quest weapon ends its power and carried status
     }
     assert.ok(destroyed > 0);
 });
-
 
 void test('fusing teeth reports the first load-status change even when the hero remains burdened', async () => {
     await freshObjectRoom();
@@ -516,7 +510,6 @@ void test('evaporating an unpaid weapon leaves its full purchase price owed', as
     }
     assert.ok(destroyed > 0);
 });
-
 
 void test('enchantment waits for the visible read message to be acknowledged', async () => {
     await freshObjectRoom();

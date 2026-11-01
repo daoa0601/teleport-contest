@@ -22,7 +22,7 @@ import {
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { breakWand } from '../js/apply.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
@@ -363,7 +363,6 @@ void test('flashing a nearby worm tail does not blind the head outside the broke
     assert.ok(worm.mhp < 500);
 });
 
-
 void test('a sighted opening-wand confirmation observes its appearance before release identifies it', async () => {
     const { input } = await wandRoom();
     requirePlayingGame(game);
@@ -399,7 +398,6 @@ for (const reason of ['handless', 'weak', 'occupied']) {
         assert.ok(game.inventory.includes(object));
     });
 }
-
 
 void test('a wrested last charge powers the broken wand with one to three charges', async () => {
     const { input, messages } = await wandRoom();

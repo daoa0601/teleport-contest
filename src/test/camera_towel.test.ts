@@ -26,7 +26,7 @@ import { seeMonsterCloseup } from '../js/mon.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { flashBurn } from '../js/sight_change.js';
 import { wearEyewear } from '../js/eyewear.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { initRng } from '../js/rng.js';
 import { canSeeMonster, newsym } from '../js/display.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

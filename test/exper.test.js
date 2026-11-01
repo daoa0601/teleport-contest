@@ -16,7 +16,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING } from '../js/object_data.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { runExtendedCommand } from './support/commands.js';

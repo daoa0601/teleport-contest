@@ -26,7 +26,7 @@ import { propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { applyArmorScrollEffect } from '../js/read.js';
 import { unpaidObjectCost, itemizedShopBill } from '../js/shk.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

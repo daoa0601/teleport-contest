@@ -35,7 +35,12 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
 import { wearHeroAccessory } from './accessory.js';
 import { isEyewear, wearEyewear } from './eyewear.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './weapon_slots.js';
+import {
+    setPrimaryWeapon,
+    setQuiverObject,
+    setSecondaryWeapon,
+    setTwoWeaponCombat,
+} from './wield.js';
 import { changeMonsterForm, maybeUnhideAt } from './mon.js';
 import { releaseObjectLeash } from './leash_apply.js';
 import { monsterName } from './do_name.js';

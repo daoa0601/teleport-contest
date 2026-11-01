@@ -13,7 +13,7 @@ import { objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObject
 import { playerName } from './player_name.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
-import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
+import { setTwoWeaponCombat, setWieldedArtifactProperties } from './wield.js';
 // C do_name.c:do_oname().
 export async function nameIndividualObject(object) {
     if (object.otyp === SPE_NOVEL) {

@@ -26,7 +26,7 @@ import { dismountHero } from '../js/steed.js';
 import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
 import { floatHeroUp } from '../js/terrain_movement.js';
 import { runObjectTimer } from '../js/timer_effects.js';
-import { setPrimaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { nearCapacity } from '../js/weight.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { fireQuiveredGold } from './support/gold-arena.js';

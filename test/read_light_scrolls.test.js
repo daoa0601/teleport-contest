@@ -9,7 +9,7 @@ import { GOLD_DRAGON_SCALE_MAIL, OIL_LAMP, SCR_LIGHT, WAX_CANDLE } from '../js/o
 import { withIndefiniteArticle } from '../js/object_grammar.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

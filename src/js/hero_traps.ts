@@ -100,7 +100,7 @@ import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { wakeMonstersNearWithMessages } from './mon.js';

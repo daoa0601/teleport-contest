@@ -44,7 +44,7 @@ import {
     invokeInventoryObject,
 } from './support/commands.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 import { nearCapacity } from '../js/weight.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

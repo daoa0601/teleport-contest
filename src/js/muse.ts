@@ -99,7 +99,7 @@ import {
     observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun,
 } from './objnam.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary, willWeld } from './wield.js';
 import { monsterCanCarryObject } from './mon.js';
 import { addObjectToContainer } from './object_container.js';
 import { unlinkObject } from './object_location.js';
@@ -143,7 +143,6 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explode } from './explosion.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import { willWeld } from './weapon_type.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';
 import { impossible } from './diagnostics.js';
 import { displayMessageWindow } from './tty_topline.js';

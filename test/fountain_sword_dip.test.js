@@ -13,7 +13,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 const alignments = [1, 0];
 for (const level of ['air_level', 'water_level']) {
     void test(`levitation on the ${level} prevents a fountain from judging the dipped sword`, async () => {

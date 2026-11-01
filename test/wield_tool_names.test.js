@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { setTopline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OIL_LAMP } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

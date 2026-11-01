@@ -44,7 +44,7 @@ import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { openingTinMaySaveHero } from './tin.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rn2 } from './rng.js';
 

@@ -41,7 +41,7 @@ import { rn1, rn2 } from './rng.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
 import { forceLearnSpell, knownSpell } from './spell.js';
-import { willWeld } from './weapon_type.js';
+import { willWeld } from './wield.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;

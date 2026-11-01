@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { promptDirection } from '../js/tty_prompts.js';
 import { moveloop_core } from '../js/allmain.js';
 import { ARROW, BOW, CLUB, OBJECT_NAMES } from '../js/object_data.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshGameplayRoom, freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';

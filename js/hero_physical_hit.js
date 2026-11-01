@@ -28,7 +28,7 @@ import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmm
 import { heroIsBlind } from './senses.js';
 import { dryTowel } from './towel.js';
 import { cansee } from './vision.js';
-import { isPolearm } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
 import { wakeAttackedMonster } from './mon.js';
 const SILVER = 14;
 const GEMSTONE = 20;

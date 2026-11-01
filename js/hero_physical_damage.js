@@ -3,7 +3,7 @@ import { P_TWO_WEAPON_COMBAT } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isBimanualObject, launcherMatchesAmmo } from './object_properties.js';
 import { useHeroSkill, weaponSkillDamageBonus, weaponSkillType } from './skills.js';
-import { heroStrengthDamageBonus } from './weapon_damage.js';
+import { heroStrengthDamageBonus } from './weapon.js';
 // The hmon caller enters this stage only after positive contact damage.
 // Zero-damage shade contacts keep their separate admission and message rules.
 export async function recalculateHeroPhysicalDamage(damage, object, { mode, twoHits, getDamageBonus, useWeaponSkill, trainWeaponSkill, state = game, }) {

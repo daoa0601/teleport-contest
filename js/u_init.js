@@ -37,7 +37,7 @@ import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import { makePlural } from './object_grammar.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { newMonsterHitPoints } from './makemon.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const WEAPON_CLASS = 2;

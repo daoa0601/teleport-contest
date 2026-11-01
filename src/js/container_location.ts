@@ -5,7 +5,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { displayLiquidName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { heroHasNoLimbs } from './polyself.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
 import { heroHandName } from './body_parts.js';
 import { riderCannotReachMessage } from './steed.js';
 import { surfaceName } from './terrain_name.js';

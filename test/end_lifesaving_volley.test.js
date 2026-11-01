@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { setQuiverObject } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

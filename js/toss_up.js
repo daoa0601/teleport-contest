@@ -27,7 +27,7 @@ import { makeBlinded } from './sight_change.js';
 import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { ceilingName } from './terrain_name.js';
 import { levelHasCeiling } from './terrain_properties.js';
-import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 const POTION_CLASS = 8;
 const RING_CLASS = 4;
 const SILVER = 14;

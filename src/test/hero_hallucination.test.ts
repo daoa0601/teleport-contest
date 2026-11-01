@@ -16,7 +16,7 @@ import { requireGameDisplay, game } from '../js/gstate.js';
 import { BLINDFOLD, GOLD_DRAGON_SCALES } from '../js/object_data.js';
 import { heroIsHallucinating } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 

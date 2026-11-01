@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { VIBRATING_SQUARE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { PICK_AXE } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

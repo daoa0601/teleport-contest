@@ -33,7 +33,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { saveMonsterTraits } from '../js/mkobj.js';
 async function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     await freshObjectRoom({

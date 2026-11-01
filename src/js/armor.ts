@@ -25,7 +25,7 @@ import {
     selfTouchPetrifyingWeapons, touchPetrifies,
 } from './stoning.js';
 import { setSlipperyHands } from './towel.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { surfaceName } from './terrain_name.js';
 import { heroFormClings } from './polyself.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';

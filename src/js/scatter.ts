@@ -65,8 +65,8 @@ import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
-import { rangedTargetHitBonus } from './weapon_accuracy.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { rangedTargetHitBonus } from './dothrow.js';
 
 export interface ScatterOptions {
     state?: GameState;

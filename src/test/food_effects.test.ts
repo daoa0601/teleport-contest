@@ -20,7 +20,7 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import {
     addInventoryObject, addInventoryWeapon,
 } from './support/game-objects.js';

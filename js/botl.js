@@ -27,7 +27,7 @@ import { heroIsPetrifying } from './stoning.js';
 import { armorSimpleName } from './armor.js';
 import { artifactById } from './artifacts.js';
 import { isWeaponTool } from './object_properties.js';
-import { weaponDescription } from './weapon_description.js';
+import { weaponDescription } from './weapon.js';
 import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine } from './query.js';

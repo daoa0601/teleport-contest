@@ -15,7 +15,7 @@ import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';

@@ -19,7 +19,7 @@ import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, scheduleObjec
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { objectWeight } from '../js/weight.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

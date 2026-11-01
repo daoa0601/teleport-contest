@@ -25,8 +25,33 @@ import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
 import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
-import { isPolearm, monsterWeaponSwingVerb, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
+import { monsterWeaponSwingVerb } from './mhitu.js';
+import { willWeld } from './wield.js';
 import { monsterHasStoneResistance } from './mondata.js';
+import { AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
+import { HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, TIN_OPENER, TOWEL } from './object_data.js';
+import { isMissileObject, isWeaponTool } from './object_properties.js';
+import { artifactDamageBonus, artifactStrikesShade } from './artifacts.js';
+import { currentAttribute } from './attrib.js';
+import { A_STR, Upolyd, WT_IRON_BALL_INCR } from './const.js';
+import { heroSpecies } from './hero_species.js';
+import { GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_WEIGHT, } from './object_data.js';
+import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
+import { objectClassForType } from './object_knowledge.js';
+import { objectMaterial } from './object_material.js';
+import { d, rnd } from './rng.js';
+import { isPoolAt } from './terrain_properties.js';
+import { artifactToHitBonus } from './artifacts.js';
+import { P_SPEAR } from './const.js';
+import { requireInitializedHero } from './hero_types.js';
+import { MONSTER_MOVE } from './monster_data.js';
+import { OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
+import { P_FLAIL } from './const.js';
+import { FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE } from './object_data.js';
+import { makeSingular } from './object_grammar.js';
+import { SKILL_NAMES } from './skills.js';
+import { isAmmunition } from './object_properties.js';
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
@@ -359,5 +384,268 @@ export async function updateMonsterWeaponAfterPolymorph(monster, state = game, {
     if (!(welded && monster.weaponCheck === NO_WEAPON_WANTED))
         monster.weaponCheck = NEED_WEAPON;
     return null;
+}
+// C weapon.c:autoreturn_weapon(). The pinned game only includes the aklys.
+export function returningWeaponRangeSquared(object) {
+    return object?.otyp === AKLYS ? AKLYS_LIM * AKLYS_LIM : null;
+}
+const TOOL_CLASS = 6;
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
+const LEATHER = 7;
+const SILVER = 14;
+function objectTypes(names) {
+    return new Set(names.map(name => OBJECT_NAMES.indexOf(name))
+        .filter(otyp => otyp >= 0));
+}
+const LARGE_FIXED_ONE = objectTypes([
+    'iron chain', 'crossbow bolt', 'morning star', 'partisan', 'runesword',
+    'elven broadsword', 'broadsword',
+]);
+const LARGE_RND4 = objectTypes(['flail', 'ranseur', 'voulge']);
+const LARGE_RND6 = objectTypes([
+    'splash of acid venom', 'halberd', 'spetum',
+]);
+const LARGE_2D4 = objectTypes(['battle-axe', 'bardiche', 'trident']);
+const LARGE_2D6 = objectTypes([
+    'tsurugi', 'dwarvish mattock', 'two-handed sword',
+]);
+const SMALL_FIXED_ONE = objectTypes([
+    'iron chain', 'crossbow bolt', 'mace', 'silver mace', 'war hammer',
+    'flail', 'spetum', 'trident',
+]);
+const SMALL_RND4 = objectTypes([
+    'battle-axe', 'bardiche', 'bill-guisarme', 'guisarme', 'lucern hammer',
+    'morning star', 'ranseur', 'broadsword', 'elven broadsword', 'runesword',
+    'voulge',
+]);
+const SMALL_RND6 = objectTypes(['splash of acid venom']);
+function damageProfile(object, monster) {
+    const large = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
+    const otyp = object.otyp;
+    const range = (large ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)[otyp]
+        ?? 0;
+    const fixed = (large ? LARGE_FIXED_ONE : SMALL_FIXED_ONE).has(otyp)
+        ? 1 : 0;
+    const random4 = (large ? LARGE_RND4 : SMALL_RND4).has(otyp);
+    const random6 = (large ? LARGE_RND6 : SMALL_RND6).has(otyp);
+    const twoD4 = large && LARGE_2D4.has(otyp);
+    const twoD6 = large && LARGE_2D6.has(otyp);
+    return { range, fixed, random4, random6, twoD4, twoD6 };
+}
+function enchantment(object) {
+    return object.spe ?? object.enchantment ?? 0;
+}
+function erosion(object) {
+    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
+}
+function addWeaponEnchantment(object, damage) {
+    const objectClass = object.oclass || objectClassForType(object.otyp);
+    const weaponLike = objectClass === WEAPON_CLASS
+        || (objectClass === TOOL_CLASS
+            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
+    if (!weaponLike)
+        return damage;
+    damage += enchantment(object);
+    return Math.max(0, damage);
+}
+function canHaveTargetDamageBonus(object) {
+    const objectClass = object.oclass || objectClassForType(object.otyp);
+    return objectClass === WEAPON_CLASS
+        || (objectClass === TOOL_CLASS
+            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0)
+        || objectClass === GEM_CLASS
+        || objectClass === BALL_CLASS
+        || objectClass === CHAIN_CLASS;
+}
+export function shadeBlocksWeaponBaseDamage(object, monster, state = game) {
+    return monsterIsShade(monster)
+        && objectMaterial(object, state) !== SILVER
+        && !artifactStrikesShade(object);
+}
+function applyTargetBaseRules(object, monster, damage, rollOne, state) {
+    const material = objectMaterial(object, state);
+    if (material !== undefined && material <= LEATHER && monsterIsThickSkinned(monster))
+        damage = 0;
+    if (shadeBlocksWeaponBaseDamage(object, monster, state))
+        damage = 0;
+    if (object.otyp === HEAVY_IRON_BALL && damage > 0) {
+        const baseWeight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
+        if (baseWeight === undefined)
+            throw new Error('The heavy iron ball has no base weight');
+        const extraWeight = Math.max(0, (object.owt ?? baseWeight) - baseWeight);
+        const increments = Math.trunc(extraWeight / WT_IRON_BALL_INCR);
+        if (increments > 0) {
+            damage += rollOne(4 * increments);
+            damage = Math.min(damage, 25);
+        }
+    }
+    return damage;
+}
+function targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero }, rollOne, state) {
+    if (!canHaveTargetDamageBonus(object))
+        return 0;
+    let bonus = 0;
+    if (object.blessed && hatesBlessings)
+        bonus += rollOne(4);
+    if (Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) === P_AXE
+        && monsterIsWooden(monster))
+        bonus += rollOne(4);
+    if (objectMaterial(object, state) === SILVER && hatesSilver)
+        bonus += rollOne(20);
+    if (artifactEmitsLight(object) && object.lamplit
+        && monsterHatesLight(monster))
+        bonus += rollOne(8);
+    // dmgval probes spec_dbon with 25 damage. An artifact with its own
+    // damage die still performs that probe even when it will not double.
+    return bonus > 1 && object.oartifact
+        && artifactDamageBonus(object, monster, 25, rollOne, { hero, state }) >= 25
+        ? Math.trunc((bonus + 1) / 2) : bonus;
+}
+function applyErosion(object, damage) {
+    if (damage > 0)
+        damage = Math.max(1, damage - erosion(object));
+    return damage;
+}
+export function rollPhysicalWeaponDamage(object, monster, { state = game, hero = false, rollOne = rnd, hatesBlessings = monsterHatesBlessings(monster), hatesSilver = monsterHatesSilver(monster), rollDice = d, } = {}) {
+    if (object.otyp === CREAM_PIE)
+        return 0;
+    const profile = damageProfile(object, monster);
+    let damage = profile.range > 0 ? rollOne(profile.range) : 0;
+    damage += profile.fixed;
+    if (profile.random4)
+        damage += rollOne(4);
+    if (profile.random6)
+        damage += rollOne(6);
+    if (profile.twoD4)
+        damage += rollDice(2, 4);
+    if (profile.twoD6)
+        damage += rollDice(2, 6);
+    damage = addWeaponEnchantment(object, damage);
+    damage = applyTargetBaseRules(object, monster, damage, rollOne, state);
+    damage += targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero }, rollOne, state);
+    return applyErosion(object, damage);
+}
+export function rollPhysicalWeaponDamageAgainstHero(object, state, options = {}) {
+    // C dmgval(obj, &youmonst) asks mon_hates_silver() about the hero's
+    // current form; lycanthropy (Hate_silver) only adds the searing line.
+    const species = heroSpecies(state);
+    return rollPhysicalWeaponDamage(object, { mnum: species }, { ...options, state, hero: true, hatesSilver: monsterSpeciesHatesSilver(species) });
+}
+// Strength values above 18 retain NetHack's internal encoding (19 == 18/01,
+// 93 == 18/75, 118 == 18/**), matching botl.js:formatStrength().
+export function strengthDamageBonus(strength) {
+    if (strength < 6)
+        return -1;
+    if (strength < 16)
+        return 0;
+    if (strength < 18)
+        return 1;
+    if (strength === 18)
+        return 2;
+    if (strength <= 93)
+        return 3;
+    if (strength <= 108)
+        return 4;
+    if (strength < 118)
+        return 5;
+    return 6;
+}
+// C weapon.c:dbon(). Monster forms do not use the human Strength score.
+export function heroStrengthDamageBonus(state) {
+    return Upolyd(state?.u)
+        ? 0 : strengthDamageBonus(currentAttribute(A_STR, state));
+}
+// C weapon.c:hitval() and dothrow.c:omon_adj().
+const M1_SWIM = 0x00000002;
+const M1_WALLWALK = 0x00000008;
+const M1_THICK_HIDE = 0x00200000;
+const S_DRAGON = 30;
+const S_GIANT = 34;
+const S_JABBERWOCK = 36;
+const S_NAGA = 40;
+const S_SNAKE = 45;
+const S_XORN = 50;
+const S_EEL = 57;
+function heroTarget(defender, state) {
+    return defender === state.u;
+}
+export function weaponHitBonus(object, defender, { state = game, random = rn2, rollOne = rnd, } = {}) {
+    const hero = heroTarget(defender, state);
+    let target;
+    if (heroTarget(defender, state)) {
+        requireInitializedHero(defender);
+        target = { mnum: defender.umonnum, mx: defender.ux, my: defender.uy };
+    }
+    else
+        target = defender;
+    const skill = OBJECT_SUBTYPE[object.otyp];
+    const weapon = object.oclass === WEAPON_CLASS
+        || (object.oclass === TOOL_CLASS && skill !== 0);
+    const symbol = MONSTER_SYMBOL[target.mnum];
+    const flags = MONSTER_FLAGS1[target.mnum];
+    let bonus = OBJECT_HIT_BONUS[object.otyp];
+    if (bonus === undefined || skill === undefined)
+        throw new RangeError(`Unknown weapon type ${object.otyp}`);
+    if (symbol === undefined || flags === undefined)
+        throw new RangeError(`Unknown weapon defender species ${target.mnum}`);
+    if (weapon) {
+        if (object.spe === undefined)
+            throw new Error(`Weapon ${object.otyp} has no enchantment value.`);
+        bonus += object.spe;
+    }
+    if (weapon && object.blessed && monsterHatesBlessings(target))
+        bonus += 2;
+    if (object.oclass === WEAPON_CLASS && skill === P_SPEAR
+        && [S_XORN, S_DRAGON, S_JABBERWOCK, S_NAGA, S_GIANT].includes(symbol)) {
+        bonus += 2;
+    }
+    if (object.otyp === TRIDENT && (flags & M1_SWIM)) {
+        if (isPoolAt(target.mx, target.my, state))
+            bonus += 4;
+        else if (symbol === S_EEL || symbol === S_SNAKE)
+            bonus += 2;
+    }
+    if (weapon && skill === P_PICK_AXE
+        && (flags & M1_WALLWALK) && (flags & M1_THICK_HIDE)) {
+        bonus += 2;
+    }
+    if (object.oartifact) {
+        bonus += artifactToHitBonus(object, target, rollOne, { hero, random, state });
+    }
+    return bonus;
+}
+// C weapon.c:weapon_descr(). Describe the kind of weapon without knowledge,
+// enchantment, material, or a personal name.
+const CLASS_NAMES = [
+    'strange object', 'strange object', 'weapon', 'armor', 'ring', 'amulet',
+    'tool', 'food', 'potion', 'scroll', 'spellbook', 'wand', 'coin', 'gem',
+    'large rock', 'iron ball', 'chain', 'venom',
+];
+export function weaponDescription(object) {
+    const skill = [2, 6, 13].includes(object.oclass)
+        ? Math.abs(requireObjectData(OBJECT_SUBTYPE, object.otyp)) : 0;
+    let description = SKILL_NAMES[skill];
+    if (skill === 0) {
+        if ([CORPSE, TIN, EGG, STATUE, BOULDER, TOWEL, TIN_OPENER].includes(object.otyp))
+            description = requireObjectData(OBJECT_NAMES, object.otyp) ?? undefined;
+        else
+            description = object.globby ? 'glob' : CLASS_NAMES[object.oclass];
+    }
+    else if (skill === P_SLING && isAmmunition(object)) {
+        description = [ROCK, LUCKSTONE, LOADSTONE, TOUCHSTONE, FLINT].includes(object.otyp)
+            ? 'stone' : object.oclass === 13 ? 'gem' : CLASS_NAMES[object.oclass];
+    }
+    else if (skill === P_BOW && isAmmunition(object))
+        description = 'arrow';
+    else if (skill === P_CROSSBOW && isAmmunition(object))
+        description = 'bolt';
+    else if (skill === P_FLAIL && object.otyp === GRAPPLING_HOOK)
+        description = 'hook';
+    else if (skill === P_PICK_AXE && object.otyp === DWARVISH_MATTOCK)
+        description = 'mattock';
+    if (!description)
+        throw new Error(`No weapon description for object type ${object.otyp}`);
+    return makeSingular(description);
 }
 //# sourceMappingURL=weapon.js.map

@@ -33,7 +33,7 @@ import { monsterObjectPronoun, monsterPossessive, monsterPolymorphsWhenStoned, m
 import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
-import { weaponHitBonus } from './weapon_accuracy.js';
+import { weaponHitBonus } from './weapon.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';

@@ -10,7 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, BATTLE_AXE, CORPSE, DAGGER, LEATHER_GLOVES, OBJECT_NAMES, SMALL_SHIELD, } from '../js/object_data.js';
 import { pickupAtHero } from '../js/pickup.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

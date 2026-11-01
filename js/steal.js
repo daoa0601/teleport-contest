@@ -33,7 +33,7 @@ import { openHoldingTrap } from './trap.js';
 import { armorSimpleName, stopDonning } from './armor.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash } from './leash_apply.js';

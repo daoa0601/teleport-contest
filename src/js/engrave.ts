@@ -19,6 +19,33 @@ import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './terrain_properties.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
+import {
+    AKLYS_LIM,
+    P_AXE,
+    P_BOW,
+    P_CROSSBOW,
+    P_DAGGER,
+    P_LANCE,
+    P_PICK_AXE,
+    P_POLEARMS,
+    P_SABER,
+    P_SHORT_SWORD,
+    P_WHIP,
+} from './const.js';
+import { artifactById } from './artifacts.js';
+import {
+    AKLYS,
+    HEAVY_IRON_BALL,
+    IRON_CHAIN,
+    OBJECT_BIMANUAL,
+    OBJECT_DIR,
+    OBJECT_SUBTYPE,
+    TIN_OPENER,
+    TOWEL,
+} from './object_data.js';
+import { isMissileObject, isWeaponTool } from './object_properties.js';
+import { willWeld } from './wield.js';
+import type { GameObject } from './object_types.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
 
@@ -368,4 +395,14 @@ export async function readEngravingAt(
     engraving.eread = true;
     engraving.erevealed = true;
     return true;
+}
+
+// C engrave.c:freehand(). A removable item does not occupy the hand permanently.
+export function heroHasFreeHand(state: GameState): boolean {
+    const weapon = state.uwep || state.u.uwep;
+    if (!weapon || !willWeld(weapon)) return true;
+    // freehand() calls welded() before checking the other hand or shield.
+    weapon.bknown = true;
+    const shield = state.uarms || state.u.uarms;
+    return !OBJECT_BIMANUAL[weapon.otyp] && !shield?.cursed;
 }

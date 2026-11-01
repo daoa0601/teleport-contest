@@ -80,8 +80,8 @@ import { promptDirection } from './tty_prompts.js';
 import {
     EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight,
 } from './weight.js';
-import { isBlade } from './weapon_type.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isBlade } from './object_properties.js';
+import { isWeldedPrimary } from './wield.js';
 import { cansee } from './vision.js';
 import {
     observeObjectForNaming, definiteName, objectCombatName, objectQuestion,

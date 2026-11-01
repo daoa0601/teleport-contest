@@ -6,7 +6,7 @@ import { CORPSE, MEAT_RING } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { canLetGo, freeInventoryObject } from './hero_inventory.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { paranoidQuery } from './query.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { heroHandName, monsterStomachName } from './body_parts.js';

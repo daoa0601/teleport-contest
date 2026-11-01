@@ -10,7 +10,7 @@ import {
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { BEARTRAP, BOULDER, CHEST, OBJECT_NAMES, QUARTERSTAFF } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { invokeInventoryObject } from './support/commands.js';
 import {
     addInventoryObject, artifactObject, floorObject,

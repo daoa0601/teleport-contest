@@ -24,7 +24,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { confusePromptDirection, promptDirection } from './tty_prompts.js';
 import { vision_note_blocker_change } from './vision.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
 import { commandResultCancelled } from './command_state.js';
 export async function useStethoscope(object) {
     requirePlayingGame(game);

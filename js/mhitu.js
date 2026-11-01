@@ -18,7 +18,10 @@ import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } fro
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning } from './armor.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
-import { isPolearm, monsterWeaponSwingVerb } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
+import { weaponHitBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { monsterWeaponStrengthBonus } from './uhitm.js';
+import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit } from './artifacts.js';
 import { artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -58,8 +61,6 @@ import { observeObjectForNaming, objectCombatName, objectName, ownedObjectName, 
 import { objectDescription } from './object_description.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
-import { weaponHitBonus } from './weapon_accuracy.js';
-import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
@@ -96,9 +97,11 @@ import { seductionCompatibility } from './seduction_compatibility.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { objectTypeKnown } from './shk.js';
-import { isWeldedPrimary } from './weapon_slots.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
+import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { isMissileObject, isWeaponTool } from './object_properties.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
 const M1_SWIM = 0x00000002;
@@ -3080,5 +3083,13 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
         await publish(`${name()} looks ${modifier}${reactions[reaction]}.`);
     }
     return { mask: M_ATTK_MISS, heroDied: !!state.program_state?.gameover };
+}
+// C mhitu.c:mswings_verb(). The mixed-strike roll occurs even when bashing.
+export function monsterWeaponSwingVerb(object, bash = false, random = rn2) {
+    const direction = OBJECT_DIR[object.otyp] ?? 0;
+    const thrust = (direction & 1) && (!(direction & ~1) || random(2) === 0);
+    const lash = OBJECT_SUBTYPE[object.otyp] === P_WHIP
+        || (object.otyp === TOWEL && (object.spe ?? 0) > 0);
+    return bash ? 'bashes with' : lash ? 'lashes' : thrust ? 'thrusts' : 'swings';
 }
 //# sourceMappingURL=mhitu.js.map

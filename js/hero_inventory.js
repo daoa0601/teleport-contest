@@ -21,7 +21,7 @@ import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE,
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 const SCROLL_CLASS = 9;
 const COIN_CLASS = 12;
 const CARRIED_FLAGS = new Map([

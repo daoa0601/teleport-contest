@@ -21,7 +21,7 @@ import { strangeFeeling } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, objectTypeKnown, updateUnpaidObjectPrice, } from './shk.js';
 import { objectWeight } from './weight.js';
-import { willWeld } from './weapon_type.js';
+import { willWeld } from './wield.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const SCROLL_CLASS = 9;

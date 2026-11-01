@@ -44,7 +44,7 @@ import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage } from './shk.js';
-import { isBlade } from './weapon_type.js';
+import { isBlade } from './object_properties.js';
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
 const ROCK_CLASS = 14;

@@ -5,12 +5,12 @@ import { TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, W_ARMOR } from './cons
 import { game } from './gstate.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
 import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
-import { isSword } from './weapon_type.js';
+import { isSword } from './object_properties.js';
+import { isWeldedPrimary } from './wield.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { isFlimsyObject } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';
 import { surfaceName } from './terrain_name.js';
-import { isWeldedPrimary } from './weapon_slots.js';
 const MZ_SMALL = 1;
 export function armorWearDecision(object, state = game) {
     const slot = armorSlotFor(object.otyp);

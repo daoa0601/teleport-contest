@@ -12,7 +12,7 @@ import { monsterHasMagicResistance } from '../js/anti_magic_trap.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { d, initRng, rn2, rnd } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import type { HeroNaturalEffectContext } from '../js/hero_natural_types.js';
 import type { Monster } from '../js/monster_types.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

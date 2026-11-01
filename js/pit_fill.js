@@ -21,7 +21,7 @@ import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { cansee } from './vision.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 const M1_WALLWALK = 0x08;
 const M2_ROCKTHROW = 0x08000000;
 export async function fillPitWithBoulderAt(x, y, state = game, { publish = plineWithContinuation, } = {}) {

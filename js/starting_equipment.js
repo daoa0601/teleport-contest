@@ -3,7 +3,7 @@ import { armorSlotFor, wearHeroArmor } from './armor.js';
 import { FLINT, OBJECT_BIMANUAL, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
 import { learnInitialSpell } from './spell.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './wield.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const SPBOOK_CLASS = 10;

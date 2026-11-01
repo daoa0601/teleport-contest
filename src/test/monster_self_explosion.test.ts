@@ -18,7 +18,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -208,7 +208,6 @@ void test('hero life saving resumes after fatal direct blast damage', async () =
     assert.match(messages.join(' '), /It is fatal\..*But wait.*medallion.*crumbles/s);
 });
 
-
 void test('fire doubles body damage to a cold-resistant bystander without crediting the hero', async () => {
     const { input } = explosionRoom();
     requirePlayingGame(game);
@@ -311,7 +310,6 @@ for (const lifeSaved of [false, true] as const) {
     });
 }
 
-
 void test('fatal pit damage from evaporated water stops later fire damage to the floor pile', async () => {
     const { input, messages } = explosionRoom();
     requirePlayingGame(game);
@@ -328,7 +326,6 @@ void test('fatal pit damage from evaporated water stops later fire damage to the
     assert.equal(paper.quan, 64);
     assert.doesNotMatch(messages.join(' '), /You are caught in the/);
 });
-
 
 void test('life saving after an evaporated-pool fall allows the floor fire and blast to finish', async () => {
     const { input } = explosionRoom();
@@ -347,7 +344,6 @@ void test('life saving after an evaporated-pool fall allows the floor fire and b
     assert.ok(paper.quan < 64);
     assert.ok(game.u.uhp > 0 && game.u.uhp < game.u.uhpmax);
 });
-
 
 for (const [form, species] of [
     ['red dragon', 'flaming sphere'],

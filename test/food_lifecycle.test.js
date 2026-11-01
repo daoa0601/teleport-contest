@@ -18,7 +18,7 @@ import { stopHeroOccupation } from '../js/occupation.js';
 import { polymonHero } from '../js/polyself.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { runDueTimers } from '../js/timer_effects.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, corpseObject, floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

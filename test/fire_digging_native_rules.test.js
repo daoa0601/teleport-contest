@@ -8,7 +8,7 @@ import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { burnHeroArmorByFire } from '../js/trap.js';
 import { vision_reset } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -31,8 +31,9 @@ import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { heroHasFreeHand, isBlade, isWetTowel } from './weapon_type.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { heroHasFreeHand } from './engrave.js';
+import { isBlade, isWetTowel } from './object_properties.js';
+import { isWeldedPrimary } from './wield.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { heroSpecies } from './hero_species.js';
 import {

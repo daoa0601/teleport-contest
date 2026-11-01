@@ -32,7 +32,7 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_SUBTYPE, STATUE } from './object_data.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, couldsee } from './vision.js';
-import { isPolearm } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
 
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

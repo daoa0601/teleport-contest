@@ -19,7 +19,7 @@ import { beginObjectBurn, endObjectBurn } from '../js/light.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

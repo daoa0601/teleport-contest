@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshTurnRoom } from './support/playable-room.js';

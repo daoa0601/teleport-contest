@@ -14,8 +14,8 @@ import {
 } from './const.js';
 import { deleteTrap } from './trap.js';
 import { ensureHeroSkills, useHeroSkill, weaponSkillType } from './skills.js';
-import { isBlade } from './weapon_type.js';
-import { weaponDescription } from './weapon_description.js';
+import { isBlade } from './object_properties.js';
+import { weaponDescription } from './weapon.js';
 
 export async function fightSeenWebWithForce(
     x: number, y: number, state: GameState = game,

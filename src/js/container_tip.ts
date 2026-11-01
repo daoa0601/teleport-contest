@@ -8,7 +8,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
 import { ableToLoot } from './container_location.js';
 import { heroHasNoHands } from './polyself.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHasFreeHand } from './engrave.js';
 import { heroHandName } from './body_parts.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { inventoryItemDescription } from './invent.js';

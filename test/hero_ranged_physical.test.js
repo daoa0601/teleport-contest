@@ -8,7 +8,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { ARROW, AXE, BOULDER, BOW, HEAVY_IRON_BALL, OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';

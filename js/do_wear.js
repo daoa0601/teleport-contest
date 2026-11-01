@@ -26,7 +26,7 @@ import { chooseInventoryObject, compactInventoryLetters } from './inventory_prom
 import { accessibleEquipment, equipmentClassification, wearingFullEquipment, } from './equipment_selection.js';
 import { canSelectOff } from './bulk_takeoff.js';
 import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
-import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
+import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { yn_function } from './query.js';
 export async function doputon() {

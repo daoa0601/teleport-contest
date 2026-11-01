@@ -22,7 +22,7 @@ import { heroHasNoLimbs } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { touchPetrifies } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
-import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
+import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { TAKEOFF_ORDER, resetBulkTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import type { TakeoffSlot } from './takeoff_state.js';
 import { selectBulkTakeoff } from './takeoff_menu.js';

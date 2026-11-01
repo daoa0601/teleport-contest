@@ -7,7 +7,7 @@ import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

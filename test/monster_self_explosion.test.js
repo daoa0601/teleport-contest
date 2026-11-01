@@ -17,7 +17,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { memoryStorage } from './support/memory-storage.js';

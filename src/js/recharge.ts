@@ -41,7 +41,7 @@ import {
     chargeAlteredUnpaidObject, objectTypeKnown,
     updateUnpaidObjectPrice,
 } from './shk.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 
 export interface RechargeResult { heroDied: boolean; damage?: number }
 export interface RingRechargeResult extends RechargeResult { damage: number }

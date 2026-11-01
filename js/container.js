@@ -13,7 +13,8 @@ import { nomul } from './command_state.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';
+import { heroHasFreeHand } from './engrave.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { objectDescription as describeObject } from './object_description.js';
 import { getobj } from './inventory_prompt.js';
@@ -44,7 +45,6 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
 import { objectWeight } from './weight.js';
-import { heroHasFreeHand, willWeld } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot, stolenValue, sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shk.js';

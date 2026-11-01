@@ -27,7 +27,7 @@ import { isWeaponTool } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, returnHeroToHumanForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
 import { dropSecondaryWeapon } from './two_weapon.js';
-import { isTwoWeaponObject } from './weapon_type.js';
+import { isTwoWeaponObject } from './wield.js';
 import { wakeAttackedMonster } from './mon.js';
 const S_KOBOLD = 11;
 const S_ORC = 15;

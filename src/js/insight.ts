@@ -43,9 +43,9 @@ import { SHIELD_OF_REFLECTION } from './object_data.js';
 import {
     canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
 } from './skills.js';
-import { weaponDescription } from './weapon_description.js';
-import { isAmmunition, isWetTowel } from './weapon_type.js';
-import { emptyHandedDescription } from './weapon_readiness.js';
+import { weaponDescription } from './weapon.js';
+import { isAmmunition, isWetTowel } from './object_properties.js';
+import { emptyHandedDescription } from './wield.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterDigests } from './monster_data.js';

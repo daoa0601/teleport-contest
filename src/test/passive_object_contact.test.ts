@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { requireFixtureGame } from './support/game-state.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { AT_CLAW } from '../js/monster_attack_types.js';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';

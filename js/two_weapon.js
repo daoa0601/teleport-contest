@@ -14,8 +14,7 @@ import { OBJECT_BIMANUAL } from './object_data.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { objectHasPersonalName, objectName, objectNameIsPlural, ownedObjectAction, ownedObjectName, } from './objnam.js';
 import { rnd } from './rng.js';
-import { setTwoWeaponCombat } from './weapon_slots.js';
-import { isTwoWeaponObject } from './weapon_type.js';
+import { setTwoWeaponCombat, isTwoWeaponObject } from './wield.js';
 // C mondata.h could_twoweap() examines only the first three attacks.
 export function heroCanUseTwoWeapons(state = game) {
     return requireMonsterData(MONSTER_ATTACKS, heroSpecies(state)).slice(0, 3)

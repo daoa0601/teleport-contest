@@ -9,7 +9,7 @@ import { finishDeferredMonsterMiscItem } from '../js/muse.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

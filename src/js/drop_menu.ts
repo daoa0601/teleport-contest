@@ -15,7 +15,7 @@ import { objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } f
 import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { getLine, tty_yn_function } from './query.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';
 import type { MultiSelectSection } from './windows.js';
 import type { GameObject } from './object_types.js';

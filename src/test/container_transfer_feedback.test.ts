@@ -6,7 +6,7 @@ import { CHEST, DAGGER, DART, ROCK, SHORT_SWORD } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 
 void test('container removal describes the picked quantity and the merged inventory total', async () => {
     freshPlayableRoom();

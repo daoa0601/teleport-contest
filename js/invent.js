@@ -29,7 +29,8 @@ import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNa
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
-import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isBlade } from './object_properties.js';
+import { isTwoWeaponObject } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';

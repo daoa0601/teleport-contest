@@ -28,7 +28,7 @@ import { makeBlinded } from './sight_change.js';
 import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { ceilingName } from './terrain_name.js';
 import { levelHasCeiling } from './terrain_properties.js';
-import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

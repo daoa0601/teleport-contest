@@ -11,7 +11,7 @@ import { recordObjectCall } from '../js/object_knowledge.js';
 import { beginObjectBurn } from '../js/light.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

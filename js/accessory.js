@@ -13,7 +13,7 @@ import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import { captureLevitationState, grantWornProperty, propertyIsActive, hasIntrinsicProperty, propertyIsBlocked, propertyTimeout, refreshMovementProperties, removeWornProperty, setPropertyTimeout, } from './properties.js';
-import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
+import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
 import { heroFormFlags, heroHasNoLimbs, heroIsUnchanging } from './polyself.js';
 import { changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.js';

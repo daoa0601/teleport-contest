@@ -7,7 +7,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { initializePet } from '../js/dog.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { untrap } from '../js/untrap.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

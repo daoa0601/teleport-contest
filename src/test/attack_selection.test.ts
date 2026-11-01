@@ -11,7 +11,7 @@ import {
 import { LEATHER_GLOVES, WHITE_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { artifactObject, corpseObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

@@ -34,7 +34,7 @@ import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { cansee } from './vision.js';
-import { setPrimaryWeapon } from './weapon_slots.js';
+import { setPrimaryWeapon } from './wield.js';
 
 interface ProjectileBarsOptions {
     x: number;

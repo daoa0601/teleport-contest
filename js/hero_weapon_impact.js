@@ -17,7 +17,7 @@ import { objectResistsDestruction } from './object_state.js';
 import { ownedObjectName } from './objnam.js';
 import { d, rn2, rnl } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
-import { losePrimaryWeapon, setTwoWeaponCombat } from './weapon_slots.js';
+import { losePrimaryWeapon, setTwoWeaponCombat } from './wield.js';
 const IRON = 11;
 const METAL = 12;
 const PM_BLACK_PUDDING = MONSTER_NAME.indexOf('black pudding');

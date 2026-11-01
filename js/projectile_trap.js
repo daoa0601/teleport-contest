@@ -14,7 +14,7 @@ import { rn2, rnd } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
 import { monsterName } from './do_name.js';
 async function placeMissile(missile, trap, state) {
     if (state === game)

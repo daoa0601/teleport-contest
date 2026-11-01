@@ -178,7 +178,10 @@ import {
     monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon,
 } from './weapon.js';
 import { swingMonsterWeapon } from './mhitu.js';
-import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isPick, isPolearm } from './object_properties.js';
+import { returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { willWeld } from './wield.js';
+import { monsterWeaponStrengthBonus } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -231,7 +234,6 @@ import {
 } from './regions.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies } from './stoning.js';
 import { monsterReflectsRay } from './ray.js';
-import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
 import { talkToDemon } from './demon_talk.js';

@@ -14,7 +14,7 @@ import { punishHero } from '../js/punishment.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setSlipperyHands } from '../js/towel.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from '../js/wield.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';

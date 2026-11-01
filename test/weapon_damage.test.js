@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ACID_VENOM, AXE, BULLWHIP, CREAM_PIE, DAGGER, HEAVY_IRON_BALL, DWARVISH_MATTOCK, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, TWO_HANDED_SWORD, WAN_LIGHT, WAN_LIGHTNING, } from '../js/object_data.js';
-import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, } from '../js/weapon_damage.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, } from '../js/weapon.js';
 import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';

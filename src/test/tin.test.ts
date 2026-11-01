@@ -20,7 +20,7 @@ import { addShopObjectToBill } from '../js/shk.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setSlipperyHands } from '../js/towel.js';
 import { continueTinOpening, setTinVariety, startTin, tinDetails, tinVariety, useTinOpener } from '../js/tin.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -43,7 +43,6 @@ void test('tin contents depend on individual knowledge instead of recognizing th
     });
     assert.equal(await inventoryItemDescription(identified), 'a tin of kobold meat');
 });
-
 
 async function room(t: TestContext, answers: readonly PromptAnswer[] = [], options: ObjectRoomOptions = {}) {
     await freshObjectRoom({ gameplaySeed: 71n, role: 'wizard', ...options });
@@ -158,7 +157,6 @@ void test('slippery bare hands drop one unopened tin from a carried stack', asyn
     const result = await startTin(food);
     assert.equal(result.started, false);
     assert.equal(objectQuantity(food), 2);
-
 
     const dropped = floorObjectsAt(game.level, game.u.ux, game.u.uy).find(object => object.otyp === TIN);
     assert.equal(objectQuantity(dropped), 1);

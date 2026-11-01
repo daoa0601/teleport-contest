@@ -5,7 +5,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { W_ARMF, W_RINGL, W_RINGR } from '../js/const.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { planInput } from './support/planned-input.js';
 import { freshObjectRoom } from './support/object-room.js';

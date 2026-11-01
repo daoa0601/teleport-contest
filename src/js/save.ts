@@ -33,7 +33,7 @@ import {
 } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { weaponNeedsBashingMessage } from './weapon_type.js';
+import { weaponNeedsBashingMessage } from './wield.js';
 import { GRAPPLING_HOOK, PICK_AXE, SLIME_MOLD } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';

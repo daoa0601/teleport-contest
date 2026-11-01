@@ -12,7 +12,7 @@ import { BLINDFOLD, LENSES, TOWEL } from './object_data.js';
 import { heroHasNoHead } from './hero_species.js';
 import { heroIsBlind, isEyesOfTheOverworld, syncBlindness, } from './senses.js';
 import { toggleBlindness } from './sight_change.js';
-import { releaseWeaponSlots } from './weapon_slots.js';
+import { releaseWeaponSlots } from './wield.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
 function currentEyewear() {
     return game.ublindf || game.u?.ublindf || null;

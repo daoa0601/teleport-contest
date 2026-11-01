@@ -8,7 +8,7 @@ import { PIT } from '../js/const.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addTrap } from './support/level-state.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

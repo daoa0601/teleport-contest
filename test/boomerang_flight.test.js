@@ -4,7 +4,7 @@ import { A_DEX, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { BOOMERANG } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { rhack } from '../js/cmd.js';
 import { pushKey } from '../js/input.js';
 import { throwInventoryObject } from './support/commands.js';

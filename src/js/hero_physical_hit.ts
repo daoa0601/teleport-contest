@@ -35,7 +35,7 @@ import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmm
 import { heroIsBlind } from './senses.js';
 import { dryTowel } from './towel.js';
 import { cansee } from './vision.js';
-import { isPolearm } from './weapon_type.js';
+import { isPolearm } from './object_properties.js';
 import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';

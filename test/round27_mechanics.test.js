@@ -10,7 +10,7 @@ import { grantIntrinsicProperty, hasTimedProperty, setPropertyTimeout } from '..
 import { initRng } from '../js/rng.js';
 import { waterDamageObject } from '../js/trap.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireFixtureGame } from './support/game-state.js';

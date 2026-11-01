@@ -15,7 +15,7 @@ import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
-import { weaponHitBonus } from '../js/weapon_accuracy.js';
+import { weaponHitBonus } from '../js/weapon.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

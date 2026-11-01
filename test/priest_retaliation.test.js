@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
 import { hurtleMonster } from '../js/dothrow.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { A_DEX, ALTAR, AM_SHRINE, Align2amask, M_SEEN_ELEC, M_SEEN_REFL, NO_MINVENT, ROOMOFFSET, STRAT_WAITFORU, TEMPLE, W_ARM, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

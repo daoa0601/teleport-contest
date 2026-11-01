@@ -12,7 +12,7 @@ import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES, RIN_FREE_ACTION
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { memoryStorage } from './support/memory-storage.js';

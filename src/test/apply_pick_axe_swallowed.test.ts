@@ -9,7 +9,7 @@ import { game } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { BULLWHIP, PICK_AXE } from '../js/object_data.js';
 import { W_SWAPWEP, W_WEP } from '../js/const.js';
-import { setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';

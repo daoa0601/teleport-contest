@@ -14,7 +14,7 @@ import { blessObjectState, curseObject } from './object_state.js';
 import { inTown } from './room.js';
 import { rn2 } from './rng.js';
 import { updateUnpaidObjectPrice } from './shk.js';
-import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
+import { setTwoWeaponCombat, setWieldedArtifactProperties } from './wield.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { angerWatchGuards } from './mon.js';
 

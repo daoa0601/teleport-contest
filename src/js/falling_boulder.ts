@@ -31,7 +31,7 @@ import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js
 import { rn1 } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
-import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { finishEnvironmentalMonsterDeath, wakeMonster } from './mon.js';
 
 interface FallingBoulderOptions extends Pick<ScrollEffectOptions,

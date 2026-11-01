@@ -39,7 +39,7 @@ import { isWeaponTool } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, returnHeroToHumanForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
 import { dropSecondaryWeapon } from './two_weapon.js';
-import { isTwoWeaponObject } from './weapon_type.js';
+import { isTwoWeaponObject } from './wield.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { AttackTuple } from './monster_action_types.js';

@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DUNCE_CAP, CORNUTHAUM, MUMMY_WRAPPING, RIN_INVISIBILITY, OBJECT_NAMES, SPEED_BOOTS, TOWEL } from '../js/object_data.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';
 import { races } from '../js/roles.js';

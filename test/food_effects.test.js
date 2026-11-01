@@ -15,7 +15,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { APPLE, CARROT, CORPSE, EGG, EUCALYPTUS_LEAF, FORTUNE_COOKIE, LUMP_OF_ROYAL_JELLY, SPRIG_OF_WOLFSBANE, OBJECT_NAMES, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon, } from './support/game-objects.js';
 import { installHumanWerewolfHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';

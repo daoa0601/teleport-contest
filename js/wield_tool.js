@@ -8,11 +8,9 @@ import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { OBJECT_BIMANUAL } from './object_data.js';
-import { willWeld } from './weapon_type.js';
-import { readyHeroWeapon } from './weapon_readiness.js';
+import { willWeld, readyHeroWeapon, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './wield.js';
 import { stopTwoWeaponCombat } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall, } from './polyself.js';
-import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './weapon_slots.js';
 function quantityOf(object) {
     return object.quan ?? object.quantity ?? 1;
 }

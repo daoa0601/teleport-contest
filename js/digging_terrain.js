@@ -50,7 +50,7 @@ import { surfaceName } from './terrain_name.js';
 import { feelTrap, finishImmediateMonsterTrap, seeTrap, triggerImmediateMonsterTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
-import { isAxe } from './weapon_type.js';
+import { isAxe } from './object_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';

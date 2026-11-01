@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_OIL, POT_WATER } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { setHeroLycanthropy } from '../js/were.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

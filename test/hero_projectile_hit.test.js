@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { ACID_VENOM, BLINDING_VENOM, DAGGER, DART, ROCK } from '../js/object_data.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

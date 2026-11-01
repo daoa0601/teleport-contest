@@ -110,7 +110,8 @@ import { continueWipingFace, donull, dowipe, threateningMonsterNearby, } from '.
 import { objectQuantity } from './object_stack.js';
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
-import { setSecondaryWeapon } from './weapon_slots.js';
+import { setSecondaryWeapon } from './wield.js';
+import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY } from './object_data.js';
 import { NO_COLOR } from './terminal.js';
 import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling } from './monster_data.js';
@@ -135,7 +136,6 @@ import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
 import { heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { continueTrapSetting } from './apply.js';
-import { isPick } from './weapon_type.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { continueHeroDigging } from './hero_digging.js';
 import { dowear, doputon, removeWornItem } from './do_wear.js';

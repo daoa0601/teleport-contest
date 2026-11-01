@@ -10,7 +10,7 @@ import {
 import { petDroppableObject, initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { runClaimedGlobTimer } from '../js/glob.js';
 import { beginObjectBurn } from '../js/light.js';
 import { punishHero } from '../js/punishment.js';
@@ -180,7 +180,6 @@ function assertMonsterOwns(monster: Monster, object: GameObject) {
     assert.equal(object.carrierMid, monster.m_id);
     assert.ok(monster.minvent?.includes(object));
 }
-
 
 void test('makemon startup inventory links every identity to the final actor',
     async () => {

@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { setPrimaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
