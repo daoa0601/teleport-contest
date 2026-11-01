@@ -4,7 +4,7 @@ import { LEVEL_TELEP, D_CLOSED, DOOR, MFAST, MM_ANGRY, NO_MINVENT } from '../js/
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { heroEveryturnEffect, takeMonsterTurn } from '../js/monmove.js';
-import { resumeDeferredMovementSpell } from '../js/mcastu.js';
+import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { BAG_OF_HOLDING, DAGGER, POT_EXTRA_HEALING, SACK, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -90,7 +90,9 @@ void test('temporary speed does not prevent a caster from making its speed perma
 
     const turn = await takeMonsterTurn(monster, game, random);
     assert.ok(turn.movement);
-    await resumeDeferredMovementSpell({ monster, ...turn, movement: turn.movement }, game, random);
+    installPagerInput(resetInputState(), { expected: /faster|casts/, limit: 4 });
+    await mcastSpell(monster, 'haste-self', 0,
+        movementSpellContext(monster, game, turn.calls, { random }));
 
     assert.equal(monster.permspeed, MFAST);
     assert.equal(monster.mspec_used, 6);
@@ -208,7 +210,8 @@ void test('the caster remains injured while its healing message waits for acknow
     assert.ok(turn.movement);
     const input = resetInputState();
     await pline('The corridor stretches away into the cold and silent darkness.');
-    const healing = resumeDeferredMovementSpell({ monster, ...turn, movement: turn.movement }, game, random, undefined, () => 12);
+    const healing = mcastSpell(monster, 'cure-self', 0,
+        movementSpellContext(monster, game, turn.calls, { random, rollDice: () => 12 }));
     await input.waitUntilBlocked();
     try {
         assert.equal(monster.mhp, 5);

@@ -38,7 +38,6 @@ import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, dist2, dungeonDepth } from './hacklib.js';
-import { monsterSpellDeathReason, touchHeroWithDeath, applyHeroSpellDamage, beginDeferredHeroCloneWizard, finishDeferredHeroCloneWizard, resolveDeferredHeroAggravation, resolveDeferredHeroHasteSelf, resolveDeferredHeroSummonMonsters, resumeDeferredHeroSpell, resumeDeferredMovementSpell, rollDeferredHeroSpellDamage, resolveMonsterMagicRay, summonMonsterInsects, } from './mcastu.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion, } from './mondata.js';
 import { resolveMonsterWeaponContact, tryKnockback, resolveMonsterContactEffect } from './uhitm.js';
 import { applyArtifactHit } from './artifact_hit.js';

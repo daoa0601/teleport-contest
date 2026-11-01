@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { triggerImmediateMonsterTrap } from '../js/trap.js';
-import { resumeDeferredMovementSpell } from '../js/mcastu.js';
+import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { findMonsterDefensiveItem, lootMonsterContainer, prepareMonsterItemUse, useMonsterDefensiveItem, } from '../js/muse.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -183,16 +183,23 @@ for (const condition of ['blind deaf', 'blind telepath deaf', 'invisible caster 
         assert.ok(turn.movement);
         assert.equal(turn.movement.spellCast?.spell, 'insects');
         assert.equal(canSeeMonster(monster), false);
-        const messages = [];
-        const effect = await resumeDeferredMovementSpell({ monster, ...turn, movement: turn.movement }, game, random, undefined, undefined, message => { messages.push(message); });
-        assert.ok(effect?.created.length);
+        const monstersBefore = new Set(game.level.monsters.map(present => present.m_id));
+        game._lastPlineMessage = '';
+        await mcastSpell(monster, 'insects', 0, movementSpellContext(monster, game, turn.calls, {
+            random,
+        }));
+        const created = game.level.monsters.filter(present => !monstersBefore.has(present.m_id));
+        assert.ok(created.length);
+        // mcast_insects() keeps the plain tty publisher, so the topline's
+        // last message is the observable feedback.
+        const message = game._lastPlineMessage;
         if (condition === 'blind deaf')
-            assert.equal(messages.length, 0);
+            assert.equal(message, '');
         else if (condition === 'blind telepath deaf')
-            assert.match(messages[0] ?? '', /^The .+ summons insects!$/);
+            assert.match(message, /^The .+ summons insects!$/);
         else {
-            assert.ok(effect.created.some(canSpotMonster));
-            assert.equal(messages[0], condition.endsWith('deaf') ? 'Insects appear.'
+            assert.ok(created.some(canSpotMonster));
+            assert.equal(message, condition.endsWith('deaf') ? 'Insects appear.'
                 : 'You hear someone summoning something, and insects appear.');
         }
     });

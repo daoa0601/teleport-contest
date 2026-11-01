@@ -232,7 +232,6 @@ export interface MovementSpellCast {
     directed: false;
     blocked?: boolean;
     fumbled?: boolean;
-    deferredSpellEffect?: boolean;
 }
 
 export interface MonsterAttackPaging {
@@ -301,38 +300,7 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     fumbled?: boolean;
     misdirected?: boolean;
     curseKind?: 'visible-undirected' | 'visible-directed' | 'visible-general' | 'visible-displaced' | 'audible' | null;
-    deferredSpellDamage?: boolean;
-    deferredSpellEffect?: boolean;
-    effectDamage?: number;
-    spellEffectMessage?: string | null;
-    deferredStrengthLoss?: { amount: number; killer: string };
-    deferredFirePillar?: boolean;
-    deferredLightningSpell?: boolean;
-    deferredInsectSpell?: boolean;
-    deferredCurseItems?: boolean;
-    deferredSummonMonsters?: boolean;
-    deferredCloneWizard?: boolean;
-    deferredHasteSelf?: boolean;
-    deferredAggravation?: boolean;
-    deferredDeathTouch?: boolean;
-    deferredDestroyArmor?: boolean;
-    deferredGeyserSpell?: boolean;
-    unimplementedSpellEffect?: boolean;
-    healedMonster?: number;
-    stunDuration?: number;
-    monsterDisappeared?: boolean;
-    reflectedLightning?: boolean;
-    summonedInsects?: Monster[];
-    fatalAttribution?: { kind: 'death-inflicted-by'; killer: string; announcesDeath: boolean };
     rehumanize?: boolean;
-    cursedInventory?: Awaited<ReturnType<typeof rndcurse>>;
-    confusedHero?: boolean;
-    paralyzed?: boolean;
-    stunnedHero?: boolean;
-    cloneWizard?: Monster;
-    summonedMonsters?: Monster[];
-    aggravatedMonsters?: Monster[];
-    hasteSelf?: { message: string | null; oldSpeed: number; speed: number };
 }
 
 export type HeroBreath = {
@@ -547,14 +515,12 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     trap?: MonsterTrapEvent | null;
     equipment?: Awaited<ReturnType<typeof reassessMonsterArmor>>;
     spellCast?: MovementSpellCast;
-    spellEffect?: MonsterSpellEffect;
     postMoveWasVisible?: boolean;
     postMoveDestinationPainted?: boolean;
     postMoveOldSquarePainted?: boolean;
     // notice_mon() ran for this action's single postmov() pass.
     postMoveNoticed?: boolean;
     deferredAfterMonsterTrap?: boolean;
-    deferredAfterMovementSpell?: boolean;
     deferredAfterSpecialAttack?: boolean;
     deferredCuss?: boolean;
 }

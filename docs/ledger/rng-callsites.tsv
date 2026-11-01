@@ -27,12 +27,12 @@ src/js/allmain.ts	moveloopPreamble	rnd	"[""9000""]"	constant
 src/js/monmove.ts	presentMonsterAction	rn2	"[""5""]"	constant
 src/js/mhitu.ts	presentMonsterAttackEffects/random	rn2	"[""range""]"	unproved
 src/js/monmove.ts	presentMonsterCuss/publishMonsterCuss argument 3	rn2	"[""sides""]"	unproved
-src/js/mcastu.ts	resolveDeferredHeroDeathTouch	rn2	"[""sides""]"	constant
-src/js/mcastu.ts	resolveDeferredHeroDeathTouch/touchHeroWithDeath argument 4	d	"[""count"", ""sides""]"	unproved
-src/js/mcastu.ts	resolveDeferredHeroFirePillar	d	"[""8"", ""6""]"	constant
-src/js/mcastu.ts	resolveDeferredHeroGeyser	d	"[""8"", ""6""]"	constant
-src/js/mcastu.ts	resolveDeferredHeroLightningSpell	d	"[""8"", ""6""]"	constant
-src/js/mcastu.ts	resolveDeferredHeroLightningSpell	rnd	"[""100""]"	constant
+src/js/mcastu.ts	mcastDeathTouch	rn2	"[""sides""]"	constant
+src/js/mcastu.ts	mcastDeathTouch/touchHeroWithDeath argument 4	d	"[""count"", ""sides""]"	unproved
+src/js/mcastu.ts	mcastFirePillar	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	mcastGeyser	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	mcastLightning	d	"[""8"", ""6""]"	constant
+src/js/mcastu.ts	mcastLightning	rnd	"[""100""]"	constant
 src/js/allmain.ts	rollHeroTeleportitis	rn2	"[""85""]"	constant
 src/js/ambient_sounds.ts	dosounds	rn2	"[""2""]"	constant
 src/js/ambient_sounds.ts	dosounds	rn2	"[""2""]"	constant
@@ -934,11 +934,10 @@ src/js/makemon.ts	rndmonstReservoir	rn2	"[""totalWeight""]"	unproved
 src/js/makemon.ts	setMimicAppearance	rn1	"[""PM_WIZARD - PM_ARCHAEOLOGIST + 1"", ""PM_ARCHAEOLOGIST""]"	constant
 src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
 src/js/makemon.ts	setMimicAppearance	rn2	"[""3""]"	constant
-src/js/mcastu.ts	resumeDeferredHeroSpell	d	"[""3"", ""6""]"	constant
-src/js/mcastu.ts	resumeDeferredHeroSpell	d	"[""dice"", ""4""]"	constant
-src/js/mcastu.ts	resumeDeferredHeroSpell	rollOne	"[""lossSides""]"	guarded
-src/js/mcastu.ts	resumeDeferredMovementSpell	rollDice	"[""3"", ""6""]"	constant
-src/js/mcastu.ts	rollDeferredHeroSpellDamage	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
+src/js/mcastu.ts	mCureSelf	d	"[""3"", ""6""]"	constant
+src/js/mcastu.ts	mcastStunYou	d	"[""dice"", ""4""]"	constant
+src/js/mcastu.ts	mcastWeakenYou	rollOne	"[""lossSides""]"	guarded
+src/js/mcastu.ts	castmuSpellEffect	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
 src/js/maze_terrain.ts	carveMazeFrom	rn2	"[""available.length""]"	guarded
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeXMax >> 1) - 1""]"	unproved
 src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved

@@ -8,10 +8,7 @@ import { lootMonsterContainer } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterName } from '../js/do_name.js';
 import { beginMonsterHeroAttack } from '../js/mhitu.js';
-import {
-    resolveDeferredHeroHasteSelf,
-    resumeDeferredHeroSpell,
-} from '../js/mcastu.js';
+import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { DAGGER, POT_FULL_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -62,14 +59,13 @@ for (const feedback of ['unseen', 'already fast', 'asleep', 'frozen', 'immobile'
         if (feedback === 'already fast')
             await equipMonsterObject(caster, await knownObject(SPEED_BOOTS), W_ARMF);
         const calls: string[] = [];
-        const attack = await beginMonsterHeroAttack(caster, game,
+        const initiation = await beginMonsterHeroAttack(caster, game,
             limit => limit === 4 ? 2 : limit - 1, () => 1, () => 1, calls);
         const action = { monster: caster, calls, movement: {
             oldx: caster.mx, oldy: caster.my, x: caster.mx, y: caster.my,
-            moved: false, ...attack,
+            moved: false, ...initiation,
         } };
         assert.equal(action.movement.heroAttackSequence?.current?.kind, 'hero-spell');
-        resumeDeferredHeroSpell(action, game);
         if (feedback === 'unseen') {
             caster.minvis = true;
             game.u.detectMonsters = true;
@@ -82,11 +78,16 @@ for (const feedback of ['unseen', 'already fast', 'asleep', 'frozen', 'immobile'
         initRng(7n);
         const nextName = monsterName(witness);
         initRng(7n);
+        const messages: string[] = [];
 
-        const haste = resolveDeferredHeroHasteSelf(action, game);
+        // C mcastu.c:mcast_spell() runs mon_adjust_speed() for haste-self
+        // inside one transaction; a silent speed change must consume no
+        // display randomness before the next perceived monster name.
+        await mcastSpell(caster, 'haste-self', 0, movementSpellContext(caster, game, calls, {
+            publish: async message => { messages.push(message); },
+        }));
 
-        assert.ok(haste, 'The selected haste spell must finish');
-        assert.equal(haste.message, null);
+        assert.deepEqual(messages, [], 'the haste must stay silent');
         assert.equal(caster.permspeed, MFAST);
         assert.equal(caster.mspeed, MFAST);
         assert.equal(monsterName(witness), nextName,

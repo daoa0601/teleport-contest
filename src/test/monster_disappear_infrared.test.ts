@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { resumeDeferredMovementSpell } from '../js/mcastu.js';
+import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -25,8 +25,10 @@ void test('infravision reveals a disappearance spell cast from a dark square', a
     assert.equal(action.movement.spellCast?.spell, 'disappear');
     const messages: string[] = [];
 
-    await resumeDeferredMovementSpell(action, game, random, undefined, undefined,
-        message => { messages.push(message); });
+    await mcastSpell(demon, 'disappear', 0, movementSpellContext(demon, game, action.calls, {
+        random,
+        publish: async message => { messages.push(message); },
+    }));
 
     assert.ok(messages.includes('The nalfeshnee suddenly disappears!'));
     assert.equal(!!demon.minvis, true);
