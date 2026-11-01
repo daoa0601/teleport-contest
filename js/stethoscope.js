@@ -25,7 +25,7 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { confusePromptDirection, promptDirection } from './tty_prompts.js';
 import { vision_note_blocker_change } from './vision.js';
 import { heroHasFreeHand } from './engrave.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 export async function useStethoscope(object) {
     requirePlayingGame(game);
     const hero = game.u;

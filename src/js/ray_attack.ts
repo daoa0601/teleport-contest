@@ -13,7 +13,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { burnArmorByFire } from './trap.js';
 import { igniteItems } from './light.js';
 import { payForShopDamage } from './shk.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import {
     EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS,
@@ -70,8 +70,8 @@ import type { MonsterAttack } from './data_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import type { HeroRaySource } from './hero_breath.js';
 import type { Position } from './map_types.js';
-import type { RayFloorKind, RayFloorResult } from './magic_types.js';
-import { rayDamageType } from './magic_types.js';
+import type { RayFloorKind, RayFloorResult } from './zap.js';
+import { rayDamageType } from './zap.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance,
     monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance,

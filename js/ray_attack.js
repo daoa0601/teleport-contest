@@ -12,7 +12,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { burnArmorByFire } from './trap.js';
 import { igniteItems } from './light.js';
 import { payForShopDamage } from './shk.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';
 import { artifactById } from './artifacts.js';
@@ -44,7 +44,7 @@ import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { realRayName, displayRayName } from './ray_name.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster, rayMonsterAt, runRay, } from './ray.js';
 import { applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect, } from './zap.js';
-import { rayDamageType } from './magic_types.js';
+import { rayDamageType } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits, } from './mondata.js';
 import { finishMonsterEating } from './dogmove.js';
 // zhitm uses this value to request disintegration from its caller.

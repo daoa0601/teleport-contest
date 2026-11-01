@@ -6,7 +6,7 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroStomachName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { applyCorpsePostEffects } from './corpse_eating.js';
 import {
     canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell, transientMonsterGlyph,

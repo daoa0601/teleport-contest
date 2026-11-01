@@ -5,7 +5,8 @@
 
 import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { commandResultCancelled, nomul } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
+import { nomul } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import type { GameObject } from './object_types.js';
 import { monsterIsHumanoid } from './monster_data.js';
@@ -16,7 +17,8 @@ import {
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
 import { isBimanualObject } from './object_properties.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import type { PlayingGameState } from './game_state.js';
+import type { PlayingGameState, GameState } from './game_state.js';
+import type { ArmorCompletion } from './cmd.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies } from './hero_species.js';
@@ -425,4 +427,10 @@ export function selectHeroDisenchantmentTarget(
             state?.ublindf || state?.u?.ublindf,
         ][fallback] || null
     );
+}
+
+// C donning()/doffing() inspect afternmv, not a separate armor timer.
+export function pendingArmorAction(state: GameState = game): ArmorCompletion | null {
+    const after = state._afterMove;
+    return after?.kind === 'wear' || after?.kind === 'remove' ? after : null;
 }

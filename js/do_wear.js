@@ -4,7 +4,8 @@
 // Armor_off()/off_msg() completion shared with allmain.c.
 import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { commandResultCancelled, nomul } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
+import { nomul } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, } from './object_data.js';
@@ -385,5 +386,10 @@ export function selectHeroDisenchantmentTarget(state, random, calls) {
         state?.uamul || state?.u?.uamul,
         state?.ublindf || state?.u?.ublindf,
     ][fallback] || null);
+}
+// C donning()/doffing() inspect afternmv, not a separate armor timer.
+export function pendingArmorAction(state = game) {
+    const after = state._afterMove;
+    return after?.kind === 'wear' || after?.kind === 'remove' ? after : null;
 }
 //# sourceMappingURL=do_wear.js.map

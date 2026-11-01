@@ -3,7 +3,7 @@
 import { A_CON, DIED, DOOR, D_CLOSED, D_LOCKED, G_NOCORPSE, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroStomachName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { applyCorpsePostEffects } from './corpse_eating.js';
 import { canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { plineWithContinuation } from './pline.js';

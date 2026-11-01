@@ -1,6 +1,6 @@
 // C do_name.c:namefloorobj().
 import { Upolyd } from './const.js';
-import { visibleCommandKey } from './command_keys.js';
+import { visibleCommandKey } from './cmd.js';
 import { glyphAt, randomBogusMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';

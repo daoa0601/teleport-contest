@@ -7,14 +7,14 @@ import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGet
 import { CLICK_1, CLICK_2, COLNO, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, ROWNO, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
 import { readchar, takeCommandKey, takeCommandResponse } from './input.js';
-import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
+import { promptedDirectionKey, visibleCommandKey } from './cmd.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
-import { rememberCommandKey, rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
+import { rememberCommandKey, rememberYnAnswerKey, takeRepeatCommand } from './cmd.js';
 import { keyText } from './prevmsg.js';
-import { controlKeyHintLines } from './command_help.js';
-import { clearCannedCommands } from './command_state.js';
+import { controlKeyHintLines } from './cmd.js';
+import { clearCannedCommands } from './cmd.js';
 import { impossible } from './diagnostics.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [

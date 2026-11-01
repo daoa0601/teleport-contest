@@ -13,7 +13,6 @@ import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
 import { game } from './gstate.js';
-import { probeObject } from './magic_probe.js';
 import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './do_name.js';
@@ -40,7 +39,7 @@ import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { turnObjectWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
-import { learnWand } from './zap.js';
+import { learnWand, probeObject } from './zap.js';
 
 export { hitMonsterWithWand } from './immediate_monster_magic.js';
 

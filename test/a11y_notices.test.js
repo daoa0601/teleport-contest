@@ -9,7 +9,7 @@ import { doBlindingRay } from '../js/flash.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { chooseInventoryObject } from '../js/inventory_prompt.js';
-import { clearDetectionMap } from '../js/magic_map_display.js';
+import { clearDetectionMap } from '../js/detect.js';
 import { blockMonsterNotices, unblockMonsterNotices } from '../js/hack.js';
 import { EXPENSIVE_CAMERA, FOOD_RATION, WAN_DIGGING } from '../js/object_data.js';
 import { runSegment } from '../js/jsmain.js';

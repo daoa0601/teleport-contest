@@ -183,12 +183,12 @@ src/js/container.ts	explodeBag	d	"[""6"", ""6""]"	constant
 src/js/container.ts	loseCursedBagContents	rn2	"[""13""]"	constant
 src/js/container.ts	magicBagExplodes	rn2	"[""1 << Math.min(depth, 7)""]"	unproved
 src/js/container.ts	scatterBagContents	rn2	"[""13""]"	constant
-src/js/container_impact.ts	containerImpactDamage	random	"[""3""]"	constant
-src/js/container_loot.ts	lootCommand	rn2	"[""2""]"	constant
-src/js/container_loot.ts	lootCommand	rn2	"[""6""]"	constant
-src/js/container_loot.ts	lootFloorContainers	rnd	"[""10""]"	constant
-src/js/container_loot.ts	lootMonster	rnd	"[""3""]"	constant
-src/js/container_tip.ts	tipContainer	rn2	"[""13""]"	constant
+src/js/dokick.ts	containerImpactDamage	random	"[""3""]"	constant
+src/js/pickup.ts	lootCommand	rn2	"[""2""]"	constant
+src/js/pickup.ts	lootCommand	rn2	"[""6""]"	constant
+src/js/pickup.ts	lootFloorContainers	rnd	"[""10""]"	constant
+src/js/pickup.ts	lootMonster	rnd	"[""3""]"	constant
+src/js/pickup.ts	tipContainer	rn2	"[""13""]"	constant
 src/js/corpse_eating.ts	applyCorpsePostEffects	rn2	"[""2""]"	constant
 src/js/corpse_eating.ts	eatStalker	rn1	"[""100"", ""50""]"	constant
 src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""++count""]"	guarded
@@ -760,8 +760,8 @@ src/js/lock_pick.ts	continuePicking	rn2	"[""100""]"	constant
 src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[0])""]"	unproved
 src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[1])""]"	unproved
 src/js/lua/lifecycle.ts	bindingsFor/rn2	rn2	"[""luaInteger(args[0])""]"	unproved
-src/js/magic_detection.ts	detectedCoins	rnd	"[""10""]"	constant
-src/js/magic_negation.ts	specialAttackNegated	random	"[""10""]"	constant
+src/js/detect.ts	detectedCoins	rnd	"[""10""]"	constant
+src/js/uhitm.ts	specialAttackNegated	random	"[""10""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""10""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant

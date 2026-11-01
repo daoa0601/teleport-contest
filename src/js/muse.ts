@@ -8,7 +8,8 @@
 // muse_unslime/cures_sliming).
 
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { setMulti, endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import {
     BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP, G_GONE,
     HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole, is_pit,

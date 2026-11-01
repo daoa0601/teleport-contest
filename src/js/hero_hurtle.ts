@@ -4,7 +4,8 @@ import { withIndefiniteArticle } from './object_grammar.js';
 // C ref: dothrow.c hurtle() and hurtle_step().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { nomul, setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
+import { nomul } from './hack.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {

@@ -7,7 +7,8 @@ import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, R
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { commandResultCancelled, nomul } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
+import { nomul } from './hack.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
 import { propertyIsActive } from './properties.js';

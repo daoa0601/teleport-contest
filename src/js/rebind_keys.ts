@@ -8,8 +8,8 @@ import { pgetchar } from './input.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS } from './command_data.js';
-import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
-import { keyText } from './command_help.js';
+import { COMMAND_DESCRIPTIONS } from './cmd.js';
+import { keyText } from './cmd.js';
 import type { NativeCommand } from './data_types.js';
 
 // cmd.c count_bind_keys(): user rebinds plus default keys that no longer

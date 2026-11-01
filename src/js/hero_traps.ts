@@ -97,12 +97,12 @@ import {
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
-import { activateMagicPortal } from './magic_portal.js';
+
 import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { ceilingName } from './terrain_name.js';
@@ -129,7 +129,7 @@ import { possessiveName } from './hacklib.js';
 import { upstart } from './hacklib.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { askTeleportDestination } from './teleport.js';
+import { activateMagicPortal, askTeleportDestination } from './teleport.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';

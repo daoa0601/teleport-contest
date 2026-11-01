@@ -1,5 +1,5 @@
-import { takeRepeatCommand } from './command_repeat.js';
-import { clearCannedCommands } from './command_state.js';
+import { takeRepeatCommand } from './cmd.js';
+import { clearCannedCommands } from './cmd.js';
 import { game } from './gstate.js';
 import { takeCommandResponse } from './input.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';

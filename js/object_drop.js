@@ -15,7 +15,7 @@ import { definiteObjectAction, observeObjectForNaming, } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
-import { containerImpactDamage } from './container_impact.js';
+import { containerImpactDamage } from './dokick.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { dropBall } from './ball.js';
 import { addObjectToMonsterInventory } from './steal.js';

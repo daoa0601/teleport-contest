@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { NO_MINVENT, W_ARMC } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { magicNegation } from '../js/magic_negation.js';
+import { magicNegation } from '../js/mhitu.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_GUARDING, CLOAK_OF_PROTECTION, RIN_PROTECTION } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

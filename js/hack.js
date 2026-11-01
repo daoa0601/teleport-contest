@@ -12,7 +12,7 @@ import { bot } from './botl.js';
 import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { endVoluntaryMultiTurn, nomul } from './command_state.js';
+import { clearCannedCommands, currentMulti, setMulti } from './cmd.js';
 import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
 import { clearHeroTrap, setHeroTrap, heroCanMoveFromTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
@@ -2781,5 +2781,29 @@ export async function noticeAllMonsters(state = game, publish = plineWithContinu
     for (const monster of spottable) {
         await noticeMonster(monster, state, publish);
     }
+}
+// Runtime command counts and involuntary delays.
+// C refs: cmd.c:reset_cmd_vars(), rhack(), hack.c:nomul().
+// C hack.c:nomul(). Caller-owned reasons and recovery messages follow this
+// call even when a longer existing delay makes it return early.
+export function nomul(value, state = game) {
+    const previous = currentMulti(state);
+    if (previous < value)
+        return;
+    if (previous >= 0)
+        state.context.botl = true;
+    const hero = state.u;
+    hero.invulnerable = false; // u.uinvulnerable, not the timed property
+    hero.usleep = 0;
+    setMulti(value, state);
+    if (value === 0)
+        state._helplessReason = null;
+    stopRun(state);
+    clearCannedCommands(state);
+}
+// Keep the full command count and any occupation. A timed occupation may
+// still need its final callback after the remaining multi becomes zero.
+export function endVoluntaryMultiTurn(state = game) {
+    nomul(0, state);
 }
 //# sourceMappingURL=hack.js.map

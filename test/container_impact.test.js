@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, CHEST, EGG, MIRROR, OBJECT_NAMES, POT_WATER, } from '../js/object_data.js';
-import { containerImpactDamage } from '../js/container_impact.js';
+import { containerImpactDamage } from '../js/dokick.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { objectWeight } from '../js/weight.js';
 import { knownObject } from './support/game-objects.js';

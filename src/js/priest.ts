@@ -14,7 +14,7 @@ import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym, randomDisplayMonsterIdentity } from './display.js';

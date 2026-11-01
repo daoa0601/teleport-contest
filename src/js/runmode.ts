@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { DirectionalRunMode, DirectionalRunState } from './command_types.js';
+import type { DirectionalRunMode, DirectionalRunState } from './cmd.js';
 import type { TerminalCell } from './terminal.js';
 import { flush_screen } from './display.js';
 import { COLNO, MAX_TYPE, ROWNO } from './const.js';

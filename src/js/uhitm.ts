@@ -35,7 +35,8 @@ import {
     MM_IGNOREWATER, MSLOW, NON_PM, POOL, RLOC_MSG, RLOC_NOMSG, STRAT_WAITFORU, STONING, Upolyd, WATER, W_AMUL,
     W_ARMH, W_SADDLE,
 } from './const.js';
-import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { nomul } from './hack.js';
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, map_invisible, shieldeff,
 } from './display.js';
@@ -61,7 +62,7 @@ import {
     finishMonsterPetrification, monsterSubject, turnGolemToStone,
 } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
-import { magicNegation, specialAttackNegated } from './magic_negation.js';
+
 import type {
     MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationDeathHandler, PetrificationOptions,
 } from './mon.js';
@@ -104,7 +105,8 @@ import type { MonsterStoningCureOptions } from './muse.js';
 import { stealHeroQuestObject, stealHeroGold, stealFromHero } from './steal.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import {
-    infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, poisonAttackNoun, resolveHeroSeduction,
+    infectHeroWithMonsterDisease, heroSlipsFree, heroSlipsFromWrapping, magicNegation, poisonAttackNoun,
+    resolveHeroSeduction,
 } from './mhitu.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
@@ -3272,4 +3274,13 @@ export async function petrifyMonsterDefender(monster: Monster, {
 export function monsterWeaponStrengthBonus(monster: Pick<Monster, 'minvent'>, random = rn2): number {
     const gloves = (monster.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
     return gloves?.otyp === GAUNTLETS_OF_POWER ? 3 + random(4) : 0;
+}
+
+// C uhitm.c:mhitm_mgc_atk_negated(): a cancelled attacker never lands its
+// special attack; otherwise magic_negation() on the defender decides.
+export function specialAttackNegated(attacker: Hero | Monster, defender: Hero | Monster, {
+    state = game, random = rn2,
+}: { state?: GameState; random?: typeof rn2 } = {}) {
+    if (attacker !== state.u && attacker.mcan) return true;
+    return random(10) < 3 * magicNegation(defender, state);
 }

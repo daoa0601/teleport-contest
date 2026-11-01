@@ -90,7 +90,7 @@ import { countContents } from './invent.js';
 import { objectWeight } from './weight.js';
 import { artifactById } from './artifacts.js';
 import { bot } from './botl.js';
-import { setMulti, commandResultCancelled } from './command_state.js';
+import { commandResultCancelled, setMulti } from './cmd.js';
 import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
 import { promptYesNo, promptChoice, promptYesNoAllQuit } from './query.js';
 import { publishMonsterYelp, publishMonsterGrowl } from './ambient_sounds.js';
@@ -109,6 +109,7 @@ import { monsterAtPosition } from './steed.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { deleteTrap, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
+import { isPick } from './object_properties.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;
@@ -4805,4 +4806,22 @@ function sameShopLevel(first: { dnum: number; dlevel: number } | null | undefine
     return !!first && !!second
         && first.dnum === second.dnum
         && first.dlevel === second.dlevel;
+}
+
+// C shk.c:pick_pick(), called by pickup.c:out_container() before addinv().
+const M1_NOEYES = 0x00001000;
+
+export async function warnAboutRemovedPick(object: GameObject, state: GameState = game): Promise<void> {
+    if (object.unpaid || !isPick(object)) return;
+    const keeper = currentShopResident(state);
+    if (!keeper || !shopkeeperInOwnShop(keeper, state)) return;
+    if (state.moves !== (state._pickWarningMove ?? 0)) {
+        if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper)) {
+            await plineWithContinuation(`"You sneaky ${shopkeeperCustomerInsult(state)}!  Get out of here with that pick!"`);
+        } else {
+            const hasEyes = !((MONSTER_FLAGS1[keeper.mnum] ?? 0) & M1_NOEYES);
+            await plineWithContinuation(`${shopkeeperName(keeper, { state })} ${hasEyes ? 'glares at' : 'is dismayed because of'} your pick!`);
+        }
+    }
+    state._pickWarningMove = state.moves;
 }

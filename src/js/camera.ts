@@ -1,6 +1,6 @@
 // C apply.c:use_camera(), do_blinding_ray(); zap.c self-camera branch.
 import { MM_NOMSG } from './const.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { monsterStomachName } from './body_parts.js';
 import { canSpotMonster, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';

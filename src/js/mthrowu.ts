@@ -12,7 +12,7 @@ import {
     applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness,
 } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { isPolearm, ammunitionMatchesLauncher, isAmmunition } from './object_properties.js';
 import {
     returningWeaponRangeSquared,
@@ -97,7 +97,7 @@ import { poisonHero } from './poison.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { shouldMulchMissile } from './projectile.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rayDamageType } from './magic_types.js';
+import { rayDamageType } from './zap.js';
 import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';

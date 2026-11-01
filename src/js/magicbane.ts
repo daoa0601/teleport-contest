@@ -3,7 +3,7 @@
 
 import { setHeroGrip } from './hero_grip.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { heroSpecies } from './hero_species.js';
@@ -11,7 +11,6 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
-import { probeMonster } from './magic_probe.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
 import { monsterName } from './do_name.js';
@@ -21,8 +20,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { cancelMonster } from './zap.js';
-import { monsterResistsEffect } from './zap.js';
+import { cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
 
 type MagicbaneEffect = 'probe' | 'stun' | 'scare' | 'cancel';
 

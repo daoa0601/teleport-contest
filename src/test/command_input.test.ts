@@ -7,7 +7,7 @@ import { promptKey } from '../js/tty_prompts.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { readCommandInput } from '../js/command_input.js';
+import { readCommandInput } from '../js/cmd.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
 async function waitActions() {

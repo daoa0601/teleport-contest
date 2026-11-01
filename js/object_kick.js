@@ -4,7 +4,7 @@ import { artifactById } from './artifacts.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
-import { containerImpactDamage } from './container_impact.js';
+import { containerImpactDamage } from './dokick.js';
 import { A_DEX, DOOR, D_CLOSED, D_LOCKED, IS_OBSTRUCTED, SHOPBASE, STATUE_TRAP, Is_airlevel, Is_waterlevel, WEB, ZAP_POS, is_pit, isok, } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';

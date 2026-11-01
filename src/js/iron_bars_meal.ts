@@ -5,7 +5,7 @@ import { DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED,
     SHOPBASE, SHOP_DOOR_COST, W_NONDIGGABLE } from './const.js';
 import { currentStrength } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { feel_location, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { watchDigging } from './digging_watch.js';

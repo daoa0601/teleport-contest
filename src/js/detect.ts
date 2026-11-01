@@ -13,58 +13,62 @@ export type AutomaticSearchResult = boolean | { statueTrap: Position };
 // C ref: detect.c — dosearch(), dosearch0().
 
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game } from './gstate.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { artifactById } from './artifacts.js';
-import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import {
-    canSpotMonster, canSenseMonster, monsterHasWarningProjection, feel_location, glyphAt,
-    magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap,
-    newsym, show_glyph_cell, unmap_invisible, flashGlyphAt, terrain_glyph, transientMonsterGlyph,
+    canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection,
+    feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving,
+    map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground,
+    under_water, unmapObject, unmap_invisible, flashGlyphAt, terrain_glyph, transientMonsterGlyph,
     transientTrapGlyph, cls, displaySelf, docrt, feel_newsym,
 } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
-    M_AP_TYPE, Is_airlevel, Is_waterlevel, isok,
-    IS_FURNITURE,
-    D_CLOSED, D_LOCKED, D_TRAPPED,
-    STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR,
-    W_NONDIGGABLE, W_NONPASSWALL, WM_MASK,
+    D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED,
+    IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP,
+    TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK,
+    Is_airlevel, Is_waterlevel, isok, IS_FURNITURE,
 } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
-import { objectClassForType, observeObject } from './object_knowledge.js';
+import { OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
+import { objectMaterial } from './object_material.js';
+
 import { activateStatueTrapAt } from './statue_trap.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { commandSafetyPrevention } from './do.js';
-import { clearAreaCells, vision_note_blocker_change } from './vision.js';
+import { cansee, clearAreaCells, vision_note_blocker_change } from './vision.js';
 import { recordDiscoveredRoom, recordMappedOverviewState } from './dungeon.js';
-import { revealMonsterAppearance } from './mon.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap.js';
+import { openFallingTrap, openHoldingTrap, trapName } from './trap.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { TER_DETECT, TER_MON, TER_OBJ, TER_TRP } from './const.js';
-import { heroToeName } from './body_parts.js';
+import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { requireLiveGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
 import type { TrapGlyphSource } from './display.js';
-import type { DetectionObject, DetectionOptions, DetectionResult } from './magic_detection.js';
-import {
-    browseDetectionMap,
-    clearDetectionMap,
-    redisplayDetectionMap,
-    unconstrainMap,
-} from './magic_map_display.js';
+import type { Hero } from './hero_types.js';
+import { propertyIsActive } from './properties.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
+import { expelHero } from './hero_expulsion.js';
+import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
+import { currency } from './currency.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { getObjectClassBounds } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
+import { isQuantumBox } from './quantum_cat.js';
+import { triggerBoobyTrap } from './booby_trap.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -731,4 +735,690 @@ function trappedDoors(state: PlayingGameState) {
         if (!location) throw new RangeError(`A trapped door lies outside the map at ${x},${y}`);
         return location.typ !== SDOOR && (location.doormask & D_TRAPPED);
     });
+}
+
+// C detect.c:gold_detect(), food_detect(), object_detect(), monster_detect().
+// Physical source consumption and trycall() belong to the caller.
+export interface DetectionResult { result: 0 | 1; known: boolean; strangeFeeling: boolean; }
+export interface DetectionOptions { state?: GameState; }
+export interface DetectionObject {
+    otyp: number;
+    oclass: number;
+    quan: number;
+    ox: number;
+    oy: number;
+    quantity?: number;
+    corpsenm?: number;
+    dknown?: boolean;
+}
+
+const FOOD_CLASS = 7, POTION_CLASS = 8, SPBOOK_CLASS = 10, COIN_CLASS = 12;
+const ROCK_CLASS = 14;
+const GOLD = 15;
+const GOLD_GOLEM = MONSTER_NAME.indexOf('gold golem');
+const LONG_WORM = MONSTER_NAME.indexOf('long worm');
+const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
+const WORM_TAIL_CLASS = MONSTER_SYMBOL[LONG_WORM_TAIL];
+
+export async function detectGold(source: GameObject | null, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const blessed = !!source?.blessed;
+    const stale = await clearStaleObjects(COIN_CLASS, blessed ? GOLD : 0, state);
+    const monsters = liveMonsters(state);
+    const floors = floorObjects(state);
+    let known = stale;
+    let steedGold = false;
+    let remote = false;
+    for (const monster of monsters) {
+        if (monster.mnum !== GOLD_GOLEM
+            && !monsterObjects(monster).some(object => goldIn(object, blessed, state))) continue;
+        if (monster === state.u.usteed) steedGold = true;
+        else { known = remote = true; break; }
+    }
+    if (!remote) {
+        for (const object of floors) {
+            if (!goldIn(object, blessed, state)) continue;
+            known = true;
+            if (!atHero(object.ox, object.oy, state)) { remote = true; break; }
+        }
+    }
+    if (!known) {
+        let message = 'You feel materially poor.';
+        if (state.u.umonnum === GOLD_GOLEM)
+            message = `You feel like a million ${currency(2, { state })}!`;
+        else if (state.inventory.some(object => objectOfClass(object, COIN_CLASS)))
+            message = 'You feel worried about your future financial situation.';
+        else if (steedGold) {
+            const steed = state.u.usteed;
+            if (!steed) throw new Error('Detected steed gold requires a mounted steed.');
+            const name = monsterName(steed, { state,
+                article: steed.mtame ? 'your' : 'the', suppressSaddle: true });
+            message = `You feel interested in ${name}${name.endsWith('s') ? "'" : "'s"} financial situation.`;
+        }
+        await strangeFeeling(message, state);
+        return effectResult(1, false, true);
+    }
+    if (!remote) {
+        if (stale) await docrt();
+        await plineWithContinuation(`You notice some gold between your ${makePlural(heroFootName(state))}.`);
+        return effectResult(0, known);
+    }
+    await clearDetectionMap(state);
+    const constraints = unconstrainMap(state);
+    const shown: DetectionMap = new Map();
+    try {
+        for (const object of floors) {
+            const found = goldIn(object, blessed, state);
+            if (found) await showObjectAt(found, object.ox, object.oy, shown);
+        }
+        for (const monster of monsters) {
+            const carried = monsterObjects(monster);
+            if (monster.mnum === GOLD_GOLEM || carried.some(object => object.otyp === GOLD_PIECE)) {
+                await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
+            } else {
+                const found = carried.map(object => goldIn(object, blessed, state)).find(Boolean);
+                if (found) await showObjectAt(found, monster.mx, monster.my, shown);
+            }
+        }
+        const mode = await showHeroUnlessCovered(shown, state);
+        await plineWithContinuation(formatFeltMessage('very greedy, and sense gold!', state));
+        exerciseWisdom(true, state);
+        await browseDetectionMap(mode, 'gold', { state });
+    } finally { await redisplayDetectionMap(constraints, state); }
+    return effectResult(0, known);
+}
+
+export async function detectFood(source: GameObject | null, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const confused = (state.u.confusionTurns ?? 0) > 0 || !!source?.cursed;
+    const objectClass = confused ? POTION_CLASS : FOOD_CLASS;
+    const what = confused ? 'something' : 'food';
+    const stale = await clearStaleObjects(objectClass, 0, state);
+    alignSteed(state);
+    const matches = [];
+    for (const object of floorObjects(state)) {
+        const found = objectOfClass(object, objectClass);
+        if (found) matches.push({ object: found, x: object.ox, y: object.oy });
+    }
+    for (const monster of liveMonsters(state)) {
+        const found = monsterObjects(monster)
+            .map(object => objectOfClass(object, objectClass)).find(Boolean);
+        if (found) matches.push({ object: found, x: monster.mx, y: monster.my });
+    }
+    const remote = matches.some(({ x, y }) => !atHero(x, y, state));
+    if (!matches.length) {
+        if (stale) {
+            await docrt();
+            await plineWithContinuation(`You sense a lack of ${what} nearby.`);
+            await grantEdibility(source, state);
+        } else if (source) {
+            const starts = source.blessed && !state.u.uedibility;
+            await strangeFeeling(`Your ${heroNoseName(state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
+            if (starts) state.u.uedibility = 1;
+        }
+        return effectResult(stale ? 0 : 1, stale && !confused, !stale && !!source);
+    }
+    if (!remote) {
+        await plineWithContinuation(`You ${source ? 'smell' : 'sense'} ${what} nearby.`);
+        await grantEdibility(source, state);
+        return effectResult(0, true);
+    }
+    await clearDetectionMap(state);
+    const constraints = unconstrainMap(state);
+    const shown: DetectionMap = new Map();
+    try {
+        for (const { object, x, y } of matches) await showObjectAt(object, x, y, shown);
+        const mode = await showHeroUnlessCovered(shown, state);
+        if (!source) await plineWithContinuation(`You sense ${what}.`);
+        else if (source.blessed) {
+            await plineWithContinuation(`Your ${heroNoseName(state)} ${state.u.uedibility ? 'continues' : 'starts'} to tingle and you smell ${what}.`);
+            state.u.uedibility = 1;
+        } else await plineWithContinuation(`Your ${heroNoseName(state)} tingles and you smell ${what}.`);
+        exerciseWisdom(true, state);
+        await browseDetectionMap(mode, 'food', { state });
+    } finally { await redisplayDetectionMap(constraints, state); }
+    return effectResult(0, true);
+}
+
+export async function detectMonsters(source: GameObject | null, { state = game, monsterClass = 0 }: DetectionOptions & { monsterClass?: number } = {}): Promise<DetectionResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const monsters = liveMonsters(state);
+    if (!monsters.length) {
+        if (source) await strangeFeeling(heroIsHallucinating(state)
+            ? 'You get the heebie jeebies.' : 'You feel threatened.', state);
+        return effectResult(1, false, !!source);
+    }
+    const swallowed = state.u.uswallow;
+    await clearDetectionMap(state);
+    const constraints = unconstrainMap(state);
+    const previousDetection = state.u.detectMonsters;
+    try {
+        let woken = false;
+        for (const monster of monsters) {
+            if (!monsterClass || MONSTER_SYMBOL[monster.mnum] === monsterClass
+                || (monster.mnum === LONG_WORM && monsterClass === WORM_TAIL_CLASS))
+                await mapDetectedMonster(monster, true, state);
+            if (source?.cursed && (monster.msleeping || !monster.mcanmove)) {
+                monster.msleeping = monster.mfrozen = 0;
+                monster.mcanmove = 1;
+                woken = true;
+            }
+        }
+        if (!swallowed) await displaySelf();
+        await plineWithContinuation('You sense the presence of monsters.');
+        if (woken) await plineWithContinuation('Monsters sense the presence of you.');
+        if (source?.blessed && !constraints.changed) {
+            await flushPendingTopline();
+        } else {
+            state.u.detectMonsters = true;
+            await browseDetectionMap(TER_DETECT | TER_MON, 'monster of interest', { state });
+        }
+    } finally {
+        if (previousDetection === undefined) delete state.u.detectMonsters;
+        else state.u.detectMonsters = previousDetection;
+        await redisplayDetectionMap(constraints, state);
+    }
+    return effectResult(0, true);
+}
+
+export async function detectObjects(source: GameObject | null, { state = game, objectClass = 0 }: DetectionOptions & { objectClass?: number } = {}): Promise<DetectionResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (!Number.isInteger(objectClass) || objectClass < 0 || objectClass > 17)
+        throw new RangeError(`Invalid object detection class: ${objectClass}`);
+    // detect.c:object_detect() cannot tell a class symbol from the
+    // user-defined boulder symbol when they match, so it detects both: the
+    // buried-object chain stays class-only.
+    const boulderClass = objectClass
+        && OBJECT_CLASS_SYMBOLS[objectClass] === currentBoulderSymbol(state)
+        ? ROCK_CLASS : 0;
+    const matches = (object: GameObject): GameObject | null =>
+        objectOfClass(object, objectClass) || objectOfClass(object, boulderClass);
+    const observe = source?.blessed
+        && [POTION_CLASS, SPBOOK_CLASS].includes(source.oclass ?? objectClassForType(source.otyp));
+    const floors = floorObjects(state);
+    const buried = state.level.buriedObjects || [];
+    alignSteed(state);
+    const monsters = liveMonsters(state);
+    let elsewhere = 0, here = 0;
+    if (observe) for (const object of state.inventory) observeRecursively(object, state);
+    for (const object of floors) {
+        if (!objectClass && !boulderClass || matches(object)) {
+            if (atHero(object.ox, object.oy, state)) here++;
+            else elsewhere++;
+        }
+        if (observe) observeRecursively(object, state);
+    }
+    for (const object of buried) {
+        if (!objectClass || objectOfClass(object, objectClass)) {
+            if (atHero(object.ox, object.oy, state)) here++;
+            else elsewhere++;
+        }
+        if (observe) observeRecursively(object, state);
+    }
+    for (const monster of monsters) {
+        for (const object of monsterObjects(monster)) {
+            if (!objectClass && !boulderClass || matches(object)) elsewhere++;
+            if (observe) observeRecursively(object, state);
+        }
+        if (misleadingMimic(monster, source, objectClass)
+            || monsterGold(monster, objectClass)) { elsewhere++; break; }
+    }
+    const stale = await clearStaleObjects(objectClass, 0, state);
+    let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
+        ? 'something' : objectClass ? OBJECT_CLASS_NAMES[objectClass] : 'objects';
+    if (boulderClass && objectClass !== ROCK_CLASS) what += ' and/or large stones';
+    if (!stale && !elsewhere) {
+        if (!here) {
+            if (source) await strangeFeeling('You feel a lack of something.', state);
+            return effectResult(1, false, !!source);
+        }
+        await plineWithContinuation(`You sense ${what} nearby.`);
+        return effectResult(0, false);
+    }
+    await clearDetectionMap(state);
+    const constraints = unconstrainMap(state);
+    const shown: DetectionMap = new Map();
+    try {
+        for (const object of buried) {
+            const found = objectClass ? objectOfClass(object, objectClass) : object;
+            if (found) await showObjectAt(found, object.ox, object.oy, shown);
+        }
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const found = (state.level.objects[x]?.[y] || [])
+                    .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
+                if (found) await showObjectAt(found, x, y, shown);
+            }
+        }
+        for (const monster of monsters) {
+            const found = monsterObjects(monster)
+                .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
+            if (found) await showObjectAt(found, monster.mx, monster.my, shown);
+            if (misleadingMimic(monster, source, objectClass)) {
+                const appearance = monster.mappearance;
+                if (appearance === undefined) throw new Error('An object mimic requires an object appearance.');
+                // C starts from cg.zeroobj and assigns only otyp, quan, ox,
+                // oy, and corpsenm.  oc_class stays zero, so display.h's
+                // obj_is_generic() never hides the mimic's appearance behind
+                // the potion-class slot: a disguised potion is drawn with its
+                // own shuffled oc_color even though no dknown exists.
+                const mimicObject: DetectionObject = { otyp: appearance, oclass: 0,
+                    quan: 1, quantity: 1, ox: 0, oy: 0,
+                    corpsenm: monster.mcorpsenm !== undefined && monster.mcorpsenm >= 0 ? monster.mcorpsenm : MONSTER_NAME.indexOf('tengu') };
+                await showObjectAt(mimicObject, monster.mx, monster.my, shown);
+            } else if (monsterGold(monster, objectClass)) {
+                await showObjectAt(detectedCoins(), monster.mx, monster.my, shown);
+            }
+        }
+        const mode = await showHeroUnlessCovered(shown, state);
+        await plineWithContinuation(`You detect the ${elsewhere ? 'presence' : 'absence'} of ${what}.`);
+        if (elsewhere) await browseDetectionMap(mode, 'object', { state });
+        else await flushPendingTopline();
+    } finally { await redisplayDetectionMap(constraints, state); }
+    return effectResult(0, false);
+}
+
+function effectResult(result: 0 | 1, known: boolean, strangeFeeling = false): DetectionResult {
+    return { result, known, strangeFeeling };
+}
+
+async function strangeFeeling(message: string, state: GameState, forceMessage = false) {
+    await plineWithContinuation(state.flags.beginner && !forceMessage
+        ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`
+        : message);
+}
+
+async function grantEdibility(source: GameObject | null, state: GameState) {
+    if (!source?.blessed) return;
+    if (!state.u.uedibility) await plineWithContinuation(`Your ${heroNoseName(state)} starts to tingle.`);
+    state.u.uedibility = 1;
+}
+
+function alignSteed(state: GameState) {
+    const steed = state.u.usteed;
+    if (steed) {
+        steed.mx = state.u.ux;
+        steed.my = state.u.uy;
+    }
+}
+
+function monsterObjects(monster: Monster): GameObject[] { return monster.minvent || []; }
+
+// C detect.c:o_in().
+function objectOfClass(object: GameObject, objectClass: number): GameObject | null {
+    if (!objectClass) return null;
+    if ((object.oclass ?? objectClassForType(object.otyp)) === objectClass) return object;
+    if (isQuantumBox(object)) return null;
+    for (const child of object.contents || []) {
+        const found = objectOfClass(child, objectClass);
+        if (found) return found;
+    }
+    return null;
+}
+
+// C detect.c:o_material().
+function objectOfMaterial(object: GameObject, material: number, state: GameState): GameObject | null {
+    if (objectMaterial(object, state) === material) return object;
+    for (const child of object.contents || []) {
+        const found = objectOfMaterial(child, material, state);
+        if (found) return found;
+    }
+    return null;
+}
+
+function goldIn(object: GameObject, blessed: boolean, state: GameState): GameObject | null {
+    return blessed && objectOfMaterial(object, GOLD, state)
+        || objectOfClass(object, COIN_CLASS);
+}
+
+async function clearStaleObjects(objectClass: number, material: number, state: PlayingGameState): Promise<boolean> {
+    let changed = false;
+    const monsters = new Map(liveMonsters(state).map(monster =>
+        [`${monster.mx},${monster.my}`, monster]));
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const glyph = glyphAt(x, y, state);
+            if (glyph?.kind !== 'object') continue;
+            const monster = monsters.get(`${x},${y}`);
+            const objects = [...(state.level.objects[x]?.[y] || []), ...(monster?.minvent || [])];
+            const materialMatches = material && objectMaterial(glyph.otyp, state) === material;
+            const classMatches = objectClass && objectClassForType(glyph.otyp) === objectClass;
+            const stale = !objectClass && !material ? !objects.length
+                : materialMatches ? !objects.some(object => objectOfMaterial(object, material, state))
+                    : classMatches && !objects.some(object => objectOfClass(object, objectClass));
+            if (stale) { await unmapObject(x, y); changed = true; }
+        }
+    }
+    return changed;
+}
+
+async function showObjectAt(object: DetectionObject, x: number, y: number, shown: DetectionMap) {
+    object.ox = x;
+    object.oy = y;
+    await map_object(object, true);
+    shown.set(`${x},${y}`, object);
+}
+
+// C's detected-coins object is also built from cg.zeroobj; only otyp, quan,
+// and the coordinates are assigned, so it keeps a zero oc_class too.
+function detectedCoins(): DetectionObject {
+    const quantity = rnd(10);
+    return { otyp: GOLD_PIECE, oclass: 0, quan: quantity, quantity, ox: 0, oy: 0 };
+}
+
+async function showHeroUnlessCovered(shown: DetectionMap, state: GameState) {
+    let mode = TER_DETECT | TER_OBJ;
+    if (!shown.has(`${state.u.ux},${state.u.uy}`)) {
+        await newsym(state.u.ux, state.u.uy);
+        mode |= TER_MON;
+    }
+    return mode;
+}
+
+function observeRecursively(object: GameObject, state: GameState): void {
+    observeObject(object, state);
+    for (const child of object.contents || []) observeRecursively(child, state);
+}
+
+function misleadingMimic(monster: Monster, source: GameObject | null, objectClass: number) {
+    return source?.cursed && M_AP_TYPE(monster) === M_AP_OBJECT
+        && (!objectClass || objectClassForType(monster.mappearance ?? -1) === objectClass);
+}
+
+function monsterGold(monster: Monster, objectClass: number) {
+    return (!objectClass || objectClass === COIN_CLASS)
+        && monsterObjects(monster).some(object => object.otyp === GOLD_PIECE);
+}
+
+// C detect.c:unconstrain_map(), browse_map(), map_monst(), map_redisplay().
+interface DetectionConstraints {
+    saved: {
+        uinwater: Hero['uinwater'];
+        uburied: Hero['uburied'];
+        uswallow: Hero['uswallow'];
+        underwater: GameState['underwater'];
+    };
+    changed: boolean;
+}
+interface BrowseDetectionOptions {
+    state?: GameState;
+}
+
+export function unconstrainMap(state: GameState = game): DetectionConstraints {
+    const saved = { uinwater: state.u.uinwater, uburied: state.u.uburied,
+        uswallow: state.u.uswallow, underwater: state.underwater };
+    state.iflags.save_uswallow = !!saved.uswallow;
+    state.u.uinwater = state.u.uburied = state.u.uswallow = 0;
+    state.underwater = false;
+    return { saved, changed: !!(saved.uinwater || saved.underwater
+        || saved.uburied || saved.uswallow) };
+}
+
+export function reconstrainMap({ saved }: DetectionConstraints, state: GameState = game) {
+    state.iflags.save_uswallow = false;
+    if (saved.uinwater === undefined) delete state.u.uinwater;
+    else state.u.uinwater = saved.uinwater;
+    if (saved.uburied === undefined) delete state.u.uburied;
+    else state.u.uburied = saved.uburied;
+    if (saved.uswallow === undefined) delete state.u.uswallow;
+    else state.u.uswallow = saved.uswallow;
+    if (saved.underwater === undefined) delete state.underwater;
+    else state.underwater = saved.underwater;
+}
+
+export async function clearDetectionMap(_state: GameState = game) {
+    await cls();
+}
+
+// C detect.c:map_monst().
+export async function mapDetectedMonster(monster: Monster, showTail: boolean, state: GameState = game) {
+    // Ghosts retain their space symbol. The detected glyph makes that space
+    // visible through tty inverse video, independently of pet highlighting.
+    const detected = MONSTER_SYMBOL[monster.mnum] === 54;
+    const monsterState = detected ? 'detected' : monster.mtame ? 'pet' : 'normal';
+    const glyph = transientMonsterGlyph(monster, monsterState);
+    const inverse = state.flags.use_inverse !== false
+        && state.iflags.use_inverse !== false && state.iflags.wc_inverse !== false;
+    const attribute = detected ? inverse ? 1 : 0
+        : monster.mtame && state.flags.hilite_pet
+            ? terminalAttrFromCAttr(state.iflags.wc2_petattr ?? C_ATR_INVERSE) : 0;
+    await show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color,
+        false, attribute, glyph);
+    if (!showTail || monster.mnum !== LONG_WORM) return;
+    const tail = transientMonsterGlyph({ mnum: LONG_WORM_TAIL, female: !!monster.female },
+        monster.mtame ? 'pet' : 'normal');
+    for (const segment of [...(monster.wormSegments || [])].reverse()) {
+        if (!segment.x) continue;
+        await show_glyph_cell(segment.x, segment.y, tail.ch, tail.color,
+            false, attribute, tail);
+    }
+}
+
+export async function browseDetectionMap(terrainMode: number, goal: string, {
+    state = game,
+}: BrowseDetectionOptions = {}) {
+    const hadTip = await showGetposTip(state);
+    const savedAutoDescribe = state.iflags.autodescribe;
+    const savedTerrainMode = state.iflags.terrainmode;
+    state.iflags.autodescribe = true;
+    state.iflags.terrainmode = terrainMode;
+    try {
+        await showGetposInstructions(state);
+        if (hadTip) await plineWithContinuation(`Move cursor to ${goal}:`);
+        // C browse_map() supplies no description callback: getpos.c
+        // auto_describe() renders do_screen_description() with the browse's
+        // terrainmode active, and that mode already gates which glyph
+        // classes its symbol matching and lookat() detail report.
+        await selectMapPosition({
+            start: { x: state.u.ux, y: state.u.uy },
+            prompt: state._pending_message,
+            goal, force: false,
+        });
+    } finally {
+        if (savedAutoDescribe === undefined) delete state.iflags.autodescribe;
+        else state.iflags.autodescribe = savedAutoDescribe;
+        if (savedTerrainMode === undefined) delete state.iflags.terrainmode;
+        else state.iflags.terrainmode = savedTerrainMode;
+    }
+}
+
+// C detect.c:map_redisplay().
+export async function redisplayDetectionMap(constraints: DetectionConstraints, state: GameState = game) {
+    reconstrainMap(constraints, state);
+    await docrt();
+    // C map_redisplay() defers a full restricted redraw: the turn's
+    // under_water(0)/under_ground(0) clears the map again instead of
+    // repairing only the previous three-by-three viewport.
+    if (state.u.uinwater || state.underwater) await under_water(2);
+    if (state.u.uburied) await under_ground(2);
+    // C map_redisplay() does not flush: docrt() only sets the status
+    // redraw flag ("caller needs to call bot()"), so the restored map and
+    // the status line both repaint at moveloop's once-per-input bot() +
+    // curs_on_u(), after any monster phase and moves++ have settled.  An
+    // eager flush here renders the turn counter one input early whenever
+    // the suppressing run flag (travel leaves context.run at 8) blocks the
+    // time update that would otherwise re-flag it.
+}
+
+// C detect.c:do_mapping(), do_vicinity_map().
+const MAP_MODE = TER_DETECT | TER_MAP | TER_TRP | TER_OBJ;
+
+export async function mapMagicLevel({ state = game,
+    confused = (state.u.confusionTurns ?? 0) > 0, revealAllTraps = false }: { state?: GameState; confused?: boolean; revealAllTraps?: boolean } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const constraints = unconstrainMap(state);
+    try {
+        await mapLevel({ confused, revealAllTraps, exercise: false });
+        if (!state.level.flags.hero_memory || constraints.changed) {
+            await flush_screen(1);
+            await browseDetectionMap(MAP_MODE, 'anything of interest', { state });
+            await redisplayDetectionMap(constraints, state);
+        }
+    } finally { reconstrainMap(constraints, state); }
+    exerciseWisdom(true, state);
+}
+
+export async function mapVicinity(source: GameObject | null, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const extended = !!source && (source.blessed
+        || propertyIsActive('clairvoyant', state) || state.u.clairvoyant);
+    const hero = state.u;
+    const bounds = { left: Math.max(1, hero.ux - 9),
+        right: Math.min(COLNO - 1, hero.ux + 10),
+        top: Math.max(0, hero.uy - 5), bottom: Math.min(ROWNO - 1, hero.uy + 6) };
+    const visionRow = state.viz_array?.[hero.uy];
+    const savedVision = visionRow?.[hero.ux];
+    if (!visionRow || savedVision === undefined) throw new Error('Mapping requires current hero vision.');
+    const savedDetection = hero.clairvoyanceDetection;
+    if (hero.uswallow) visionRow[hero.ux] = savedVision | IN_SIGHT;
+    hero.clairvoyanceDetection = true;
+    const constraints = unconstrainMap(state);
+    let detectedMonster = false, detectedObject = false, refresh = false;
+    try {
+        for (let x = bounds.left; x <= bounds.right; x++) {
+            for (let y = bounds.top; y <= bounds.bottom; y++) {
+                const oldGlyph = glyphAt(x, y, state);
+                await showMapSpot(x, y, { state, confused: (hero.confusionTurns ?? 0) > 0 });
+                const object = state.level.objects[x]?.[y]?.[0];
+                if (object) {
+                    if (extended) observeObject(object, state);
+                    await map_object(object, true);
+                    if (glyphChanged(oldGlyph, glyphAt(x, y, state))
+                        && terrainCoversObjectsAt(x, y, state)) detectedObject = true;
+                }
+                const monster = state.level.monsters.find(actor => monsterHasMapPosition(actor, state) &&
+                    !actor.dead && actor.mhp > 0 && actor.mx === x && actor.my === y);
+                if (!monster) continue;
+                if ((constraints.changed || !state.level.flags.hero_memory)
+                    && !extended && (x !== hero.ux || y !== hero.uy)
+                    && oldGlyph?.kind !== 'monster') await map_invisible(x, y);
+                else await mapDetectedMonster(monster, false, state);
+                const newGlyph = glyphAt(x, y, state);
+                if (extended && glyphChanged(oldGlyph, newGlyph)
+                    && newGlyph?.kind !== 'invisible') detectedMonster = true;
+            }
+        }
+        if (!source && state.flags.quick_farsight)
+            detectedMonster = detectedObject = false;
+        if (!state.level.flags.hero_memory || constraints.changed
+            || detectedMonster || detectedObject) {
+            await flush_screen(1);
+            await pline('You sense your surroundings.');
+            const mode = MAP_MODE | (extended || glyphAt(hero.ux, hero.uy)?.kind === 'monster'
+                ? TER_MON : 0);
+            await browseDetectionMap(mode, 'anything of interest', { state });
+            refresh = true;
+        }
+    } finally {
+        reconstrainMap(constraints, state);
+        if (savedDetection === undefined) delete hero.clairvoyanceDetection;
+        else hero.clairvoyanceDetection = savedDetection;
+        visionRow[hero.ux] = savedVision;
+    }
+    for (let x = bounds.left; x <= bounds.right; x++) {
+        for (let y = bounds.top; y <= bounds.bottom; y++) {
+            if (x === hero.ux && y === hero.uy) continue;
+            const glyph = glyphAt(x, y, state);
+            if (glyph?.kind !== 'monster' || glyph.mnum === LONG_WORM_TAIL) continue;
+            const monster = state.level.monsters.find(actor => monsterHasMapPosition(actor, state) &&
+                !actor.dead && actor.mhp > 0 && actor.mx === x && actor.my === y);
+            if (!monster || !canSpotMonster(monster)) await map_invisible(x, y);
+        }
+    }
+    await see_monsters();
+    if (refresh) await docrt();
+}
+
+// Native compares glyph identities, which include species and object type;
+// colors and tty highlighting do not make a different remembered glyph.
+function glyphChanged(before: ReturnType<typeof glyphAt>, after: ReturnType<typeof glyphAt>): boolean {
+    if (before?.kind !== after?.kind || glyphCharacter(before) !== glyphCharacter(after)) return true;
+    if (!before || !after) return false;
+    if (before.kind === 'object' && after.kind === 'object') return before.otyp !== after.otyp;
+    if (before.kind === 'monster' && after.kind === 'monster') return before.mnum !== after.mnum;
+    if (before.kind === 'trap' && after.kind === 'trap') return before.trapType !== after.trapType;
+    return false;
+}
+
+function glyphCharacter(glyph: ReturnType<typeof glyphAt>): string | undefined {
+    return glyph && 'ch' in glyph && typeof glyph.ch === 'string' ? glyph.ch : undefined;
+}
+
+// C detect.c:openit()/openone(). Each opened feature keeps its normal owner.
+export async function openit(state: GameState = game) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (state.u.uswallow) {
+        const engulfer = state.u.ustuck;
+        if (!engulfer) throw new Error('Opening a swallowing monster requires its actor.');
+        if (monsterDigests(engulfer)) await plineWithContinuation(
+            heroIsBlind(state) ? 'Its mouth opens!'
+                : `${monsterName(engulfer, { capitalized: true, state })} opens its mouth!`,
+        );
+        await expelHero(engulfer, { state });
+        return -1;
+    }
+    let opened = 0;
+    const cells = await clearAreaCells(state.u.ux, state.u.uy, BOLT_LIM, {
+        ignoreBlockers: Is_airlevel(state.u.uz) || Is_waterlevel(state.u.uz),
+    });
+    for (const { x, y } of cells) {
+        for (const object of state.level.objects?.[x]?.[y] || []) {
+            if ([CHEST, LARGE_BOX].includes(object.otyp) && object.olocked) {
+                object.olocked = false;
+                opened++;
+            }
+        }
+        const location = state.level.requireAt(x, y);
+        if (location.typ === SDOOR || (location.typ === DOOR
+            && (location.doormask & (D_CLOSED | D_LOCKED)))) {
+            revealSecretDoor(x, y);
+            if (location.doormask & D_TRAPPED) {
+                const dx = x - state.u.ux, dy = y - state.u.uy;
+                if (dx * dx + dy * dy < 3) {
+                    if (await triggerBoobyTrap('door', { state })) return opened;
+                }
+                else await plineWithContinuation(`You ${cansee(x, y) ? 'see'
+                    : heroIsDeaf(state) ? 'feel the shock of' : 'hear'} an explosion!`, { noRepeat: true });
+                await wakeMonstersNearWithMessages(x, y, 121, state);
+                location.doormask = D_NODOOR;
+            } else location.doormask = D_ISOPEN;
+            vision_note_blocker_change(x, y);
+            await newsym(x, y);
+            opened++;
+        } else if (location.typ === SCORR) {
+            revealSecretCorridor(x, y);
+            await newsym(x, y);
+            opened++;
+        } else {
+            const trap = state.level.traps.find(t => t.tx === x && t.ty === y);
+            if (trap) {
+                if (!trap.tseen && trap.ttyp !== STATUE_TRAP) {
+                    trap.tseen = true;
+                    await newsym(x, y);
+                    opened++;
+                }
+                const target = x === state.u.ux && y === state.u.uy ? state.u
+                    : state.level.monsters.find(m => monsterHasMapPosition(m, state) && m.mx === x && m.my === y && m.mhp > 0);
+                const holding = await openHoldingTrap(target, { state });
+                if (holding.changed || (await openFallingTrap(target, {
+                    state, trapdoorOnly: true,
+                })).changed) opened++;
+            } else {
+                const bridge = findDrawbridgeAt(x, y, state);
+                if (bridge) {
+                    await openDrawbridge(bridge.x, bridge.y, state);
+                    opened++;
+                }
+            }
+        }
+        if (state.program_state.gameover) break;
+    }
+    return opened;
 }

@@ -3,7 +3,7 @@
 // per-missile handoff to the flight owners.
 import { game, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { beginCommandResult, commandResultCancelled, setMulti } from './command_state.js';
+import { beginCommandResult, commandResultCancelled, setMulti } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute } from './attrib.js';

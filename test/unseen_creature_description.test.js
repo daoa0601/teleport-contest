@@ -4,7 +4,7 @@ import { farlookLocationDescription } from '../js/pager.js';
 import { map_invisible, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { mapVicinity } from '../js/magic_mapping.js';
+import { mapVicinity } from '../js/detect.js';
 import { SPE_CLAIRVOYANCE } from '../js/object_data.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

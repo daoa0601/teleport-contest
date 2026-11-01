@@ -27,7 +27,7 @@ import { heroIsDeaf } from './senses.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './do_name.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';
 import { deleteTrap } from './trap.js';

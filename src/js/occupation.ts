@@ -5,7 +5,8 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { continueFoodMeal } from './eat.js';
 import { game } from './gstate.js';
-import { clearCannedCommands, endVoluntaryMultiTurn } from './command_state.js';
+import { clearCannedCommands } from './cmd.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import type { GameState } from './game_state.js';
 
 // C allmain.c:stop_occupation().

@@ -7,7 +7,7 @@ import { selectMapPosition } from '../js/getpos.js';
 import { doOptions } from '../js/options.js';
 import { startLuaCore } from './support/lua-game.js';
 import { parseNethackrc, applyNethackrc } from '../js/options.js';
-import { commandKeyDescription } from '../js/command_keys.js';
+import { commandKeyDescription } from '../js/cmd.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';

@@ -1,7 +1,7 @@
 // C timeout.c:do_storms(), after ambient sounds and before hunger.
 import { castMonsterSpellRay } from './breath_ray.js';
 import { CLOUD, COLNO, ROWNO } from './const.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';

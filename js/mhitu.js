@@ -4,7 +4,7 @@
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, WATER, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, } from './display.js';
@@ -50,7 +50,8 @@ import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, sta
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt } from './trap.js';
 import { selectAttack } from './attack_selection.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, setMulti } from './command_state.js';
+import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { disturbMealMimicry } from './meal_mimic.js';
@@ -65,7 +66,6 @@ import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { applyMonsterStoningAttack, heroResistsStoning, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
-import { magicNegation, specialAttackNegated } from './magic_negation.js';
 import { setHeroGrip } from './hero_grip.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
@@ -73,7 +73,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
-import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdSedu, mhitmAdStun, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, resolveMonsterWeaponContact, resolvePhysicalHeroHug, tryKnockback, } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdSedu, mhitmAdStun, specialAttackNegated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, resolveMonsterWeaponContact, resolvePhysicalHeroHug, tryKnockback, } from './uhitm.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
@@ -100,7 +100,8 @@ import { objectTypeKnown } from './shk.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { hasIntrinsicProperty, hasInvokedProperty } from './properties.js';
 import { isMissileObject, isWeaponTool } from './object_properties.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
@@ -3091,5 +3092,45 @@ export function monsterWeaponSwingVerb(object, bash = false, random = rn2) {
     const lash = OBJECT_SUBTYPE[object.otyp] === P_WHIP
         || (object.otyp === TOWEL && (object.spe ?? 0) > 0);
     return bash ? 'bashes with' : lash ? 'lashes' : thrust ? 'thrusts' : 'swings';
+}
+// Protection against special attacks. C mhitu.c:magic_negation().
+const WEAPON_CLASS = 2;
+const TOOL_CLASS = 6;
+const M2_MINION = 0x00001000;
+const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
+const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
+export function magicNegation(defender, state = game) {
+    const hero = defender === state.u;
+    const species = 'mnum' in defender ? defender.mnum : defender.umonnum ?? -1;
+    const inventory = 'mnum' in defender ? defender.minvent : state.inventory;
+    let cancellation = 0;
+    let guardingAmulet = false;
+    let protection = hero ? hasInvokedProperty('protection', state)
+        : species === PM_HIGH_CLERIC;
+    for (const object of inventory || []) {
+        if ((object.owornmask ?? 0) & W_ARMOR) {
+            cancellation = Math.max(cancellation, OBJECT_SPELL_LEVEL[object.otyp] ?? 0);
+        }
+        else if ((object.owornmask ?? 0) & W_AMUL) {
+            guardingAmulet = object.otyp === AMULET_OF_GUARDING;
+        }
+        if (!protection) {
+            const weapon = object.oclass === WEAPON_CLASS
+                || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0);
+            const worn = !!((object.owornmask ?? 0)
+                & (W_ARMOR | W_ACCESSORY | (weapon ? W_WEP : 0)));
+            const artifact = artifactById(object.oartifact, state);
+            protection = (worn && OBJECT_PROPERTY[object.otyp] === 'protection')
+                || !!artifact?.carriedFlags.includes('SPFX_PROTECT')
+                || (worn && !!artifact?.flags.includes('SPFX_PROTECT'));
+        }
+    }
+    if (protection)
+        return Math.min(3, cancellation + (guardingAmulet ? 2 : 1));
+    const innateProtection = species === PM_ALIGNED_CLERIC
+        || !!((MONSTER_FLAGS2[species] ?? 0) & M2_MINION)
+        || (hero && ((hasIntrinsicProperty('protection', null, state) && (state.u.ublessed ?? 0) > 0)
+            || (state.u.uspellprot ?? 0) > 0));
+    return innateProtection ? Math.max(1, cancellation) : cancellation;
 }
 //# sourceMappingURL=mhitu.js.map

@@ -19,7 +19,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_dat
 import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
-import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
+import { rememberObjectChoice, takeRepeatCommand } from './cmd.js';
 import { keyText } from './prevmsg.js';
 import { putMessageHistory } from './tty_topline.js';
 

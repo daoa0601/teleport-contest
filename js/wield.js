@@ -3,7 +3,7 @@
 // doswapweapon(), dotwoweapon(), and finish_splitting().
 import { game } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { commandResultCancelled, commandResultFailed, setMulti, } from './command_state.js';
+import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
 import { LENSES, LOADSTONE, OBJECT_NAMES } from './object_data.js';
 import { monsterIsHumanoid } from './monster_data.js';

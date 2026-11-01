@@ -4,7 +4,7 @@
 
 import { game, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { beginCommandResult, commandResultCancelled, setMulti } from './command_state.js';
+import { beginCommandResult, commandResultCancelled, setMulti } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

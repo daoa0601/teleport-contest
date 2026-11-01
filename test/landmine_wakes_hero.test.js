@@ -1,7 +1,7 @@
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { nomul } from '../js/command_state.js';
+import { nomul } from '../js/hack.js';
 import { LANDMINE, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';

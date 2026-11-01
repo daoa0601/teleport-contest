@@ -1,6 +1,7 @@
 // Hero sleep state.
 // C ref: timeout.c fall_asleep().
-import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { nomul } from './hack.js';
 import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 import { plineWithContinuation } from './pline.js';

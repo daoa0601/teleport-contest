@@ -6,7 +6,7 @@ import { addBuriedObject } from '../js/buried_object.js';
 import { glyphAt, map_object } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
-import { detectFood, detectGold, detectMonsters, detectObjects, mapVicinity } from '../js/magic_detection.js';
+import { detectFood, detectGold, detectMonsters, detectObjects, mapVicinity } from '../js/detect.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import {
     APPLE, GOLD_PIECE, LARGE_BOX, POT_HEALING, POT_MONSTER_DETECTION, SPE_DETECT_TREASURE, SPE_CLAIRVOYANCE, OBJECT_NAMES, OBJECT_COLOR,

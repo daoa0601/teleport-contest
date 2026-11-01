@@ -1,7 +1,7 @@
 // C do_wear.c:glibr(). Each turn, slippery fingers shed uncursed rings and
 // any wielded weapon that is not welded or an aklys.
 import { canLetGo } from './hero_inventory.js';
-import { clearCannedCommands } from './command_state.js';
+import { clearCannedCommands } from './cmd.js';
 import { removeHeroAccessory } from './accessory.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';

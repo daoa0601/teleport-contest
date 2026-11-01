@@ -1,6 +1,6 @@
 // Native eat.c mimic meals, eatmdone/eatmupdate, and mhitu.c interruption.
 import { finishHeroHelplessness } from './allmain.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { DISMOUNT_FELL, M_AP_NOTHING, M_AP_OBJECT, Upolyd } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym } from './display.js';
 import { flushPendingTopline } from './tty_topline.js';

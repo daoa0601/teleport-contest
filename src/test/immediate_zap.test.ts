@@ -21,7 +21,7 @@ import {
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterStatusLine } from '../js/insight.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
-import { probeObjectChain } from '../js/magic_probe.js';
+import { probeObjectChain } from '../js/zap.js';
 import { chargedWand, floorObject, knownObject, unopenedCatBox } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';

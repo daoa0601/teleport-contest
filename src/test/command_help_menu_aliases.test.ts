@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { showKeyBindings } from '../js/command_help.js';
+import { showKeyBindings } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { applyNethackrc } from '../js/options.js';

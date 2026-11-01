@@ -14,7 +14,7 @@ import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from './windows.js';
 import { nhgetch, readchar } from './input.js';
 import { chooseInventoryObject, compactInventoryLetters, reassignInventoryLetters } from './inventory_prompt.js';
-import { commandResultCancelled, commandResultFailed } from './command_state.js';
+import { commandResultCancelled, commandResultFailed } from './cmd.js';
 import { assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';

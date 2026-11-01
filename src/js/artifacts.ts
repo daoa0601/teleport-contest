@@ -141,7 +141,7 @@ import {
 } from './zap.js';
 import { cansee } from './vision.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import type { ArtifactPower } from './data_types.js';
 import type { UntrapOptions } from './untrap.js';
 import {

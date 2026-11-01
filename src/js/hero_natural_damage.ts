@@ -19,7 +19,7 @@ import { applyHeroNaturalPolymorph } from './hero_natural_polymorph.js';
 import { applyHeroNaturalSliming } from './hero_natural_sliming.js';
 import { applyHeroNaturalTheft } from './hero_natural_theft.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
-import { specialAttackNegated } from './magic_negation.js';
+
 import { normalDemon } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { paralyzeMonster } from './mon.js';
@@ -34,7 +34,7 @@ import {
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsUndead } from './monster_data.js';
 import {
     mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdStun,
-    physicalDamage,
+    physicalDamage, specialAttackNegated,
 } from './uhitm.js';
 import { drainMonsterEnergy } from './mhitm.js';
 import { teleportMonsterByHero } from './teleport.js';

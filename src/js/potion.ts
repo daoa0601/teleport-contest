@@ -13,7 +13,8 @@
 import { armorSlotFor, heroHasFreeAction } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, restoreHeroBaseAttributes } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName } from './body_parts.js';
-import { commandResultCancelled, commandResultFailed, nomul, setMulti } from './command_state.js';
+import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
+import { nomul } from './hack.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, Is_airlevel, Is_waterlevel, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
 import { impossible } from './diagnostics.js';
 import { fingersOrGloves, washHands } from './dip_water.js';
@@ -65,7 +66,7 @@ import { floatingAbove } from './levitation_commands.js';
 import { applyLevitationPotion } from './levitation_potion.js';
 import { pickupBurden } from './lift_object.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { detectMonsters, detectObjects } from './magic_detection.js';
+import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
 import type { CloneOptions } from './makemon.js';
 import type { MapLocation, Position } from './map_types.js';

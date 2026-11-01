@@ -9,7 +9,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { grantPrayerFavor } from '../js/divine_gifts.js';
-import { magicNegation } from '../js/magic_negation.js';
+import { magicNegation } from '../js/mhitu.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';

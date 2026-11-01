@@ -1,4 +1,4 @@
-import type { ArmorCompletion } from './command_types.js';
+import type { ArmorCompletion } from './cmd.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import {
@@ -45,13 +45,12 @@ import {
     W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL,
     TT_LAVA, KILLED_BY_AN,
 } from './const.js';
-import { mapVicinity } from './magic_mapping.js';
+
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
-import {
-    clearCannedCommands, endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction,
-    setMulti,
-} from './command_state.js';
+import { clearCannedCommands, currentMulti, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { pendingArmorAction } from './do_wear.js';
+import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { dosounds, sessionIsNight } from './ambient_sounds.js';
 import { warnWithMasterKey, applyArtifactHit } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
@@ -123,7 +122,7 @@ import { mklev, l_nhcore_init, u_on_upstairs } from './mklev.js';
 import { makemonAt, finishMonsterGrowth } from './makemon.js';
 import { continueCountedCommand, getLine, promptYesNo, rhack } from './cmd.js';
 import { finishArmorRemoval } from './do_wear.js';
-import { clearRepeatCommand } from './command_repeat.js';
+import { clearRepeatCommand } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './quest.js';
 import { amuletTurn, intervene, monsterCarriesAmulet, publishMonsterCuss } from './wizard.js';
@@ -188,7 +187,7 @@ import { clearJustPicked } from './just_picked.js';
 import { nearCapacity } from './weight.js';
 import { runLevelRegions } from './regions.js';
 import { invault, moveVaultGuard } from './vault.js';
-import { automaticSearch, revealWarnedMonsters } from './detect.js';
+import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './hunger.js';

@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { nomul } from '../js/command_state.js';
+import { nomul } from '../js/hack.js';
 import { scoreDeathCause } from '../js/end.js';
 import { checkHeroAttackOverexertion } from '../js/hero_overexertion.js';
 import { resetInputState } from '../js/input.js';

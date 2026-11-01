@@ -4,7 +4,7 @@ import { armorSimpleName } from './armor.js';
 import { monsterLegName } from './body_parts.js';
 import { MGIVENNAME, M_ATTK_MISS, W_ARM, W_ARMC, W_ARMH, W_ARMU } from './const.js';
 import { heroSpecies } from './hero_species.js';
-import { specialAttackNegated } from './magic_negation.js';
+import { specialAttackNegated } from './uhitm.js';
 import { AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsSlithy,

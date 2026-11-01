@@ -1,53 +1,81 @@
-// C pickup.c: command pickup, automatic pickup, and floor inspection.
-import { setMulti } from './command_state.js';
+// C pickup.c: command pickup, automatic pickup, floor inspection,
+// container looting (doloot()), and tipping (dotip()).
+import { commandResultCancelled, setMulti } from './cmd.js';
+import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { definiteName, objectCombatName, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
+import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock } from './lock_pick.js';
 import { isForceableWeapon } from './lock.js';
 import { getAdjacentLocation } from './tty_prompts.js';
-import { lootCommand } from './container_loot.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, is_pit, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
+import { ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, is_pit, isok, GRAVE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_ITEMFLAGS_SELECTED, PLNMSG_OBJNAM_ONLY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, } from './const.js';
 import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
-import { newsym, newsym_force, flush_screen, consumeHallucinatedMenuObjectGlyph } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, displayLiquidName, flush_screen, newsym, newsym_force, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { describeDecor } from './dungeon_feature.js';
-import { showMultiSelectWindow } from './windows.js';
+import { showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
 import { carryableObjectCount, liftObject } from './lift_object.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
-import { yn_function } from './query.js';
+import { promptYesNoQuit, yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { heroCanReachFloor, heroEscapedShaft, heroTeetersAtPit } from './floor_reach.js';
+import { floorReachProblem, heroCanReachFloor, heroEscapedShaft, heroTeetersAtPit, } from './floor_reach.js';
 import { hideHeroUnder } from './mon.js';
-import { remoteBurglary } from './shk.js';
+import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, } from './shk.js';
 import { roomsAt } from './room.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { touchArtifactByHero } from './artifacts.js';
-import { LOADSTONE, GOLD_PIECE, CORPSE, SCR_SCARE_MONSTER, } from './object_data.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { BAG_OF_HOLDING, BAG_OF_TRICKS, CAN_OF_GREASE, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, STATUE, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { consumeObjectCharge } from './object_charge.js';
+import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { addObjectToContainer } from './object_container.js';
+import { unlinkObject } from './object_location.js';
+import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
+import { triggerChestTrap } from './chest_trap.js';
+import { useBagOfTricks } from './bag_of_tricks.js';
+import { useHornOfPlenty } from './horn_of_plenty.js';
+import { surfaceName } from './terrain_name.js';
+import { exceedsActionCapacity, nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
+import { inventoryItemDescription } from './invent.js';
+import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject, useContainer, } from './container.js';
+import { feelPetrifyingCorpse, touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
+import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, } from './steed.js';
+import { monsterName } from './do_name.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { learnObjectType } from './object_knowledge.js';
+import { propertyIsActive } from './properties.js';
+import { loseHeroHp } from './hero_damage.js';
+import { rn2, rnd } from './rng.js';
+import { reverseLoot } from './confused_loot.js';
+import { heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, } from './polyself.js';
+import { heroHasFreeHand } from './engrave.js';
+import { heroHandName } from './body_parts.js';
+import { riderCannotReachMessage } from './steed.js';
+import { ceilingName } from './terrain_name.js';
+import { tipWornHelmet } from './tip_hat.js';
+import { currency } from './currency.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { exerciseAttribute } from './attrib.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, } from './object_knowledge.js';
-import { nearCapacity, pickupLoadPrefix } from './weight.js';
 import { heroIsBlind } from './senses.js';
-import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { heroCannotTake, heroFormHidesUnderObjects } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
-import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
@@ -600,5 +628,501 @@ async function lootLockedContainer(container, containerCount) {
         game._cannedCommands ??= [];
         game._cannedCommands.push({ kind: 'command', name: 'force' });
     }
+}
+// C pickup.c:able_to_loot(): floor-container admission for loot and tip.
+export async function ableToLoot(x, y, looting) {
+    const verb = looting ? 'loot' : 'tip';
+    const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y);
+    const reach = floorReachProblem(game, { checkPit: !!trap && is_pit(trap.ttyp) });
+    if (reach) {
+        if (game.u.usteed && (game.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC) {
+            await plineWithContinuation(riderCannotReachMessage());
+        }
+        else {
+            const surface = heroCanReachFloor(game) ? 'bottom of the pit' : surfaceName(x, y);
+            await plineWithContinuation(`You can't reach the ${surface}.`);
+        }
+        return false;
+    }
+    const lava = isLavaAt(x, y);
+    if (lava || isPoolAt(x, y) && (looting || !(game.underwater || game.u.uinwater))) {
+        await plineWithContinuation(`You cannot ${verb} things that are deep in the ${displayLiquidName(lava ? 'lava' : 'water')}.`);
+        return false;
+    }
+    if (heroHasNoLimbs(game)) {
+        await plineWithContinuation(`Without limbs, you cannot ${verb} anything.`);
+        return false;
+    }
+    if (looting && !heroHasFreeHand(game)) {
+        await plineWithContinuation(`Without a free ${heroHandName()}, you cannot loot anything.`);
+        return false;
+    }
+    return true;
+}
+export async function lootCommand(input) {
+    game.context.move = 0;
+    if (exceedsActionCapacity(game)) {
+        await plineWithContinuation("You can't do that while carrying so much stuff.");
+        return;
+    }
+    if (heroHasNoHands(game)) {
+        await plineWithContinuation('You have no hands!');
+        return;
+    }
+    if (game.u.confused || (game.u.confusionTurns ?? 0) > 0) {
+        if (rn2(6) && await reverseLoot()) {
+            game.context.move = 1;
+            return;
+        }
+        if (rn2(2)) {
+            await plineWithContinuation('Being confused, you find nothing to loot.');
+            game.context.move = 1;
+            return;
+        }
+    }
+    const { ux: x, uy: y } = game.u;
+    if (!game.iflags.menu_requested && await lootFloorContainers(x, y, input.unlockContainer))
+        return;
+    // C mon_beside(): MON_AT() over the 3x3 around the hero, so a long
+    // worm's tail segments count even when its head is farther away.
+    const beside = monBeside(x, y);
+    if (!beside && !game.iflags.menu_requested) {
+        await plineWithContinuation("You don't find anything here to loot.");
+        return;
+    }
+    const target = await input.chooseDirection('Loot in what direction?', 'Invalid loot location', x, y);
+    if (!target)
+        return;
+    const underfoot = target.x === x && target.y === y;
+    const containers = (requireGameLevel().objects[target.x]?.[target.y] ?? []).some(isContainer);
+    if (underfoot && containers) {
+        await lootFloorContainers(x, y, input.unlockContainer);
+        return;
+    }
+    if (target.dz < 0) {
+        await plineWithContinuation(`You don't find anything to loot on the ${ceilingName(target.x, target.y, game)}.`);
+        game.context.move = 1;
+        return;
+    }
+    const monster = requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
+        && monster.mx === target.x && monster.my === target.y);
+    const result = monster ? await lootMonster(monster) : { asked: false, spentTime: false };
+    if (game.u.confused || (game.u.confusionTurns ?? 0) > 0
+        || game.u.stunned || (game.u.stunnedTurns ?? 0) > 0)
+        game.context.move = 1;
+    if (result.spentTime)
+        return;
+    if (!underfoot && containers) {
+        await plineWithContinuation(monster ? `You can't loot anything ${result.asked ? 'else ' : ''}there with ${monsterName(monster)} in the way.` : 'You have to be at a container to loot it.');
+    }
+    else
+        await plineWithContinuation(`You don't find anything ${result.asked ? 'else ' : ''}${underfoot ? 'here' : 'there'} to loot.`);
+}
+// C pickup.c:container_at().
+async function lootFloorContainers(x, y, unlock) {
+    const pile = requireGameLevel().objects[x]?.[y] ?? [];
+    const containers = pile.filter(isContainer);
+    if (!containers.length) {
+        if (requireGameLevel().requireAt(x, y).typ === GRAVE)
+            await plineWithContinuation('You need to dig up the grave to effectively loot it...');
+        return false;
+    }
+    if (!await ableToLoot(x, y, true))
+        return true;
+    for (const object of pile) {
+        if (willFeelPetrifyingCorpse(object)) {
+            await feelPetrifyingCorpse(object);
+            game.context.move = 1;
+            return true;
+        }
+    }
+    const items = [];
+    if (containers.length > 1) {
+        for (const object of containers) {
+            observeObjectForNaming(object);
+            items.push({ text: await inventoryItemDescription(object), value: object });
+        }
+    }
+    const selected = containers.length === 1 ? containers
+        : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
+            pageLocalKeys: true,
+            sections: [{ items }], signalEscape: true });
+    if (selected === null)
+        return true;
+    if (!selected.length)
+        return false;
+    let spentTime = false;
+    let resetJustPicked = true;
+    for (const [index, container] of selected.entries()) {
+        if (container.olocked) {
+            await unlock(container, selected.length);
+            spentTime ||= !!game.context.move;
+            continue;
+        }
+        container.lknown = true;
+        if (container.otyp === BAG_OF_TRICKS) {
+            await plineWithContinuation(`You carefully open the ${objectCombatName(container)}...`);
+            await plineWithContinuation('It develops a huge set of teeth and bites you!');
+            const damage = rnd(10);
+            await loseHeroHp(propertyIsActive('halfPhysicalDamage') ? Math.ceil(damage / 2) : damage, 'carnivorous bag');
+            learnObjectType(BAG_OF_TRICKS);
+            spentTime = true;
+            break;
+        }
+        game._pending_message = '';
+        await flush_screen(1);
+        const result = await useContainer(container, {
+            moreContainers: index + 1 < selected.length, underlay: snapshotMenuUnderlay(),
+            resetJustPicked,
+        });
+        if (result.tookOut)
+            resetJustPicked = false;
+        spentTime ||= result.spentTime;
+        if (result.heroDied || result.stopLooting || !result.container)
+            break;
+    }
+    game.context.move = spentTime ? 1 : 0;
+    return true;
+}
+// C pickup.c:loot_mon().
+async function lootMonster(monster) {
+    let asked = false;
+    let spentTime = false;
+    const saddle = monster !== game.u.usteed ? monsterSaddle(monster) : null;
+    if (saddle) {
+        asked = true;
+        const name = monsterName(monster, { suppressSaddle: true });
+        const answer = await promptYesNoQuit(`Do you want to remove the saddle from ${name}?`, 'n');
+        if (answer === 'q')
+            return { asked, spentTime };
+        if (answer === 'y') {
+            if (heroHasNoLimbs(game)) {
+                await plineWithContinuation("You can't do that without limbs.");
+                return { asked, spentTime };
+            }
+            if (saddle.cursed) {
+                await plineWithContinuation(`You can't.  The saddle seems to be stuck to ${monsterName(monster, { suppressSaddle: true })}.`);
+                game.context.move = 1;
+                return { asked, spentTime: true };
+            }
+            await removeObjectFromMonsterInventory(monster, saddle);
+            if (game.flags.verbose !== false)
+                await plineWithContinuation(`You take the ${simpleObjectName(saddle)} off of ${monsterName(monster)}.`);
+            // C doloot()/addinv_core0() reset the batch when the saddle is acquired.
+            clearJustPicked(game);
+            const held = await holdAnotherObject(saddle, { dropMessage: `You drop ${await inventoryItemDescription(saddle)}!` });
+            markJustPicked(held.object);
+            rnd(3);
+            game.context.move = 1;
+            spentTime = true;
+        }
+    }
+    if (game.u.uswallow) {
+        // C loot_mon() passes the saddle inquiry flag, not the command count.
+        // pickup.c:loot_mon() calls pickup() directly; only dopickup()
+        // runs pickup_checks(), so an empty stomach costs no turn here.
+        await pickupAtHero(asked ? 1 : 0, { runLocationChecks: false });
+        spentTime = !!game.context.move;
+    }
+    return { asked, spentTime };
+}
+// C pickup.c:mon_beside(): any monster occupying one of the 3x3 squares
+// around (x, y), with MON_AT() counting worm tail segments.
+function monBeside(x, y) {
+    for (let nx = x - 1; nx <= x + 1; nx++) {
+        for (let ny = y - 1; ny <= y + 1; ny++) {
+            if (!isok(nx, ny))
+                continue;
+            if (requireGameLevel().monsters.some(monster => monsterHasMapPosition(monster, game)
+                && monsterOccupiesPosition(monster, nx, ny)
+                && monster.mhp > 0))
+                return true;
+        }
+    }
+    return false;
+}
+// C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
+// tipcontainer_gettarget(), and tipcontainer_checks().
+async function containerDescription(object) {
+    observeObjectForNaming(object);
+    return await inventoryItemDescription(object);
+}
+export async function tipCommand() {
+    game.context.move = 0;
+    const { ux: x, uy: y } = game.u;
+    const containers = (requireGameLevel().objects[x]?.[y] ?? []).filter(isContainer);
+    const considerFloor = !game.iflags.menu_requested
+        || game.flags.menu_style === MENU_TRADITIONAL && containers.length > 1;
+    if (containers.length && considerFloor) {
+        let canTip = !exceedsActionCapacity(game);
+        if (!canTip)
+            await plineWithContinuation(`You can't tip ${game.flags.verbose === false
+                ? 'a container' : containers.length > 1 ? 'one' : 'it'} while carrying so much.`);
+        else
+            canTip = await ableToLoot(x, y, false);
+        if (canTip) {
+            if (containers.length > 1) {
+                const items = [];
+                for (const object of containers)
+                    items.push({
+                        text: await containerDescription(object), value: object,
+                    });
+                if (game.inventory.length)
+                    items.push({ selectable: false, text: '' }, {
+                        ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
+                        text: 'tip something being carried', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
+                    });
+                const picked = await showMultiSelectWindow({ title: 'Tip which container?',
+                    sections: [{ items }], pageLocalKeys: true,
+                    omitHeadings: true, pickOne: true, signalEscape: true });
+                // pickup.c:choose_tip_container_menu() returns ECMD_CANCEL
+                // when the container menu is dismissed with Escape.
+                if (picked === null) {
+                    commandResultCancelled();
+                    return;
+                }
+                const source = picked.find(object => object !== null);
+                if (source) {
+                    await tipContainer(source);
+                    game.context.move = 1;
+                    return;
+                }
+            }
+            else {
+                const source = containers[0];
+                if (source) {
+                    const answer = await promptYesNoQuit(`There is ${await containerDescription(source)} here, tip it?`);
+                    if (answer === 'q')
+                        return;
+                    if (answer === 'y') {
+                        await tipContainer(source);
+                        game.context.move = 1;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    const object = await chooseInventoryObject('tip', object => {
+        if (object.oclass === 12)
+            return GETOBJ_EXCLUDE;
+        return isContainer(object) || object.otyp === HORN_OF_PLENTY
+            && object.dknown && objectTypeKnown(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
+    }, { forcePrompt: true });
+    if (!object) {
+        commandResultCancelled(); // pickup.c:dotip() getobj ECMD_CANCEL.
+        return;
+    }
+    if (isContainer(object) || object.otyp === HORN_OF_PLENTY) {
+        await tipContainer(object);
+        game.context.move = 1;
+        return;
+    }
+    await tipOrdinaryObject(object);
+}
+async function tipOrdinaryObject(object) {
+    let spill = null;
+    if ([TALLOW_CANDLE, WAX_CANDLE].includes(object.otyp) && object.lamplit)
+        spill = 'wax';
+    else if (object.otyp === POT_OIL && object.lamplit
+        || object.otyp === OIL_LAMP && object.age !== 0
+        || object.otyp === MAGIC_LAMP && object.spe !== 0)
+        spill = 'oil';
+    else if (object.otyp === CAN_OF_GREASE && object.spe > 0)
+        spill = 'grease';
+    else if ([FOOD_RATION, CRAM_RATION, LEMBAS_WAFER].includes(object.otyp))
+        spill = 'crumbs';
+    else if (object.oclass === 17)
+        spill = 'venom';
+    if (spill) {
+        const plural = spill === 'crumbs';
+        const { ux: x, uy: y } = game.u;
+        const tail = isPoolAt(x, y) ? ` and gradually dissipate${plural ? '' : 's'}`
+            : isLavaAt(x, y) ? ` and immediately burn${plural ? '' : 's'} away` : '';
+        await plineWithContinuation(`Some ${spill} spill${plural ? '' : 's'} onto the ${surfaceName(x, y)}${tail}.`);
+        if (object.otyp === CAN_OF_GREASE)
+            await consumeObjectCharge(object);
+        game.context.move = 1;
+    }
+    else if (object.oclass === 8) {
+        await plineWithContinuation(`The ${objectCombatName(object)} ${object.quan === 1 ? 'is' : 'are'} securely sealed.`);
+    }
+    else if (object === (game.uarmh || game.u.uarmh)) {
+        game.context.move = await tipWornHelmet(object) ? 1 : 0;
+    }
+    else
+        await plineWithContinuation(object.otyp === STATUE ? 'Nothing interesting happens.' : 'Nothing happens.');
+}
+async function tipDestination(source) {
+    const items = [{
+            key: '-', text: 'on the floor', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
+        }, { selectable: false, text: '' }];
+    const targets = game.inventory.filter(object => object !== source && isContainer(object)
+        && !(object.otyp === BAG_OF_TRICKS && object.dknown && objectTypeKnown(object)));
+    const hands = targets.length === 0 || (!heroHasNoHands(game) && heroHasFreeHand(game));
+    if (!hands)
+        await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
+            : `You have no free ${heroHandName()}.`);
+    for (const object of targets) {
+        if (!hands || object.olocked && object.lknown || !object.invlet)
+            items.push({ selectable: false, text: `    ${await containerDescription(object)}` });
+        else
+            items.push({ key: object.invlet, text: await containerDescription(object), value: object });
+    }
+    const picked = await showMultiSelectWindow({ title: `Where to tip the contents of ${await containerDescription(source)}`,
+        sections: [{ items }], omitHeadings: true, pickOne: true, signalEscape: true });
+    return { cancelled: picked === null, target: picked?.find(object => object !== null) ?? null };
+}
+async function tipChecks(source, target, allowEmpty) {
+    if (target?.otyp === BAG_OF_TRICKS) {
+        await useBagOfTricks(target);
+        return false;
+    }
+    source.lknown = true;
+    if (source.olocked) {
+        await plineWithContinuation(`The ${simpleObjectName(source)} is locked.`);
+        return false;
+    }
+    if (source.otrapped) {
+        await triggerChestTrap(source);
+        if ((game.multi ?? 0) >= 0 && !game._helplessTurns) {
+            nomul(-1);
+            game._helplessReason = 'tipping a container';
+            game._helplessDoneMessage = '';
+        }
+        return false;
+    }
+    if (source.otyp === BAG_OF_TRICKS || source.otyp === HORN_OF_PLENTY) {
+        if (target && !await tipChecks(target, null, true))
+            return false;
+        await emptyChargedContainer(source, target);
+        return false;
+    }
+    if (isQuantumBox(source)) {
+        await observeQuantumCat(source);
+        source.cknown = true;
+        if (!source.contents?.length) {
+            await plineWithContinuation(`${source.where === 'inventory' ? 'Your ' : 'The '}box is now empty.`);
+            return allowEmpty;
+        }
+    }
+    if (!allowEmpty && !source.contents?.length) {
+        source.cknown = true;
+        await plineWithContinuation(`The ${simpleObjectName(source)} is empty.`);
+        return false;
+    }
+    return true;
+}
+async function emptyChargedContainer(source, target) {
+    const shopGoods = source.where !== 'inventory' && !!costlySpot(source.ox, source.oy) && !source.no_charge;
+    if (shopGoods)
+        await addShopObjectToBill(source, game, { ininv: false, silent: true });
+    const oldCharges = source.spe;
+    let seen = 0;
+    do {
+        if (source.otyp === BAG_OF_TRICKS) {
+            const result = await useBagOfTricks(source, { tipping: true });
+            if (!result.created)
+                break;
+            seen += result.seen;
+        }
+        else if (!await useHornOfPlenty(source, { tipping: true, target }))
+            break;
+    } while (source.spe > 0 && !game.program_state.gameover);
+    if (source.spe < oldCharges) {
+        if (source.otyp === BAG_OF_TRICKS && !seen)
+            await plineWithContinuation('Nothing seems to happen.');
+        source.spe = oldCharges;
+        await chargeUnpaidUsage(source, { alternate: true });
+        source.spe = 0;
+        source.cknown = true;
+    }
+    if (shopGoods)
+        removeObjectAndContentsFromBill(source);
+}
+async function tipContainer(source) {
+    source.ox = game.u.ux;
+    source.oy = game.u.uy;
+    const destination = await tipDestination(source);
+    if (destination.cancelled || !await tipChecks(source, destination.target, false))
+        return;
+    const target = destination.target;
+    if (target && !await tipChecks(target, null, true))
+        return;
+    const { ux: x, uy: y } = game.u;
+    const held = source.where === 'inventory';
+    const targetHeld = target?.where === 'inventory';
+    const highDrop = !game.u.uswallow && !heroCanReachFloor(game, { checkPit: true });
+    const altar = !game.u.uswallow && requireGameLevel().requireAt(x, y).typ === ALTAR;
+    const shopGoods = !held && !!costlySpot(x, y);
+    let terse = !(highDrop || altar || costlySpot(x, y));
+    let loss = 0;
+    const contents = [...source.contents ?? []];
+    source.cknown = true;
+    await plineWithContinuation(target ? `${contents.length > 1 ? 'Objects tumble' : 'An object tumbles'} into the ${objectCombatName(target)}.`
+        : `${contents.length > 1 ? 'Objects spill' : 'An object spills'} out${terse ? ':' : '.'}`);
+    setSellDisposition(SELL_NORMAL);
+    for (const [index, object] of contents.entries()) {
+        unlinkObject(object);
+        object.ox = x;
+        object.oy = y;
+        if (source.otyp === ICE_BOX)
+            thawObject(object, game);
+        else if (source.otyp === BAG_OF_HOLDING && source.cursed && !rn2(13)) {
+            loss += await loseMagicBagItem(object, held);
+            terse = false;
+            continue;
+        }
+        if (shopGoods)
+            await addShopObjectToBill(object, game, { ininv: false, silent: true });
+        const suppressed = game.iflags.suppress_price;
+        if (shopGoods)
+            game.iflags.suppress_price = true;
+        try {
+            if (target) {
+                if (target.otyp === BAG_OF_HOLDING && magicBagExplodes(object)) {
+                    await explodeBag(target, object, game, { tipping: true, triggerHeld: held });
+                    if (game.program_state.gameover)
+                        return;
+                    break;
+                }
+                await addObjectToContainer(target, object);
+            }
+            else {
+                object.how_lost = LOST_DROPPED;
+                if (highDrop)
+                    await hitFloorWithObject(object);
+                else {
+                    if (altar)
+                        await landObjectOnAltar(object);
+                    else {
+                        const name = await containerDescription(object);
+                        await plineWithContinuation(terse ? `${name}${index + 1 < contents.length ? ',' : '.'}`
+                            : `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object) ? 'drop' : 'drops'} to the ${surfaceName(x, y)}.`);
+                        if (terse)
+                            game._lastPlineKind = PLNMSG_OBJNAM_ONLY;
+                    }
+                    await dropObjectAtHero(object);
+                    if (game._lastPlineKind !== PLNMSG_OBJNAM_ONLY)
+                        terse = false;
+                }
+            }
+        }
+        finally {
+            if (suppressed === undefined)
+                delete game.iflags.suppress_price;
+            else
+                game.iflags.suppress_price = suppressed;
+        }
+        if (game.program_state.gameover)
+            break;
+    }
+    if (loss)
+        await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
+    source.owt = objectWeight(source);
+    if (target && target.where !== 'gone')
+        target.owt = objectWeight(target);
+    if (held || targetHeld)
+        await reportHeroEncumbrance();
 }
 //# sourceMappingURL=pickup.js.map

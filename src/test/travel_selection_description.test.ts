@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
-import { readCommandInput } from '../js/command_input.js';
+import { readCommandInput } from '../js/cmd.js';
 import { STONE, VWALL } from '../js/const.js';
 import { displayMessageWindow } from '../js/tty_topline.js';
 import { flush_screen, newsym } from '../js/display.js';

@@ -9,7 +9,7 @@ import {
     TELEP_TRAP, TRAPDOOR, TRAP_EXPLANATIONS, TRAPNUM, VIBRATING_SQUARE,
     WEB, W_QUIVER, W_SWAPWEP, is_hole, is_pit,
 } from './const.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import type { GameState } from './game_state.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';

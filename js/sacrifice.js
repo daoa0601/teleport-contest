@@ -1,7 +1,7 @@
 // Offerings at altars.
 // C pray.c:dosacrifice(), offer_corpse(), and the Amulet offering helpers.
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { nomul } from './command_state.js';
+import { nomul } from './hack.js';
 import { observeObjectForNaming } from './objnam.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { artifactById, artifactExistCount, createArtifactGift, discoverArtifact, setArtifactOrigin, } from './artifacts.js';

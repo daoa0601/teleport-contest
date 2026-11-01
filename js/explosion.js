@@ -30,7 +30,7 @@ import { payForShopDamage } from './shk.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, } from './zap.js';
-import { rayDamageType } from './magic_types.js';
+import { rayDamageType } from './zap.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, } from './mondata.js';
 const WAND_CLASS = 11;

@@ -6,7 +6,7 @@ export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: G
 export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
 // Spell learning and the native spell.c:spelleffects() transaction.
-import { commandResultFailed } from './command_state.js';
+import { commandResultFailed } from './cmd.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { promptDirection, promptKey } from './tty_prompts.js';
@@ -25,12 +25,12 @@ import { makeFamiliar } from './familiar.js';
 import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { jumpHero } from './jumping.js';
-import { mapVicinity } from './magic_detection.js';
+import { mapVicinity } from './detect.js';
 import { mksobj } from './mkobj.js';
 import { deleteObject } from './object_delete.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
 import { findArmorClass } from './armor.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { restoreCannedCommandTail } from './cmd.js';
 import {
     canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, flush_screen,

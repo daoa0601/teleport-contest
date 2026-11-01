@@ -17,7 +17,7 @@ import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Trap } from './map_types.js';
 import type { LevitationState } from './property_types.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import {

@@ -26,8 +26,8 @@ import {
 } from './tty_menu.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
-import { visibleCommandKey } from './command_keys.js';
+import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
+import { visibleCommandKey } from './cmd.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { showDisclosureOverlay } from './windows.js';
 

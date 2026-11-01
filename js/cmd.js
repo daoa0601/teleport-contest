@@ -40,31 +40,28 @@ import { attackHostileMonster } from './hero_melee.js';
 import { monsterAtPosition } from './steed.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import { descendFromLevitation } from './levitation_commands.js';
-import { beginCommandResult, clearCannedCommands, commandResultCancelled, commandResultFailed, endVoluntaryMultiTurn, resetCommandVariables, setMulti } from './command_state.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { propertyIsActive } from './properties.js';
-import { pickupAtHero } from './pickup.js';
+import { pickupAtHero, tipCommand } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { inventoryReport } from './inventory_reports.js';
 import { isContainer } from './container.js';
-import { tipCommand } from './container_tip.js';
 import { dolookaround } from './lookaround.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import { TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove } from './hack.js';
-import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
-import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
+import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS, } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandResponse } from './input.js';
-import { readCommandInput } from './command_input.js';
-import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandResponse } from './input.js';
 import { terrainCommand } from './terrain_view.js';
 import { autoDescribePosition, selectTravelMenuPosition } from './getpos.js';
-import { whatDoesCommand } from './command_help.js';
-import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
+import { whatDoesCommand } from './pager.js';
+import { availableExtendedCommands, commandDescription, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList, } from './extended_commands.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection, promptKey, restoreCommandMap } from './tty_prompts.js';
+import { showTextWindow } from './windows.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 import { flush_screen, docrt } from './display.js';
@@ -2015,4 +2012,565 @@ async function dodrop() {
             setSellDisposition(SELL_NORMAL);
     }
 }
+// ── Runtime command counts and results (C cmd.c:rhack(), reset_cmd_vars()) ──
+// C command handlers return an ECMD_* status which rhack() inspects after
+// the command finishes (cmd.c:3810): ECMD_CANCEL and ECMD_FAIL make it call
+// reset_cmd_vars(TRUE), clearing CQ_CANNED and CQ_REPEAT. JS handlers run
+// before that seam, so they record the same bits here instead.
+export function beginCommandResult(state = game) {
+    state._commandResult = ECMD_OK;
+}
+// Multiple failure paths can combine bits exactly like a C return value
+// (use_pole() returns res|ECMD_CANCEL after an already-timed wield).
+export function commandResultCancelled(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_CANCEL;
+}
+export function commandResultFailed(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_FAIL;
+}
+// doapply() ORs arti_speak()'s ECMD_TIME into the tool result
+// (apply.c:4422), so a cancelled tool use by a speaking artifact still
+// spends its turn.
+export function commandResultSpentTime(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_TIME;
+}
+// C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
+// Unlike end_running(), reset_cmd_vars() zeroes context.run directly: no
+// time repaint is queued and the terrain classifier is not recomputed.
+export function resetCommandVariables(clearQueues) {
+    game.context.run = 0;
+    game._travelMap = undefined;
+    game._runState = null;
+    game.context.mv = false;
+    game.context.travel = false;
+    game.context.travel1 = false;
+    game.context.nopick = false;
+    game.context.forcefight = false;
+    game.context.move = 0;
+    setMulti(0);
+    game.iflags.menu_requested = false;
+    game._movementAttempt = null;
+    if (clearQueues) {
+        clearCannedCommands();
+        clearRepeatCommand();
+    }
+}
+// C cmdq_clear(CQ_CANNED): commands and their answers share one queue.
+export function clearCannedCommands(state = game) {
+    state._cannedCommands = [];
+    clearCommandKeys();
+}
+// C has one multi counter; involuntary delays have a positive mirror here.
+export function currentMulti(state = game) {
+    const helplessTurns = state._helplessTurns ?? 0;
+    if (helplessTurns > 0)
+        return -helplessTurns;
+    return state.multi;
+}
+// Direct native assignments (combat wake, life saving, unmul, countdown)
+// must change the same counter that nomul() compares during this turn.
+export function setMulti(value, state = game) {
+    state.multi = value;
+    state._helplessTurns = Math.max(0, -value);
+}
+// Native multi < 0 includes sleep, paralysis, prayer, and delayed actions.
+export function heroHasInvoluntaryDelay(state = game) {
+    return currentMulti(state) < 0;
+}
+// ── Command counts (C cmd.c:get_count(), parse()) ─────────────────────────
+export async function readCommandInput() {
+    game._commandCount = 0;
+    setMulti(0);
+    await flush_screen(1);
+    let result;
+    if (game.commandBindings.numberPad) {
+        const key = await readchar('command');
+        result = (key & 255) === game.commandBindings.specialKey('count')
+            ? await readCommandCount() : { key, count: 0 };
+    }
+    else {
+        result = await readCommandCount();
+    }
+    game._commandCount = result.count;
+    setMulti(Math.max(0, result.count - 1));
+    game._commandKey = result.key;
+    // C parse() clears WIN_MESSAGE after reading the command key.
+    if (game._pending_message || game._retained_message || game._promptOwnsTopline)
+        clearMessageWindow();
+    return result;
+}
+async function readCommandCount() {
+    let count = 0;
+    let backspaced = false;
+    for (;;) {
+        const key = await readchar('command');
+        let showZero = false;
+        if (key >= 48 && key <= 57) {
+            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
+            showZero = key === 48;
+        }
+        else if (key === 8 || key === 127) {
+            if (!count)
+                return { key, count: 0 };
+            count = Math.trunc(count / 10);
+            backspaced = true;
+        }
+        else {
+            return { key, count: key === 27 ? 0 : count };
+        }
+        if (count > 9 || backspaced) {
+            const text = backspaced && !count && !showZero
+                ? 'Count: ' : `Count: ${count}`;
+            if (count || showZero)
+                backspaced = false;
+            clearMessageWindow();
+            await setTopline(text);
+            await flush_screen(0);
+            game.nhDisplay?.setCursor(text.length, 0);
+        }
+    }
+}
+// ── Named command keys (C cmd.c:cmd_from_ecname(), cmd_from_func()) ──────
+const DEFAULT_COMMAND_KEYS = new Map([
+    ['#', '#'],
+    ['apply', 'a'], ['attributes', String.fromCharCode(24)],
+    ['autopickup', '@'],
+    ['cast', 'Z'], ['close', 'c'], ['known', '\\'], ['knownclass', '`'], ['down', '>'],
+    ['drop', 'd'], ['droptype', 'D'], ['eat', 'e'], ['fire', 'f'], ['fight', 'F'],
+    ['glance', ';'], ['help', '?'], ['inventory', 'i'],
+    ['kick', String.fromCharCode(4)], ['look', ':'],
+    ['moveeast', 'l'], ['movenorth', 'k'], ['movenortheast', 'u'],
+    ['movenorthwest', 'y'], ['movesouth', 'j'], ['movesoutheast', 'n'],
+    ['movesouthwest', 'b'], ['movewest', 'h'],
+    ['open', 'o'], ['options', 'O'], ['pay', 'p'], ['pickup', ','], ['puton', 'P'],
+    ['quaff', 'q'], ['quiver', 'Q'], ['read', 'r'], ['remove', 'R'],
+    ['reqmenu', 'm'], ['run', 'G'], ['rush', 'g'], ['save', 'S'],
+    ['search', 's'], ['swap', 'x'],
+    ['prevmsg', String.fromCharCode(16)],
+    ['seeamulet', '"'], ['seearmor', '['], ['seerings', '='], ['seeweapon', ')'],
+    ['seetools', '('], ['seeall', '*'], ['inventtype', 'I'],
+    ['showgold', '$'], ['showspells', '+'], ['terrain', String.fromCharCode(127)],
+    ['takeoff', 'T'], ['throw', 't'], ['travel', '_'],
+    ['up', '<'], ['wait', '.'], ['wear', 'W'],
+    ['wield', 'w'], ['zap', 'z'],
+    ['teleport', String.fromCharCode(20)], ['wizgenesis', String.fromCharCode(7)],
+    ['wizlevelport', String.fromCharCode(22)], ['wizmap', String.fromCharCode(6)],
+    ['wizwish', String.fromCharCode(23)],
+]);
+// C reset_commands() gives Ctrl-direction keys their rush bindings.
+const CONTROL_RUSH_DIRECTION = new Map([
+    [2, 'b'], [8, 'h'], [10, 'j'], [11, 'k'],
+    [12, 'l'], [14, 'n'], [21, 'u'], [25, 'y'],
+]);
+export function controlRushDirection(key) {
+    return CONTROL_RUSH_DIRECTION.get(key) || null;
+}
+// These keys select existing JS handlers; they are not the live key map.
+export function commandExecutionKey(command) {
+    if (!command)
+        return null;
+    const direct = DEFAULT_COMMAND_KEYS.get(command);
+    if (direct)
+        return direct;
+    for (const mode of ['run', 'rush']) {
+        if (!command?.startsWith(mode))
+            continue;
+        const direction = DEFAULT_COMMAND_KEYS.get(`move${command.slice(mode.length)}`);
+        if (direction)
+            return mode === 'run' ? direction.toUpperCase()
+                : String.fromCharCode(direction.charCodeAt(0) & 31);
+    }
+    return null;
+}
+// movecmd() recognizes a bound handler, including run/rush and vertical
+// movement. This projection keeps the existing direction consumers on one
+// coordinate alphabet without treating that alphabet as the live bindings.
+export function movementDirectionKey(key, bindings) {
+    const movement = bindings.movementForKey(key);
+    return movement ? 'hykulnjb><'.charAt(movement.direction) : '';
+}
+export function promptedDirectionKey(key, bindings) {
+    if (key === bindings.specialKey('getdir.self')
+        || key === bindings.specialKey('getdir.self2'))
+        return '.';
+    return movementDirectionKey(key, bindings);
+}
+export function visibleCommandKey(code) {
+    code &= 255;
+    if (code >= 128)
+        return `M-${visibleCommandKey(code & 127)}`;
+    if (code < 32)
+        return `^${String.fromCharCode(code + 64)}`;
+    if (code === 127)
+        return '^?';
+    return String.fromCharCode(code);
+}
+// C cmd.c:cmd_from_ecname().
+export function commandKeyDescription(command, bindings) {
+    const name = String(command);
+    if (!NATIVE_COMMANDS.some(entry => entry.name === name))
+        return '';
+    const key = bindings.keyForCommand(name);
+    return key ? visibleCommandKey(key) : `#${name}`;
+}
+// ── Repeat queue (C cmd.c:CQ_REPEAT, cmdq_add_ec()) ───────────────────────
+// C cmd.c:CQ_REPEAT. Commands retain their selected handler; object choices
+// retain inventory letters so repeating acts on the current inventory.
+export function clearRepeatCommand() {
+    game._repeatCommands = [];
+}
+export function rememberCommand(binding, append) {
+    if (game._inDoAgain)
+        return;
+    if (!append)
+        clearRepeatCommand();
+    game._repeatCommands ??= [];
+    // cmdq_add_ec() looks up the first table entry for the function. Aliases
+    // such as #name therefore repeat as #call, including Lua admission.
+    const command = NATIVE_COMMANDS.find(candidate => candidate.handler === binding.command?.handler)
+        ?? binding.command;
+    game._repeatCommands.push({ kind: 'command', binding: {
+            command, parameter: null,
+            key: commandExecutionKey(command?.name)?.charCodeAt(0) ?? null,
+        } });
+}
+export function rememberCommandKey(key) {
+    if (game._inDoAgain)
+        return;
+    game._repeatCommands ??= [];
+    game._repeatCommands.push({ kind: 'key', key });
+}
+export function rememberObjectChoice(key, count) {
+    if (game._inDoAgain)
+        return;
+    game._repeatCommands ??= [];
+    if (count !== null && count > 0)
+        game._repeatCommands.push({ kind: 'count', count });
+    rememberCommandKey(key);
+}
+// C cmd.c:yn_function() pushes a real-input answer into CQ_REPEAT without
+// checking in_doagain, so an answer typed while a do-again replay is still
+// unwinding (a death during ^A reaching end-of-game disclosure) becomes
+// the queued answer for the following question.
+export function rememberYnAnswerKey(key) {
+    game._repeatCommands ??= [];
+    game._repeatCommands.push({ kind: 'key', key });
+}
+export function takeRepeatCommand() {
+    return game._inDoAgain ? game._repeatCommands?.shift() : undefined;
+}
+// ── Key help (C cmd.c:key2extcmddesc(), dokeylist(), help_dir()) ──────────
+// C misc_keys[] supplies descriptions to both key help and the bindings list.
+const miscellaneousKeys = [
+    { name: 'escape', description: 'cancel current prompt or pending prefix', numberPadOnly: false },
+    { name: 'count', description: 'Prefix: for digits when preceding a command with a count', numberPadOnly: true },
+];
+export function keyText(key) {
+    return key === 32 ? '<space>' : key === 27 ? '<esc>'
+        : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);
+}
+// C cmd.c:key2extcmddesc().
+export function describeCommandKey(key) {
+    const bindings = game.commandBindings;
+    // key2extcmddesc() probes movecmd() in walk, rush, then run mode.
+    // Each probe updates u.dz, even when the key is not a movement command.
+    for (const mode of [0, 2, 1]) {
+        const movement = bindings.movementForKey(key, mode);
+        game.u.dz = movement?.dz ?? 0;
+        if (!movement)
+            continue;
+        game.u.dx = movement.dx;
+        game.u.dy = movement.dy;
+        if (!movement.dz)
+            break;
+    }
+    if (key >= 48 && key <= 57 && !bindings.numberPad)
+        return 'start of, or continuation of, a count';
+    if (bindings.numberPad) {
+        if (key === 53 || key === 181)
+            return `${bindings.pcHack !== (key === 181) ? 'run' : 'rush'} prefix`;
+        if (key === 48 || bindings.pcHack && key === 176)
+            return "synonym for 'i'";
+    }
+    for (const special of miscellaneousKeys) {
+        if (special.numberPadOnly && !bindings.numberPad)
+            continue;
+        const code = special.name === 'escape' ? 27 : bindings.specialKey(special.name);
+        if (key === code)
+            return special.description;
+    }
+    const command = bindings.lookup(key)?.command;
+    if (!command)
+        return null;
+    if (command.handler === 'do_reqmenu')
+        return 'movement prefix: move without autopickup and without attacking\nnon-movement prefix: request menu or modify command (#reqmenu)';
+    return commandDescription(command) + (command.name === '#' ? '' : ` (#${command.name})`);
+}
+// C cmd.c:help_dir(): after an invalid direction given to a caller whose
+// prompt starts with '^', a letter key might have meant its control command.
+export function controlKeyHintLines(key) {
+    const isLetter = (key >= '@'.charCodeAt(0) && key <= 'Z'.charCodeAt(0))
+        || (key >= 'a'.charCodeAt(0) && key <= 'z'.charCodeAt(0));
+    if (!isLetter && key !== '['.charCodeAt(0))
+        return [];
+    const sym = String.fromCharCode(key).toUpperCase();
+    const ctrl = sym.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    const explain = describeCommandKey(ctrl);
+    const wizardOnly = 'EFGIVW'.includes(sym);
+    if (explain === null || (wizardOnly && !game.flags.debug))
+        return [];
+    return [
+        `Are you trying to use ^${sym}${wizardOnly ? '' : ' as specified in the Guidebook'}?`,
+        '',
+        `${keyText(ctrl).padEnd(8)}${explain}.`,
+        '',
+        'To use that command, hold down the <Ctrl> key as a shift',
+        `and press the <${sym}> key.`,
+        '',
+    ];
+}
+// C cmd.c:dokeylist().
+// C cmd.c:keylist_func_has_key().
+// C cmd.c:keylist_putcmds().
+export async function showKeyBindings() {
+    const bindings = game.commandBindings;
+    const used = new Set([3]); // SIGINT is reserved even if a key is rebound.
+    const lines = ['', '            Full Current Key Bindings List',
+        '        (also commands with no key assignment)', '', 'Directional keys:'];
+    const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction));
+    lines.push(`          ${key(1)}  ${key(2)}  ${key(3)}`, '           \\ | / ', `          ${key(0)}- . -${key(4)}`, '           / | \\ ', `          ${key(7)}  ${key(6)}  ${key(5)}`, '');
+    if (!bindings.numberPad)
+        lines.push('Ctrl+<direction> will run in specified direction until something very', '        interesting is seen.');
+    lines.push(`${bindings.numberPad ? 'Meta' : 'Shift'}+<direction> will run in specified direction until you encounter`, '        an obstacle.', '', 'Miscellaneous keys:');
+    const keyless = [];
+    for (const special of miscellaneousKeys) {
+        if (special.numberPadOnly && !bindings.numberPad)
+            continue;
+        const code = special.name === 'escape' ? 27 : bindings.specialKey(special.name);
+        if (!code || used.has(code)) {
+            keyless.push(special);
+            continue;
+        }
+        used.add(code);
+        lines.push(`${keyText(code).padEnd(7)} ${special.description}`);
+    }
+    lines.push('^C      interrupt: break out of NetHack (SIGINT)');
+    for (const special of keyless)
+        lines.push(`${`[${special.name}]`.padEnd(21)} ${special.description}`);
+    lines.push('', 'Menu control keys:');
+    for (const [control, description] of [
+        ['>', 'Go to next page'], ['<', 'Go to previous page'], ['^', 'Go to first page'],
+        ['|', 'Go to last page'], ['.', 'Select all items in entire menu'],
+        ['@', 'Invert selection for all items'], ['-', 'Unselect all items in entire menu'],
+        [',', 'Select all items on current page'], ['~', "Invert current page's selections"],
+        ['\\', 'Unselect all items on current page'], [':', 'Search and invert matching items'],
+        ['Return', 'Accept current choice(s) and dismiss menu'], ['Enter', 'Same as Return'],
+        ['Space', 'If not on last page, advance one page;'], ['     ', 'when on last page, treat like Return'],
+        ['Escape', 'Cancel menu without making any choice(s)'],
+    ]) {
+        // C options.c:show_menu_controls() uses the configured alias for
+        // each menu command; Return, Space and Escape stay hardcoded.
+        const key = control?.length === 1
+            ? visibleCommandKey(bindings.menuKey(control)) : control ?? '';
+        lines.push(`${key.padEnd(7)} ${description ?? ''}`);
+    }
+    const ignored = NATIVE_COMMAND_FLAGS.INTERNALCMD | NATIVE_COMMAND_FLAGS.MOVEMENTCMD | NATIVE_COMMAND_FLAGS.WIZMODECMD;
+    const categories = [
+        ['General commands:', command => !!(command.flags & NATIVE_COMMAND_FLAGS.GENERALCMD) && !(command.flags & ignored)],
+        ['Game commands:', command => !(command.flags & (NATIVE_COMMAND_FLAGS.GENERALCMD | ignored))],
+        ['Debug mode commands:', command => !!game.flags.debug
+                && !!(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD) && !(command.flags & NATIVE_COMMAND_FLAGS.INTERNALCMD)],
+    ];
+    for (const [heading, include] of categories) {
+        const commands = NATIVE_COMMANDS.filter(command => command.name !== null && include(command));
+        if (!commands.length)
+            continue;
+        lines.push('', heading);
+        const previouslyUsed = new Set(used);
+        for (let code = 0; code < 256; code++) {
+            if (used.has(code) || code === 32 && !game.flags.rest_on_space)
+                continue;
+            const binding = bindings.lookup(code);
+            if (!binding?.command || !include(binding.command))
+                continue;
+            lines.push(`${keyText(code).padEnd(7)} ${(binding.command.name ?? '').padEnd(13)} ${commandDescription(binding.command)}${binding.parameter === null ? '' : ` "${binding.parameter}"`}`);
+            used.add(code);
+        }
+        for (const command of commands) {
+            if (bindings.bindings.some(binding => !previouslyUsed.has(binding.key) && binding.command === command))
+                continue;
+            lines.push(`#${(command.name ?? '').padEnd(20)} ${commandDescription(command)}`);
+        }
+    }
+    await showTextWindow(lines);
+    await restoreCommandMap();
+    game.context.move = 0;
+}
+// Player-facing descriptions from pinned cmd.c:extcmdlist.
+export const COMMAND_DESCRIPTIONS = new Map([
+    ["#", "enter and perform an extended command"],
+    ["?", "list all extended commands"],
+    ["adjust", "adjust inventory letters"],
+    ["annotate", "name current level"],
+    ["apply", "apply (use) a tool (pick-axe, key, lamp...)"],
+    ["attributes", "show your attributes"],
+    ["autopickup", "toggle the 'autopickup' option on/off"],
+    ["bugreport", "file a bug report"],
+    ["call", "name a monster, specific object, or type of object"],
+    ["cast", "zap (cast) a spell"],
+    ["chat", "talk to someone"],
+    ["chronicle", "show journal of major events"],
+    ["close", "close a door"],
+    ["conduct", "list voluntary challenges you have maintained"],
+    ["debugfuzzer", "start the fuzz tester"],
+    ["dip", "dip an object into something"],
+    ["down", "go down a staircase"],
+    ["drop", "drop an item"],
+    ["droptype", "drop specific item types"],
+    ["eat", "eat something"],
+    ["engrave", "engrave writing on the floor"],
+    ["enhance", "advance or check weapon and spell skills"],
+    ["exploremode", "enter explore (discovery) mode"],
+    ["fight", "prefix: force fight even if you don't see a monster"],
+    ["fire", "fire ammunition from quiver"],
+    ["force", "force a lock"],
+    ["genocided", "list monsters that have been genocided or become extinct"],
+    ["glance", "show what type of thing a map symbol corresponds to"],
+    ["help", "give a help message"],
+    ["herecmdmenu", "show menu of commands you can do here"],
+    ["history", "show a summary of the game's development"],
+    ["inventory", "show your inventory"],
+    ["inventtype", "show inventory of one specific item class"],
+    ["invoke", "invoke an object's special powers"],
+    ["jump", "jump to another location"],
+    ["kick", "kick something"],
+    ["known", "show what object types have been discovered"],
+    ["knownclass", "show discovered types for one class of objects"],
+    ["levelchange", "change experience level"],
+    ["lightsources", "show mobile light sources"],
+    ["look", "look at what is here"],
+    ["lookaround", "describe what you can see"],
+    ["loot", "loot a box on the floor"],
+    ["monster", "use monster's special ability"],
+    ["name", "same as call; name a monster or object or object type"],
+    ["offer", "offer a sacrifice to the gods"],
+    ["open", "open a door"],
+    ["options", "show option settings"],
+    ["optionsfull", "show all option settings, possibly change them"],
+    ["overview", "show a summary of the explored dungeon"],
+    ["panic", "test panic routine (fatal to game)"],
+    ["pay", "pay your shopping bill"],
+    ["perminv", "scroll persistent inventory display"],
+    ["pickup", "pick up things at the current location"],
+    ["polyself", "polymorph self"],
+    ["pray", "pray to the gods for help"],
+    ["prevmsg", "view recent game messages"],
+    ["puton", "put on an accessory (ring, amulet, etc)"],
+    ["quaff", "quaff (drink) something"],
+    ["quit", "exit without saving current game"],
+    ["quiver", "select ammunition for quiver"],
+    ["read", "read a scroll or spellbook"],
+    ["redraw", "redraw screen"],
+    ["remove", "remove an accessory (ring, amulet, etc)"],
+    ["repeat", "repeat a previous command"],
+    ["reqmenu", "prefix: request menu or modify command"],
+    ["retravel", "travel to previously selected travel location"],
+    ["ride", "mount or dismount a saddled steed"],
+    ["rub", "rub a lamp or a stone"],
+    ["run", "prefix: run until something interesting is seen"],
+    ["rush", "prefix: rush until something interesting is seen"],
+    ["save", "save the game and exit"],
+    ["saveoptions", "save the game configuration"],
+    ["search", "search for traps and secret doors"],
+    ["seeall", "show all equipment in use"],
+    ["seeamulet", "show the amulet currently worn"],
+    ["seearmor", "show the armor currently worn"],
+    ["seerings", "show the ring(s) currently worn"],
+    ["seetools", "show the tools currently in use"],
+    ["seeweapon", "show the weapon currently wielded"],
+    ["shell", "leave game to enter a sub-shell ('exit' to come back)"],
+    ["showgold", "show gold, possibly shop credit or debt"],
+    ["showspells", "list and reorder known spells"],
+    ["showtrap", "describe an adjacent, discovered trap"],
+    ["sit", "sit down"],
+    ["stats", "show memory statistics"],
+    ["suspend", "push game to background ('fg' to come back)"],
+    ["swap", "swap wielded and secondary weapons"],
+    ["takeoff", "take off one piece of armor"],
+    ["takeoffall", "remove all armor"],
+    ["teleport", "teleport around the level"],
+    ["terrain", "view map without monsters or objects obstructing it"],
+    ["therecmdmenu", "menu of commands you can do from here to adjacent spot"],
+    ["throw", "throw something"],
+    ["timeout", "look at timeout queue and hero's timed intrinsics"],
+    ["tip", "empty a container"],
+    ["toggle", "toggle boolean option"],
+    ["travel", "travel to a specific location on the map"],
+    ["turn", "turn undead away"],
+    ["twoweapon", "toggle two-weapon combat"],
+    ["untrap", "untrap something"],
+    ["up", "go up a staircase"],
+    ["vanquished", "list vanquished monsters"],
+    ["version", "list compile time options for this version of NetHack"],
+    ["versionshort", "show version and date+time program was built"],
+    ["vision", "show vision array"],
+    ["wait", "rest one move while doing nothing"],
+    ["wear", "wear a piece of armor"],
+    ["whatdoes", "tell what a command does"],
+    ["whatis", "show what type of thing a symbol corresponds to"],
+    ["wield", "wield (put in use) a weapon"],
+    ["wipe", "wipe off your face"],
+    ["wizborn", "show stats of monsters created"],
+    ["wizbury", "bury objs under and around you"],
+    ["wizcast", "cast any spell"],
+    ["wizcustom", "show customized glyphs"],
+    ["wizdetect", "reveal hidden things within a small radius"],
+    ["wizdispmacros", "validate the display macro ranges"],
+    ["wizfliplevel", "flip the level"],
+    ["wizgenesis", "create a monster"],
+    ["wizidentify", "identify all items in inventory"],
+    ["wizintrinsic", "set an intrinsic"],
+    ["wizkill", "slay a monster"],
+    ["wizlevelport", "teleport to another level"],
+    ["wizloaddes", "load and execute a des-file lua script"],
+    ["wizloadlua", "load and execute a lua script"],
+    ["wizobjprobs", "list object generation probabilities"],
+    ["wizmakemap", "recreate the current level"],
+    ["wizmap", "map the level"],
+    ["wizmondiff", "validate the difficulty ratings of monsters"],
+    ["wizrumorcheck", "verify rumor boundaries"],
+    ["wizseenv", "show map locations' seen vectors"],
+    ["wizshownhuuid", "show NHUUID for this game"],
+    ["wizsmell", "smell monster"],
+    ["wiztelekinesis", "telekinesis"],
+    ["wizwhere", "show locations of special levels"],
+    ["wizwish", "wish for something"],
+    ["wmode", "show wall modes"],
+    ["zap", "zap a wand"],
+    ["movewest", "move west (screen left)"],
+    ["movenorthwest", "move northwest (screen upper left)"],
+    ["movenorth", "move north (screen up)"],
+    ["movenortheast", "move northeast (screen upper right)"],
+    ["moveeast", "move east (screen right)"],
+    ["movesoutheast", "move southeast (screen lower right)"],
+    ["movesouth", "move south (screen down)"],
+    ["movesouthwest", "move southwest (screen lower left)"],
+    ["rushwest", "rush west (screen left)"],
+    ["rushnorthwest", "rush northwest (screen upper left)"],
+    ["rushnorth", "rush north (screen up)"],
+    ["rushnortheast", "rush northeast (screen upper right)"],
+    ["rusheast", "rush east (screen right)"],
+    ["rushsoutheast", "rush southeast (screen lower right)"],
+    ["rushsouth", "rush south (screen down)"],
+    ["rushsouthwest", "rush southwest (screen lower left)"],
+    ["runwest", "run west (screen left)"],
+    ["runnorthwest", "run northwest (screen upper left)"],
+    ["runnorth", "run north (screen up)"],
+    ["runnortheast", "run northeast (screen upper right)"],
+    ["runeast", "run east (screen right)"],
+    ["runsoutheast", "run southeast (screen lower right)"],
+    ["runsouth", "run south (screen down)"],
+    ["runsouthwest", "run southwest (screen lower left)"],
+    ["migratemons", "show migrating monsters and migrate N random ones"],
+]);
 //# sourceMappingURL=cmd.js.map

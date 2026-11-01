@@ -2,7 +2,7 @@
 // new_book_description(). Inventory, billing, and holding keep their owners.
 import { exerciseWisdom } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation as pline } from './pline.js';

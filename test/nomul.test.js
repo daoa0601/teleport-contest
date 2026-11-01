@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { stopDonning } from '../js/armor.js';
-import { nomul } from '../js/command_state.js';
+import { nomul } from '../js/hack.js';
 import { game } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { startRun } from '../js/runmode.js';

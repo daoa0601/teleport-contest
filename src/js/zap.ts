@@ -31,8 +31,8 @@ import {
     Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING,
 } from './const.js';
 import {
-    canSeeMonster, displayColorName, displayLiquidName, docrt, glyphAt, newsym,
-    shieldeff, unmap_invisible,
+    canSeeMonster, consumeHallucinatedMenuObjectGlyph, displayColorName, displayLiquidName, docrt,
+    glyphAt, newsym, randomDisplayMonsterName, shieldeff, unmap_invisible,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
@@ -49,7 +49,7 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { loseHeroHp } from './hero_damage.js';
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory } from './accessory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
@@ -69,9 +69,9 @@ import {
     monsterIsPlayerMonster, monsterIsWhirly,
 } from './monster_data.js';
 import {
-    DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_NAMES,
+    CHEST, DWARVISH_CLOAK, EGG, GLOB_OF_GREEN_SLIME, LARGE_BOX, OBJECT_CHARGED, OBJECT_NAMES,
     OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE,
-    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, TIN, WAN_LIGHTNING, WAN_STRIKING,
 } from './object_data.js';
 import {
     ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG,
@@ -84,7 +84,7 @@ import {
     WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION,
     WAN_WISHING,
 } from './object_data.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType, objectClassForType, observeObject } from './object_knowledge.js';
 import { objectResistsDestruction } from './object_state.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer,
@@ -105,8 +105,18 @@ import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { isContainer } from './container.js';
+import { objectDescription } from './object_description.js';
 import {
-    definiteObjectAction,
+    AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC,
+    AD_DRST, AD_ACID, AD_SPC1, AD_SPC2,
+} from './monster_attack_types.js';
+import type { DamageType } from './monster_attack_types.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { showInventoryWindow } from './windows.js';
+import type { InventorySection } from './windows.js';
+import {
+    definiteName, definiteObjectAction,
     killerObjectName, objectName, objectNameIsPlural, ownedObjectName,
     observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun,
 } from './objnam.js';
@@ -119,7 +129,7 @@ import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { PropertyName } from './property_types.js';
-import type { InventoryDamageType, MagicDamageResult, RayFloorKind, RayFloorResult } from './magic_types.js';
+
 import { requirePlayingGame } from './gstate.js';
 import { BOLT_LIM } from './const.js';
 import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt } from './mon.js';
@@ -152,9 +162,9 @@ import {
     beginImmediateZap, finishImmediateZap, hitFloorPileWithWand,
     hitMonsterWithWand, hitObjectWithWand,
 } from './immediate_zap.js';
-import { doEnlightenmentEffect } from './insight.js';
+import { doEnlightenmentEffect, monsterStatusLine } from './insight.js';
 import { gotoLevel } from './level_change.js';
-import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
+
 import { mksobj } from './mkobj.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
@@ -1992,4 +2002,145 @@ export function adjustSpellDamage(damage: number, state: GameState = game): numb
     if (intelligence <= 18) return damage + 1;
     if (intelligence <= 24 || level < 14) return damage + 2;
     return damage + 3;
+}
+
+export type InventoryDamageType = 'cold' | 'fire' | 'electric';
+export type RayFloorKind = 'fire' | 'cold' | 'disintegration' | 'lightning'
+    | 'acid' | 'poison' | 'magic' | 'death' | 'breath' | null;
+
+export interface MagicDamageResult {
+    damage: number;
+    heroDied: boolean;
+}
+
+export interface RayFloorResult {
+    absorbed: boolean;
+    rangeChange: number;
+    shopDamage?: boolean;
+}
+
+// Native ray types encode the source in the tens digit and the effect in
+// units: zap.c decodes the attack type with zaptype(type) % 10 (zap.c:4245,
+// 4788, 5154).
+export function rayDamageType(type: number): DamageType {
+    const effects: readonly DamageType[] = [AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE,
+        AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2];
+    const damage = effects[Math.abs(type) % 10];
+    if (damage === undefined) throw new RangeError(`Invalid native ray type ${type}`);
+    return damage;
+}
+
+// Probing reveals object descriptions and immediate container contents.
+// C refs: zap.c probe_objchain(), probe_monster(), and bhito(WAN_PROBING).
+function schroedingersBox(object: GameObject) {
+    return object.otyp === LARGE_BOX && object.spe === 1;
+}
+
+export async function probeMonster(monster: Monster, {
+    state = game, onHead = true, x = monster.mx, y = monster.my, publish = plineWithContinuation,
+}: { state?: GameState; onHead?: boolean; x?: number; y?: number; publish?: MessagePublisher } = {}) {
+    await publish(await monsterStatusLine(monster, { state, x, y }));
+    if (!onHead) return;
+    const inventory = monster.minvent || monster.inventory || [];
+    if (!inventory.length) {
+        const carryingHero = state.u.uswallow && state.u.ustuck === monster;
+        // zap.c:probe_monster() formats the name with noit_Monnam():
+        // ARTICLE_YOUR plus SUPPRESS_IT, so a tame carrier reads "Your
+        // kitten" and hostiles fall back to "The".
+        await publish(`${monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true })} is not carrying anything${carryingHero ? ' besides you' : ''}.`);
+        return;
+    }
+    probeObjectChain(inventory, { state });
+    // invent.c:display_minventory() titles the menu with
+    // s_suffix(noit_Monnam(mon)) — ARTICLE_YOUR plus SUPPRESS_IT, matching
+    // the empty-carrier message above — and shows the monster's whole
+    // inventory through query_objlist() with INVORDER_SORT: entries group
+    // by class in inv_order under class headings, the tty layer generates
+    // the selector letters, and only a leading gold stack keeps its own
+    // '$' selector (pickup.c:1129-1139).
+    const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
+    await showProbedObjectInventory(inventory, `${possessiveName(name)} possessions:`, { state });
+}
+
+// C zap.c:probe_objchain().
+export function probeObjectChain(inventory: readonly GameObject[], { state = game }: { state?: GameState } = {}) {
+    for (const object of inventory) {
+        observeObject(object, state);
+        if (isContainer(object) || object.otyp === STATUE) {
+            object.lknown = true;
+            if (!schroedingersBox(object)) object.cknown = true;
+        } else if (object.otyp === TIN) object.known = true;
+    }
+}
+
+export async function probeObject(object: GameObject, { state = game }: { state?: GameState } = {}) {
+    let learned = !object.dknown;
+    observeObject(object, state);
+    if (isContainer(object) || object.otyp === STATUE) {
+        object.cknown = object.lknown = true;
+        const name = definiteName(objectName(object, state), state);
+        if ([CHEST, LARGE_BOX].includes(object.otyp) && !object.tknown) {
+            if (object.otrapped) await plineWithContinuation(`${definiteObjectAction(object, 'are', state)} trapped!`);
+            object.tknown = true;
+        }
+        if (!object.contents?.length) await plineWithContinuation(`${definiteObjectAction(object, 'are', state)} empty.`);
+        else if (schroedingersBox(object)) {
+            const cat = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'cat';
+            await plineWithContinuation(`You aren't sure whether ${name} has ${withIndefiniteArticle(cat)} or its corpse inside.`);
+            object.cknown = false;
+        } else {
+            for (const content of object.contents) observeObject(content, state);
+            await showProbedObjectInventory(object.contents, `Contents of ${await probedContentsTitle(object, state)}:`, { state });
+        }
+        learned = true;
+    } else if (object.otyp === TIN) {
+        learned ||= !object.known || !object.cknown;
+        object.known = object.cknown = true;
+    } else if (object.otyp === EGG) {
+        learned ||= !object.known && (object.corpsenm ?? -1) >= 0;
+        object.known = true;
+    }
+    return learned;
+}
+
+// C query_objlist(): PICK_NONE still gives each object a menu identifier,
+// so tty assigns letters. INVORDER_SORT adds headings even for one item.
+export async function showProbedObjectInventory(objects: readonly GameObject[], title: string, {
+    state = game, groupByClass = true,
+}: { state?: GameState; groupByClass?: boolean } = {}): Promise<void> {
+    const sorted = sortObjects(objects, { mode: lootSortMode({ state }), state });
+    const sections: InventorySection<GameObject>[] = [];
+    const classes = groupByClass ? inventoryClassOrder(state) : [null];
+    let first = true;
+    for (const oclass of classes) {
+        const members = oclass === null ? sorted
+            : sorted.filter(object => (object.oclass || objectClassForType(object.otyp)) === oclass);
+        if (!members.length) continue;
+        const items = [];
+        for (const object of members) {
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({
+                ...(first && objectClassForType(object.otyp) === 12 ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object), value: object,
+            });
+            first = false;
+        }
+        sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
+    }
+    await showInventoryWindow(sections, { title });
+}
+
+// C invent.c:cinv_doname(): the probing contents menu names the box with
+// "trapped" inserted before its lock state even though doname() already
+// shows a just-learned trap, so a trapped box is named twice.
+async function probedContentsTitle(object: GameObject, state: GameState): Promise<string> {
+    let name = await objectDescription(object, { state });
+    if (!object.otrapped) return name;
+    const locked = name.indexOf(' locked ');
+    const unlocked = name.indexOf(' unlocked ');
+    if (locked >= 0 && (unlocked < 0 || locked < unlocked))
+        name = name.replace(' locked ', ' trapped locked ');
+    else if (unlocked >= 0)
+        name = name.replace(' unlocked ', ' trapped unlocked ');
+    return name.replace('an trapped ', 'a trapped ');
 }

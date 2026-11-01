@@ -13,7 +13,8 @@ import {
     MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum,
 } from './const.js';
 import { PanicTermination } from './panic_termination.js';
-import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
+import { setMulti } from './cmd.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
@@ -30,7 +31,7 @@ import { vision_recalc } from './vision.js';
 import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, type ShopExitOutcome } from './shk.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
-import { containerContents } from './container_contents.js';
+import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import {
     ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow,
@@ -46,7 +47,7 @@ import { d, rn2 } from './rng.js';
 import { mksobj } from './mkobj.js';
 import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { objectName } from './objnam.js';
+import { definiteName, objectName, simpleObjectName, observeObjectForNaming } from './objnam.js';
 import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
@@ -63,10 +64,11 @@ import {
 } from './const.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import {
-    AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR,
-    CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES,
-    SPE_BOOK_OF_THE_DEAD,
+    AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR,
+    JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE,
 } from './object_data.js';
+import { objectDescription } from './object_description.js';
+import { lootSortMode, sortObjects } from './object_sort.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
@@ -1924,4 +1926,38 @@ export async function waitForCurrentMonsterMore(fallbackMessage = '') {
         resetToplineClip();
     }
     return flushPendingTopline();
+}
+
+// C end.c:container_contents(), shared by final disclosure and #loot ':'.
+export async function containerContents(
+    list: readonly GameObject[], identified: boolean, allContainers: boolean, reportEmpty: boolean,
+): Promise<void> {
+    for (const box of list) {
+        if (isContainer(box) || box.otyp === STATUE) {
+            box.cknown = true;
+            if (identified) box.lknown = true;
+            if (box.otyp === BAG_OF_TRICKS) continue;
+            if (box.contents?.length) {
+                const lines = [`Contents of ${definiteName(objectName(box))}:`, ''];
+                if (isQuantumBox(box)) {
+                    lines.push("  Schroedinger's cat!");
+                } else {
+                    if (!identified)
+                        for (const object of box.contents) observeObjectForNaming(object);
+                    for (const object of sortObjects(box.contents, { mode: lootSortMode() })) {
+                        if (identified) identifyObjectForDisclosure(object);
+                        lines.push(`  ${await objectDescription(object, { withPrice: true })}`);
+                    }
+                }
+                await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
+                if (allContainers)
+                    await containerContents(box.contents, identified, true, reportEmpty);
+            } else if (reportEmpty) {
+                const name = definiteName(simpleObjectName(box));
+                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is empty.`);
+                await displayMessageWindow();
+            }
+        }
+        if (!allContainers) break;
+    }
 }

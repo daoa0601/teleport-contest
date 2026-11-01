@@ -6,7 +6,7 @@ import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL, W_ARMC } 
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { applyHeroNaturalPolymorph } from '../js/hero_natural_polymorph.js';
 import { resetInputState } from '../js/input.js';
-import { magicNegation } from '../js/magic_negation.js';
+import { magicNegation } from '../js/mhitu.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
 import { monsterHasMagicResistance } from '../js/anti_magic_trap.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';

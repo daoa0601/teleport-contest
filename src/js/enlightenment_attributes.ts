@@ -3,7 +3,7 @@ import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
-import { magicNegation } from './magic_negation.js';
+import { magicNegation } from './mhitu.js';
 import { simpleArmorName } from './armor.js';
 import { confersLuck } from './hero_inventory.js';
 import { fromWhat, extrinsicPropertyMask, intrinsicPropertyMask, veryFast } from './attribute_provenance.js';

@@ -15,7 +15,7 @@ import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
-import type { CannedCommand, AfterMove, MovementAttempt, RepeatCommandEntry, RunState } from './command_types.js';
+import type { AfterMove, CannedCommand, MovementAttempt, RepeatCommandEntry, RunState } from './cmd.js';
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './takeoff_state.js';
 import type { Artifact, ArtifactOrigin } from './artifacts.js';

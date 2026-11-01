@@ -1,6 +1,6 @@
 // weight.js — Hero inventory weight and carrying-capacity state.
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
-import { pendingArmorAction } from './command_state.js';
+import { pendingArmorAction } from './do_wear.js';
 import { BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_NUTRITION, OBJECT_WEIGHT, OILSKIN_SACK, SACK, STATUE, TALLOW_CANDLE, requireObjectData, } from './object_data.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
