@@ -9,7 +9,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import {
     CLUB, LOADSTONE, SCR_REMOVE_CURSE,
 } from '../js/object_data.js';
-import { removeCurseEffect } from '../js/scroll_effects.js';
+import { removeCurseEffect } from '../js/read.js';
 import {
     addInventoryObject, knownObject,
 } from './support/game-objects.js';

@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { jumpHero } from '../js/jumping.js';
 import { BULLWHIP, WAN_STRIKING } from '../js/object_data.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { breakWand } from '../js/wand_break.js';
+import { breakWand } from '../js/apply.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -27,7 +27,7 @@ import {
 import { objectTypeKnown } from '../js/shk.js';
 import { doride } from '../js/steed.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import { addInventoryObject, chargedWand, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';

@@ -16,7 +16,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, HELMET, ROCK, SCR_AMNESIA, SCR_EARTH, SCR_FIRE, SCR_STINKING_CLOUD, SPE_FORCE_BOLT, SPE_HEALING } from '../js/object_data.js';
 import { recordObjectKnowledge } from '../js/object_knowledge.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { applyAreaScrollEffect } from '../js/scroll_area_effects.js';
+import { applyAreaScrollEffect } from '../js/read.js';
 import { advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance } from '../js/skills.js';
 import { forceLearnSpell, knownSpell } from '../js/spell.js';
 import { vision_recalc } from '../js/vision.js';

@@ -12,7 +12,7 @@ import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLUB, OBJECT_NAMES, POT_HEALING, SCR_IDENTIFY, SPE_DIG } from '../js/object_data.js';
-import { applyScrollEffects, identifyEffect } from '../js/scroll_effects.js';
+import { applyScrollEffects, identifyEffect } from '../js/read.js';
 import { makeShopkeeperHappy } from '../js/shk.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { vision_recalc } from '../js/vision.js';

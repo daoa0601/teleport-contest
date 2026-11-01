@@ -8,7 +8,7 @@ import { WAN_PROBING } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
-import { zapMapAt } from '../js/wand_terrain_magic.js';
+import { zapMapAt } from '../js/zap.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';

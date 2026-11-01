@@ -1,30 +1,47 @@
 // Ray attacks, terrain changes, and elemental item damage.
-// C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), and
-// destroy_items().
+// C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
+// learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
+// zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
 
 import { objectMaterial } from './object_material.js';
-import { convertSecretDoor } from './detect.js';
+import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 import { bypassObjectList, nextUnbypassedObject } from './object_bypass.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './steed.js';
+import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
+import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { applyWandEffect } from './wand_effects.js';
-import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const.js';
+import {
+    GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok,
+    ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN,
+    ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel,
+    Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR,
+    TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE,
+} from './const.js';
 import { objectDirection } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { backfireWand, zappable } from './wand_charge.js';
-import { updateIceObjectTimersAt } from './floor_object.js';
+import { updateIceObjectTimersAt, placeCreatedObject, stack_object } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
-import { exerciseAttribute } from './attrib.js';
-import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING } from './const.js';
-import { canSeeMonster, displayColorName, displayLiquidName, docrt, newsym } from './display.js';
+import { exerciseAttribute, exerciseWisdom } from './attrib.js';
+import {
+    A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN,
+    SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT,
+    ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel,
+    ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA,
+    Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING,
+} from './const.js';
+import {
+    canSeeMonster, displayColorName, displayLiquidName, docrt, glyphAt, newsym,
+    shieldeff, unmap_invisible,
+} from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
-import { waterbodyName } from './terrain_name.js';
+import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
 import { game, requireLiveGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
+import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
+import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { SHOPBASE } from './const.js';
 import { roomsAt } from './room.js';
 import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
@@ -38,61 +55,74 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
 import { finishHeroDeath } from './end.js';
 import { meltIce } from './ice.js';
-import { consumeInventoryItem } from './invent.js';
+import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { igniteItems } from './light.js';
+import { igniteItems, lightDamage, lightRoom } from './light.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { deleteFloorTrap, maketrap } from './mklev.js';
+import { deleteFloorTrap, maketrap, randomEngraving } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle, armorUsesPairGrammar } from './object_grammar.js';
 import {
     MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME,
     monsterIsPlayerMonster, monsterIsWhirly,
 } from './monster_data.js';
 import {
     DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_NAMES,
-    OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD,
-    SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING,
+    OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING,
 } from './object_data.js';
-import { observeObject } from './object_knowledge.js';
+import {
+    ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG,
+    SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT,
+    SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_POLYMORPH,
+    SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK,
+    WAN_CANCELLATION, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT,
+    WAN_LIGHT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE,
+    WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION,
+    WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION,
+    WAN_WISHING,
+} from './object_data.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
 import { objectResistsDestruction } from './object_state.js';
 import {
     LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer,
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion.js';
-import { heroHasNoHands } from './polyself.js';
+import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
 import { dissolveBars } from './projectile_bars.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
-import { rn1, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
-import { chargeUnpaidUsage, addShopDamage } from './shk.js';
+import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
     definiteObjectAction,
-    killerObjectName, objectName, ownedObjectName, observeObjectForNaming,
-    observeDistantObjectForNaming, pluralizeObjectNoun,
+    killerObjectName, objectName, objectNameIsPlural, ownedObjectName,
+    observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun,
 } from './objnam.js';
 import { delobj } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { PropertyName } from './property_types.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind, RayFloorResult } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
 import { BOLT_LIM } from './const.js';
-import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster } from './mon.js';
+import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt } from './mon.js';
 import { revealMonsterAppearance } from './mon.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
@@ -104,8 +134,35 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { SavedMonsterTraits } from './monster_types.js';
-import { monsterHitPointsPerLevel } from './makemon.js';
+import { monsterHitPointsPerLevel, createCritters } from './makemon.js';
 import type { MonsterHitPointRandom } from './makemon.js';
+import { zapDigWithObject } from './digging_magic.js';
+import { objectIsHardHelmet } from './armor.js';
+import { impossible } from './diagnostics.js';
+import { changeDoorByMagic } from './door_magic.js';
+import { recordMappedOverviewState } from './dungeon.js';
+import { forceDescribeDecor } from './dungeon_feature.js';
+import {
+    deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt,
+    relocateEngraving,
+} from './engrave.js';
+import { addExperience } from './exper.js';
+import { explode } from './explosion.js';
+import {
+    beginImmediateZap, finishImmediateZap, hitFloorPileWithWand,
+    hitMonsterWithWand, hitObjectWithWand,
+} from './immediate_zap.js';
+import { doEnlightenmentEffect } from './insight.js';
+import { gotoLevel } from './level_change.js';
+import { probeMonster, showProbedObjectInventory } from './magic_probe.js';
+import { mksobj } from './mkobj.js';
+import { okToQuest, onQuestStart } from './quest.js';
+import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
+import { goodPosition } from './teleport_rules.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { trapName } from './trap_name.js';
+import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
+import { makeWish } from './wish.js';
 
 export interface FloorBurnOptions {
     state?: GameState;
@@ -147,6 +204,8 @@ const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const WAND_CLASS = 11;
+
+const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
 const RAY_COLD = 'cold';
@@ -159,6 +218,87 @@ export const INVENTORY_DAMAGE = Object.freeze({
     FIRE: 'fire',
     ELECTRIC: 'electric',
 });
+
+// C zap.c:learnwand().
+export function learnWand(object: GameObject, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (object.oclass === 10) return; // Spell pseudo-objects do not rediscover books.
+    if (objectTypeKnown(object, state)) observeObject(object, state);
+    else {
+        if (!heroIsBlind(state)) observeObject(object, state);
+        if (object.dknown) learnObjectType(object.otyp, state);
+    }
+}
+
+// C zap.c:zappable(). It removes a charge from the wand when one is left.
+export async function zappable(wand: GameObject, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (wand.spe < 0 || (wand.spe === 0 && rn2(121) !== 0)) return false;
+    if (wand.spe === 0)
+        await plineWithContinuation('You wrest one last charge from the worn-out wand.');
+    wand.spe--;
+    return true;
+}
+
+// C zap.c zapnodir(), also the engrave command's no-direction wand effects.
+export async function zapWithoutDirection(source: GameObject, state: PlayingGameState) {
+    let known = false;
+    switch (source.otyp) {
+    case WAN_LIGHT:
+    case SPE_LIGHT:
+        known = source.dknown && !heroIsBlind(state);
+        await lightRoom(true, { finishMonsterKill: finishHeroMonsterKill });
+        if (state.program_state.gameover) return;
+        await lightDamage(source, true, 5, { state });
+        break;
+    case WAN_SECRET_DOOR_DETECTION:
+    case SPE_DETECT_UNSEEN:
+        known = !!source.dknown;
+        await findit();
+        break;
+    case WAN_STASIS:
+        state.level.flags.stasis_until = Math.max(state.level.flags.stasis_until || 0,
+            state.moves + rn2(21) + 10);
+        break;
+    case WAN_CREATE_MONSTER:
+        if (await createCritters(rn2(23) ? 1 : rn2(7) + 2)) known = !!source.dknown;
+        break;
+    case WAN_WISHING:
+        // zapnodir(): C tests Luck, which includes a carried luckstone's bonus.
+        if ((state.u.uluck || 0) + (state.u.moreluck || 0) + rn2(5) < 0)
+            await plineWithContinuation('Unfortunately, nothing happens.');
+        else {
+            known = !!source.dknown;
+            await makeWish();
+        }
+        break;
+    case WAN_ENLIGHTENMENT:
+        known = !!source.dknown;
+        await doEnlightenmentEffect();
+        break;
+    }
+    if (known && !state.program_state.gameover) {
+        if (!objectTypeKnown(source, state)) addExperience(0, 10, state);
+        learnWand(source, { state });
+    }
+}
+
+// C zap.c:backfire(). Native backfire differs from a failed recharge: every
+// wand uses d6 here.
+export async function backfireWand(wand: GameObject, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    wand.in_use = true;
+    await plineWithContinuation(`${definiteObjectAction(wand, null, state)} suddenly explodes!`);
+    const damage = d(wand.spe + 2, 6);
+    const injury = state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage;
+    if (await loseHeroHp(injury, 'exploding wand', {
+        state, deathCause: 'killed by an exploding wand',
+    })) return;
+    await useUpInventoryStack(wand, state);
+}
 
 async function finishWandUse(wand: GameObject | null) {
     if (!wand || wand.spe >= 0) return;
@@ -219,6 +359,452 @@ export async function dozap(): Promise<void> {
     if (game.program_state.gameover) return;
     await finishWandUse(wand);
     game.context.move = 1;
+}
+
+// C zap.c:zap_steed(). Zapping downwards while riding applies the wand to
+// the steed first.
+async function zapSteed(source: GameObject, state: PlayingGameState) {
+    const steed = state.u.usteed;
+    if (!steed) return false;
+    state.bhitpos = { x: steed.mx, y: steed.my };
+    state.notonhead = false;
+    switch (source.otyp) {
+    case WAN_PROBING:
+        await probeMonster(steed, { state });
+        learnWand(source, { state });
+        return true;
+    case WAN_TELEPORTATION:
+    case SPE_TELEPORT_AWAY: {
+        const { ux: x, uy: y } = state.u;
+        await teleportHero({ chooseDestination: askTeleportDestination });
+        if ((heroControlsTeleport(state) && !(state.u.stunned || (state.u.stunnedTurns ?? 0) > 0))
+            || !couldsee(x, y) || (state.u.ux - x) ** 2 + (state.u.uy - y) ** 2 >= 16)
+            learnWand(source, { state });
+        return true;
+    }
+    case SPE_CURE_SICKNESS:
+    case WAN_MAKE_INVISIBLE:
+    case WAN_CANCELLATION:
+    case SPE_CANCELLATION:
+    case WAN_POLYMORPH:
+    case SPE_POLYMORPH:
+    case WAN_STRIKING:
+    case SPE_FORCE_BOLT:
+    case WAN_SLOW_MONSTER:
+    case SPE_SLOW_MONSTER:
+    case WAN_SPEED_MONSTER:
+    case SPE_HEALING:
+    case SPE_EXTRA_HEALING:
+    case SPE_DRAIN_LIFE:
+    case WAN_OPENING:
+    case SPE_KNOCK:
+        await hitMonsterWithWand(steed, source, { state });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// C zap.c:zap_updown(). Vertical zaps only reach the hero's own square.
+async function zapVertically(source: GameObject, state: PlayingGameState) {
+    const { ux: x, uy: y, dz = 0 } = state.u;
+    const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    let disclose = false;
+    switch (source.otyp) {
+    case WAN_PROBING:
+        await probeVertically(source, x, y, state);
+        return true;
+    case WAN_OPENING:
+    case SPE_KNOCK: {
+        const bridge = findDrawbridgeAt(x, y, state);
+        if (state.level.requireAt(x, y).typ === DBWALL && bridge) {
+            await openDrawbridge(bridge.x, bridge.y, state);
+            disclose = true;
+        } else if (dz > 0 && onQuestStart(state) && !okToQuest(state)) {
+            let stairs = state.stairs;
+            while (stairs && (stairs.isladder || stairs.up || stairs.tolev.dnum !== state.u.uz.dnum)) stairs = stairs.next;
+            if (stairs?.sx === x && stairs.sy === y) {
+                await plineWithContinuation('The stairs seem to ripple momentarily.');
+                disclose = true;
+            }
+        }
+        if (state.program_state.gameover) return disclose;
+        if (dz > 0) {
+            const effect = state.u.utrap ? await openHoldingTrap(state.u, { state })
+                : await openFallingTrap(state.u, { state });
+            disclose ||= effect.noticed;
+        }
+        break;
+    }
+    case WAN_STRIKING:
+    case SPE_FORCE_BOLT:
+    case WAN_LOCKING:
+    case SPE_WIZARD_LOCK:
+        disclose = await strikeOrLockVertically(source, x, y, trap, state);
+        break;
+    case SPE_STONE_TO_FLESH:
+        await fleshOnTerrain(x, y, state);
+        break;
+    }
+    if (state.program_state.gameover) return disclose;
+    if (dz > 0) {
+        await hitFloorPileWithWand(source, x, y, { state, direction: dz });
+        if (!state.program_state.gameover) await zapMapAt(x, y, source, { state });
+    } else if (state.u.uundetected && heroFormHidesUnderObjects(state)) {
+        const object = state.level.objects[state.u.ux]?.[state.u.uy]?.[0];
+        if (object && await hitObjectWithWand(object, source, { state })) {
+            await maybeUnhideAt(state.u.ux, state.u.uy, state);
+            disclose = true;
+        }
+    }
+    return disclose;
+}
+
+async function strikeOrLockVertically(source: GameObject, x: number, y: number, trap: Trap | undefined, state: PlayingGameState) {
+    const striking = [WAN_STRIKING, SPE_FORCE_BOLT].includes(source.otyp);
+    const { dz = 0 } = state.u, location = state.level.at(x, y);
+    if (!location) throw new Error(`No map location at ${x},${y}`);
+    const bridge = findDrawbridgeAt(x, y, state);
+    if (bridge && (location.typ === DRAWBRIDGE_DOWN ? dz > 0 : location.typ === DOOR)) {
+        if (striking) await destroyDrawbridge(bridge.x, bridge.y, state);
+        else await closeDrawbridge(bridge.x, bridge.y, state);
+        return true;
+    }
+    if (striking && dz < 0 && rn2(3) && !Is_airlevel(state.u.uz)
+        && !Is_waterlevel(state.u.uz) && !(state.underwater || state.u.uinwater) && !onQuestStart(state)) {
+        await plineWithContinuation(`A rock is dislodged from the ${ceilingName(x, y, state)} and falls on your ${heroHeadName(state)}.`);
+        let damage = rnd(objectIsHardHelmet(state.uarmh || state.u.uarmh) ? 2 : 6);
+        if (state.u.halfPhysicalDamage) damage = Math.ceil(damage / 2);
+        if (await loseHeroHp(damage, 'falling rock', { state })) return false;
+        const rock = await mksobj(ROCK, false, false);
+        await placeCreatedObject(rock, x, y, state);
+        observeObjectForNaming(rock, { state });
+        await stack_object(rock, state);
+        await newsym(x, y);
+        return false;
+    }
+    if (dz <= 0 || !trap) return false;
+    if (!striking) {
+        const effect = await closeHoldingTrap(state.u, { state });
+        if (effect.changed) return effect.noticed;
+    }
+    if (striking && trap.ttyp === TRAPDOOR) {
+        const known = !!trap.tseen;
+        await plineWithContinuation(heroIsBlind(state) && !known ? 'Something beneath you shatters.'
+            : !known ? "There's a trapdoor beneath you; it shatters." : 'The trapdoor beneath you shatters.');
+        trap.ttyp = HOLE;
+        trap.tseen = 1;
+        await newsym(x, y);
+        await triggerHeroTrap(trap, { gotoLevel });
+        return known;
+    }
+    if (!striking && trap.ttyp === HOLE) {
+        trap.ttyp = TRAPDOOR;
+        if (heroIsBlind(state) || !trap.tseen) await plineWithContinuation(`Some ${isIceAt(x, y, state) ? 'frost' : 'dust'} swirls beneath you.`);
+        else {
+            trap.tseen = 1;
+            await newsym(x, y);
+            await plineWithContinuation('A trapdoor appears beneath you.');
+            return true;
+        }
+    }
+    return false;
+}
+
+async function fleshOnTerrain(x: number, y: number, state: PlayingGameState) {
+    const { dz = 0 } = state.u;
+    if (Is_airlevel(state.u.uz) || Is_waterlevel(state.u.uz) || state.underwater || state.u.uinwater
+        || (onQuestStart(state) && dz < 0)) await plineWithContinuation('Nothing happens.');
+    else if (dz < 0) await plineWithContinuation(`Blood drips on your ${heroFaceName(state)}.`);
+    else if (!state.level.objects[x]?.[y]?.length && engravingAt(x, y)?.engr_type !== ENGRAVE) {
+        if (isPoolAt(x, y, state) || isIceAt(x, y, state)) await plineWithContinuation('Nothing happens.');
+        else await plineWithContinuation(`Blood ${isLavaAt(x, y, state) ? 'boils' : 'pools'} ${state.u.levitating ? 'beneath' : 'at'} your ${makePlural(heroFootName(state))}.`);
+    }
+}
+
+async function probeVertically(source: GameObject, x: number, y: number, state: PlayingGameState) {
+    let found = 0;
+    if ((state.u.dz ?? 0) < 0) await plineWithContinuation(`You probe towards the ${ceilingName(x, y, state)}.`);
+    else {
+        recordMappedOverviewState();
+        const location = state.level.at(x, y);
+        if (!location) throw new Error(`No map location at ${x},${y}`);
+        const remembered = location.lastseentyp;
+        found += await hitFloorPileWithWand(source, x, y, { state, direction: state.u.dz ?? 0 });
+        const surface = location.typ === DRAWBRIDGE_UP
+            ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+        await zapMapAt(x, y, source, { state });
+        const furniture = surface === ICE || IS_FURNITURE(surface);
+        if (furniture && remembered !== location.lastseentyp) found++;
+        await plineWithContinuation(`You probe beneath ${furniture ? 'it' : `the ${surfaceName(x, y, state)}`}.`);
+        found += await displayBuriedInventory(x, y, state);
+    }
+    if (!found) await plineWithContinuation('Your probe reveals nothing.');
+}
+
+async function displayBuriedInventory(x: number, y: number, state: PlayingGameState) {
+    const pile = state.level.objects[x]?.[y] || [];
+    let underwhat = 'here', count = 0;
+    if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
+        const liquid = displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state);
+        count = pile.length;
+        if (pile.length === 1) {
+            const object = pile[0];
+            if (!object) throw new Error('A visible one-object pile must contain its object.');
+            const plural = objectNameIsPlural(object, state);
+            await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
+            underwhat = plural || armorUsesPairGrammar(OBJECT_NAMES[object.otyp] ?? '') ? 'under them' : 'beneath it';
+        } else {
+            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
+            underwhat = 'beneath them';
+        }
+    }
+    const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
+    for (const object of buried) observeObject(object, state);
+    if (buried.length) await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
+    return count + buried.length;
+}
+
+// C zap.c:weffects(). Zapping and spell casting share the effect dispatch;
+// callers own charge use and direction input.
+export async function applyWandEffect(source: GameObject, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u, type = source.otyp, direction = objectDirection(type, state);
+    const unknown = !objectTypeKnown(source, state);
+    let disclose = false;
+    exerciseWisdom(true, state);
+    if (hero.usteed && direction !== NODIR && !hero.dx && !hero.dy
+        && (hero.dz ?? 0) > 0 && await zapSteed(source, state)) {
+        disclose = true;
+    } else if (direction === IMMEDIATE) {
+        beginImmediateZap(state);
+        if (hero.uswallow) {
+            if (!hero.ustuck) throw new Error('A swallowed hero must have an engulfing monster.');
+            await hitMonsterWithWand(hero.ustuck, source, { state });
+        } else if (hero.dz) disclose = await zapVertically(source, state);
+        else await traceImmediateZap(source, rn2(8) + 6, state);
+        if (!state.program_state.gameover) await finishImmediateZap(state);
+    } else if (direction === NODIR) {
+        await zapWithoutDirection(source, state);
+    } else {
+        if (type === WAN_DIGGING || type === SPE_DIG) await zapDigWithObject(source, { state });
+        else if ((type >= SPE_MAGIC_MISSILE && type <= SPE_FINGER_OF_DEATH)
+            || (type >= WAN_MAGIC_MISSILE && type <= WAN_LIGHTNING)) {
+            await zapRayWithObject(source, { state });
+        } else await impossible('weffects: unexpected spell or wand');
+        disclose = true;
+    }
+    if (disclose && !state.program_state.gameover) {
+        learnWand(source, { state });
+        if (unknown) addExperience(0, 10, state);
+    }
+}
+
+// C zap.c:zap_map(). Terrain is affected before occupants and floor piles.
+export async function zapMapAt(x: number, y: number, source: GameObject, { state = game }: { state?: GameState } = {}) {
+    requirePlayingGame(state);
+    let learned = await cancelMagicTrap(x, y, source, state);
+    if (state.program_state.gameover) return;
+    const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if ((state.u.dz ?? 0) > 0) await zapEngraving(x, y, source, state);
+    else if (!state.u.dz) learned = await zapDrawbridge(x, y, source, state) || learned;
+    if (state.program_state.gameover) return;
+    if (source.otyp === WAN_PROBING)
+        learned = await probeTerrain(x, y, trap, learned, state);
+    if (learned) learnWand(source, { state });
+}
+
+async function cancelMagicTrap(x: number, y: number, source: GameObject, state: PlayingGameState) {
+    if (![WAN_CANCELLATION, SPE_CANCELLATION].includes(source.otyp)) return false;
+    const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (!trap) return false;
+    if ([MAGIC_PORTAL, VIBRATING_SQUARE].includes(trap.ttyp)) {
+        await shieldeff(x, y);
+        if (!cansee(x, y)) return false;
+        trap.tseen = 1;
+        await newsym(x, y);
+        return true;
+    }
+    if (![TELEP_TRAP, LEVEL_TELEP, MAGIC_TRAP, ANTI_MAGIC, POLY_TRAP].includes(trap.ttyp)) return false;
+    const visible = cansee(x, y);
+    await explode(x, y, -WAN_CANCELLATION, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL, { state });
+    deleteTrap(trap, state);
+    await newsym(x, y);
+    return visible;
+}
+
+async function zapEngraving(x: number, y: number, source: GameObject, state: PlayingGameState) {
+    const engraving = engravingAt(x, y, state.level);
+    if (!engraving || engraving.engr_type === HEADSTONE) return;
+    switch (source.otyp) {
+    case WAN_POLYMORPH:
+    case SPE_POLYMORPH: {
+        deleteEngravingAt(x, y, state.level);
+        const { text, pristine } = randomEngraving();
+        makeEngravingAt(x, y, text, pristine, state.moves, 0);
+        break;
+    }
+    case WAN_CANCELLATION:
+    case SPE_CANCELLATION:
+    case WAN_MAKE_INVISIBLE:
+        deleteEngravingAt(x, y, state.level);
+        break;
+    case WAN_TELEPORTATION:
+    case SPE_TELEPORT_AWAY:
+        await relocateEngraving(engraving, state);
+        break;
+    case SPE_STONE_TO_FLESH:
+        if (engraving.engr_type !== ENGRAVE) break;
+        await plineWithContinuation(heroIsHallucinating(state)
+            ? 'The floor runs like butter!' : 'The edges on the floor get smoother.');
+        wipeEngravingAt(x, y, d(2, 4), true, state.level);
+        break;
+    case WAN_STRIKING:
+    case SPE_FORCE_BOLT:
+        wipeEngravingAt(x, y, d(2, 4), true, state.level);
+        break;
+    }
+}
+
+async function zapDrawbridge(x: number, y: number, source: GameObject, state: PlayingGameState) {
+    const originalType = state.level.requireAt(x, y).typ;
+    const bridge = findDrawbridgeAt(x, y, state);
+    if (!bridge) return false;
+    switch (source.otyp) {
+    case WAN_OPENING:
+    case SPE_KNOCK:
+        if (originalType === DBWALL) {
+            const visible = cansee(x, y) || cansee(bridge.x, bridge.y);
+            await openDrawbridge(bridge.x, bridge.y, state);
+            return visible;
+        }
+        break;
+    case WAN_LOCKING:
+    case SPE_WIZARD_LOCK: {
+        const observed = (cansee(x, y) || cansee(bridge.x, bridge.y))
+            && bridge.location.typ === DRAWBRIDGE_DOWN;
+        await closeDrawbridge(bridge.x, bridge.y, state);
+        return observed;
+    }
+    case WAN_STRIKING:
+    case SPE_FORCE_BOLT:
+        if (originalType !== DRAWBRIDGE_UP) {
+            await destroyDrawbridge(bridge.x, bridge.y, state);
+            return true;
+        }
+        break;
+    }
+    return false;
+}
+
+function sameGlyph(left: ReturnType<typeof glyphAt>, right: ReturnType<typeof glyphAt>) {
+    if (left === right) return true;
+    if (!left || !right || left.kind !== right.kind) return false;
+    switch (left.kind) {
+    case 'terrain': return right.kind === 'terrain' && left.terrainName === right.terrainName;
+    case 'object': return right.kind === 'object' && left.otyp === right.otyp;
+    case 'monster': return right.kind === 'monster' && left.mnum === right.mnum;
+    case 'trap': return right.kind === 'trap' && left.trapType === right.trapType;
+    case 'effect':
+    case 'engraving':
+    case 'invisible':
+    case 'nothing':
+    case 'unexplored':
+    case 'warning':
+        return glyphCharacter(left) === glyphCharacter(right);
+    }
+}
+
+async function probeTerrain(x: number, y: number, trap: Trap | undefined, learned: boolean, state: PlayingGameState) {
+    const location = state.level.requireAt(x, y);
+    const oldType = location.lastseentyp, oldGlyph = glyphAt(x, y, state);
+    await showMapSpot(x, y, { state });
+    learned ||= oldType !== location.lastseentyp || !sameGlyph(oldGlyph, glyphAt(x, y, state));
+    const surface = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    if (surface === SDOOR) {
+        revealSecretDoor(x, y);
+        vision_note_blocker_change(x, y);
+        await newsym(x, y);
+        if (cansee(x, y)) {
+            await plineWithContinuation('Probing reveals a secret door.');
+            learned = true;
+        } else if (Is_rogue_level(state.u.uz)) await plineWithContinuation(formatDraftMessage(false, state));
+    } else if (surface === SCORR) {
+        location.typ = CORR;
+        vision_note_blocker_change(x, y);
+        await newsym(x, y);
+        await plineWithContinuation('Probing exposes a secret corridor.');
+        learned = true;
+    } else if ((surface === ICE || IS_FURNITURE(surface)) && (state.u.dz ?? 0) > 0) {
+        await forceDescribeDecor({ state, probing: true });
+        learned = true;
+    }
+    if (trap) {
+        const seen = trap.tseen, hallucinating = heroIsHallucinating(state);
+        trap.tseen = 1;
+        await newsym(x, y);
+        if (!seen || hallucinating) {
+            const name = trapName(trap.ttyp, { state });
+            const definite = hallucinating ? !rn2(4)
+                : trap.ttyp === VIBRATING_SQUARE && Invocation_lev(state.u.uz, state);
+            await plineWithContinuation(`You find ${definite ? `the ${name}!` : `${withIndefiniteArticle(name)}.`}`);
+            learned = !hallucinating;
+        }
+    }
+    return learned;
+}
+
+function glyphCharacter(glyph: ReturnType<typeof glyphAt>): string | undefined {
+    return glyph && 'ch' in glyph && typeof glyph.ch === 'string' ? glyph.ch : undefined;
+}
+
+// C zap.c:bhit(), ZAPPED_WAND branch: a beam-limited walk over the map,
+// monsters, floor piles, and doors.
+async function traceImmediateZap(source: GameObject, range: number, state: PlayingGameState) {
+    const { dx = 0, dy = 0, ux, uy } = state.u;
+    state.bhitpos = { x: ux, y: uy };
+    let shopDoor = false;
+    while (range-- > 0) {
+        const x = state.bhitpos.x += dx, y = state.bhitpos.y += dy;
+        if (!isok(x, y)) {
+            state.bhitpos.x -= dx;
+            state.bhitpos.y -= dy;
+            break;
+        }
+        await zapMapAt(x, y, source, { state });
+        if (state.program_state.gameover) return;
+        const location = state.level.at(x, y);
+        if (!location) throw new Error(`No map location at ${x},${y}`);
+        const type = location.typ;
+        const monster = monsterAtPosition(state.level, x, y);
+        if (monster) {
+            state.notonhead = x !== monster.mx || y !== monster.my;
+            if (await hitMonsterWithWand(monster, source, { state, x, y })) return;
+            range -= 3;
+        } else if (source.otyp === WAN_PROBING && location.remembered_glyph?.kind === 'invisible') {
+            await unmap_invisible(x, y);
+        }
+        if (state.program_state.gameover) return;
+        if (await hitFloorPileWithWand(source, x, y, { state })) range--;
+        if (state.program_state.gameover) return;
+        if ((type === DOOR || type === SDOOR)
+            && [WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT].includes(source.otyp)
+            && await changeDoorByMagic(source, x, y, { state })) {
+            if (cansee(x, y) || (source.otyp === WAN_STRIKING && !heroIsDeaf(state))) learnWand(source, { state });
+            if (location.doormask === D_BROKEN && roomsAt(state.level, x, y, SHOPBASE).length) {
+                shopDoor = true;
+                addShopDamage(x, y, SHOP_DOOR_COST, state);
+            }
+        }
+        if (!ZAP_POS(type) || (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)))) {
+            state.bhitpos.x -= dx;
+            state.bhitpos.y -= dy;
+            break;
+        }
+    }
+    if (shopDoor) await payForShopDamage('destroy', { state });
 }
 
 
@@ -621,7 +1207,7 @@ export function monsterHasElementalResistance(monster: Monster, mask: number): b
     return !!(monsterResistanceBits(monster) & mask);
 }
 
-export { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
+export { hitMonsterWithRay, zapRayWithObject };
 
 
 function destroyable(object: GameObject, damageType: InventoryDamageType | null | undefined) {

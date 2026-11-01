@@ -20,7 +20,7 @@ import {
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';

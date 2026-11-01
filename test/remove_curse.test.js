@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { W_ARM } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { CLUB, LOADSTONE, SCR_REMOVE_CURSE, } from '../js/object_data.js';
-import { removeCurseEffect } from '../js/scroll_effects.js';
+import { removeCurseEffect } from '../js/read.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';
 import { installHeroChainedToBuriedBall, installPunishedHero, } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';

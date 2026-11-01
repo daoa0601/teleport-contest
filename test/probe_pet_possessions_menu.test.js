@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyWandEffect } from '../js/wand_effects.js';
+import { applyWandEffect } from '../js/zap.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { APPLE, WAN_PROBING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

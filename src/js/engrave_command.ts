@@ -40,10 +40,9 @@ import {
     monsterIsVerySmall, monsterIsWhirly,
 } from './monster_data.js';
 import { exceedsActionCapacity } from './weight.js';
-import { learnWand, zappable } from './wand_charge.js';
+import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './recharge.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
-import { zapWithoutDirection } from './wand_effects.js';
 import { dryTowel } from './towel.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';

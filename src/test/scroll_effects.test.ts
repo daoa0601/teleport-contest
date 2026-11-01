@@ -11,8 +11,8 @@ import {
     SCR_MAGIC_MAPPING, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { applyScrollEffects } from '../js/scroll_effects.js';
-import { learnScroll, learnScrollType } from '../js/scroll_discovery.js';
+import { applyScrollEffects } from '../js/read.js';
+import { learnScroll, learnScrollType } from '../js/read.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';

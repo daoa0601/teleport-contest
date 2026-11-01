@@ -16,7 +16,7 @@ import { finishScheduledLevelChange } from '../js/level_change.js';
 import { AMULET_OF_LIFE_SAVING, DIAMOND, SCR_TELEPORTATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { teleportScrollEffect } from '../js/scroll_teleport.js';
+import { teleportScrollEffect } from '../js/read.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

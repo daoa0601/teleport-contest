@@ -56,7 +56,7 @@ import {
     heroIsPolymorphed, polymorphHero,
 } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
-import { applyRemoveCurseSpell } from './scroll_effects.js';
+import { applyRemoveCurseSpell } from './read.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';

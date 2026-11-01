@@ -61,7 +61,7 @@ import { burnHeroArmorByFire } from './trap.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap_magic.js';
 import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
-import { learnWand } from './wand_charge.js';
+import { learnWand } from './zap.js';
 import { destroyInventoryByElement } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 

@@ -21,7 +21,7 @@ import { spellSkillType } from '../js/spell_school.js';
 import { advanceSpellProtection } from '../js/spell_misc_effects.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { rhack } from '../js/cmd.js';
-import { backfireWand } from '../js/wand_charge.js';
+import { backfireWand } from '../js/zap.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { hitMonsterWithAppliedWeapon, hitMonsterWithThrownObject } from '../js/hero_ranged_attack.js';

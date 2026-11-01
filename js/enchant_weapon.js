@@ -17,7 +17,7 @@ import { ownedObjectAction } from './objnam.js';
 import { isWeaponTool } from './object_properties.js';
 import { uncurseObjectState } from './object_state.js';
 import { rn2, rnd } from './rng.js';
-import { strangeFeeling } from './scroll_strange_feeling.js';
+import { strangeFeeling } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, objectTypeKnown, updateUnpaidObjectPrice, } from './shk.js';
 import { objectWeight } from './weight.js';

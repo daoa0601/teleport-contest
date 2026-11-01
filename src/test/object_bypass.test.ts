@@ -8,7 +8,7 @@ import { hitFloorPileWithWand } from '../js/immediate_zap.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { CLUB, DAGGER, POT_WATER, ROCK, STATUE, WAN_CANCELLATION, WAN_STRIKING } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { breakWand } from '../js/wand_break.js';
+import { breakWand } from '../js/apply.js';
 import { destroyInventoryByElement, destroyFireMonsterInventory } from '../js/zap.js';
 import { addInventoryObject, chargedWand } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';

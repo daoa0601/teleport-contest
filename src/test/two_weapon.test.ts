@@ -9,7 +9,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { rndcurse } from '../js/throne.js';
-import { removeCurseEffect } from '../js/scroll_effects.js';
+import { removeCurseEffect } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { FOUNTAIN } from '../js/const.js';
 import { restoreGame, saveGame } from '../js/save.js';

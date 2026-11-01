@@ -9,7 +9,7 @@ import { useHeroBreath } from '../js/hero_breath_command.js';
 import { useHeroMindBlast } from '../js/hero_mind_blast.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES, POT_GAIN_ENERGY } from '../js/object_data.js';
-import { applyScrollEffects } from '../js/scroll_effects.js';
+import { applyScrollEffects } from '../js/read.js';
 import { applyPotionEffect } from '../js/potion.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
