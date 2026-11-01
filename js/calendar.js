@@ -15,8 +15,8 @@ export function recorderIsLeapDay(datetime) {
     return parts.some(part => part.type === 'month' && part.value === '02')
         && parts.some(part => part.type === 'day' && part.value === '29');
 }
-// C calendar.c:getlt(): localtime(getnow()).  getnow() inherits the current
-// New York DST offset, while localtime() applies the fixed date's own offset,
+// C calendar.c:getlt(): localtime(getnow()).  getnow() inherits the recording
+// clock's New York DST offset, while localtime() applies the fixed date's own offset,
 // so a time near midnight can fall on the neighboring calendar day.
 export function recorderLocalDate(datetime) {
     const epoch = recorderLocalEpochSeconds(datetime);
@@ -39,6 +39,8 @@ export function recorderLocalDate(datetime) {
         weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(field('weekday')),
     };
 }
+// New York daylight time (UTC-4) inherited by the recorder's fixed clock.
+const RECORDER_INHERITED_OFFSET_MS = -4 * 60 * 60 * 1000;
 export function recorderLocalEpochSeconds(datetime) {
     if (!datetime || !/^\d{14}$/.test(datetime))
         return 0;
@@ -48,28 +50,13 @@ export function recorderLocalEpochSeconds(datetime) {
         Number(datetime.slice(10, 12)), Number(datetime.slice(12, 14)),
     ];
     const target = Date.UTC(values[0], values[1] - 1, values[2], values[3], values[4], values[5]);
-    const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York', hourCycle: 'h23',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
     // The deterministic-recorder patch copies localtime(now) into struct tm
     // and then overwrites the fixed calendar fields without resetting
-    // tm_isdst.  Preserve that inherited current New York offset rather than
-    // applying the fixed date's historically correct DST offset.
-    const currentEpoch = Math.trunc(Date.now() / 1000) * 1000;
-    const currentParts = new Map(formatter.formatToParts(new Date(currentEpoch))
-        .filter(part => part.type !== 'literal')
-        .map(part => [part.type, Number(part.value)]));
-    const part = (name) => {
-        const value = currentParts.get(name);
-        if (value === undefined)
-            throw new Error(`Local time formatter omitted ${name}`);
-        return value;
-    };
-    const currentLocalProjection = Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'));
-    const inheritedOffset = currentLocalProjection - currentEpoch;
-    return Math.trunc((target - inheritedOffset) / 1000);
+    // tm_isdst, so mktime() applies the New York offset in effect when the
+    // session was recorded, not the fixed date's historically correct one.
+    // The replay cannot observe that recording clock; the reference corpus
+    // was recorded under daylight time, so model its inherited offset.
+    return Math.trunc((target - RECORDER_INHERITED_OFFSET_MS) / 1000);
 }
 // C calendar.c:yyyymmddhhmmss() uses the local offset in effect at the time.
 export function recorderTimestamp(epoch) {
@@ -96,8 +83,8 @@ export function recorderTimestamp(epoch) {
         ...['month', 'day', 'hour', 'minute', 'second'].map(name => String(field(name)).padStart(2, '0'))]
         .join('');
 }
-// C save.c writes the local timestamp; restore.c reads it using the current
-// offset. A time saved across a DST boundary therefore shifts on restore.
+// C save.c writes the local timestamp; restore.c reads it using the recording
+// clock's offset. A time saved across a DST boundary therefore shifts on restore.
 export function recorderRestoredTime(epoch) {
     return recorderLocalEpochSeconds(recorderTimestamp(epoch));
 }

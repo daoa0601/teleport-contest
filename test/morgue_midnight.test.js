@@ -23,15 +23,16 @@ async function enterMorgue(datetime) {
     await checkSpecialRoom();
     assert.equal(room.rtype, OROOM);
 }
-void test('entering a morgue at the midnight hour tells the hero to run', async (context) => {
+void test('entering a morgue at a fixed summer midnight tells the hero to run', async (context) => {
+    // A summer date keeps the recorder's inherited daylight offset.
     context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 15, 12) });
-    await enterMorgue('20021214000000');
+    await enterMorgue('20020714000000');
     assert.equal(game._last_message, 'Run away!  Run away!');
 });
-void test('entering a morgue at a fixed winter midnight read during summer time is uncanny', async (context) => {
-    // The inherited summer offset shifts 2002-12-14 00:00 to
-    // 2002-12-13 23:00 EST, an hour before midnight.
-    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 15, 12) });
+void test('entering a morgue at a fixed winter midnight is uncanny', async (context) => {
+    // The inherited daylight offset shifts 2002-12-14 00:00 to
+    // 2002-12-13 23:00 EST, an hour before midnight, in any replay season.
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 15, 12) });
     await enterMorgue('20021214000000');
     assert.equal(game._last_message, 'You have an uncanny feeling...');
 });
