@@ -10,7 +10,7 @@ import { knownObject } from './support/game-objects.js';
 import { HELMET, SPE_NOVEL } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { initRng } from '../js/rng.js';
-import { roles } from '../js/roles.js';
+import { races, roles } from '../js/roles.js';
 import type { MonsterFlag } from '../js/monster_types.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -425,6 +425,30 @@ void test('a sober gnome grunts its orcish reply', async () => {
 
     assert.equal(game._pending_message, 'The gnome grunts.');
 });
+
+// C sounds.c:domonnoise() upgrades MS_ORC to MS_HUMANOID speech only when
+// same_race() matches the monster against the hero's form or race; kobolds
+// and gnomes have the orc sound but belong to their own species families.
+for (const [raceName, species, peaceful, message] of [
+    ['orc', 'kobold', false, 'The kobold grunts.'],
+    ['orc', 'gnome', true, 'The gnome grunts.'],
+    ['human', 'hill orc', false, 'The hill orc grunts.'],
+    ['orc', 'hill orc', false, 'The hill orc threatens you.'],
+] as const) {
+    void test(`chat with a ${species} ${peaceful ? 'peaceful to' : 'hostile to'} a ${raceName} hero`, async () => {
+        const heroRace = races.find(candidate => candidate.name === raceName);
+        if (!heroRace) throw new Error(`Unknown hero race: ${raceName}`);
+        await freshObjectRoom({ race: heroRace });
+        const monster = await createMonsterAt(species, 11, 10);
+        monster.msleeping = 0;
+        monster.mpeaceful = peaceful ? 1 : 0;
+
+        await runExtendedCommand('chat', 'l');
+
+        assert.equal(game._pending_message, message);
+        assert.equal(game.context.move, 1);
+    });
+}
 
 void test('Death quotes Snuff without claiming a misquote', async () => {
     await freshObjectRoom();

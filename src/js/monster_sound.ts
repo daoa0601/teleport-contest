@@ -20,8 +20,9 @@ import { consultOracle } from './rumor.js';
 import { roles } from './roles.js';
 import { rn2 } from './rng.js';
 import {
-    MONSTER_NAME, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND,
+    MONSTER_NAME, MONSTER_FLAGS1, MONSTER_SOUND,
 } from './monster_data.js';
+import { sameMonsterRace } from './monster_race.js';
 
 const MS_SILENT = 0;
 const MS_BARK = 1;
@@ -123,8 +124,10 @@ export async function publishMonsterNoise(
         if (!role) throw new Error(`Quest guardian ${monster.mnum} has no role`);
         sound = MONSTER_SOUND[MONSTER_NAME.indexOf('archeologist') + role.mnum] ?? MS_SILENT;
     } else if (monster.isshk) sound = MS_SELL;
-    else if (sound === MS_ORC && (hallucinating
-        || ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) | (MONSTER_FLAGS2[state.urace.mnum] ?? 0)) & 0x80))
+    else if (sound === MS_ORC
+        && (sameMonsterRace(monster.mnum, heroSpecies(state))
+            || sameMonsterRace(monster.mnum, state.urace.mnum)
+            || hallucinating))
         sound = MS_HUMANOID;
     else if (sound === MS_MOO && !monster.mtame) sound = MS_BELLOW;
     else if (hallucinating && looksLikeGecko(monster, state)) sound = MS_SELL;
