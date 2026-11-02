@@ -23,7 +23,7 @@ import { announceInvocationSquare } from './invocation.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './hack.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
-import { leashAttachedToMonster, releaseMonsterLeash } from './leash_apply.js';
+import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } from './apply.js';
 import { rn2, rnd } from './rng.js';
 import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsRider } from './monster_data.js';
@@ -800,43 +800,8 @@ export async function clearFixedTeleportDestination(x, y, state = game, random =
         },
     };
 }
-function distanceToHero(monster, state) {
+export function distanceToHero(monster, state) {
     return Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
-}
-async function moveLeashedMonsterNextToHero(monster, state, random) {
-    if (distanceToHero(monster, state) <= 1)
-        return;
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state, random });
-    if (!destination)
-        return;
-    await relocateMonsterTo(monster, destination.x, destination.y, { state, random });
-    if (state === game) {
-        await newsym(oldx, oldy);
-        await newsym(monster.mx, monster.my);
-    }
-}
-// C apply.c:next_to_u(), used before stairs, falls, and teleportation.
-export async function bringLeashedFollowers(state = game, random = rn2) {
-    for (const monster of [...(state.level?.monsters || [])].reverse()) {
-        if (!monster?.mleashed || (monster.mhp ?? 1) <= 0)
-            continue;
-        await moveLeashedMonsterNextToHero(monster, state, random);
-        if (distanceToHero(monster, state) <= 1)
-            continue;
-        const leash = leashAttachedToMonster(monster, state);
-        if (!leash || leash.cursed)
-            return false;
-        releaseMonsterLeash(monster, state);
-        const leashedCount = requireGameLevel(state).monsters.filter(candidate => candidate.mleashed).length;
-        await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
-    }
-    const steed = state.u?.usteed;
-    const steedInventory = steed?.minvent || steed?.inventory || [];
-    if (steedInventory.some(object => object.otyp === AMULET_OF_YENDOR))
-        return false;
-    return true;
 }
 // C teleport_pet(): feedback may wait for input while the leash is attached.
 async function teleportMonsterPet(monster, state, force, publish) {

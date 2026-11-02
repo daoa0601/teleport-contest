@@ -83,7 +83,8 @@ import { heroHasHidingAbility, useHeroHide } from './hero_hide.js';
 import { chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, } from './hero_web.js';
 import { heroCanMindBlast, useHeroMindBlast, } from './hero_mind_blast.js';
 import { heroCanRemovePunishment, useHeroNymphAbility, } from './hero_nymph_ability.js';
-import { heroCanUseUnicornHorn, useUnicornHorn, } from './unicorn_horn.js';
+import { heroCanUseUnicornHorn } from './unicorn_horn.js';
+import { useUnicornHorn } from './apply.js';
 import { useHeroVampireShift } from './vampire_shift.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
@@ -130,7 +131,7 @@ import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDispositio
 import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
 import { performPetRangedAttack } from './dogmove.js';
 import { dokick } from './dokick.js';
-import { bringLeashedFollowers } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
 import { COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, isok } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };

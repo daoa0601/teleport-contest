@@ -15,7 +15,7 @@ import {
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, monsterVisible, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -44,7 +44,8 @@ import { heroIsBlind } from './senses.js';
 import { isBimanualObject } from './object_properties.js';
 import { rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
-import { isPolearm, type WeaponCandidate } from './object_properties.js';
+import { isPolearm, isWetTowel, type WeaponCandidate } from './object_properties.js';
+import { possessiveName } from './hacklib.js';
 import { monsterWeaponSwingVerb } from './mhitu.js';
 import { willWeld } from './wield.js';
 import type { MessagePublisher } from './pline.js';
@@ -778,4 +779,52 @@ export function weaponDescription(object: GameObject): string {
     else if (skill === P_PICK_AXE && object.otyp === DWARVISH_MATTOCK) description = 'mattock';
     if (!description) throw new Error(`No weapon description for object type ${object.otyp}`);
     return makeSingular(description);
+}
+
+interface TowelChangeOptions {
+    state?: GameState;
+    verbose?: boolean;
+    publish?: MessagePublisher | null;
+}
+
+// C weapon.c:wet_a_towel().
+export async function wetTowel(
+    object: GameObject, amount: number,
+    { state = game, verbose = false, publish = pline }: TowelChangeOptions = {},
+): Promise<void> {
+    const wetness = amount <= 0 ? object.spe - amount : amount;
+    if (wetness > object.spe && verbose && publish) {
+        const adjective = wetness < 3 ? object.spe ? 'damper' : 'damp'
+            : object.spe ? 'wetter' : 'wet';
+        await reportTowelChange(object, `gets ${adjective}.`, state, publish);
+    }
+    if (wetness !== object.spe) finishTowelChange(object, wetness, state);
+}
+
+// C weapon.c:dry_a_towel().
+export async function dryTowel(
+    object: GameObject, amount: number,
+    { state = game, verbose = false, publish = pline }: TowelChangeOptions = {},
+): Promise<void> {
+    const wetness = amount < 0 ? object.spe + amount : amount;
+    if (wetness < object.spe && verbose && publish)
+        await reportTowelChange(object, `dries${wetness ? '' : ' out'}.`, state, publish);
+    if (wetness !== object.spe) finishTowelChange(object, wetness, state);
+}
+
+async function reportTowelChange(
+    object: GameObject, change: string, state: GameState, publish: MessagePublisher,
+): Promise<void> {
+    if (object.where === 'inventory') {
+        await publish(`${ownedObjectName(object, state, { includeQuantity: true })} ${change}`);
+    } else if (object.where === 'minvent' && object.ocarry && canSeeMonster(object.ocarry)) {
+        const owner = possessiveName(monsterName(object.ocarry, { state, capitalized: true }));
+        await publish(`${owner} ${objectName(object, state)} ${change}`);
+    }
+}
+
+// C weapon.c:finish_towel_change().
+function finishTowelChange(object: GameObject, wetness: number, state: GameState): void {
+    object.spe = Math.max(0, Math.min(7, wetness));
+    if (object === state.uwep || object === state.u.uwep) state._unweapon = !isWetTowel(object);
 }

@@ -82,7 +82,7 @@ import {
 import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, finishInUseInventory } from './end.js';
 import { monsterCanCarryObject } from './mon.js';
-import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
+import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { touchPetrifies } from './stoning.js';
 import {
     armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects,
@@ -124,7 +124,7 @@ import { finishArmorRemoval } from './do_wear.js';
 import { clearRepeatCommand } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './quest.js';
-import { amuletTurn, intervene, monsterCarriesAmulet, publishMonsterCuss } from './wizard.js';
+import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
 import {
@@ -872,14 +872,6 @@ async function rollHeroTeleportitis(): Promise<void> {
     clearRepeatCommand();
 }
 
-// C apply.c:next_to_u().
-function heroNextToLeashedFollowers(): boolean {
-    const level = game.level;
-    if (level?.monsters.some(monster => monster.mleashed
-        && (monster.mx - game.u.ux) ** 2 + (monster.my - game.u.uy) ** 2 > 2)) return false;
-    const steed = game.u.usteed;
-    return !(steed && monsterCarriesAmulet(steed));
-}
 
 // C allmain.c:moveloop_core(). A selected change waits through involuntary
 // delays and Unchanging; losing the source of the change cancels it.

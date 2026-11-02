@@ -43,7 +43,7 @@ import { applyRemoveCurseSpell } from './read.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { cansee } from './vision.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './wizard.js';

@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { startHeroSickness } from '../js/hero_illness.js';
 import { poisonHero } from '../js/poison.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
-import { eatRoyalJelly } from '../js/royal_jelly.js';
+import { eatRoyalJelly } from '../js/ordinary_food_effects.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

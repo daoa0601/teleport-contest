@@ -20,7 +20,7 @@ import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './trap
 import { stopHeroOccupation } from './occupation.js';
 import { objectTypeKnown } from './shk.js';
 import { heroResistsStoning, resolveImmediatePetrification, selfTouchPetrifyingWeapons, touchPetrifies, } from './stoning.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { releaseWeaponSlots } from './wield.js';
 import { surfaceName } from './terrain_name.js';
 import { heroFormClings } from './polyself.js';

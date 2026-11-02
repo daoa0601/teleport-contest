@@ -4,7 +4,7 @@ import { changeHeroLuck } from './attrib.js';
 import {
     applyMonsterBlindness, heroBlindingObjectHitMessage, monsterCanBeBlindedByObject,
 } from './blinding_attack.js';
-import { releaseCameraDemon } from './camera.js';
+import { releaseCameraDemon } from './dothrow.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dist2 } from './hacklib.js';

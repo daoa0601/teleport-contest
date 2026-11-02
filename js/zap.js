@@ -99,7 +99,7 @@ import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_pro
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
 import { isEyewear, wearEyewear } from './eyewear.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
-import { releaseObjectLeash } from './leash_apply.js';
+import { releaseObjectLeash } from './apply.js';
 import { fractureRock, sokobanGuilt } from './rock_breakage.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';

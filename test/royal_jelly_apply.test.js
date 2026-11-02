@@ -8,7 +8,7 @@ import { DAGGER, EGG, LUMP_OF_ROYAL_JELLY, } from '../js/object_data.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { initRng } from '../js/rng.js';
-import { useRoyalJelly } from '../js/royal_jelly.js';
+import { useRoyalJelly } from '../js/apply.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

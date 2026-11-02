@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { useCreamPie } from '../js/cream_pie.js';
+import { useCreamPie } from '../js/apply.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { CREAM_PIE } from '../js/object_data.js';

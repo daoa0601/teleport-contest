@@ -8,7 +8,7 @@ import { APPLE, BAG_OF_TRICKS, BOULDER, CHEST, CREDIT_CARD, LOCK_PICK, SADDLE, S
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { setSlipperyHands } from '../js/towel.js';
+import { setSlipperyHands } from '../js/potion.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';

@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import type { InputGate } from '../js/input.js';
 import { AKLYS, LONG_SWORD, RIN_PROTECTION } from '../js/object_data.js';
-import { setSlipperyHands } from '../js/towel.js';
+import { setSlipperyHands } from '../js/potion.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

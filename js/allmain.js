@@ -45,7 +45,7 @@ import { MONSTER_GENO, monsterIsAnimal, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER
 import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, finishInUseInventory } from './end.js';
 import { monsterCanCarryObject } from './mon.js';
-import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
+import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
 import { touchPetrifies } from './stoning.js';
 import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
@@ -74,7 +74,7 @@ import { finishArmorRemoval } from './do_wear.js';
 import { clearRepeatCommand } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './quest.js';
-import { amuletTurn, intervene, monsterCarriesAmulet, publishMonsterCuss } from './wizard.js';
+import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength, } from './attrib.js';
@@ -773,15 +773,6 @@ async function rollHeroTeleportitis() {
         await checkHeroLeashes(from.x, from.y);
     clearCannedCommands();
     clearRepeatCommand();
-}
-// C apply.c:next_to_u().
-function heroNextToLeashedFollowers() {
-    const level = game.level;
-    if (level?.monsters.some(monster => monster.mleashed
-        && (monster.mx - game.u.ux) ** 2 + (monster.my - game.u.uy) ** 2 > 2))
-        return false;
-    const steed = game.u.usteed;
-    return !(steed && monsterCarriesAmulet(steed));
 }
 // C allmain.c:moveloop_core(). A selected change waits through involuntary
 // delays and Unchanging; losing the source of the change cancels it.

@@ -25,7 +25,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { shopDig } from './shk.js';
 import { sinkBacksUp } from './fountain.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { bringLeashedFollowers } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
 import { impactDrop } from './dokick.js';
 import { waterDamageObject } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';

@@ -24,7 +24,7 @@ import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
 import { petrifyMonsterImmediately } from './trap.js';
-import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { releaseAllMonsterLeashes } from './apply.js';
 import { monsterName } from './do_name.js';
 import { ownedObjectName, objectNameIsPlural } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';

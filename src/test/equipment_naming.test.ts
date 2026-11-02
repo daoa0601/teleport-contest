@@ -17,7 +17,7 @@ import {
 import { polymorphHero } from '../js/polyself.js';
 import { punishHero } from '../js/punishment.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { setSlipperyHands } from '../js/towel.js';
+import { setSlipperyHands } from '../js/potion.js';
 import { addInventoryItem } from '../js/u_init.js';
 import {
     setPrimaryWeapon,

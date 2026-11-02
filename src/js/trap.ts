@@ -35,7 +35,7 @@ import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import type { ImmediateMonsterTrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { dryTowel, wetTowel } from './towel.js';
+import { dryTowel, wetTowel } from './weapon.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';

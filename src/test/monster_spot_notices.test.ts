@@ -29,7 +29,7 @@ import { RIN_CONFLICT, SKELETON_KEY } from '../js/object_data.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { runSegment } from '../js/jsmain.js';
 import { gotoLevel } from '../js/level_change.js';
-import { jumpHero } from '../js/jumping.js';
+import { jumpHero } from '../js/apply.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { createMonsterAt } from './support/monsters.js';

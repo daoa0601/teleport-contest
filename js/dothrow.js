@@ -26,7 +26,7 @@ import { rejoinObjectStack } from './mkobj.js';
 import { makePlural, verbForSubject, objectDescription } from './objnam.js';
 import { applyPolearm, applyTool } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
-import { couldPoleMonster } from './polearm.js';
+import { couldPoleMonster } from './apply.js';
 import { promptDirection } from './tty_prompts.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
@@ -35,7 +35,7 @@ import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName } from './body_parts.js';
-import { dryTowel } from './towel.js';
+import { dryTowel } from './weapon.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
@@ -47,7 +47,7 @@ import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName } from './terrain_name.js';
 import { requireGameLevel, requireInitializedGame } from './gstate.js';
-import { IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR } from './const.js';
+import { IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG } from './const.js';
 import { tossObjectUp } from './toss_up.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
@@ -68,13 +68,14 @@ import { isPoolAt } from './terrain_properties.js';
 import { armorSimpleName } from './armor.js';
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { releaseCameraDemon } from './camera.js';
+import { setMonsterMalign } from './makemon.js';
+import { randomDisplayMonsterName } from './display.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, settleThrownShopObject, stolenValue, makeAngryShopkeeper, insideShopRoomAt } from './shk.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 const M2_ROCKTHROW = 0x08000000;
 // C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
 const WEAPON_CLASS = 2;
@@ -1111,5 +1112,25 @@ export async function hitFloorWithObject(object, { verbose = true, state = game,
     if (await shipObject(object, hero.ux, hero.uy, { state: requireInitializedGame(state), publish }))
         return null;
     return dropObjectAtHero(object, { impact: true, state, publish });
+}
+// C dothrow.c:release_camera_demon().
+const PM_HOMUNCULUS = 51;
+const PM_IMP = 52;
+export async function releaseCameraDemon(object, x, y, { state = game, publish = plineWithContinuation, random = rn2, summonMonster = makemonAt, } = {}) {
+    if (random(3) !== 0)
+        return null;
+    const mnum = random(3) === 0 ? PM_IMP : PM_HOMUNCULUS;
+    const monster = await summonMonster(mnum, x, y, MM_NOMSG);
+    if (!monster)
+        return null;
+    if (canSpotMonster(monster)) {
+        const subject = heroIsHallucinating(state)
+            ? `A ${randomDisplayMonsterName()}`
+            : 'The picture-painting demon';
+        await publish(`${subject} is released!`);
+    }
+    monster.mpeaceful = object.cursed ? 0 : 1;
+    setMonsterMalign(monster, state);
+    return monster;
 }
 //# sourceMappingURL=dothrow.js.map

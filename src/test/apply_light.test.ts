@@ -9,7 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runExtendedCommand } from './support/commands.js';
-import { lightCocktail, useCandle, useCandelabrum, useLamp } from '../js/apply_light.js';
+import { lightCocktail, useCandle, useCandelabrum, useLamp } from '../js/apply.js';
 import { beginObjectBurn, endObjectBurn, objectLightRadius } from '../js/light.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

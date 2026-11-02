@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
-import { flipCoin } from '../js/coin_flip.js';
+import { flipCoin } from '../js/apply.js';
 import { A_DEX, HOLE, NO_MINVENT } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount } from '../js/hero_gold.js';

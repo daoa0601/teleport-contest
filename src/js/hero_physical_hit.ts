@@ -33,7 +33,7 @@ import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, YA, YUMI } from './object_data.
 import { objectMaterial } from './o_init.js';
 import { isLauncherAmmunition, isMissileObject, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
 import { heroIsBlind } from './senses.js';
-import { dryTowel } from './towel.js';
+import { dryTowel } from './weapon.js';
 import { cansee } from './vision.js';
 import { isPolearm } from './object_properties.js';
 import type { MessagePublisher } from './pline.js';

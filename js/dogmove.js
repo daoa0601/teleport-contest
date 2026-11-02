@@ -34,7 +34,7 @@ import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
-import { releaseMonsterLeash } from './leash_apply.js';
+import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';

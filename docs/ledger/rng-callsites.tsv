@@ -68,12 +68,12 @@ src/js/anti_magic_trap.ts	implosionDamage	rnd	"[""4""]"	constant
 src/js/anti_magic_trap.ts	implosionDamage	rnd	"[""4""]"	constant
 src/js/anti_magic_trap.ts	triggerHeroAntiMagicTrap	d	"[""2"", ""6""]"	constant
 src/js/anti_magic_trap.ts	triggerHeroAntiMagicTrap	rnd	"[""Math.trunc(drain / 2)""]"	constant
-src/js/apply_bell.ts	useBell	rn2	"[""3""]"	constant
-src/js/apply_bell.ts	useBell	rn2	"[""4""]"	constant
-src/js/apply_bell.ts	useBell	rnd	"[""2""]"	constant
-src/js/apply_light.ts	useLamp	d	"[""2"", ""10""]"	constant
-src/js/apply_light.ts	useLamp	rn2	"[""2""]"	constant
-src/js/apply_light.ts	useLamp	rn2	"[""3""]"	constant
+src/js/apply.ts	useBell	rn2	"[""3""]"	constant
+src/js/apply.ts	useBell	rn2	"[""4""]"	constant
+src/js/apply.ts	useBell	rnd	"[""2""]"	constant
+src/js/apply.ts	useLamp	d	"[""2"", ""10""]"	constant
+src/js/apply.ts	useLamp	rn2	"[""2""]"	constant
+src/js/apply.ts	useLamp	rn2	"[""3""]"	constant
 src/js/armor.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
 src/js/armor.ts	erodeWornArmor	rn2	"[""4""]"	constant
 src/js/armor.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
@@ -147,10 +147,10 @@ src/js/bullwhip.ts	useBullwhip	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	useBullwhip	rn2	"[""proficiency + 2""]"	guarded
 src/js/dig.ts	buryObject	rn1	"[""50"", ""20""]"	constant
 src/js/dig.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
-src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
-src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
-src/js/camera.ts	useCamera	rn2	"[""2""]"	constant
-src/js/camera.ts	useCamera	rnd	"[""25""]"	constant
+src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
+src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
+src/js/apply.ts	useCamera	rn2	"[""2""]"	constant
+src/js/apply.ts	useCamera	rnd	"[""25""]"	constant
 src/js/cannibalism.ts	applyCannibalPenalty	rn1	"[""4"", ""2""]"	constant
 src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	d	"[""4"", ""6""]"	constant
 src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	rnd	"[""20""]"	constant
@@ -169,9 +169,9 @@ src/js/apply.ts	dorub	rn2	"[""500""]"	constant
 src/js/hack.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
 src/js/hack.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
 src/js/hack.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
-src/js/coin_flip.ts	flipCoin	rn2	"[""100""]"	constant
-src/js/coin_flip.ts	flipCoin	rn2	"[""2""]"	constant
-src/js/coin_flip.ts	flipCoin	rn2	"[""dexterity""]"	invariant
+src/js/apply.ts	flipCoin	rn2	"[""100""]"	constant
+src/js/apply.ts	flipCoin	rn2	"[""2""]"	constant
+src/js/apply.ts	flipCoin	rn2	"[""dexterity""]"	invariant
 src/js/confused_loot.ts	reverseLoot	rn2	"[""10""]"	constant
 src/js/confused_loot.ts	reverseLoot	rn2	"[""3""]"	constant
 src/js/confused_loot.ts	reverseLoot	rn2	"[""remaining + 1""]"	unproved
@@ -215,7 +215,7 @@ src/js/corpse_meal.ts	prepareCorpseMeal	rnd	"[""8""]"	constant
 src/js/corpse_revival.ts	containerBlocksRevival	rn2	"[""40""]"	constant
 src/js/corpse_revival.ts	retryRevival	d	"[""5"", ""50""]"	constant
 src/js/corpse_revival.ts	retryRevival	rn2	"[""99""]"	constant
-src/js/cream_pie.ts	useCreamPie	rnd	"[""25""]"	constant
+src/js/apply.ts	useCreamPie	rnd	"[""25""]"	constant
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""100 - 3 * intelligence""]"	unproved
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""30""]"	constant
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""object.oartifact || object.blessed ? 4 : 5""]"	constant
@@ -431,17 +431,17 @@ src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
 src/js/gold_throw.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
 src/js/gold_throw.ts	resolveQuiveredGoldMonsterContact	rn2	"[""3""]"	constant
 src/js/gold_throw.ts	resolveQuiveredGoldMonsterContact	rnd	"[""20""]"	constant
-src/js/grappling_hook.ts	damageHero	rn2	"[""10""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""2""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""4""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""4""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""4""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""5""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rn2	"[""skill > P_SKILLED ? 20 : 2""]"	constant
-src/js/grappling_hook.ts	useGrapplingHook	rnd	"[""2""]"	constant
-src/js/grease_apply.ts	useGrease	rn1	"[""11"", ""5""]"	constant
-src/js/grease_apply.ts	useGrease	rn1	"[""6"", ""10""]"	constant
-src/js/grease_apply.ts	useGrease	rn2	"[""2""]"	constant
+src/js/apply.ts	damageHero	rn2	"[""10""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""2""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""4""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""4""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""4""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""5""]"	constant
+src/js/apply.ts	useGrapplingHook	rn2	"[""skill > P_SKILLED ? 20 : 2""]"	constant
+src/js/apply.ts	useGrapplingHook	rnd	"[""2""]"	constant
+src/js/apply.ts	useGrease	rn1	"[""11"", ""5""]"	constant
+src/js/apply.ts	useGrease	rn1	"[""6"", ""10""]"	constant
+src/js/apply.ts	useGrease	rn2	"[""2""]"	constant
 src/js/guardian_angel.ts	gainGuardianAngel	d	"[""angel.m_lev"", ""10""]"	invariant
 src/js/guardian_angel.ts	gainGuardianAngel	rn1	"[""8"", ""15""]"	constant
 src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""30""]"	constant
@@ -681,13 +681,13 @@ src/js/input.ts	randomKey	rn2	"[""NATIVE_COMMAND_CONSTANTS.N_DIRS""]"	unproved
 src/js/input.ts	randomKey	rnd	"[""game.iflags.wc_eight_bit_input ? 255 : 127""]"	constant
 src/js/inventory_prompt.ts	mimeInventoryAction	rn2	"[""2""]"	constant
 src/js/iron_bars_meal.ts	continueChewingTerrain	rnd	"[""20""]"	constant
-src/js/jumping.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
-src/js/jumping.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
-src/js/jumping.ts	escapeJumpTrap	rn1	"[""1000"", ""500""]"	constant
-src/js/jumping.ts	escapeJumpTrap	rn2	"[""3""]"	constant
-src/js/jumping.ts	escapeJumpTrap	rnd	"[""10""]"	constant
-src/js/jumping.ts	jumpHero	rnd	"[""10""]"	constant
-src/js/jumping.ts	jumpHero	rnd	"[""25""]"	constant
+src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
+src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
+src/js/apply.ts	escapeJumpTrap	rn1	"[""1000"", ""500""]"	constant
+src/js/apply.ts	escapeJumpTrap	rn2	"[""3""]"	constant
+src/js/apply.ts	escapeJumpTrap	rnd	"[""10""]"	constant
+src/js/apply.ts	jumpHero	rnd	"[""10""]"	constant
+src/js/apply.ts	jumpHero	rnd	"[""25""]"	constant
 src/js/kick_admission.ts	admitHeroKick	rn2	"[""2""]"	constant
 src/js/kick_admission.ts	kickCanReachTarget	rn2	"[""3""]"	constant
 src/js/kick_door.ts	kickDoor	rn2	"[""3""]"	constant
@@ -722,9 +722,9 @@ src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""3""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""Math.max(1, bodyWeight + 1)""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	rollOne	"[""16""]"	constant
 src/js/landmine_trap.ts	finishMonsterLandMine	random	"[""3""]"	constant
-src/js/leash_apply.ts	checkHeroLeashes	rn2	"[""3""]"	constant
-src/js/leash_apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
-src/js/leash_apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
+src/js/apply.ts	checkHeroLeashes	rn2	"[""3""]"	constant
+src/js/apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
+src/js/apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
 src/js/leprechaun_stash.ts	stashLeprechaunGold	random	"[""4""]"	constant
 src/js/level_change.ts	applyStairTravelEffects	rnd	"[""3""]"	constant
 src/js/level_change.ts	finishAstralArrival	rn1	"[""4"", ""3""]"	constant
@@ -960,14 +960,14 @@ src/js/minion.ts	summonedType	rn2	"[""50""]"	constant
 src/js/minion.ts	summonedType	rn2	"[""6""]"	constant
 src/js/minion.ts	summonedType	rn2	"[""6""]"	constant
 src/js/minion.ts	summonedType	rn2	"[""6""]"	constant
-src/js/mirror.ts	seeOwnReflection	d	"[""3"", ""4""]"	constant
-src/js/mirror.ts	seeOwnReflection	rn2	"[""4""]"	constant
-src/js/mirror.ts	seeOwnReflection	rnd	"[""MAXULEV + 6 - hero.ulevel""]"	invariant
-src/js/mirror.ts	showMonsterReflection	d	"[""2"", ""4""]"	constant
-src/js/mirror.ts	showMonsterReflection	d	"[""monster.m_lev"", ""gaze[3]""]"	unproved
-src/js/mirror.ts	showMonsterReflection	rn2	"[""4""]"	constant
-src/js/mirror.ts	showMonsterReflection	rn2	"[""5""]"	constant
-src/js/mirror.ts	useMirror	rn2	"[""2""]"	constant
+src/js/apply.ts	seeOwnReflection	d	"[""3"", ""4""]"	constant
+src/js/apply.ts	seeOwnReflection	rn2	"[""4""]"	constant
+src/js/apply.ts	seeOwnReflection	rnd	"[""MAXULEV + 6 - hero.ulevel""]"	invariant
+src/js/apply.ts	showMonsterReflection	d	"[""2"", ""4""]"	constant
+src/js/apply.ts	showMonsterReflection	d	"[""monster.m_lev"", ""gaze[3]""]"	unproved
+src/js/apply.ts	showMonsterReflection	rn2	"[""4""]"	constant
+src/js/apply.ts	showMonsterReflection	rn2	"[""5""]"	constant
+src/js/apply.ts	useMirror	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	addWayOut	rn2	"[""2""]"	constant
 src/js/sp_lev.ts	addWayOut	rn2	"[""escapeItems.length""]"	constant
 src/js/sp_lev.ts	applyMinesSameRaceMonsterGate	rn2	"[""3""]"	constant
@@ -2095,9 +2095,9 @@ src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""10""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""20""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""3""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder/hitMonster	rollOne	"[""20""]"	constant
-src/js/royal_jelly.ts	eatRoyalJelly	rn2	"[""17""]"	constant
-src/js/royal_jelly.ts	eatRoyalJelly	rn2	"[""17""]"	constant
-src/js/royal_jelly.ts	eatRoyalJelly	rnd	"[""20""]"	constant
+src/js/ordinary_food_effects.ts	eatRoyalJelly	rn2	"[""17""]"	constant
+src/js/ordinary_food_effects.ts	eatRoyalJelly	rn2	"[""17""]"	constant
+src/js/ordinary_food_effects.ts	eatRoyalJelly	rnd	"[""20""]"	constant
 src/js/rumor.ts	outOracle	rnd	"[""remaining.length - 1""]"	guarded
 src/js/rumor.ts	outRumor	rn2	"[""2""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""3""]"	constant
@@ -2230,8 +2230,8 @@ src/js/steed.ts	strikeSteed	random	"[""20""]"	constant
 src/js/steed.ts	strikeSteed	roll	"[""20""]"	constant
 src/js/steed.ts	useSaddle	rn2	"[""100""]"	constant
 src/js/steed.ts	wakeSteedForRiding	rn2	"[""remaining""]"	unproved
-src/js/stethoscope.ts	useStethoscope	rn2	"[""2""]"	constant
-src/js/stethoscope.ts	useStethoscope	rn2	"[""game.urole.key === 'healer' ? 10 : 3""]"	constant
+src/js/apply.ts	useStethoscope	rn2	"[""2""]"	constant
+src/js/apply.ts	useStethoscope	rn2	"[""game.urole.key === 'healer' ? 10 : 3""]"	constant
 src/js/stoning.ts	applyMonsterStoningAttack	random	"[""10""]"	constant
 src/js/stoning.ts	applyMonsterStoningAttack	random	"[""3""]"	constant
 src/js/storms.ts	doStorms	rn1	"[""20"", ""30""]"	constant
@@ -2319,10 +2319,10 @@ src/js/toss_up.ts	tossObjectUp	rollOne	"[""20""]"	constant
 src/js/toss_up.ts	tossObjectUp	rollOne	"[""25""]"	constant
 src/js/toss_up.ts	tossObjectUp	rollOne	"[""4""]"	constant
 src/js/toss_up.ts	tossObjectUp	rollOne	"[""weightDamage""]"	constant
-src/js/towel.ts	useTowel	rn1	"[""10"", ""3""]"	constant
-src/js/towel.ts	useTowel	rn1	"[""10"", ""3""]"	constant
-src/js/towel.ts	useTowel	rn2	"[""2""]"	constant
-src/js/towel.ts	useTowel	rn2	"[""3""]"	constant
+src/js/apply.ts	useTowel	rn1	"[""10"", ""3""]"	constant
+src/js/apply.ts	useTowel	rn1	"[""10"", ""3""]"	constant
+src/js/apply.ts	useTowel	rn2	"[""2""]"	constant
+src/js/apply.ts	useTowel	rn2	"[""3""]"	constant
 src/js/trap.ts	applyMonsterRustTrap	roll	"[""5""]"	constant
 src/js/trap.ts	burnArmorByFire/luckRandom	rnl	"[""range""]"	unproved
 src/js/trap.ts	waterDamageObject	random	"[""2""]"	constant
@@ -2381,12 +2381,12 @@ src/js/undead_turning.ts	turnHeroWithUndeadMagic	roll	"[""30""]"	constant
 src/js/undead_turning.ts	turnMonsterWithUndeadMagic	options.roll	"[""8""]"	constant
 src/js/unicorn_gift.ts	offerUnicornGem	rn2	"[""3""]"	constant
 src/js/unicorn_gift.ts	offerUnicornGem	rn2	"[""7""]"	constant
-src/js/unicorn_horn.ts	causeHornTrouble	random	"[""13""]"	constant
-src/js/unicorn_horn.ts	causeHornTrouble	random	"[""90""]"	constant
-src/js/unicorn_horn.ts	causeHornTrouble	random	"[""constitution""]"	invariant
-src/js/unicorn_horn.ts	shuffle	random	"[""index + 1""]"	unproved
-src/js/unicorn_horn.ts	useUnicornHorn	random	"[""maximum""]"	constant
-src/js/unicorn_horn.ts	useUnicornHorn	rollDice	"[""2"", ""object?.blessed ? 4 : 2""]"	constant
+src/js/apply.ts	causeHornTrouble	random	"[""13""]"	constant
+src/js/apply.ts	causeHornTrouble	random	"[""90""]"	constant
+src/js/apply.ts	causeHornTrouble	random	"[""constitution""]"	invariant
+src/js/apply.ts	shuffleTroubles	random	"[""index + 1""]"	unproved
+src/js/apply.ts	useUnicornHorn	random	"[""maximum""]"	constant
+src/js/apply.ts	useUnicornHorn	rollDice	"[""2"", ""object?.blessed ? 4 : 2""]"	constant
 src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant
 src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""8""]"	constant
 src/js/untrap.ts	rewardMonsterRescue	random	"[""3""]"	constant
@@ -2434,9 +2434,9 @@ src/js/were.ts	summonedWereAlly	random	"[""7""]"	constant
 src/js/were.ts	transformWereMonster	rn2	"[""9""]"	constant
 src/js/were.ts	wereChange	random	"[""30""]"	constant
 src/js/were.ts	wereChange	random	"[""denominator""]"	constant
-src/js/whistle.ts	blowMagicWhistle	rn2	"[""2""]"	constant
-src/js/whistle.ts	blowMagicWhistle	rn2	"[""2""]"	constant
-src/js/whistle.ts	useWhistle	rn2	"[""49""]"	constant
+src/js/apply.ts	blowMagicWhistle	rn2	"[""2""]"	constant
+src/js/apply.ts	blowMagicWhistle	rn2	"[""2""]"	constant
+src/js/apply.ts	useWhistle	rn2	"[""49""]"	constant
 src/js/wish.ts	makeWish	rn2	"[""100""]"	constant
 src/js/objnam.ts	parseWishRange	rn2	"[""9""]"	constant
 src/js/objnam.ts	randomTypeByDescription	rn2	"[""total""]"	unproved

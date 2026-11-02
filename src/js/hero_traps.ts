@@ -91,9 +91,10 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
 import {
-    bringLeashedFollowers, clearFixedTeleportDestination, heroControlsTeleport, heroTeleportDestinationOk,
+clearFixedTeleportDestination, heroControlsTeleport, heroTeleportDestinationOk,
     heroTeleportTrapBlock, moveHeroByTeleport, teleportHero,
 } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
 import { triggerHeroFireTrap } from './fire_trap.js';

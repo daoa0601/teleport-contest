@@ -19,7 +19,8 @@ import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { rn2, rnd, rnl } from './rng.js';
 import { leaveHeroShop } from './shk.js';
-import { bringLeashedFollowers, heroControlsTeleport } from './teleport.js';
+import { heroControlsTeleport } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
 import { surfaceName } from './terrain_name.js';
 
 const shudder = 'You shudder for a moment.';

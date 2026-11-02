@@ -37,7 +37,7 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { loseHeroHp } from './hero_damage.js';
 import { igniteItems } from './light.js';
 import { destroyFireInventory } from './zap.js';
-import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { releaseAllMonsterLeashes } from './apply.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
@@ -126,7 +126,7 @@ import { monsterMayDigLocation } from './mon.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
-import { checkHeroLeashes } from './leash_apply.js';
+import { checkHeroLeashes } from './apply.js';
 import { isPick, isFlimsyObject } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget } from './dig.js';

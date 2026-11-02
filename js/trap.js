@@ -30,7 +30,7 @@ import { stopAllObjectTimers } from './timeout.js';
 import { d, rnl, rn2, rnd, rn2Display } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
-import { dryTowel, wetTowel } from './towel.js';
+import { dryTowel, wetTowel } from './weapon.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster } from './mon.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
