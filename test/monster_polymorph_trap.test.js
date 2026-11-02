@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLY_TRAP, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { pline } from '../js/pline.js';
 import { IRON_SHOES, KICKING_BOOTS, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
@@ -62,6 +63,32 @@ void test('magic resistance protects a monster from a polymorph trap', async () 
     await triggerImmediateMonsterTrap(monster, game);
     assert.equal(monster.mnum, originalForm);
     assert.notEqual(trap.tseen, true);
+});
+void test('a magic-resistant monster on a polymorph trap reports that it resists', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(POLY_TRAP, {
+        monster: { species: 'baby gray dragon' },
+    });
+    requirePlayingGame(game);
+    const originalForm = monster.mnum;
+    const messages = [];
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async (message) => messages.push(message),
+    });
+    assert.equal(monster.mnum, originalForm);
+    assert.deepEqual(messages, ['The baby gray dragon resists!']);
+    assert.notEqual(trap.tseen, true);
+});
+void test('the resists report carries the accessiblemsg anchor of the monster', async () => {
+    const { monster } = await freshMonsterTrapRoom(POLY_TRAP, {
+        monster: { species: 'baby gray dragon' },
+    });
+    requirePlayingGame(game);
+    game.flags.accessiblemsg = true;
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, { publish: pline });
+    const said = [...game._messageHistory, game._pending_message].join(' | ');
+    assert.match(said, /\([^)]*\): The baby gray dragon resists!/);
 });
 void test('a visible monster changes form and reveals a polymorph trap', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(POLY_TRAP, {

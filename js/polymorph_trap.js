@@ -1,7 +1,10 @@
 // Polymorph traps triggered by monsters.
-// C ref: trap.c:trapeffect_poly().
+// C ref: trap.c:trapeffect_poly_trap(), monster branch.
+import { set_msg_xy } from './pline.js';
 import { changeMonsterForm } from './mon.js';
 import { monsterHasMagicResistance, monsterWornIronShoes } from './anti_magic_trap.js';
+import { shieldeff } from './display.js';
+import { monsterName } from './do_name.js';
 import { W_ARMF } from './const.js';
 import { game } from './gstate.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
@@ -40,10 +43,11 @@ export async function applyMonsterPolymorphTrap(monster, trap, state = game, { r
     if (monsterHasMagicResistance(monster)) {
         return {
             kind: 'polymorph-trap',
+            monster,
             trap,
             changed: false,
             shielded: true,
-            finished: true,
+            finished: false,
             ...visibility,
         };
     }
@@ -67,7 +71,24 @@ export async function applyMonsterPolymorphTrap(monster, trap, state = game, { r
     };
 }
 export async function finishMonsterPolymorphTrap(event, { publish = async () => { }, finishDeath, state = game, } = {}) {
-    if (!event || event.finished)
+    if (!event)
+        return event;
+    if ('shielded' in event) {
+        // C trap.c:trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
+        // shield effect runs whenever the monster's square is visible, and a
+        // visible square reports "<mon> resists!".  C reveals the trap only
+        // after an actual shape change, so it stays hidden here.
+        await shieldeff(event.monster.mx, event.monster.my, state);
+        if (event.seeSquare) {
+            // mon.c:shieldeff_mon() reports through pline_mon(), which
+            // anchors the message at the monster's square.
+            set_msg_xy(event.monster.mx, event.monster.my);
+            await publish(`${monsterName(event.monster, { state, capitalized: true })} resists!`);
+        }
+        event.finished = true;
+        return event;
+    }
+    if (event.finished)
         return event;
     const change = await changeMonsterForm(event.monster, null, state, {
         showMessage: true,
