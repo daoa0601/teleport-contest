@@ -6,7 +6,7 @@ import { M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOWAIT, MMOVE_NOTHING, 
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makeDeaf } from '../js/hero_hearing.js';
+import { makeDeaf } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { AT_SPIT } from '../js/monster_attack_types.js';

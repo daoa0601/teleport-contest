@@ -1,7 +1,8 @@
 // Hero petrification from contact, corpses, and eggs.
 // C refs: mondata.c touch_petrifies()/poly_when_stoned(),
 // pickup.c fatal_corpse_mistake(), trap.c instapetrify(),
-// potion.c make_stoned(), and timeout.c stoned_dialogue().
+// timeout.c stoned_dialogue(); potion.c make_stoned() lives in potion.ts
+// (setHeroPetrificationTimeout).
 
 import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
@@ -10,6 +11,7 @@ import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
 
+import type { PetrificationKillerFormat } from './potion.js';
 import { A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
 import { canSpotMonster, randomDisplayMonsterSubject } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
@@ -142,44 +144,6 @@ export function heroResistsStoning(state: GameState = game): boolean {
 
 export function heroIsPetrifying(state: GameState = game): boolean {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;
-}
-
-export type PetrificationKillerFormat =
-    | typeof KILLED_BY_AN | typeof KILLED_BY | typeof NO_KILLER_PREFIX;
-
-interface PetrificationTimeoutOptions {
-    state?: GameState;
-    message?: string | null;
-    killer?: string | null;
-    killerFormat?: PetrificationKillerFormat;
-    publish?: MessagePublisher;
-}
-
-// C potion.c:make_stoned(). Admission belongs to the attack or command;
-// replacing an active timeout must retain its original delayed killer.
-export async function setHeroPetrificationTimeout(turns: number, {
-    state = game, message = null, killer = null,
-    killerFormat = KILLED_BY_AN, publish = plineWithContinuation,
-}: PetrificationTimeoutOptions = {}): Promise<void> {
-    requireLiveGame(state);
-    if (!Number.isFinite(turns)) throw new RangeError('Petrification timeout must be finite.');
-    const requested = Math.trunc(turns);
-    const hero = state.u;
-    const old = hero.stonedTurns ?? 0;
-    hero.stonedTurns = Math.max(0, Math.min(TIMEOUT, requested));
-    hero.stoned = hero.stonedTurns > 0;
-    if ((requested !== 0) !== (old !== 0)) {
-        state.context.botl = true;
-        if (message !== null) await publish(message);
-    }
-    // Native killer bookkeeping follows the transition message's input pause.
-    if (!hero.stonedTurns) {
-        delete hero.stoneKiller;
-        delete hero.stoneKillerFormat;
-    } else if (!old) {
-        hero.stoneKiller = killer ?? '';
-        hero.stoneKillerFormat = killerFormat;
-    }
 }
 
 export function startHeroPetrification({

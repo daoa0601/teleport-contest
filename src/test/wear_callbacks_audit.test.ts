@@ -13,7 +13,7 @@ import { grantIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import type { GameObject } from '../js/object_types.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

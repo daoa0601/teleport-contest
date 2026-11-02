@@ -7,7 +7,7 @@ import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/do_we
 
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { wearEyewear } from '../js/eyewear.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

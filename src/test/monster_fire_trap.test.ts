@@ -18,7 +18,7 @@ import {
     SCR_IDENTIFY, TOWEL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { addTrap, floorObjects, floorObjectsAt } from './support/level-state.js';

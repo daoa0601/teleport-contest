@@ -2,8 +2,8 @@
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
 import { formatFeltMessage } from './hero_speech.js';
-import { makeConfused } from './hero_mental_status.js';
-import { makeBlinded } from './sight_change.js';
+import { makeConfused } from './potion.js';
+import { makeBlinded } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import { A_CON, A_MAX, A_STR, ROOM, } from './const.js';

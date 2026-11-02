@@ -7,7 +7,7 @@ import { exerciseAttribute } from './attrib.js';
 import { A_WIS, PARANOID_WERECHANGE } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { setHeroSpecies } from './hero_species.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
 import { canSeeMonster, newsym } from './display.js';

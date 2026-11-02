@@ -28,7 +28,7 @@ import { polymonHero } from './polyself.js';
 import { harmlessMissile } from './projectile.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { ceilingName } from './terrain_name.js';
 import { levelHasCeiling } from './dungeon.js';

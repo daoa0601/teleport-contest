@@ -13,7 +13,7 @@ import {
     deactivateArtifactProperty,
     invokeArtifactPower,
 } from '../js/artifacts.js';
-import { applyLevitationPotion } from '../js/levitation_potion.js';
+import { applyLevitationPotion } from '../js/potion.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import {

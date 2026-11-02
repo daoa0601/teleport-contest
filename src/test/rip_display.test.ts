@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { startHeroSickness } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/potion.js';
 import { runSegment } from '../js/jsmain.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

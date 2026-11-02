@@ -60,7 +60,7 @@ import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
 
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import type { gotoLevel as changeLevel } from './level_change.js';
-import { makeStunned } from './hero_mental_status.js';
+import { makeStunned } from './potion.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { deleteTrap, seeTrap, tryMonsterTrapEscape } from './trap.js';
 import { endVoluntaryMultiTurn } from './hack.js';import { fillPitWithBoulderAt } from './pit_fill.js';

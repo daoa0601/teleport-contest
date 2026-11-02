@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { PIT, ROOM } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { makeStunned } from '../js/hero_mental_status.js';
+import { makeStunned } from '../js/potion.js';
 import { maketrap } from '../js/mklev.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';

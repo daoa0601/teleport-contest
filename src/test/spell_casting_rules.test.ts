@@ -6,7 +6,7 @@ import { A_INT, A_STR, A_WIS, HUNGRY, P_BASIC, P_SKILLED, WEAK } from '../js/con
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { game } from '../js/gstate.js';
-import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
+import { makeConfused, makeStunned } from '../js/potion.js';
 import { currentHungerState } from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import {

@@ -63,15 +63,16 @@ import type { ArtifactDefenseQuery } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
-import { startHeroSickness } from './hero_illness.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import {
+    makeConfused, makeHallucinated, makeStunned, startHeroSickness,
+} from './potion.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { withIndefiniteArticle, objectDescription } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 
 import { stopHeroOccupation } from './occupation.js';
-
-import { makeBlinded } from './sight_change.js';
+import { stopRun } from './hack.js';
+import { makeBlinded } from './potion.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import type { MonsterAttackDeathOptions, DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
@@ -182,7 +183,10 @@ import {
     TIN_OPENER,
     TOWEL,
 } from './object_data.js';
-import { hasIntrinsicProperty, hasInvokedProperty } from './properties.js';
+import {
+    hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty,
+    propertyTimeout, removeIntrinsicProperty, setPropertyTimeout,
+} from './properties.js';
 import { isMissileObject, isWeaponTool } from './object_properties.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { M_AP_OBJECT } from './const.js';
@@ -3461,4 +3465,19 @@ export async function damageHeroFromMonster(monster: Monster, amount: number, {
     if (polymorphed)
         return (await returnHeroToHumanForm(state, { publish })).died;
     return die(monster);
+}
+
+export function heroHasRemovableSpeed(state = game) {
+    return propertyTimeout('fast', state) > 0
+        || hasPermanentIntrinsicProperty('fast', state);
+}
+
+// C mhitu.c:u_slow_down().
+export async function slowHero(state = game, publish: MessagePublisher = plineWithContinuation) {
+    requireLiveGame(state);
+    setPropertyTimeout('fast', 0, state);
+    removeIntrinsicProperty('fast', state);
+    await publish(state.u.fast || state.u.veryFast
+        ? 'Your quickness feels less natural.' : 'You slow down.');
+    await exerciseAttribute(A_DEX, false, state);
 }

@@ -16,7 +16,7 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } from './hero_genocide.js';
 import { setMimicBlocking } from './hero_seeing.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';

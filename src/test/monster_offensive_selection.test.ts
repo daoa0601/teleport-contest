@@ -24,7 +24,7 @@ import {
 
 import { applyPotionEffect } from '../js/potion.js';
 import { dopray } from '../js/pray.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

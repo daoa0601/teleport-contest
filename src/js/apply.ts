@@ -153,21 +153,16 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './hero_expulsion.js';
 import { setHeroGrip } from './hero_grip.js';
-import { makeDeaf } from './hero_hearing.js';
+import { makeDeaf } from './potion.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero, hurtleJumpTo } from './hero_hurtle.js';
-import {
-    cureHeroSickness,
-    cureHeroVomiting,
-    heroIsVomiting,
-    startHeroSickness,
-    startHeroVomiting,
-} from './hero_illness.js';
+import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './hero_illness.js';
+import { startHeroSickness } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { attackHostileMonster } from './hero_melee.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
@@ -393,7 +388,8 @@ import {
     payForShopDamage,
     shopkeeperIsMuted,
 } from './shk.js';
-import { flashBurn, makeBlinded } from './sight_change.js';
+import { flashBurn } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { ensureHeroSkills } from './skills.js';
 import { castSpell, knownSpell } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';

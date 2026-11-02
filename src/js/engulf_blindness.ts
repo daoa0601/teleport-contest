@@ -12,7 +12,7 @@ import { d } from './rng.js';
 import {
     blindfolded, heroIsBlind, heroIsBlinded, setHeroBlindnessTurns,
 } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 
 // C mhitu.c:gulp_blnd_check().
 export async function gulpBlindnessCheck({

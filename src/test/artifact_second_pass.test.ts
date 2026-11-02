@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { applyArtifactHit, invokeArtifactPower } from '../js/artifacts.js';
 import { artifactByName } from '../js/artifacts.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { artifactObject } from './support/game-objects.js';

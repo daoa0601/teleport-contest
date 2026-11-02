@@ -6,7 +6,7 @@ import { setTopline } from '../js/pline.js';
 import { lifeSaveMonster } from '../js/mondeath.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

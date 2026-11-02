@@ -35,7 +35,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
-import { quaff } from './quaff.js';
+import { quaff } from './potion.js';
 import { clearMessageWindow } from './tty_topline.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts.

@@ -14,7 +14,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { advanceDisplacementTimeout } from '../js/hero_displacement.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { takeMonsterTurn } from '../js/monmove.js';

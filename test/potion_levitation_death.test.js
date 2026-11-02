@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_LEVITATION } from '../js/object_data.js';
-import { quaff } from '../js/quaff.js';
+import { quaff } from '../js/potion.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

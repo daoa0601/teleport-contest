@@ -14,7 +14,7 @@ import { AT_EXPL } from '../js/monster_attack_types.js';
 import { reportMonsterCombatNoise, resolveMonsterCombatExplosion } from '../js/mhitm.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, LEASH } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';

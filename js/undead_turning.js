@@ -7,7 +7,7 @@ import { canSeeMonster } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';
-import { makeStunned } from './hero_mental_status.js';
+import { makeStunned } from './potion.js';
 import { game } from './gstate.js';
 import { restartEggHatchTimer } from './egg.js';
 import { makeMonsterFlee } from './monmove.js';

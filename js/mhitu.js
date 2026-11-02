@@ -27,13 +27,13 @@ import { artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
-import { startHeroSickness } from './hero_illness.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, } from './potion.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { withIndefiniteArticle, objectDescription } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
-import { makeBlinded } from './sight_change.js';
+import { stopRun } from './runmode.js';
+import { makeBlinded } from './potion.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -75,13 +75,14 @@ import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './currency.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
+import { damageHeroFromMonster, loseHeroHp } from './hero_damage.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource, } from './ray.js';
 import { destroyInventoryByElement } from './zap.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { detachHeroGold, heroGoldObject } from './hero_gold.js';
+import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
@@ -93,13 +94,12 @@ import { objectTypeKnown } from './shk.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
 import { AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
-import { hasIntrinsicProperty, hasInvokedProperty } from './properties.js';
+import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
 import { isMissileObject, isWeaponTool } from './object_properties.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { M_AP_OBJECT } from './const.js';
 import { GOLD_PIECE } from './object_data.js';
 import { mimicObjectName } from './objnam.js';
-import { stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
 const M1_SWIM = 0x00000002;
@@ -3158,28 +3158,17 @@ export async function disturbMealMimicry(monster, { state = game } = {}) {
     }
     return true;
 }
-// C mhitu.c:mdamageu(). Unlike losehp(), this clamps current HP down to
-// the existing maximum and does not stop running on zero-damage effects.
-export async function damageHeroFromMonster(monster, amount, { state = game, publish = plineWithContinuation, die = finishMonsterAttackDeath, } = {}) {
+export function heroHasRemovableSpeed(state = game) {
+    return propertyTimeout('fast', state) > 0
+        || hasPermanentIntrinsicProperty('fast', state);
+}
+// C mhitu.c:u_slow_down().
+export async function slowHero(state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
-    requirePlayingGame(state);
-    if (amount < 0) {
-        await impossible(`mdamageu for negative damage? (${amount})`);
-        amount = 0;
-    }
-    const hero = state.u;
-    const polymorphed = Upolyd(hero);
-    const hpKey = polymorphed ? 'mh' : 'uhp';
-    const maximum = polymorphed ? 'mhmax' : 'uhpmax';
-    state.context.botl = true;
-    hero[hpKey] -= amount;
-    if (state.flags.showdamage && amount)
-        await publish(`[HP ${-amount}, ${hero[hpKey]} left]`);
-    hero[hpKey] = Math.min(hero[hpKey], hero[maximum]);
-    if (hero[hpKey] > 0)
-        return false;
-    if (polymorphed)
-        return (await returnHeroToHumanForm(state, { publish })).died;
-    return die(monster);
+    setPropertyTimeout('fast', 0, state);
+    removeIntrinsicProperty('fast', state);
+    await publish(state.u.fast || state.u.veryFast
+        ? 'Your quickness feels less natural.' : 'You slow down.');
+    await exerciseAttribute(A_DEX, false, state);
 }
 //# sourceMappingURL=mhitu.js.map

@@ -31,7 +31,7 @@ import type { GameObject } from './object_types.js';
 import type { Engraving } from './map_types.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isBlade, isWetTowel } from './object_properties.js';

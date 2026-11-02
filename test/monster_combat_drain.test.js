@@ -11,7 +11,7 @@ import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, BLACK_DRAGON_SCALES, CLOAK_OF_PROTECTION, OBJECT_NAMES } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { isHumanWereMonster } from '../js/were.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

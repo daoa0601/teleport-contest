@@ -19,7 +19,7 @@ import { ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DRAWBRIDGE_UP, DUST, ENGRAVE, EN
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isBlade, isWetTowel } from './object_properties.js';

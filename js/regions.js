@@ -19,7 +19,7 @@ import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasPoisonResistance, } from './mondata.js';
 import { loseHeroHp } from './hack.js';

@@ -4,7 +4,7 @@ import test from 'node:test';
 import { A_STR, SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { startHeroSickness } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/potion.js';
 import { poisonHero } from '../js/poison.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
 import { eatRoyalJelly } from '../js/eat.js';

@@ -14,7 +14,7 @@ import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

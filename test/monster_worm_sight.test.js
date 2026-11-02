@@ -12,7 +12,7 @@ import { monsterName } from '../js/do_name.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { createSteamCloud } from '../js/regions.js';

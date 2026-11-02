@@ -9,7 +9,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { A_DEX, A_STR, A_WIS } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
-import { makeStunned } from '../js/hero_mental_status.js';
+import { makeStunned } from '../js/potion.js';
 import { OBJECT_NAMES, SPE_FIREBALL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { studyBook } from '../js/spellbook_study.js';

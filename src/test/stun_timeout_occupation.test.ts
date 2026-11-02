@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
-import { makeStunned } from '../js/hero_mental_status.js';
+import { makeStunned } from '../js/potion.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';

@@ -10,7 +10,7 @@ import {
 import {
     advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue,
 } from '../js/levitation_timeout.js';
-import { applyLevitationPotion } from '../js/levitation_potion.js';
+import { applyLevitationPotion } from '../js/potion.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { knownObject } from './support/game-objects.js';

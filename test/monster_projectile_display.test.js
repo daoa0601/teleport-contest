@@ -11,7 +11,7 @@ import { heroIsBlind } from '../js/senses.js';
 import { monsterProjectileDisplay } from '../js/mthrowu.js';
 import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

@@ -13,6 +13,7 @@ import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/
 import { objectQuantity } from '../js/mkobj.js';
 import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
+import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -21,9 +22,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { makeBlinded } from '../js/sight_change.js';
-import { UNENCUMBERED, nearCapacity } from '../js/hack.js';
-import { objectWeight } from '../js/mkobj.js';
+import { makeBlinded } from '../js/potion.js';
 void test('a blind hero flicks a whip toward it without naming the unseen monster', async () => {
     const level = freshPlayableRoom({ role: 'archeologist' });
     const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });

@@ -2,7 +2,7 @@
 // C ref: trap.c chest_trap().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { makeHallucinated, makeStunned } from './potion.js';
 import { heroHandName } from './body_parts.js';
 import { heroSpecies } from './hero_species.js';
 import { nomul } from './hack.js';

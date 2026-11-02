@@ -104,7 +104,7 @@ src/js/attrib.ts	gainHeroStrength	rn2	"[""4""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""10""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""6""]"	constant
 src/js/attrib.ts	loseHeroStrength	random	"[""4""]"	constant
-src/js/attrib.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
+src/js/potion.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
 src/js/ball.ts	beginBallAndChainMove	rn2	"[""2""]"	constant
@@ -744,9 +744,9 @@ src/js/level_teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
 src/js/level_teleport.ts	randomTeleportDepth	rollOne	"[""3""]"	constant
 src/js/level_teleport.ts	readLevelRequest	rnl	"[""5""]"	constant
 src/js/levitation_commands.ts	refreshLevitationArtifactCooldowns	rnz	"[""100""]"	constant
-src/js/levitation_potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
-src/js/levitation_potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
-src/js/levitation_potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
+src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
+src/js/potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
+src/js/potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
 src/js/light.ts	createConfusedLightPets	rn2	"[""2""]"	constant
 src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
 src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved

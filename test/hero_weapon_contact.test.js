@@ -7,7 +7,7 @@ import { prepareHeroWeaponContact } from '../js/hero_weapon_contact.js';
 import { ARROW, BATTLE_AXE, BOOMERANG, BOW, DAGGER, FOOD_RATION, KATANA, OBJECT_NAMES, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { ownedObjectAction, ownedObjectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';

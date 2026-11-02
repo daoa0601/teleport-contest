@@ -7,7 +7,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen, newsym, redrawMap } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { scheduleLevelTimer } from '../js/timeout.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';

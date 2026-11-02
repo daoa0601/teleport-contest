@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { glyphAt } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -1,11 +1,11 @@
 // Hero sickness and nausea state.
-// C refs: potion.c make_sick(), make_vomiting();
-// timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
+// C refs: timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit();
+// potion.c make_sick() lives in potion.ts (startHeroSickness).
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { isIceAt } from './dbridge.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { makeConfused, makeStunned } from './hero_mental_status.js';
+import { makeConfused, makeStunned } from './potion.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
@@ -23,28 +23,6 @@ import { d, rn2 } from './rng.js';
 import { propertyIsActive } from './properties.js';
 export function heroIsSick(state = game) {
     return !!state.u?.sick || (state.u?.sickTurns ?? 0) > 0;
-}
-// The onset line can page before the sickness timeout or cause changes.
-export async function startHeroSickness({ state = game, turns, cause = 'illness', type = SICK_VOMITABLE, talk = true, publish = plineWithContinuation, }) {
-    const hero = state.u;
-    if (hero.sicknessResistance)
-        return { started: false, newlySick: false };
-    const oldTurns = hero.sickTurns ?? 0;
-    const newlySick = !oldTurns;
-    if (newlySick) {
-        await publish(formatFeltMessage('deathly sick.', state));
-    }
-    else if (talk) {
-        const severity = turns <= oldTurns / 2 ? 'much' : 'even';
-        await publish(formatFeltMessage(`${severity} worse.`, state));
-    }
-    hero.sickTurns = Math.min(TIMEOUT, Math.max(0, Math.trunc(turns)));
-    hero.sick = hero.sickTurns > 0;
-    hero.sickType = (hero.sickType ?? 0) | type;
-    state.context.botl = true;
-    await exerciseAttribute(A_CON, false, state);
-    hero.sickCause = cause;
-    return { started: hero.sick, newlySick };
 }
 export function cureHeroSickness(state = game, type = SICK_ALL) {
     const hero = state.u;

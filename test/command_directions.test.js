@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, DOOR, D_CLOSED, D_ISOPEN, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { makeStunned } from '../js/hero_mental_status.js';
+import { makeStunned } from '../js/potion.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { PICK_AXE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

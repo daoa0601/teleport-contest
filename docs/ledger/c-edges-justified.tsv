@@ -1478,7 +1478,7 @@ resetobjs	weight	inlined	objectWeight for the candelabrum conversion (bones_obje
 cpostfx	eatmdone	inlined	finishMealMimicry clears the mimic meal state (eat.ts)
 cpostfx	eye_of_newt_buzz	inlined	corpseEnergyBuzz (eat.ts)
 cpostfx	givit	inlined	grantCorpseIntrinsic incl. the gainstr(-1) case (eat.ts)
-cpostfx	self_invis_message	inlined	showInvisibilityMessage (hero_invisibility.ts via eatStalker)
+cpostfx	self_invis_message	inlined	showInvisibilityMessage (potion.ts via eatStalker)
 cpostfx	toggle_displacement	inlined	announceDisplacementChange inside gainCorpseDisplacement (hero_displacement.ts)
 cpostfx	uasmon_maxStr	inlined	ATTRMAX(A_INT) reads urace.attrmax; the uasmon_maxStr branch only applies to A_STR
 check_shop_obj	contained_gold	inlined	containedGold(object, true) (shk.ts settleThrownShopObject)

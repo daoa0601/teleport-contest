@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { createCorpstatAt } from '../js/mkobj.js';
 import { APPLE, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { addTrap } from './support/level-state.js';
 import { freshPlayableRoom } from './support/playable-room.js';

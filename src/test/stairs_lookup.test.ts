@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mkstairs } from '../js/mklev.js';
-import { applyLevitationPotion } from '../js/levitation_potion.js';
+import { applyLevitationPotion } from '../js/potion.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { refreshProperty } from '../js/properties.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

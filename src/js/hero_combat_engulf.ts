@@ -33,7 +33,8 @@ import { withIndefiniteArticle } from './objnam.js';
 
 import { heroIsUnchanging } from './polyself.js';
 import { d, rn2 } from './rng.js';
-import { heroIsFlaming, setHeroSlimingTimeout } from './slime.js';
+import { heroIsFlaming } from './slime.js';
+import { setHeroSlimingTimeout } from './potion.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';

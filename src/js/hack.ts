@@ -38,7 +38,7 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { igniteItems } from './light.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './apply.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
     MONSTER_ATTACKS, requireMonsterData, monsterIsAmorphous, MONSTER_BODY_META,

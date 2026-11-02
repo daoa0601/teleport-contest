@@ -23,7 +23,7 @@ import { deleteObject } from '../js/shk.js';
 import { setMonsterSpecies } from '../js/mondata.js';
 import { terrainCommand } from '../js/terrain_view.js';
 import { rayMissMessage } from '../js/ray_hit_message.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { installSwallowedHero } from './support/hero-state.js';

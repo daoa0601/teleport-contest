@@ -21,8 +21,9 @@ import {
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand } from './zap.js';
-import { flashBurn, makeBlinded } from './sight_change.js';
-import { makeStunned } from './hero_mental_status.js';
+import { flashBurn } from './sight_change.js';
+import { makeBlinded } from './potion.js';
+import { makeStunned } from './potion.js';
 import {
     finishMealMimicry, finishHeroDigestion, getHungry, recoverHeroFromFainting,
     regainHearingAfterHelplessness,

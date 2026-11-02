@@ -4,7 +4,7 @@ import { roles } from '../js/roles.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_HEALING } from '../js/object_data.js';
-import { quaff } from '../js/quaff.js';
+import { quaff } from '../js/potion.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [roleName, score] of [['wizard', 990], ['knight', 1990]]) {

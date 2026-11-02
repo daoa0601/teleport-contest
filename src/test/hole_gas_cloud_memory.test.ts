@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { flush_screen } from '../js/display.js';
 import { HOLE } from '../js/const.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { maketrap } from '../js/mklev.js';
 import { createPoisonGasCloud } from '../js/regions.js';

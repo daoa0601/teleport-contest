@@ -11,7 +11,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from '../js/mondata.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';

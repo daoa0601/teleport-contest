@@ -13,7 +13,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_YENDOR, BUGLE, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

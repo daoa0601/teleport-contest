@@ -4,7 +4,7 @@ import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { makeDeaf } from '../js/hero_hearing.js';
+import { makeDeaf } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { playInstrument } from '../js/music.js';
 import { AMULET_OF_STRANGULATION, LEATHER_DRUM, OBJECT_NAMES, } from '../js/object_data.js';

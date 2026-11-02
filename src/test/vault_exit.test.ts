@@ -6,8 +6,8 @@ import { engravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hiddenGold } from '../js/vault.js';
 
-
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { heroGoldAmount } from '../js/hero_gold.js';
+import { makeHallucinated } from '../js/potion.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, GOLD_PIECE, LARGE_BOX, POT_HEALING } from '../js/object_data.js';

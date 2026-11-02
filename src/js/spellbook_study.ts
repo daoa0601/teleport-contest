@@ -14,7 +14,7 @@ import { shieldeff } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 
 import { takeHeroGold } from './hero_gold.js';
-import { makeConfused } from './hero_mental_status.js';
+import { makeConfused } from './potion.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './do.js';
@@ -35,7 +35,7 @@ import { propertyIsActive } from './properties.js';
 import { promptYesNo } from './query.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { chargeUnpaidUsage } from './shk.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { readBookOfDead, readNovel } from './special_spellbooks.js';
 import { createMemorizedSpell, currentSpellKnowledge } from './spell.js';
 import { teleportHero } from './teleport.js';

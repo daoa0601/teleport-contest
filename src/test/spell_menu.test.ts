@@ -9,7 +9,7 @@ import { MENU_TRADITIONAL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { makeStunned } from '../js/hero_mental_status.js';
+import { makeStunned } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import {
     OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_DIG, SPE_FIREBALL, SPE_FORCE_BOLT,

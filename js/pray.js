@@ -26,7 +26,8 @@ import { announceTerrainRescue, nomul } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { angerTemplePriest } from './priest.js';
-import { makeConfused, makeHallucinated, makeStunned, } from './hero_mental_status.js';
+import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
+import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -59,7 +60,7 @@ import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, } from './ray.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill, } from './skills.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
@@ -73,11 +74,11 @@ import { flushPendingTopline } from './tty_topline.js';
 import { displayColorName, docrt, newsym, see_monsters, shieldeff, } from './display.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
+import { nearCapacity } from './weight.js';
 import { purifyHeroLycanthropy } from './were.js';
 import { isPoolOrLavaAt } from './dbridge.js';
 import { pline as printLine } from './pline.js';
 import { plineWithContinuation as pline } from './pline.js';
-import { loseHeroHp, nearCapacity } from './hack.js';
 // ---------------------------------------------------------------------------
 // Prayer decisions and the three-turn prayer occupation (pray)
 // ---------------------------------------------------------------------------
