@@ -4,7 +4,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { A_DEX, A_STR, NO_MINVENT, P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_EXPERT, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, STR18, W_ARM, } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss, } from '../js/hero_attack_accuracy.js';
+import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss } from '../js/uhitm.js';
 import { AD_PHYS, AD_SEDU, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
 import { DAGGER, GOLD_PIECE, LEATHER_ARMOR } from '../js/object_data.js';
 import { races } from '../js/roles.js';

@@ -17,7 +17,7 @@ import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { recordMappedOverviewState } from './dungeon.js';
-import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
+import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { isContainer } from './container.js';

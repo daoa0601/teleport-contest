@@ -15,7 +15,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { heroFormSticks } from './polyself.js';
 import { isSteadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { revealMimicIdentity } from './mimic.js';
+import { revealMimicIdentity } from './uhitm.js';
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';

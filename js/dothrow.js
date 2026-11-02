@@ -13,11 +13,11 @@ import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
 import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { weaponHitBonus, dryTowel } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural } from './objnam.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectClassForType, objectMaterial } from './o_init.js';
@@ -43,7 +43,8 @@ import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName } from './terrain_name.js';
 import { tossObjectUp } from './toss_up.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { captureHeroProjectileName } from './uhitm.js';
+import { capitalizedDefiniteName, rayMissMessage } from './ray_hit_message.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
@@ -493,6 +494,18 @@ async function throwSelectedUnit(item, dx, dy, volley) {
         volley,
     });
     return 'stopVolley' in shotResult && !!shotResult.stopVolley;
+}
+// C dothrow.c:tmiss(). Concealed targets are omitted even when sensed;
+// the caller owns whether a missed throw wakes the target.
+export async function reportHeroThrownMiss(monster, object, { state = game, publish = plineWithContinuation, volley, target = { x: monster.mx, y: monster.my }, } = {}) {
+    const name = captureHeroProjectileName(object, state, volley);
+    const appearance = M_AP_TYPE(monster);
+    if (!canSeeMonster(monster) || appearance !== 0 && appearance !== M_AP_MONSTER) {
+        const verb = objectNameIsPlural(object, state) ? 'miss' : 'misses';
+        await publish(`${capitalizedDefiniteName(name, state)} ${verb}.`);
+    }
+    else
+        await publish(rayMissMessage(name, monster, { ...target, state }));
 }
 const POTION_CLASS = 8;
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {

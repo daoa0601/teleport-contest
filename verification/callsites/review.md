@@ -142,7 +142,7 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/eat.ts:863` shouldGiveTemporaryResistance | guarded | `eat.c:991 temp_givit` |
 | `src/js/dungeon.ts:602` placeLevels | guarded | `dungeon.c:665 place_level` |
 | `src/js/engrave.ts:164` wipeoutText | guarded | `engrave.c:119 wipeout_text` |
-| `src/js/hero_form_combat.ts:331` performHeroEngulf | guarded | `uhitm.c:5423 hmonas` |
+| `src/js/uhitm.ts:5510` performHeroEngulf | guarded | `uhitm.c:5423 hmonas` |
 | `src/js/hole.ts:42` liquidForHole | guarded | `dig.c:605 fillholetyp` |
 | `src/js/minion.ts:138` demonLord | constant | `minion.c:404 dlord` |
 | `src/js/minion.ts:147` demonPrince | constant | `minion.c:390 dprince` |

@@ -4,7 +4,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, MSLOW, NO_MINVENT, STRAT_WAITFORU, W_ARM, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveHeroNaturalDamage } from '../js/hero_natural_damage.js';
+import { resolveHeroNaturalDamage } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_BLND, AD_COLD, AD_CONF, AD_DRLI, AD_FIRE, AD_PHYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STUN, AD_TLPT, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP, } from '../js/monster_attack_types.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

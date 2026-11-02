@@ -8,7 +8,7 @@ import {
     NO_MINVENT, STRAT_WAITFORU, W_ARM,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveHeroNaturalDamage } from '../js/hero_natural_damage.js';
+import { resolveHeroNaturalDamage } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import {
     AD_BLND, AD_COLD, AD_CONF, AD_DRLI, AD_FIRE, AD_PHYS, AD_RUST,

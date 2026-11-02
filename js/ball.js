@@ -25,7 +25,7 @@ import { heroIsBlind } from './senses.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { fillPitWithBoulderAt, resetHeroTrap } from './trap.js';
 import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
-import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
+import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';

@@ -7,7 +7,6 @@ src/js/attrib.ts	attrib.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
-src/js/barehand_combat.ts	uhitm.c
 src/js/bear_trap.ts	trap.c
 src/js/bones_admission.ts	bones.c
 src/js/bones_death.ts	bones.c
@@ -23,7 +22,6 @@ src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
 src/js/confused_loot.ts	pickup.c
-src/js/confusing_touch.ts	uhitm.c
 src/js/context_menu.ts	cmd.c
 src/js/corpse_revival.ts	zap.c
 src/js/currency.ts	invent.c
@@ -66,10 +64,7 @@ src/js/gold_throw.ts	dothrow.c
 src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
-src/js/hero_attack_accuracy.ts	weapon.c
-src/js/hero_attack_conduct.ts	uhitm.c
 src/js/hero_breath.ts	zap.c
-src/js/hero_combat_engulf.ts	uhitm.c
 src/js/hero_drop.ts	do.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
@@ -80,21 +75,13 @@ src/js/hero_inventory.ts	invent.c
 src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_magic_trap.ts	trap.c
-src/js/hero_melee.ts	uhitm.c
 src/js/hero_multishot.ts	end.c
-src/js/hero_natural_damage.ts	uhitm.c
-src/js/hero_natural_theft.ts	uhitm.c
-src/js/hero_object_contact.ts	uhitm.c
 src/js/hero_polymorph_trap.ts	trap.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
 src/js/hero_self_zap.ts	zap.c
 src/js/hero_status.ts	insight.c
-src/js/hero_weapon_contact.ts	uhitm.c
-src/js/hero_weapon_hit.ts	uhitm.c
-src/js/hero_weapon_impact.ts	uhitm.c
-src/js/hero_weapon_poison.ts	uhitm.c
 src/js/horn_of_plenty.ts	mkobj.c
 src/js/ice.ts	zap.c
 src/js/ident.ts	mkobj.c
@@ -202,7 +189,6 @@ src/js/transient_light.ts	light.c
 src/js/trap.ts	trap.c
 src/js/tty_prompts.ts	cmd.c
 src/js/two_weapon.ts	wield.c
-src/js/uhitm.ts	uhitm.c
 src/js/undead_turning.ts	zap.c
 src/js/vault.ts	vault.c
 src/js/vibrating_square_trap.ts	trap.c

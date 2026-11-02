@@ -79,7 +79,7 @@ import {
     applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
     mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage,
     petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack,
-    resolveMonsterPhysicalDamage, tryKnockback,
+    resolveMonsterPhysicalDamage, tryKnockback, applyMonsterCombatEffect, physicalEffect, effectResult,
 } from './uhitm.js';
 import { monsterReflectionSource } from './ray.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
@@ -1205,104 +1205,6 @@ export async function resolveMonsterCombatDamage(
     const growth = await growAttacker(defender);
     return result({ ...effect, nativeResult: M_ATTK_DEF_DIED
         | (growth.survived ? 0 : M_ATTK_AGR_DIED), heroDied: growth.heroDied });
-}
-
-// C uhitm.c:mhitm_adtyping(), the monster-versus-monster arm; native
-// mdamagem() (mhitm.c:1059) calls it right after the attacker-petrify gate.
-// The hero-attacker arm lives in hero_natural_damage.ts and the per-adtyp
-// owners keep their mhitm_ad_* branches in uhitm.ts.
-async function applyMonsterCombatEffect(
-    attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    switch (context.attack[1]) {
-    case AD_PHYS: return context.applyPhysical();
-    case AD_FIRE: case AD_COLD: case AD_ELEC: case AD_ACID: case AD_RUST: case AD_CORR: case AD_DCAY:
-        return applyMonsterElementEffect(attacker, defender, context);
-    case AD_HALU: case AD_PLYS: case AD_SLEE: case AD_SLOW: case AD_CONF:
-    case AD_WERE: case AD_HEAL: case AD_STCK: case AD_WRAP:
-        return applyMonsterStatusEffect(attacker, defender, context);
-    // C uhitm.c:mhitm_ad_drli/blnd/ench/stun/legs() own their mhitm
-    // branches in uhitm.ts.
-    case AD_DRLI: return mhitmAdDrli({ attacker, defender, context });
-    case AD_BLND: return mhitmAdBlnd({ attacker, defender, context });
-    case AD_ENCH: return mhitmAdEnch({ attacker, defender, context });
-    case AD_STUN: return mhitmAdStun({ attacker, defender, context });
-    case AD_LEGS: return mhitmAdLegs({ attacker, defender, context });
-    case AD_DREN: case AD_DETH: case AD_PEST: case AD_FAMN: case AD_DISE: case AD_CURS:
-        return applyMonsterDrainEffect(attacker, defender, context);
-    case AD_SEDU: case AD_SITM: case AD_SSEX: case AD_SGLD:
-        return applyMonsterTheftEffect(attacker, defender, context);
-    case AD_TLPT: case AD_POLY: case AD_SLIM:
-        return applyMonsterTransformEffect(attacker, defender, context);
-    case AD_DGST: return applyMonsterDigestionEffect(attacker, defender, context);
-    case AD_DRIN: {
-        const brain = await resolveMonsterBrainAttack(attacker, defender, context.damage, context);
-        return { damage: brain.damage, nativeResult: brain.hitFlags, done: false,
-            skipBrainDrain: brain.skipBrainDrain, heroDied: brain.heroDied };
-    }
-    case AD_STON: return petrifyingEffect(attacker, defender, context);
-    case AD_DRST: case AD_DRDX: case AD_DRCO: {
-        let damage = context.damage;
-        if (!await monsterCombatAttackNegated(attacker, defender, { ...context, verbose: false })
-            && context.random(8) === 0)
-            damage = await poisonMonsterFromAttack(attacker, defender, context.attack[0], damage, context);
-        return effectResult(damage);
-    }
-    case AD_SAMU: case AD_MAGM: case AD_DISN: case AD_SPC1: case AD_SPC2:
-    case AD_CLRC: case AD_SPEL: case AD_RBRE:
-        return effectResult(0);
-    }
-}
-
-async function physicalEffect(
-    attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    let grew = false;
-    const physical = await resolveMonsterPhysicalDamage(attacker, defender,
-        { attackType: context.attack[0] }, context.damage, {
-            ...context, hitOnHead: !context.notOnHead,
-            finishDeath: async (monster, options) => {
-                const outcome = await context.finishDeath(monster, options);
-                if (!outcome.survived && !outcome.heroDied && monster === defender) {
-                    grew = true;
-                    return { ...outcome, heroDied: (await context.growAttacker(defender)).heroDied };
-                }
-                return outcome;
-            },
-        });
-    let nativeResult = physical.hitFlags;
-    let heroDied = physical.heroDied;
-    if ((nativeResult & M_ATTK_DEF_DIED) && !heroDied && !grew) {
-        const growth = await context.growAttacker(defender);
-        heroDied = growth.heroDied;
-        if (!growth.survived) nativeResult |= M_ATTK_AGR_DIED;
-    }
-    if (attacker.mhp <= 0 || attacker.dead) nativeResult |= M_ATTK_AGR_DIED;
-    return { damage: physical.damage, done: physical.done, nativeResult, heroDied };
-}
-
-async function petrifyingEffect(
-    attacker: Monster, defender: Monster, context: MonsterCombatEffectContext,
-): Promise<MonsterCombatEffectResult> {
-    if (attacker.mcan) return effectResult(context.damage);
-    const stone = await petrifyMonsterDefender(defender, {
-        ...context, visible: context.visible && canSeeMonster(defender),
-    });
-    if (stone.heroDied) return effectResult(0, M_ATTK_MISS, true);
-    let nativeResult = M_ATTK_MISS;
-    let heroDied = false;
-    if (!stone.survived) {
-        if (defender.mtame && !context.visible)
-            await context.publish('You have a peculiarly sad feeling for a moment, then it passes.');
-        const growth = await context.growAttacker(defender);
-        nativeResult = M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED);
-        heroDied = growth.heroDied;
-    }
-    return { damage: 0, nativeResult, done: stone.stopped, heroDied };
-}
-
-function effectResult(damage: number, nativeResult = M_ATTK_MISS, heroDied = false): MonsterCombatEffectResult {
-    return { damage, nativeResult, heroDied, done: false };
 }
 
 // C mhitm.c:mdamagem()'s AD_DGST tail: meal effects that run only after

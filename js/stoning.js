@@ -60,60 +60,6 @@ export function contactIsProtected(attackType, wornMask, usedWeapon = false) {
         return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
     return false;
 }
-// C uhitm.c:do_stone_u(). A successful golem transformation avoids the timer.
-export async function startHeroPetrificationFromMonster(monster, state = game) {
-    if (heroIsPetrifying(state) || heroResistsStoning(state))
-        return false;
-    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
-        const transformed = await polymonHero(PM_STONE_GOLEM);
-        if (transformed.transformed)
-            return false;
-    }
-    const unique = !!(requireMonsterData(MONSTER_GENO, monster.mnum) & G_UNIQ);
-    const properName = !!(requireMonsterData(MONSTER_FLAGS2, monster.mnum) & M2_PNAME);
-    const name = monsterTypeName(monster.mnum, monster.female);
-    return startHeroPetrification({
-        state, killer: unique && !properName ? `the ${name}` : name,
-        killerFormat: unique ? KILLED_BY : KILLED_BY_AN,
-    });
-}
-// C uhitm.c:mhitm_ad_ston(), after the ordinary hit message.
-export async function applyMonsterStoningAttack(monster, { state = game, random = rn2, publish = plineWithContinuation, } = {}) {
-    if (random(3) !== 0)
-        return false;
-    const spotted = canSpotMonster(monster);
-    const hallucinating = heroIsHallucinating(state);
-    const subject = () => !spotted ? 'It'
-        : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-    // C mon_nam(magr): the mid-sentence name; a given name stays as typed
-    // instead of being decapitalized from the sentence subject.
-    const target = () => monsterName(monster, { state });
-    const deaf = heroIsDeaf(state);
-    const hear = async (text) => {
-        const message = formatHeardMessage(text, state);
-        if (message)
-            await publish(message);
-    };
-    if (monster.mcan) {
-        if (!deaf)
-            await hear(`a cough from ${target()}!`);
-        return false;
-    }
-    const blind = heroIsBlind(state);
-    if (hallucinating && !blind) {
-        await hear('hissing.');
-        await publish(`${subject()} appears to be blowing you a kiss...`);
-    }
-    else if (!deaf) {
-        await hear(`${possessiveName(target())} hissing!`);
-    }
-    else if (!blind) {
-        await publish(`${subject()} seems to grimace.`);
-    }
-    if (random(10) !== 0 && state.flags.moonphase !== NEW_MOON)
-        return false;
-    return startHeroPetrificationFromMonster(monster, state);
-}
 export function heroResistsStoning(state = game) {
     return !!state.u?.stoneResistance;
 }

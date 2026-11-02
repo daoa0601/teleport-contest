@@ -18,7 +18,7 @@ It currently covers these six entry points:
 | `hack.c:calc_capacity` | `hack.js:calcCapacity` |
 | `hack.c:near_capacity` | `hack.js:nearCapacity` |
 | `weapon.c:dmgval` | `weapon.js:rollPhysicalWeaponDamage` |
-| `uhitm.c:find_roll_to_hit` | `hero_attack_accuracy.js:findHeroMeleeHitThreshold` |
+| `uhitm.c:find_roll_to_hit` | `uhitm.js:findHeroMeleeHitThreshold` |
 
 Run from the worktree root (tested on macOS; requires clang, make, Node and uv):
 

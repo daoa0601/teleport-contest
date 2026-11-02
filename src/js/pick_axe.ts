@@ -11,7 +11,7 @@ import { plineWithContinuation } from './pline.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
-import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { diggingTarget, startHeroDigging } from './dig.js';
 import { gotoLevel } from './level_change.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './monster_data.js';

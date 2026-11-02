@@ -2,7 +2,7 @@
 
 import { P_SLING, RLOC_MSG } from './const.js';
 import { plineWithContinuation } from './pline.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { reportHeroThrownMiss } from './dothrow.js';
 import { MONSTER_ALIGNMENT, monsterIsUnicorn } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';

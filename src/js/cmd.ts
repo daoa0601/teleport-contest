@@ -32,7 +32,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { surfaceName } from './terrain_name.js';
 import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile } from './pager.js';
-import { attackHostileMonster } from './hero_melee.js';
+import { attackHostileMonster } from './uhitm.js';
 import { monsterAtPosition, doride, stuckSteed } from './steed.js';
 import { observeBucForNaming, withIndefiniteArticle } from './objnam.js';
 import { objectQuantity } from './mkobj.js';

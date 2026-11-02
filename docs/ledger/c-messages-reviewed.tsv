@@ -528,10 +528,10 @@ trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/trap.ts
 trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/trap.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
 trap.c	untrap	are containers	composed	src/js/trap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
 trap.c	untrap	is a container	composed	src/js/trap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
-uhitm.c	gulpum	is burning to a crisp!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
-uhitm.c	gulpum	is freezing to death!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
-uhitm.c	gulpum	seems mildly chilly.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
-uhitm.c	gulpum	seems mildly hot.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	is burning to a crisp!	composed	src/js/uhitm.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	is freezing to death!	composed	src/js/uhitm.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	seems mildly chilly.	composed	src/js/uhitm.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	seems mildly hot.	composed	src/js/uhitm.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	mhitm_ad_cold	frost doesn't chill	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm branch composes frost does not chill; the mhitm branch composes the seem to chill variant.
 uhitm.c	mhitm_ad_cold	frost doesn't seem to chill	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm branch composes frost does not chill; the mhitm branch composes the seem to chill variant.
 uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/uhitm.ts:mhitmAdCold; The uhitm and mhitm branches print the covered in frost line, guarded by sight.

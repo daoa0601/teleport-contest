@@ -8,7 +8,7 @@ import { heroFootName, heroHandName, monsterHandName } from './body_parts.js';
 import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok } from './const.js';
 import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { stumbleOntoMimic } from './mimic.js';
+import { stumbleOntoMimic } from './uhitm.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { objectNoLongerHeld } from './do.js';
 import { pickupFloorObject } from './pickup.js';

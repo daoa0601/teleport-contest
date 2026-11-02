@@ -9,7 +9,7 @@ import { clearMessageWindow, flushPendingTopline } from '../js/tty_topline.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveHeroCombatEngulf } from '../js/hero_combat_engulf.js';
+import { resolveHeroCombatEngulf } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import {

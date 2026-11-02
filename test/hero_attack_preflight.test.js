@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_FLAGS1 } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
-import { prepareAppliedWeaponAttack } from '../js/hero_attack_preflight.js';
+import { prepareAppliedWeaponAttack } from '../js/uhitm.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
 import { OBJECT_NAMES } from '../js/object_data.js';

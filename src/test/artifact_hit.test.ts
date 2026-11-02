@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { applyArtifactHit } from '../js/artifacts.js';
-import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
+import { hitMonsterWithHeroObject } from '../js/uhitm.js';
 import { makeHallucinated } from '../js/potion.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

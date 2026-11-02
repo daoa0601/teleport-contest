@@ -28,7 +28,7 @@ const changes = {
         'return inventoryWeight(state) - weightCapacity(state) + 1;'],
     damage: ['weapon.js', 'return applyErosion(object, damage);',
         'return applyErosion(object, damage) + 1;'],
-    accuracy: ['hero_attack_accuracy.js', 'threshold += 2;', 'threshold += 3;'],
+    accuracy: ['uhitm.js', 'threshold += 2;', 'threshold += 3;'],
     state: ['weapon.js', 'return applyErosion(object, damage);',
         'object.spe += 1; return applyErosion(object, damage);'],
     rng: ['weapon.js', 'return applyErosion(object, damage);',
@@ -113,7 +113,7 @@ const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
 const mkobjWeight = await import('../../js/mkobj.js');
 const hackWeight = await import('../../js/hack.js');
 const { rollPhysicalWeaponDamage } = await import('../../js/weapon.js');
-const { findHeroMeleeHitThreshold } = await import('../../js/hero_attack_accuracy.js');
+const { findHeroMeleeHitThreshold } = await import('../../js/uhitm.js');
 const { wearHeroAccessory } = await import('../../js/do_wear.js');
 const { grantIntrinsicProperty } = await import('../../js/properties.js');
 const accuracyRing = data.OBJECT_NAMES.indexOf('increase accuracy');

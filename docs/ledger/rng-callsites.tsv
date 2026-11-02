@@ -122,8 +122,8 @@ src/js/ball.ts	fallWithIronBall	rn2	"[""5""]"	constant
 src/js/ball.ts	jerkHeroBackToChain	rnd	"[""20""]"	constant
 src/js/ball.ts	reserveBallAndChainPlacement	rnd	"[""400""]"	constant
 src/js/ball.ts	scatterCarriedItems	rnd	"[""capacity""]"	guarded
-src/js/barehand_combat.ts	doublePunch	rn2	"[""5""]"	constant
-src/js/barehand_combat.ts	prepareHeroBarehandContact	rnd	"[""heroUsesMartialArts(state) ? 4 : 2""]"	constant
+src/js/uhitm.ts	doublePunch	rn2	"[""5""]"	constant
+src/js/uhitm.ts	prepareHeroBarehandContact	rnd	"[""heroUsesMartialArts(state) ? 4 : 2""]"	constant
 src/js/bear_trap.ts	finishMonsterBearTrap	rollDice	"[""2"", ""4""]"	constant
 src/js/blinding_attack.ts	blindMonsterWithThrownObject	rollOne	"[""25""]"	constant
 src/js/blinding_attack.ts	prepareHeroThrownBlindness	rollOne	"[""25""]"	constant
@@ -452,7 +452,7 @@ src/js/hack.ts	heroLiquidEffects	random	"[""3""]"	constant
 src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
-src/js/hero_attack_accuracy.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
+src/js/uhitm.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
 src/js/hack.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""3""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""6""]"	constant
@@ -468,10 +468,10 @@ src/js/hero_breath.ts	hitWithLightning	random	"[""3""]"	constant
 src/js/hero_breath.ts	hitWithLightning	rollDice	"[""attack[2]"", ""6""]"	invariant
 src/js/hero_breath.ts	hitWithMagic	rollDice	"[""attack[2]"", ""6""]"	invariant
 src/js/hero_breath.ts	hitWithSleep	rollDice	"[""attack[2]"", ""25""]"	invariant
-src/js/hero_combat_engulf.ts	engulfDamage	random	"[""2""]"	constant
-src/js/hero_combat_engulf.ts	engulfDamage	random	"[""4""]"	constant
-src/js/hero_combat_engulf.ts	resolveHeroCombatEngulf	rollDice	"[""dice"", ""sides""]"	unproved
-src/js/hero_combat_explosion.ts	resolveHeroCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
+src/js/uhitm.ts	engulfDamage	random	"[""2""]"	constant
+src/js/uhitm.ts	engulfDamage	random	"[""4""]"	constant
+src/js/uhitm.ts	resolveHeroCombatEngulf	rollDice	"[""dice"", ""sides""]"	unproved
+src/js/uhitm.ts	resolveHeroCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/dig.ts	continueHeroDigging	rn2	"[""2""]"	constant
 src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
 src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
@@ -493,11 +493,11 @@ src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""2""]"	constant
 src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""4""]"	constant
 src/js/hero_engulf.ts	resolveHeroEngulf	rollOne	"[""-hero.uac""]"	guarded
 src/js/hero_expulsion.ts	releaseHeroFromMonster	rollOne	"[""2""]"	constant
-src/js/hero_form_combat.ts	performFormWeaponAttack	rnd	"[""20""]"	constant
-src/js/hero_form_combat.ts	performHeroEngulf	rn2	"[""5""]"	constant
-src/js/hero_form_combat.ts	performHeroEngulf	rnd	"[""20 + index""]"	guarded
-src/js/hero_form_combat.ts	performHeroEngulf	rnd	"[""8""]"	constant
-src/js/hero_form_combat.ts	performNaturalContact	rnd	"[""20""]"	constant
+src/js/uhitm.ts	performFormWeaponAttack	rnd	"[""20""]"	constant
+src/js/uhitm.ts	performHeroEngulf	rn2	"[""5""]"	constant
+src/js/uhitm.ts	performHeroEngulf	rnd	"[""20 + index""]"	guarded
+src/js/uhitm.ts	performHeroEngulf	rnd	"[""8""]"	constant
+src/js/uhitm.ts	performNaturalContact	rnd	"[""20""]"	constant
 src/js/hero_form_kick.ts	kickWithMonsterForm	rnd	"[""20""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
@@ -506,7 +506,7 @@ src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""30""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
-src/js/hero_hit_aftermath.ts	finishHeroHitAftermath	random	"[""2""]"	constant
+src/js/uhitm.ts	finishHeroHitAftermath	random	"[""2""]"	constant
 src/js/hero_hurtle.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
 src/js/timeout.ts	advanceHeroSickness	random	"[""100""]"	constant
 src/js/timeout.ts	sicknessDialogue	rn2	"[""4""]"	constant
@@ -520,10 +520,10 @@ src/js/hero_magic_trap.ts	triggerHeroMagicTrapEffect	rn1	"[""5"", ""10""]"	const
 src/js/hero_magic_trap.ts	triggerHeroMagicTrapEffect	rn1	"[""5"", ""15""]"	constant
 src/js/hero_magic_trap.ts	triggerHeroMagicTrapEffect	rnd	"[""20""]"	constant
 src/js/hero_magic_trap.ts	triggerHeroMagicTrapEffect	rnd	"[""4""]"	constant
-src/js/hero_melee.ts	attackHostileMonster	rn2	"[""7""]"	constant
-src/js/hero_melee.ts	attackWithHumanForm	rnd	"[""20""]"	constant
-src/js/hero_melee.ts	attackWithHumanForm	rnd	"[""20""]"	constant
-src/js/hero_melee.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
+src/js/uhitm.ts	attackHostileMonster	rn2	"[""7""]"	constant
+src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
+src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
+src/js/uhitm.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
@@ -535,36 +535,36 @@ src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
 src/js/hack.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
-src/js/hero_natural_brain.ts	applyHeroNaturalBrain	random	"[""8""]"	constant
-src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
-src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""30""]"	constant
-src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""4""]"	constant
-src/js/hero_natural_damage.ts	applyNaturalEffect	random	"[""3""]"	constant
-src/js/hero_natural_damage.ts	applyNaturalEffect	random	"[""4""]"	constant
-src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""10""]"	constant
-src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	unproved
-src/js/hero_natural_damage.ts	curseNaturalTarget	random	"[""10""]"	constant
+src/js/uhitm.ts	applyHeroNaturalBrain	random	"[""8""]"	constant
+src/js/uhitm.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	eatMonsterBrain	rollOne	"[""30""]"	constant
+src/js/uhitm.ts	eatMonsterBrain	rollOne	"[""4""]"	constant
+src/js/uhitm.ts	applyNaturalEffect	random	"[""3""]"	constant
+src/js/uhitm.ts	applyNaturalEffect	random	"[""4""]"	constant
+src/js/uhitm.ts	applyNaturalEffect	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	unproved
+src/js/uhitm.ts	curseNaturalTarget	random	"[""10""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	random	"[""3""]"	constant
 src/js/uhitm.ts	mhitmAdDrli	rollDice	"[""2"", ""6""]"	constant
-src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""10""]"	constant
-src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""10""]"	constant
-src/js/hero_natural_damage.ts	poisonNaturalTarget	random	"[""8""]"	constant
-src/js/hero_natural_damage.ts	resolveHeroNaturalDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
-src/js/hero_natural_damage.ts	sleepNaturalTarget	rollOne	"[""10""]"	constant
-src/js/hero_natural_damage.ts	summonDemonPet	random	"[""13""]"	constant
-src/js/hero_natural_damage.ts	summonDemonPet	random	"[""6""]"	constant
-src/js/hero_natural_grip.ts	monsterSlipsFromHeroGrip	random	"[""2""]"	constant
-src/js/hero_natural_grip.ts	monsterSlipsFromHeroGrip	random	"[""3""]"	constant
-src/js/hero_natural_grip.ts	wrapMonster	random	"[""10""]"	constant
-src/js/hero_natural_polymorph.ts	applyHeroNaturalPolymorph	random	"[""25""]"	constant
-src/js/hero_natural_sliming.ts	applyHeroNaturalSliming	random	"[""4""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	random	"[""25""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	unproved
-src/js/hero_object_contact.ts	resolveHeroObjectContact	rollDice	"[""2"", ""4""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""20""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""4""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""contact.damage""]"	unproved
-src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""range""]"	guarded
+src/js/uhitm.ts	poisonNaturalTarget	random	"[""10""]"	constant
+src/js/uhitm.ts	poisonNaturalTarget	random	"[""10""]"	constant
+src/js/uhitm.ts	poisonNaturalTarget	random	"[""8""]"	constant
+src/js/uhitm.ts	resolveHeroNaturalDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
+src/js/uhitm.ts	sleepNaturalTarget	rollOne	"[""10""]"	constant
+src/js/uhitm.ts	summonDemonPet	random	"[""13""]"	constant
+src/js/uhitm.ts	summonDemonPet	random	"[""6""]"	constant
+src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""2""]"	constant
+src/js/uhitm.ts	monsterSlipsFromHeroGrip	random	"[""3""]"	constant
+src/js/uhitm.ts	wrapMonster	random	"[""10""]"	constant
+src/js/uhitm.ts	applyHeroNaturalPolymorph	random	"[""25""]"	constant
+src/js/uhitm.ts	applyHeroNaturalSliming	random	"[""4""]"	constant
+src/js/uhitm.ts	resolveHeroObjectContact	random	"[""25""]"	constant
+src/js/uhitm.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	unproved
+src/js/uhitm.ts	resolveHeroObjectContact	rollDice	"[""2"", ""4""]"	constant
+src/js/uhitm.ts	resolveHeroObjectContact	rollOne	"[""20""]"	constant
+src/js/uhitm.ts	resolveHeroObjectContact	rollOne	"[""4""]"	constant
+src/js/uhitm.ts	resolveHeroObjectContact	rollOne	"[""contact.damage""]"	unproved
+src/js/uhitm.ts	resolveHeroObjectContact	rollOne	"[""range""]"	guarded
 src/js/hero_object_hit.ts	hitHeroWithObject	rollOne	"[""20""]"	constant
 src/js/hack.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
 src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
@@ -629,21 +629,21 @@ src/js/trap.ts	webTrapDuration	rn2	"[""4""]"	constant
 src/js/trap.ts	webTrapDuration	rn2	"[""6""]"	constant
 src/js/trap.ts	webTrapDuration	rn2	"[""6""]"	constant
 src/js/trap.ts	webTrapDuration	rnd	"[""2""]"	constant
-src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnd	"[""2""]"	constant
-src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnd	"[""damage ? 20 : 10""]"	constant
-src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnl	"[""4""]"	constant
-src/js/hero_weapon_contact.ts	prepareHeroWeaponContact	d	"[""2"", ""3""]"	constant
-src/js/hero_weapon_contact.ts	prepareHeroWeaponContact	rn2	"[""4""]"	constant
-src/js/hero_weapon_contact.ts	prepareHeroWeaponContact	rnd	"[""state.u.ulevel""]"	invariant
-src/js/hero_weapon_hit.ts	resolveHeroWeaponHit	rn2	"[""25""]"	constant
-src/js/hero_weapon_hit.ts	resolveHeroWeaponHit	rn2	"[""3""]"	constant
-src/js/hero_weapon_hit.ts	resolveHeroWeaponHit	rnd	"[""100""]"	constant
-src/js/hero_weapon_impact.ts	resolveHeroJoust	d	"[""2"", ""weapon === (state.uwep || state.u.uwep) ? 10 : 2""]"	constant
-src/js/hero_weapon_impact.ts	rollHeroJoust	rn2	"[""5""]"	constant
-src/js/hero_weapon_impact.ts	rollHeroJoust	rnl	"[""50""]"	constant
-src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""10""]"	constant
-src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""wearOffChance""]"	constant
-src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	rollOne	"[""6""]"	constant
+src/js/uhitm.ts	improvisedWeaponContact	rnd	"[""2""]"	constant
+src/js/uhitm.ts	improvisedWeaponContact	rnd	"[""damage ? 20 : 10""]"	constant
+src/js/uhitm.ts	improvisedWeaponContact	rnl	"[""4""]"	constant
+src/js/uhitm.ts	prepareHeroWeaponContact	d	"[""2"", ""3""]"	constant
+src/js/uhitm.ts	prepareHeroWeaponContact	rn2	"[""4""]"	constant
+src/js/uhitm.ts	prepareHeroWeaponContact	rnd	"[""state.u.ulevel""]"	invariant
+src/js/uhitm.ts	resolveHeroWeaponHit	rn2	"[""25""]"	constant
+src/js/uhitm.ts	resolveHeroWeaponHit	rn2	"[""3""]"	constant
+src/js/uhitm.ts	resolveHeroWeaponHit	rnd	"[""100""]"	constant
+src/js/uhitm.ts	resolveHeroJoust	d	"[""2"", ""weapon === (state.uwep || state.u.uwep) ? 10 : 2""]"	constant
+src/js/uhitm.ts	rollHeroJoust	rn2	"[""5""]"	constant
+src/js/uhitm.ts	rollHeroJoust	rnl	"[""50""]"	constant
+src/js/uhitm.ts	resolveHeroWeaponPoison	random	"[""10""]"	constant
+src/js/uhitm.ts	resolveHeroWeaponPoison	random	"[""wearOffChance""]"	constant
+src/js/uhitm.ts	resolveHeroWeaponPoison	rollOne	"[""6""]"	constant
 src/js/hack.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2""]"	unproved
 src/js/dig.ts	liquidForHole	random	"[""lava + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""moats + 1""]"	guarded

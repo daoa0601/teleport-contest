@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { NO_MINVENT, W_ARM, W_ARMG, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalTheft } from '../js/hero_natural_theft.js';
+import { applyHeroNaturalTheft } from '../js/uhitm.js';
 import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';

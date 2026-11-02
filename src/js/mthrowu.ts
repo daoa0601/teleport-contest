@@ -49,7 +49,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { captureHeroProjectileName } from './hero_physical_messages.js';
+import { captureHeroProjectileName } from './uhitm.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies } from './polyself.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';

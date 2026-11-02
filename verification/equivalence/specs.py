@@ -146,7 +146,7 @@ HACKLIB = 'js/hacklib.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
 JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
-            'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js')
+            'js/uhitm.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js')
 
 SPECS = [
     Spec('rn2', 'rn2', 'rn2', [('x', INT)], pre=lambda s: [s['x'] >= 1],
@@ -234,7 +234,7 @@ ATTRIB = 'js/attrib.js'
 EXPER = 'js/exper.js'
 CONST = 'js/const.js'
 WEAPON_DAMAGE = 'js/weapon.js'
-HIT_BONUS = 'js/hero_attack_accuracy.js'
+HIT_BONUS = 'js/uhitm.js'
 POLYSELF = 'js/polyself.js'
 HACK = 'js/hack.js'
 
