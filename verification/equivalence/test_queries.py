@@ -19,9 +19,10 @@ class LuckSplitTests(unittest.TestCase):
         # nonlinear query depending on the random seed and process memory
         # layout (CI failed twice before a solver retry and once, at seed
         # 10, through it). specs.luck_partitions fixes the luck-sum
-        # magnitude, which makes every divisor concrete and every split
-        # query linear integer arithmetic, decided deterministically. Sweep
-        # the seeds over the split queries whose unsplit form used to stall.
+        # magnitude, fixing the luck-dependent rn2 modulus. RND(x) still
+        # has symbolic modulus x, so the split queries remain nonlinear.
+        # Sweep 21 seeds over seven selected partitions as a regression
+        # check, without claiming stability for every partition or seed.
         spec = next(s for s in SPECS if s.name == 'rnl')
         recorder = prove.recorder_dir()
         front = prove.CFront(recorder, [recorder / 'src' / file for file in prove.C_FILES]

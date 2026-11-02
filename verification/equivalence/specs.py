@@ -115,11 +115,10 @@ def luck_partitions(front):
     Both luck fields are signed chars, so u.uluck + u.moreluck lies in
     [-256, 254] and every value has the magnitude of exactly one partition:
     k = |sum| with sum in {k, -k} (k = 0 allows only 0). Fixing the
-    magnitude makes every luck-dependent divisor concrete -- the rn2 draw
-    modulus 37 + abs(adjustment) and, for x <= 15, the (abs(sum) + 1) / 3
-    adjustment -- so each partition's obligations are linear integer
-    arithmetic that z3 decides deterministically instead of a nonlinear
-    query whose outcome depended on the solver's seed and memory layout.
+    magnitude fixes the rn2 modulus 37 + abs(adjustment) within each branch
+    for small or large x. RND(x) still has symbolic modulus x, so each
+    partition remains nonlinear. The split reduced solver instability in
+    measured runs; it does not guarantee a decision for every solver seed.
     """
     return [(f'luck sum magnitude {k}',
              lambda s, _k=k: [z3.Or(s['u.uluck'] + s['u.moreluck'] == _k,

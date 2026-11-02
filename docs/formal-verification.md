@@ -180,21 +180,24 @@ a two-configuration retry, while macOS proved the byte-identical propositions
 in about a second (a query dump confirmed the branch and the integration
 base construct identical `rnl` queries, so the port edits were not the
 cause). Retrying between incomplete configurations only moved the failing
-seed around, so the nondeterminism is removed instead: `specs.luck_partitions`
-splits the domain exhaustively by the magnitude of the luck sum (both fields
-are `schar`, so `u.uluck + u.moreluck` lies in [-256, 254] and every value
-belongs to exactly one of 257 magnitude partitions). Fixing the magnitude
-makes every luck-dependent divisor concrete, so each partition's obligations
-are linear integer arithmetic that z3 decides deterministically; the domain,
-outputs, stream positions and log entries are unchanged, and every partition
-must be satisfiable. The split claim takes 168.2 s over 257 partitions (each
-at most 13 C x 18 JS paths, most fewer), the probes and mutants still
-short-circuit on the first failing partition with concrete witnesses, and a
-regression test sweeps seeds 0 through 20 over the split queries whose
-unsplit form used to stall (magnitudes 0, 1, 2, 3, 4, 5 and 13), requiring
-every seed to prove; all 21 seeds passed with a worst sweep-set time of
-14.0 s, and the full claim also proves at seed 10. `queries.py` is back to
-a single default solver configuration.
+seed around, so `specs.luck_partitions` instead reduces the query complexity
+by splitting the domain exhaustively by the magnitude of the luck sum. Both
+fields are `schar`, so `u.uluck + u.moreluck` lies in [-256, 254] and every
+value belongs to exactly one of 257 magnitude partitions. Fixing the magnitude
+fixes the `rn2(37 + abs(adjustment))` modulus within each branch for small or
+large `x`. The initial `RND(x)` draw still has symbolic modulus `x` over
+`1..INT_MAX-256`, so the partition queries remain nonlinear. The split removes
+one symbolic divisor, without guaranteeing that z3 will decide every query.
+The domain, outputs, stream positions and log entries are unchanged, and
+every partition must be satisfiable. The split claim takes 168.2 s over 257
+partitions (each at most 13 C x 18 JS paths, most fewer). Probes and mutants
+still short-circuit on the first failing partition with concrete witnesses. A
+regression test sweeps seeds 0 through 20 over seven selected partitions
+(magnitudes 0, 1, 2, 3, 4, 5 and 13), requiring each sampled query to prove.
+All 21 seeds passed with a worst sweep-set time of 14.0 s, and the full claim
+also proves at seed 10. These runs provide stability evidence for the tested
+partitions and seeds, not a guarantee for all partitions or solver seeds.
+`queries.py` is back to a single default solver configuration.
 
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.

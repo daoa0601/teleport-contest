@@ -236,15 +236,18 @@ three failed before the corresponding verifier extensions. See
 
 The `rnl` claim splits its domain exhaustively by the magnitude of the luck
 sum (`u.uluck + u.moreluck`, both `schar`, so 257 magnitude partitions).
-Fixing the magnitude makes every luck-dependent divisor concrete -- the
-`rn2(37 + abs(adjustment))` draw modulus and, for `x <= 15`, the
-`(abs(luck) + 1) / 3` adjustment -- so every obligation is linear integer
-arithmetic that z3 decides deterministically. The unsplit query coupled the
-two symbolic divisors, and z3 proved or gave up on it depending on the
-random seed, term-construction order, or process memory layout: Linux CI
+Fixing the magnitude fixes the `rn2(37 + abs(adjustment))` modulus within
+each branch for small or large `x`. The initial `RND(x)` draw still uses
+symbolic `x` over `1..INT_MAX-256`, so the partition queries remain nonlinear.
+The split removes one symbolic divisor; it does not guarantee that z3 will
+decide every query. The unsplit query coupled the two symbolic divisors,
+and z3 proved or gave up on it depending on the random seed, term-construction
+order, or process memory layout: Linux CI
 timed it out at 120 seconds three times, including once through a two-stage
-solver retry. A regression test sweeps seeds 0 through 20 over the split
-queries whose unsplit form used to stall and requires every seed to prove.
+solver retry. A regression test sweeps seeds 0 through 20 over seven of the
+257 partitions (magnitudes 0, 1, 2, 3, 4, 5 and 13) and requires each sampled
+query to prove. Passing this sweep is evidence of stability for those
+partitions and seeds, not a guarantee for all partitions or solver seeds.
 
 The complete 41-claim run passed in 704.66 s, including all 45 domain probes
 and 49 mutant checks. It wrote the 41-row equivalence ledger only after the
