@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { SICK_NONVOMITABLE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { UNICORN_HORN } from '../js/object_data.js';
-import { useUnicornHorn } from '../js/unicorn_horn.js';
+import { useUnicornHorn } from '../js/apply.js';
 import {
     applyInventoryObject, runMonsterAbilityCommand,
 } from './support/commands.js';

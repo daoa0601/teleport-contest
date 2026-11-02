@@ -19,7 +19,7 @@ import { createCorpstatAt, mkcorpstat, mksobj, curseObjectState, addObjectToCont
 import { monsterCanCarryObject } from './mon.js';
 import { linkObjectToMonsterInventory } from './mkobj.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { releaseAllMonsterLeashes } from './leash_apply.js';
+import { releaseAllMonsterLeashes } from './apply.js';
 import { setMonsterGivenName } from './do_name.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, MONSTER_HAS_WEAPON_ATTACK } from './monster_data.js';

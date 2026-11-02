@@ -16,7 +16,7 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName, } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './leash_apply.js';
+import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject } from './invent.js';

@@ -49,7 +49,7 @@ import { objectResistsDestruction } from './zap.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroResistsStoning, resolveImmediatePetrification, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel } from './dungeon.js';

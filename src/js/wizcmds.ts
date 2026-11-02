@@ -91,7 +91,7 @@ import { rn2 } from './rng.js';
 import { makeBlinded } from './sight_change.js';
 import { setHeroSlimingTimeout } from './slime.js';
 import { setHeroPetrificationTimeout } from './stoning.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import type { PlayingGameState } from './game_state.js';
 import {

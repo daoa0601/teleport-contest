@@ -124,7 +124,8 @@ import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resolveMonsterGaze } from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
-import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './leash_apply.js';
+import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
+
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;

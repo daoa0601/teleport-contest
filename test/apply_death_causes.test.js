@@ -4,7 +4,7 @@ import { useBullwhip } from '../js/bullwhip.js';
 import { TT_BEARTRAP, W_WEP } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { jumpHero } from '../js/jumping.js';
+import { jumpHero } from '../js/apply.js';
 import { BULLWHIP, WAN_STRIKING } from '../js/object_data.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { breakWand } from '../js/apply.js';

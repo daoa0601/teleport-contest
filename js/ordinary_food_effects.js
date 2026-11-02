@@ -3,8 +3,8 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLightHeadedFeeling, heroStomachName } from './body_parts.js';
 import { nomul } from './hack.js';
-import { EXPL_FIERY, Is_airlevel, Is_waterlevel, MON_FLOOR, TIMEOUT } from './const.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { EXPL_FIERY, Is_airlevel, Is_waterlevel, MON_FLOOR, POISONING, TIMEOUT } from './const.js';
+import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { explode } from './explosion.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -25,9 +25,11 @@ import { makeMonsterFlee } from './monmove.js';
 import { APPLE, CARROT, CLOVE_OF_GARLIC, CRAM_RATION, EGG, EUCALYPTUS_LEAF, FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, OBJECT_NAMES, PEAR, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TRIPE_RATION, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { foodObjectName } from './objnam.js';
-import { heroIsPolymorphed } from './polyself.js';
+import { heroIsPolymorphed, heroIsUnchanging, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';
-import { eatRoyalJelly } from './royal_jelly.js';
+import { gainHeroStrength } from './attrib.js';
+import { finishHeroDeath } from './end.js';
+import { healHeroLegs } from './hero_legs.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
@@ -258,5 +260,56 @@ function engulfingAttackBlinds(state) {
     if (!swallower)
         throw new Error('An engulfed hero must have a swallowing monster.');
     return requireMonsterData(MONSTER_ATTACKS, swallower.mnum).some(([method, damage]) => method === AT_ENGL && damage === AD_BLND);
+}
+const PM_KILLER_BEE = 1;
+const PM_QUEEN_BEE = 5;
+// C eat.c:fpostfx(): the LUMP_OF_ROYAL_JELLY case.
+export async function eatRoyalJelly(jelly, { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    if (heroIsPolymorphed(state) && hero.umonnum === PM_KILLER_BEE
+        && !heroIsUnchanging(state)) {
+        const transformation = await polymonHero(PM_QUEEN_BEE);
+        if (transformation.transformed)
+            return { transformed: true, died: !!transformation.died };
+    }
+    await gainHeroStrength(jelly, 1, { state });
+    const hitPointChange = rnd(20) * (jelly.cursed ? -1 : 1);
+    state.context.botl = true;
+    if (heroIsPolymorphed(state)) {
+        hero.mh += hitPointChange;
+        if (hero.mh > hero.mhmax) {
+            if (rn2(17) === 0)
+                hero.mhmax++;
+            hero.mh = hero.mhmax;
+        }
+        else if (hero.mh <= 0) {
+            const restored = await returnHeroToHumanForm(state, { publish, die });
+            if (restored.died)
+                return { transformed: true, died: true };
+        }
+    }
+    else {
+        hero.uhp += hitPointChange;
+        if (hero.uhp > hero.uhpmax) {
+            if (rn2(17) === 0) {
+                hero.uhpmax++;
+                hero.uhppeak = Math.max(hero.uhppeak, hero.uhpmax);
+            }
+            hero.uhp = hero.uhpmax;
+        }
+        else if (hero.uhp <= 0) {
+            const died = await die({
+                killer: 'rotten lump of royal jelly',
+                deathType: POISONING,
+            });
+            return { transformed: false, died: !!died };
+        }
+    }
+    if (!jelly.cursed) {
+        await healHeroLegs(state, { publish });
+    }
+    return { transformed: false, died: false };
 }
 //# sourceMappingURL=ordinary_food_effects.js.map
