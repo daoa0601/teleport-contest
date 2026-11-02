@@ -16,7 +16,7 @@ import { W_ACCESSORY, W_ARMF, W_ARMOR, W_WEP } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { drainHeroEnergy } from './hero_energy.js';
 import {
     CLOAK_OF_MAGIC_RESISTANCE,
@@ -36,6 +36,7 @@ import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
 import { monsterName } from './do_name.js';
 import { ownedObjectName } from './objnam.js';
+import { loseHeroHp } from './hack.js';
 
 interface AntiMagicTrapPresentation {
     // The movement owner adds location and visibility after the immediate effect.

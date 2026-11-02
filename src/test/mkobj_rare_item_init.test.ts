@@ -7,9 +7,10 @@ import {
     STATUE, TIN,
 } from '../js/object_data.js';
 import { MONSTER_BODY_META, MONSTER_NAME } from '../js/monster_data.js';
-import { objectWeight } from '../js/weight.js';
+
 import { objectTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_HUMAN = MONSTER_NAME.indexOf('human');

@@ -38,7 +38,7 @@ import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { rndcurse } from './throne.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation } from './pline.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
@@ -69,6 +69,7 @@ import { dist2 } from './hacklib.js';
 import {
     monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
 } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 const M1_SEE_INVIS = 0x01000000;
 export const MCF_INDIRECT = 0x01;

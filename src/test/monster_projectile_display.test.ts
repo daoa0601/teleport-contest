@@ -14,11 +14,12 @@ import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/o
 import { makeBlinded } from '../js/sight_change.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 function screenCell(x: number, y: number) {
     const cell = requireGameDisplay(game).grid[y + 1]?.[x - 1];

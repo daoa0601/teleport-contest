@@ -16,12 +16,12 @@ import { objectClassForType } from '../o_init.js';
 import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../u_init.js';
-import { objectWeight } from '../weight.js';
 import { objectTypeForName } from './des.js';
 import { luaInteger } from './arguments.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
 import { deleteObject } from '../shk.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer } from '../timeout.js';
+import { objectWeight } from '../mkobj.js';
 class ObjectHandle extends LuaUserdata {
 }
 const LOCATIONS = {

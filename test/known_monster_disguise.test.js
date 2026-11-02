@@ -2,7 +2,6 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, NO_MINVENT, } from '../js/const.js';
-import { threateningMonsterNearby } from '../js/do.js';
 import { game } from '../js/gstate.js';
 import { nameToMonster } from '../js/mondata.js';
 import { MAP_SYMBOLS } from '../js/map_symbols.js';
@@ -14,6 +13,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { threateningMonsterNearby } from '../js/hack.js';
 for (const [appearance, label] of [[M_AP_FURNITURE, 'furniture'], [M_AP_OBJECT, 'object']]) {
     void test(`a known ${label} disguise does not block safe waiting`, async () => {
         freshPlayableRoom();

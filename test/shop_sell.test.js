@@ -4,7 +4,7 @@ import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { CORPSE, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, OBJECT_COST, OBJECT_NAMES, POT_FRUIT_JUICE, SACK, TIN, } from '../js/object_data.js';
 import { HUNGRY, WEAK } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
@@ -16,6 +16,7 @@ import { floorObject, knownObject, uninitializedObject, } from './support/game-o
 import { placeCreatedObject } from '../js/floor_object.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 function monsterLevel(species) {

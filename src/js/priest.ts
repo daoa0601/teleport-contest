@@ -31,13 +31,13 @@ import {
     ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL,
     In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
-import { roomForRoomno, roomsAt } from './room.js';
+
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
-import { checkSpecialRoom, shopkeeperInOwnShop } from './shk.js';
+import { shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsDisplaced } from './do_wear.js';
 
@@ -56,6 +56,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
 import { SPBOOK_no_NOVEL, xdir, ydir } from './mklev.js';
+import { roomForRoomno, roomsAt, checkSpecialRoom } from './hack.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;

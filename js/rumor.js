@@ -5,7 +5,6 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { getRumor } from './mklev.js';
 import { heroIsBlind } from './senses.js';
-import { heroGoldAmount } from './hero_gold.js';
 import { moneyToMonster } from './shk.js';
 import { currency } from './currency.js';
 import { monsterName } from './do_name.js';
@@ -18,6 +17,7 @@ import { BOGUS_MONSTERS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, TRUE_
 import { showTextWindow } from './windows.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { ORACLE_TEXT } from './oracle_data.js';
+import { heroGoldAmount } from './hack.js';
 // C rumors.c:doconsult(). Refusals are free; payment commits a turn even
 // when the hero can afford only the deliberately unhelpful major oracle.
 export async function consultOracle(oracle, state = game) {

@@ -3,13 +3,14 @@ import test from 'node:test';
 import { MENU_TRADITIONAL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, SACK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 import { createStaffedShop } from './support/shop.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('traditional payment buys a single item after its yes-or-no question', async (t) => {
     await freshObjectRoom();

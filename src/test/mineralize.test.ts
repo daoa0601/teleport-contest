@@ -11,11 +11,12 @@ import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { GOLD_PIECE, KELP_FROND, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { objectWeight } from '../js/weight.js';
+
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startLuaCore } from './support/lua-game.js';
+import { objectWeight } from '../js/mkobj.js';
 
 const GEM_CLASS = 13;
 

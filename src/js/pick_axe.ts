@@ -35,7 +35,7 @@ import { fireDamageObject } from './fire_damage.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { diggingTarget, startHeroDigging } from './dig.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
@@ -43,7 +43,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './m
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_NAMES, STATUE } from './object_data.js';
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
-import { roomsAt, roomForRoomno } from './room.js';
+
 import { d, rn2, rnd } from './rng.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { confusePromptDirection } from './tty_prompts.js';
@@ -58,6 +58,7 @@ import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { monsterName } from './do_name.js';
+import { loseHeroHp, roomsAt, roomForRoomno } from './hack.js';
 
 export interface PickAxeDirection {
     dx: number;

@@ -6,9 +6,9 @@ import { generateMinetown } from '../js/mkmaze.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, TALLOW_CANDLE, WAX_CANDLE, } from '../js/object_data.js';
 import { roles } from '../js/roles.js';
-import { roomForRoomno } from '../js/room.js';
 import { countTerrain, floorObjects, levelStairs, } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
+import { roomForRoomno } from '../js/hack.js';
 async function buildMinetown(variant) {
     const active = freshSpecialLevel({
         prototype: 'minetn', variant, seed: variant * 131, depth: 6,

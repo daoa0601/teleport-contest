@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PANICLOG, PIT, POOL, STONE, W_AMUL, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
@@ -19,6 +18,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { loseHeroHp } from '../js/hack.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function engulfRoom(attackerSpecies = 'fog cloud', defenderSpecies = 'orc') {
     const level = await freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true },

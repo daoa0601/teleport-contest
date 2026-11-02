@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { punishHero } from '../js/punishment.js';
-import { moveObject } from '../js/floor_object.js';
+
 import { rhack } from '../js/cmd.js';
 import { DB_DIR, DB_EAST, DB_WEST, DRAWBRIDGE_DOWN, MM_ANGRY, MM_NOTAIL, NO_MINVENT, PIT, LEVEL_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -17,6 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 import { assertWormBody } from './support/worms.js';
+import { moveObject } from '../js/hack.js';
 
 void test('#wizfliplevel reflects the active level and its position-dependent effects', async t => {
     // C get_level_extends() expands this room to x=7..15, y=7..13.

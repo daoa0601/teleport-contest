@@ -16,9 +16,10 @@ import { courtMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
-import { objectWeight } from './weight.js';
+
 import { rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
+import { objectWeight } from './mkobj.js';
 
 export async function reverseLoot(): Promise<boolean> {
     if (!rn2(3)) {

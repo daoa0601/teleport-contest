@@ -35,7 +35,7 @@ import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { makePlural, verbForSubject } from './objnam.js';
 
-import { loseHeroHp } from './hero_damage.js';
+
 import { cureHeroSickness } from './hero_illness.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -66,6 +66,7 @@ import { setSlipperyHands } from './potion.js';
 import { cansee } from './vision.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './wizard.js';
+import { loseHeroHp } from './hack.js';
 
 const COIN_CLASS = 12;
 const M2_PRINCE = 0x00000800;

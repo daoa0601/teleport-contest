@@ -15,7 +15,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { finishHeroDeath } from './end.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
@@ -43,6 +43,7 @@ import {
     updateUnpaidObjectPrice,
 } from './shk.js';
 import { isWeldedPrimary } from './wield.js';
+import { loseHeroHp } from './hack.js';
 
 export interface RechargeResult { heroDied: boolean; damage?: number }
 export interface RingRechargeResult extends RechargeResult { damage: number }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE, POT_HEALING, SACK } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
@@ -10,6 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 for (const loan of [10, 25]) {
     void test(`paying a 25-zorkmid debt describes its ${loan}-zorkmid gold loan`, async () => {

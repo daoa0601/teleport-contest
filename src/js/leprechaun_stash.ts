@@ -6,10 +6,11 @@ import { MONSTER_NAME } from './monster_data.js';
 import { dropMonsterObject } from './steal.js';
 import { GOLD_PIECE } from './object_data.js';
 import { rn2 } from './rng.js';
-import { roomsAt } from './room.js';
+
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
+import { roomsAt } from './hack.js';
 
 // C monmove.c:leppie_stash().
 export async function stashLeprechaunGold(monster: Monster, state: GameState = game,

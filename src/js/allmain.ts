@@ -60,7 +60,7 @@ import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { dosounds, sessionIsNight } from './ambient_sounds.js';
 import { warnWithMasterKey, applyArtifactHit } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
-import { overexertHeroHp } from './hero_overexertion.js';
+
 import { ceilingName } from './terrain_name.js';
 
 import { consumeMonsterItem } from './mthrowu.js';
@@ -123,7 +123,7 @@ import { makemonAt, finishMonsterGrowth } from './makemon.js';
 import { continueCountedCommand, getLine, promptYesNo, rhack } from './cmd.js';
 import { finishArmorRemoval } from './do_wear.js';
 import { clearRepeatCommand } from './cmd.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
 import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './quest.js';
 import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
@@ -133,7 +133,7 @@ import {
 } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { rndcurse } from './throne.js';
-import { stopRun, captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
+
 import {
     resolveMonsterGaze, completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage,
     resolveMonsterSelfExplosion,
@@ -184,7 +184,7 @@ import { clearHeroSliming } from './slime.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
-import { nearCapacity } from './weight.js';
+
 import { runLevelRegions } from './regions.js';
 import { invault, moveVaultGuard } from './vault.js';
 import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js';
@@ -192,7 +192,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
 import { monsterAlignmentType } from './priest.js';
 import { moveElementalBubbles } from './elemental.js';
-import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, fixShopDamage } from './shk.js';
+import { removeObjectAndContentsFromBill, currentShopResident, fixShopDamage } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import {
     hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty,
@@ -202,6 +202,15 @@ import { heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
 
 import { nhTimeout } from './timeout.js';
 import type { MonsterGrowth } from './makemon.js';
+import {
+    overexertHeroHp,
+    finishDestinationSpotEffects,
+    stopRun,
+    captureRunmodeDelay,
+    isTeleportRunmode,
+    nearCapacity,
+    checkSpecialRoom,
+} from './hack.js';
 
 interface TurnMaintenance {
     sourceTurn: number;

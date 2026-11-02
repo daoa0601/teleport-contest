@@ -10,7 +10,6 @@ import { flush_screen } from '../js/display.js';
 import { moreUntilDismissed } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { containerContents } from '../js/end.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
 import { LEASH, POT_HEALING, SACK, TIN, TIN_OPENER } from '../js/object_data.js';
@@ -24,6 +23,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
+import { loseHeroHp } from '../js/hack.js';
 function visibleText() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }

@@ -7,7 +7,6 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
 import { FOOD_RATION } from '../js/object_data.js';
-import { updateHeroRoomMembership } from '../js/room.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -15,6 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { requireScreenRow, screenText } from './support/screen.js';
 import { createRoom } from './support/topology.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 // The tty draws a line when the next message pages it behind --More--.
 function drawnTopline() {
     return requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();

@@ -61,7 +61,7 @@ import {
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks } from './hack.js';
 import { depth, dist2, possessiveName, upstart } from './hacklib.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { expelHero } from './hero_expulsion.js';
 import { freeInventoryObject } from './hero_inventory.js';
@@ -72,7 +72,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { clearHeroTrap, setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
 import { objectMaterial } from './o_init.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, deleteFloorTrap, maketrap, stairwayAt } from './mklev.js';
@@ -108,7 +108,7 @@ import { autopickupAtHero } from './pickup.js';
 import { connectPits, pitsAreConjoined } from './pit_connections.js';
 import { angerTemplePriest } from './priest.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { inTown, roomsAt } from './room.js';
+
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
     addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper,
@@ -118,7 +118,7 @@ import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
@@ -148,6 +148,13 @@ import { displayMessageWindow } from './tty_topline.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import {
+    loseHeroHp,
+    finishDestinationSpotEffects,
+    inTown,
+    roomsAt,
+    switchHeroTerrain,
+} from './hack.js';
 
 // ---------------------------------------------------------------------------
 // Hero pick-axe/axe digging occupation (hero_digging)

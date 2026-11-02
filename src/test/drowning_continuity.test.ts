@@ -9,11 +9,12 @@ import { hurtleHero } from '../js/hero_hurtle.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
-import { startRun } from '../js/runmode.js';
+
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { promptDirection } from '../js/tty_prompts.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { startRun } from '../js/cmd.js';
 
 void test('swimming within a pool checks inventory only on the one-in-five water roll', async () => {
     let wet = 0;

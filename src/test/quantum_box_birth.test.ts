@@ -6,9 +6,10 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, LARGE_BOX } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
+
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 
 void test('a quantum mechanic carries a sealed box owning a correctly weighted, undecayed cat', async () => {
     await freshObjectRoom();

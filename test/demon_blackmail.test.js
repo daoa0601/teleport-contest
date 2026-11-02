@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
@@ -16,6 +16,7 @@ import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 void test('a peaceful invisible demon prince reveals itself and attacks a penniless hero', async () => {
     await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);

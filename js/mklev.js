@@ -27,7 +27,7 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { nextIdent } from './ident.js';
 import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
-import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
@@ -54,7 +54,6 @@ import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from '.
 import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setupElementalBubbles } from './elemental.js';
-import { insideRoom, roomsAt } from './room.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
 import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey, somexyspace, } from './mkroom.js';
 import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification, } from './mkmaze.js';
@@ -63,7 +62,6 @@ import { makeroguerooms, makerogueghost } from './extralev.js';
 import { restoreLevelRegions } from './regions.js';
 import { beginObjectBurn } from './light.js';
 import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
-import { objectWeight } from './weight.js';
 import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
@@ -72,6 +70,9 @@ import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, } from './sp_lev.js';
 import { beginLuaThemerooms, callLuaThemerooms, generateLuaSpecialLevel, themerooms_generate } from './sp_lev_lua.js';
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
+import { switchHeroTerrain, roomsAt } from './hack.js';
+import { insideRoom } from './mkroom.js';
+import { objectWeight } from './mkobj.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.

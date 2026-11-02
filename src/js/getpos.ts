@@ -11,7 +11,7 @@ import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, terrain_glyph 
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { readcharPoskey, takeCommandPosition } from './input.js';
-import { currentLuaLifecycle } from './lua/lifecycle.js';
+
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -120,17 +120,6 @@ export function moveGetposCursor(cursor: Position, dx: number, dy: number): void
     cursor.y += dy;
 }
 
-export function shouldShowGetposTip(state = game) {
-    return state.flags?.tips !== false && !state._travelTipShown;
-}
-
-// C hack.c:handle_tip(). Dismissing the tip does not cancel map selection.
-export async function showGetposTip(state = game) {
-    if (!shouldShowGetposTip(state)) return false;
-    state._travelTipShown = true;
-    await currentLuaLifecycle().callCore(state, 'getpos_tip');
-    return true;
-}
 
 // getpos() prints a separate pline; tty decides whether it fits after the caller's message.
 export async function showGetposInstructions(state: GameState = game): Promise<void> {

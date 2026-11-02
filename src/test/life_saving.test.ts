@@ -10,7 +10,7 @@ import { A_CON, LAVAPOOL, NO_MINVENT, POOL } from '../js/const.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER } from '../js/object_data.js';
 import { changeMonsterForm } from '../js/mon.js';
@@ -24,6 +24,7 @@ import { createStaffedShop } from './support/shop.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { loseHeroHp } from '../js/hack.js';
 
 void test('life saving consumes the worn amulet and restores the hero', async () => {
     await freshObjectRoom();

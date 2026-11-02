@@ -6,11 +6,11 @@ import { CORPSE } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { objectWeight } from '../js/mkobj.js';
 void test('a dead human leaves a correctly weighted corpse with a decay timer', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

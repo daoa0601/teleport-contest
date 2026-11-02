@@ -23,11 +23,13 @@ import {
     GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK,
 } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
-import { nearCapacity, objectWeight } from '../js/weight.js';
+
 import { stopHeroOccupation } from '../js/occupation.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 
 
 async function freshGlobState(seed = 1) {

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import type { GameMap } from '../js/game.js';
 import type { Monster } from '../js/monster_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -16,6 +16,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom, type ObjectRoomOptions } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 // C minion.c:demon_talk()/bribe(). A peaceful demon beside the hero with
 // mux/muy on the hero runs the whole payment conversation.

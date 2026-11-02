@@ -3,13 +3,14 @@ import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { checkHeroAttackOverexertion } from '../js/hero_overexertion.js';
+
 import { BOULDER } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { checkHeroAttackOverexertion, nearCapacity } from '../js/hack.js';
 
 for (const polymorphed of [false, true]) {
     void test(`attack exertion displays the reduced ${polymorphed ? 'monster-form' : 'human'} HP`, async () => {

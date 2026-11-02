@@ -11,7 +11,6 @@ import { placeMonsterAt } from '../js/steed.js';
 import { selectMonsterOffensiveItem } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
-import { updateHeroRoomMembership } from '../js/room.js';
 import { applyPotionEffect } from '../js/potion.js';
 import { dopray } from '../js/pray.js';
 import { makeBlinded } from '../js/sight_change.js';
@@ -22,6 +21,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createRoom, createSpecialLevel } from './support/topology.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 const MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 async function offensiveRoom({ species = 'orc', x = 14, y = 10 } = {}) {
     const level = await freshObjectRoom({ left: 2, right: 35, top: 2, bottom: 18 });

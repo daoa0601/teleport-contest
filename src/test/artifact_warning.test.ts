@@ -46,10 +46,11 @@ import {
 } from './support/commands.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { nearCapacity } from '../js/hack.js';
 
 async function warningRoom(options = {}) {
     await freshObjectRoom(options);

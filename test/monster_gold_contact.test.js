@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_QUIVER } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGoldAmount, heroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { AD_SGLD, AD_SSEX, AT_CLAW, AT_BITE } from '../js/monster_attack_types.js';
 import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { GOLD_PIECE } from '../js/object_data.js';
@@ -11,6 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { resetInputState } from '../js/input.js';
 import { setQuiverObject } from '../js/wield.js';
+import { heroGoldAmount } from '../js/hack.js';
 void test('a leprechaun steals a small purse, keeps the gold, and flees without cancelling claw damage', async () => {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

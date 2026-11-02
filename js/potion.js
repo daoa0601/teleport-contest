@@ -33,7 +33,6 @@ import { fruitName } from './fruit.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth, dist2, ledgerNo, possessiveName } from './hacklib.js';
-import { loseHeroHp } from './hero_damage.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { healHero } from './hero_healing.js';
 import { makeDeaf } from './hero_hearing.js';
@@ -101,13 +100,13 @@ import { waterDamageObject, erodeObject, objectIsVulnerableToErosion } from './t
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { cansee } from './vision.js';
-import { nearCapacity } from './weight.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { polymorphMonsterFromMagic, obj_unpolyable, poly_obj } from './zap.js';
+import { loseHeroHp, nearCapacity } from './hack.js';
 // ---- ghost_from_bottle() and the dopotion() occupant check (C potion.c:481, 617-644) ----
 const PM_GHOST = MONSTER_NAME.indexOf('ghost');
 const PM_DJINNI = MONSTER_NAME.indexOf('djinni');

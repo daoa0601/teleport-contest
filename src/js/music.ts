@@ -13,7 +13,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { zapHeroWithObject } from './hero_self_zap.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
@@ -49,6 +49,7 @@ import { zapRayWithObject, monsterResistsEffect } from './zap.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { tameMonster } from './dog.js';
+import { loseHeroHp } from './hack.js';
 
 export type InstrumentOptions = NonNullable<Parameters<typeof playTune>[2]>;
 type InstrumentEffectResult = { heroDied: boolean } | void;

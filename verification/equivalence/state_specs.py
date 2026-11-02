@@ -24,7 +24,7 @@ STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
-    'js/dungeon.js', 'js/mon.js', 'js/monmove.js', 'js/weight.js',
+    'js/dungeon.js', 'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
 )
 
@@ -267,14 +267,14 @@ RESTORED_PROPERTIES = ('u.uprops[LEVITATION].extrinsic', 'u.uprops[LEVITATION].b
 
 STATE_SPECS += [
     Spec('weight_cap:state', 'weight_cap', 'weightCapacity', [],
-         js_file='js/weight.js', js_args=[('obj', 'game')],
+         js_file='js/hack.js', js_args=[('obj', 'game')],
          state=HERO + CAPACITY_STATE, references=WORN, configure=capacity_state,
          pre=capacity_domain, assumptions=CAPACITY_ASSUMPTIONS,
          dependencies=('acurr:all',), restored_state=RESTORED_PROPERTIES, result_range=(1, 1000), partitions=whole_domain,
          require_counterexamples=True,
          probes=[('summarized Strength correspondence omitted', UnrelatedState(
              capacity_domain, ('capacity-strength',)))],
-         mutants=[('js/weight.js', 'capacity -= 200;', 'capacity -= 100;')]),
+         mutants=[('js/hack.js', 'capacity -= 200;', 'capacity -= 100;')]),
 ]
 
 INVENTORY_FIELDS = [(f'invent[{i}].{field}', declared, None)
@@ -294,7 +294,7 @@ def inventory_domain(s):
 
 
 STATE_SPECS += [
-    Spec(name, native, port, params, js_file='js/weight.js',
+    Spec(name, native, port, params, js_file='js/hack.js',
          arguments=capacity_arguments,
          state=HERO + CAPACITY_STATE + [('chain', INT, None)] + INVENTORY_FIELDS,
          references=WORN, configure=inventory_state,
@@ -309,7 +309,7 @@ STATE_SPECS += [
          partitions=inventory_partitions, require_counterexamples=True,
          probes=[('native cache correspondence omitted', UnrelatedState(
              inventory_domain, ('inventory-cache',)))],
-         mutants=[('js/weight.js', old, new)])
+         mutants=[('js/hack.js', old, new)])
     for name, native, port, params, old, new in (
         ('inv_weight:chain4', 'inv_weight', 'invWeight', [],
          '(quantity(object) + 50) / 100);', '(quantity(object) + 49) / 100);'),

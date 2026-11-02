@@ -26,7 +26,8 @@ import {
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
+
 
 const STRANGE_OBJECT = 0;
 const ATHAME = OBJECT_NAMES.indexOf('athame');

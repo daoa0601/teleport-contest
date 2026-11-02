@@ -22,7 +22,7 @@ import { exerciseWisdom, currentAttribute, exerciseAttribute } from './attrib.js
 import { heroHeadName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
@@ -39,10 +39,7 @@ import {
 } from './display.js';
 import { monsterName } from './do_name.js';
 import { explode } from './explosion.js';
-import {
-    prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions,
-    showGetposTip,
-} from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero } from './hero_healing.js';
 import { heroIsSick } from './hero_illness.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
@@ -74,7 +71,7 @@ import {
 } from './tty_menu.js';
 import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { cansee } from './vision.js';
-import { exceedsActionCapacity, objectWeight } from './weight.js';
+
 import { showInventoryWindow } from './windows.js';
 import { hitMonsterWithRay, adjustSpellDamage } from './zap.js';
 import { heroHasFreeHand } from './engrave.js';
@@ -96,6 +93,13 @@ import {
     SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH,
     SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK,
 } from './object_data.js';
+import {
+    loseHeroHp,
+    shouldShowGetposTip,
+    showGetposTip,
+    exceedsActionCapacity,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 export function knownSpell(otyp: number, state: GameState = game): 'unknown' | 'fresh' | 'stale' | 'forgotten' {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);

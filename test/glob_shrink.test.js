@@ -16,11 +16,12 @@ import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { shipObject } from '../js/dokick.js';
 import { GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK, } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
-import { nearCapacity, objectWeight } from '../js/weight.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 async function freshGlobState(seed = 1) {
     await freshObjectRoom({
         left: 8, right: 16, top: 7, bottom: 13,

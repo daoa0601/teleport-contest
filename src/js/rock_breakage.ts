@@ -27,7 +27,8 @@ import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
+
 
 const GEM_CLASS = 13;
 

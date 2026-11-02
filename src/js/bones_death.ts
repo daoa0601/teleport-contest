@@ -35,7 +35,8 @@ import { objectNoLongerHeldSynchronously } from './do.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { unpunishHero } from './punishment.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
+
 
 const PM_HUMAN = 260;
 const PM_GHOST = 287;

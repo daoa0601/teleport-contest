@@ -7,12 +7,12 @@ import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
-import { HVY_ENCUMBER, MOD_ENCUMBER, nearCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
+import { HVY_ENCUMBER, MOD_ENCUMBER, nearCapacity } from '../js/hack.js';
 void test('hunger-induced burden pages the faint before monsters move after wizard teleport', async () => {
     await freshObjectRoom({
         flags: { debug: true, tips: false, pickup: false, verbose: false },

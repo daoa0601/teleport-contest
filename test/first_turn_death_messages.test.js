@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { flush_screen } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { damageHeroFromMonster } from '../js/hero_damage.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -11,6 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
+import { damageHeroFromMonster } from '../js/mhitu.js';
 for (const moves of [1, 2]) {
     void test(`death on turn ${moves} ${moves === 1 ? 'includes' : 'omits'} the early-death farewell`, async () => {
         await freshObjectRoom({ moves, flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });

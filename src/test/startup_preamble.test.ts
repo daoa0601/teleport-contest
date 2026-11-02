@@ -9,7 +9,7 @@ import { removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
 import { DUST } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { propertyIsActive } from '../js/properties.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import type { RoleKey } from '../js/roles.js';
@@ -25,6 +25,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createRoomLevel, freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { completeHeroStartup } from './support/startup.js';
+import { nearCapacity } from '../js/hack.js';
 
 function preambleInput() {
     game.context ||= { move: 0, nopick: false };

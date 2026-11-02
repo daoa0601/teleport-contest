@@ -26,7 +26,7 @@ import { objectClassForType } from '../o_init.js';
 import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../u_init.js';
-import { objectWeight } from '../weight.js';
+
 import { objectTypeForName } from './des.js';
 import { luaInteger } from './arguments.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
@@ -35,6 +35,7 @@ import type { GameState } from '../game_state.js';
 import type { GameObject } from '../object_types.js';
 import { deleteObject } from '../shk.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer } from '../timeout.js';
+import { objectWeight } from '../mkobj.js';
 
 export interface ObjectApi {
     toAbsolute(x: number, y: number): { x: number; y: number };

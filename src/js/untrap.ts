@@ -5,7 +5,7 @@ import { trapName, deleteTrap, convertTrapToObject, trapAt } from './trap.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { vision_note_blocker_change } from './vision.js';
-import { roomsAt } from './room.js';
+
 import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -41,7 +41,7 @@ import { blocksDiagonalDoor, blocksMove, heroBadRock } from './hack.js';
 import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { checkHeroLeashes } from './apply.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
 import { vision_recalc } from './vision.js';
 import { consumeObjectCharge } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
@@ -80,9 +80,7 @@ import {
     resolveImmediatePetrification, touchPetrifies,
 } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
-import {
-    EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight,
-} from './weight.js';
+
 import { isBlade } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
 import { cansee } from './vision.js';
@@ -92,6 +90,16 @@ import {
 } from './objnam.js';
 
 import { monsterName as canonicalMonsterName } from './do_name.js';
+import {
+    roomsAt,
+    finishDestinationSpotEffects,
+    EXT_ENCUMBER,
+    HVY_ENCUMBER,
+    calcCapacity,
+    inventoryWeight,
+    nearCapacity,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 
 const POTION_CLASS = 8;

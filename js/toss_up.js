@@ -8,7 +8,6 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterHatesBlessings } from './monster_data.js';
@@ -28,6 +27,7 @@ import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './s
 import { ceilingName } from './terrain_name.js';
 import { levelHasCeiling } from './dungeon.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { loseHeroHp } from './hack.js';
 const POTION_CLASS = 8;
 const RING_CLASS = 4;
 const SILVER = 14;

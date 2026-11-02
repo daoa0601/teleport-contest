@@ -1,5 +1,4 @@
 import { setHeroGrip } from './hero_grip.js';
-import { heroLocomotion } from './hero_locomotion.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
@@ -16,7 +15,6 @@ import { restoreLevelTimers } from './timeout.js';
 import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory, restoreObjectPetHistory } from './save.js';
 import { restoreLevelLightSources } from './light.js';
-import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { flushPendingTopline } from './tty_topline.js';
@@ -41,7 +39,6 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './mon.js';
 import { killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
@@ -49,12 +46,11 @@ import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
 import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
-import { nearCapacity } from './weight.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
 import { heroHasOlfaction } from './polyself.js';
-import { checkSpecialRoom, setShopResidency, fixShopDamage } from './shk.js';
+import { setShopResidency, fixShopDamage } from './shk.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './mkmaze.js';
 import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
@@ -65,6 +61,7 @@ import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster } from './dog.js';
 import { collectLevelFollowers } from './dog.js';
+import { heroLocomotion, loseHeroHp, switchHeroTerrain, nearCapacity, checkSpecialRoom, } from './hack.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
 export function scheduleLevelChange(args, changeLevel = gotoLevel, preMessage = '') {

@@ -11,10 +11,10 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 TARGETS = ['weight', 'inv_weight', 'calc_capacity', 'near_capacity', 'dmgval', 'find_roll_to_hit']
 LOCATIONS = [
-    ('mkobj.c:weight', 'weight.js:objectWeight'),
-    ('hack.c:inv_weight', 'weight.js:invWeight'),
-    ('hack.c:calc_capacity', 'weight.js:calcCapacity'),
-    ('hack.c:near_capacity', 'weight.js:nearCapacity'),
+    ('mkobj.c:weight', 'mkobj.js:objectWeight'),
+    ('hack.c:inv_weight', 'hack.js:invWeight'),
+    ('hack.c:calc_capacity', 'hack.js:calcCapacity'),
+    ('hack.c:near_capacity', 'hack.js:nearCapacity'),
     ('weapon.c:dmgval', 'weapon.js:rollPhysicalWeaponDamage'),
     ('uhitm.c:find_roll_to_hit', 'hero_attack_accuracy.js:findHeroMeleeHitThreshold'),
 ]

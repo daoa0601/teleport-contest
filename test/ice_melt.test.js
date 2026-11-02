@@ -6,7 +6,6 @@ import { buryObject } from '../js/dig.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
 import { meltIce } from '../js/ice.js';
 import { pushKeys } from '../js/input.js';
 import { BEARTRAP, BELL_OF_OPENING, BOULDER, GOLD_PIECE } from '../js/object_data.js';
@@ -18,6 +17,7 @@ import { applyRayFloorFeatures } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 async function iceBridge() {
     await freshObjectRoom();
     requireFixtureGame(game);

@@ -23,7 +23,7 @@ import {
 } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addFruit } from '../js/fruit.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import {
     addInventoryObject, floorArtifact, floorObject,
 } from './support/game-objects.js';
@@ -31,6 +31,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('sitting on a corpse describes the seat before its discomfort', async () => {
     freshGameplayRoom();

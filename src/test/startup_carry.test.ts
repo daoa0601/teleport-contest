@@ -21,12 +21,12 @@ import { races, roles } from '../js/roles.js';
 import {
     uInitCarryAttrBoost, uInitInventoryAttrs,
 } from '../js/u_init.js';
-import {
-    inventoryWeight, invWeight, objectWeight, weightCapacity,
-} from '../js/weight.js';
+
 import { freshGame } from './support/game-state.js';
 import { prepareHeroStartup } from './support/startup.js';
 import { initRng } from '../js/rng.js';
+import { inventoryWeight, invWeight, weightCapacity } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 
 test.beforeEach(() => {
     freshGame();

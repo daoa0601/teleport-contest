@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { FLINT } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
@@ -10,6 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { planInput } from './support/planned-input.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 void test('an unidentified mineral stone receives the ordinary gem-class sale price', async (t) => {
     await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();

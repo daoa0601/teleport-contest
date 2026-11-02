@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
@@ -13,6 +13,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 async function briber({ gold, hero, hell, demonSetup, } = {}) {
     const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, ...hero } });
     if (hell)

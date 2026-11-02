@@ -10,10 +10,11 @@ import { resetGame, requirePlayingGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
 import { races, roles } from '../../js/roles.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
-import { initializeHeroRoomMembership } from '../../js/room.js';
+
 import { initializeMonsterVitals } from '../../js/allmain.js';
 import { initializeFruitRegistry } from '../../js/fruit.js';
 import { DEFAULT_TEST_DATETIME } from './calendar.js';
+import { initializeHeroRoomMembership } from '../../js/u_init.js';
 
 export interface FixtureGameState extends PlayingGameState {
     mvitals: MonsterVital[];

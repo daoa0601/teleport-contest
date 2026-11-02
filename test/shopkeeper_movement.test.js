@@ -12,12 +12,13 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { destroyObjectFromMonsterInventory } from '../js/monworn.js';
 import { DAGGER, PICK_AXE } from '../js/object_data.js';
-import { addShopObjectToBill, checkSpecialRoom } from '../js/shk.js';
+import { addShopObjectToBill } from '../js/shk.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
+import { checkSpecialRoom } from '../js/hack.js';
 void test('a keeper at home blocks a pick-carrying hero at the shop door', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

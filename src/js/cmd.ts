@@ -129,9 +129,7 @@ import { doattributes, doconduct } from './insight.js';
 import { displayHelpFile } from './pager.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
-import {
-    continueWipingFace, donull, dowipe, threateningMonsterNearby,
-} from './do.js';
+import { continueWipingFace, donull, dowipe } from './do.js';
 
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
@@ -145,7 +143,7 @@ import { autopickupAtHero } from './pickup.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 
 import { dosave } from './save.js';
-import { arriveTravel, captureRunmodeDelay, startRun, startWalkRepeat, stopRun } from './runmode.js';
+
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { doride, stuckSteed } from './steed.js';
 import { continueForceLock, doforce } from './lock.js';
@@ -155,7 +153,7 @@ import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, triggerHeroTrapAt } from './hero_traps.js';
 
 import { ledgerNo } from './hacklib.js';
-import { nearCapacity, SLT_ENCUMBER } from './weight.js';
+
 import { dopray, dosacrifice } from './pray.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
@@ -170,11 +168,20 @@ import {
     doenhance,
 } from './skills.js';
 import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
-import { showGetposTip, showGetposInstructions, selectMapPosition } from './getpos.js';
+import { showGetposInstructions, selectMapPosition } from './getpos.js';
 import { performPetRangedAttack } from './dogmove.js';
 import { dokick } from './dokick.js';
 import { bringLeashedFollowers } from './apply.js';
 import { COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, isok } from './const.js';
+import {
+    threateningMonsterNearby,
+    arriveTravel,
+    captureRunmodeDelay,
+    stopRun,
+    nearCapacity,
+    SLT_ENCUMBER,
+    showGetposTip,
+} from './hack.js';
 
 // Direction deltas: y u k
 //                   h . l
@@ -1929,6 +1936,30 @@ export function commandResultSpentTime(state: GameState = game): void {
     state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_TIME;
 }
 
+// C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
+export function startRun(dx: number, dy: number, g: GameState = game, mode: DirectionalRunMode = 1): DirectionalRunState {
+    g._runState = {
+        dx, dy,
+        mode,
+    };
+    g.lastStrTurn = 0;
+    // C's DOMOVE_RUSH dispatch grants the movement ration whenever the
+    // repeat begins, regardless of the surviving context.run value.
+    if (!g.multi) g.multi = Math.max(COLNO, ROWNO);
+    g.context.run = mode;
+    g.context.mv = true;
+    return g._runState;
+}
+
+// C rhack()'s DOMOVE_WALK dispatch (cmd.c:3785-3788): a counted direction
+// only marks the repeat active.  context.run keeps whatever value an
+// earlier rush or travel left behind, as does the last corridor turn.
+// No movement ration is granted.
+export function startWalkRepeat(dx: number, dy: number, g: GameState = game): DirectionalRunState {
+    g._runState = { dx, dy, mode: 0 };
+    g.context.mv = true;
+    return g._runState;
+}
 // C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
 // Unlike end_running(), reset_cmd_vars() zeroes context.run directly: no
 // time repaint is queued and the terrain classifier is not recomputed.

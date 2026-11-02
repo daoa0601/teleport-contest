@@ -9,10 +9,10 @@ import { ACID_VENOM, BLINDFOLD, DAGGER, DIAMOND, FLINT, GOLD_PIECE, LOADSTONE, L
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
 import { objectTypeKnown } from '../js/shk.js';
-import { inventoryWeight } from '../js/weight.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { inventoryWeight } from '../js/hack.js';
 const GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
 function ringMadeOf(material) {

@@ -3,10 +3,11 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { ROCK } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 // C pickup.c:encumber_msg() uses stagger(youmonst.data, "stagger") and
 // marks the status line for the next flush.

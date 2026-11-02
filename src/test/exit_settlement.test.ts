@@ -6,8 +6,8 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { finishLivingGame, finishOrdinaryQuit } from '../js/end.js';
 import { doGenocide } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { bonesLevelExists } from '../js/bones.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
@@ -20,6 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { loseHeroHp, heroGoldAmount } from '../js/hack.js';
 
 function screenText(): string {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');

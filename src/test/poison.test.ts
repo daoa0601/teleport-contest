@@ -7,12 +7,13 @@ import { A_CON, A_STR, Upolyd } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, LONG_SWORD } from '../js/object_data.js';
-import { nearCapacity, weightCapacity } from '../js/weight.js';
+
 import { requireScreenRow } from './support/screen.js';
 import { poisonHero } from '../js/poison.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity, weightCapacity } from '../js/hack.js';
 
 void test('surviving severe poison lowers maximum HP and attributes', async () => {
     await freshObjectRoom();

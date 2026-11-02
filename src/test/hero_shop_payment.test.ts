@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -12,6 +12,7 @@ import { DAGGER, GOLD_PIECE, OBJECT_NAMES, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 import { A_CHA } from '../js/const.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 
 void test('a lower container quote cannot settle a higher agreed bill without enough funds', async () => {
     await freshObjectRoom({ role: 'archeologist' });

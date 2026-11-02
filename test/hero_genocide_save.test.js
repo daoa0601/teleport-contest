@@ -6,7 +6,6 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { GameDisplay } from '../js/game_display.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame, resetGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
@@ -21,6 +20,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
+import { loseHeroHp } from '../js/hack.js';
 async function genocideRoom(debug = false) {
     await freshObjectRoom({
         hero: { urexp: 100 },

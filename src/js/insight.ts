@@ -37,7 +37,7 @@ import {
     characteristicEnlightenmentLines, enlightenmentRoleName,
 } from './enlightenment_background.js';
 export { goldInsightLines } from './enlightenment_background.js';
-import { invWeight, nearCapacity } from './weight.js';
+
 import {
     ACH_HELL, ACH_MINE, ACH_RNK1, ACH_RNK8, ACH_TOWN,
     achievementEntries,
@@ -77,6 +77,7 @@ import type { GameObject } from './object_types.js';
 import type { TextPage } from './windows.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import { invWeight, nearCapacity } from './hack.js';
 
 export interface EnlightenmentOptions { basic?: boolean; magic?: boolean }
 

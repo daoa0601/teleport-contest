@@ -14,7 +14,6 @@ import { flush_screen } from '../js/display.js';
 import { objectQuantity, splitObjectStack } from '../js/mkobj.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { runDueTimers } from '../js/timer_effects.js';
-import { objectWeight } from '../js/weight.js';
 import { billForObject } from '../js/shk.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -30,6 +29,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { mksobj } from '../js/mkobj.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { objectWeight } from '../js/mkobj.js';
 function screen() {
     assert.ok(game.nhDisplay);
     return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');

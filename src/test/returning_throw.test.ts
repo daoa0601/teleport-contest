@@ -9,7 +9,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { rhack } from '../js/cmd.js';
 import { redrawMap } from '../js/display.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
@@ -17,6 +17,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
+import { nearCapacity } from '../js/hack.js';
 
 async function wieldAklys() {
     await freshObjectRoom({ left: 4, right: 25, top: 3, bottom: 17 });

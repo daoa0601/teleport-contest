@@ -7,11 +7,12 @@ import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { CLUB, ROCK, SACK } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
-import { inventoryWeight, objectWeight } from '../js/weight.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { inventoryWeight } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 function savedRecord(value) {
     assert.ok(isSavedRecord(value), 'The saved container must be a record');
     return value;

@@ -9,10 +9,11 @@ import { AD_SSEX, AT_BITE } from '../js/monster_attack_types.js';
 import type { HeroContactAttack } from '../js/monster_action_types.js';
 import { resolveMonsterContactEffect } from '../js/uhitm.js';
 import { initRng } from '../js/rng.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { nearCapacity } from '../js/hack.js';
 
 for (const improving of [false, true]) {
     void test(`seduction ${improving ? 'gains' : 'loses'} constitution before exercising it at the load-change pager`, async () => {

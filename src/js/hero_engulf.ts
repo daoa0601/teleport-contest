@@ -33,7 +33,7 @@ import { newsym, shieldeff, swallowed } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { damageHeroFromMonster } from './hero_damage.js';
+
 import { drainHeroEnergy } from './hero_energy.js';
 import { expelHero } from './hero_expulsion.js';
 import { infectHeroWithMonsterDisease } from './mhitu.js';
@@ -54,6 +54,7 @@ import { touchPetrifies } from './stoning.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc } from './vision.js';
 import { monsterHasStoneResistance } from './mondata.js';
+import { damageHeroFromMonster } from './mhitu.js';
 
 export interface HeroEngulfOptions {
     state?: GameState;

@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { CHEST, POT_HEALING } from '../js/object_data.js';
 import { THRONE } from '../js/const.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 for (const blind of [false, true]) {
     void test(`confused old-loot feedback ${blind ? 'keeps an unseen potion unobserved while blind' : 'reveals an unseen potion appearance'}`, async () => {

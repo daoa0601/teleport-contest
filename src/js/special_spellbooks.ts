@@ -11,7 +11,7 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { makeInvocationArea } from './invocation_area.js';
-import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
+
 import { findMonsterNearPosition } from './mklev.js';
 import { morgueMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
@@ -36,6 +36,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { tameMonster } from './dog.js';
+import { heroIsOnStairs, isInvocationPosition } from './hack.js';
 
 interface SpecialBookOptions { state?: GameState; }
 interface UndeadCreationOptions extends SpecialBookOptions { reviveCorpses?: boolean; flags?: number; }

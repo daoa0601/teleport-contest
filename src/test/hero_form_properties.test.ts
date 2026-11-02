@@ -10,7 +10,7 @@ import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { createFireExplosion } from '../js/fire_explosion.js';
 import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
-import { heroCanMoveFromTrap, triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
@@ -21,6 +21,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { prepareHeroStartup } from './support/startup.js';
+import { heroCanMoveFromTrap } from '../js/hack.js';
 
 void test('fire immunity protects a dragon body and ends when the hero changes back', async () => {
     await freshObjectRoom({ flags: { debug: true } });

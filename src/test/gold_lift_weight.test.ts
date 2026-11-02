@@ -9,10 +9,11 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { liftObject } from '../js/lift_object.js';
 import { DART, GOLD_PIECE } from '../js/object_data.js';
-import { invWeight, nearCapacity, weightCapacity } from '../js/weight.js';
+
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { invWeight, nearCapacity, weightCapacity } from '../js/hack.js';
 
 void test('lifting one gold piece at the strained threshold asks to continue', async () => {
     await freshObjectRoom();

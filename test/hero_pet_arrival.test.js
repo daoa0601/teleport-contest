@@ -3,7 +3,6 @@ import test from 'node:test';
 import { NO_MINVENT, PIT, POOL, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { settlePetHeroDisplacement } from '../js/hero_pet_displacement.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
@@ -11,6 +10,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { settlePetHeroDisplacement } from '../js/hack.js';
 void test('frightening a pet into a pit reduces tameness and alignment after the fall', async () => {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

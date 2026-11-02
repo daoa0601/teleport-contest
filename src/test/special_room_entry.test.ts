@@ -6,8 +6,9 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import type { Room } from '../js/map_types.js';
-import { checkSpecialRoom } from '../js/shk.js';
+
 import { freshObjectRoom } from './support/object-room.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 for (const entry of [
     { type: ANTHOLE, message: 'You enter an anthole!' },

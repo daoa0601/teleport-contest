@@ -2,19 +2,19 @@
 // C refs: do.c cmd_safety_prevention(), donull(), dowipe(), and wipeoff();
 //         hack.c monster_nearby().
 
-import { heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
+import { setHeroBlindnessTimeout } from './senses.js';
 import { game, requireLiveGame } from './gstate.js';
-import { monsterIsHelpless } from './mondata.js';
+
 import type { GameState } from './game_state.js';
-import type { Monster } from './monster_types.js';
+
 import type { WipeFaceOccupation } from './occupation_types.js';
-import { canSpotMonster } from './display.js';
+
 import { pline, plineWithContinuation } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
-import { monsterIsScaredAt } from './monmove.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
-import { AT_BOOM } from './monster_attack_types.js';
-import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
+
+
+
+
+
 import { makeBlinded } from './sight_change.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
@@ -25,41 +25,8 @@ import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown } from './shk
 import { rn2 } from './rng.js';
 import { callObjectType } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
+import { threateningMonsterNearby } from './hack.js';
 
-const M1_HIDE = 0x00000100;
-
-function monsterHasActiveAttack(monster: Monster): boolean {
-    return (MONSTER_ATTACKS[monster?.mnum] || [])
-        .some(([attackType]) => attackType && attackType !== AT_BOOM);
-}
-
-
-// C hack.c:monster_nearby().  This is the shared threat predicate used by
-// both safe waiting and safe searching; it is intentionally stricter than
-// mere adjacency.
-export function threateningMonsterNearby(state: GameState = game): boolean {
-    const u = state.u;
-    if (!u) return false;
-    const hallucinating = heroIsHallucinating(state);
-    for (let x = u.ux - 1; x <= u.ux + 1; x++) {
-        for (let y = u.uy - 1; y <= u.uy + 1; y++) {
-            if (!isok(x, y) || x === u.ux && y === u.uy) continue;
-            const monster = state.level?.monsters.find(candidate =>
-                monsterHasMapPosition(candidate, state)
-                && monsterOccupiesPosition(candidate, x, y));
-            if (!monster || monster.dead || monster.mhp <= 0) continue;
-            const appearance = M_AP_TYPE(monster);
-            if (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT) continue;
-            if (!hallucinating && (monster.mpeaceful || !monsterHasActiveAttack(monster))) continue;
-            const hider = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HIDE;
-            if ((hider && monster.mundetected) || monsterIsHelpless(monster)
-                || monsterIsScaredAt(monster, state, u.ux, u.uy)
-                || !canSpotMonster(monster)) continue;
-            return true;
-        }
-    }
-    return false;
-}
 
 function dangerousHeroProperties() {
     const u = game.u;

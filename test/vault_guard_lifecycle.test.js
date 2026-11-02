@@ -14,7 +14,6 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';
 import { setWallStateAt } from '../js/wall_topology.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { moveObject } from '../js/floor_object.js';
 import { flush_screen } from '../js/display.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
@@ -27,6 +26,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { isLavaAt, isPoolAt } from '../js/dbridge.js';
+import { moveObject } from '../js/hack.js';
 async function guardCorridor({ blocked = true } = {}) {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

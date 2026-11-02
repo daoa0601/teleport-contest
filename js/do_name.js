@@ -22,7 +22,7 @@ import { impossible } from './diagnostics.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './apply.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName, } from './monster_data.js';
@@ -37,6 +37,7 @@ import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from '
 import { makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { rn2 } from './rng.js';
 import { monsterAtPosition } from './steed.js';
+import { showGetposTip } from './hack.js';
 // C do_name.c:docallcmd().
 // C do_name.c:name_ok().
 // C do_name.c:call_ok().

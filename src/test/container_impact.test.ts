@@ -13,9 +13,10 @@ import {
     POT_WATER,
 } from '../js/object_data.js';
 import { containerImpactDamage } from '../js/dokick.js';
-import { addCreatedObjectToContainer } from '../js/mkobj.js';import { objectWeight } from '../js/weight.js';
+import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 
 function collector() {
     const messages: string[] = [];

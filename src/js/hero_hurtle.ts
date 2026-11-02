@@ -29,12 +29,12 @@ import type { HurtleDeathHandler } from './dothrow.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { endHeroVolley } from './hero_multishot.js';
 import { triggerHeroTrap, type HeroTrapOptions } from './hero_traps.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName } from './monster_data.js';
 import { BOULDER } from './object_data.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { placeHeroOnLevel } from './hero_location.js';
 import { updateHeroRegions } from './regions.js';
 import { monsterName } from './do_name.js';
@@ -42,16 +42,23 @@ import { monsterObjectPronoun } from './mondata.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
-import { checkSpecialRoom } from './shk.js';
+
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { inventoryWeight } from './weight.js';
+
 import { vision_recalc } from './vision.js';
-import { switchHeroTerrain } from './terrain_movement.js';
+
 import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 
 import { angerMonster, monsterWearsTorsoArmor, wakeMonster } from './mon.js';
+import {
+    finishDestinationSpotEffects,
+    loseHeroHp,
+    checkSpecialRoom,
+    inventoryWeight,
+    switchHeroTerrain,
+} from './hack.js';
 
 export interface HeroTeleportMovement {
     oldx: number;

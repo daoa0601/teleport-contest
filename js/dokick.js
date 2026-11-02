@@ -9,7 +9,6 @@ import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } 
 import { findDrawbridgeAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './hero_legs.js';
-import { loseHeroHp } from './hero_damage.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
@@ -18,7 +17,6 @@ import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_
 import { applyHeroContactPassive } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
@@ -49,7 +47,6 @@ import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { invWeight, weightCapacity, objectWeight } from './weight.js';
 import { specialContactDamage } from './contact_damage.js';
 import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
 import { artifactById } from './artifacts.js';
@@ -65,7 +62,6 @@ import { breakFloorObject } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper } from './shk.js';
 import { containedGold } from './shk.js';
-import { roomsAt } from './room.js';
 import { resolveImmediatePetrification, touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { resolveGoldMonsterContact } from './gold_throw.js';
@@ -81,6 +77,8 @@ import { currency } from './currency.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { objectResistsDestruction } from './zap.js';
+import { loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, } from './hack.js';
+import { objectWeight } from './mkobj.js';
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');

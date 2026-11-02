@@ -14,7 +14,7 @@ import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { launchRollingBoulder } from '../js/rolling_boulder.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
-import { checkSpecialRoom } from '../js/shk.js';
+
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
@@ -22,6 +22,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createRoom } from './support/topology.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 function topline(): string {
     return requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';

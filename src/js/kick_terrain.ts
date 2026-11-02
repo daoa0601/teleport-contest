@@ -35,8 +35,9 @@ import { bringLeashedFollowers } from './apply.js';
 import { impactDrop } from './dokick.js';
 import { waterDamageObject } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import type { MapLocation } from './map_types.js';
+import { objectWeight } from './mkobj.js';
 
 interface TerrainKickResponses {
     ouch: (x: number, y: number) => Promise<void>;

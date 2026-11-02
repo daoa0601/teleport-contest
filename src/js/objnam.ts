@@ -30,7 +30,7 @@ import {
 } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
-import { objectWeight } from './weight.js';
+
 import { heroIsBlind } from './senses.js';
 import {
     artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact,
@@ -89,12 +89,14 @@ import { canOverwriteTerrain } from './display.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 
 import { waterbodyName } from './terrain_name.js';
-import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import { lookupNovelTitle } from './novel_titles.js';
 import type { Fruit } from './game_state.js';
+import { objectWeight } from './mkobj.js';
+import { switchHeroTerrain } from './hack.js';
 
 export { japaneseItemName } from './japanese_item_name.js';
 

@@ -11,7 +11,6 @@ import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING
 import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
-import { exceedsActionCapacity } from './weight.js';
 import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR } from './const.js';
@@ -76,6 +75,7 @@ import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, settleThrownShopObject, stolenValue, makeAngryShopkeeper, insideShopRoomAt } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { exceedsActionCapacity } from './hack.js';
 const M2_ROCKTHROW = 0x08000000;
 // C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
 const WEAPON_CLASS = 2;

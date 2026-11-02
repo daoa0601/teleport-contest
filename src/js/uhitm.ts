@@ -55,7 +55,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { retouchEquipment } from './hero_retouch.js';
-import { damageHeroFromMonster } from './hero_damage.js';
+
 import { igniteItems } from './light.js';
 import {
     applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, grantMonsterCorpseIntrinsic,
@@ -194,6 +194,7 @@ import {
 } from './monster_data.js';
 
 import type { ArtifactDefender } from './artifacts.js';
+import { damageHeroFromMonster } from './mhitu.js';
 
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster: Pick<Monster, 'mnum'>): boolean {

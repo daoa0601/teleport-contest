@@ -4,9 +4,9 @@ import { moveloop_core } from '../js/allmain.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
-import { HVY_ENCUMBER, nearCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { HVY_ENCUMBER, nearCapacity } from '../js/hack.js';
 async function strainedHero() {
     freshTurnRoom({ role: 'knight', heroLevel: 30 });
     requirePlayingGame(game);

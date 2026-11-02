@@ -1,7 +1,6 @@
 import { seeTrap } from './trap.js';
 import { objectMaterial } from './o_init.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroLocomotion } from './hero_locomotion.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { newsym, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -18,6 +17,7 @@ import { changeMonsterForm } from './mon.js';
 import { rn2 } from './rng.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { monsterResistsEffect, poly_obj } from './zap.js';
+import { heroLocomotion } from './hack.js';
 const IRON = 11;
 const WAND_CLASS = 12;
 export async function triggerHeroPolymorphTrap(trap, viaSitting) {

@@ -6,7 +6,6 @@ import { plineWithContinuation } from './pline.js';
 import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { nameToMonster } from './mondata.js';
 import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
 import { definiteName } from './objnam.js';
@@ -14,6 +13,7 @@ import { withIndefiniteArticle } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
+import { loseHeroHp } from './hack.js';
 const POISON_EFFECT = [
     'You feel weaker!',
     'Your brain is on fire!',

@@ -39,10 +39,8 @@ import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { insideRoom, roomForIndex, roomsAt } from './room.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom } from './mkroom.js';
 import { beginObjectBurn } from './light.js';
-import { objectWeight } from './weight.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionMatch } from './selvar.js';
 import { CANDELABRUM_OF_INVOCATION, GEM_CLASS, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, M2_DWARF, M2_FEMALE, M2_GNOME, M2_MALE, M2_SHAPESHIFTER, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RANDOM_CLASS, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, canDigDown, canFallThrough, findMonsterNearPosition, is_hole, is_pit, make_engr_at, makecorridors, maketrap, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, stairway_add, topologize, } from './mklev.js';
@@ -52,6 +50,9 @@ import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
 import { makeSpecialDrawbridge } from './dbridge.js';
 import { monsterHasStoneResistance, monsterPolymorphsWhenStoned, setMonsterSpecies } from './mondata.js';
+import { insideRoom } from './mkroom.js';
+import { roomForIndex, roomsAt } from './hack.js';
+import { objectWeight } from './mkobj.js';
 export async function fillVault(room) {
     if (!room)
         return;

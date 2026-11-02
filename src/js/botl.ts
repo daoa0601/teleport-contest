@@ -42,8 +42,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { InterfaceFlags, StatusHiliteRule } from './flags.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
-import { heroGoldAmount } from './hero_gold.js';
-import { nearCapacity } from './weight.js';
+
+
 import { activeObjectSymbols, objectClassForType, objectClassSymbol } from './display.js';
 import { rankOf } from './quest_pager.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
@@ -71,6 +71,7 @@ import {
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain } from './hack.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
+import { heroGoldAmount, nearCapacity } from './hack.js';
 
 // C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.

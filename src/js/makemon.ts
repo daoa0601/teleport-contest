@@ -70,15 +70,17 @@ import { registerQuestLeader } from './quest.js';
 import { createParticularMonster } from './read_creation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
-import { inTown, roomForIndex } from './room.js';
+
 import { goodPosition } from './teleport_rules.js';
-import { objectWeight } from './weight.js';
+
 import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear } from './mklev.js';
 import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import { shopkeeperName } from './shknam.js';
+import { inTown, roomForIndex } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;

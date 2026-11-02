@@ -9,9 +9,10 @@ import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { cls } from '../../js/display.js';
 import { pushKey } from '../../js/input.js';
-import { roomsAt } from '../../js/room.js';
-import { checkSpecialRoom } from '../../js/shk.js';
+
+
 import { createMonsterAt } from './monsters.js';
+import { roomsAt, checkSpecialRoom } from '../../js/hack.js';
 
 export interface StaffedShopOptions {
     left?: number; right?: number; top?: number; bottom?: number;

@@ -75,12 +75,10 @@ import { monsterSaddle } from './steed.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { cansee } from './vision.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
-import {
-    prepareMapPositionHighlights, selectMapPosition, showGetposInstructions, showGetposTip,
-} from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { finishHeroDeath as defaultHeroDeath } from './end.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { objectLightRadius } from './light.js';
 import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
@@ -108,7 +106,7 @@ import { monsterResistsEffect } from './zap.js';
 import { tameMonster } from './dog.js';
 import { exerciseAttribute as exerciseAttributeNamed } from './attrib.js';
 import { studyBook } from './spellbook_study.js';
-import { exceedsActionCapacity, objectWeight } from './weight.js';
+
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -116,6 +114,8 @@ import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { RoomLightOptions } from './light.js';
 import type { Position } from './map_types.js';
+import { showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 export type ScrollLevelChange = (...args: Parameters<typeof changeLevel>) => unknown;
 export type ScrollMonsterKill = NonNullable<RoomLightOptions['finishMonsterKill']>;

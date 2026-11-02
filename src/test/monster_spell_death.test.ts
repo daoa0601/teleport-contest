@@ -12,7 +12,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { createRoom } from './support/topology.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { initRng } from '../js/rng.js';
-import { updateHeroRoomMembership } from '../js/room.js';
+
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -20,6 +20,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 import type { InputGate } from '../js/input.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 
 const SPELL_PROSE = /^$|survived that attempt on your life|mumbled curse|priest|cleric|lich|wounds|geyser|die|medallion|frozen|touch of death|pillar of fire|lightning|curses|misses|normal|head suddenly|return|Goodbye|points|But wait|feel much better|Do not pass Go|Your body rises from the dead/i;
 

@@ -142,19 +142,13 @@ import { doBlindingRay } from './flash.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import {
-    prepareMapPositionHighlights,
-    selectMapPosition,
-    shouldShowGetposTip,
-    showGetposInstructions,
-    showGetposTip,
-} from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, runSafepetDisplacement } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './hero_expulsion.js';
@@ -175,7 +169,7 @@ import { woundHeroLegs } from './hero_legs.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
-import { checkHeroAttackOverexertion } from './hero_overexertion.js';
+
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
@@ -204,7 +198,7 @@ import {
 } from './invent.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
-import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
+
 import { gotoLevel } from './level_change.js';
 import {
     beginObjectBurn,
@@ -213,7 +207,7 @@ import {
     lightRoom,
     transformMagicLampToOilLamp,
 } from './light.js';
-import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './location_effects.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -375,7 +369,7 @@ import {
     rnd,
     rnl,
 } from './rng.js';
-import { roomsAt } from './room.js';
+
 import {
     blindfolded,
     heroIsBlind,
@@ -444,7 +438,7 @@ import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { dryTowel } from './weapon.js';
-import { exceedsActionCapacity, nearCapacity, objectWeight } from './weight.js';
+
 import { wieldTool } from './wield_tool.js';
 import type { WieldToolResult } from './wield_tool.js';
 import { doswapweapon, releaseWeaponSlots } from './wield.js';
@@ -454,6 +448,19 @@ import { monsterCarriesAmulet } from './wizard.js';
 import { adjustMonsterSpeed } from './worn.js';
 import { useMagicMarker } from './write.js';
 import { objectResistsDestruction, zappable } from './zap.js';
+import {
+    shouldShowGetposTip,
+    showGetposTip,
+    loseHeroHp,
+    checkHeroAttackOverexertion,
+    heroIsOnStairs,
+    isInvocationPosition,
+    finishDestinationSpotEffects,
+    roomsAt,
+    exceedsActionCapacity,
+    nearCapacity,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;

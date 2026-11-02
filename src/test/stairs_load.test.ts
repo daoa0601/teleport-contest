@@ -5,10 +5,11 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
-import { nearCapacity, SLT_ENCUMBER } from '../js/weight.js';
+
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
+import { nearCapacity, SLT_ENCUMBER } from '../js/hack.js';
 
 for (const ladder of [false, true]) {
     const noun = ladder ? 'ladder' : 'stairs';

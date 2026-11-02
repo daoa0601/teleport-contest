@@ -16,11 +16,11 @@ import { objectClassForType } from '../js/o_init.js';
 import { objectMaterial } from '../js/o_init.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
 import { artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { speciesCanBlow } from '../js/mondata.js';
+import { objectWeight } from '../js/mkobj.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function interestRoom(species = 'goblin') {
     await freshObjectRoom({ gameplaySeed: 97n, context: { mon_moving: true } });

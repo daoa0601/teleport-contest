@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
@@ -29,6 +29,7 @@ import {
     monstersObserveHeroResistance,
     seenResistanceForDamage,
 } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 export interface HeroObjectHitOptions {
     state?: GameState;

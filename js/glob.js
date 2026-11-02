@@ -18,9 +18,10 @@ import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './tim
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { nearCapacity, objectWeight, } from './weight.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
 import { activelyEatingGlob } from './eat.js';
+import { nearCapacity } from './hack.js';
+import { objectWeight } from './mkobj.js';
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }

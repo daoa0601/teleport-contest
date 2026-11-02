@@ -6,20 +6,16 @@ import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { specialLevelAt } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
-import { freeInventoryObject } from './hero_inventory.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
+import { breakFloorObject, breakObjectAtLocation } from './dothrow.js';
 import { BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { splitObjectStack } from './mkobj.js';
 import { harmlessMissile } from './projectile.js';
-import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { switchHeroTerrain } from './terrain_movement.js';
 import { cansee } from './vision.js';
-import { setPrimaryWeapon } from './wield.js';
+import { roomsAt, switchHeroTerrain } from './hack.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -46,28 +42,7 @@ export async function projectileHitsIronBars(object, { forceHit = false, heroCau
         return { blocked: false, destroyed: false, heroDied: false };
     return hitIronBars(object, { kind: 'projectile', heroCaused }, options);
 }
-// C hack.c:domove_fight_ironbars(). Decide breakage before removing the
-// wielded object, so only one item breaks and the remaining stack stays held.
-export async function strikeIronBarsWithWeapon(weapon, x, y, state = game) {
-    const breaksOnImpact = objectBreaksOnImpact(weapon);
-    let object = weapon;
-    if (breaksOnImpact) {
-        if (weapon.quan > 1) {
-            const split = splitObjectStack(weapon, 1, state);
-            if (!split)
-                throw new Error('A wielded stack hitting bars could not be split.');
-            object = split;
-        }
-        else {
-            await setPrimaryWeapon(null, state);
-        }
-        await freeInventoryObject(object, state);
-    }
-    await hitIronBars(object, { kind: 'wielded', breaksOnImpact }, {
-        x: state.u.ux, y: state.u.uy, barsX: x, barsY: y, state,
-    });
-}
-async function hitIronBars(object, attack, { x, y, barsX, barsY, state = game, publish = plineWithContinuation, random = rn2, }) {
+export async function hitIronBars(object, attack, { x, y, barsX, barsY, state = game, publish = plineWithContinuation, random = rn2, }) {
     const level = requireGameLevel(state);
     const bars = level.requireAt(barsX, barsY);
     const nondiggable = (bars.wall_info & W_NONDIGGABLE) !== 0;

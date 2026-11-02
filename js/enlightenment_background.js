@@ -10,7 +10,6 @@ import { heroIsBlind } from './senses.js';
 import { costlySpot } from './shk.js';
 import { depth, endgameLevelName } from './hacklib.js';
 import { findArmorClass } from './do_wear.js';
-import { heroGoldAmount } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
 import { currency } from './currency.js';
 import { withIndefiniteArticle } from './objnam.js';
@@ -19,6 +18,7 @@ import { newExperienceThreshold, experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, monsterTypeName } from './monster_data.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER, OBJECT_NAMES } from './object_data.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, In_endgame, In_quest, Is_knox_level, Is_rogue_level, Upolyd } from './const.js';
+import { heroGoldAmount } from './hack.js';
 export function enlightenmentRoleName() {
     const female = Upolyd(game.u) ? game.u.mfemale : game.flags.female;
     return female && game.urole?.name.f ? game.urole.name.f : game.urole?.name.m ?? 'Adventurer';

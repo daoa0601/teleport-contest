@@ -5,9 +5,10 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { checkSpecialRoom } from '../js/shk.js';
+
 import { memoryStorage } from './support/memory-storage.js';
 import { roomBindings } from './support/themed-room-bindings.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 void test('entering a restored special subroom updates the room linked from its parent', async t => {
     const lua = await roomBindings(t);

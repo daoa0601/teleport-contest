@@ -13,11 +13,11 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { unpaidObjectCost, itemizedShopBill } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
-import { objectWeight } from '../js/weight.js';
 import { addInventoryObject, addInventoryWeapon, floorObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { invokeInventoryObject, readInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 void test('confused enchant weapon repairs and proofs a weapon without enchanting it', async () => {
     await freshObjectRoom({ hero: { confusionTurns: 5 } });
     requireFixtureGame(game);

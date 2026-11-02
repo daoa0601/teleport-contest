@@ -6,11 +6,11 @@ import { docrt, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { showMessageMenu } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
+import { loseHeroHp } from '../js/hack.js';
 function rowText(row) {
     return requireScreenRow(row).map(cell => cell.ch).join('').trimEnd();
 }

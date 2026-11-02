@@ -12,7 +12,7 @@ import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { shieldeff } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
@@ -43,6 +43,7 @@ import { rndcurse } from './throne.js';
 import type { GameState, SpellbookContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { aggravateMonsters } from './wizard.js';
+import { loseHeroHp } from './hack.js';
 
 interface SpellbookOptions { state?: GameState; }
 

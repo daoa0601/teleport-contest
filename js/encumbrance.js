@@ -2,7 +2,8 @@
 // records only the last completed encumbrance check.
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { encumbranceMessage, nearCapacity } from './weight.js';
+import { encumbranceMessage } from './pickup.js';
+import { nearCapacity } from './hack.js';
 export async function reportHeroEncumbrance(state = game, publish = plineWithContinuation) {
     const previous = state._encumbranceLevel ?? 0;
     const capacity = nearCapacity(state);

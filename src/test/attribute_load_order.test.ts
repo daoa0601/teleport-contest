@@ -5,9 +5,10 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_SICKNESS, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('sickness potions report a weakened carrying capacity before their HP damage', async () => {
     let physicalAttributeLosses = 0;

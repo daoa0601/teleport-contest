@@ -46,7 +46,7 @@ function propertyRecord(property: PropertyName, state: PropertyState = game): Pr
     return record;
 }
 
-function existingPropertyRecord(property: PropertyName, state: PropertyState = game): PropertySources | null {
+export function existingPropertyRecord(property: PropertyName, state: PropertyState = game): PropertySources | null {
     return state.u?._propertySources?.[property] || null;
 }
 
@@ -62,7 +62,7 @@ function intrinsicSourceIsActive(record: PropertySources | null): boolean {
     return Object.keys(record?.intrinsic || {}).length > 0;
 }
 
-function propertySourceIsActive(property: PropertyName, state: PropertyState): boolean {
+export function propertySourceIsActive(property: PropertyName, state: PropertyState): boolean {
     const hero = state.u;
     const record = existingPropertyRecord(property, state);
     return intrinsicSourceIsActive(record)
@@ -78,35 +78,13 @@ export function hasRawLevitationSource(state: PropertyState = game) {
     return propertySourceIsActive('levitation', state);
 }
 
-function levitationSourceIsActive(ignoreBoots: boolean, state: PropertyState): boolean {
+export function levitationSourceIsActive(ignoreBoots: boolean, state: PropertyState): boolean {
     const record = existingPropertyRecord('levitation', state);
     return intrinsicSourceIsActive(record) || !!record?.invoked
         || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
 }
 
-// C hack.c:weight_cap() ignores the trap block on levitation, and defers
-// the carrying benefit of boots whose Boots_on callback has not run yet.
-export function levitationSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
-    return !existingPropertyRecord('levitation', state)?.blockedByTerrain
-        && levitationSourceIsActive(ignoreBoots, state);
-}
-
-// Removing pending boots' levitation for weight_cap() also restores flight
-// through float_vs_flight(). Query that temporary state without changing the
-// abilities projected onto the hero while the boots are actually worn.
-export function flyingSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
-    if (!ignoreBoots) return propertyIsActive('flying', state);
-    if (existingPropertyRecord('flying', state)?.blockedByTerrain
-        || levitationSourceIsActive(true, state)) return false;
-    const flying = propertySourceIsActive('flying', state);
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    if (flying && trapped) return false;
-    const steedFlies = hero.usteed
-        && !!((MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) & 0x01);
-    return flying || !!steedFlies;
-}
 
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {
     if (existingPropertyRecord(property, state)?.blockedByTerrain) return true;

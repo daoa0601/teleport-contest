@@ -20,13 +20,14 @@ import {
     WAN_FIRE, WAN_WISHING,
 } from '../js/object_data.js';
 import { chooseObjectToCharge, rechargeObject } from '../js/recharge.js';
-import { weightCapacity } from '../js/weight.js';
+
 import { unpaidObjectCost } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { addInventoryObject, artifactObject, floorObject } from './support/game-objects.js';
 import { readInventoryObject, invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { weightCapacity } from '../js/hack.js';
 
 const SCR_CHARGING = OBJECT_NAMES.indexOf('charging');
 const RIN_GAIN_STRENGTH = OBJECT_NAMES.indexOf('gain strength');

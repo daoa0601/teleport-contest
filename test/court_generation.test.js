@@ -6,10 +6,10 @@ import { mklev } from '../js/mklev.js';
 import { CHEST, GOLD_PIECE, MACE } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
 import { freshGame } from './support/game-state.js';
 import { floorObjects } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
+import { objectWeight } from '../js/mkobj.js';
 async function generateCourt() {
     const state = freshGame({ moves: 0, flags: { bones: false }, hero: {
             uz: { dnum: 0, dlevel: 20 }, ulevel: 20,

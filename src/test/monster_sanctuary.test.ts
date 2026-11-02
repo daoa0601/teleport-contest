@@ -12,10 +12,11 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { mfndpos } from '../js/mon.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
-import { updateHeroRoomMembership } from '../js/room.js';
+
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 
 async function shrineEncounter(species = 'goblin') {
     freshSpecialLevel({ prototype: 'Kni-loca', seed: 2501, depth: 11 });

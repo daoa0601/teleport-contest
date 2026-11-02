@@ -6,10 +6,11 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { chooseInventoryObject } from '../js/inventory_prompt.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('#adjust moves only the counted part of a stack', async t => {
     await freshObjectRoom();

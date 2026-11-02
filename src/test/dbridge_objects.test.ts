@@ -4,13 +4,14 @@ import { DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP } from 
 import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { moveObject, placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/floor_object.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BELL_OF_OPENING, ROCK, SACK } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { moveObject } from '../js/hack.js';
 
 function bridgeRoom(open = false) {
     const level = freshGameplayRoom();

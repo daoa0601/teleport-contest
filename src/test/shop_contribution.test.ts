@@ -3,12 +3,13 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { DAGGER } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('dropping a contribution clears a peaceful robbed shopkeeper\'s loss balance', async () => {
     await freshObjectRoom();

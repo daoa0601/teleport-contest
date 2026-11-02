@@ -9,8 +9,8 @@ import { recoverTimedLuck } from './timeout_luck.js';
 import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
 import { breathingDialogue, wallPassageDialogue, finishBreathingTimeout, finishWallPassageTimeout } from './timeout_warnings.js';
 import { levitationDialogue, advanceLevitationTimeout, advanceFlyingTimeout } from './levitation_timeout.js';
-import { slipOrTrip } from './fumbling.js';
-import { invWeight } from './weight.js';
+
+
 import { formatFeltMessage } from './hero_speech.js';
 import { makeBlinded } from './sight_change.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
@@ -31,6 +31,21 @@ import { healHeroLegs } from './hero_legs.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue } from './hero_illness.js';
 import { advanceHeroSliming, heroIsSliming, slimeDialogue } from './slime.js';
+import { isPoolAt, isIceAt } from './dbridge.js';
+import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE } from './const.js';
+import { observeObjectForNaming, objectDescription, withIndefiniteArticle } from './objnam.js';
+import { ROCK } from './object_data.js';
+import { heroFootName } from './body_parts.js';
+import { heroResistsStoning } from './stoning.js';
+import { monsterName } from './do_name.js';
+import { rn2 } from './rng.js';
+import { dismountHero } from './steed.js';
+import { currentAttribute } from './attrib.js';
+import { heroSpecies } from './hero_species.js';
+import { hurtleHero } from './hero_hurtle.js';
+import { finishTeleportArrival } from './location_effects.js';
+import { gotoLevel } from './level_change.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
     advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, resolveImmediatePetrification,
     touchPetrifies,
@@ -57,6 +72,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { CORPSE } from './object_data.js';
 import { corpseName, killerObjectName } from './objnam.js';
 import { releaseWeaponSlots } from './wield.js';
+import { invWeight } from './hack.js';
 
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
 // properties have no dedicated recovery action; their source projection still
@@ -703,4 +719,86 @@ async function touchWieldedCorpseAfterResistanceExpires(state: GameState) {
         if (result.died) return;
         if (!state.u.stoneResistance) await releaseWeaponSlots(object, state);
     }
+}
+
+// C timeout.c:slip_or_trip().  Fumbling arrival message, ice slides, and
+// the pet-loss dismount, all after the fumbling source's timeout fires.
+
+export async function slipOrTrip(publish: MessagePublisher = plineWithContinuation): Promise<void> {
+    const hero = game.u;
+    const steed = hero.usteed;
+    const pile = game.level?.objects[hero.ux]?.[hero.uy] ?? [];
+    const top = !steed && !(isPoolAt(hero.ux, hero.uy) && !hero.uinwater) ? pile[0] : undefined;
+    const hallucinating = heroIsHallucinating(game);
+    if (top) {
+        let what: string;
+        if (game._lastPlineKind === PLNMSG_ONE_ITEM_HERE)
+            what = top.quan === 1 ? 'it' : hallucinating ? 'they' : 'them';
+        else if (top.dknown || !heroIsBlind(game)) {
+            observeObjectForNaming(top);
+            what = await objectDescription(top, { state: game });
+        }
+        else {
+            const rocks = pile.find(object => object.otyp === ROCK);
+            what = rocks ? rocks.quan === 1 ? 'a rock' : 'some rocks' : 'something';
+        }
+        await publish(hallucinating
+            ? `Egads!  ${what.charAt(0).toUpperCase()}${what.slice(1)} bite${top.quan === 1 ? 's' : ''} your ${heroFootName(game)}!`
+            : `You trip over ${what}.`);
+        if (!game.uarmf && !hero.uarmf && top.otyp === CORPSE
+            && touchPetrifies(top.corpsenm) && !heroResistsStoning(game)) {
+            await resolveImmediatePetrification({
+                killer: `tripping over ${withIndefiniteArticle(MONSTER_NAME[top.corpsenm ?? -1] ?? 'monster')} corpse`, publish,
+            });
+        }
+        return;
+    }
+    const onIce = isIceAt(hero.ux, hero.uy);
+    const saddle = steed?.minvent?.find(object => (object.owornmask ?? 0) & W_SADDLE);
+    if (hero.fumblingFromIce || onIce && !rn2(3)) {
+        const iceOnly = !hero.fumblingFromArmor && !hero.fumblingIntrinsic
+            && !propertyIsActive('fumbling', game);
+        const subject = steed ? monsterName(steed, {
+            state: game, capitalized: true, suppressSaddle: true,
+        }) : 'You';
+        const verb = rn2(2) ? 'slip' : 'slide';
+        await publish(`${subject} ${verb}${steed ? 's' : ''} ${onIce ? 'on' : 'off'} the ice.`);
+        if (steed && !saddle?.cursed && (!iceOnly || !rn2(3))) {
+            await publish('You lose your balance.');
+            await dismountHero(DISMOUNT_FELL, { announce: publish });
+        } else if (!rn2(10 + currentAttribute(A_DEX, game))) {
+            if (heroSpecies(game) !== MONSTER_NAME.indexOf('grid bug')) {
+                const directions: readonly (readonly [number, number])[] = [
+                    [-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [1, -1], [1, 1], [-1, 1],
+                ];
+                const direction = directions[rn2(directions.length)];
+                if (!direction) throw new Error('Ice slip chose no direction');
+                [hero.dx, hero.dy] = direction;
+            }
+            const dx = hero.dx ?? 0, dy = hero.dy ?? 0;
+            if (hero.ux + dx !== hero.ux0 || hero.uy + dy !== hero.uy0)
+                await hurtleHero(dx, dy, 1, {
+                    verbose: false, finishTeleport: finishTeleportArrival, gotoLevel,
+                    finishMonsterDeath: (monster, death) => finishHeroMonsterKill(
+                        monster, monster.mx, monster.my, {
+                            ...death, showKillMessage: false, recordConduct: false, publish,
+                        },
+                    ),
+                });
+        }
+        return;
+    }
+    if (steed && saddle?.cursed) return;
+    const feet = makePlural(heroFootName(game));
+    const messages = steed ? [
+        'You slide to one side of the saddle.', `Your ${feet} slip out of the stirrups.`,
+        'You let go of the reins.', 'You bang into the saddle-horn.',
+    ] : [
+        'You stumble.', `You trip over your own ${hallucinating ? 'elbow' : feet}.`,
+        `You slip ${hallucinating ? 'on a banana peel' : 'and nearly fall'}.`, 'You flounder.',
+    ];
+    const message = messages[rn2(4)];
+    if (!message) throw new Error('Fumbling chose no message');
+    await publish(message);
+    if (steed) await dismountHero(DISMOUNT_FELL, { announce: publish });
 }

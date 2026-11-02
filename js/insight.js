@@ -21,7 +21,6 @@ import { attributeEnlightenmentLines, contractEnlightenment, combatIncrement, mo
 export { piousness } from './enlightenment_attributes.js';
 import { backgroundEnlightenmentLines, basicsEnlightenmentLines, characteristicEnlightenmentLines, enlightenmentRoleName, } from './enlightenment_background.js';
 export { goldInsightLines } from './enlightenment_background.js';
-import { invWeight, nearCapacity } from './weight.js';
 import { ACH_HELL, ACH_MINE, ACH_RNK1, ACH_RNK8, ACH_TOWN, achievementEntries, } from './achievements.js';
 import { SHIELD_OF_REFLECTION } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType, } from './skills.js';
@@ -49,6 +48,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { visibleRegionAt } from './regions.js';
 import { monsterHiddenConditions } from './pager.js';
 import { blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, } from './senses.js';
+import { invWeight, nearCapacity } from './hack.js';
 function plural(n, singular, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;
 }

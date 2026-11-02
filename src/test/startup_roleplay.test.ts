@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { ROOM } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import {
@@ -23,6 +23,7 @@ import { makedog } from '../js/u_init.js';
 import {
     completeHeroStartup, prepareHeroStartup,
 } from './support/startup.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 
 async function start(roleKey: RoleKey, raceName: RaceName = 'human', flags: GameState['flags'] = { pauper: true }) {

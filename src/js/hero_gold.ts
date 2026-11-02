@@ -14,7 +14,8 @@ import { nextIdent } from './ident.js';
 import { delobj } from './invent.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
-import type { Monster } from './monster_types.js';
+
+import { heroGoldAmount } from './hack.js';
 
 type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'u' | 'moves' | 'context'>;
 
@@ -40,7 +41,7 @@ export async function takeHeroGold(state: GameState = game): Promise<void> {
     if (lostMoney) state.context.botl = true;
 }
 
-function quantity(object: GameObject | null | undefined): number {
+export function heroGoldQuantity(object: GameObject | null | undefined): number {
     return Math.max(0, Math.trunc(
         object?.quan ?? object?.quantity ?? 0,
     ));
@@ -50,7 +51,7 @@ function coinWeight(amount: number): number {
     return Math.max(1, Math.trunc((amount + 50) / 100));
 }
 
-function normalizeGoldObject(object: GameObject, amount = quantity(object)): GameObject {
+function normalizeGoldObject(object: GameObject, amount = heroGoldQuantity(object)): GameObject {
     object.otyp = GOLD_PIECE;
     object.oclass = COIN_CLASS;
     object.invlet = '$';
@@ -66,29 +67,16 @@ export function heroGoldObject(state: Pick<GameState, 'inventory'>): GameObject 
         object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
 
-// C hack.c:money_cnt() over the hero's inventory: zero gold pieces
-// rather than a missing stack.
-export function heroGoldAmount(state: Pick<GameState, 'inventory'>): number {
-    const object = heroGoldObject(state);
-    return object ? quantity(object) : 0;
-}
-
-// C hack.c:money_cnt() over a monster's minvent; C callers shk.c:4046,
-// shk.c:5586, priest.c:614.
-
-export function monsterGoldAmount(monster: Monster): number {
-    return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
-}
 
 
 export function addHeroGoldObject(state: GoldInventoryState, incoming: GameObject | null | undefined): GoldAddition {
     if (!incoming) return { object: heroGoldObject(state), merged: false };
-    const amount = quantity(incoming);
+    const amount = heroGoldQuantity(incoming);
     if (!amount) return { object: heroGoldObject(state), merged: false };
     state.context.botl = true;
     const existing = heroGoldObject(state);
     if (existing && existing !== incoming) {
-        const total = quantity(existing) + amount;
+        const total = heroGoldQuantity(existing) + amount;
         normalizeGoldObject(existing, total);
         incoming.where = 'gone';
         incoming.ox = incoming.oy = 0;
@@ -145,7 +133,7 @@ export function setHeroGoldAmount(state: GoldInventoryState, amount: number): Ga
 export function detachHeroGold(state: GameState, requested: number | null = null): GameObject | null {
     const object = heroGoldObject(state);
     if (!object) return null;
-    const amount = quantity(object);
+    const amount = heroGoldQuantity(object);
     const count = requested === null
         ? amount : Math.max(1, Math.min(Math.trunc(requested), amount));
     const detached = count < amount ? splitObjectStack(object, count, state) : object;

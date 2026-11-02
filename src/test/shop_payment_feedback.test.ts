@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, SACK } from '../js/object_data.js';
@@ -10,6 +10,7 @@ import { buyShopBillItem, itemizedShopBill, deleteObject } from '../js/shk.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 for (const portion of ['partly used', 'intact', 'fully used'] as const) {
     void test(`paying for ${portion} goods keeps the payment quantity until wrapped feedback finishes`, async () => {

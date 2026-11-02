@@ -20,7 +20,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './hacklib.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { useUpInventoryStack } from './hero_inventory.js';
 import { makeConfused, makeHallucinated } from './hero_mental_status.js';
 import { heroPolyGender } from './hero_species.js';
@@ -43,6 +43,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { detectTraps } from './detect.js';
 import { ynSingleKey } from './tty_prompts.js';
+import { loseHeroHp } from './hack.js';
 
 const ROCK_CLASS = 14;
 

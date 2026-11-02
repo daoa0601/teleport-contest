@@ -11,7 +11,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender } from './hero_attack_accuracy.js';
 import { attackHeroInMonsterForm } from './hero_form_combat.js';
-import { checkHeroAttackOverexertion } from './hero_overexertion.js';
+
 import { heroSpecies } from './hero_species.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
 import { AT_WEAP } from './monster_attack_types.js';
@@ -27,10 +27,11 @@ import { makePlural } from './objnam.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { canBeginTwoWeaponCombat, stopTwoWeaponCombat } from './two_weapon.js';
-import { exceedsActionCapacity } from './weight.js';
+
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { checkHeroAttackOverexertion, exceedsActionCapacity } from './hack.js';
 
 const DIRECTIONS: readonly (readonly [number, number])[] = [
     [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1],

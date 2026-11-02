@@ -18,10 +18,10 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { ARTIFACTS } from './artifacts.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHatesSilver } from './hero_species.js';
-import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
+
 import { BELL_OF_OPENING, LEASH } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { uncurseObjectState } from './mkobj.js';
@@ -36,6 +36,7 @@ import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, o
 import { propertyIsActive } from './properties.js';
 import { bypassObject, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { surfaceName } from './terrain_name.js';
+import { loseHeroHp, heroIsOnStairs, isInvocationPosition } from './hack.js';
 
 type Artifact = (typeof ARTIFACTS)[number];
 type RetouchSlot = 'uarmg' | 'uswapwep' | 'uwep' | 'uleft' | 'uright' | 'ublindf';

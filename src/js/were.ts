@@ -6,7 +6,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, PARANOID_WERECHANGE } from './const.js';
-import { threateningMonsterNearby } from './do.js';
+
 import { game, requirePlayingGame } from './gstate.js';
 import { setHeroSpecies } from './hero_species.js';
 import { splitHeroMonsterForm } from './mklev.js';
@@ -38,6 +38,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import { tameMonster } from './dog.js';
+import { threateningMonsterNearby } from './hack.js';
 
 export interface HeroWereChangeOptions {
     state?: GameState;

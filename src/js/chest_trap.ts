@@ -21,7 +21,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import { delobj } from './invent.js';
@@ -34,6 +34,7 @@ import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteO
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory, getObjectLocation } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;

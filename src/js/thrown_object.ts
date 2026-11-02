@@ -84,8 +84,9 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 
 import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
+import { objectWeight } from './mkobj.js';
 
 const VENOM_CLASS = 17;
 

@@ -7,6 +7,7 @@
 import { game, requireGameLevel } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok, LEVEL_TIMER_KIND } from './const.js';
+import { isPoolAt } from './dbridge.js';
 import { BOULDER, STATUE } from './object_data.js';
 import { createPoisonGasCloud } from './regions.js';
 import { heroIsDeaf } from './senses.js';
@@ -856,5 +857,30 @@ export async function fumaroles(state = requireInitializedGame()) {
     if (heard && !heroIsDeaf(state))
         await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
     return { heard, loud };
+}
+// C mkmaze.c:water_friction().  Water can deflect a swimming hero's
+// intended move onto the orthogonal axis.
+export async function applyWaterFriction() {
+    const hero = game.u;
+    if (hero.dx && !rn2(hero.dy ? 6 : 3)) {
+        let dy;
+        do {
+            dy = rn2(3) - 1;
+        } while (dy && (!isok(hero.ux, hero.uy + dy) || !isPoolAt(hero.ux, hero.uy + dy, game)));
+        hero.dx = 0;
+        hero.dy = dy;
+    }
+    else if (hero.dy && !rn2(hero.dx ? 5 : 3)) {
+        let dx;
+        do {
+            dx = rn2(3) - 1;
+        } while (dx && (!isok(hero.ux + dx, hero.uy) || !isPoolAt(hero.ux + dx, hero.uy, game)));
+        hero.dx = dx;
+        hero.dy = 0;
+    }
+    else {
+        return;
+    }
+    await plineWithContinuation('Water turbulence affects your movements.');
 }
 //# sourceMappingURL=mkmaze.js.map

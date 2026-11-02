@@ -5,10 +5,11 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('monster poison waits for the load pager before remembering the new encumbrance', async () => {
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });

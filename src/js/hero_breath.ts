@@ -20,7 +20,7 @@ import {
 import { displayLiquidName, shieldeff } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { monsterSpellDeathReason } from './mcastu.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
@@ -47,6 +47,7 @@ import {
     monstersForgetHeroResistance,
     monstersObserveHeroResistance,
 } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 export function heroBreathAttack(state = game, damageType: DamageType | null = null) {
     const form = heroMonsterForm(state);

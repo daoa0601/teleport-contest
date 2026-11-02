@@ -6,10 +6,10 @@ import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { KICKING_BOOTS, LARGE_BOX } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { nearCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { nearCapacity } from '../js/hack.js';
 // C allmain.c moveloop_core() calls find_ac() only after its movement loop
 // ends with the hero able to act.  While a burdened hero is still putting on
 // boots, the monsters' extra turns see and show the old armor class.

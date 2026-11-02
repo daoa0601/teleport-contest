@@ -1,6 +1,5 @@
 import { trapName } from './trap.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
@@ -43,14 +42,10 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
-import { loseHeroHp } from './hero_damage.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './mondata.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, } from './hack.js';
-import { heroCouldMoveOntoBoulder } from './boulder_push.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { commandResultCancelled } from './cmd.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
@@ -59,6 +54,7 @@ import { isAccessibleAt } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCanOoze } from './monmove.js';
+import { heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects, } from './hack.js';
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SWIM = 0x00000002;

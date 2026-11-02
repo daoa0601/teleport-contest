@@ -1,4 +1,4 @@
-import { monsterGoldAmount } from '../js/hero_gold.js';
+
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import { resetInputState } from '../js/input.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { monsterGoldAmount } from '../js/hack.js';
 
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 

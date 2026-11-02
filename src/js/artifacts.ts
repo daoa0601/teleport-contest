@@ -115,7 +115,7 @@ import { objectName, objectNameIsPlural } from './objnam.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, KILLED_BY } from './const.js';
 import { finishHeroDeath } from './end.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { definiteName, objectCombatName } from './objnam.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
@@ -195,7 +195,7 @@ import { applyHeroLocationEffects } from './hack.js';
 import { rnz } from './rng.js';
 import { heroIsBlinded, permanentBlind } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
-import { objectWeight } from './weight.js';
+
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { doBlindingRay } from './flash.js';
 import { lightDamage, lightRoom } from './light.js';
@@ -215,6 +215,8 @@ import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { migrateMonsterToLevel } from './mon.js';
+import { loseHeroHp } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;

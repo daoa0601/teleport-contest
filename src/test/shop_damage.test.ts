@@ -14,13 +14,23 @@ import {
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { canSpotMonster, terrain_glyph } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import {
     ARROW, DAGGER, BOULDER, CHAIN_MAIL, LAND_MINE, LEASH, LOCK_PICK, POT_FRUIT_JUICE,
 } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
-import { checkSpecialRoom, addShopDamage, makeAngryShopkeeper, pacifyShopkeeper, payForShopDamage, repairShopDamage, rileShopkeeper, setPaidShopkeeper, shopDig, shopkeeperRepairsDamage } from '../js/shk.js';
+import {
+    addShopDamage,
+    makeAngryShopkeeper,
+    pacifyShopkeeper,
+    payForShopDamage,
+    repairShopDamage,
+    rileShopkeeper,
+    setPaidShopkeeper,
+    shopDig,
+    shopkeeperRepairsDamage
+} from '../js/shk.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { syncBlindness } from '../js/senses.js';
@@ -28,6 +38,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { deliverMigratingMonsters } from '../js/dog.js';
+import { heroGoldAmount, checkSpecialRoom } from '../js/hack.js';
 
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 

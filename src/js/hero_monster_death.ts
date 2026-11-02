@@ -27,7 +27,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
 import { mkobj } from './mkobj.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
@@ -46,6 +46,7 @@ import {
     monsterDeathSquareAllowsObjects, monsterDeathSwallower, monsterLeavesCorpse, prepareMonsterPetrification,
     resolveMonsterDeathExplosion, rollMonsterDeathExplosion,
 } from './mon.js';
+import { finishDestinationSpotEffects } from './hack.js';
 
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
 // pet-murder chronicle entry behind (mon.c:xkilled()).

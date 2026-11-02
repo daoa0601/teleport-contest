@@ -30,8 +30,9 @@ import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import { isLavaAt, isPoolAt } from './dbridge.js';
+import { objectWeight } from './mkobj.js';
 
 
 export interface FloorEffectOptions {

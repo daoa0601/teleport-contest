@@ -12,7 +12,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState, pushKey, pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
@@ -25,6 +25,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
+import { loseHeroHp } from '../js/hack.js';
 
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 

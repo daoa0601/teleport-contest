@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { ICE, NO_MINVENT, PLNMSG_ONE_ITEM_HERE } from '../js/const.js';
-import { slipOrTrip } from '../js/fumbling.js';
+
 import { showFloorPile } from '../js/floor_object_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -17,6 +17,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { slipOrTrip } from '../js/timeout.js';
 
 void test('fumbling refers to the item just described on the floor by a pronoun', async () => {
     await freshObjectRoom();

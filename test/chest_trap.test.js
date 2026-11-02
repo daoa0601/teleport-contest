@@ -5,7 +5,6 @@ import { triggerChestTrap } from '../js/chest_trap.js';
 import { M_SEEN_COLD, M_SEEN_ELEC } from '../js/const.js';
 import { useContainer } from '../js/container.js';
 import { flush_screen } from '../js/display.js';
-import { moveObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, CHEST, CLUB, RIN_FREE_ACTION, ROCK } from '../js/object_data.js';
@@ -19,6 +18,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { moveObject } from '../js/hack.js';
 function randomValues(...values) {
     return (range) => {
         const value = values.shift();

@@ -135,7 +135,7 @@ src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficul
 src/js/boomerang.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/boulder_pool.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
 src/js/boulder_pool.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
-src/js/boulder_push.ts	pushIntoTrap	rn2	"[""10""]"	constant
+src/js/hack.ts	pushIntoTrap	rn2	"[""10""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""directions.length""]"	unproved
 src/js/bullwhip.ts	damageHeroWithWhip	rnd	"[""2""]"	constant
@@ -152,8 +152,8 @@ src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/apply.ts	useCamera	rn2	"[""2""]"	constant
 src/js/apply.ts	useCamera	rnd	"[""25""]"	constant
 src/js/eat.ts	applyCannibalPenalty	rn1	"[""4"", ""2""]"	constant
-src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	d	"[""4"", ""6""]"	constant
-src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	rnd	"[""20""]"	constant
+src/js/hack.ts	finishCeilingMonsterArrival	d	"[""4"", ""6""]"	constant
+src/js/hack.ts	finishCeilingMonsterArrival	rnd	"[""20""]"	constant
 src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length * 100""]"	unproved
 src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/character_selection.ts	rigidChecks	rn2	"[""1""]"	constant
@@ -416,13 +416,13 @@ src/js/fountain.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
 src/js/fountain.ts	dipFountainSword	rn2	"[""3""]"	constant
 src/js/fountain.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant
 src/js/fruit.ts	addFruit	rnd	"[""127""]"	constant
-src/js/fumbling.ts	checkSlipperyIce	rn2	"[""propertyIsActive('coldResistance', game) ? 3 : 2""]"	constant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""10 + currentAttribute(A_DEX, game)""]"	invariant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""2""]"	constant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""3""]"	constant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""3""]"	constant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""4""]"	constant
-src/js/fumbling.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
+src/js/hack.ts	checkSlipperyIce	rn2	"[""propertyIsActive('coldResistance', game) ? 3 : 2""]"	constant
+src/js/timeout.ts	slipOrTrip	rn2	"[""10 + currentAttribute(A_DEX, game)""]"	invariant
+src/js/timeout.ts	slipOrTrip	rn2	"[""2""]"	constant
+src/js/timeout.ts	slipOrTrip	rn2	"[""3""]"	constant
+src/js/timeout.ts	slipOrTrip	rn2	"[""3""]"	constant
+src/js/timeout.ts	slipOrTrip	rn2	"[""4""]"	constant
+src/js/timeout.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
 src/js/genocide.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
 src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
 src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
@@ -453,7 +453,7 @@ src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
 src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
 src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
 src/js/hero_attack_accuracy.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
-src/js/hero_beast_displacement.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
+src/js/hack.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""3""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""6""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""twoWeapons ? 3 : 6""]"	constant
@@ -533,13 +533,13 @@ src/js/hero_mind_blast.ts	mindBlastSense	random	"[""2""]"	constant
 src/js/hero_mind_blast.ts	useHeroMindBlast	rollDamage	"[""15""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
-src/js/hero_movement_turbulence.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
-src/js/hero_movement_turbulence.ts	airTurbulenceStopsHero	rn2	"[""4""]"	constant
-src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""3""]"	constant
-src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""3""]"	constant
-src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""hero.dx ? 5 : 3""]"	constant
-src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
-src/js/hero_movement_turbulence.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
+src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
+src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""4""]"	constant
+src/js/mkmaze.ts	applyWaterFriction	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	applyWaterFriction	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dx ? 5 : 3""]"	constant
+src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
+src/js/hack.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/hero_natural_brain.ts	applyHeroNaturalBrain	random	"[""8""]"	constant
@@ -573,7 +573,7 @@ src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""4""]"	constan
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""contact.damage""]"	unproved
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""range""]"	guarded
 src/js/hero_object_hit.ts	hitHeroWithObject	rollOne	"[""20""]"	constant
-src/js/hero_pet_displacement.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
+src/js/hack.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
 src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
 src/js/hero_ranged_attack.ts	hitMonsterWithRangedObject	rnd	"[""20""]"	constant
@@ -594,7 +594,7 @@ src/js/hero_self_zap.ts	zapHeroWithObject	rn1	"[""25"", ""50""]"	constant
 src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""100""]"	constant
 src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""25""]"	constant
 src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""50""]"	constant
-src/js/hero_step_confirmation.ts	confirmHeroStep	rnd	"[""TRAPNUM - 1""]"	constant
+src/js/hack.ts	confirmHeroStep	rnd	"[""TRAPNUM - 1""]"	constant
 src/js/hero_strangulation.ts	strangulationDialogue	rn2	"[""50""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	random	"[""3""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""20""]"	constant
@@ -651,7 +651,7 @@ src/js/hero_weapon_impact.ts	rollHeroJoust	rnl	"[""50""]"	constant
 src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""10""]"	constant
 src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""wearOffChance""]"	constant
 src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	rollOne	"[""6""]"	constant
-src/js/hero_web_fight.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2""]"	unproved
+src/js/hack.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2""]"	unproved
 src/js/dig.ts	liquidForHole	random	"[""lava + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""moats + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""pools + 1""]"	guarded
@@ -680,7 +680,7 @@ src/js/input.ts	randomKey	rn2	"[""7""]"	constant
 src/js/input.ts	randomKey	rn2	"[""NATIVE_COMMAND_CONSTANTS.N_DIRS""]"	unproved
 src/js/input.ts	randomKey	rnd	"[""game.iflags.wc_eight_bit_input ? 255 : 127""]"	constant
 src/js/inventory_prompt.ts	mimeInventoryAction	rn2	"[""2""]"	constant
-src/js/iron_bars_meal.ts	continueChewingTerrain	rnd	"[""20""]"	constant
+src/js/hack.ts	continueChewingTerrain	rnd	"[""20""]"	constant
 src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
 src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
 src/js/apply.ts	escapeJumpTrap	rn1	"[""1000"", ""500""]"	constant
@@ -751,7 +751,7 @@ src/js/light.ts	createConfusedLightPets	rn2	"[""2""]"	constant
 src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
 src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
 src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
-src/js/location_effects.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
+src/js/hack.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
 src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved
 src/js/lock.ts	breakChestLock	rn2	"[""3""]"	constant
 src/js/lock.ts	continueForceLock	rn2	"[""100""]"	constant
@@ -2144,7 +2144,7 @@ src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
-src/js/shk.ts	checkSpecialRoom	rn2	"[""3""]"	constant
+src/js/hack.ts	checkSpecialRoom	rn2	"[""3""]"	constant
 src/js/shk.ts	enterShop	rn2	"[""3""]"	constant
 src/js/shk.ts	heroHonorific	rn2	"[""4""]"	constant
 src/js/shk.ts	chatWithShopkeeper	rn2	"[""IZCHAK_SPEAKS.length""]"	constant

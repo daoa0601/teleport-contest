@@ -10,6 +10,7 @@ import { nextIdent } from './ident.js';
 import { delobj } from './invent.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
+import { heroGoldAmount } from './hack.js';
 const COIN_CLASS = 12;
 // C sit.c:take_gold(). Contained coins are not exposed to the effect.
 export async function takeHeroGold(state = game) {
@@ -27,13 +28,13 @@ export async function takeHeroGold(state = game) {
     if (lostMoney)
         state.context.botl = true;
 }
-function quantity(object) {
+export function heroGoldQuantity(object) {
     return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
 }
 function coinWeight(amount) {
     return Math.max(1, Math.trunc((amount + 50) / 100));
 }
-function normalizeGoldObject(object, amount = quantity(object)) {
+function normalizeGoldObject(object, amount = heroGoldQuantity(object)) {
     object.otyp = GOLD_PIECE;
     object.oclass = COIN_CLASS;
     object.invlet = '$';
@@ -46,27 +47,16 @@ function normalizeGoldObject(object, amount = quantity(object)) {
 export function heroGoldObject(state) {
     return (state?.inventory || []).find(object => object?.otyp === GOLD_PIECE || object?.oclass === COIN_CLASS) || null;
 }
-// C hack.c:money_cnt() over the hero's inventory: zero gold pieces
-// rather than a missing stack.
-export function heroGoldAmount(state) {
-    const object = heroGoldObject(state);
-    return object ? quantity(object) : 0;
-}
-// C hack.c:money_cnt() over a monster's minvent; C callers shk.c:4046,
-// shk.c:5586, priest.c:614.
-export function monsterGoldAmount(monster) {
-    return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
-}
 export function addHeroGoldObject(state, incoming) {
     if (!incoming)
         return { object: heroGoldObject(state), merged: false };
-    const amount = quantity(incoming);
+    const amount = heroGoldQuantity(incoming);
     if (!amount)
         return { object: heroGoldObject(state), merged: false };
     state.context.botl = true;
     const existing = heroGoldObject(state);
     if (existing && existing !== incoming) {
-        const total = quantity(existing) + amount;
+        const total = heroGoldQuantity(existing) + amount;
         normalizeGoldObject(existing, total);
         incoming.where = 'gone';
         incoming.ox = incoming.oy = 0;
@@ -126,7 +116,7 @@ export function detachHeroGold(state, requested = null) {
     const object = heroGoldObject(state);
     if (!object)
         return null;
-    const amount = quantity(object);
+    const amount = heroGoldQuantity(object);
     const count = requested === null
         ? amount : Math.max(1, Math.min(Math.trunc(requested), amount));
     const detached = count < amount ? splitObjectStack(object, count, state) : object;

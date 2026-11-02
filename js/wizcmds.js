@@ -16,7 +16,7 @@ import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { visibleCommandKey } from './cmd.js';
 import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, objectNeedsFullIdentification, } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { setMulti } from './cmd.js';
 import { makeWish } from './wish.js';
 import { polymorphHero } from './polyself.js';
@@ -71,7 +71,7 @@ import { killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restor
 import { maybeResetPick } from './lock.js';
 import { mklev } from './mklev.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { checkSpecialRoom, setPaidShopkeeper } from './shk.js';
+import { setPaidShopkeeper } from './shk.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { vision_reset_new_level } from './vision.js';
 import { collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from './dog.js';
@@ -92,6 +92,7 @@ import { depth } from './hacklib.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { deliverSpecialLevelMessages, placeHeroAtRandomArrival, resolveHeroArrivalCollision, } from './level_change.js';
 import { cls, flush_screen, glyphAt, map_invisible } from './display.js';
+import { showGetposTip, checkSpecialRoom } from './hack.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
     const verbose = game.flags.verbose;

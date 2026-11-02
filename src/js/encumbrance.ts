@@ -4,7 +4,9 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { encumbranceMessage, nearCapacity } from './weight.js';
+import { encumbranceMessage } from './pickup.js';
+import { nearCapacity } from './hack.js';
+
 
 export async function reportHeroEncumbrance(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation,

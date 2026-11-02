@@ -15,12 +15,13 @@ import { setMonsterMalign } from './makemon.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { LARGE_BOX } from './object_data.js';
 import { deleteObject } from './shk.js';
-import { objectWeight } from './weight.js';
+
 import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { objectWeight } from './mkobj.js';
 
 interface QuantumCatOptions { makeCat?: boolean; showMessage?: boolean; state?: GameState }
 

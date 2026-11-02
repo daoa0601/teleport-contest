@@ -66,7 +66,7 @@ import {
 } from './object_data.js';
 import { makePlural } from './objnam.js';
 import { promptYesNo } from './query.js';
-import { inTown } from './room.js';
+
 import { rnd, rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
@@ -83,14 +83,14 @@ import {
 import { spendHeroNutrition, updateHeroHunger, vomitHero } from './eat.js';
 import { showEnlightenment } from './insight.js';
 import { fruitName } from './fruit.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { detectMonsters } from './detect.js';
 import {
     grantIntrinsicProperty, propertyIsActive, setPropertyTimeout,
 } from './properties.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
+import { setHeroGoldAmount } from './hero_gold.js';
 import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { consumeInventoryItem } from './invent.js';
@@ -106,6 +106,7 @@ import { deleteObject } from './shk.js';
 import { setTwoWeaponCombat, setWieldedArtifactProperties } from './wield.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
+import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 
 // ---------------------------------------------------------------------------
 // Fountain drinking, dipping, drying, warnings, and water effects (fountain)

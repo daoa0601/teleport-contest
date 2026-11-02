@@ -12,12 +12,13 @@ import { heroHasMartialKick } from './kick_rules.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { rn2, rnl } from './rng.js';
-import { inTown, roomsAt } from './room.js';
+
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { addShopDamage, payForShopDamage } from './shk.js';
 import { couldsee, vision_note_blocker_change } from './vision.js';
 import type { Monster } from './monster_types.js';
 import { angerWatchGuards, isWatch } from './mon.js';
+import { inTown, roomsAt } from './hack.js';
 
 interface DoorKickResponses {
     ouch: (x: number, y: number) => Promise<void>;

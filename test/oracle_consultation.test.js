@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -9,6 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 async function oracleWithGold(gold) {
     await freshObjectRoom({ hero: { uexp: 0 } });
     const oracle = await createMonsterAt('Oracle', 11, 10);

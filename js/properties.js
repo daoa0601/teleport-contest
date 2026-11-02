@@ -36,7 +36,7 @@ function propertyRecord(property, state = game) {
     hero._propertySources[property] = record;
     return record;
 }
-function existingPropertyRecord(property, state = game) {
+export function existingPropertyRecord(property, state = game) {
     return state.u?._propertySources?.[property] || null;
 }
 function timedSourceIsActive(property, hero) {
@@ -48,7 +48,7 @@ export function hasTimedProperty(property, state = game) {
 function intrinsicSourceIsActive(record) {
     return Object.keys(record?.intrinsic || {}).length > 0;
 }
-function propertySourceIsActive(property, state) {
+export function propertySourceIsActive(property, state) {
     const hero = state.u;
     const record = existingPropertyRecord(property, state);
     return intrinsicSourceIsActive(record)
@@ -62,35 +62,11 @@ function propertySourceIsActive(property, state) {
 export function hasRawLevitationSource(state = game) {
     return propertySourceIsActive('levitation', state);
 }
-function levitationSourceIsActive(ignoreBoots, state) {
+export function levitationSourceIsActive(ignoreBoots, state) {
     const record = existingPropertyRecord('levitation', state);
     return intrinsicSourceIsActive(record) || !!record?.invoked
         || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
-}
-// C hack.c:weight_cap() ignores the trap block on levitation, and defers
-// the carrying benefit of boots whose Boots_on callback has not run yet.
-export function levitationSupportsLoad(ignoreBoots, state = game) {
-    return !existingPropertyRecord('levitation', state)?.blockedByTerrain
-        && levitationSourceIsActive(ignoreBoots, state);
-}
-// Removing pending boots' levitation for weight_cap() also restores flight
-// through float_vs_flight(). Query that temporary state without changing the
-// abilities projected onto the hero while the boots are actually worn.
-export function flyingSupportsLoad(ignoreBoots, state = game) {
-    if (!ignoreBoots)
-        return propertyIsActive('flying', state);
-    if (existingPropertyRecord('flying', state)?.blockedByTerrain
-        || levitationSourceIsActive(true, state))
-        return false;
-    const flying = propertySourceIsActive('flying', state);
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    if (flying && trapped)
-        return false;
-    const steedFlies = hero.usteed
-        && !!((MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) & 0x01);
-    return flying || !!steedFlies;
 }
 export function propertyIsBlocked(property, state = game) {
     if (existingPropertyRecord(property, state)?.blockedByTerrain)

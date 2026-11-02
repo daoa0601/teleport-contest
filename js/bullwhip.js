@@ -12,12 +12,10 @@ import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { objectNoLongerHeld } from './do.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './hero_species.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon, monsterWieldedWeapon } from './weapon.js';
 import { BOULDER, CORPSE } from './object_data.js';
@@ -41,6 +39,7 @@ import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './do_wear.js';
 import { fireDamageObject } from './fire_damage.js';
 import { wakeAttackedMonster } from './mon.js';
+import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
 const PM_GRID_BUG = 116;
 const CARDINAL_DIRECTIONS = [
     { dx: -1, dy: 0 }, { dx: 0, dy: -1 },

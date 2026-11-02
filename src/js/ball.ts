@@ -11,9 +11,7 @@ import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './mon.js';
 import { cls, displayLiquidName, map_object, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import {
-    moveObject, placeObjectSynchronously, remove_object,
-} from './floor_object.js';
+import { placeObjectSynchronously, remove_object } from './floor_object.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { hitFloorWithObject } from './dothrow.js';
 
@@ -21,7 +19,7 @@ import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './do_wear.js';
 
 import { heroHeadName } from './body_parts.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './mkobj.js';
@@ -34,7 +32,7 @@ import {
     Is_waterlevel, is_hole, is_pit,
 } from './const.js';
 import { dist2, distmin } from './hacklib.js';
-import { nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
+
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { heroLegName } from './body_parts.js';
@@ -55,6 +53,13 @@ import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { KillerFormat } from './end.js';
+import {
+    moveObject,
+    loseHeroHp,
+    nearCapacity,
+    SLT_ENCUMBER,
+    weightCapacity,
+} from './hack.js';
 
 interface BallMoveGeometry {
     ball: GameObject;

@@ -5,12 +5,12 @@ import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { deliverMigratingObjects, impactDrop } from '../js/dokick.js';
 import { CLUB, MIRROR, ROCK } from '../js/object_data.js';
-import { updateHeroRoomMembership } from '../js/room.js';
 import { dropInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { createDungeon } from './support/topology.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 function downwardLadder() {
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Doom', num_dunlevs: 2 })];
