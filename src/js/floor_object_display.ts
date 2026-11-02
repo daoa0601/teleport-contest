@@ -11,7 +11,6 @@ import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';
-import { flush_screen } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { readEngravingAt } from './engrave.js';
 import { nomul } from './hack.js';
@@ -146,12 +145,13 @@ export async function showFloorPile(
         game._lastPlineKind = PLNMSG_ONE_ITEM_HERE;
         return await feelPetrifyingCorpse(first);
     }
-    // look_here() displays WIN_MESSAGE first. Unread prose is acknowledged
-    // and cleared; seen text stays beneath the corner window.
+    // C invent.c:look_here(): "display_nhwindow(WIN_MESSAGE, FALSE);"
+    // acknowledges prose here. Arrival's pickup.c:check_here() owns
+    // "flush_screen(1);" before "(void) look_here(ct, lhflags);".
+    // Explicit inspection leaves pending map glyphs buffered.
     const unreadMessage = !!game._pending_message;
     await flushPendingTopline();
     if (unreadMessage) clearMessageWindow();
-    await flush_screen(1);
     const display = requireGameDisplay();
     const pileLocation = heroIsBlind() ? 'you feel here' : 'are here';
     const descriptions: string[] = [];

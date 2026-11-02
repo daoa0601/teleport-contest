@@ -2,6 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_NODOOR, SQKY_BOARD } from '../js/const.js';
+import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { dolook } from '../js/invent.js';
@@ -67,6 +68,13 @@ for (const overlay of [true, false]) {
         game.flags.menu_overlay = overlay;
         await floorObject(DART, game.u.ux, game.u.uy, { quan: 1 });
         await floorObject(ARROW, game.u.ux, game.u.uy, { quan: 1 });
+        // A running game has already painted the screen: per-turn bot()
+        // (C allmain.c:473-475) and the previous command's map flush
+        // (allmain.c:555). look_here() then shows the pile window without
+        // flushing the map: invent.c:4289-4308 has no flush_screen between
+        // display_nhwindow(WIN_MESSAGE, FALSE) and the menu, so pending map
+        // glyphs stay buffered while the painted map and status remain.
+        await flush_screen(1);
         const shown = [];
         const input = resetInputState();
         input.display = {
