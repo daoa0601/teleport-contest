@@ -67,7 +67,18 @@ function boundsTable(bounds) {
         table.set(field, bounds[field]);
     return table;
 }
+// C nhlsel.c:l_selection_register(): the selection method table and its
+// metatable. Entries without a helper of their own below: new
+// (l_selection_new()), floodfill (l_selection_flood()), match
+// (l_selection_match()), room (l_selection_room()), describe_size
+// (l_selection_size_description()), __band (l_selection_and()), __bor and
+// __add (l_selection_or()), __bxor (l_selection_xor()), __sub
+// (l_selection_sub()); __unm and __bnot route to negate()
+// (l_selection_not()), and __gc (l_selection_gc()) has no port because the
+// interpreter owns the selection objects.
 export function createSelectionApi(context, invoke = null) {
+    // C nhlsel.c:l_selection_push_new(): wrap a selection in the userdata whose
+    // metatable carries the operators; the caller builds the SpecialSelection.
     const wrap = (selection) => new LuaUserdata(selection, metatable);
     const origin = () => {
         const active = currentContext();
@@ -85,6 +96,8 @@ export function createSelectionApi(context, invoke = null) {
             y: point.y - start.y,
         };
     };
+    // C nhlsel.c:l_selection_setpoint(): the zero- to three-argument forms all
+    // resolve their coordinate through get_location_coord() first.
     const set = async (...args) => {
         if (args.length === 0)
             throw new NethackLuaError('Selection setpoint error');
@@ -97,6 +110,8 @@ export function createSelectionApi(context, invoke = null) {
         selection_setpoint(point.x, point.y, selection.selection, value);
         return self ?? wrap(selection);
     };
+    // C nhlsel.c:l_selection_getpoint(): x and y, an {x,y} table or a two-entry
+    // array, resolved through get_location_coord() before the point is read.
     const get = async (self, ...args) => {
         const selection = selectionValue(self);
         let coordinate;
@@ -122,6 +137,8 @@ export function createSelectionApi(context, invoke = null) {
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selection.selection);
     };
+    // C nhlsel.c:l_selection_clone(): a copy of the selection, or the reverse
+    // copy-into-second-slot form.
     const clone = (...args) => {
         const source = selectionValue(args[0]);
         if (args.length === 1)
@@ -130,7 +147,9 @@ export function createSelectionApi(context, invoke = null) {
         copySelectionInto(selectionValue(args[1], 2), source);
         return wrap(new SpecialSelection());
     };
+    // C nhlsel.c:l_selection_numpoints(): count the selected points.
     const numpoints = (self) => selectionValue(self).numPoints();
+    // C nhlsel.c:l_selection_not(): negate a fresh selection or a clone.
     const negate = (...args) => {
         if (args.length === 0)
             return wrap(new SpecialSelection().negate());
@@ -139,8 +158,13 @@ export function createSelectionApi(context, invoke = null) {
         selection_not(target.selection);
         return result;
     };
+    // C nhlsel.c:l_selection_filter_percent(): keep points with that chance.
     const percentage = (self, percent) => wrap(selectionValue(self).percentage(luaInt(percent)));
+    // C nhlsel.c:l_selection_filter_mapchar(): keep points whose map character
+    // and lighting match.
     const filterMapchar = (self, character, lit = -2) => wrap(selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)));
+    // C nhlsel.c:l_selection_grow(): grow in the named direction (or a random
+    // one), on a clone.
     const grow = (self, direction = 'all', ...extra) => {
         const selection = selectionValue(self);
         const name = luaString(direction ?? 'all');
@@ -151,8 +175,11 @@ export function createSelectionApi(context, invoke = null) {
             selectionValue(direction, 2);
         return wrap(selection.grow(name));
     };
+    // C nhlsel.c:l_selection_rndcoord(): a random point, optionally removed,
+    // reported relative to the current room or map origin.
     const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInt(remove ?? 0)))
         ?? { x: -1, y: -1 });
+    // C nhlsel.c:l_selection_getbounds(): the selection's bounds rectangle.
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
     const explicitPoint = (x, y) => {
         const start = origin();
@@ -162,6 +189,9 @@ export function createSelectionApi(context, invoke = null) {
         };
     };
     const pointArguments = (args, first) => explicitPoint(integerArgument(args[first - 1], first), integerArgument(args[first], first + 1));
+    // C nhlsel.c:l_selection_line(), l_selection_rect() and l_selection_fillrect()
+    // (the area alias), with params_sel_2coords()' four- or five-argument forms
+    // inlined in the argc handling.
     const geometry = (shape, args) => {
         if (args.length !== 4 && args.length !== 5)
             throw new NethackLuaError(`selection.${shape === 'area' ? 'fillrect' : shape}: illegal arguments`);
@@ -183,6 +213,8 @@ export function createSelectionApi(context, invoke = null) {
         }
         return wrap(result);
     };
+    // C nhlsel.c:l_selection_circle() and l_selection_ellipse(): one or two
+    // radii, optionally filled, both through selection_do_ellipse().
     const ellipse = (circular, args) => {
         const required = circular ? 3 : 4;
         const coordinatesOnly = args.length === required
@@ -202,6 +234,8 @@ export function createSelectionApi(context, invoke = null) {
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return coordinatesOnly ? wrap(result) : args[0];
     };
+    // C nhlsel.c:l_selection_gradient(): the radial or square gradient table;
+    // x2/y2 defaulting to -1 means a single center.
     const gradient = async (options, ...extra) => {
         if (!(options instanceof LuaTable) || extra.length)
             throw new NethackLuaError('selection.gradient requires table argument');
@@ -218,6 +252,8 @@ export function createSelectionApi(context, invoke = null) {
         await selection_do_gradient(result.selection, x, y, pointCenter ? x : x2, pointCenter ? y : y2, type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE, luaCoordinate(options.get('mindist') ?? 0), luaCoordinate(options.get('maxdist')));
         return wrap(result);
     };
+    // C nhlsel.c:l_selection_randline(): a rough line between two points,
+    // defaulting to roughness 7.
     const randline = (...args) => {
         let start = explicitPoint(0, 0), end = explicitPoint(0, 0);
         let roughness = 7;
@@ -239,6 +275,8 @@ export function createSelectionApi(context, invoke = null) {
         specialSelectionRandLine(start.x, start.y, end.x, end.y, roughness, 12, target);
         return result;
     };
+    // C nhlsel.c:l_selection_iterate(): visit every selected point with the
+    // callback, room- or map-relative, aborting on a callback error.
     const iterate = async (self, ...args) => {
         const callback = args[0];
         if (args.length !== 1 || callback === undefined || luaType(callback) !== 'function')

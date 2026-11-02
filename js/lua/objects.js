@@ -56,6 +56,7 @@ const ARGUMENT_COUNTS = {
     stop_timer: { min: 1, max: 2 }, start_timer: { min: 3, max: 3 },
     bury: { oneOf: [1, 3] },
 };
+// C nhlobj.c:l_obj_check(): the obj userdata, or an error.
 function handle(value) {
     if (!(value instanceof ObjectHandle))
         throw new TypeError('object operation requires a Lua object');
@@ -70,6 +71,8 @@ function timerKind(name) {
         throw new TypeError(`Unknown object timer: ${name}`);
     return TIMER_KINDS.get(name) ?? null;
 }
+// C nhlobj.c:l_obj_timer_stop(): stop every timer of the object, or only
+// the named kind, running burn cleanup for what stopped.
 function stopTimers(item, kind, state) {
     if (!item)
         return [];
@@ -81,6 +84,14 @@ function stopTimers(item, kind, state) {
     }
     return stopped;
 }
+// C nhlobj.c:l_obj_register(): the obj method table and metatable. Entries
+// without a helper of their own below: at (l_obj_at()), next
+// (l_obj_nextobj(), walking floorChain()/objectChain()), contents
+// (l_obj_getcontents()), container (l_obj_container()), isnull
+// (l_obj_isnull()), and the timer methods (l_obj_timer_has(),
+// l_obj_timer_peek(), l_obj_timer_start()); l_obj_push() is the wrap
+// method, and l_obj_gc() is the FinalizationRegistry plus destroy(), which
+// free only objects still outside the game.
 export function createObjectApi(state = game) {
     const created = new Set();
     const collected = new FinalizationRegistry(reference => {
@@ -122,6 +133,8 @@ export function createObjectApi(state = game) {
         if (carried)
             await finishInventoryRemoval(item, state);
     }
+    // C nhlobj.c:l_obj_new_readobjnam(): a wished-for object by name, or a
+    // table's id or class; readobjnam() or mkobj()/mksobj() builds it.
     async function create(value) {
         let item;
         if (typeof value === 'string') {
@@ -182,6 +195,8 @@ export function createObjectApi(state = game) {
             const item = object(value);
             return api.wrap(item?.where === 'contained' ? item.container ?? null : null);
         },
+        // C nhlobj.c:l_obj_add_to_container(): extract the object, add it
+        // to the container, and reweigh the container.
         async addcontent(boxHandle, itemHandle) {
             const box = object(boxHandle), item = object(itemHandle);
             if (!box || !item)
@@ -190,6 +205,7 @@ export function createObjectApi(state = game) {
             handle(itemHandle).value = await addObjectToContainer(box, item, state);
             box.owt = objectWeight(box);
         },
+        // C nhlobj.c:l_obj_placeobj(): extract, place on the map, redraw.
         async placeobj(value, x, y) {
             const item = object(value);
             const point = api.toAbsolute(luaInteger(x), luaInteger(y));
@@ -224,6 +240,8 @@ export function createObjectApi(state = game) {
                 scheduleObjectTimer(item, kind, state.moves + when, state);
             }
         },
+        // C nhlobj.c:l_obj_bury(): bury at the object's square or a given
+        // one; true when the ground absorbed the object.
         async bury(value, x, y) {
             const item = object(value);
             if (!item)
@@ -263,6 +281,8 @@ function floorChain(state) {
     return (state.level?.objects || []).flatMap(column => (column || []).flatMap(pile => pile || []))
         .sort((a, b) => (b._fobjOrder || 0) - (a._fobjOrder || 0));
 }
+// C nhlobj.c:l_obj_nextobj(): the chain a next() step walks — the floor
+// pile (nexthere) or the object list (nobj) for every object location.
 function objectChain(item, onSquare, state) {
     switch (item.where) {
         case 'floor': {
@@ -290,6 +310,8 @@ function objectChain(item, onSquare, state) {
         case 'gone': return [];
     }
 }
+// C nhlobj.c:l_obj_to_table(): every object field as a Lua table, NO_OBJ
+// for a null object.
 function objectTable(item, state) {
     if (!item)
         return objectToLuaTable({ NO_OBJ: 1 });
@@ -328,6 +350,8 @@ function objectTable(item, state) {
         values.oname = name;
     return objectToLuaTable(values);
 }
+// C nhlobj.c:l_obj_objects_to_table(): the class data of an object type or
+// a carried object.
 function classTable(type, state) {
     if (typeof type !== 'number' || !Number.isInteger(type) || type < 0 || type >= OBJECT_NAMES.length)
         throw new TypeError('obj.class requires an object or object type');

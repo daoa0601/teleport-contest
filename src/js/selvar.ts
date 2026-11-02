@@ -761,6 +761,8 @@ export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
     return new SpecialSelection(selection);
 }
 
+// C sp_lev.c:set_floodfillchk_match_under() with floodfillchk_match_under():
+// the flood matches the starting square's own terrain.
 export function specialSelectionFloodFill(context: SelectionArea, x: number, y: number, diagonals = false) {
     const start = absolute(context, x, y);
     if (!isok(start.x, start.y)) return new SpecialSelection();
@@ -802,6 +804,9 @@ export function mapCharacterType(character: string | undefined): number | undefi
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
 
+// C nhlsel.c:l_selection_match(): the map fragment match. The fragment
+// parse and mapfrag_error()'s odd-dimension and valid-center checks are
+// inlined above; mapfrag_free() has no port (no owned buffer).
 export function specialSelectionMatch(fragment: string) {
     const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
     const rows = data.split('\n');

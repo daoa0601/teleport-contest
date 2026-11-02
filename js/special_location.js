@@ -25,6 +25,8 @@ export async function getLocationCoord(context, coordinate, humidity, filter) {
     return point;
 }
 // Callers which always use SP_COORD_PACK do not recognize the random sentinel.
+// C sp_lev.c:get_unpacked_coord(): the packed axes unpack here; the random
+// bit becomes the (-1,-1) sentinel getLocationCoord() handles above.
 export async function getPackedLocationCoord(context, coordinate, humidity, filter) {
     return await getLocation(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
 }
@@ -73,6 +75,9 @@ export async function getLocation(context, coordinate, humidity, filter) {
             : { x: (COLNO - 1) & ~1, y: (ROWNO - 1) & ~1 };
     return point;
 }
+// C sp_lev.c:set_ok_location_func() with good_stair_loc(): the optional
+// filter parameter replaces the humidity tests; createLuaStair()'s random
+// draw passes one that accepts only room, corridor or ice.
 export function isOkLocation(x, y, humidity, filter) {
     if (Is_waterlevel(game.u.uz))
         return true;

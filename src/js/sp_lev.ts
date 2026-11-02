@@ -186,6 +186,7 @@ export function setSpecialTerrain(x: number, y: number, typ: number, lit: number
     }
 }
 
+// C sp_lev.c:lspo_mazewalk(): walk the maze outward from a coordinate.
 export function specialMazeWalk(
     context: SpecialLevelContext, mapX: number, mapY: number,
     direction: 'north' | 'south' | 'east' | 'west', passageType = ROOM,
@@ -223,6 +224,7 @@ export function specialMazeWalk(
     );
 }
 
+// C sp_lev.c:maze1xy(): an odd, unclaimed, dry maze spot.
 function specialMazeStockPoint(mappedCells: SpecialSelection): Position {
     const level = requireGameLevel();
     // sp_lev.c:maze1xy().  The stock reservoir is outside every square
@@ -247,6 +249,8 @@ function specialMazeStockPoint(mappedCells: SpecialSelection): Position {
     return point;
 }
 
+// C sp_lev.c:rndtrap(): a random trap, excluding holes, portals, vibrating
+// squares, and level-dependent cases.
 function randomSpecialTrapType(): number {
     const level = requireGameLevel();
     let typ;
@@ -354,6 +358,9 @@ function clearStairwaySquare(x: number, y: number): void {
     if (trap) deleteTrap(trap);
 }
 
+// C sp_lev.c:set_wall_property(): flag the rectangle's walls, trees and
+// iron bars — sel_set_wall_property()'s per-point test is the condition
+// below. lspo_non_diggable() reaches this whole-map form.
 export function specialNonDiggable(context: SpecialLevelContext | null = null): void {
     const level = requireGameLevel();
     const xstart = context?.xstart ?? 0;
@@ -374,6 +381,8 @@ export function specialNonDiggable(context: SpecialLevelContext | null = null): 
     }
 }
 
+// C sp_lev.c:lspo_non_diggable(): the selection form flags the selected
+// walls and trees directly.
 export function specialSelectionNonDiggable(selection: SpecialSelection): void {
     const level = requireGameLevel();
     selection.forEachXMajor((x, y) => {
@@ -408,6 +417,8 @@ async function specialObjectOfType(context: SpecialLevelContext, otyp: number, a
     return point ? await mksobj_at(otyp, point.x, point.y, true, allowArtifacts) : null;
 }
 
+// C sp_lev.c:sel_set_door(): make the square a door (secret if asked),
+// orient it, and take the requested mask.
 function specialDoorAt(context: SpecialLevelContext, mask: number, x: number, y: number): Position | null {
     const level = requireGameLevel();
     const doorX = context.xstart + x, doorY = context.ystart + y;
@@ -419,6 +430,7 @@ function specialDoorAt(context: SpecialLevelContext, mask: number, x: number, y:
     return { x: doorX, y: doorY };
 }
 
+// C sp_lev.c:rnddoor(): one of the five door states, uniformly.
 function randomSpecialDoorMask(): number {
     // lspo_door() uses rnddoor() directly for an explicit coordinate.
     const states = [D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED];
@@ -1201,6 +1213,7 @@ async function specialTrapLocation(
 
 // sp_lev.c:get_free_room_loc(). Furniture can satisfy DRY placement;
 // room features retry on ordinary floor instead of replacing each other.
+// C sp_lev.c:get_room_loc(): somexy() supplies the room-relative point.
 async function getFreeRoomLocation(
     context: SpecialLevelContext, coordinate: Position | null, room: Room,
 ): Promise<Position> {
@@ -1515,6 +1528,7 @@ export function specialMapRows(source: string): string[] {
     return rows;
 }
 
+// C sp_lev.c:lvlfill_solid(): fill the maze area and reset per-cell flags.
 function fillSpecialSolid(type: number, lit: boolean): void {
     const level = requireGameLevel();
     for (let x = 2; x <= ((COLNO - 1) & ~1); x++) {
@@ -1533,6 +1547,8 @@ function fillSpecialSolid(type: number, lit: boolean): void {
     }
 }
 
+// C sp_lev.c:splev_initlev() behind lspo_level_init(): the level style
+// dispatch — solidfill, mazegrid, maze, rogue, mines and swamp.
 export async function fillSpecialLevel(
     options: DesOptions, active: ActiveSpecialLevel,
 ): Promise<void> {
@@ -1599,6 +1615,7 @@ export async function fillSpecialLevel(
     return;
 }
 
+// C sp_lev.c:lspo_level_flags(): the level flag names.
 export function setLuaLevelFlags(active: ActiveSpecialLevel, flags: LuaValue[]): void {
     const level = requireGameLevel();
     if (!flags.length) throw new TypeError('des.level_flags requires at least one flag');
@@ -1633,6 +1650,8 @@ export function setLuaLevelFlags(active: ActiveSpecialLevel, flags: LuaValue[]):
     }
 }
 
+// C sp_lev.c:lspo_replace_terrain(): chance-gated terrain exchange over a
+// region, selection or map fragment match.
 export async function replaceLuaTerrain(context: SpecialLevelContext, options: DesSelectionOptions): Promise<void> {
     const level = requireGameLevel();
     const explicit: [number, number, number, number] = [
@@ -1666,6 +1685,10 @@ export async function replaceLuaTerrain(context: SpecialLevelContext, options: D
     });
 }
 
+// C sp_lev.c:lspo_feature(): furniture at a dry random spot or an
+// author-chosen square; sel_set_feature() refuses existing furniture, and
+// l_table_getset_feature_flag()'s zero/one/random flag handling is the
+// loop below.
 export async function createLuaFeature(
     context: SpecialLevelContext, options: Parameters<DesOperations['feature']>[0],
 ): Promise<void> {
@@ -1729,6 +1752,8 @@ function noncoalignedSpecialAmask(): number {
     return (noncoalignedSpecialAlignmentDraw() + 2) & 0xff;
 }
 
+// C sp_lev.c:get_table_align(): the align option as a mask, including the
+// coaligned, noncoaligned and random specials.
 function luaSpecialAlignment(value = 'random') {
     if (value === 'noalign') return A_NONE;
     if (value === 'law') return A_LAWFUL;
@@ -1753,6 +1778,7 @@ function specialRoomAt(x: number, y: number, roomType: number): Room | null {
 // C sp_lev.c:sp_amask_to_amask(): the Lua altar mask resolves here, drawing
 // induced_align(80) for "random" and the re-evaluated noncoalignment ternary
 // for "noncoaligned" before the altar stores its flags.
+// C sp_lev.c:lspo_altar(): the align and shrine options with placement.
 export async function createLuaAltar(context: SpecialLevelContext, options: DesOptions): Promise<void> {
     const level = requireGameLevel();
     const coordinate = tablePoint(options);
@@ -1784,6 +1810,7 @@ export async function createLuaAltar(context: SpecialLevelContext, options: DesO
     level.flags.has_temple = true;
 }
 
+// C sp_lev.c:get_table_roomtype_opt(): the room type by name.
 function luaRoomType(name = 'ordinary') {
     const roomTypes: Record<string, number> = {
         ordinary: OROOM,
@@ -1820,6 +1847,8 @@ function luaRoomType(name = 'ordinary') {
     return roomType;
 }
 
+// C sp_lev.c:l_push_mkroom_table(): the room table passed to a contents
+// callback; get_mkroom_name()'s reverse lookup is the names map below.
 export function luaRoomTable(room: Room) {
     const names = new Map([
         [OROOM, 'ordinary'], [THEMEROOM, 'themed'], [COURT, 'throne'],
@@ -1846,6 +1875,8 @@ export function luaRoomTable(room: Room) {
     });
 }
 
+// C sp_lev.c:lspo_region(): a region becomes a room unless it is ordinary,
+// regular and unconstrained; light_region() covers the no-room case.
 export async function createLuaRoomRegion(context: SpecialLevelContext, options: DesOptions): Promise<Room | null> {
     const explicit: LuaRegion = [options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1];
     const [x1, y1, x2, y2] = explicit.some(value => value !== -1)
@@ -1882,6 +1913,8 @@ export async function createLuaRoomRegion(context: SpecialLevelContext, options:
     return room;
 }
 
+// C sp_lev.c:lspo_room(): the room table's placement fields — both x and y
+// or neither, alignments, type and size.
 export function luaRoomSpec(options: DesOptions) {
     const coordinate = tablePoint(options);
     if (coordinate && (coordinate.x === -1) !== (coordinate.y === -1))
@@ -1907,6 +1940,9 @@ export function luaRoomSpec(options: DesOptions) {
     };
 }
 
+// C sp_lev.c:lspo_stair() and lspo_ladder() through l_create_stairway():
+// stairs at a coordinate, or at a random good_stair_loc() — the filter
+// below — which set_ok_location_func() installs for the random draw.
 export async function createLuaStair(context: SpecialLevelContext,
     { direction, point }: Parameters<DesOperations['stair']>[0], usingLadder = false,
 ): Promise<Position> {
@@ -1920,6 +1956,8 @@ export async function createLuaStair(context: SpecialLevelContext,
     return location;
 }
 
+// C sp_lev.c:lspo_door(): a door state at a coordinate, or a room door by
+// wall and position.
 export async function createLuaDoor(context: SpecialLevelContext, {
     state, point, wall = 'all', pos = -1,
 }: Parameters<DesOperations['door']>[0]) {
@@ -1952,6 +1990,8 @@ export async function createLuaDoor(context: SpecialLevelContext, {
 }
 
 // C sp_lev.c:create_corridor(). Corridors start from a door.
+// C sp_lev.c:lspo_corridor(): source and destination room, door index and
+// wall; lspo_random_corridors() is the srcroom -1 case.
 export async function createLuaCorridor(options: DesOptions): Promise<void> {
     const { srcroom, srcdoor, destroom, destdoor } = options;
     if (srcroom === undefined || srcdoor === undefined || destroom === undefined || destdoor === undefined)
@@ -1992,6 +2032,7 @@ function corridorDoorEndpoint(room: Room, wall: string, door: number): Position 
     return null;
 }
 
+// C sp_lev.c:lspo_drawbridge(): direction, open or closed state, placement.
 export async function createLuaDrawbridge(context: SpecialLevelContext, options: DesOptions): Promise<Position> {
     const coordinate = tablePoint(options);
     if (!coordinate || !isok(coordinate.x, coordinate.y))
@@ -2015,6 +2056,8 @@ export async function createLuaDrawbridge(context: SpecialLevelContext, options:
     return point;
 }
 
+// C sp_lev.c:lspo_engraving(): dust, engrave, burn, mark or blood text at
+// a dry spot.
 export async function createLuaEngraving(context: SpecialLevelContext, options: Parameters<DesOperations['engraving']>[0]) {
     const point = await getLocationCoord(context, options.point, DRY);
     const types: Record<string, number> = {
@@ -2036,6 +2079,8 @@ export async function createLuaEngraving(context: SpecialLevelContext, options: 
     );
 }
 
+// C sp_lev.c:lspo_gold(): place gold, rolling a random amount when none is
+// given.
 export async function createLuaGold(context: SpecialLevelContext, options: PositionedDesOptions) {
     const point = await getLocationCoord(context, options.point, DRY);
     const requestedAmount = options.amount ?? -1;
@@ -2043,6 +2088,8 @@ export async function createLuaGold(context: SpecialLevelContext, options: Posit
     return await mkgold(amount, point.x, point.y);
 }
 
+// C sp_lev.c:lspo_object(): resolve montype, quantity and contents before
+// the per-piece creation below.
 export async function createLuaObject(
     context: SpecialLevelContext, options: DesObjectOptions,
     parentContainer: GameObject | null, parentMonster: Monster | null,
@@ -2068,6 +2115,9 @@ export async function createLuaObject(
     return object;
 }
 
+// C sp_lev.c:get_table_buc(): the blessed/uncursed/cursed/not-* curse
+// states are this branch chain; the body is create_object()'s per-piece
+// application of the Lua object overrides.
 async function createLuaObjectPiece(
     context: SpecialLevelContext, options: DesObjectOptions, corpseSpecies: number | null,
     parentContainer: GameObject | null, parentMonster: Monster | null,
@@ -2248,6 +2298,8 @@ function applyLuaMonsterAppearance(monster: Monster | null | undefined, appearan
     monster.mappearance = symbol;
 }
 
+// C sp_lev.c:lspo_monster(): species, class or random monster request; the
+// appearance, name, alignment and state overrides follow create_monster().
 export async function createLuaMonster(context: SpecialLevelContext, options: DesMonsterOptions): Promise<Monster | null> {
     const { point, monsterClass, monsterType } = options;
     const peaceful = options.peaceful == null ? null : !!options.peaceful;
@@ -2362,6 +2414,7 @@ export async function createLuaMonster(context: SpecialLevelContext, options: De
     return monster ?? null;
 }
 
+// C sp_lev.c:lspo_trap(): trap type, placement and construction options.
 export async function createLuaTrap(context: SpecialLevelContext, options: Parameters<DesOperations['trap']>[0]) {
     const { trapType, point } = options;
     const construction = {
@@ -2380,6 +2433,8 @@ export async function createLuaTrap(context: SpecialLevelContext, options: Param
     return trap;
 }
 
+// C sp_lev.c:lspo_exclusion(): a teleport or monster-generation exclusion
+// zone.
 export async function createLuaExclusion(context: SpecialLevelContext, options: DesOptions): Promise<void> {
     const type = options.type ?? 'teleport';
     if (type !== 'teleport' && type !== 'teleport-up'
@@ -2406,6 +2461,8 @@ async function regionCoordinates(context: SpecialLevelContext, coordinates: LuaR
     return { lx: start.x, ly: start.y, hx: end.x, hy: end.y };
 }
 
+// C sp_lev.c:l_get_lregion(): the region and exclude rectangles, keeping an
+// absent exclusion off-map.
 export async function levelRegionCoordinates(context: SpecialLevelContext, options: DesOptions) {
     const region = await regionCoordinates(context, options.region, options.region_islev);
     // l_get_lregion() keeps negative exclusion bounds off-map.
@@ -2442,6 +2499,8 @@ export function flipLuaRegions(active: ActiveSpecialLevel): void {
     }
 }
 
+// C sp_lev.c:floodfillchk_match_accessible(): ACCESSIBLE terrain plus
+// secret corridors and doors.
 function accessibleSpecialTerrain(x: number, y: number): boolean {
     const level = requireGameLevel();
     const type = level.at(x, y)?.typ;
@@ -2630,6 +2689,10 @@ async function medusaEmptyStatue(
     return statue;
 }
 
+// C sp_lev.c:set_wallprop_in_selection(): apply a wall property to every
+// selected square — sel_set_wall_property()'s test is inlined. Also the
+// body of lspo_non_passwall(), which negates an absent selection to cover
+// the whole map.
 export function markSpecialSelectionWallProperty(selection: SpecialSelection, property: number): void {
     const level = requireGameLevel();
     selection.forEachXMajor((x, y) => {
@@ -2640,6 +2703,8 @@ export function markSpecialSelectionWallProperty(selection: SpecialSelection, pr
     });
 }
 
+// C sp_lev.c:lspo_wall_property(): the property rectangle, defaulting to
+// the map's outline, resolved through get_location() before marking.
 export async function createLuaWallProperty(context: SpecialLevelContext, options: DesOptions): Promise<void> {
     const property = options.property ?? 'nondiggable';
     if (property !== 'nondiggable' && property !== 'nonpasswall')
@@ -2679,6 +2744,7 @@ export function specialMapSelection(context: SpecialLevelContext, rows: readonly
     return selection;
 }
 
+// C sp_lev.c:light_region(): light a rectangular area.
 function lightSpecialArea(context: SpecialLevelContext, x1: number, y1: number, x2: number, y2: number, lit: boolean): void {
     const level = requireGameLevel();
     // sp_lev.c:light_region() includes surrounding walls only when lit.
@@ -2695,6 +2761,7 @@ function lightSpecialArea(context: SpecialLevelContext, x1: number, y1: number, 
     }
 }
 
+// C sp_lev.c:lvlfill_swamp(): the relaxed-blockwise maze swamp.
 function fillSpecialSwamp(fg = ROOM, bg = MOAT, lit = false): void {
     const level = requireGameLevel();
     // sp_lev.c:lvlfill_swamp().  First establish the full moat background,
@@ -3124,6 +3191,8 @@ export async function dig_corridor(
 // into a provisional straight wall.  The ordinary wallification pass below
 // then resolves corners and junctions.  Iterate y-major to preserve C's
 // mutation order, although newly created walls do not themselves propagate.
+// C sp_lev.c:lspo_wallify(): the bounds default to the map outline when
+// the des.wallify() table omits them.
 export function wallifyMap(x1: number, y1: number, x2: number, y2: number): void {
     const level = requireGameLevel();
     const lowX = Math.max(x1, 1);

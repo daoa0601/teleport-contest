@@ -238,6 +238,11 @@ const TRAP_TYPES = new Map([
     ['vibrating square', VIBRATING_SQUARE],
 ]);
 
+// The generic des.* option reader.
+// C sp_lev.c:get_table_region(): the four-entry region and exclude arrays;
+// get_table_coords_or_region(): the x1..y2 keys with the region array as
+// fallback; get_table_int_or_random(): a "random" spe or quantity falls
+// back to the creator's default.
 function tableOptions(
     value: LuaValue | undefined,
     lighting: 'terrain' | 'integer' | 'boolean' = 'terrain',
@@ -349,6 +354,8 @@ function point(value: unknown, y: unknown = null): LuaPoint | null {
     return null;
 }
 
+// C sp_lev.c:get_table_xy_or_coord(): the x/y fields, or the coord table
+// when both axes are absent.
 export function tablePoint(options: DesOptions): LuaPoint | null {
     const x = options.x ?? -1;
     const y = options.y ?? -1;
@@ -374,6 +381,8 @@ function objectClassForSymbol(symbol: string) {
     return objectClass;
 }
 
+// C sp_lev.c:find_objtype(): resolve an object by name, honoring the class
+// symbol and the "ring of "-style prefixes, then by description.
 export function objectTypeForName(name: unknown, classSymbol: unknown = null, state: GameState = game): number {
     const prefixes: [string, number][] = [
         ['ring of ', 4],
@@ -404,6 +413,8 @@ export function objectTypeForName(name: unknown, classSymbol: unknown = null, st
     throw new Error(`unknown Lua object ${name}`);
 }
 
+// C sp_lev.c:lspo_object(): the object() arguments — id or class, montype,
+// corpse flags, and placement.
 function objectOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): DesObjectOptions {
     const options: DesOptions = id instanceof LuaTable
         ? tableOptions(id) : {};
@@ -445,6 +456,8 @@ function objectOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: Lua
     };
 }
 
+// C sp_lev.c:find_montype(): resolve a monster name, including its male and
+// female spellings, with the gender it implies.
 function monsterTypeForName(name: string) {
     const target = String(name).toLowerCase();
     for (let type = 0; type < MONSTER_NAME.length; type++) {
@@ -460,6 +473,8 @@ function monsterTypeForName(name: string) {
     throw new Error(`unknown Lua monster ${name}`);
 }
 
+// C sp_lev.c:lspo_monster(): the monster() arguments — id (get_table_montype())
+// or a class letter (get_table_monclass()), appear_as, placement and state.
 function monsterOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): DesMonsterOptions {
     const options: DesOptions = id instanceof LuaTable
         ? tableOptions(id) : {};
@@ -500,6 +515,9 @@ function monsterOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: Lu
     };
 }
 
+// C sp_lev.c:lspo_trap(): the trap() arguments — a type name resolved
+// through get_traptype_byname() or get_table_traptype_opt(), placement, and
+// the construction flags.
 function trapOptions(type: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): PositionedDesOptions & { trapType: number | null } {
     const options: DesOptions = type instanceof LuaTable
         ? tableOptions(type) : type == null ? {} : { type: String(type) };
@@ -515,6 +533,8 @@ function trapOptions(type: LuaValue | undefined, x: LuaValue | undefined, y: Lua
     };
 }
 
+// C sp_lev.c:lspo_door(): the door() arguments — state and placement, or a
+// wall and position for a room door.
 function doorOptions(state: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): PositionedDesOptions & { state: string } {
     if (state instanceof LuaTable) {
         const options = tableOptions(state);
@@ -530,6 +550,7 @@ function doorOptions(state: LuaValue | undefined, x: LuaValue | undefined, y: Lu
     };
 }
 
+// C sp_lev.c:lspo_stair() and lspo_ladder(): direction and placement.
 function stairOptions(direction: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): { direction: string; point: LuaPoint | null } {
     if (direction instanceof LuaTable) {
         const options = tableOptions(direction);
@@ -544,6 +565,8 @@ function stairOptions(direction: LuaValue | undefined, x: LuaValue | undefined, 
     };
 }
 
+// C sp_lev.c:lspo_mazewalk(): the walk origin, terrain, direction and
+// stocking flag.
 function mazeWalkOptions(value: LuaValue | undefined, y: LuaValue | undefined, direction: LuaValue | undefined): DesOptions & { dir: string; stocked: boolean } {
     if (!(value instanceof LuaTable)) {
         return {
@@ -563,6 +586,7 @@ function mazeWalkOptions(value: LuaValue | undefined, y: LuaValue | undefined, d
     };
 }
 
+// C sp_lev.c:lspo_engraving(): the engraving type, text and placement.
 function engravingOptions(value: LuaValue | undefined, type: LuaValue | undefined, text: LuaValue | undefined): PositionedDesOptions & { type: string; text: string } {
     if (type != null) {
         return {
@@ -582,6 +606,7 @@ function engravingOptions(value: LuaValue | undefined, type: LuaValue | undefine
     };
 }
 
+// C sp_lev.c:lspo_gold(): the amount and placement.
 function goldOptions(value: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): PositionedDesOptions {
     if (value instanceof LuaTable) {
         const options = tableOptions(value);
@@ -596,6 +621,8 @@ function goldOptions(value: LuaValue | undefined, x: LuaValue | undefined, y: Lu
     };
 }
 
+// C sp_lev.c:lspo_terrain(): terrain at a coordinate or over a selection,
+// with an optional lighting state.
 function callTerrain(operations: DesOperations, args: LuaValue[]) {
     if (args.length === 3)
         return operations.terrainAt(luaInteger(args[0]), luaInteger(args[1]), String(args[2]));
