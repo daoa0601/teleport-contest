@@ -140,6 +140,17 @@ export function serializeCapture(term) {
     }
     return lines.join('\n');
 }
+// The recorder's marker (termcap.c nomux_emit_marker) serializes the
+// shadow screen first and only then reads the cursor to report, so an
+// oversized serialization latches the raw-mode cursor before this
+// boundary's own cursor value is chosen.
+function captureCursor(display, screen) {
+    if (!display)
+        return null;
+    display.nomux.captureRle(screen);
+    const [col, row] = display.nomux.cursor(display.cursorCol ?? 0, display.cursorRow ?? 0);
+    return [col, row, 1];
+}
 class SegmentCapture {
     engine;
     screens;
@@ -164,20 +175,18 @@ class SegmentCapture {
         this.rngSlices.push(fullLog.slice(this.lastRngIndex));
         this.lastRngIndex = fullLog.length;
         const display = this.engine.display;
-        this.screens.push(serializeCapture(display));
-        this.cursors.push(display
-            ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
-            : null);
+        const screen = serializeCapture(display);
+        this.screens.push(screen);
+        this.cursors.push(captureCursor(display, screen));
         this.animationFramesByStep.push(this.pendingAnimationFrames);
         this.pendingAnimationFrames = [];
     }
     async animationFrame() {
         const display = this.engine.display;
+        const animScreen = serializeCapture(display);
         this.pendingAnimationFrames.push({
-            screen: serializeCapture(display),
-            cursor: display
-                ? [display.cursorCol ?? 0, display.cursorRow ?? 0, 1]
-                : null,
+            screen: animScreen,
+            cursor: captureCursor(display, animScreen),
         });
         if (typeof requestAnimationFrame === 'function') {
             await new Promise(resolve => requestAnimationFrame(resolve));

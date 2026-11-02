@@ -1112,8 +1112,14 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
     } else {
         const display = game.nhDisplay;
         display?.clearScreen();
-        let row = 0;
+        // C exit_nhwindows() → tty_suspend_nhwindows(NULL) prints one
+        // empty raw line; nomux_raw_emit() discards it only while the
+        // capture state's raw mode is inactive, so a latched recorder
+        // paints it above the score notice.
+        const separator = display?.nomux.suspendSeparator() ?? false;
+        let row = separator ? 1 : 0;
         for (const line of lines) {
+            display?.nomux.rawEmitLine();
             if (display && row === display.rows) {
                 display.scrollUp();
                 row--;
@@ -1129,6 +1135,8 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
     if (stopPrinting) {
         const display = game.nhDisplay;
         for (let count = 0; count < 2; count++) {
+            // really_done()'s done_stopprint pair of raw_print("") lines.
+            display?.nomux.rawEmitLine();
             const row = (display?.cursorRow ?? 0) + 1;
             if (display && row >= display.rows) display.scrollUp();
             display?.setCursor(0, Math.min(row, (display?.rows ?? 24) - 1));

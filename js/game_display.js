@@ -10,12 +10,16 @@
 //   // display.setCell, display.readKey etc. all delegate to terminal
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import { StatusHighlights } from './botl.js';
+import { NomuxCapture } from './tty_nomux.js';
 export class GameDisplay {
     terminal;
     mapFrameCells = new Set();
     // wintty.c:g_putch() records byte glyphs with their high bit cleared.
     // termcap.c:nomux_putch() leaves a cell alone for control characters.
     capturedMapCells = new Map();
+    // termcap.c's NOMUX capture state: the shadow-screen serializer whose
+    // oversized captures latch the raw-mode cursor the recorder reports.
+    nomux = new NomuxCapture();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline = null;
     // Displaying an empty WIN_MESSAGE can leave its answered question painted.

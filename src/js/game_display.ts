@@ -14,6 +14,7 @@ import type { StatusLine2Fields } from './botl.js';
 import { StatusHighlights } from './botl.js';
 import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
+import { NomuxCapture } from './tty_nomux.js';
 
 export class GameDisplay {
     readonly terminal: Terminal;
@@ -21,6 +22,9 @@ export class GameDisplay {
     // wintty.c:g_putch() records byte glyphs with their high bit cleared.
     // termcap.c:nomux_putch() leaves a cell alone for control characters.
     private readonly capturedMapCells = new Map<number, TerminalCell>();
+    // termcap.c's NOMUX capture state: the shadow-screen serializer whose
+    // oversized captures latch the raw-mode cursor the recorder reports.
+    readonly nomux = new NomuxCapture();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline: string | null = null;
     // Displaying an empty WIN_MESSAGE can leave its answered question painted.
