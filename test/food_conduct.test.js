@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
-import { eatingConducts, recordCorpseDiet, recordFoodConsumption, recordNonfoodConduct, recordOrdinaryFoodDiet, recordSpinachConsumption, } from '../js/food_conduct.js';
+import { eatingConducts, recordCorpseDiet, recordFoodConsumption, recordNonfoodConduct, recordOrdinaryFoodDiet, recordSpinachConsumption, } from '../js/eat.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, EGG, FOOD_RATION, FORTUNE_COOKIE, LEATHER_ARMOR, WAX_CANDLE } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';

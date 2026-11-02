@@ -73,8 +73,8 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
-import { intrinsicPossible } from './corpse_intrinsics.js';
-import type { CorpseIntrinsic } from './corpse_intrinsics.js';
+import { intrinsicPossible } from './eat.js';
+import type { CorpseIntrinsic } from './eat.js';
 import { countContents } from './invent.js';
 import { objectWeight } from './weight.js';
 import { artifactById } from './artifacts.js';
@@ -102,6 +102,7 @@ import { isPick } from './object_properties.js';
 import { maybeResetPick } from './lock.js';
 
 import { bookDisappears } from './spellbook_study.js';
+
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const GLASS = 19;

@@ -9,7 +9,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance } from './makemon.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { addFruit } from './fruit.js';
-import { setTinVariety } from './tin.js';
+import { setTinVariety } from './eat.js';
 import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
 import { nameObjectFromTopten } from './topten.js';

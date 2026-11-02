@@ -10,7 +10,7 @@ import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, EGG, FIGURINE, LOADSTONE, SLIME_MOLD, STATUE, TIN } from '../js/object_data.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { tinDetails } from '../js/tin.js';
+import { tinDetails } from '../js/eat.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';

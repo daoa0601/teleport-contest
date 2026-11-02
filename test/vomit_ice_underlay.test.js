@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_ICE, DB_MOAT, DB_UNDER, DRAWBRIDGE_UP } from '../js/const.js';
-import { vomitHero } from '../js/hero_illness.js';
+import { vomitHero } from '../js/eat.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an acidic hero vomiting melts ice below a raised drawbridge', async () => {

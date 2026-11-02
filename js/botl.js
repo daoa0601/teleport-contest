@@ -2,7 +2,7 @@
 // The tty side that paints these lines (writeStatusLines) lives in wintty.ts.
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
-import { currentHungerState } from './hunger.js';
+import { currentHungerState } from './eat.js';
 import { renderStatusLine2, writeStatusLines, hitpointBar, conditionStyle } from './wintty.js';
 import { statusVersion } from './version.js';
 import { criticallyLowHp } from './pray.js';

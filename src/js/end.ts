@@ -49,7 +49,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './vault.js';
 
 import { heroGoldAmount } from './hero_gold.js';
-import { restoreHeroNutrition } from './hunger.js';
+import { restoreHeroNutrition } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import {
     AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR,
@@ -77,7 +77,6 @@ import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './monmove.js';
-
 
 
 export interface DeathDamage {

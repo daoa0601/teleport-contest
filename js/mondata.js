@@ -21,6 +21,7 @@ import { questMonsterFlags2 } from './role_monsters.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { dist2 } from './hacklib.js';
 import { clearPath } from './vision.js';
+import { heroMonsterForm } from './polyself.js';
 export const MONSTER_CLASS_SYMBOLS = [
     '', ...'abcdefghijklmnopqrstuvwxyz', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     '@', ' ', "'", '&', ';', ':', '~', ']',
@@ -728,5 +729,21 @@ export function monstersSeeTrap(state, trap) {
             continue;
         monsterLearnsTrap(observer, trap);
     }
+}
+const S_RODENT = 18;
+const PM_ROCK_MOLE = 92;
+const PM_WOODCHUCK = 93;
+const PM_PONY = 100;
+const PM_HORSE = 104;
+const PM_WARHORSE = 105;
+// C mondata.c:cantvomit().
+export function heroCannotVomit(state) {
+    const form = heroMonsterForm(state);
+    if (form == null)
+        return false;
+    if (MONSTER_SYMBOL[form] === S_RODENT
+        && form !== PM_ROCK_MOLE && form !== PM_WOODCHUCK)
+        return true;
+    return form === PM_PONY || form === PM_HORSE || form === PM_WARHORSE;
 }
 //# sourceMappingURL=mondata.js.map

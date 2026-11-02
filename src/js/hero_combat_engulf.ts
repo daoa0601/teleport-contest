@@ -7,18 +7,16 @@ import {
 import { exerciseAttribute } from './attrib.js';
 import { heroStomachName } from './body_parts.js';
 import { nomul } from './hack.js';
-import { applyCorpsePostEffects } from './corpse_eating.js';
+import { eatingConducts, updateHeroHunger } from './eat.js';
 import {
     canSpotMonster, flush_screen, map_invisible, map_location, newsym, show_glyph_cell, transientMonsterGlyph,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { eatingConducts } from './food_conduct.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
-import { updateHeroHunger } from './hunger.js';
 import { applyMonsterGolemEffects, changeMonsterForm, resolveMonsterCorpseChance } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';
@@ -37,7 +35,6 @@ import { heroIsUnchanging } from './polyself.js';
 import { d, rn2 } from './rng.js';
 import { heroIsFlaming, setHeroSlimingTimeout } from './slime.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { cansee } from './vision.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import type { AttackTuple } from './monster_action_types.js';
@@ -206,14 +203,6 @@ async function digestDefender(defender: Monster, species: number, state: Playing
     } finally {
         state._monsterSwallower = previous;
     }
-}
-
-// C eat.c:Finish_digestion(). Corpse post-effects once digestion completes.
-export async function finishHeroDigestion(state: GameState = game): Promise<void> {
-    const species = state._digestedMonsterSpecies;
-    if (species === undefined || species === null) return;
-    await applyCorpsePostEffects(species, { state });
-    state._digestedMonsterSpecies = null;
 }
 
 async function engulfDamage(defender: Monster, type: AttackTuple[1], damage: number, state: PlayingGameState, {

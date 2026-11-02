@@ -12,7 +12,7 @@ import { clearMessageWindow } from '../js/tty_topline.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
-import { gainHeroNutrition, getHungry, resetHeroFaint, spendHeroNutrition, } from '../js/hunger.js';
+import { gainHeroNutrition, getHungry, resetHeroFaint, spendHeroNutrition, } from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, HEAVY_IRON_BALL, LEATHER_GLOVES, OBJECT_NAMES, } from '../js/object_data.js';

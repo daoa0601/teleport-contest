@@ -17,7 +17,7 @@ import { setWallStateAt } from './wall_topology.js';
 import { stopLevelTimer } from './timeout.js';
 import { containedGold } from './shk.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { resetHeroFaint } from './hunger.js';
+import { resetHeroFaint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

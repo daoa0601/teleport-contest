@@ -19,7 +19,6 @@ import { makePlural } from './objnam.js';
 import { absorbGlob } from './mkobj.js';
 import { mergable } from './invent.js';
 
-
 import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
@@ -34,6 +33,7 @@ import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DueObjectTimer } from './timeout.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
+import { activelyEatingGlob } from './eat.js';
 
 type RandomBelow = (limit: number) => number;
 interface GlobMergeOptions {
@@ -268,12 +268,6 @@ async function deleteGlob(glob: GameObject, state: GameState): Promise<void> {
     // obfree() retains a consumed shop object for itemized billing.
     if (reconcileObjectDeletionBill(glob, null, state) === 'retained') return;
     deallocateObject(glob, state);
-}
-
-// C eat.c:eating_glob(). True while this glob is the meal in progress.
-function activelyEatingGlob(glob: GameObject, state: GameState): boolean {
-    return state._occupation?.key === 'eat-food'
-        && state.context.victual?.piece === glob;
 }
 
 // shrink_glob() asks xname to include partly eaten food before reducing its mass.

@@ -9,7 +9,7 @@ import { see_monsters, see_objects, see_traps, swallowed } from './display.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { updateMealMimicry } from './meal_mimic.js';
+import { updateMealMimicry } from './eat.js';
 import { staggerVerb } from './dothrow.js';
 import { grantWornProperty, hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
 export async function makeConfused(turns, { state = game, talk = true, publish = plineWithContinuation, } = {}) {

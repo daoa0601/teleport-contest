@@ -10,7 +10,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { clearDiggingContext, ensureDiggingContext } from './dig.js';
 import { mayDig } from './hack.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition } from './eat.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterCorrodesBars, monsterPassesBars } from './mondata.js';
