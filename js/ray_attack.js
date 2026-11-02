@@ -92,9 +92,6 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
     return hit.damage;
 }
 // C zap.c:dobuzz(): the wand/spell/breath ray engine. traceRay() drives the
-// C zap.c:buzz() and zap.c:ubuzz(): the monster/hero entry wrappers that
-// call dobuzz() with the caller's position, direction and physical=TRUE;
-// the origin/monster-vs-hero dispatch lives in this function's options.
 // beam through ray.ts runRay() (the tmp_at() beam display, the closed_door()
 // and ZAP_POS obstacle tests, and bounce_dir() as rayBounceDirection);
 // zap_hit() is rayHitsMonster()/rayHitsHero() (ray.ts); zhitm() is
@@ -106,6 +103,9 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
 // monstersForgetHeroResistance all live along the hit paths; the hero hit
 // anchors its line like pline_dir(xytodir(-dx, -dy)) through
 // set_msg_dir(xyToDirection()).
+// C zap.c:buzz() and zap.c:ubuzz(): the monster/hero entry wrappers that
+// call dobuzz() with the caller's position, direction and physical=TRUE;
+// the origin/monster-vs-hero dispatch lives in this function's options.
 export async function castNativeRay(nativeType, dice, direction, { state = game, sourceMonster = null, sourceObject = null, originX = state.u.ux, originY = state.u.uy, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, die = finishHeroDeath, finishMonsterKill = finishHeroMonsterKill, sayHit = true, sayMiss = false, forceMiss = false, } = {}) {
     requirePlayingGame(state);
     if (!isRayDirection(direction))

@@ -3409,8 +3409,10 @@ export async function restoreShapechanger(monster: Monster, publish: MessagePubl
     return { changed: true, heroDied: false };
 }
 
-// C mon.c:set_mon_min_mhpmax(): raise the floor of max HP to m_lev+1 (or
-// the given minimum) and refill current HP to it.
+// C mon.c:set_mon_min_mhpmax() raises only the max-HP floor — to m_lev+1
+// or the given minimum, whichever is higher. The mcanmove/mfrozen reset
+// and the mhp refill around it belong to its callers (vamprises(),
+// lifesaved_monster(), newcham()).
 function restoreRevertedMonsterHealth(monster: Monster): void {
     monster.mcanmove = 1;
     monster.mfrozen = 0;
@@ -3592,8 +3594,9 @@ export async function respondMedusa(monster: Monster, options: MonsterGazeOption
 
 // ── C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 // C mon.c:m_respond(), shared by dochug() and immediate monster magic.
-// C mon.c:m_respond_shrieker(): shriek when the hero stands next to the
-// fungus; 1/10 summons a purple worm, then aggravate monsters.
+// C mon.c:m_respond_shrieker(): a non-deaf hero next to the fungus hears
+// the shriek; 1 time in 10 a monster is created, and only 1 of those 13
+// is a (baby, if the adult is too strong) purple worm; then aggravate.
 export async function respondToImmediateMagic(monster: Monster, state: GameState = game, {
     random = rn2, publish = pline, ...gazeOptions
 }: Omit<MonsterGazeOptions, 'state'> = {}) {
