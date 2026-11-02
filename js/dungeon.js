@@ -33,9 +33,11 @@ const DUNGEON_ALIGNMENT_BITS = {
     lawful: D_ALIGN_LAWFUL, neutral: D_ALIGN_NEUTRAL, chaotic: D_ALIGN_CHAOTIC,
     unaligned: 0, noalign: 0,
 };
+// C dungeon.c:get_dgn_flags(): the Lua DUNGEON.flags list packed to bits.
 function packedDungeonFlags(flags) {
     return flags.reduce((bits, name) => bits | DUNGEON_FLAG_BITS[name], 0);
 }
+// C dungeon.c:get_dgn_align(): the Lua DUNGEON.alignment packed to bits.
 function packedDungeonAlignment(alignment) {
     return DUNGEON_ALIGNMENT_BITS[alignment];
 }
@@ -187,6 +189,8 @@ export function initOverviewRecord(location, state = game) {
 }
 // C dungeon.c:recalc_mapseen().  The overview records what the hero has
 // learned about the current level, not every feature in the live map.
+// C dungeon.c:count_feat_lastseentyp(): the cap-3 feature counts over
+// last-seen terrain.
 export function recordMappedOverviewState({ discoveredRoom = null, state = game } = {}) {
     const level = state.level;
     if (!level)
@@ -254,6 +258,7 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
                 && monster.mappearance === CmapSymbol.altar
                 ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
                 : location.typ === ALTAR ? location.flags : 0;
+            // C altarmask_at(): a mimic's altar disguise outranks terrain.
             const alignment = Is_astralevel(state.u.uz) && location.seenv !== 255
                 || !(mask & AM_MASK) ? null : Amask2align(mask & AM_MASK);
             if (!naltar)
@@ -475,6 +480,8 @@ function definitionBranchUp(value, path) {
         return true;
     throw new TypeError(`${path} must be up or down`);
 }
+// C dungeon.c:init_dungeon_branches(): one Lua branch entry — name, base,
+// range, chainlevel, direction, branchtype.
 function branchDefinition(value, path) {
     const source = definitionRecord(value, path);
     return {
@@ -604,7 +611,9 @@ function placeLevels(index, levels, dungeon, finalByName) {
     level.dlevel = 0;
     return false;
 }
+// C dungeon.c:parent_dnum(): the dungeon whose branch list names this one.
 function findParent(childName, loaded) {
+    // C find_branch(): the branch whose name matches, in definition order.
     for (const parent of loaded) {
         const branch = parent.definition.branches.find(candidate => candidate.name === childName);
         if (branch)
@@ -612,12 +621,16 @@ function findParent(childName, loaded) {
     }
     return null;
 }
+// C dungeon.c:parent_dlevel(): the free parent-side level for a new branch,
+// avoiding squares an existing branch already occupies.
 function branchLevel(parent, branch, branches) {
     const { base, count } = levelRange(parent.dungeon, branch, parent.finalByName);
     const start = rn2(count);
     let candidate = start;
     do {
         candidate += 1;
+        // C parent_dnum()/find_branch(): the caller already located the
+        // parent and its definition.
         if (candidate >= count)
             candidate = 0;
         const dlevel = base + candidate;
@@ -628,6 +641,8 @@ function branchLevel(parent, branch, branches) {
     } while (candidate !== start);
     return base + candidate;
 }
+// C dungeon.c:init_dungeon_set_entry(): a negative entry counts from the
+// bottom, a positive one is clamped to the size, zero means the top.
 function entryLevel(definition, count) {
     const entry = definition.entry || 0;
     if (entry < 0)
@@ -648,6 +663,8 @@ function correctedBranchType(spec) {
         return spec.up ? 'no_end2' : 'no_end1';
     return 'stair';
 }
+// C dungeon.c:init_level(): each placed special level becomes an s_level
+// record; add_level(): they join the shared level list.
 function exposeSpecialLevels(loaded) {
     const all = new Map();
     for (const entry of loaded) {
@@ -682,6 +699,8 @@ function exposeSpecialLevels(loaded) {
 }
 // C fixup_level_locations(): these identities are derived from the dungeon
 // graph, both after generation and after restoring the saved graph.
+// C dungeon.c:dname_to_dnum(): the named dungeons (Quest, Sokoban, Mines,
+// Vlad's Tower) found by name.
 export function resolveDungeonIdentities(state = game) {
     const dungeons = state.dungeons ?? [];
     state.quest_dnum = dungeons.findIndex(dungeon => dungeon.dname === 'The Quest');
@@ -689,6 +708,11 @@ export function resolveDungeonIdentities(state = game) {
     state.mines_dnum = dungeons.findIndex(dungeon => dungeon.dname === 'The Gnomish Mines');
     state.tower_dnum = dungeons.findIndex(dungeon => dungeon.dname === "Vlad's Tower");
 }
+// C dungeon.c:init_dungeon_dungeons() and init_dungeon_levels(): read each
+// Lua dungeon and level entry, roll its chance, and place its special
+// levels. add_branch() joins the parent at parent_dlevel's free square and
+// init_dungeon_set_depth() derives depth_start from that connection.
+// init_castle_tune() rolls the five drawbridge notes.
 export async function init_dungeons() {
     const loaded = [];
     const branches = [];
@@ -842,6 +866,8 @@ export async function queryLevelAnnotation(level = null, inMenu = false) {
     setLevelAnnotation(location, value);
 }
 // C dungeon.c:doannotate().
+// C dungeon.c:donamelevel(): the #annotate entry — menu prefix opens the
+// overview, otherwise the annotation prompt.
 export async function doannotate() {
     if (game.iflags.menu_requested) {
         await doDungeonOverview();
@@ -883,6 +909,8 @@ function dungeonOverviewHeading(dnum) {
         : `levels ${overviewDepth(dnum, 1)} to ${overviewDepth(dnum, reached)}`;
     return `${dungeon?.dname || 'Dungeon'}: ${range}`;
 }
+// C dungeon.c:interest_mapseen(): whether the level is worth an overview
+// line — special knowledge, a branch, features, or the deepest reach.
 function overviewLevelIsInteresting(dnum, dlevel) {
     const location = { dnum, dlevel };
     if (sameDungeonLevel(location, game.u.uz))
@@ -922,6 +950,7 @@ function overviewRestingPlaceLines(record, final, currentDeath = null) {
         return [];
     return ['      Final resting place for', ...entries.map((entry, index) => `         ${entry}${index === entries.length - 1 ? '.' : ','}`)];
 }
+// C dungeon.c:seen_string(): the quantifier for a counted feature.
 function overviewCountPhrase(count, noun) {
     if (count === 1)
         return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
@@ -929,6 +958,8 @@ function overviewCountPhrase(count, noun) {
         return `some ${noun}s`;
     return `many ${noun}s`;
 }
+// C dungeon.c:shop_string(): a tended shop by its annotation, an untended
+// one as such.
 function overviewFeatureLine(features) {
     const phrases = [];
     if (features?.nshop) {
@@ -966,6 +997,8 @@ function overviewFeatureLine(features) {
     const text = phrases.join(', ');
     return `      ${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
 }
+// C dungeon.c:tunesuffix(): the known mastermind tune appends itself to
+// the Castle note.
 function overviewAutomaticNote(dnum, dlevel, record) {
     const flags = record?.flags;
     const here = { dnum, dlevel };
@@ -1002,6 +1035,8 @@ function overviewAutomaticNote(dnum, dlevel, record) {
 }
 // C dungeon.c print_mapseen() branch note (br_string2 plus the upward
 // destination depth): shared by the live #overview and the final disclosure.
+// C dungeon.c:br_string2() and br_string(): the branch kind's description;
+// a quest portal reads "Sealed" after expulsion.
 function overviewBranchLine(branch) {
     if (!branch)
         return null;
@@ -1028,6 +1063,9 @@ function overviewYouCause(cause) {
 // bypasses the interesting-level filter and prints every visited level in
 // every dungeon with its full mapseen projection.  Endgame levels print
 // first when the game ends in the Planes.
+// C dungeon.c:traverse_mapseenchn(): walk the visited levels, endgame and
+// the rest separately, and show each interesting one under its dungeon's
+// heading.
 export function dungeonOverviewDisclosure(ending, cause) {
     // show_overview() lazily recalculates the current level before building
     // the window.
@@ -1084,6 +1122,8 @@ function overviewDisclosureLevel(dnum, dlevel, ending, hereVerb, cause) {
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
+// C dungeon.c:traverse_mapseenchn(): the live overview shows every
+// interesting level of the hero's side of the endgame split.
 export async function doDungeonOverview() {
     // The C command lazily calls recalc_mapseen() before rendering.  Refresh
     // the current level from remembered/underfoot terrain at that same

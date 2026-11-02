@@ -68,6 +68,9 @@ const MS_ANIMAL = 17;
 
 // C sounds.c:dosounds(): periodic ambient noise. The shop branch's
 // wake_nearto() over an 11-square radius is C shk.c:noisy_shop() inlined.
+// C sounds.c:throne_mon_sound(), beehive_mon_sound(), morgue_mon_sound(),
+// zoo_mon_sound(), and oracle_sound(): the per-room resident tests are the
+// find() branches below; C's get_iter_mons() walkers became livingResidents().
 export async function dosounds(state: PlayingGameState = requireInitializedGame()): Promise<void> {
     if (heroIsDeaf(state) || state.flags.acoustics === false
         || state.u.uswallow || state.u.uinwater || state.u.underwater || state.underwater) return;
@@ -573,6 +576,8 @@ function mew(monster: Monster, state: GameState): string {
     return hungryTime > state.moves + 1000 ? 'purrs.' : 'mews.';
 }
 
+// C sounds.c:mon_is_gecko(): a real gecko, or a hallucinated or mimicked
+// map spot that depicts one.
 function looksLikeGecko(monster: Monster, state: GameState): boolean {
     if (monster.mnum === PM_GECKO) return true;
     if (monster.mnum === PM_LONG_WORM) return false;

@@ -188,10 +188,11 @@ function monsterNames(mnum: number) {
     return names.filter(candidate => candidate.name.length > 0);
 }
 
+// The rank-title pass of name resolution: the first matching rank prefix in
+// role order wins. The whole-word and longest-name rules above apply to
+// species names, while rank prefixes deliberately accept an attached suffix.
+// C botl.c:title_to_mon().
 function roleTitleMonster(name: string) {
-    // botl.c:title_to_mon() takes the first rank prefix in role order.
-    // The whole-word and longest-name rules above apply to species names,
-    // while rank prefixes deliberately accept an attached suffix.
     for (const role of roles) {
         for (const title of role.title || []) {
             for (const value of [title.m, title.f]) {

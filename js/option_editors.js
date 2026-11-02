@@ -108,6 +108,7 @@ export async function editCompoundMenu(name, giveMessage) {
     }
     return true;
 }
+// C botl.c:cond_menu(): the toggle-all menu with the sort-order switch.
 // C botl.c:menualpha_cmp().
 async function editStatusConditions() {
     for (;;) {

@@ -292,6 +292,8 @@ export function statusConditionBit(text) {
     const index = definitions.findIndex(condition => condition.text[0] === text[0]);
     return index >= 0 ? 1 << index : 0;
 }
+// C botl.c:condopt(): one cond_ element flips its condition bit; C's
+// init-to-defaults pass is the defaultMask constant.
 // parse_cond_option() accepts each option's first four letters (or its
 // complete name if shorter). Config parsing supplies the negation separately.
 export function setConditionOption(option, enabled, mask = defaultMask) {
@@ -497,6 +499,8 @@ export class StatusHighlights {
         field.rule = null;
         field.expires = 0;
     }
+    // C botl.c:hilite_reset_needed(): a temporary highlight expires once its
+    // time has passed and the hero is not stalled in a multi-turn action.
     evaluateNextUnhilite(state) {
         this.moves = state.moves;
         let update = !!state.context.botl;
@@ -512,6 +516,9 @@ export class StatusHighlights {
         }
         return update;
     }
+    // C botl.c:evaluate_and_notify_windowport(): the whole-field sweep; both
+    // buffers swap first, and a changed gold encoding forces update_all from
+    // gold onward.
     update(state, fields, goldSymbol = '$') {
         // bot_via_windowport() alternates buffers even when values are unchanged.
         // Each buffer keeps its percentage until that field recalculates it.
@@ -563,6 +570,10 @@ export class StatusHighlights {
     barSpanStyle() {
         return { color: this.enabled ? this.barStyle.color : NO_COLOR, attr: this.barStyle.attr };
     }
+    // C botl.c:eval_notify_windowport_field(): one field's evaluate-compare-
+    // notify round. compare_blstats() supplies the change direction (bitmasks
+    // and strings report any difference as a change), then get_hilite() picks
+    // the rule whose style reaches the tty as a painted span.
     updateField(state, field, current, encodingChanged = false) {
         const previous = this.fields.get(field);
         const rules = state.iflags.statusThresholds?.[field] ?? [];
@@ -588,6 +599,7 @@ export class StatusHighlights {
                 change = compare(previous.raw, current.raw);
         }
         const expired = !!previous?.expires && !state.multi && previous.expires < (this.moves ?? state.moves);
+        // C hilite_reset_needed(): a temporary highlight whose time passed.
         // botl.c:1584 re-sends a field only for gu.update_all, a value or
         // percentage change, or a temporary-hilite expiry. A rule list that
         // changed on its own never re-sends anything: the tty keeps the
@@ -703,6 +715,7 @@ function isPolymorphedTitleFallback(text) {
         || text.replace(/[" _()\-]/g, '').toLowerCase() === 'noneoftheabovepolymorphed';
 }
 function compare(previous, current) {
+    // C sgn(): the direction of the difference.
     if (typeof previous === 'string' && typeof current === 'string')
         return previous < current ? -1 : previous > current ? 1 : 0;
     return previous < current ? 1 : previous > current ? -1 : 0;
@@ -805,6 +818,8 @@ function hiliteAttributes(mask) {
             attr |= terminal;
     return attr;
 }
+// C botl.c:split_clridx(): the low byte is the color, the next the
+// attribute bits.
 function decodeStyle(coloridx) {
     return { color: coloridx & 255, attr: hiliteAttributes(coloridx >> 8) };
 }
@@ -2142,6 +2157,8 @@ function matchConditionBitmask(text) {
     }
     return mask;
 }
+// C botl.c:status_hilite_add_threshold(): the rule joins the end of its
+// field's threshold list.
 // Apply every successful installation, including those before a parse error.
 // Each config entry is applied immediately so later options see its changes.
 export function replayStatusHiliteOperations(operations, iflags) {

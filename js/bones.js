@@ -317,6 +317,8 @@ function repairMonsterExtensions(monster) {
     if (monster.mextra?.ebones)
         monster.mextra.ebones.parentmid = monster.m_id;
 }
+// C region.c:reset_region_mids(): bones region membership is remapped to
+// the renewed monster ids; a missing id drops out by slot swap.
 async function renewBonesIdentities(level, fruits) {
     // restmonchn() assigns every monster a fresh id; each monster inventory
     // is restored immediately afterward. getlev() then restores floor and

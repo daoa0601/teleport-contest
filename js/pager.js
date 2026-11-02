@@ -51,6 +51,7 @@ import { shouldShowGetposTip, showGetposTip } from './hack.js';
 // getpos.c:getpos(), pager.c:do_screen_description().
 // Farlook spends no game time. Ordinary look retains its cursor between
 // selections; quick look returns after describing one selection.
+// C pager.c:doquickwhatis(): the quick-glance command.
 export async function doFarlook(quick = true) {
     const savedVerbose = game.flags.verbose;
     game.flags.verbose = !!savedVerbose && !quick;
@@ -507,11 +508,14 @@ export async function offerMonsterSupplement(monster, name, withoutAsking) {
 // ---------------------------------------------------------------------------
 // Looking never reads an engraving: report its saved text, even when the
 // live inscription has since been scuffed or replaced.
+// C pager.c:add_quoted_engraving(): the remembered inscription quoted after
+// a grave or engraving description; unread inscriptions stay unread.
 export function quotedEngraving(x, y, name, force = false) {
     const engraving = game.level?.engravings?.find(e => e.x === x && e.y === y);
     const headstone = name === 'grave';
     if (!engraving || !force && name !== 'engraving' && !headstone)
         return '';
+    // C engr_at(): the engraving on this square.
     return engraving.eread ? ` with ${headstone ? 'headstone reading' : 'remembered text'}: "${engraving.rememberedText}"`
         : ` ${headstone ? 'whose headstone' : 'that'} you haven't read`;
 }
@@ -602,6 +606,9 @@ function adjacentToHero(x, y) {
 // ---------------------------------------------------------------------------
 // encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
 const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
+// C pager.c:do_screen_description(): every meaning the displayed symbol can
+// carry. add_cmap_descr() is the cmap pass (pool, moat, trap, warning) and
+// append_str() the " or " appends with their already-present check.
 export function screenDescription(x, y, description) {
     const glyph = lookGlyphAt(x, y);
     const location = game.level?.at(x, y);
@@ -853,6 +860,8 @@ export async function lookatDescription(x, y) {
     // owns farlook before the room/corridor fallback.
     return await farlookLocationDescription(x, y) || 'unexplored area';
 }
+// C pager.c:look_all(), look_traps(), look_engrs(): the farlook quick lists
+// and their "No ... are shown" refusals.
 export async function showLookList(kind, nearby, describeHero) {
     if (!game.level)
         return;
@@ -875,6 +884,8 @@ export async function showLookList(kind, nearby, describeHero) {
     }
     await displayPagerText(content());
 }
+// C pager.c:look_region_nearby(): the nearby sweep is the hero's square
+// widened by BOLT_LIM in each direction.
 async function* lookListEntries(kind, nearby, mode, describeHero) {
     const level = game.level;
     if (!level)
@@ -918,6 +929,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                     description = displayedTrapDescription(glyph.trapType, x, y);
                 else {
                     const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
+                    // C t_at(): the seen trap on this square.
                     if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
                         description = trapName(trap.ttyp);
                         obscured = true;
@@ -928,6 +940,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
             else {
                 const location = level.at(x, y);
                 const engraving = level.engravings?.find(e => e.x === x && e.y === y);
+                // C engr_at(): the inscription on this square.
                 if (!location?.seenv || !engraving)
                     continue;
                 const headstone = location.lastseentyp === GRAVE;
@@ -935,6 +948,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                 description = ' ' + (headstone ? suffix.replace(/^ (with |whose )/, '')
                     : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`);
                 const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
+                // C glyph_to_cmap(): the displayed glyph is the engraving cmap.
                 if (!shown) {
                     obscured = true;
                     symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
@@ -946,7 +960,8 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
             if (mode === 'm' && y < 10 && (kind === 'monsters' || kind === 'objects'))
                 coordinates += ' ';
             const prefix = mode === 's' ? coordinates : coordinates.padStart(mode === 'm' ? 8 : 12);
-            // Each encoded native glyph uses nine more bytes than its visible character.
+            // C encglyph(): an encoded glyph takes nine bytes more than its
+            // visible character.
             const limit = BUFSZ - 1 - 9 * (obscured ? 2 : 1);
             const rowPrefix = `${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}`;
             const literal = description + (obscured ? ', obscured by ' : '');
@@ -1032,8 +1047,15 @@ export async function identifyTrap() {
 // ---------------------------------------------------------------------------
 // C pager.c:dispfile_*, docontact(), domenucontrols().
 // ---------------------------------------------------------------------------
+// C pager.c:dispfile_help(), dispfile_shelp(), dispfile_optionfile(),
+// dispfile_optmenu(), dispfile_license(), dispfile_debughelp(), and
+// dispfile_usagehelp(): the per-file help commands share this display port.
+// C pager.c:whatdoes_help(): the keyHelp pass over KEYHELP drops comments
+// and indentation.
 export async function displayHelpFile(name, keyHelp = false) {
     clearMessageWindow();
+    // C display_file() reads the file into an NHW_TEXT window; the pager
+    // below is its port.
     const lines = HELP_FILES.get(name);
     if (!lines) {
         await pline(`Cannot open "${name}".`);

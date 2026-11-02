@@ -15,6 +15,8 @@ export async function refreshInvisibleMonsters({ state = game } = {}) {
     await see_monsters();
 }
 // C set_mimic_blocking() only updates vision blockers; callers redraw later.
+// C display.c:mimic_light_blocking(): the iter_mons callback — an invisible
+// light-blocking mimic notes its blocker change.
 export function setMimicBlocking({ state = game } = {}) {
     requireLiveGame(state);
     for (const monster of requireGameLevel(state).monsters) {

@@ -73,6 +73,8 @@ function wallCheckPos(x, y, which) {
 function moreThanOne(...values) {
     return values.filter(Boolean).length > 1;
 }
+// C display.c:set_wall(): wall mode for a straight horizontal or vertical
+// wall from its two faces.
 function straightWallMode(x, y, horizontal) {
     const first = horizontal
         ? wallCheckPos(x, y - 1, 1) : wallCheckPos(x - 1, y, 1);
@@ -80,16 +82,20 @@ function straightWallMode(x, y, horizontal) {
         ? wallCheckPos(x, y + 1, 2) : wallCheckPos(x + 1, y, 2);
     return moreThanOne(first, second) ? 0 : first + second;
 }
+// C display.c:set_corn(): corner wall mode; the inner position decides
+// between inner and outer, three finished outer faces mean finished.
 function cornerWallMode(points, inner) {
     const outside = points.map(([x, y]) => wallCheckPos(x, y, 1));
     if (wallCheckPos(inner[0], inner[1], 1))
         return 2;
     return outside.every(Boolean) ? 1 : 0;
 }
+// C display.c:set_twall(): T-wall mode from its three arms.
 function tWallMode(points) {
     const modes = points.map(([x, y], index) => wallCheckPos(x, y, index + 1));
     return moreThanOne(...modes) ? 0 : modes.reduce((sum, value) => sum + value, 0);
 }
+// C display.c:set_crosswall(): crosswall mode from the four quadrants.
 function crossWallMode(x, y) {
     const quadrants = [
         wallCheckPos(x - 1, y - 1, 1),

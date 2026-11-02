@@ -309,6 +309,7 @@ function branchMenuLabel(branch) {
         return null;
     return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(branch.end1.dnum, branch.end1.dlevel)}`;
 }
+// C dungeon.c:br_string(): the branch kind's label for the level menu.
 function branchTypeDescription(branch) {
     return {
         portal: 'Portal',
@@ -340,6 +341,8 @@ function dungeonLayoutEvents(dnum) {
 // while its incoming branch still uses the synthetic n_dgns source end.
 // Once mk_knox_portal() resolves that end to a real main-dungeon level, the
 // named `knox` special level is selectable like every other wizard target.
+// C dungeon.c:unreachable_level(): a dummy or unplaced level, or any level
+// outside the endgame once the hero is in it, cannot be chosen.
 function specialLevelReachable(event) {
     if (event.name === 'dummy')
         return false;
@@ -373,6 +376,9 @@ async function endgamePrerequisite(destination) {
 }
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
+// print_branch() lists each child branch in level order, tport_menu()
+// assigns its menu letter (or padding when unreachable), and chr_u_on_lvl()
+// marks the hero's own square with '*'.
 function wizardLevelMenu() {
     const rows = [];
     const choices = new Map();
@@ -409,6 +415,7 @@ function wizardLevelMenu() {
                 reachable = specialLevelReachable(event);
             }
             if (reachable) {
+                // C add_menu(): the row joins the tty menu built below.
                 rows.push(`${key} - ${current ? '*' : ' '} ${label}`);
                 choices.set(key, destination);
             }
@@ -626,6 +633,8 @@ function belongsToCurrentLevel(monster) {
 function sameLevel(first, second) {
     return first?.dnum === second.dnum && first.dlevel === second.dlevel;
 }
+// C dungeon.c:rm_mapseen(): discard the overview record of the level being
+// replaced (cmd.c:makemap_prepost()).
 async function discardOldLevel() {
     requirePlayingGame(game);
     const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
