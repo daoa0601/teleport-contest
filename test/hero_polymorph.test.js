@@ -7,7 +7,7 @@ import { touchArtifactByHero } from '../js/artifacts.js';
 import { A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB, } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+import { loseHeroHp } from '../js/hack.js';
 import { heroIsSick } from '../js/hero_illness.js';
 import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';

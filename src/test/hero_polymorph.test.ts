@@ -39,7 +39,6 @@ import {
 } from './support/hero-state.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { loseHeroHp } from '../js/hack.js';
 
 function requiredRole(predicate: (role: (typeof roles)[number]) => boolean) {
     const role = roles.find(predicate);

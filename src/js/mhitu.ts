@@ -71,7 +71,6 @@ import { withIndefiniteArticle, objectDescription } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 
 import { stopHeroOccupation } from './occupation.js';
-import { stopRun } from './hack.js';
 import { makeBlinded } from './potion.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import type { MonsterAttackDeathOptions, DeathHandler, FinishHeroDeathOptions } from './end.js';

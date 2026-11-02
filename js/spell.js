@@ -9,7 +9,6 @@ import { exerciseWisdom, currentAttribute, exerciseAttribute } from './attrib.js
 import { heroHeadName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
-import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
@@ -22,7 +21,7 @@ import { restoreCannedCommandTail } from './cmd.js';
 import { canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, flush_screen, map_invisible, zapdir_to_glyph, } from './display.js';
 import { monsterName } from './do_name.js';
 import { explode } from './explosion.js';
-import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip, } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero } from './potion.js';
 import { heroIsSick } from './hero_illness.js';
 import { makeConfused, makeStunned } from './potion.js';
@@ -49,13 +48,14 @@ import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './tty_menu.js';
 import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { cansee } from './vision.js';
-import { exceedsActionCapacity, objectWeight } from './weight.js';
 import { showInventoryWindow } from './windows.js';
 import { hitMonsterWithRay, adjustSpellDamage } from './zap.js';
 import { heroHasFreeHand } from './engrave.js';
 import { applyScrollEffects } from './read.js';
 import { applyWandEffect } from './zap.js';
 import { CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
+import { loseHeroHp, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { objectWeight } from './mkobj.js';
 export function knownSpell(otyp, state = game) {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
     if (!spell)

@@ -39,10 +39,7 @@ import {
 } from './display.js';
 import { monsterName } from './do_name.js';
 import { explode } from './explosion.js';
-import {
-    prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions,
-    showGetposTip,
-} from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero } from './potion.js';
 import { heroIsSick } from './hero_illness.js';
 import { makeConfused, makeStunned } from './potion.js';
