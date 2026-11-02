@@ -31,7 +31,7 @@ import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killer
 import { inventoryItemDescription, consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
 import { canSelectOff } from './bulk_takeoff.js';
-import { isWeldedPrimary, setPrimaryWeapon, setSecondaryWeapon } from './wield.js';
+import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn } from './worn.js';
 import { yn_function } from './query.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
@@ -1610,19 +1610,33 @@ export async function wearHeroAccessory(object, slot, state = game) {
     const property = OBJECT_PROPERTY[object.otyp];
     if (property === 'levitation' || property === 'protectionFromShapeChangers')
         requireLiveGame(state);
+    if (slot === 'uamul') {
+        // C Amulet_on(): "make sure amulet isn't wielded/alt-wielded/
+        // quivered, before wearing" — remove_worn_item(amul, FALSE) runs
+        // before setworn(amul, W_AMUL).
+        await removeWornHeroItem(object, state, { unchainBall: false });
+    }
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
     const wasInvisible = propertyIsActive('invisible', state);
     const wasSeeingInvisible = propertyIsActive('seeInvisible', state);
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
-    // C accessory_or_armor_on() installs rings and amulets with setworn(obj,
-    // mask) and does not release weapon slots: a wielded or quivered ring
-    // keeps its weapon slot while worn.  Ring_on()/Amulet_on() feedback
-    // follows below.
+    // C accessory_or_armor_on(): setworn(obj, mask), then Ring_on() for
+    // rings and Amulet_on() for amulets.
     await setworn(object, position.mask, state);
-    if (slot !== 'uamul')
+    if (slot !== 'uamul') {
+        // C Ring_on(): "make sure ring isn't wielded; can't use
+        // remove_worn_item() here because it has already been set worn in
+        // a ring slot" — setuwep(0)/setuswapwep(0)/setuqwep(0).
+        if (object === (state.uwep || state.u?.uwep))
+            await setPrimaryWeapon(null, state);
+        else if (object === (state.uswapwep || state.u?.uswapwep))
+            await setSecondaryWeapon(null, state);
+        else if (object === (state.uquiver || state.u?.uquiver))
+            await setQuiverObject(null, state);
         changeRingBonus(object, 1, state);
+    }
     if (slot === 'uamul')
         await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
     if (property === 'warning')
