@@ -1428,7 +1428,7 @@ export async function zapDigWithObject(_object, { state = game } = {}) {
                 await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0, { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
-            // C dig.c:conjoined_pits() gate before digging a linked pit.
+            // C trap.c:conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
                 let adjacentPit = trapAt(x, y, state);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
@@ -1599,11 +1599,11 @@ function adjacentPitRejection(x, y, state) {
     if (type === SINK)
         return 'A tangled mass of plumbing remains below the sink.';
     const stairs = stairwayAt(x, y, state);
-    // C dig.c:On_ladder().
+    // C stairs.c:On_ladder().
     if (stairs?.isladder)
         return 'The ladder is unaffected.';
-    // C dig.c:On_stairs() names the stairs as the supporting structure.
-    // On_ladder() is handled above.
+    // C stairs.c:On_stairs() names the stairs as the supporting structure;
+    // stairs.c:On_ladder() is handled above.
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
         : type === ALTAR ? 'altar' : stairs ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;

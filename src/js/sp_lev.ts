@@ -781,7 +781,6 @@ function flipDrawbridgeDirection(location: MapLocation, horizontal: boolean): vo
 
 // Bit-pair swap; C hacklib.c:swapbits().
 function swapDirectionBits(value: number, first: number, second: number): number {
-    // hacklib.c:swapbits().
     const different = ((value >> first) ^ (value >> second)) & 1;
     return value ^ ((different << first) | (different << second));
 }
