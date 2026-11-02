@@ -325,8 +325,8 @@ async function cannotPushMessage(boulder: GameObject, x: number, y: number): Pro
 }
 
 // C hack.c:cannot_push(): rock throwers pick the boulder up or step over
-// it; others may squeeze onto the square.  C hack.c:inv_cnt(): the
-// free-slot count excludes gold and caps at the 52 basic letters.
+// it; others may squeeze onto the square.  C hack.c:inv_cnt(): the count
+// of non-gold inventory; the 52-letter comparison is cannot_push()'s own.
 async function cannotPush(boulder: GameObject, x: number, y: number): Promise<boolean> {
     if (heroThrowsRocks()) {
         const canPickup = !game.level?.flags.sokoban_rules
@@ -3303,8 +3303,9 @@ export async function waterTurbulenceStopsHero(): Promise<boolean> {
     }
     return false;
 }
-// C hack.c:slippery_ice_fumbling(): bare feet on ice fumble next move
-// unless booted, cold-resistant, flying, floating, clinging, or whirly.
+// C hack.c:slippery_ice_fumbling(): on ice, unless shod in snow boots,
+// cold-resistant, flying, floating, clinging, or whirly, one chance in
+// rn2(cold ? 3 : 2) fumbles the next move.
 export function checkSlipperyIce(): void {
     const hero = game.u;
     let onIce = !propertyIsActive('levitation', game) && isIceAt(hero.ux, hero.uy);

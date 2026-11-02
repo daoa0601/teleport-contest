@@ -774,9 +774,9 @@ export async function wearHeroArmor(
     return slot;
 }
 
-// C do_wear.c:Helmet_off(): fedora luck, cornuthaum charisma, opposite
-// alignment, and the telepathy/caution see_monsters() refresh run before
-// the slot is cleared.
+// C do_wear.c:Helmet_off(): fedora luck, cornuthaum charisma, and opposite
+// alignment run before the slot is cleared; telepathy/caution clears the
+// slot first and only then refreshes see_monsters() (do_wear.c:544-547).
 // C do_wear.c:Gloves_off(): gauntlets of power are identified, encumbrance
 // is re-reported, glib is cured, and a bare-handed petrifying corpse
 // wield is resolved.
