@@ -77,7 +77,7 @@ def main():
             raise Unsupported(f'unproved rounddiv obligation: {obligation.what}')
 
     modules = load_modules()
-    label = 'js/corpse_meal.js'
+    label = 'js/eat.js'
     source = (REPO / label).read_bytes()
     modules[label] = (source, *parse_module(source))
     function = modules[label][1]['prepareCorpseMeal']

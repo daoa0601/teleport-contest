@@ -4,13 +4,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, ROOMOFFSET, VAULT, W_ARM } from '../js/const.js';
-import { digestAccessory } from '../js/eaten_accessory.js';
+import { digestAccessory, handleFoodAdmission } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { IRON_BARS_FOOD, isEdibleFood, selectFoodToEat } from '../js/food_selection.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { handleFoodAdmission } from '../js/nonfood_eating.js';
 import {
     AMULET_OF_YENDOR, APPLE, DAGGER, EGG, GOLD_PIECE, LARGE_BOX,
     LEATHER_ARMOR, OBJECT_NAMES, RIN_SLOW_DIGESTION, SCR_IDENTIFY,

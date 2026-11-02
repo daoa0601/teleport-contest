@@ -114,7 +114,7 @@ earlyarg.c	dump_enums	misc_object_nums	diagnostic	--dumpenums command-line dump 
 earlyarg.c	dump_enums	objclass_classes	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
 earlyarg.c	dump_enums	objclass_defchars	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
 eat.c	floorfood	; resume eating them?	composed	src/js/food_selection.ts:selectFoodToEat; Composes `There are iron bars here; ${resume ? 'resume eating' : 'eat'} them?` from the digging context like floorfood().
-eat.c	rottenfood	rather trippy.	composed	src/js/ordinary_food_effects.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
+eat.c	rottenfood	rather trippy.	composed	src/js/eat.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
 end.c	done	are a very tricky wizard, it seems.	dead	Pinned recorder comments the wizard-mode TRICKED line out for deterministic replay (end.c:1031); the port's finishHeroDeath returns silently for TRICKED with debug set, like the native branch without the message.
 end.c	done_in_by	, the shopkeeper	composed	src/js/shk.ts:shopkeeperKillerName; Composes honorific plus shop name before the shopkeeper title; formatkiller()'s comma-to-semicolon rewrite is applied there too.
 end.c	really_done	and Schroedinger's cat	composed	src/js/end.ts:finishLivingGame; Pushes Schroedinger's cat into the pet names joined with " and " for the closing company line.

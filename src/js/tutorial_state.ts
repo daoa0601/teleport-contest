@@ -17,7 +17,7 @@ import { deleteObject } from './shk.js';
 import { syncBlindness } from './senses.js';
 import { assignInventoryLetter } from './u_init.js';
 import { findArmorClass } from './armor.js';
-import { restoreHeroNutrition } from './hunger.js';
+import { restoreHeroNutrition } from './eat.js';
 
 const WORN_SLOTS = [
     ['uarm', W_ARM], ['uarmc', W_ARMC], ['uarmh', W_ARMH],

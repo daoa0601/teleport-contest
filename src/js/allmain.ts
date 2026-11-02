@@ -23,8 +23,10 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand } from './zap.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeStunned } from './hero_mental_status.js';
-import { finishMealMimicry } from './meal_mimic.js';
-import { finishHeroDigestion } from './hero_combat_engulf.js';
+import {
+    finishMealMimicry, finishHeroDigestion, getHungry, recoverHeroFromFainting,
+    regainHearingAfterHelplessness,
+} from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -133,7 +135,10 @@ import {
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { rndcurse } from './throne.js';
 import { stopRun, captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
-import { resolveMonsterGaze } from './mhitu.js';
+import {
+    resolveMonsterGaze, completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage,
+    resolveMonsterSelfExplosion,
+} from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
 import {
     canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, randomDisplayMonsterName, see_monsters,
@@ -164,9 +169,6 @@ import { initializeSourceStartup } from './startup.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
-    completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion,
-} from './mhitu.js';
-import {
     finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, presentMonsterQuaff as publishMonsterQuaff,
     presentMonsterWandUse, revealAggravatingMonster,
 } from './muse.js';
@@ -188,7 +190,6 @@ import { invault, moveVaultGuard } from './vault.js';
 import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { finishPrayerOccupation } from './pray.js';
-import { getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './hunger.js';
 import { monsterAlignmentType } from './priest.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, fixShopDamage } from './shk.js';

@@ -17,7 +17,7 @@ import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
-import { parseTinPreparation, setTinVariety, tinDetails } from './tin.js';
+import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition, } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
@@ -37,7 +37,6 @@ import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
 import { EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
-import { consumeRemainingFood, foodNutrition } from './food_lifecycle.js';
 import { placeCreatedObject } from './floor_object.js';
 import { beginObjectBurn } from './light.js';
 import { hatchableEggSpecies } from './egg_species.js';
@@ -238,13 +237,6 @@ export function objectCombatName(object, { state = game, includeCorpseSpecies = 
     if ((object.quan ?? object.quantity ?? 1) !== 1)
         name = pluralizeObjectNoun(object, name);
     return name.replace(/^the /iu, '');
-}
-// C eat.c:food_xname(): eating describes one item, even in a larger stack.
-export function foodObjectName(object, { state = game, definite = false, } = {}) {
-    if (object.otyp === CORPSE)
-        return corpseName(object, { singular: true, definite });
-    const name = objectName(object, state);
-    return definite ? definiteName(name, state) : name;
 }
 // invent.c:loot_xname() ignores counts and individual user names. Its
 // temporary adjustments group water, towels, and globs without altering them.

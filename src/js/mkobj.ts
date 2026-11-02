@@ -9,7 +9,7 @@ import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
 import { novelTitle } from './novel_titles.js';
-import { setTinVariety } from './tin.js';
+import { setTinVariety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { nextIdent, nextObjectId } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
@@ -37,7 +37,6 @@ import { assignCandyWrapper } from './read.js';
 import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
 import { dropObjectAtHero } from './hero_drop.js';
 
-
 import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld } from './do.js';
 import { deleteObject, splitObjectBill, settleGlobAbsorptionBilling } from './shk.js';
 import { startGlobTimeout } from './glob.js';
@@ -52,8 +51,6 @@ import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } f
 
 import { bookCursed } from './spellbook_study.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
-
-
 
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;

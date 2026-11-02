@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, G_GENOD, ICE, NO_MINVENT, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
-import { doeat } from '../js/eat.js';
+import {
+    doeat, applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood,
+} from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { heroIsUnconscious } from '../js/hero_sleep.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -15,9 +17,6 @@ import {
     APPLE, CARROT, CLOVE_OF_GARLIC, EGG, FOOD_RATION, FORTUNE_COOKIE,
     LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, PEAR, TRIPE_RATION,
 } from '../js/object_data.js';
-import {
-    applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood,
-} from '../js/ordinary_food_effects.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind, heroIsDeaf, setHeroBlindnessTurns } from '../js/senses.js';

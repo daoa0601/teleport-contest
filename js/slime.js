@@ -13,7 +13,7 @@ import { MONSTER_SYMBOL } from './monster_data.js';
 import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
-import { openingTinMaySaveHero } from './tin.js';
+import { openingTinMaySaveHero } from './eat.js';
 import { withIndefiniteArticle } from './objnam.js';
 export const PM_GREEN_SLIME = 208;
 const PM_FLAMING_SPHERE = 30;

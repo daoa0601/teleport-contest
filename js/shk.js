@@ -62,7 +62,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
-import { intrinsicPossible } from './corpse_intrinsics.js';
+import { intrinsicPossible } from './eat.js';
 import { countContents } from './invent.js';
 import { objectWeight } from './weight.js';
 import { artifactById } from './artifacts.js';

@@ -28,7 +28,7 @@ import { heroIsSick } from './hero_illness.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, heroCanChant } from './hero_speech.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition } from './eat.js';
 import { takeCommandResponse } from './input.js';
 import { wakeMonster } from './mon.js';
 import { monsterHasShockResistance } from './mondata.js';

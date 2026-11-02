@@ -55,7 +55,7 @@ import { heroFormSticks } from './hero_species.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { speedUpHero } from './hero_speed.js';
 import { heroIsStrangled } from './hero_strangulation.js';
-import { updateHeroHunger } from './hunger.js';
+import { updateHeroHunger, fixHeroPetrification } from './eat.js';
 import { peekCommandResponse } from './input.js';
 import { doEnlightenmentEffect, showEnlightenment } from './insight.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -86,11 +86,7 @@ import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';
 
-
 import { ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN } from './object_data.js';
-
-
-
 
 import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 
@@ -110,7 +106,7 @@ import { makeBlinded } from './sight_change.js';
 import { dipSink } from './fountain.js';
 import { burnAwayHeroSlime, heroIsFlaming, heroIsSliming } from './slime.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
-import { fixHeroPetrification, heroIsPetrifying } from './stoning.js';
+import { heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { isPoolAt } from './terrain_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';

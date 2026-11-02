@@ -43,6 +43,8 @@ import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';
 import { dist2 } from './hacklib.js';
 import { clearPath } from './vision.js';
+import { heroMonsterForm } from './polyself.js';
+
 // Native MALE, FEMALE, and NEUTRAL name indices.
 export type MonsterNameGender = 0 | 1 | 2;
 
@@ -768,7 +770,6 @@ export function setMonsterSpecies(monster: Monster, mnum: number): Monster {
 
 // C mondata.c:mon_learns_traps() and mons_see_trap().
 
-
 const M1_NOEYES = 0x00001000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -809,4 +810,20 @@ export function monstersSeeTrap(state: GameState, trap: Pick<Trap, 'ttyp' | 'tx'
         if (!clearPath(observer.mx, observer.my, trap.tx, trap.ty)) continue;
         monsterLearnsTrap(observer, trap);
     }
+}
+
+const S_RODENT = 18;
+const PM_ROCK_MOLE = 92;
+const PM_WOODCHUCK = 93;
+const PM_PONY = 100;
+const PM_HORSE = 104;
+const PM_WARHORSE = 105;
+
+// C mondata.c:cantvomit().
+export function heroCannotVomit(state: GameState) {
+    const form = heroMonsterForm(state);
+    if (form == null) return false;
+    if (MONSTER_SYMBOL[form] === S_RODENT
+        && form !== PM_ROCK_MOLE && form !== PM_WOODCHUCK) return true;
+    return form === PM_PONY || form === PM_HORSE || form === PM_WARHORSE;
 }

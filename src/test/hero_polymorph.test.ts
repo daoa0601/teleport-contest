@@ -12,7 +12,7 @@ import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { heroIsSick, startHeroSickness } from '../js/hero_illness.js';
-import { spendHeroNutrition } from '../js/hunger.js';
+import { spendHeroNutrition } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';

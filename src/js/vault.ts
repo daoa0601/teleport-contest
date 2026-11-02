@@ -22,7 +22,7 @@ import { stopLevelTimer } from './timeout.js';
 import { findVaultGuard, setVaultTerrainFlags } from './vault_guard.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { resetHeroFaint } from './hunger.js';
+import { resetHeroFaint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

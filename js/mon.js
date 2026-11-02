@@ -10,7 +10,7 @@ import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, monsterIsNoncorporeal, monsterIsRider, monsterSpeciesSticks, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_RESISTS, MONSTER_SOUND, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterHasHead, monsterIsAmorphous, monsterIsDisplacer, MONSTER_BODY_META, MONSTER_HAS_WEAPON_ATTACK, monsterHatesSilver, monsterIsCovetous, monsterIsKop, monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses, } from './monster_data.js';
 import { monsterName, namelessMonsterName, setMonsterGivenName, formatMonsterName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, } from './mondata.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, } from './mondata.js';
 import { AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
@@ -50,7 +50,6 @@ import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody,
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './regions.js';
-import { monsterKnowsTrap } from './mondata.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { roomsAt } from './room.js';
@@ -84,7 +83,7 @@ import { armorThiefGone } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './light.js';
-import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './corpse_intrinsics.js';
+import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { inventoryItemDescription, delobj } from './invent.js';
@@ -1832,7 +1831,7 @@ export async function consumeMonsterFloorObjects(monster, state, { originalSpeci
         if (!mealInterrupted(monster, context) && originalSpecies === PM_GELATINOUS_CUBE)
             status = await eatOrEngulfPile(monster, context) || status;
         if (!mealInterrupted(monster, context) && speciesEatsCorpses(originalSpecies))
-            status = await eatCorpse(monster, context) || status;
+            status = await meatcorpse(monster, context) || status;
     }
     const died = !!monster.dead || monster.mhp <= 0;
     const leftLevel = !died && leftMealLevel(monster, context);
@@ -1945,7 +1944,8 @@ async function eatOrEngulfPile(monster, context) {
     }
     return eaten > 0 || engulfed > 0 ? 1 : 0;
 }
-async function eatCorpse(monster, context) {
+// C mon.c:meatcorpse().
+async function meatcorpse(monster, context) {
     const { state, level } = context;
     const originalSpecies = monster.mnum;
     const x = monster.mx, y = monster.my;

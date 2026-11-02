@@ -1,12 +1,10 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero attacker branch.
 import { objectIsHardHelmet } from './armor.js';
 import { exerciseWisdom } from './attrib.js';
-import { applyCannibalPenalty } from './cannibalism.js';
+import { applyCannibalPenalty, eatingConducts, spendHeroNutrition } from './eat.js';
 import { A_INT, DIED, KILLED_BY_AN, M_ATTK_MISS, W_AMUL, W_ARMH } from './const.js';
 import { finishHeroDeath } from './end.js';
-import { eatingConducts } from './food_conduct.js';
 import { monsterSlipsFromHeroGrip } from './hero_natural_grip.js';
-import { spendHeroNutrition } from './hunger.js';
 import { monsterHasHead, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterTypeName, } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';

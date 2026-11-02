@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { STONING, TURNED_SLIME } from '../js/const.js';
-import { applyCorpsePreEffects } from '../js/corpse_eating.js';
+import { applyCorpsePreEffects } from '../js/eat.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { useHeroGaze } from '../js/hero_gaze.js';
 import { hurtleHero } from '../js/hero_hurtle.js';

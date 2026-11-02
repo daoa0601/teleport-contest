@@ -20,7 +20,7 @@ import { promptChoice } from './query.js';
 import { costlySpot } from './shk.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, resolveImmediatePetrification, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { setTinVariety } from './tin.js';
+import { setTinVariety } from './eat.js';
 import { objectWeight } from './weight.js';
 export async function useTinningKit(kit) {
     requirePlayingGame(game);

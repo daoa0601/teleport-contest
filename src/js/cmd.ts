@@ -122,8 +122,7 @@ import {
 } from './unicorn_horn.js';
 import { useHeroVampireShift } from './vampire_shift.js';
 import { doread } from './read.js';
-import { continueFoodMeal, doeat } from './eat.js';
-import { continueTinOpening } from './tin.js';
+import { continueFoodMeal, doeat, continueTinOpening } from './eat.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { displayHelpFile } from './pager.js';

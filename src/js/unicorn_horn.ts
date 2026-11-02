@@ -14,9 +14,9 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { objectName } from './objnam.js';
 import {
-    cureHeroSickness, cureHeroVomiting, heroIsVomiting,
-    startHeroSickness, startHeroVomiting, vomitHero,
+    cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroSickness, startHeroVomiting,
 } from './hero_illness.js';
+import { vomitHero } from './eat.js';
 import {
     MONSTER_ATTACKS, monsterIsUnicorn,
 } from './monster_data.js';

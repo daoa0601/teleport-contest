@@ -151,7 +151,7 @@ src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/camera.ts	useCamera	rn2	"[""2""]"	constant
 src/js/camera.ts	useCamera	rnd	"[""25""]"	constant
-src/js/cannibalism.ts	applyCannibalPenalty	rn1	"[""4"", ""2""]"	constant
+src/js/eat.ts	applyCannibalPenalty	rn1	"[""4"", ""2""]"	constant
 src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	d	"[""4"", ""6""]"	constant
 src/js/ceiling_monster_arrival.ts	finishCeilingMonsterArrival	rnd	"[""20""]"	constant
 src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length * 100""]"	unproved
@@ -189,29 +189,29 @@ src/js/pickup.ts	lootCommand	rn2	"[""6""]"	constant
 src/js/pickup.ts	lootFloorContainers	rnd	"[""10""]"	constant
 src/js/pickup.ts	lootMonster	rnd	"[""3""]"	constant
 src/js/pickup.ts	tipContainer	rn2	"[""13""]"	constant
-src/js/corpse_eating.ts	applyCorpsePostEffects	rn2	"[""2""]"	constant
-src/js/corpse_eating.ts	eatStalker	rn1	"[""100"", ""50""]"	constant
-src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""++count""]"	guarded
-src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""2""]"	constant
-src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
-src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
-src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rnd	"[""3""]"	constant
-src/js/corpse_intrinsics.ts	grantCorpseIntrinsic	d	"[""3"", ""6""]"	constant
-src/js/corpse_intrinsics.ts	shouldGiveIntrinsic	rn2	"[""4""]"	constant
-src/js/corpse_intrinsics.ts	shouldGiveIntrinsic	rn2	"[""chance""]"	guarded
-src/js/corpse_intrinsics.ts	shouldGiveTemporaryResistance	rn2	"[""chance""]"	guarded
-src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""10""]"	constant
-src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""choices.length""]"	constant
-src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""rotted + 1""]"	guarded
-src/js/corpse_meal.ts	eatTaintedCorpse	rn1	"[""10"", ""10""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rn2	"[""20""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rn2	"[""5""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rn2	"[""5""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rn2	"[""7""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rnd	"[""15""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rnd	"[""15""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rnd	"[""4""]"	constant
-src/js/corpse_meal.ts	prepareCorpseMeal	rnd	"[""8""]"	constant
+src/js/eat.ts	applyCorpsePostEffects	rn2	"[""2""]"	constant
+src/js/eat.ts	eatStalker	rn1	"[""100"", ""50""]"	constant
+src/js/eat.ts	chooseCorpseIntrinsic	rn2	"[""++count""]"	guarded
+src/js/eat.ts	chooseCorpseIntrinsic	rn2	"[""2""]"	constant
+src/js/eat.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
+src/js/eat.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
+src/js/eat.ts	corpseEnergyBuzz	rnd	"[""3""]"	constant
+src/js/eat.ts	grantCorpseIntrinsic	d	"[""3"", ""6""]"	constant
+src/js/eat.ts	shouldGiveIntrinsic	rn2	"[""4""]"	constant
+src/js/eat.ts	shouldGiveIntrinsic	rn2	"[""chance""]"	guarded
+src/js/eat.ts	shouldGiveTemporaryResistance	rn2	"[""chance""]"	guarded
+src/js/eat.ts	describeCorpseTaste	rn2	"[""10""]"	constant
+src/js/eat.ts	describeCorpseTaste	rn2	"[""choices.length""]"	constant
+src/js/eat.ts	describeCorpseTaste	rn2	"[""rotted + 1""]"	guarded
+src/js/eat.ts	eatTaintedCorpse	rn1	"[""10"", ""10""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rn2	"[""20""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rn2	"[""5""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rn2	"[""5""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rn2	"[""7""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rnd	"[""15""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rnd	"[""15""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rnd	"[""4""]"	constant
+src/js/eat.ts	prepareCorpseMeal	rnd	"[""8""]"	constant
 src/js/corpse_revival.ts	containerBlocksRevival	rn2	"[""40""]"	constant
 src/js/corpse_revival.ts	retryRevival	d	"[""5"", ""50""]"	constant
 src/js/corpse_revival.ts	retryRevival	rn2	"[""99""]"	constant
@@ -310,12 +310,12 @@ src/js/earthquake.ts	dropHeroIntoChasm	rnl	"[""roleRange""]"	constant
 src/js/earthquake.ts	dropMonsterIntoChasm	rnd	"[""wasTrapped ? 4 : 6""]"	constant
 src/js/earthquake.ts	trapHeroInChasm	rn2	"[""6""]"	constant
 src/js/eat.ts	ordinaryFoodIsRotten	rn2	"[""7""]"	constant
-src/js/eaten_accessory.ts	boundedIncrease	rn2	"[""Math.abs(amount)""]"	unproved
-src/js/eaten_accessory.ts	boundedIncrease	rnd	"[""20 - Math.abs(old)""]"	unproved
-src/js/eaten_accessory.ts	boundedIncrease	rnd	"[""Math.abs(amount)""]"	guarded
-src/js/eaten_accessory.ts	digestAccessory	d	"[""10"", ""20""]"	constant
-src/js/eaten_accessory.ts	digestAccessory	rn2	"[""object.oclass === 4 ? 3 : 5""]"	constant
-src/js/eaten_accessory.ts	digestAccessory	rnd	"[""100""]"	constant
+src/js/eat.ts	boundedIncrease	rn2	"[""Math.abs(amount)""]"	unproved
+src/js/eat.ts	boundedIncrease	rnd	"[""20 - Math.abs(old)""]"	unproved
+src/js/eat.ts	boundedIncrease	rnd	"[""Math.abs(amount)""]"	guarded
+src/js/eat.ts	digestAccessory	d	"[""10"", ""20""]"	constant
+src/js/eat.ts	digestAccessory	rn2	"[""object.oclass === 4 ? 3 : 5""]"	constant
+src/js/eat.ts	digestAccessory	rnd	"[""100""]"	constant
 src/js/egg.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
 src/js/egg.ts	finishEggHatchTimer	rnd	"[""12""]"	constant
 src/js/egg.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
@@ -657,11 +657,11 @@ src/js/dig.ts	liquidForHole	random	"[""moats + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""pools + 1""]"	guarded
 src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""13""]"	constant
 src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""7""]"	constant
-src/js/hunger.ts	chokeHeroOnFood	rn2	"[""20""]"	constant
-src/js/hunger.ts	getHungry	rn2	"[""10""]"	constant
-src/js/hunger.ts	getHungry	rn2	"[""20""]"	constant
-src/js/hunger.ts	regainHearingAfterHelplessness	rn2	"[""2""]"	constant
-src/js/hunger.ts	updateHeroHunger	rn2	"[""20 - rounded""]"	unproved
+src/js/eat.ts	chokeHeroOnFood	rn2	"[""20""]"	constant
+src/js/eat.ts	getHungry	rn2	"[""10""]"	constant
+src/js/eat.ts	getHungry	rn2	"[""20""]"	constant
+src/js/eat.ts	regainHearingAfterHelplessness	rn2	"[""2""]"	constant
+src/js/eat.ts	updateHeroHunger	rn2	"[""20 - rounded""]"	unproved
 src/js/ident.ts	nextIdent	rnd	"[""2""]"	constant
 src/js/ident.ts	nextIdent	rnd	"[""2""]"	constant
 src/js/immediate_monster_magic.ts	healMonsterWithMagic	d	"[""6"", ""extra ? 8 : 4""]"	constant
@@ -1788,9 +1788,9 @@ src/js/music.ts	playLeatherDrum	rn2	"[""DRUM_BEATS.length""]"	constant
 src/js/music.ts	playWoodenFlute	rn2	"[""Math.max(1, currentAttribute(A_DEX))""]"	constant
 src/js/music.ts	playWoodenHarp	rn2	"[""Math.max(1, currentAttribute(A_DEX))""]"	constant
 src/js/music.ts	putMonstersToSleep	d	"[""10"", ""10""]"	constant
-src/js/nonfood_eating.ts	eatNonFood	rnd	"[""15""]"	constant
-src/js/nonfood_eating.ts	eatNonFood	rnd	"[""4""]"	constant
-src/js/nonfood_eating.ts	spitOutRustproofObject	rn2	"[""10""]"	constant
+src/js/eat.ts	eatNonFood	rnd	"[""15""]"	constant
+src/js/eat.ts	eatNonFood	rnd	"[""4""]"	constant
+src/js/eat.ts	spitOutRustproofObject	rn2	"[""10""]"	constant
 src/js/novel_titles.ts	novelTitle	rn2	"[""NOVEL_TITLES.length""]"	constant
 src/js/novel_tribute.ts	selectTributePassage	rn2	"[""remaining""]"	unproved
 src/js/novel_tribute.ts	selectTributePassage	rn2	"[""tracking.count""]"	unproved
@@ -1865,19 +1865,19 @@ src/js/orc_raid.ts	randomOrcName	rn2	"[""30""]"	constant
 src/js/orc_raid.ts	randomOrcName	rn2	"[""syllables.length""]"	unproved
 src/js/orc_raid.ts	sendRaiderToLowerMines	rn2	"[""40""]"	constant
 src/js/orc_raid.ts	sendRaiderToLowerMines	rn2	"[""bottom - current.dlevel + 1""]"	unproved
-src/js/ordinary_food_effects.ts	applyOrdinaryFoodFirstBite	d	"[""10"", ""4""]"	constant
-src/js/ordinary_food_effects.ts	applyOrdinaryFoodFirstBite	d	"[""3"", ""6""]"	constant
-src/js/ordinary_food_effects.ts	applyOrdinaryFoodFirstBite	rn1	"[""requireFoodMeal(state).reqtime"", ""5""]"	unproved
-src/js/ordinary_food_effects.ts	applyOrdinaryFoodPostEffects	rn1	"[""11"", ""20""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	d	"[""2"", ""10""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	d	"[""2"", ""4""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	rn2	"[""3""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	rn2	"[""4""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	rn2	"[""4""]"	constant
-src/js/ordinary_food_effects.ts	applyRottenFood	rnd	"[""10""]"	constant
-src/js/ordinary_food_effects.ts	ordinaryFoodFeedback	rnd	"[""100""]"	constant
-src/js/ordinary_food_effects.ts	tasteTripe	rn1	"[""requireFoodMeal(state).reqtime"", ""14""]"	unproved
-src/js/ordinary_food_effects.ts	tasteTripe	rn2	"[""2""]"	constant
+src/js/eat.ts	applyOrdinaryFoodFirstBite	d	"[""10"", ""4""]"	constant
+src/js/eat.ts	applyOrdinaryFoodFirstBite	d	"[""3"", ""6""]"	constant
+src/js/eat.ts	applyOrdinaryFoodFirstBite	rn1	"[""requireFoodMeal(state).reqtime"", ""5""]"	unproved
+src/js/eat.ts	applyOrdinaryFoodPostEffects	rn1	"[""11"", ""20""]"	constant
+src/js/eat.ts	applyRottenFood	d	"[""2"", ""10""]"	constant
+src/js/eat.ts	applyRottenFood	d	"[""2"", ""4""]"	constant
+src/js/eat.ts	applyRottenFood	rn2	"[""3""]"	constant
+src/js/eat.ts	applyRottenFood	rn2	"[""4""]"	constant
+src/js/eat.ts	applyRottenFood	rn2	"[""4""]"	constant
+src/js/eat.ts	applyRottenFood	rnd	"[""10""]"	constant
+src/js/eat.ts	ordinaryFoodFeedback	rnd	"[""100""]"	constant
+src/js/eat.ts	tasteTripe	rn1	"[""requireFoodMeal(state).reqtime"", ""14""]"	unproved
+src/js/eat.ts	tasteTripe	rn2	"[""2""]"	constant
 src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
 src/js/detect.ts	detectedTrapDisguise	rn2	"[""20""]"	constant
 src/js/pick_axe.ts	applyPickAxeDirection	rnd	"[""2""]"	constant
@@ -2293,19 +2293,19 @@ src/js/thrown_object.ts	prepareHeroThrownTarget	random	"[""10""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""3""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""quarter""]"	guarded
 src/js/timeout_body.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
-src/js/tin.ts	consumeSpinach	rnd	"[""200""]"	constant
-src/js/tin.ts	consumeSpinach	rnd	"[""400""]"	constant
-src/js/tin.ts	consumeTin	rn1	"[""11"", ""5""]"	constant
-src/js/tin.ts	consumeTin	rn1	"[""15"", ""10""]"	constant
-src/js/tin.ts	consumeTin	rn2	"[""2""]"	constant
-src/js/tin.ts	consumeTin	rn2	"[""8""]"	constant
-src/js/tin.ts	setTinVariety	rn2	"[""preparations.length - 1""]"	constant
-src/js/tin.ts	setTinVariety	rn2	"[""preparations.length - 1""]"	constant
-src/js/tin.ts	startTin	rn1	"[""1 + Math.trunc(500 / (currentAttribute(A_DEX, state) + currentStrength(state)))"", ""10""]"	invariant
-src/js/tin.ts	startTin	rn2	"[""2""]"	constant
-src/js/tin.ts	startTin	rn2	"[""weapon.cursed ? 3 : weapon.blessed ? 1 : 2""]"	constant
-src/js/tin.ts	tinVariety	rn2	"[""7""]"	constant
-src/js/tin.ts	tinVariety	rn2	"[""preparations.length - 1""]"	constant
+src/js/eat.ts	consumeSpinach	rnd	"[""200""]"	constant
+src/js/eat.ts	consumeSpinach	rnd	"[""400""]"	constant
+src/js/eat.ts	consumeTin	rn1	"[""11"", ""5""]"	constant
+src/js/eat.ts	consumeTin	rn1	"[""15"", ""10""]"	constant
+src/js/eat.ts	consumeTin	rn2	"[""2""]"	constant
+src/js/eat.ts	consumeTin	rn2	"[""8""]"	constant
+src/js/eat.ts	setTinVariety	rn2	"[""preparations.length - 1""]"	constant
+src/js/eat.ts	setTinVariety	rn2	"[""preparations.length - 1""]"	constant
+src/js/eat.ts	startTin	rn1	"[""1 + Math.trunc(500 / (currentAttribute(A_DEX, state) + currentStrength(state)))"", ""10""]"	invariant
+src/js/eat.ts	startTin	rn2	"[""2""]"	constant
+src/js/eat.ts	startTin	rn2	"[""weapon.cursed ? 3 : weapon.blessed ? 1 : 2""]"	constant
+src/js/eat.ts	tinVariety	rn2	"[""7""]"	constant
+src/js/eat.ts	tinVariety	rn2	"[""preparations.length - 1""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant

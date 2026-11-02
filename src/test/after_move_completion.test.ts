@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { resolveHeroCombatEngulf } from '../js/hero_combat_engulf.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { beginMealMimicry } from '../js/meal_mimic.js';
+import { beginMealMimicry } from '../js/eat.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 import { SPEED_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

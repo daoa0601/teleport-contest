@@ -76,7 +76,7 @@ import { useBullwhip } from './bullwhip.js';
 import { pickLock } from './lock_pick.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { isContainer, useContainer } from './container.js';
-import { useTinOpener } from './tin.js';
+import { useTinOpener } from './eat.js';
 import { useMagicMarker } from './write.js';
 import { useUnicornHorn } from './unicorn_horn.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';

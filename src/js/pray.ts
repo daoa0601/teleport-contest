@@ -54,9 +54,7 @@ import { healHeroLegs } from './hero_legs.js';
 import { confersLuck } from './hero_inventory.js';
 import { clearHeroStrangulation, heroIsStrangled } from './hero_strangulation.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
-import {
-    currentHungerState, restoreHeroNutrition,
-} from './hunger.js';
+import { currentHungerState, restoreHeroNutrition } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import {
     consumeInventoryItem, inventoryItemDescription,
