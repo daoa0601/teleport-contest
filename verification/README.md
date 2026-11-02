@@ -256,10 +256,11 @@ complete run succeeded. All 62 executor/query/selection tests passed in
 8.594 s, all 37 ledger CLI tests passed in 129.197 s, and `npm run compile`
 passed. The ledger tests include a complete fast-claim run against the new
 ledger. The eight added claims remain `fast`; the two existing slow claims
-retain their domains and negative checks. After the `rnl` luck split the
-complete run passed again in 875.76 s (the split claim alone is 168.2 s) with
-the final suite of 63 executor/query/selection tests passing in 123.0 s and
-the same 37 ledger CLI tests in 285.8 s.
+retain their domains and negative checks. After the final 17-interval
+`rnl` split the complete run passed again in 736.2 s (the split claim alone
+is 13.3 s, the CI-parity `--skip-slow --check-ledger` run 134.7 s) with the
+final suite of 63 executor/query/selection tests passing in 83.1 s and the
+same 37 ledger CLI tests in 140.1 s.
 
 Run the language, solver-isolation and command-selection tests
 (63 tests; no game sessions):
