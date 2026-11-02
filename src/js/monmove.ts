@@ -1534,10 +1534,12 @@ async function moveHostile(
 ): Promise<MonsterMovement> {
     const oldx = monster.mx;
     const oldy = monster.my;
-    // monmove.c:m_move() refreshes the apparent target before every actor
-    // specialization, including shk_move(), pri_move(), and gd_move().  This
-    // second refresh is RNG-visible for an invisible or displaced hero and
-    // can update retained mux/muy before the special actor returns.
+    // monmove.c:m_move() refreshes the apparent target exactly once
+    // (monmove.c:1761), before every actor specialization including
+    // shk_move(), pri_move(), and gd_move().  This refresh is
+    // RNG-visible for an invisible or displaced hero and survives the
+    // special actor's return: a gd_move() fall-through keeps the mux/muy
+    // its own mnexto() -> rloc_to() refresh established.
     setMonsterApparentHeroPosition(monster, state, random, calls);
     requirePerceivedHero(monster);
     if (!monster.wormno && monsterIsCovetous(monster)
@@ -1555,11 +1557,20 @@ async function moveHostile(
             };
         }
     }
+    // monmove.c:m_move() dispatches shopkeeper, guard, and priest movement
+    // after this one refresh.  gd_move() returning -1 (vault.ts returns
+    // null) falls through to ordinary movement below with no further
+    // set_apparxy(), keeping the mux/muy its own mnexto() -> rloc_to()
+    // refresh established (teleport.c:1702).
     if (!monster.wormno) {
         const priestMovement = await movePriest(monster, state, random, rollDice, rollOne, calls);
         if (priestMovement) return priestMovement;
         const shopMovement = await moveShopkeeper(monster, state, random, rollDice, rollOne, calls);
         if (shopMovement) return shopMovement;
+        if (monster.isgd && monster._egd) {
+            const guardMovement = await moveVaultGuard(monster, state, random, calls);
+            if (guardMovement) return guardMovement;
+        }
     }
     const finishMovement = (
         movement: MonsterMovement,
@@ -2942,12 +2953,11 @@ export async function moveMonsterAfterTrap(
             setMonsterApparentHeroPosition(monster, state, random, calls);
             movement = await movePet(monster, state, random, rollDice, rollOne, calls);
         } else {
-            if (!monster.wormno && monster.isgd && monster._egd) {
-                setMonsterApparentHeroPosition(monster, state, random, calls);
-                movement = await moveVaultGuard(monster, state, random, calls);
-            }
-            if (!movement)
-                movement = await moveHostile(monster, state, random, rollDice, rollOne, calls, postMoveCapabilities);
+            // Hostile actors (including gd_move() fall-through) refresh the
+            // apparent hero position once inside moveHostile(), matching
+            // monmove.c:m_move()'s single set_apparxy() before its actor
+            // specializations.
+            movement = await moveHostile(monster, state, random, rollDice, rollOne, calls, postMoveCapabilities);
         }
         movement.postMoveCapabilities = postMoveCapabilities;
         await completeMovedMonsterAction(
