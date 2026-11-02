@@ -67,6 +67,9 @@ import { floorReachProblem, heroEscapedShaft, heroTeetersAtPit } from './trap.js
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
+// The #pickup command: C hack.c:dopickup() runs the location checks and
+// then pickup.c:pickup() over what remains, or loots the swallower's
+// stomach when it holds the engulfer's inventory.
 export async function pickupAtHero(count = Math.max(0, game._commandCount || 0), { runLocationChecks = true } = {}) {
     setMulti(0);
     const source = pickupSourceAtHero();

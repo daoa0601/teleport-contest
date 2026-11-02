@@ -894,6 +894,9 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
     return { rockOk, treeOk };
 }
 
+// Diggability of a location for monster tunnelling.
+// C hack.c:may_dig(): stone walls and trees flagged W_NONDIGGABLE
+// cannot be dug through.
 export function monsterMayDigLocation(loc: MapLocation | null | undefined) {
     if (!loc) return false;
     return !((IS_STWALL(loc.typ) || IS_TREE(loc.typ)) && (loc.wall_info ?? 0) & W_NONDIGGABLE);

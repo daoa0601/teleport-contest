@@ -27,6 +27,9 @@ type SelectOff = (object: GameObject) => Promise<void>;
 
 const WEAPON_CLASS = 2;
 
+// C do_wear.c:menu_remarm(): the category and object pick lists for 'A',
+// including the combination-style class prompt and the BUC category
+// filter from pickup.c:query_category()/allow_category().
 export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
     const style = game.flags.menu_style ?? MENU_FULL;
     let categories: Category[] = ['all'];

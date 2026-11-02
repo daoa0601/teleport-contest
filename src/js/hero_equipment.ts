@@ -42,6 +42,9 @@ export async function removeHeroEquipment(object: GameObject, state: GameState =
 
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.
+// Armor routes through the do_wear.c *_off() owners inside
+// removeHeroArmor()/clearHeroArmor(): Cloak_off(), Armor_off(),
+// Helmet_off(), Gloves_off(), Boots_off(), Shield_off(), Shirt_off().
 export async function removeWornHeroItem(object: GameObject, state: GameState = game, {
     unchainBall = true,
     ...armorOptions

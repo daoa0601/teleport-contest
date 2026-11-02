@@ -121,6 +121,8 @@ async function createStolenItem(type: number, gang: string, state: PlayingGameSt
 }
 
 // C mkmaze.c:shiny_orc_stuff().
+// C objnam.c:shiny_obj(): the captain's ring is a random "shiny"
+// description match within the ring class.
 async function giveShinyLoot(monster: Monster, state: PlayingGameState): Promise<void> {
     const captain = monster.mnum === PM_ORC_CAPTAIN;
     const goldChance = captain ? 600 : 300;

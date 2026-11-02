@@ -35,6 +35,11 @@ import type { TakeoffSlot } from './do_wear.js';
 
 import { selectBulkTakeoff } from './takeoff_menu.js';
 
+// C do_wear.c:doddoremarm(): the #takeoffall command — resume an
+// interrupted disrobing, refuse when nothing is worn, then collect the
+// selection and start the occupation.
+// set_occupation() is the _occupation assignment below; wearing_armor()
+// is the TAKEOFF_ORDER scan that decides "not wearing anything".
 export async function takeOffAll(): Promise<void> {
     game.context.move = 0;
     const progress = game.context.takeoff;
@@ -62,6 +67,12 @@ export async function takeOffAll(): Promise<void> {
 
 // The initiating command schedules work; each later callback completes one
 // working turn. Even zero-delay armor requires one such turn in native 'A'.
+// C do_wear.c:take_off(): the 'A' occupation body — finish the current
+// piece after its delay, walk takeoff_order for the next one (covering
+// cloaks and suits over a shirt costs extra), and announce "You finish
+// disrobing." when the mask empties.
+// do_takeoff() is removeSelectedSlot(); set_occupation() is the
+// _occupation assignment at the end of each round.
 export async function continueBulkTakeoff(state: GameState = game): Promise<boolean> {
     const progress = state.context.takeoff;
     if (!progress) return false;
@@ -153,6 +164,9 @@ async function offMessage(object: GameObject, state: GameState): Promise<void> {
 
 // C do_wear.c:select_off(); invent.c:carrying_stoning_corpse() is the
 // petrifying-corpse check that guards taking gloves off.
+// C do_wear.c:better_not_take_that_off(): the paranoid confirmation before
+// taking off gloves while carrying a corpse that could turn the bearer to
+// stone.
 export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
     const weapon = takeoffSlotObject('uwep');
     const gloves = takeoffSlotObject('uarmg');
@@ -244,6 +258,10 @@ function checkWeldedWeapon(object: GameObject | null, state: GameState = game): 
     return true;
 }
 
+// C do_wear.c:cursed(): a welded weapon or cursed worn item refuses to
+// come off, with the slippery-fingers variant, and reveals its BUC.
+// fingers_or_gloves() is the pluralized finger name in the slippery
+// refusal.
 async function unremovableCurse(object: GameObject, slot: TakeoffSlot, state: GameState): Promise<boolean> {
     if (!(slot === 'uwep' ? checkWeldedWeapon(object, state) : object.cursed)) return false;
     const slippery = !!state.u.glib || (state.u.glibTurns ?? 0) > 0;

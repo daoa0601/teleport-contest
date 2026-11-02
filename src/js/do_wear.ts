@@ -226,6 +226,10 @@ export async function finishArmorRemoval(
 
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
 // T suggests armor and R suggests accessories; either accepts the other kind.
+// C do_wear.c:ia_dotakeoff(): the item-action flag keeps the queued letter
+// selectable even when a different accessible piece is the lone suggestion.
+// C do_wear.c:count_worn_stuff(): the worn count and its single default
+// item, with only the outermost torso layer counted.
 export async function removeWornItem(action: 'remove' | 'take off', itemAction = false): Promise<void> {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
@@ -770,6 +774,12 @@ export async function wearHeroArmor(
     return slot;
 }
 
+// C do_wear.c:Helmet_off(): fedora luck, cornuthaum charisma, and opposite
+// alignment run before the slot is cleared; telepathy/caution clears the
+// slot first and only then refreshes see_monsters() (do_wear.c:544-547).
+// C do_wear.c:Gloves_off(): gauntlets of power are identified, encumbrance
+// is re-reported, glib is cured, and a bare-handed petrifying corpse
+// wield is resolved.
 export async function removeHeroArmor(object: GameObject, state: GameState = game, options: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object.otyp);
     if (!slot || equippedObject(state, slot) !== object) return false;
@@ -783,6 +793,7 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (pending?.object === object) {
         cancelDonning(state);
     }
+    // C attrib.c:change_luck(-1): the fedora's luck refund at its bounds.
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
     if (object.otyp === CORNUTHAUM && !cancelledDon) {
@@ -887,6 +898,9 @@ async function losePetrificationProtection(armor: GameObject, state: GameState, 
 }
 
 // Slot/source removal without the Boots_off() transition.
+// C do_wear.c:Armor_gone(): the destroyed-armor path — setnotworn() rather
+// than setworn(0), the artifact-light stop message, and dragon handling
+// with on_purpose FALSE.
 // C do_wear.c:Shield_off().
 // C do_wear.c:Shirt_off().
 export async function clearHeroArmor(object: GameObject, state: GameState = game, {
@@ -1009,6 +1023,8 @@ export async function erodeWornArmor(state: GameState = game) {
     return damaged;
 }
 
+// C do_wear.c:obj_erode_type(): the first erosion kind that can apply to
+// the object from its material — burn, rust, crack, rot, or corrode.
 export function objectErosionKind(object: Pick<GameObject, 'otyp' | 'oclass'>): ArmorErosionDescription | null {
     const material = objectMaterial(object.otyp);
     if ((material !== undefined && material <= 8 && material !== 1) || material === 18)
@@ -1024,6 +1040,8 @@ export function objectErosionKind(object: Pick<GameObject, 'otyp' | 'oclass'>): 
     return null;
 }
 
+// C do_wear.c:wornarm_destroyed(): cancel any interrupted donning, take
+// the piece off, and destroy it only if it survived the removal.
 export async function destroyWornArmor(armor: GameObject, state: GameState = game) {
     await removeWornHeroItem(armor, state);
     if (state.program_state?.gameover || !state.inventory.includes(armor)) return false;
@@ -1031,6 +1049,9 @@ export async function destroyWornArmor(armor: GameObject, state: GameState = gam
     return true;
 }
 
+// C do_wear.c:maybe_destroy_armor(): the slot check and the 90% resistance
+// roll that mark this piece as the one that crumbles, inlined with the
+// caller's per-slot messages.
 // C do_wear.c:disintegrate_arm(), with a specified worn piece.
 export async function disintegrateWornArmor(armor: GameObject, {
     state = game, publish = plineWithContinuation,
@@ -1166,6 +1187,10 @@ function grantArmorProperty(object: GameObject, state: GameState, property: Prop
     }
 }
 
+// C do_wear.c:Helmet_on(): the helm switch — fedora luck (applied by the
+// dispatcher for archeologists), caution's monster refresh, the
+// cornuthaum charisma swing, and the curse of dunce caps and opposite
+// alignment helms.
 async function applyHelmetOnEffects(object: GameObject, state: GameState): Promise<void> {
     if (object.otyp === CORNUTHAUM) {
         state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
@@ -1217,6 +1242,11 @@ function armorHasOtherPropertySource(property: PropertyName, object: GameObject,
         || !!sources?.worn.some(source => source.slot !== slot);
 }
 
+// C do_wear.c:toggle_stealth(): feedback and discovery when stealth is
+// gained or lost by wearing or removing elven items; riding suppresses it
+// unless hero or steed flies.
+// RIN_STEALTH discovery uses learnring(); elven items use makeknown() as
+// learnObjectType().
 async function toggleArmorStealth(object: GameObject, on: boolean, state: GameState): Promise<void> {
     if (armorHasOtherPropertySource('stealth', object, state) || propertyIsBlocked('stealth', state)
         || state.u.usteed && !propertyIsActive('flying', state) && !propertyIsActive('levitation', state)) return;
@@ -1245,6 +1275,10 @@ function canObserveDisplacement(state: GameState): boolean {
         || heroDetectsMonsters(state);
 }
 
+// C do_wear.c:Cloak_on(): the cloak switch — protection is identified,
+// invisibility is announced, oilskin fits tightly, and the smock's acid
+// resistance is installed.  The elven-cloak stealth and displacement
+// branches live with the armor-on dispatcher below.
 async function applyCloakOnEffects(object: GameObject, state: GameState): Promise<void> {
     switch (object.otyp) {
     case CLOAK_OF_PROTECTION: learnObjectType(object.otyp, state); break;
@@ -1283,9 +1317,20 @@ async function applyCloakOffEffects(object: GameObject, state: GameState): Promi
 }
 
 // C do_wear.c:Armor_on() -> dragon_armor_handling().  Dragon armor's AC is
+// C do_wear.c:Helmet_on(): the archeologist's fedora luck credit runs at
+// this dispatcher so immediate and delayed wears share it.
+// The displacement cloak's toggle_displacement() message is composed
+// inline below instead of calling the shared helper.
 // active as soon as setworn() installs the slot, but these extrinsics and
 // their feedback are afternmv effects: they begin only when dressing reaches
 // multi == 0.  Return messages so allmain can preserve nomovemsg ordering.
+// C do_wear.c:Boots_on(): the boot switch — water walking, levitation,
+// speed, fumbling, and elven stealth, with the AC-evident known flag.
+// C do_wear.c:Gloves_on(): gauntlets of power are identified and gauntlets
+// of fumbling start their rnd(20) timer; dexterity runs through the shared
+// adj_abon() credit below.
+// C do_wear.c:Cloak_on(): the elven-cloak and displacement branches that
+// share the dispatcher's property bookkeeping.
 export async function applyArmorOnEffects(object: GameObject, state: GameState = game, { initialDon = false }: ArmorOnOptions = {}): Promise<string[]> {
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS) requireLiveGame(state);
     const previousLevitation = object?._levitationBeforeWear
@@ -1407,6 +1452,8 @@ export async function applyStartingArmorEffects(state: GameState = game) {
 
 // C do_wear.c:Armor_off() removes both the ordinary dragon resistance and
 // the color-specific extra property after the suit leaves W_ARM.
+// C do_wear.c:dragon_armor_handling() runs through the same removal for
+// Armor_gone().
 export async function removeArmorProperties(
     object: GameObject, state: GameState = game,
     { embeddedSkin = false }: { embeddedSkin?: boolean } = {},
@@ -1700,6 +1747,10 @@ async function showWornAmulet(object: GameObject, state: GameState): Promise<voi
     if (message) await plineWithContinuation(message);
 }
 
+// C do_wear.c:Amulet_on(): the amulet switch after setworn() — gas relief,
+// unchanging, change, strangulation, restful sleep, flight, guarding.
+// float_vs_flight()'s levitation block runs in wearHeroAccessory's
+// property grant before this switch.
 async function applyAmuletOnEffects(
     object: GameObject, state: GameState, { wasFlying, wasInGas }: AmuletOnState,
 ): Promise<void> {
@@ -1709,6 +1760,7 @@ async function applyAmuletOnEffects(
     }
     let message: string | undefined;
     if (OBJECT_PROPERTY[object.otyp] === 'flying') state.context.botl = true;
+    // C potion.c:make_slimed(0): wearing unchanging cures sliming silently.
     if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state)) clearHeroSliming(state);
     else if (object.otyp === AMULET_OF_RESTFUL_SLEEP) {
         const timeout = rnd(98) + 2;
@@ -1717,6 +1769,8 @@ async function applyAmuletOnEffects(
     } else if (object.otyp === AMULET_OF_STRANGULATION) {
         if (startAmuletStrangulation(state)) message = 'It constricts your throat!';
     } else if (OBJECT_PROPERTY[object.otyp] === 'magicalBreathing' && wasInGas) {
+        // C region.c:region_danger(): the caller captured the gas state
+        // while the amulet was off (heroIsInDangerousRegion).
         learnObjectType(object.otyp, state);
         message = 'You are no longer bothered by the poison gas.';
     } else if (OBJECT_PROPERTY[object.otyp] === 'flying' && state.u.flying && !wasFlying) {
@@ -1755,12 +1809,18 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
             : rank[before] !== rank[after] ? rank[after]
                 : `${state.flags.female ? 'female' : 'male'} ${rank[after]}`;
         recordGameLogEvent(`transformed into ${withIndefiniteArticle(title)}`, { state, flags: LL_MINORAC });
+        // C polyself.c:livelog_newform(): the transformed-into chronicle line.
     }
     await plineWithContinuation('The amulet disintegrates!');
     if (!changed && object.dknown) await tryCallObjectType(object, state);
     await consumeInventoryItem(object, state);
 }
 
+// C do_wear.c:Ring_off_or_gone(): the ring removal switch — stealth,
+// warning, see invisible, invisibility, levitation, attribute rings, and
+// protection-from-shape-changers, with off_msg() timing left to callers.
+// The stealth branch composes toggle_stealth()'s noisy message inline
+// rather than calling the armor-side helper.
 export async function removeHeroAccessory(
     object: GameObject, state: GameState = game,
 ): Promise<PropertyName | null> {
@@ -1809,6 +1869,11 @@ export async function removeHeroAccessory(
     return property;
 }
 
+// C do_wear.c:Amulet_off(): the amulet switch — ESP sees monsters first,
+// guarding's AC is computed while still worn, strangulation ends, and
+// flying/levitation settles after the slot is cleared.
+// C do_wear.c:float_vs_flight(): the levitation-blocked flying flag is
+// reconciled inside clearHeroAccessory()'s property refresh.
 async function removeAmulet(object: GameObject, state: GameState): Promise<PropertyName | null> {
     const strangled = heroIsStrangled(state);
     const flying = propertyIsActive('flying', state);

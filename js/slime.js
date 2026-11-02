@@ -56,6 +56,9 @@ export function heroCanBeSlimed(state = game) {
 export function heroIsSliming(state = game) {
     return (state.u?.slimedTurns ?? 0) > 0 || !!state.u?.slimed;
 }
+// Starting the sliming countdown.
+// C end.c:delayed_killer(): the slime death defers its killer string until
+// the timeout fires; dropHeroSliming() below deallocates it.
 export function startHeroSliming({ state = game, turns = 10, killer = '', } = {}) {
     const hero = state.u;
     if (!heroCanBeSlimed(state))

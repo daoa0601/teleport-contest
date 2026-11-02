@@ -1985,3 +1985,16 @@ make_itemized_bill	alloc	n/a	memory allocation for the alternate bill; JS array 
 pay_billed_items	update_inventory	n/a	perm_invent window plumbing
 set_repo_loc	sgn	inlined	Math.sign (shk.ts completeShopSettlement)
 boxlock_invent	update_inventory	n/a	perm_invent window plumbing
+delayed_killer	alloc	n/a	memory allocation for the killer record; typed slimeKiller/stoneKiller/_polymorphGenocideCause fields replace it
+delayed_killer	find_delayed_killer	inlined	the typed fields are read back at slime.ts:235 (hero.slimeKiller) and stoning.ts:458 (petrificationDeathCause)
+menu_remarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (takeoff_menu.ts selectBulkTakeoff)
+menu_remarm	menu_class_present	n/a	menu class plumbing; the BUC filter is a direct category check (takeoff_menu.ts)
+doddoremarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (bulk_takeoff.ts takeOffAll)
+Boots_on	update_inventory	n/a	perm_invent window plumbing
+Cloak_on	update_inventory	n/a	perm_invent window plumbing
+Gloves_on	update_inventory	n/a	perm_invent window plumbing
+Helmet_on	update_inventory	n/a	perm_invent window plumbing
+use_leash_core	update_inventory	n/a	perm_invent window plumbing
+mleashed_next2u	update_inventory	n/a	perm_invent window plumbing
+moverock_core	launch_obj	inlined	the rolling-boulder launch is launchRollingBoulder() (rolling_boulder.ts, trap.c:launch_obj port)
+readobjnam_parse_charges	digit	inlined	ctype digit() became the /^\d/ tests (objnam.ts parseWishCharges)

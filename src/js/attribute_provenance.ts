@@ -151,6 +151,10 @@ const FLAGS: Readonly<Partial<Record<PropertyName, ArtifactFlag>>> = {
     halfSpellDamage: 'SPFX_HSPDAM', halfPhysicalDamage: 'SPFX_HPHDAM', reflection: 'SPFX_REFLECT',
 };
 
+// The first item conveying a particular intrinsic.
+// C artifact.c:abil_to_adtyp(): the C extrinsic-pointer table became the
+// DEFENSES map above.
+// C artifact.c:abil_to_spfx(): likewise the FLAGS map for spfx bits.
 export function whatGives(property: PropertyName, state: GameState = game): GameObject | null {
     const wornmask = W_ARM | W_ARMC | W_ARMH | W_ARMS | W_ARMG | W_ARMF | W_ARMU
         | W_AMUL | W_RINGL | W_RINGR | W_TOOL | W_ART | W_ARTI

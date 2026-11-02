@@ -175,6 +175,8 @@ async function moveRevivalOccupant(monster: Monster, x: number, y: number, state
 
 // C hack.c:moverock().  Hero boulder pushes and their sokoban consequences.
 
+// C hack.c:moverock_done(): every boulder left on the starting square
+// resumes normal naming once the push attempt ends.
 export async function pushBouldersAt(sx: number, sy: number, dx: number, dy: number): Promise<boolean> {
     requirePlayingGame(game);
     const ret = await pushBoulders(sx, sy, dx, dy);
@@ -189,6 +191,10 @@ function moverockDone(sx: number, sy: number): void {
         if (object.otyp === BOULDER) object.corpsenm = 0;
 }
 
+// C hack.c:moverock_core(): the push loop over the pile — blind checks,
+// sokoban rules, monsters, doors, traps, liquid, and shop billing.
+// sobj_at() is boulderAt(); doorless_door() is the rogue/broken doorway
+// test in the diagonal-door rejection below.
 async function pushBoulders(sx: number, sy: number, dx: number, dy: number): Promise<boolean> {
     requirePlayingGame(game);
     const level = game.level;
@@ -307,6 +313,8 @@ async function stepOntoBoulder(x: number, y: number): Promise<boolean> {
     return true;
 }
 
+// C hack.c:cannot_push_msg(): "You try to move it, but in vain", with the
+// steed variant and a blind feel of the square.
 async function cannotPushMessage(boulder: GameObject, x: number, y: number): Promise<void> {
     const what = `the ${objectCombatName(boulder)}`;
     const steed = game.u.usteed;
@@ -316,6 +324,9 @@ async function cannotPushMessage(boulder: GameObject, x: number, y: number): Pro
     if (heroIsBlind(game)) await feel_location(x, y);
 }
 
+// C hack.c:cannot_push(): rock throwers pick the boulder up or step over
+// it; others may squeeze onto the square.  C hack.c:inv_cnt(): the count
+// of non-gold inventory; the 52-letter comparison is cannot_push()'s own.
 async function cannotPush(boulder: GameObject, x: number, y: number): Promise<boolean> {
     if (heroThrowsRocks()) {
         const canPickup = !game.level?.flags.sokoban_rules
@@ -355,6 +366,11 @@ async function monsterBlocksBoulder(boulder: GameObject, monster: Monster, sx: n
     }
 }
 
+// The trap branches of C hack.c:moverock_core(): a pushed boulder can
+// trigger a land mine, plug or fill a pit, fall through a hole, teleport
+// away, or launch a rolling-boulder trap.
+// C hack.c:rock_disappear_msg(): the "suddenly it disappears!" farewell
+// when a boulder leaves by teleport trap.
 async function pushIntoTrap(boulder: GameObject, trap: Trap, sx: number, sy: number, rx: number, ry: number, dx: number, dy: number, costly: boolean): Promise<'handled' | 'push' | 'ignored'> {
     requirePlayingGame(game);
     if (trap.ttyp === LANDMINE && rn2(10)) {
@@ -443,6 +459,9 @@ async function pushIntoTrap(boulder: GameObject, trap: Trap, sx: number, sy: num
     return 'ignored';
 }
 
+// C hack.c:dopush(): the push feedback and relocation — message first,
+// then movobj(), blind feels, and the bill adjustments when the boulder
+// crosses shop boundaries.
 async function moveBoulder(boulder: GameObject, sx: number, sy: number, rx: number, ry: number, costly: boolean): Promise<void> {
     requirePlayingGame(game);
     const moves = game.moves;
@@ -780,6 +799,8 @@ function heroIsInAir(state: GameState) {
         || (heroFormClings(state) && levelHasCeiling(state));
 }
 
+// C hack.c:u_simple_floortyp(): the floor classification under the hero —
+// water walls and lava walls, then pool or lava only when not in air.
 function heroFloorType(state: GameState, x: number, y: number) {
     const terrain = state.level?.at?.(x, y)?.typ;
     if (terrain !== undefined && IS_WATERWALL(terrain)) return WATER;
@@ -822,6 +843,8 @@ export function heroShouldAvoidLiquid(x: number, y: number, state = game) {
         || !!((state.flags?.paranoia_bits ?? 0) & PARANOID_SWIM);
 }
 
+// C hack.c:may_passwall(): stone walls flagged W_NONPASSWALL block
+// wall-passing.
 export function heroCanPassWallAt(state: GameState, x: number, y: number) {
     const location = requireGameLevel(state).at(x, y);
     return !!location && heroPassesWalls(state)
@@ -2976,6 +2999,8 @@ function specialRoomEntryMessage(room: Room, roomno: number): string | null {
     case COCKNEST: return 'You enter a disgusting nest!';
     case ANTHOLE: return 'You enter an anthole!';
     case BARRACKS: {
+        // C hack.c:monstinroom(): is any soldier, sergeant, lieutenant, or
+        // captain of this platoon still inside the barracks room?
         const soldiers = ['soldier', 'sergeant', 'lieutenant', 'captain'].map(name => MONSTER_NAME.indexOf(name));
         const occupied = game.level?.monsters.some(monster => !monster.dead && monster.mhp > 0
             && soldiers.includes(monster.mnum)
@@ -3278,6 +3303,9 @@ export async function waterTurbulenceStopsHero(): Promise<boolean> {
     }
     return false;
 }
+// C hack.c:slippery_ice_fumbling(): on ice, unless shod in snow boots,
+// cold-resistant, flying, floating, clinging, or whirly, one chance in
+// rn2(cold ? 3 : 2) fumbles the next move.
 export function checkSlipperyIce(): void {
     const hero = game.u;
     let onIce = !propertyIsActive('levitation', game) && isIceAt(hero.ux, hero.uy);
@@ -3301,11 +3329,19 @@ export function checkSlipperyIce(): void {
     }
     if (!onIce) hero.fumblingFromIce = false;
 }
+// C hack.c:avoid_moving_on_trap(): a seen trap other than the vibrating
+// square stops a run; announceRunTrap() below adds its mention_walls line.
+// t_at() and trapname() run inside the find; set_msg_xy() marks the trap
+// square from announceRunTrap() below.
 export function knownRunTrap(x: number, y: number, state: GameState): Trap | undefined {
     return state.level?.traps.find(trap => trap.tx === x && trap.ty === y
         && trap.tseen && trap.ttyp !== VIBRATING_SQUARE);
 }
 
+// C hack.c:avoid_moving_on_liquid(): an unsafe liquid transition stops a
+// blind or shift-dir run; known water/lava walking keeps going.
+// is_pool_or_lava() is the isPoolAt||isLavaAt pair; hliquid() and
+// set_msg_xy() run in announceRunLiquid() below.
 export function runLiquidIsDangerous(x: number, y: number, state: GameState): boolean {
     const location = state.level?.at(x, y);
     if (!location) return false;
@@ -3519,6 +3555,9 @@ function rejectHeroMove(): false {
 const DISPLACER_BEAST = MONSTER_NAME.indexOf('displacer beast');
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 
+// C hack.c:domove_attackmon_at(): the displacer-beast swap roll — a hidden
+// target, rn2(2), the believed position, helplessness, diagonal rock, and
+// goodpos() all gate the offer before do_attack().
 export function beastChoosesHeroDisplacement(
     beast: Monster, state: PlayingGameState, x: number, y: number,
 ): boolean {
@@ -3580,6 +3619,11 @@ export async function settleBeastHeroDisplacement(beast: Monster, state: Playing
 }
 const TIP_UNTRAP_MON = 1 << 2;
 
+// C hack.c:domove_swap_with_pet(): the refusal checks — a boulder-pinned
+// pit, grid-bug diagonals, a boulder at the hero's square, tight
+// diagonals, a trap under a peaceful pet, and undisplaceable targets.
+// sobj_at() is the boulder scan at the hero's square; handle_tip()'s
+// TIP_UNTRAP_MON hint prints inline.
 export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameState): Promise<boolean> {
     const hero = state.u;
     const x = hero.ux, y = hero.uy;
@@ -3633,6 +3677,8 @@ export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameSta
 }
 
 // The hero is at the monster's square and the refusal checks have passed.
+// C hack.c:domove_swap_with_pet(): the swap itself — trade places, then
+// run the landing liquid, the trap, and the kill or abuse consequences.
 export async function settlePetHeroDisplacement(monster: Monster, state: PlayingGameState): Promise<void> {
     const hero = state.u;
     monster.mtrapped = 0;
@@ -3748,6 +3794,16 @@ export async function runSafepetDisplacement(monster: Monster): Promise<SafepetD
 }
 
 // C hack.c:domove_core() owns the movement transaction.
+// C hack.c:carrying_too_much(): an overloaded or exhausted hero collapses
+// before any destination handling.
+// C hack.c:u_maybe_impaired(): stunned, or confused with a one-in-five
+// chance, scrambles the direction.
+// C hack.c:impaired_movement(): confdir() retries until an in-bounds,
+// traversable square or 50 attempts cancel the move.
+// C hack.c:avoid_running_into_trap_or_liquid(): a seen trap, or a
+// dangerous liquid while blind, stops or cancels the run before the step.
+// C hack.c:domove_attackmon_at(): the target-monster branch for the
+// swallower and an ordinary destination — displacement offer or attack.
 async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-door'> {
     requirePlayingGame(game);
     const u = game.u;

@@ -418,6 +418,8 @@ function corpseSpeciesName(object: Pick<GameObject, 'corpsenm'>): string {
     return requireMonsterData(MONSTER_NAME, object.corpsenm);
 }
 
+// C end.c:find_delayed_killer(): reading the stored petrification killer
+// and its prefix format back for the death report.
 function petrificationDeathCause(state: GameState): string {
     const name = state.u.stoneKiller;
     if (!name) return 'killed by petrification';

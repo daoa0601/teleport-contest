@@ -5858,6 +5858,8 @@ export function heroEscapedShaft(trap: Trap | null): boolean {
 }
 
 // C trap.c:uescaped_shaft().
+// C engrave.c:can_reach_floor(): the shared floor-reach test; heroCanReachFloor()
+// below is the boolean wrapper, and pickup_checks() calls this directly.
 export function floorReachProblem(
     state: GameState = game,
     { checkPit = false }: FloorReachOptions = {},
