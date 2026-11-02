@@ -7,7 +7,7 @@ import { ARROW_TRAP, BEAR_TRAP, FIRE_TRAP, POOL, ROOM, TT_BEARTRAP } from '../js
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

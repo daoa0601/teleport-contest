@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { DOOR, D_CLOSED, D_TRAPPED, D_NODOOR } from '../js/const.js';

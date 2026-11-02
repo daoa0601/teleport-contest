@@ -5,10 +5,9 @@ import { LAVAPOOL, TT_LAVA } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { moreUntilDismissed } from '../js/tty_topline.js';
 import { game, requireGameLevel } from '../js/gstate.js';
-import { sinkHeroIntoLava } from '../js/hack.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
-
+import { sinkHeroIntoLava } from '../js/trap.js';
 // C trap.c:sink_into_lava() calls done(DISSOLVED) with positive HP.
 // end.c:done() redraws status before zeroing HP and asking "Die?".
 void test('sinking during a rush while trapped in lava refreshes time before the death pager', async () => {

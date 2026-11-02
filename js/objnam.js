@@ -2,6 +2,7 @@
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
 import { game, requireGameLevel } from './gstate.js';
 import { objectProb, objectMaterial, objectClassForType, observeObject } from './o_init.js';
+import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
@@ -10,54 +11,41 @@ import { monsterName } from './do_name.js';
 import { currency } from './currency.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
-import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP } from './const.js';
-import { mkobj, mksobj, set_corpsenm, unlinkObject } from './mkobj.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
+import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
+import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight } from './mkobj.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
-import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition, } from './eat.js';
+import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns, } from './artifacts.js';
-import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
-import { isBeingTakenOff } from './do_wear.js';
-import { pendingArmorAction } from './do_wear.js';
-import { equipmentLightDescription } from './light.js';
-import { armorSimpleName } from './do_wear.js';
+import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL } from './object_data.js';
+import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.js';
+import { equipmentLightDescription, beginObjectBurn } from './light.js';
 import { isContainer } from './container.js';
-import { OBJECT_CLASS_SYMBOLS, displayColorName } from './display.js';
-import { cansee } from './vision.js';
+import { OBJECT_CLASS_SYMBOLS, displayColorName, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
+import { cansee, vision_note_blocker_change } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
-import * as objects from './object_data.js';
 import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
-import { EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { placeCreatedObject } from './floor_object.js';
-import { beginObjectBurn } from './light.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { counterWereSpecies } from './were.js';
-import { applyHeroLiquidEffects } from './hack.js';
-import { docrt, feel_newsym } from './display.js';
+import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { deleteEngravingAt } from './engrave.js';
-import { fireDamageChain } from './fire_damage.js';
-import { canFallThrough, countLevelFeatures, make_grave, maketrap } from './mklev.js';
+import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetHeroTrap, maketrap } from './trap.js';
+import { canFallThrough, countLevelFeatures, make_grave } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { propertyIsActive } from './properties.js';
-import { canOverwriteTerrain } from './display.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { waterbodyName } from './terrain_name.js';
-import { resetHeroTrap } from './terrain_movement.js';
-import { deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion } from './trap.js';
-import { vision_note_blocker_change } from './vision.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import { lookupNovelTitle } from './novel_titles.js';
-import { objectWeight } from './mkobj.js';
-import { switchHeroTerrain } from './hack.js';
+import * as objects from './object_data.js';
 export { japaneseItemName } from './japanese_item_name.js';
 const STRANGE_OBJECT = 0;
 const WEAPON_CLASS = 2;
@@ -3072,5 +3060,17 @@ function erosionDescription(object, state) {
 }
 function erosionDegree(level) {
     return level === 2 ? 'very ' : level === 3 ? 'thoroughly ' : '';
+}
+// ── moved from src/js/trap.ts ──
+// C objnam.c:bare_artifactname(uwep): the primary weapon's artifact name
+// with a lowercased leading "The ", or its plain xname() when it is no
+// artifact (trap.c:5581 names the primary even for a fiery secondary).
+export function bareArtifactOrPlainName(weapon, state) {
+    const artifact = artifactById(weapon?.oartifact, state);
+    if (artifact)
+        return artifact.name.replace(/^The /, 'the ');
+    if (!weapon)
+        return '';
+    return objectCombatName(weapon, { state, includeCorpseSpecies: false });
 }
 //# sourceMappingURL=objnam.js.map

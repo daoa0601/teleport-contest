@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { KICKING_BOOTS, LOCK_PICK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, MOAT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrapAt } from '../js/hero_traps.js';
+import { triggerHeroTrapAt } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';

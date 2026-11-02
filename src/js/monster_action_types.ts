@@ -8,19 +8,16 @@ import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Position, Trap } from './map_types.js';
 import type { rndcurse } from './throne.js';
-import type { finishMonsterAttackDeath } from './end.js';
-import type { DeathHandler } from './end.js';
+import type { finishMonsterAttackDeath, DeathHandler } from './end.js';
 import type { MonsterBreathResult, MonsterSpitResult } from './mthrowu.js';
 import type { MonsterOffensivePhase, MonsterOffensiveResult } from './monster_offensive_types.js';
 import type { AttackMethod, DamageType, AT_EXPL, AT_GAZE, AT_ENGL, AT_WEAP, AT_BREA, AT_SPIT } from './monster_attack_types.js';
 import type { HeroMonsterWeaponVolley } from './monster_projectile_types.js';
 import type { applyMonsterContactPassive } from './mhitm.js';
 import type { MonsterBearTrapEvent } from './bear_trap.js';
-import type { MonsterFireTrapEvent } from './fire_trap.js';
+import type { MonsterFireTrapEvent, MonsterPitTrap, MonsterProjectileTrapEvent } from './trap.js';
 import type { MonsterLandMineEvent } from './landmine_trap.js';
-import type { MonsterPitTrap } from './trap.js';
 import type { MonsterRockTrapEvent } from './rock_trap.js';
-import type { MonsterProjectileTrapEvent } from './projectile_trap.js';
 import type { MonsterSleepGasTrapEvent } from './sleep_gas_trap.js';
 import type { MonsterSqueakyBoardEvent } from './squeaky_board_trap.js';
 import type { MonsterVibratingSquareEvent } from './vibrating_square_trap.js';
@@ -29,7 +26,6 @@ import type { MonsterRustTrapEvent } from './rust_trap.js';
 import type { MonsterAntiMagicTrapEvent } from './anti_magic_trap.js';
 import type { growMonster } from './makemon.js';
 import type { MonsterMigrationResult } from './dog.js';
-
 export type RandomBelow = (limit: number) => number;
 export type RollOne = (sides: number) => number;
 export type RollDice = (count: number, sides: number) => number;
@@ -188,7 +184,6 @@ export interface PetInventoryAction {
     dropped?: GameObject[];
 }
 
-
 export interface MonsterSpell {
     key: MonsterSpellName;
     level: number;
@@ -299,7 +294,6 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     curseKind?: 'visible-undirected' | 'visible-directed' | 'visible-general' | 'visible-displaced' | 'audible' | null;
     rehumanize?: boolean;
 }
-
 
 export type HeroProjectile = HeroMonsterWeaponVolley;
 
@@ -520,7 +514,6 @@ export interface MonsterMoveResult {
 export interface MonsterTurnResult extends MonsterMoveResult {
     dochugContext: DochugContext;
 }
-
 
 export interface MonsterRandomOptions {
     random?: RandomBelow;

@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { DART_TRAP, RUST_TRAP, NO_MINVENT, ROLLING_BOULDER_TRAP, MMOVE_DIED, MMOVE_MOVED } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { beginMonsterMove } from '../js/monmove.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -14,7 +13,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
-
+import { maketrap } from '../js/trap.js';
 for (const [species, trapType] of [['air elemental', DART_TRAP], ['wraith', RUST_TRAP]] as const) {
     void test(`a flying ${species} crosses a floor-triggered trap without setting it off`, async () => {
         await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });

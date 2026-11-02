@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HOLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { prepareHoleFall } from '../js/hero_traps.js';
+import { prepareHoleFall } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

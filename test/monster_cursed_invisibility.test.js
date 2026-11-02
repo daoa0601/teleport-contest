@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroIsUnconscious, putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { revealAggravatingMonster } from '../js/muse.js';
@@ -14,6 +14,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroIsUnconscious } from '../js/trap.js';
 void test('an aggravating potion revelation names a tame drinker as your monster', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

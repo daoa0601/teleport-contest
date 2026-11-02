@@ -1,38 +1,30 @@
 // C do.c:boulder_hits_pool(), for both free and pushed floor boulders.
+
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { buryFloorObjectsAt } from './dig.js';
 import { DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, Is_waterlevel, ROOM, WATER } from './const.js';
 import { impossible } from './diagnostics.js';
 import { displayLiquidName, docrt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { burnAwayHeroSlime } from './hack.js';
-
+import { burnAwayHeroSlime, loseHeroHp, switchHeroTerrain } from './hack.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { deleteFloorTrap } from './mklev.js';
-import { finishEnvironmentalMonsterDeath } from './mon.js';
+import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir } from './mon.js';
 import { monsterAtPosition } from './steed.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { monsterName } from './do_name.js';
-import { verbForSubject } from './objnam.js';
-
-import { objectCombatName } from './objnam.js';
+import { verbForSubject, objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-
 import { waterbodyName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { monsterInAir } from './mon.js';
-
 import { cansee, vision_note_blocker_change } from './vision.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { MessagePublisher } from './pline.js';
-import { loseHeroHp, switchHeroTerrain } from './hack.js';
+import { deleteFloorTrap } from './trap.js';
 
 interface BoulderLiquidOptions {
     pushing?: boolean;

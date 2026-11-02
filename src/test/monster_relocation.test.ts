@@ -1,7 +1,6 @@
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { FIRE_TRAP, NO_MINVENT, PIT, ROOM, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, STRAT_APPEARMSG } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
@@ -16,10 +15,9 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { createStaffedShop } from './support/shop.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { relocateMonsterTo, moveHeroByTeleport } from '../js/teleport.js';
-import { maketrap } from '../js/mklev.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-
+import { maketrap } from '../js/trap.js';
 void test('relocating an engulfer carries its swallowed hero without releasing the hold', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

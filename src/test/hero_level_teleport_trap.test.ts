@@ -10,7 +10,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { LEVITATION_BOOTS } from '../js/object_data.js';

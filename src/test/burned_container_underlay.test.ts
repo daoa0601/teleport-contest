@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_LAVA, DRAWBRIDGE_UP } from '../js/const.js';
-import { fireDamageObject } from '../js/fire_damage.js';
+import { fireDamageObject } from '../js/trap.js';
 import { CHEST, CLUB, SCR_TELEPORTATION } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { floorObject, knownObject } from './support/game-objects.js';

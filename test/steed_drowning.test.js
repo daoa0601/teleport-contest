@@ -4,12 +4,12 @@ import { POOL, TIMEOUT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { floatHeroDown } from '../js/terrain_movement.js';
 import { runExtendedCommand } from './support/commands.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { floatHeroDown } from '../js/trap.js';
 function recordMessages(messages) {
     const input = resetInputState();
     installPagerInput(input, {

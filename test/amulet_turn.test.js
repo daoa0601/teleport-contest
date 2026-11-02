@@ -4,7 +4,6 @@ import { moveloop_core } from '../js/allmain.js';
 import { MAGIC_PORTAL, ROOM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { amuletTurn } from '../js/wizard.js';
@@ -12,6 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { maketrap } from '../js/trap.js';
 for (const blind of [false, true]) {
     void test(`portal warmth ${blind ? 'does not reveal' : 'reveals'} an unseen Amulet's appearance ${blind ? 'while blind' : 'after sight returns'}`, async () => {
         await freshObjectRoom({ hero: { blindTurns: blind ? 100 : 0 } });

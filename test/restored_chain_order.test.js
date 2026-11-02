@@ -13,11 +13,12 @@ import { vision_recalc } from '../js/vision.js';
 import { createStaffedShop } from './support/shop.js';
 import { installPagerInput } from './support/pager-input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { maketrap, u_on_upstairs } from '../js/mklev.js';
+import { u_on_upstairs } from '../js/mklev.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { maketrap } from '../js/trap.js';
 for (const cached of [false, true]) {
     void test(`${cached ? 'revisiting' : 'restoring'} a level rebuilds stair selection from the saved chain`, async () => {
         if (cached)

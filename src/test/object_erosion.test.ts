@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { NO_MINVENT, W_ARMC } from '../js/const.js';
 import { pline } from '../js/pline.js';
-import { fireDamageChain } from '../js/fire_damage.js';
+import { fireDamageChain } from '../js/trap.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { erodeAttackingWeapon, erodeObject } from '../js/trap.js';

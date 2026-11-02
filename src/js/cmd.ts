@@ -1,181 +1,107 @@
 import { selectContextMenu } from './context_menu.js';
-import { doapply, dorub, dojump } from './apply.js';
-import { doname } from './do_name.js';
+import type { ContextMenuSelection } from './context_menu.js';
+import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, bringLeashedFollowers } from './apply.js';
+import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
-import { doloot } from './pickup.js';
+import { doloot, pickupAtHero, tipCommand, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
-import { doChronicle, doGenocided, doVanquished } from './insight.js';
-import { doturn } from './pray.js';
-import { dipInto, dodip } from './potion.js';
-import { doclose, doopen } from './lock.js';
-import { moveIntoFailedUntrap } from './untrap.js';
-import { askTeleportDestination, teleportAtWillCommand } from './teleport.js';
-import { adjustSplit, doadjust, doPermanentInventory } from './invent.js';
-import type { ContextMenuSelection } from './context_menu.js';
-import { CLICK_1, CLICK_2, xdir, ydir } from './const.js';
-import { queueCommandResponses } from './input.js';
+import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
+import { doturn, dopray, dosacrifice } from './pray.js';
+import { dipInto, dodip, quaff } from './potion.js';
+import { doclose, doopen, continuePicking, continueForceLock, doforce } from './lock.js';
+import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
+import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
+import { adjustSplit, doadjust, doPermanentInventory, bucAdjectiveForName, ddoinv, dolook } from './invent.js';
+import type { InventoryAction } from './invent.js';
+import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, GETOBJ_SUGGEST, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, isok } from './const.js';
+import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandResponse } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
-import { continuePicking } from './lock.js';
-
 import { resetOccupations } from './occupation_reset.js';
-import { ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
-import { STAIRS, THRONE } from './const.js';
-import {
-    showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes,
-    wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill,
-    wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic,
-    wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish,
-} from './wizcmds.js';
-import { wizBury } from './dig.js';
+import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
+import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout_queue.js';
-import { wizardTeleportCommand } from './teleport.js';
 import type { GameState } from './game_state.js';
 import type { HeroOccupation } from './occupation_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
-import { quaff } from './potion.js';
 import { clearMessageWindow } from './tty_topline.js';
-// cmd.js — Command parsing and dispatch.
-// C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
-
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-import { ESCAPED } from './const.js';
-import { VIBRATING_SQUARE } from './const.js';
 import { surfaceName } from './terrain_name.js';
-import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription } from './pager.js';
-import { GETOBJ_SUGGEST } from './const.js';
-import { monsterName } from './do_name.js';
+import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile } from './pager.js';
 import { attackHostileMonster } from './hero_melee.js';
-import { monsterAtPosition } from './steed.js';
+import { monsterAtPosition, doride, stuckSteed } from './steed.js';
 import { observeBucForNaming, withIndefiniteArticle } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
-
 import { descendFromLevitation } from './levitation_commands.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip } from './hack.js';
 import { propertyIsActive } from './properties.js';
-import { pickupAtHero, tipCommand } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { inventoryReport } from './inventory_reports.js';
 import { isContainer } from './container.js';
 import { dolookaround } from './lookaround.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
-import { TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove } from './hack.js';
-import {
-    DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS,
-    NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS,
-} from './command_data.js';
+import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
+import type { CommandDefinition } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff } from './do_wear.js';
-
+import { resetBulkTakeoff, dowear, doputon, removeWornItem } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandResponse } from './input.js';
 import { terrainCommand } from './terrain_view.js';
-import { autoDescribePosition, selectTravelMenuPosition } from './getpos.js';
-import { whatDoesCommand } from './pager.js';
-import {
-    availableExtendedCommands, commandDescription, completeExtendedCommand, extendedCommandMenu,
-    showExtendedCommandList,
-} from './extended_commands.js';
+import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition } from './getpos.js';
+import { availableExtendedCommands, commandDescription, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { promptDirection, promptKey, restoreCommandMap } from './tty_prompts.js';
 import { showTextWindow } from './windows.js';
-import type { CommandDefinition } from './command_data.js';
-import type { InventoryAction } from './invent.js';
+import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import type { CommandBindings } from './command_bindings.js';
-export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 import { flush_screen, docrt } from './display.js';
 import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { doprevMessage, messageWindowMode } from './prevmsg.js';
-import {
-    dozap,
-} from './zap.js';
-import { bucAdjectiveForName, ddoinv, dolook } from './invent.js';
+import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './hero_breath.js';
-import { useHeroBreath } from './polyself.js';
-import { monsterBreathAttack } from './dogmove.js';
-import { heroSpitAttack, useHeroSpit } from './polyself.js';
-import { heroGazeAttack, useHeroGaze } from './polyself.js';
-import {
-    heroCanSplitLikeGremlin, useHeroGremlinSplit,
-} from './hero_gremlin.js';
+import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroFormSticks, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
+import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
+import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
 import { heroCanSummonWerePack } from './were.js';
-import { useHeroWereSummon } from './polyself.js';
 import { heroHasHidingAbility, useHeroHide } from './hero_hide.js';
-import { chooseSpiderAbility, heroCanSpinWeb, useHeroWeb } from './polyself.js';
-import { heroCanMindBlast, useHeroMindBlast } from './polyself.js';
-import { heroCanRemovePunishment, useHeroNymphAbility } from './polyself.js';
 import { heroCanUseUnicornHorn } from './unicorn_horn.js';
-import { useUnicornHorn } from './apply.js';
-import { useHeroVampireShift } from './polyself.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat, continueTinOpening } from './eat.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
-import { doattributes, doconduct } from './insight.js';
-import { displayHelpFile } from './pager.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
 import { continueWipingFace, donull, dowipe } from './do.js';
-
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
-import { setSecondaryWeapon } from './wield.js';
+import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY } from './object_data.js';
-import { NO_COLOR } from './terminal.js';
 import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling } from './monster_data.js';
-import { heroFormSticks } from './polyself.js';
-import { autopickupAtHero } from './pickup.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-
 import { dosave } from './save.js';
-
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { doride, stuckSteed } from './steed.js';
-import { continueForceLock, doforce } from './lock.js';
-import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
-import { climbOutOfPit, triggerHeroTrapAt } from './hero_traps.js';
-
 import { ledgerNo } from './hacklib.js';
-
-import { dopray, dosacrifice } from './pray.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
-import { heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
-import { continueTrapSetting } from './apply.js';
 import { applyPickAxeDirection } from './pick_axe.js';
-import { continueHeroDigging } from './dig.js';
-import { dowear, doputon, removeWornItem } from './do_wear.js';
-import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { dofire, dothrow } from './dothrow.js';
-import {
-    doenhance,
-} from './skills.js';
+import { doenhance } from './skills.js';
 import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
-import { showGetposInstructions, selectMapPosition } from './getpos.js';
-import { performPetRangedAttack } from './dogmove.js';
 import { dokick } from './dokick.js';
-import { bringLeashedFollowers } from './apply.js';
-import { COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, isok } from './const.js';
-import {
-    threateningMonsterNearby,
-    arriveTravel,
-    captureRunmodeDelay,
-    stopRun,
-    nearCapacity,
-    SLT_ENCUMBER,
-    showGetposTip,
-} from './hack.js';
+// cmd.js — Command parsing and dispatch.
+// C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
+
+export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 
 // Direction deltas: y u k
 //                   h . l
@@ -1846,7 +1772,6 @@ async function dodrop(): Promise<void> {
     }
 }
 
-
 // ── Command, repeat-queue, and result types ──────────────────────────────
 
 export type NativeCommand = CommandDefinition;
@@ -2058,7 +1983,6 @@ async function readCommandCount(): Promise<CommandInput> {
         }
     }
 }
-
 
 // ── Named command keys (C cmd.c:cmd_from_ecname(), cmd_from_func()) ──────
 

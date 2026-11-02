@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, SQKY_BOARD } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -1,12 +1,10 @@
-import { requirePlayingGame } from '../js/gstate.js';
+import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARROW_TRAP, DOOR, D_CLOSED, D_TRAPPED, PIT, POOL, ROOM, SDOOR, TRAPPED_CHEST, TRAPPED_DOOR, } from '../js/const.js';
+import { ARROW_TRAP, DOOR, D_CLOSED, D_TRAPPED, PIT, POOL, ROOM, SDOOR, TRAPPED_CHEST, TRAPPED_DOOR } from '../js/const.js';
 import { addBuriedObject } from '../js/dig.js';
 import { glyphAt, map_object } from '../js/display.js';
-import { game } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
@@ -16,6 +14,7 @@ import { addInventoryObject, floorObject, uninitializedObject } from './support/
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 function rememberedObject(level, x, y) {
     const glyph = level.requireAt(x, y).remembered_glyph;
     assert.ok(glyph?.kind === 'object', `Expected a remembered object at ${x},${y}`);

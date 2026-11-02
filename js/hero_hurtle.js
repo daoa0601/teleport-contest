@@ -1,21 +1,16 @@
-import { trapName } from './trap.js';
-import { withIndefiniteArticle } from './objnam.js';
-// Moving the hero through the air after a forceful action.
-// C ref: dothrow.c hurtle() and hurtle_step().
+import { trapName, triggerHeroTrap, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
+import { withIndefiniteArticle, objectName } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { setMulti } from './cmd.js';
-import { nomul } from './hack.js';
+import { nomul, heroTestMove, blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, finishDestinationSpotEffects, loseHeroHp, checkSpecialRoom, inventoryWeight, switchHeroTerrain } from './hack.js';
 import { heroHasWaterWalking } from './do_wear.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok } from './const.js';
 import { canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { heroTestMove, blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason } from './hack.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { endHeroVolley } from './hero_multishot.js';
-import { triggerHeroTrap } from './hero_traps.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
-import { petrifyMonsterFromContact } from './trap.js';
+import { wakeMonstersNearWithMessages, angerMonster, monsterWearsTorsoArmor, wakeMonster } from './mon.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { placeHeroOnLevel } from './hero_location.js';
@@ -23,15 +18,12 @@ import { updateHeroRegions } from './regions.js';
 import { monsterName } from './do_name.js';
 import { monsterObjectPronoun } from './mondata.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
-import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
-import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { touchPetrifies } from './stoning.js';
 import { vision_recalc } from './vision.js';
 import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './dbridge.js';
-import { angerMonster, monsterWearsTorsoArmor, wakeMonster } from './mon.js';
-import { finishDestinationSpotEffects, loseHeroHp, checkSpecialRoom, inventoryWeight, switchHeroTerrain, } from './hack.js';
 const M1_WALLWALK = 0x00000008;
 const HUMAN_WEIGHT = 1450;
 function heroForm() {

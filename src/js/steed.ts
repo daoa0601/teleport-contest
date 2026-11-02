@@ -1,16 +1,7 @@
-import { trapName } from './trap.js';
+import { trapName, resolveImmediatePetrification, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, floatHeroDown } from './trap.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-
-// steed.js — Saddling, mounting, riding, and dismounting.
-// C ref: steed.c.
-
-import {
-    BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
-    DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS,
-    IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR,
-    NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT,
-    TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok,
-} from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok } from './const.js';
+import type { DirectionVector } from './const.js';
 import { impossible } from './diagnostics.js';
 import { depth, endgameLevelName } from './hacklib.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -18,19 +9,14 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster, MonsterPosition } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { MessagePublisher } from './pline.js';
-import type { DirectionVector } from './const.js';
-import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
-import { floatHeroDown } from './terrain_movement.js';
-import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
+import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
+import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { finishMonsterKilled } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled,
-    monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
@@ -39,9 +25,8 @@ import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
 import { objectMaterial } from './o_init.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-
 import { monsterName, monsterReflexiveAction } from './do_name.js';
-import { monsterSubjectPronoun, monsterPassesBars } from './mondata.js';
+import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
@@ -51,7 +36,6 @@ import { heroPassesWalls, heroSpecies } from './polyself.js';
 import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
-
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
@@ -61,33 +45,17 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
-
-import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-
+import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { monsterIsHelpless } from './mondata.js';
-import {
-    blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects,
-} from './hack.js';
-
-
+import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { commandResultCancelled } from './cmd.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
 import { levelHasCeiling } from './dungeon.js';
-import { isAccessibleAt } from './monmove.js';
+import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
-
 import { surfaceName } from './terrain_name.js';
-import { heroCanOoze } from './monmove.js';
-import {
-    heroLocomotion,
-    loseHeroHp,
-    nearCapacity,
-    SLT_ENCUMBER,
-    heroCouldMoveOntoBoulder,
-    finishDestinationSpotEffects,
-} from './hack.js';
+// steed.js — Saddling, mounting, riding, and dismounting.
+// C ref: steed.c.
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

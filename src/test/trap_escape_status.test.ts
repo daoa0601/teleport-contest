@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { TT_PIT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
-import { setHeroTrap } from '../js/hero_traps.js';
+import { setHeroTrap } from '../js/trap.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 

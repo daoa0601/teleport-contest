@@ -1,43 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones_death.js';
 import { resetInputState } from '../js/input.js';
 import { promptYesNo } from '../js/query.js';
-import {
-    BURNING,
-    DIED,
-    FOUNTAIN,
-    G_GENOD,
-    GRAVE,
-    HEADSTONE,
-    LEAVESTATUE,
-    NON_PM,
-    PIT,
-    ROOM,
-    W_ARM,
-    W_ARMC,
-} from '../js/const.js';
+import { BURNING, DIED, FOUNTAIN, G_GENOD, GRAVE, HEADSTONE, LEAVESTATUE, NON_PM, PIT, ROOM, W_ARM, W_ARMC } from '../js/const.js';
 import { setHeroRemainsFromDeath, setHeroRemainsFromMonster } from '../js/death_remains.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { maketrap } from '../js/mklev.js';
 import { beginObjectBurn } from '../js/light.js';
-import {
-    CORPSE,
-    DAGGER,
-    FOOD_RATION,
-    LEATHER_ARMOR,
-    MUMMY_WRAPPING,
-    OIL_LAMP,
-    STATUE,
-} from '../js/object_data.js';
+import { CORPSE, DAGGER, FOOD_RATION, LEATHER_ARMOR, MUMMY_WRAPPING, OIL_LAMP, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { races, roles } from '../js/roles.js';
-
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -45,7 +21,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { objectWeight } from '../js/mkobj.js';
-
+import { maketrap } from '../js/trap.js';
 const PM_GHOST = 287;
 const PM_HUMAN_ARCHEOLOGIST = 331;
 const PM_HUMAN_MUMMY = 192;

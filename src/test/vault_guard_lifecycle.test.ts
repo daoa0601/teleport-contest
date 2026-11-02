@@ -6,26 +6,18 @@ import { createRoom } from './support/topology.js';
 import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE,
-} from '../js/const.js';
+import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { maketrap } from '../js/mklev.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';
 import { setWallStateAt } from '../js/wall_topology.js';
 import { memoryStorage } from './support/memory-storage.js';
-
 import { flush_screen } from '../js/display.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import {
-    finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath, killGenocidedMonster, removeMonsterFromGame,
-    sendMonsterToLimbo,
-} from '../js/mon.js';
+import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath, killGenocidedMonster, removeMonsterFromGame, sendMonsterToLimbo } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, DAGGER, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';
@@ -35,8 +27,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { isLavaAt, isPoolAt } from '../js/dbridge.js';
 import { moveObject } from '../js/hack.js';
-
-
+import { maketrap } from '../js/trap.js';
 async function guardCorridor({ blocked = true } = {}) {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

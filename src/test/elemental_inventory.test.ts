@@ -1,9 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { wearHeroAccessory } from '../js/do_wear.js';
-
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { PIT, OBJECT_TIMER_KIND } from '../js/const.js';
 import { wearEyewear } from '../js/eyewear.js';
@@ -17,23 +15,14 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { dodiscovered } from '../js/o_init.js';
 import { recordObjectCall } from '../js/do_name.js';
-
-import { igniteItems } from '../js/light.js';
-import {
-    AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, GLOB_OF_GREEN_SLIME,
-    OBJECT_NAMES, POT_HEALING, POT_SPEED, RIN_PROTECTION, SCR_IDENTIFY,
-    SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_COLD,
-} from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, GLOB_OF_GREEN_SLIME, OBJECT_NAMES, POT_HEALING, POT_SPEED, RIN_PROTECTION, SCR_IDENTIFY, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_COLD } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { destroyLavaInventory } from '../js/trap.js';
-import {
-    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
-} from '../js/zap.js';
+import { destroyLavaInventory, igniteItems } from '../js/trap.js';
+import { destroyColdInventory, destroyElectricInventory, destroyFireInventory } from '../js/zap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-
 void test('carried paper can burn while an exposed candle catches light', async () => {
     await freshObjectRoom({ moves: 10, hero: { uhp: 20, uhpmax: 20 } });
     requireFixtureGame(game);

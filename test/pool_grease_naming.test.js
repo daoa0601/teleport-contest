@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { RUST_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { RING_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

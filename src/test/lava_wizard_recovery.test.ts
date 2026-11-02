@@ -2,16 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ICE, LAVAPOOL, POOL, TIMEOUT, TT_LAVA } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
+import { heroLiquidEffects } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { wearHeroArmor, findArmorClass } from '../js/do_wear.js';
-
 import { LEATHER_ARMOR, POT_WATER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-
+import { floatHeroDown, sinkHeroIntoLava } from '../js/trap.js';
 void test('lava destroys armor while keeping its cached AC through the death refusal question', async () => {
     const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 0 });

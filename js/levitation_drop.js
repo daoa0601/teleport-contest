@@ -6,8 +6,8 @@
 import { I_SPECIAL, TIMEOUT, W_ART, W_ARTI } from './const.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
-import { clearLevitationMasks, hasInvokedProperty, propertyIsActive, restoreLevitationSources, setCarriedProperty, setInvokedProperty, stashLevitationSources, } from './properties.js';
-import { floatHeroDown } from './terrain_movement.js';
+import { clearLevitationMasks, hasInvokedProperty, propertyIsActive, restoreLevitationSources, setCarriedProperty, setInvokedProperty, stashLevitationSources } from './properties.js';
+import { floatHeroDown } from './trap.js';
 // C finesse_ahriman(): true when dropping `object` would toggle levitation
 // off inside freeinv().  On true, the invoked source is replaced by an
 // explicit carried source (C `ELevitation = W_ART`), so set_artifact_

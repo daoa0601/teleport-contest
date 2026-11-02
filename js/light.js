@@ -2,46 +2,42 @@
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
+import { wakeMonstersNearWithMessages, finishMonsterKilled, maybeUnhideAt } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './polyself.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
-import { definiteObjectAction, minimalObjectName } from './objnam.js';
+import { definiteObjectAction, minimalObjectName, makePlural, withIndefiniteArticle, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
+import { plineWithContinuation } from './pline.js';
+import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { makemonNear } from './mklev.js';
-import { unblessObjectState, uncurseObjectState } from './mkobj.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
-import { monsterDigests, monsterIsWhirly, } from './monster_data.js';
-import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
-import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
+import { unblessObjectState, uncurseObjectState, objectWeight } from './mkobj.js';
+import { monsterDigests, monsterIsWhirly } from './monster_data.js';
+import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType } from './o_init.js';
 import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
-import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './zap.js';
-import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
 import { loseHeroHp, roomForRoomno } from './hack.js';
-import { objectWeight } from './mkobj.js';
 const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
 ]);
-const TIMED_LIGHT_TYPES = new Set([
+export const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
-const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
+export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
@@ -696,61 +692,5 @@ export async function runClaimedObjectBurnTimer(claimed, state = game, currentTu
         && (object.otyp === POT_OIL || object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE))
         await newsym(location.x, location.y);
     return { object, threshold, overdue: false, destroyed };
-}
-function catchesFire(object, random) {
-    if (!object || object.lamplit || object.in_use
-        || !LIGHT_TYPES.has(object.otyp)
-        || object.otyp === BRASS_LANTERN)
-        return false;
-    if ((object.otyp === MAGIC_LAMP
-        || object.otyp === CANDELABRUM_OF_INVOCATION)
-        && (object.spe ?? 0) <= 0)
-        return false;
-    if (TIMED_LIGHT_TYPES.has(object.otyp) && (object.age ?? 0) <= 0)
-        return false;
-    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.cursed)
-        return false;
-    return !([OIL_LAMP, MAGIC_LAMP].includes(object.otyp)
-        && object.cursed && random(2) === 0);
-}
-function lightSourceName(object, state) {
-    observeObjectForNaming(object, { state });
-    const name = objectName(object, state);
-    const quantity = object.quan ?? object.quantity ?? 1;
-    return quantity > 1 ? makePlural(name) : name;
-}
-export async function igniteItems(objects, { state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
-    const ignited = [];
-    for (const object of objects || []) {
-        // catch_lit() requires a current location, even during floor effects.
-        if (!getObjectLocation(object, state))
-            continue;
-        if (!catchesFire(object, random))
-            continue;
-        const plural = (object.quan ?? object.quantity ?? 1) > 1;
-        const blind = heroIsBlind(state);
-        if (visible) {
-            const name = lightSourceName(object, state);
-            // C catch_lit() names the source with Yname2(): shop, carrier, or your/the.
-            const prefix = objectOwnershipPrefix(object, state);
-            await publish(blind
-                ? `${prefix}${name} ${plural ? 'feel' : 'feels'} warm.`
-                : `${prefix}${name} ${plural ? 'catch' : 'catches'} light!`);
-        }
-        // C apply.c:catch_lit() credits discovery even when the fire is unseen.
-        if (object.otyp === POT_OIL)
-            learnObjectType(POT_OIL, state);
-        // C catch_lit(): an unpaid source that catches while carried is billed
-        // for its use on top of its price.
-        if (object.where === 'inventory' && object.unpaid
-            && costlySpot(state.u.ux, state.u.uy, state)) {
-            await chargeUnpaidUsage(object, { state });
-            await publish(`"That's in addition to the cost of ${ownedObjectName(object, state, { capitalized: false })} ${plural ? 'themselves' : 'itself'}, of course."`);
-            await billDummyObject(object, state);
-        }
-        if (beginObjectBurn(object, state, state.moves ?? 0))
-            ignited.push(object);
-    }
-    return ignited;
 }
 //# sourceMappingURL=light.js.map

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { drainHeroEnergy } from '../js/hero_energy.js';
+import { drainHeroEnergy } from '../js/trap.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

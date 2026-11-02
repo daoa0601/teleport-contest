@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, LR_PORTAL, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, NO_MINVENT, STAIRS } from '../js/const.js';
-import { maketrap } from '../js/mklev.js';
 import { place_lregion } from '../js/mkmaze.js';
 import { game } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -10,7 +9,7 @@ import { placeHeroAtRandomArrival } from '../js/level_change.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createSpecialLevel } from './support/topology.js';
-
+import { maketrap } from '../js/trap.js';
 void test('random arrival resets the old position on entry to a different level', async () => {
     freshPlayableRoom({ hero: {
         uz: { dnum: 0, dlevel: 2 }, uz0: { dnum: 0, dlevel: 1 },

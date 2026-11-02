@@ -5,7 +5,7 @@ import { HOLE, LA_DOWN, LA_UP, STAIRS } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
-import { maketrap, mklev, mkstairs, } from '../js/mklev.js';
+import { mklev, mkstairs } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -13,6 +13,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createRoomLevel, freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { maketrap } from '../js/trap.js';
 function specialRoom(storage, dlevel) {
     freshPlayableRoom({ flags: { debug: true }, hero: { uz: { dnum: 0, dlevel }, uhp: 100, uhpmax: 100 } });
     game.plname = 'Traveler';

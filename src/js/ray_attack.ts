@@ -2,81 +2,55 @@
 // C refs: zap.c ubuzz(), dobuzz(), zhitm(), and zhitu().
 
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
-import { finishMonsterKilled, healMonster, wakeMonster } from './mon.js';
-import { adjustSpellDamage, objectResistsDestruction } from './zap.js';
+import { finishMonsterKilled, healMonster, wakeMonster, revealMonsterAppearance } from './mon.js';
+import { adjustSpellDamage, objectResistsDestruction, applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect, rayDamageType } from './zap.js';
+import type { RayFloorKind, RayFloorResult } from './zap.js';
 import { explode } from './explosion.js';
-import { revealMonsterAppearance } from './mon.js';
 import { heroFormSticks } from './polyself.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { monsterResistsSleep } from './mondata.js';
+import { monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { burnArmorByFire, erodeArmor, damageObjectWithAcid } from './trap.js';
-import { igniteItems } from './light.js';
+import { burnArmorByFire, erodeArmor, damageObjectWithAcid, igniteItems } from './trap.js';
 import { payForShopDamage } from './shk.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
-import {
-    EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS,
-} from './const.js';
+import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSeeMonster, canSenseMonster, newsym, shieldeff } from './display.js';
 import { plineWithContinuation, set_msg_dir } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { xyToDirection } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { finishHeroDeath } from './end.js';
+import type { DeathHandler } from './end.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { distantObjectName, objectName } from './objnam.js';
+import { distantObjectName, objectName, makePlural } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
-import { makePlural } from './objnam.js';
-
 import { hitHeroWithRay } from './hero_breath.js';
+import type { HeroRaySource } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import type { HeroMonsterKillOptions, HeroMonsterDeathContext } from './hero_monster_death.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
-import {
-    MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
-} from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
-import {
-    AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE,
-} from './monster_attack_types.js';
-import {
-    BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH,
-    WAN_MAGIC_MISSILE, WAN_LIGHTNING,
-} from './object_data.js';
+import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE } from './monster_attack_types.js';
+import type { DamageType } from './monster_attack_types.js';
+import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH, WAN_MAGIC_MISSILE, WAN_LIGHTNING } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { flashBurn } from './sight_change.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { realRayName, displayRayName } from './ray_name.js';
-import {
-    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectsRay,
-    monsterReflectionSource, rayHitsHero, rayHitsMonster, rayMonsterAt, runRay,
-} from './ray.js';
-import {
-    applyRayFloorFeatures, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, monsterResistsEffect,
-} from './zap.js';
-
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster, rayMonsterAt, runRay } from './ray.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './pline.js';
-import type { DeathHandler } from './end.js';
-import type { HeroMonsterKillOptions, HeroMonsterDeathContext } from './hero_monster_death.js';
 import type { MonsterAttack } from './data_types.js';
-import type { DamageType } from './monster_attack_types.js';
-import type { HeroRaySource } from './hero_breath.js';
 import type { Position } from './map_types.js';
-import type { RayFloorKind, RayFloorResult } from './zap.js';
-import { rayDamageType } from './zap.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance,
-    monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance,
-    monsterHasShockResistance, monsterResistanceBits,
-} from './mondata.js';
 import { finishMonsterEating } from './dogmove.js';
 
 export type RayDirection = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n' | '<' | '>';

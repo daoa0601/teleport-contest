@@ -1,64 +1,36 @@
-import { seeTrap, trapAt } from './trap.js';
-// C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
-
+import { seeTrap, trapAt, connectPits, fireDamageObject, triggerHeroTrap } from './trap.js';
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsHallucinating } from './senses.js';
-import { nomul } from './hack.js';
+import { nomul, loseHeroHp, roomsAt, roomForRoomno } from './hack.js';
 import { artifactById } from './artifacts.js';
 import { makeMonsterFlee } from './monmove.js';
 import { heroIsPunished } from './ball.js';
-import {
-    BEAR_TRAP,
-    DIGTYP_UNDIGGABLE,
-    IRONBARS,
-    IS_OBSTRUCTED,
-    IS_TREE,
-    IS_WATERWALL,
-    Is_airlevel,
-    Is_waterlevel,
-    KILLED_BY,
-    LANDMINE,
-    LAVAWALL,
-    N_DIRS_Z,
-    SHOPBASE,
-    TT_PIT,
-    TT_WEB,
-    WEB,
-    is_hole,
-    is_pit,
-    isok,
-} from './const.js';
+import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LANDMINE, LAVAWALL, N_DIRS_Z, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok } from './const.js';
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { fireDamageObject } from './fire_damage.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-
 import { diggingTarget, startHeroDigging } from './dig.js';
-import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_NAMES, STATUE } from './object_data.js';
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
-
 import { d, rn2, rnd } from './rng.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon.js';
 import { isPick } from './object_properties.js';
-import { connectPits } from './pit_connections.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { monsterName } from './do_name.js';
-import { loseHeroHp, roomsAt, roomForRoomno } from './hack.js';
+// C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
 
 export interface PickAxeDirection {
     dx: number;
@@ -98,7 +70,6 @@ function diggingLocation(x: number, y: number, state: GameState) {
     if (!location) throw new Error(`Digging target (${x}, ${y}) is outside the map.`);
     return location;
 }
-
 
 function impaired(state: GameState) {
     const hero = state.u;

@@ -1,32 +1,25 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
-
 import { fallWithIronBall } from '../js/ball.js';
 import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY, OBJECT_TIMER_KIND } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { grantPrayerFavor } from '../js/pray.js';
+import { grantPrayerFavor, fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { enchantWeapon } from '../js/enchant_weapon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { healHeroLegs } from '../js/hero_legs.js';
 import { resetInputState } from '../js/input.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
-import {
-    AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE,
-    HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH,
-} from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE, HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH } from '../js/object_data.js';
 import { claimNextDueObjectTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
 import { poisonHero } from '../js/poison.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { dismountHero } from '../js/steed.js';
-import { fixPrayerTrouble, Trouble } from '../js/pray.js';
-import { floatHeroUp } from '../js/terrain_movement.js';
 import { runObjectTimer } from '../js/timer_effects.js';
 import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
-
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { fireQuiveredGold } from './support/gold-arena.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -34,7 +27,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { nearCapacity } from '../js/hack.js';
-
+import { floatHeroUp } from '../js/trap.js';
 void test('the first drop-side load check starts from an unencumbered baseline', async () => {
     await freshObjectRoom();
     await addInventoryObject(ROCK, { quan: 70 });

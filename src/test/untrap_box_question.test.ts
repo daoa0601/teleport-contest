@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { CHEST } from '../js/object_data.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

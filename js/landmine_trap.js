@@ -1,20 +1,16 @@
 // Land mines triggered by monsters.
 // C ref: trap.c:trapeffect_landmine().
+import { plineWithContinuation } from './pline.js';
+import { resolveMonsterLiquid, monsterInAir } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
 import { setMulti } from './cmd.js';
 import { newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { heroIsUnconscious } from './hero_sleep.js';
 import { explodeLandMine } from './landmine_explosion.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
-import { resolveMonsterLiquid } from './mon.js';
+import { fillPitWithBoulderAt, beginMonsterPitTrap, finishMonsterPitTrap, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap, heroIsUnconscious, monsterWearsIronShoes } from './trap.js';
 import { MONSTER_BODY_META } from './monster_data.js';
-import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap, } from './trap.js';
-import { monsterInAir } from './mon.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 async function finishMineDeath(monster, event, state, options) {

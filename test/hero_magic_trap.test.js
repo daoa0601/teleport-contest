@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_CHA, MAGIC_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_REFLECTION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

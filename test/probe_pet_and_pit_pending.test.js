@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { climbOutOfPit } from '../js/hero_traps.js';
+import { climbOutOfPit } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { TT_PIT, W_CHAIN } from '../js/const.js';
 import { IRON_CHAIN, WAN_PROBING } from '../js/object_data.js';

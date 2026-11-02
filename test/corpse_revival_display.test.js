@@ -6,12 +6,12 @@ import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { glyphAt } from '../js/display.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
-import { maketrap } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 void test('a buried revival keeps the hallucinated appearance shown when its pit opens', async () => {
     await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     initRng(17n);

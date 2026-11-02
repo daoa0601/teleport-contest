@@ -1,16 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { wearHeroAccessory } from '../js/do_wear.js';
-
 import { NO_MINVENT, PIT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { releaseHold } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, maketrap } from '../js/trap.js';
 import { DAGGER, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
@@ -21,7 +18,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { cancelMonster } from '../js/zap.js';
 import { monsterHasColdResistance } from '../js/mondata.js';
-
 async function conflictRoom(expectedMessages: RegExp) {
     await freshObjectRoom({ hero: { ulevel: 30 } });
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');

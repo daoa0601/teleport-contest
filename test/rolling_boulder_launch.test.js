@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, ROLLING_BOULDER_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { maketrap } from '../js/mklev.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { maketrap } from '../js/trap.js';
 // trap.c find_random_launch_coord()/isclearpath(): the boulder's line may
 // cross pools and lava (ZAP_POS terrain); only the launch square itself
 // must not be pool or lava.

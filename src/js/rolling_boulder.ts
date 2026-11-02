@@ -1,12 +1,7 @@
-import { seeTrap } from './trap.js';
-// C trap.c:launch_obj(), ROLL styles. Each square resolves its occupants,
-// traps and floor effects before the next square or final placement.
+import { seeTrap, animateRollingBoulderCell, deleteTrap } from './trap.js';
 import { heroHasCarriedArtifactFlag } from './artifacts.js';
 import { endVoluntaryMultiTurn } from './hack.js';
-import {
-    DOOR, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LANDMINE, LEVEL_TELEP,
-    M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP, is_hole, is_pit, isok,
-} from './const.js';
+import { DOOR, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LANDMINE, LEVEL_TELEP, M_AP_MONSTER, MIGR_RANDOM, TELEP_TRAP, is_hole, is_pit, isok } from './const.js';
 import { canSpotMonster, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -20,10 +15,9 @@ import { depth, distmin } from './hacklib.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
-import { animateRollingBoulderCell } from './hero_traps.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import type { Position } from './map_types.js';
-import { revealMonsterAppearance } from './mon.js';
+import { revealMonsterAppearance, wakeMonstersNearWithMessages, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
@@ -31,31 +25,25 @@ import { monsterObjectPronoun } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import type { Monster } from './monster_types.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { withIndefiniteArticle, killerObjectName, objectCombatName } from './objnam.js';
 import { observeObject } from './o_init.js';
-import { splitObjectStack } from './mkobj.js';
-
-
+import { splitObjectStack, unlinkObject } from './mkobj.js';
 import { shipObject } from './dokick.js';
-import { unlinkObject } from './mkobj.js';
-
-import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import { relocateObjectRandomly } from './teleport.js';
 import type { GameObject } from './object_types.js';
-import { killerObjectName, objectCombatName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { fractureRock } from './rock_breakage.js';
 import { d, rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { deleteTrap } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { rangedTargetHitBonus } from './dothrow.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+// C trap.c:launch_obj(), ROLL styles. Each square resolves its occupants,
+// traps and floor effects before the next square or final placement.
 
 interface RollingBoulderOptions {
     state?: PlayingGameState;

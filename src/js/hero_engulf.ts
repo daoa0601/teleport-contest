@@ -3,45 +3,32 @@
 
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
-import {
-    A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit,
-} from './const.js';
+import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
+import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroContactAttack } from './monster_action_types.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { finishMonsterAttackDeath } from './end.js';
-import { heroIsBreathless, heroPassesWalls, heroSpecies } from './polyself.js';
-import {
-    AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
-} from './monster_attack_types.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal,
-    monsterIsWhirly,
-} from './monster_data.js';
-import {
-    BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE,
-    WAX_CANDLE,
-} from './object_data.js';
+import { heroIsBreathless, heroPassesWalls, heroSpecies, applyHeroGolemEffects } from './polyself.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
+import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { newsym, shieldeff, swallowed } from './display.js';
-import { plineWithContinuation } from './pline.js';
 import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
-
-import { drainHeroEnergy } from './hero_energy.js';
+import { drainHeroEnergy, petrifyMonsterImmediately, resetHeroTrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
-import { infectHeroWithMonsterDisease } from './mhitu.js';
+import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
 import { resetOccupations } from './occupation_reset.js';
-import { applyHeroGolemEffects } from './polyself.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
-import { petrifyMonsterImmediately } from './trap.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { monsterName } from './do_name.js';
 import { ownedObjectName, objectNameIsPlural } from './objnam.js';
@@ -51,10 +38,8 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { dismountHero } from './steed.js';
 import { touchPetrifies } from './stoning.js';
-import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc } from './vision.js';
 import { monsterHasStoneResistance } from './mondata.js';
-import { damageHeroFromMonster } from './mhitu.js';
 
 export interface HeroEngulfOptions {
     state?: GameState;
@@ -113,7 +98,6 @@ function engulfSquareBlocked(location: MapLocation | null, otherBody: Pick<Monst
     return IS_OBSTRUCTED(location.typ) || closedDoor || IS_TREE(location.typ)
         || (location.typ === IRONBARS && !monsterIsWhirly(otherBody));
 }
-
 
 // C gulpmu(): capture has moved the attacker, but the hero is not swallowed
 // until dismounting, releases and contact petrification have completed.

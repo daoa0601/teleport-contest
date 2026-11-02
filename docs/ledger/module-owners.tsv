@@ -12,6 +12,7 @@ src/js/bones_death.ts	bones.c
 src/js/bones_monster.ts	bones.c
 src/js/botl.ts	botl.c
 src/js/boulder_pool.ts	do.c
+src/js/bulk_takeoff.ts	do_wear.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
@@ -32,6 +33,7 @@ src/js/dokick.ts	dokick.c
 src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
 src/js/dungeon.ts	dungeon.c
+src/js/dungeon_feature.ts	pickup.c
 src/js/eat.ts	eat.c
 src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
@@ -46,10 +48,10 @@ src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/falling_boulder.ts	read.c
 src/js/familiar.ts	dog.c
-src/js/fire_damage.ts	trap.c
 src/js/floor_naming.ts	do_name.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
+src/js/floor_reach.ts	engrave.c
 src/js/fruit.ts	objnam.c
 src/js/genocide.ts	read.c
 src/js/glob.ts	mkobj.c
@@ -57,12 +59,12 @@ src/js/glyph_customizations.ts	display.c
 src/js/gold_throw.ts	dothrow.c
 src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
+src/js/hack.ts	hack.c
 src/js/hero_attack_accuracy.ts	weapon.c
 src/js/hero_attack_conduct.ts	uhitm.c
 src/js/hero_breath.ts	zap.c
 src/js/hero_combat_engulf.ts	uhitm.c
 src/js/hero_drop.ts	do.c
-src/js/hero_energy.ts	trap.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
@@ -80,16 +82,19 @@ src/js/hero_object_contact.ts	uhitm.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
+src/js/hero_self_zap.ts	zap.c
+src/js/hero_sleep.ts	timeout.c
 src/js/hero_status.ts	insight.c
 src/js/hero_strangulation.ts	timeout.c
 src/js/hero_weapon_contact.ts	uhitm.c
 src/js/hero_weapon_hit.ts	uhitm.c
 src/js/hero_weapon_impact.ts	uhitm.c
 src/js/hero_weapon_poison.ts	uhitm.c
-src/js/hole_destination.ts	trap.c
 src/js/horn_of_plenty.ts	mkobj.c
 src/js/ice.ts	zap.c
 src/js/ident.ts	mkobj.c
+src/js/immediate_monster_magic.ts	mon.c
+src/js/immediate_zap.ts	zap.c
 src/js/individual_naming.ts	do_name.c
 src/js/input.ts	cmd.c
 src/js/isaac64.ts	isaac64.c
@@ -114,6 +119,7 @@ src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
+src/js/mondeath.ts	mon.c
 src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
@@ -130,8 +136,6 @@ src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
 src/js/pick_axe.ts	mon.c
 src/js/pickup.ts	pickup.c
-src/js/pit_connections.ts	trap.c
-src/js/pit_fill.ts	trap.c
 src/js/player_name.ts	do_name.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
@@ -141,8 +145,6 @@ src/js/potion.ts	potion.c
 src/js/priest.ts	priest.c
 src/js/projectile.ts	dothrow.c
 src/js/projectile_bars.ts	monmove.c
-src/js/projectile_trap.ts	trap.c
-src/js/properties.ts	trap.c
 src/js/punishment.ts	read.c
 src/js/quest.ts	quest.c
 src/js/ray_attack.ts	zap.c
@@ -154,7 +156,6 @@ src/js/rect.ts	rect.c
 src/js/revival_species.ts	read.c
 src/js/ring_sink.ts	do.c
 src/js/rng.ts	rnd.c
-src/js/rock_breakage.ts	trap.c
 src/js/rumor.ts	rumors.c
 src/js/scatter.ts	explode.c
 src/js/shknam.ts	shknam.c
@@ -174,7 +175,6 @@ src/js/steed.ts	steed.c
 src/js/storms.ts	timeout.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
-src/js/terrain_movement.ts	trap.c
 src/js/terrain_name.ts	dungeon.c
 src/js/throne.ts	sit.c
 src/js/thrown_object.ts	zap.c
@@ -191,11 +191,9 @@ src/js/tty_prompts.ts	cmd.c
 src/js/two_weapon.ts	wield.c
 src/js/uhitm.ts	uhitm.c
 src/js/undead_turning.ts	zap.c
-src/js/untrap.ts	trap.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
-src/js/web_trap.ts	trap.c
 src/js/wield.ts	wield.c
 src/js/wintty.ts	wintty.c
 src/js/wish.ts	zap.c

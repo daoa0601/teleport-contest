@@ -5,16 +5,78 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { ARTIFACT_DATA } from './artifact_data.js';
-import type {
-    ArtifactDefinition,
-    ArtifactFlag,
-    ArtifactDamage,
-    ArtifactDefense,
-} from './data_types.js';
+import type { ArtifactDefinition, ArtifactFlag, ArtifactDamage, ArtifactDefense, ArtifactPower } from './data_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { PropertyName } from './property_types.js';
+import type { PropertyName, WornPropertySlot } from './property_types.js';
+import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, isok, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
+import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js';
+import { heroHasDrainResistance } from './do_wear.js';
+import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
+import { insideShopRoomAt } from './shk.js';
+import { mksobj, objectWeight } from './mkobj.js';
+import { ensureHeroSkills } from './skills.js';
+import { races, roles } from './roles.js';
+import { objectClassForType, recordObjectEncounter, objectMaterial } from './o_init.js';
+import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
+import { d, rnd, rn2, rnz } from './rng.js';
+import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, OBJECT_PROPERTY, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { questMonsterAlignment } from './role_monsters.js';
+import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, MONSTER_SOUND } from './monster_data.js';
+import { monsterWieldedWeapon } from './weapon.js';
+import { monsterAlignmentType } from './priest.js';
+import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
+import { see_monsters, displayColorName, glyphAt, canSeeMonster, newsym } from './display.js';
+import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty } from './properties.js';
+import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
+import { isContainer } from './container.js';
+import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
+import { getRumor } from './mklev.js';
+import { exerciseAttribute } from './attrib.js';
+import { finishHeroDeath } from './end.js';
+import type { DeathHandler } from './end.js';
+import { monsterNeckName } from './body_parts.js';
+import { loseHeroExperience } from './exper.js';
+import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp } from './hack.js';
+import { formatFeltMessage } from './hero_speech.js';
+import { lightDamage, lightRoom } from './light.js';
+import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel } from './mon.js';
+import { applyMagicbaneHit } from './magicbane.js';
+import { monsterName } from './do_name.js';
+import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
+import { cansee, couldsee } from './vision.js';
+import { monsterHitPointsPerLevel } from './makemon.js';
+import { commandResultCancelled } from './cmd.js';
+import { moveIntoFailedUntrap, untrap, igniteItems, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
+import type { UntrapOptions } from './trap.js';
+import { recalculateTelepathyRange } from './worn.js';
+import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
+import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
+import { cureHeroSickness, heroIsSick } from './hero_illness.js';
+import { showEnlightenment } from './insight.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
+import { retouchHeroObject } from './hero_retouch.js';
+import { useCrystalBall } from './crystal_ball.js';
+import { clearHeroSliming, heroIsSliming } from './slime.js';
+import { chooseObjectToCharge, rechargeObject } from './recharge.js';
+import { doBlindingRay } from './flash.js';
+import { flashBurn } from './sight_change.js';
+import { makeBlinded, makeHallucinated } from './potion.js';
+import { promptDirection } from './tty_prompts.js';
+import { castSpell, spellSkillType } from './spell.js';
+import { depth } from './hacklib.js';
+import { gotoLevel } from './level_change.js';
+import { levelTeleport } from './level_teleport.js';
+import { teleportMonsterByHero } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
+import { showPagedPickOneMenu } from './windows.js';
+import { throwOrdinaryObject } from './ordinary_throw.js';
+import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { holdAnotherObject } from './hero_hold_object.js';
 
 export type Artifact = { -readonly [Key in keyof ArtifactDefinition]: ArtifactDefinition[Key] } & {
     baseName: string;
@@ -56,168 +118,12 @@ export interface ArtifactTouchResult {
     bane?: boolean;
 }
 
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM } from './const.js';
-import { dragonFormForArmor } from './polyself.js';
-import { heroHasDrainResistance } from './do_wear.js';
 
-import { game, requirePlayingGame } from './gstate.js';
-import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
-import { insideShopRoomAt } from './shk.js';
-import { mksobj } from './mkobj.js';
-import { ensureHeroSkills } from './skills.js';
-import { races } from './roles.js';
-import { objectClassForType, recordObjectEncounter } from './o_init.js';
-import { verbForSubject } from './objnam.js';
 
-import { d, rnd, rn2 } from './rng.js';
-import {
-    GOLD_DRAGON_SCALE_MAIL,
-    GOLD_DRAGON_SCALES,
-    OBJECT_NAMES,
-    OBJECT_SUBTYPE,
-    OBJECT_UNIQUE,
-    requireObjectData,
-} from './object_data.js';
-import { objectMaterial } from './o_init.js';
-import { questMonsterAlignment } from './role_monsters.js';
-import {
-    MONSTER_FLAGS2,
-    MONSTER_MAGIC_RESISTANCE,
-    MONSTER_NAME,
-    MONSTER_SYMBOL,
-    monsterIsCovetous,
-    monsterIsPlayerMonster,
-} from './monster_data.js';
-import { monsterWieldedWeapon } from './weapon.js';
-import { monsterAlignmentType } from './priest.js';
-import { heroHatesSilver, heroSpecies } from './polyself.js';
-import { roles } from './roles.js';
-import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
-import type { WornPropertySlot } from './property_types.js';
-import { see_monsters } from './display.js';
-import { OBJECT_PROPERTY } from './object_data.js';
-import {
-    grantWornProperty,
-    hasCarriedProperty,
-    removeWornProperty,
-    setCarriedProperty,
-} from './properties.js';
-import { DOOR, D_TRAPPED, W_WEP, isok } from './const.js';
-import { displayColorName, glyphAt } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
-import { isContainer } from './container.js';
-import { requireLiveGame } from './gstate.js';
 
-import { wornObjectGrantsProperty } from './properties.js';
-import { heroIsBlind } from './senses.js';
-import { getRumor } from './mklev.js';
-import { objectName, objectNameIsPlural } from './objnam.js';
-import { exerciseAttribute } from './attrib.js';
-import { A_WIS, KILLED_BY } from './const.js';
-import { finishHeroDeath } from './end.js';
 
-import { definiteName, objectCombatName } from './objnam.js';
-import type { MessagePublisher } from './pline.js';
-import type { DeathHandler } from './end.js';
-import { heroIsHallucinating } from './senses.js';
-import { canSeeMonster } from './display.js';
-import { monsterNeckName } from './body_parts.js';
-import { loseHeroExperience } from './exper.js';
-import { burnAwayHeroSlime } from './hack.js';
-import { formatFeltMessage } from './hero_speech.js';
-import { igniteItems } from './light.js';
-import { healMonster, wakeMonstersNearWithMessages } from './mon.js';
-import { applyMagicbaneHit } from './magicbane.js';
-import {
-    MONSTER_SIZE,
-    monsterHasHead,
-    monsterIsAmorphous,
-    monsterIsNoncorporeal,
-    monsterIsNonliving,
-} from './monster_data.js';
-import { monsterName } from './do_name.js';
 
-import { observeDistantObjectForNaming } from './objnam.js';
-import {
-    destroyInventoryByElement,
-    destroyMonsterInventoryByElement,
-    INVENTORY_DAMAGE,
-} from './zap.js';
-import { cansee } from './vision.js';
-import { monsterHitPointsPerLevel } from './makemon.js';
-import { commandResultCancelled } from './cmd.js';
-import type { ArtifactPower } from './data_types.js';
-import type { UntrapOptions } from './untrap.js';
-import {
-    GETOBJ_EXCLUDE,
-    GETOBJ_SUGGEST,
-    I_SPECIAL,
-    In_endgame,
-    In_hell,
-    In_quest,
-    P_EXPERT,
-    TIMEOUT,
-    W_ARTI,
-} from './const.js';
-import { newsym } from './display.js';
-import { recalculateTelepathyRange } from './worn.js';
-import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
-import {
-    hasNonArtifactInvisibility,
-    invisibilityIsBlocked,
-    syncHeroInvisibility,
-} from './hero_invisibility.js';
-import { cureHeroSickness, heroIsSick } from './hero_illness.js';
-import { showEnlightenment } from './insight.js';
-import {
-    ACID_VENOM,
-    ARROW,
-    BLINDING_VENOM,
-    CRYSTAL_BALL,
-    FAKE_AMULET_OF_YENDOR,
-    SPE_CONE_OF_COLD,
-    SPE_FIREBALL,
-} from './object_data.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
-import { retouchHeroObject } from './hero_retouch.js';
-import { useCrystalBall } from './crystal_ball.js';
-import { moveIntoFailedUntrap, untrap } from './untrap.js';
-import {
-    captureLevitationState,
-    hasInvokedProperty,
-    hasIntrinsicProperty,
-    propertyHasOtherSources,
-    refreshProperty,
-    setInvokedProperty,
-} from './properties.js';
-import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
-import { applyHeroLocationEffects } from './hack.js';
-import { rnz } from './rng.js';
-import { heroIsBlinded, permanentBlind } from './senses.js';
-import { clearHeroSliming, heroIsSliming } from './slime.js';
 
-import { chooseObjectToCharge, rechargeObject } from './recharge.js';
-import { doBlindingRay } from './flash.js';
-import { lightDamage, lightRoom } from './light.js';
-import { MONSTER_SOUND } from './monster_data.js';
-import { flashBurn } from './sight_change.js';
-import { makeBlinded, makeHallucinated } from './potion.js';
-import { promptDirection } from './tty_prompts.js';
-import { castSpell, spellSkillType } from './spell.js';
-import { depth } from './hacklib.js';
-import { gotoLevel } from './level_change.js';
-import { levelTeleport } from './level_teleport.js';
-import { teleportMonsterByHero } from './teleport.js';
-import { bringLeashedFollowers } from './apply.js';
-import { showPagedPickOneMenu } from './windows.js';
-import { couldsee } from './vision.js';
-import { throwOrdinaryObject } from './ordinary_throw.js';
-import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { holdAnotherObject } from './hero_hold_object.js';
-import { migrateMonsterToLevel } from './mon.js';
-import { loseHeroHp } from './hack.js';
-import { objectWeight } from './mkobj.js';
 
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
@@ -970,7 +876,6 @@ export async function setWieldedArtifactProperties(
 
 // C artifact.c:set_artifact_intrinsic(), Sting_effects(), glow_verb().
 
-
 function glowStrength(count: number): 0 | 1 | 2 | 3 {
     return count > 12 ? 3 : count > 4 ? 2 : count > 0 ? 1 : 0;
 }
@@ -1076,7 +981,6 @@ export async function warnWithMasterKey(state: GameState = game): Promise<void> 
 
 // C artifact.c:arti_speak(). Speaking artifacts select rumors by their BUC.
 
-
 export async function speakArtifact(
     object: GameObject,
     { state = game }: { state?: GameState } = {},
@@ -1095,7 +999,6 @@ export async function speakArtifact(
 
 // The visible hero transaction for touching an artifact.
 // C ref: artifact.c touch_artifact().
-
 
 export interface HeroArtifactTouchResult extends ArtifactTouchResult {
     died: boolean;
@@ -1153,7 +1056,6 @@ export async function touchArtifactByHero(
 
 // Artifact weapon damage and special-hit effects.
 // C ref: artifact.c artifact_hit().
-
 
 export interface ArtifactHitOptions {
     state?: GameState;
@@ -1550,7 +1452,6 @@ function healHeroFromDrain(state: GameState, amount: number) {
 
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
-
 
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };

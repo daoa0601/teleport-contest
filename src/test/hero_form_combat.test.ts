@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, TT_PIT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

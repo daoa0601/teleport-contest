@@ -1,7 +1,5 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { requirePlayingGame } from './gstate.js';
-// Immediate magic owns each actual target; beam traversal and wand breakage
-// choose those targets. C refs: zap.c bhito(), bhitpile(), zapsetup/wrapup().
+import { requirePlayingGame, game } from './gstate.js';
 import { A_WIS } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { sweepFloorPile } from './floor_object.js';
@@ -10,16 +8,14 @@ import { reviveCorpseByMagic } from './corpse_revival.js';
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
-import { game } from './gstate.js';
 import { maybeUnhideAt } from './mon.js';
 import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './do_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
-import { BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
-import { singularObjectName } from './objnam.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING } from './object_data.js';
+import { singularObjectName, withIndefiniteArticle } from './objnam.js';
 import { relocateObjectRandomly } from './teleport.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
+import { fillPitWithBoulderAt } from './trap.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -27,6 +23,8 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { turnObjectWithUndeadMagic } from './undead_turning.js';
 import { cansee } from './vision.js';
 import { learnWand, probeObject, drainObjectEnchantment, cancelObjectMagic, createPolymorphMonsterFromPile, polymorphFloorObject, stone_to_flesh_obj } from './zap.js';
+// Immediate magic owns each actual target; beam traversal and wand breakage
+// choose those targets. C refs: zap.c bhito(), bhitpile(), zapsetup/wrapup().
 export { hitMonsterWithWand } from './immediate_monster_magic.js';
 const WAN_OPENING = OBJECT_NAMES.indexOf('opening');
 const WAN_LOCKING = OBJECT_NAMES.indexOf('locking');

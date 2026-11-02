@@ -5,7 +5,7 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/potion.js';
 import { BOULDER } from '../js/object_data.js';
-import { fillPitWithBoulderAt } from '../js/pit_fill.js';
+import { fillPitWithBoulderAt } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
 import { tryMonsterTrapEscape } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';

@@ -5,7 +5,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { LEASH } from '../js/object_data.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

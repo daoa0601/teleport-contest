@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { G_GENOD, STATUE_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { maketrap } from '../js/mklev.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 void test('a statue trap can choose a pony when the alternative is a co-aligned unicorn', async () => {
     const level = await freshObjectRoom();
     const pony = MONSTER_NAME.indexOf('pony');

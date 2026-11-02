@@ -1,13 +1,11 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
 import { dragonFormForArmor } from './polyself.js';
-import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName } from './objnam.js';
-import { verbForSubject } from './objnam.js';
-import { learnObjectType } from './o_init.js';
+import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, verbForSubject } from './objnam.js';
 import { canSeeMonster, displayColorName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
@@ -20,19 +18,20 @@ import { monsterName } from './do_name.js';
 import { monsterObjectPronoun, monsterPossessive } from './mondata.js';
 import { possessiveName } from './hacklib.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
-import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
 import { game, requireLiveGame } from './gstate.js';
-import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
-import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_DELAY, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
+import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
+import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_DELAY, OBJECT_PROPERTY, SADDLE, requireObjectData } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP, } from './const.js';
+import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP } from './const.js';
 import { placeObject } from './floor_object.js';
 import { objectNoLongerHeld } from './do.js';
 import { deleteObject } from './shk.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';
+import { resolveImmediatePetrification } from './trap.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -175,18 +174,13 @@ function preference(monster, object) {
     return armorBonus(object)
         + Number(object?.otyp === SPEED_BOOTS && monster?.permspeed !== 2) * 20;
 }
-function wornInSlot(monster, mask) {
+export function wornInSlot(monster, mask) {
     return (monster?.minvent || monster?.inventory || [])
         .find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
 // C trap.c:wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
 const IRON = 11;
-// C trap.c:wearing_iron_shoes().
-export function monsterWearsIronShoes(monster) {
-    const boots = wornInSlot(monster, W_ARMF);
-    return !!boots && objectMaterial(boots) === IRON;
-}
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
 // whose worn bit is present in misc_worn_check contribute protection.
 export function findMonsterArmorClass(monster) {

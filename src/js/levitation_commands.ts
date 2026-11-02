@@ -2,27 +2,20 @@
 // floating_above().  The '>' command owner calls this before its stair
 // lookup and maps spentTurn to context.move.
 
-import {
-    I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA,
-    TIMEOUT, W_ARTI,
-} from './const.js';
+import { I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA, TIMEOUT, W_ARTI } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './dbridge.js';
-
 import type { GameState } from './game_state.js';
 import type { Stairway } from './map_types.js';
+import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { glyphAt } from './display.js';
-import { plineWithContinuation } from './pline.js';
-import {
-    hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource,
-    propertyIsBlocked,
-} from './properties.js';
-import { floatHeroDown } from './terrain_movement.js';
+import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, propertyIsBlocked } from './properties.js';
 import { artifactById } from './artifacts.js';
 import { rnz } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
+import { floatHeroDown } from './trap.js';
 
 export type LevitationDescentResult =
     | { handled: false; spentTurn: false }

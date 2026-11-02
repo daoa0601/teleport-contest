@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MAGIC_PORTAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';

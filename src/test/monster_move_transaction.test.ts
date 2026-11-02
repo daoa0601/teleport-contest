@@ -1,15 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { MM_ANGRY, NO_MINVENT, PIT, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction, takeMonsterTurn } from '../js/monmove.js';
 import { ROCK } from '../js/object_data.js';
-import { maketrap } from '../js/mklev.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-
+import { maketrap } from '../js/trap.js';
 // C monmove.c:m_move() calls tele_restrict() after a tengu's one-in-five
 // teleport probe; the refusal line pages, and the same m_move() then runs
 // ordinary destination selection and postmov().

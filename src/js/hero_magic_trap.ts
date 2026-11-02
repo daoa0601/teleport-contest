@@ -1,30 +1,26 @@
 // Hero magic-trap outcomes. C trap.c:domagictrap().
+
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 import { heroSpineName } from './body_parts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { A_CHA, In_quest, isok, Upolyd } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { triggerHeroFireTrap } from './fire_trap.js';
+import { triggerHeroFireTrap } from './trap.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { makeDeaf } from './potion.js';
+import { makeDeaf, showInvisibilityMessage, makeBlinded } from './potion.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
-import { showInvisibilityMessage } from './potion.js';
 import { heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import {
-    grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty,
-    hasInvokedProperty, hasWornProperty, removeIntrinsicProperty,
-} from './properties.js';
+import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, removeIntrinsicProperty } from './properties.js';
 import { onQuestStart } from './quest.js';
 import { rn1, rnd } from './rng.js';
 import { applyRemoveCurseSpell } from './read.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { makeBlinded } from './potion.js';
 import { tameMonster } from './dog.js';
 
 const M2_NEUTER = 0x00040000;

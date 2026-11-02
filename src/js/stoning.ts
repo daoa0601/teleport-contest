@@ -4,21 +4,20 @@
 // timeout.c stoned_dialogue(); potion.c make_stoned() lives in potion.ts
 // (setHeroPetrificationTimeout).
 
-import { heroIsHallucinating } from './senses.js';
+import { heroIsHallucinating, heroIsBlind, heroIsDeaf } from './senses.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
-import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { makePlural, withIndefiniteArticle, corpseName, killerObjectName, objectMonsterName } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
-
 import type { PetrificationKillerFormat } from './potion.js';
 import { A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
 import { canSpotMonster, randomDisplayMonsterSubject } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -27,31 +26,25 @@ import { game, requireLiveGame } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
-import {
-    AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC,
-    AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS,
-} from './monster_attack_types.js';
+import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { CORPSE, EGG } from './object_data.js';
-import { corpseName, killerObjectName, objectMonsterName } from './objnam.js';
-import {
-    heroHasNoLimbs, heroIsPolymorphed, polymonHero,
-} from './polyself.js';
+import { heroHasNoLimbs, heroIsPolymorphed, polymonHero } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { openingTinMaySaveHero } from './eat.js';
 import { uswapwepgone, uwepgone } from './wield.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rn2 } from './rng.js';
+import { resolveImmediatePetrification } from './trap.js';
 
 const PM_CHICKATRICE = 9;
 const PM_COCKATRICE = 10;
 const PM_MEDUSA = 284;
-const PM_STONE_GOLEM = 257;
+export const PM_STONE_GOLEM = 257;
 const S_GOLEM = 55;
 const G_UNIQ = 0x1000;
 const M2_PNAME = 0x00080000;
@@ -264,36 +257,6 @@ export function formCanBecomeStoneGolem(mnum: number | undefined, state: GameSta
     );
     return mnum !== undefined && MONSTER_SYMBOL[mnum] === S_GOLEM && mnum !== PM_STONE_GOLEM
         && !stoneGolemGenocided;
-}
-
-export async function resolveImmediatePetrification({
-    state = game,
-    killer,
-    publish = plineWithContinuation,
-    die = finishHeroDeath,
-}: {
-    state?: GameState;
-    killer: string;
-    publish?: MessagePublisher;
-    die?: DeathHandler;
-}) {
-    // C trap.c:instapetrify() is a no-op for a stoning-resistant hero.
-    if (heroResistsStoning(state)) return { died: false, transformed: false };
-    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
-        const result = await polymonHero(PM_STONE_GOLEM);
-        if (result.transformed || result.died)
-            return { died: !!result.died, transformed: !!result.transformed };
-    }
-
-    await publish('You turn to stone...');
-    const died = await die({
-        killer,
-        killerFormat: KILLED_BY,
-        deathVerb: 'turned to stone',
-        deathLineShown: true,
-        deathType: STONING,
-    });
-    return { died: !!died, transformed: false };
 }
 
 export function heroWouldPetrifyFromFlesh(mnum: number | undefined, state: GameState = game): boolean {

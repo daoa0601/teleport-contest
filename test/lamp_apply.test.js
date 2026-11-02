@@ -1,16 +1,17 @@
+import { addInventoryObject } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROOM, SHOPBASE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requirePlayingGame, requireGameLevel } from '../js/gstate.js';
-import { igniteItems, transformMagicLampToOilLamp } from '../js/light.js';
-import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, WAX_CANDLE, } from '../js/object_data.js';
+import { transformMagicLampToOilLamp } from '../js/light.js';
+import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { cansee, vision_recalc, vision_reset_new_level, } from '../js/vision.js';
-import { applyInventoryObject as applyInventoryA, } from './support/commands.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { applyInventoryObject as applyInventoryA } from './support/commands.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { igniteItems } from '../js/trap.js';
 async function freshLampState(otyp, overrides = {}, seed = 1n) {
     freshPlayableRoom({
         seed,

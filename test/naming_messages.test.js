@@ -10,7 +10,7 @@ import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDG
 import { useContainer } from '../js/container.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
-import { fireDamageObject } from '../js/fire_damage.js';
+import { fireDamageObject } from '../js/trap.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { announceGlobMerge } from '../js/glob.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -30,7 +30,7 @@ import { beginMonsterPitTrap, finishMonsterPitTrap, tryMonsterTrapEscape } from 
 import { AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE, } from '../js/object_data.js';
 import { dropObjectAtHero } from '../js/hero_drop.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
-import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/projectile_trap.js';
+import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap } from '../js/rock_trap.js';
 import { chargeAlteredUnpaidObject } from '../js/shk.js';
@@ -39,7 +39,7 @@ import { bookCursed, studyBook } from '../js/spellbook_study.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
 import { turnObjectWithUndeadMagic } from '../js/undead_turning.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from '../js/vibrating_square_trap.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

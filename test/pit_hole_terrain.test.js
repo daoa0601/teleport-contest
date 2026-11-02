@@ -6,13 +6,14 @@ import { addBuriedObject } from '../js/dig.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { updateIceObjectTimersAt } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { countLevelFeatures, maketrap } from '../js/mklev.js';
+import { countLevelFeatures } from '../js/mklev.js';
 import { DAGGER } from '../js/object_data.js';
 import { levelTimers, objectTimers, scheduleLevelTimer, scheduleObjectTimer } from '../js/timeout.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { corpseObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { maketrap } from '../js/trap.js';
 for (const [name, levelFlag, expected] of [
     ['ordinary level', null, DOOR],
     ['maze', 'is_maze_lev', ROOM],

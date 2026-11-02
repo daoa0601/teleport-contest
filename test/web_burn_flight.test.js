@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TT_WEB, WEB } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
-import { setHeroTrap } from '../js/hero_traps.js';
+import { setHeroTrap } from '../js/trap.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';

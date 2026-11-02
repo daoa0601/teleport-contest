@@ -1,9 +1,7 @@
 // C mklev.c:mkinvokearea()/mkinvpos(). The rings are deliberately visited
 // in native order: actors encounter the changed terrain before the next ring.
-import {
-    COLNO, ROWNO, COULD_SEE, IN_SIGHT, FIRE_TRAP, IRONBARS, IS_STWALL, MOAT, ROOM,
-    TT_BURIEDBALL,
-} from './const.js';
+
+import { COLNO, ROWNO, COULD_SEE, IN_SIGHT, FIRE_TRAP, IRONBARS, IS_STWALL, MOAT, ROOM, TT_BURIEDBALL } from './const.js';
 import { buriedBallToPunishment } from './dig.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { flush_screen, newsym } from './display.js';
@@ -12,22 +10,18 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
+import { finishMonsterLiquidDeath, resolveMonsterLiquid, revealMonsterAppearance } from './mon.js';
 import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
+import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
 import { impossible, panic } from './diagnostics.js';
-import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
-import { maketrap, mkstairs } from './mklev.js';
-import { finishMonsterLiquidDeath, resolveMonsterLiquid } from './mon.js';
-import { revealMonsterAppearance } from './mon.js';
+import { mkstairs } from './mklev.js';
 import { monsterAtPosition } from './steed.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, resetHeroTrap, deleteTrap, maketrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { fractureRock } from './rock_breakage.js';
-import { resetHeroTrap } from './terrain_movement.js';
 import { isPoolAt } from './dbridge.js';
-
-import { deleteTrap } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 
 function invocationRings(x: number, y: number): Position[][] {

@@ -9,70 +9,51 @@ import { recoverTimedLuck } from './timeout_luck.js';
 import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
 import { breathingDialogue, wallPassageDialogue, finishBreathingTimeout, finishWallPassageTimeout } from './timeout_warnings.js';
 import { levitationDialogue, advanceLevitationTimeout, advanceFlyingTimeout } from './levitation_timeout.js';
-
-
 import { formatFeltMessage } from './hero_speech.js';
-import { makeBlinded } from './potion.js';
-import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
-import { makeDeaf } from './potion.js';
+import { makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands } from './potion.js';
 import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
-
-import { requireInitializedGame, game } from './gstate.js';
+import { requireInitializedGame, game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { PropertyName } from './property_types.js';
-import { nomul } from './hack.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging } from './mon.js';import { deferredDecor } from './dungeon_feature.js';
-import { rnd } from './rng.js';
+import { nomul, invWeight } from './hack.js';
+import { wakeMonstersNearWithMessages, restartMonsterShapechanging } from './mon.js';
+import { deferredDecor } from './dungeon_feature.js';
+import { rnd, rn2 } from './rng.js';
 import { propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, setPropertyTimeout } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { setSlipperyHands } from './potion.js';
 import { healHeroLegs } from './hero_legs.js';
-import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
+import { putHeroToSleep, heroIsUnaware } from './hero_sleep.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue } from './hero_illness.js';
 import { advanceHeroSliming, heroIsSliming, slimeDialogue } from './slime.js';
 import { isPoolAt, isIceAt } from './dbridge.js';
-import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE } from './const.js';
-import { observeObjectForNaming, objectDescription, withIndefiniteArticle } from './objnam.js';
-import { ROCK } from './object_data.js';
-import { heroFootName } from './body_parts.js';
-import { heroResistsStoning } from './stoning.js';
+import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
+import { observeObjectForNaming, objectDescription, withIndefiniteArticle, makePlural, corpseName, killerObjectName } from './objnam.js';
+import { ROCK, CORPSE } from './object_data.js';
+import { heroFootName, heroHandName } from './body_parts.js';
+import { heroResistsStoning, advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, touchPetrifies } from './stoning.js';
 import { monsterName } from './do_name.js';
-import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { currentAttribute } from './attrib.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, polymonHero } from './polyself.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import {
-    advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, resolveImmediatePetrification,
-    touchPetrifies,
-} from './stoning.js';
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
-import { polymonHero } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { makePlural } from './objnam.js';
-
 import { newsym, randomDisplayMonsterName, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
 import { cleanupObjectBurn } from './light.js';
-import { OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
-import { heroHandName } from './body_parts.js';
 import { eatingDangerousCorpse } from './eat.js';
-import { requireLiveGame, requirePlayingGame } from './gstate.js';
-import { heroIsUnaware } from './hero_sleep.js';
-import { CORPSE } from './object_data.js';
-import { corpseName, killerObjectName } from './objnam.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { invWeight } from './hack.js';
+import { heroIsUnconscious, resolveImmediatePetrification } from './trap.js';
 
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
 // properties have no dedicated recovery action; their source projection still

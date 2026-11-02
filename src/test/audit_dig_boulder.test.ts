@@ -4,13 +4,12 @@ import { rhack } from '../js/cmd.js';
 import { PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { BOULDER, WAN_DIGGING } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-
+import { maketrap } from '../js/trap.js';
 void test('digging away a covering boulder exposes a hiding monster', async () => {
     await freshObjectRoom();
     const spider = await createMonsterAt('cave spider', 11, 10);

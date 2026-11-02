@@ -1,18 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    ARROW_TRAP, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, HEADSTONE,
-    LAVAPOOL, LAVAWALL, MAGIC_PORTAL, MOAT, POOL, ROOM, VIBRATING_SQUARE, WATER,
-} from '../js/const.js';
+import { ARROW_TRAP, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, HEADSTONE, LAVAPOOL, LAVAWALL, MAGIC_PORTAL, MOAT, POOL, ROOM, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { maketrap } from '../js/mklev.js';
 import { BOULDER, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { cleanupSpecialLevelMap } from '../js/special_level_cleanup.js';
 import { freshGame } from './support/game-state.js';
 import { floorObject } from './support/game-objects.js';
-
+import { maketrap } from '../js/trap.js';
 for (const [name, terrain] of [
     ['pool', POOL], ['moat', MOAT], ['water', WATER],
     ['raised drawbridge', DRAWBRIDGE_UP], ['lava pool', LAVAPOOL], ['lava wall', LAVAWALL],

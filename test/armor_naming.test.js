@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { BEAR_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { objectName } from '../js/objnam.js';
 import { IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES } from '../js/object_data.js';

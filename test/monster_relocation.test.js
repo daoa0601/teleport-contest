@@ -15,9 +15,9 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { createStaffedShop } from './support/shop.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { relocateMonsterTo, moveHeroByTeleport } from '../js/teleport.js';
-import { maketrap } from '../js/mklev.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 void test('relocating an engulfer carries its swallowed hero without releasing the hold', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);

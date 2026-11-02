@@ -1,29 +1,21 @@
 import { rhack } from '../js/cmd.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/do_wear.js';
-
-import { wearHeroArmor } from '../js/do_wear.js';
-
+import { wearHeroAccessory, wearHeroArmor } from '../js/do_wear.js';
 import { A_INT, A_WIS, HUNGRY, M_SEEN_SLEEP, NOT_HUNGRY, SATIATED, WEAK } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroIsUnconscious } from '../js/hero_sleep.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { resetInputState } from '../js/input.js';
-import {
-    POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT,
-    DUNCE_CAP, POT_GAIN_ABILITY, POT_HALLUCINATION, POT_PARALYSIS, POT_SLEEPING,
-    RIN_FREE_ACTION,
-} from '../js/object_data.js';
+import { POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, DUNCE_CAP, POT_GAIN_ABILITY, POT_HALLUCINATION, POT_PARALYSIS, POT_SLEEPING, RIN_FREE_ACTION } from '../js/object_data.js';
 import { applyPotionMentalEffect } from '../js/potion.js';
 import { grantIntrinsicProperty, revokeIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';
-import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-
+import { heroIsUnconscious } from '../js/trap.js';
 async function effect(type: number, properties: KnownObjectOverrides = {}) {
     const potion = await knownObject(type, properties);
     resetInputState().feed(' '.repeat(30));

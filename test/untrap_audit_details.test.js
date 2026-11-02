@@ -8,7 +8,7 @@ import { initRng } from '../js/rng.js';
 import { initializePet } from '../js/dog.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

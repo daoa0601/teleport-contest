@@ -1,20 +1,16 @@
-import { floorObjectsAt } from './support/level-state.js';
-import { addTrap } from './support/level-state.js';
-import { requirePlayingGame } from '../js/gstate.js';
+import { floorObjectsAt, addTrap } from './support/level-state.js';
+import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, PIT, ROOM, STONE, TT_BEARTRAP, TT_PIT } from '../js/const.js';
-import { game } from '../js/gstate.js';
-import { applyHeroLocationEffects } from '../js/hack.js';
+import { applyHeroLocationEffects, switchHeroTerrain } from '../js/hack.js';
 import { BOULDER } from '../js/object_data.js';
 import { grantIntrinsicProperty, refreshMovementProperties } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { floatHeroUp, resetHeroTrap } from '../js/terrain_movement.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { switchHeroTerrain } from '../js/hack.js';
-
+import { floatHeroUp, resetHeroTrap } from '../js/trap.js';
 for (const property of ['levitation', 'flying'] as const) {
     void test(`${property} stops inside solid terrain and resumes after it opens`, async () => {
         await freshObjectRoom();

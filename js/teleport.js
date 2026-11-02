@@ -1,5 +1,3 @@
-// teleport.js - same-level teleportation.
-// C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
@@ -12,14 +10,14 @@ import { pline, plineWithContinuation } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
-import { randomTeleportDepth } from './level_teleport.js';
+import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
-import { clampHoleDestination } from './hole_destination.js';
+import { clampHoleDestination, deleteTrap, seeTrap, tryMonsterTrapEscape, fillPitWithBoulderAt, clearHeroTrap, heroIsUnconscious } from './trap.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { noticeAllMonsters, withMonsterNoticesBlocked } from './hack.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
+import { noticeAllMonsters, withMonsterNoticesBlocked, endVoluntaryMultiTurn, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt } from './hack.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters, shieldeff } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } from './apply.js';
 import { rn2, rnd } from './rng.js';
@@ -36,17 +34,12 @@ import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonste
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
+import { heroIsUnaware } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
-import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
-import { gotoLevel, scheduleLevelChange } from './level_change.js';
-import { makeStunned } from './potion.js';
-import { deleteTrap, seeTrap, tryMonsterTrapEscape } from './trap.js';
-import { endVoluntaryMultiTurn } from './hack.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
+import { makeStunned, makeConfused } from './potion.js';
 import { learnObjectType } from './o_init.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
@@ -57,7 +50,7 @@ import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
 import { unlinkObject } from './mkobj.js';
-import { shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt, } from './hack.js';
+import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 function requireLevel(state) {
     if (!state.level)
         throw new Error('Teleportation requires a dungeon level.');
@@ -1338,5 +1331,40 @@ async function settleRelocatedObject(object, oldx, oldy, x, y, state, publish) {
     else {
         await stolenValue(object, oldx, oldy, false, { silent: false, state, publish });
     }
+}
+// ── moved from src/js/trap.ts ──
+// C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
+// announcement before accepting its first character.
+export async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
+    requirePlayingGame(game);
+    await seeTrap(trap);
+    const hero = game.u;
+    // C hack.c:u_locomotion() gives the hero's active movement properties
+    // precedence over the species' normal way of moving.
+    const locomotion = heroLocomotion('step');
+    const verb = intentional ? 'trigger' : `${locomotion} onto`;
+    await plineWithContinuation(`You ${verb} a level teleport trap!`);
+    if (hero.antimagic && !intentional)
+        await shieldeff(hero.ux, hero.uy);
+    if (hero.antimagic && !intentional || In_endgame(hero.uz)) {
+        await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
+        return;
+    }
+    deleteTrap(trap);
+    await newsym(hero.ux, hero.uy);
+    await levelTeleport({
+        gotoLevel: (...args) => { scheduleLevelChange(args, gotoLevel ?? changeLevel); },
+    });
+    if (game.program_state.gameover)
+        return;
+    const controlled = heroControlsTeleport();
+    if (heroIsHallucinating(game) || controlled) {
+        await plineWithContinuation(`You briefly feel ${heroIsHallucinating(game) ? 'oriented' : 'centered'}.`);
+    }
+    else {
+        await plineWithContinuation(formatFeltMessage(`${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`));
+    }
+    if (!controlled)
+        await makeConfused((hero.confusionTurns ?? 0) + 3, { talk: false });
 }
 //# sourceMappingURL=teleport.js.map

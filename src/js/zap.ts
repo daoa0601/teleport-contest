@@ -3,7 +3,7 @@
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
 
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, learnObjectType, observeObject, objectClassForType } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
@@ -13,8 +13,7 @@ import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok,
 import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject } from './floor_object.js';
-import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
-
+import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -23,66 +22,49 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
-import { resetPick } from './lock.js';
-
+import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
-import { drawbridgeUnderlyingType } from './dbridge.js';
-
-
-import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
+import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
-
 import { commandResultCancelled } from './cmd.js';
-import { removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
-
+import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { meltIce } from './ice.js';
-import { consumeInventoryItem, inventoryItemDescription, delobj } from './invent.js';
+import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
-import { igniteItems, lightDamage, lightRoom } from './light.js';
-import { buryFloorObjectsAt } from './dig.js';
-import { deleteFloorTrap, maketrap, randomEngraving, CANDELABRUM_OF_INVOCATION } from './mklev.js';
+import { lightDamage, lightRoom } from './light.js';
+import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
+import { randomEngraving, CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters } from './trap.js';
-import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription } from './objnam.js';
-import { learnObjectType, observeObject, objectClassForType } from './o_init.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
-import { objectQuantity, splitObjectStack } from './mkobj.js';
-
+import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
+import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, monsterIsPlayerMonster, monsterIsWhirly, MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, requireMonsterData, monsterIsRider } from './monster_data.js';
-
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
 import { dissolveBars } from './projectile_bars.js';
-import { resetHeroTrap } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
-
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { isContainer } from './container.js';
-
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
-import { definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -99,12 +81,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import type { MonsterHitPointRandom } from './makemon.js';
-import { zapDigWithObject } from './dig.js';
-import { objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
-
 import { impossible } from './diagnostics.js';
-import { changeDoorByMagic } from './lock.js';
-
 import { recordMappedOverviewState } from './dungeon.js';
 import { forceDescribeDecor } from './dungeon_feature.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
@@ -113,7 +90,6 @@ import { explode } from './explosion.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand } from './immediate_zap.js';
 import { doEnlightenmentEffect, monsterStatusLine } from './insight.js';
 import { gotoLevel } from './level_change.js';
-import { mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject } from './mkobj.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
@@ -121,11 +97,10 @@ import { makeWish } from './wish.js';
 import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
-
 import { isEyewear, wearEyewear } from './eyewear.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
-import { fractureRock, sokobanGuilt } from './rock_breakage.js';
+import { fractureRock } from './rock_breakage.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';
 import { vegetarianCorpse } from './food_traits.js';
@@ -133,7 +108,6 @@ import { updateInventoryPresentation } from './u_init.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
-import { objectWeight } from './mkobj.js';
 
 export interface FloorBurnOptions {
     state?: GameState;
@@ -1793,7 +1767,6 @@ export function getObjectLocation(
     }
     return null;
 }
-
 
 function survived(monster: Monster): boolean {
     return !monster.dead && (monster.mhp ?? 0) > 0;

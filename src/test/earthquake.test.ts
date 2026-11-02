@@ -11,7 +11,7 @@ import { createEarthquake } from '../js/earthquake.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { heroIsPolymorphed } from '../js/polyself.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

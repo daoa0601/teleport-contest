@@ -12,7 +12,7 @@ import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { heroIsHallucinating } from '../js/senses.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { untrap } from '../js/untrap.js';
+import { untrap } from '../js/trap.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
