@@ -16,7 +16,8 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Trap } from './map_types.js';
-import { floorReachProblem, heroTeetersAtPit } from './trap.js';
+import { floorReachProblem } from './engrave.js';
+import { heroTeetersAtPit } from './trap.js';
 
 export interface PickupLocationProblem {
     messages: string[];

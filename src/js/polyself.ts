@@ -507,6 +507,11 @@ export async function stopStrangulationInImmuneForm(
     await publish('You are no longer being strangled.');
 }
 
+// C polyself.c:check_strangling() with on=TRUE: polymon() and polyman()
+// reach this half. The grip tightening also runs
+// makeknown(AMULET_OF_STRANGULATION) — discover_object() through
+// learnObjectType() — so the amulet enters the discoveries list even when
+// it was first put on in an immune body.
 export async function restartAmuletStrangulation(
     state = game, publish: MessagePublisher = plineWithContinuation,
 ) {

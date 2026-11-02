@@ -15,7 +15,7 @@ import { hitFloorWithObject } from './dothrow.js';
 import { observeObject } from './o_init.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';
 
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { unlinkObject } from './mkobj.js';

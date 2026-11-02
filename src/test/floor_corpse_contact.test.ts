@@ -12,7 +12,7 @@ import { LAVAPOOL } from '../js/const.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
-import { heroCanReachFloor } from '../js/floor_reach.js';
+import { heroCanReachFloor } from '../js/engrave.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

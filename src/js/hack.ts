@@ -21,7 +21,7 @@ import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
 import type { DeathHandler, FinishHeroDeathOptions, KillerFormat } from './end.js';
 import { placeObject, stack_object, updateIceObjectTimersAt, remove_object } from './floor_object.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { heroIsUnaware } from './senses.js';
 import { putHeroToSleep } from './timeout.js';
 import { resetHeroFaint, getHungry, spendHeroNutrition } from './eat.js';

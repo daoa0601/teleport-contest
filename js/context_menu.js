@@ -3,7 +3,7 @@ import { ALTAR, BOLT_LIM, CLICK_1, CLICK_2, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, 
 import { canSpotMonster, glyphAt } from './display.js';
 import { clearMessageWindow } from './tty_topline.js';
 import { floorObjectDescription } from './floor_object_display.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { isContainer } from './container.js';

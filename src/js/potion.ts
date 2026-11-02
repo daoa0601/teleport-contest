@@ -35,7 +35,7 @@ import { addExperience, gainExperienceLevel, randomExperience } from './exper.js
 import { explode } from './explosion.js';
 import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToErosion, captureLevitationState, floatHeroUp } from './trap.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { fruitName } from './fruit.js';
 import type { GameState, PlayingGameState } from './game_state.js';

@@ -28,7 +28,7 @@ import { carryableObjectCount, liftObject } from './lift_object.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { promptYesNoQuit, yn_function, getLine } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { hideHeroUnder } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL } from './shk.js';
 import { pickupLocationProblem } from './pickup_location.js';
@@ -63,7 +63,8 @@ import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnaware } from './senses.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
-import { floorReachProblem, heroEscapedShaft, heroTeetersAtPit } from './trap.js';
+import { floorReachProblem } from './engrave.js';
+import { heroEscapedShaft, heroTeetersAtPit } from './trap.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }

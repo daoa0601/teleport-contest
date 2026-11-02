@@ -30,7 +30,7 @@ import { carryableObjectCount, liftObject } from './lift_object.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { promptYesNoQuit, yn_function, getLine } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { hideHeroUnder } from './mon.js';
 import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL } from './shk.js';
 import { pickupLocationProblem } from './pickup_location.js';
@@ -69,7 +69,8 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import { floorReachProblem, heroEscapedShaft, heroTeetersAtPit } from './trap.js';
+import { floorReachProblem } from './engrave.js';
+import { heroEscapedShaft, heroTeetersAtPit } from './trap.js';
 
 interface PickupSource {
     x: number;

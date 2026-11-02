@@ -559,10 +559,12 @@ export async function wizLevelChange() {
     game.context.move = 0;
 }
 
-// C wizcmds.c:wiz_makemap(), makemap_remove_mons(), makemap_unmakemon();
-// cmd.c:makemap_prepost(). Pets leave before the old level is discarded.
-
 const G_UNIQ = 0x1000;
+
+// C wizcmds.c:wiz_makemap(), makemap_remove_mons(), makemap_unmakemon();
+// cmd.c:makemap_prepost(pre) and (post) frame the rebuild: Pets leave
+// before the old level is discarded, and the helpers below own the two
+// halves of that C function.
 export async function wizMakeMap(): Promise<void> {
     requirePlayingGame(game);
     game.context.move = 0;
@@ -585,7 +587,8 @@ export async function wizMakeMap(): Promise<void> {
     await returnToReplacementLevel(pets, wasInsideTower);
 }
 
-// C wizcmds.c:makemap_remove_mons().
+// C wizcmds.c:makemap_remove_mons(), the first step of
+// cmd.c:makemap_prepost(pre); dmonsfree() is purgeDeadMonsters() at its end.
 async function removeOldLevelMonsters(): Promise<Monster[]> {
     const pets = await collectLevelFollowers(game, true);
     // C fmon is newest first, whereas level.monsters appends births.
@@ -637,7 +640,13 @@ function sameLevel(first: DungeonLocation | undefined, second: DungeonLocation):
 }
 
 // C dungeon.c:rm_mapseen(): discard the overview record of the level being
-// replaced (cmd.c:makemap_prepost()).
+// replaced (cmd.c:makemap_prepost(pre)). The rest of that pre half lives
+// here: dobjsfree() plus savelev(FREEING) release the level's objects —
+// get_freeing_nhfile() and close_nhfile() are only the file plumbing
+// around that release, which the port performs in memory — set_uinwater(0)
+// is the u.uinwater write below, and the svd.dndest/svu.updest memsets
+// need no counterpart because the arrival regions belong to the
+// replacement level, which rebuilds them.
 async function discardOldLevel(): Promise<void> {
     requirePlayingGame(game);
     const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
@@ -688,6 +697,8 @@ function freeLevelObject(object: GameObject): void {
     deallocateObject(object);
 }
 
+// C cmd.c:makemap_prepost(pre) prize reset: remove_achievement() revokes
+// the recorded Mine's-end or Sokoban-prize credit before the oid resets.
 async function revokeLevelPrize(): Promise<void> {
     requirePlayingGame(game);
     const prototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
@@ -706,6 +717,13 @@ async function revokeLevelPrize(): Promise<void> {
     }
 }
 
+// C cmd.c:makemap_prepost(FALSE): re-entering the rebuilt level —
+// vision_reset() is vision_reset_new_level(), u_on_rndspot() is
+// placeHeroAtRandomArrival(), losedogs() is deliverMigratingMonsters(),
+// u_collide_m() is resolveHeroArrivalCollision(), initrack() is the track
+// reset, and deliver_splev_message() is deliverSpecialLevelMessages().
+// The INSURANCE save_currentstate() checkpoint is modeled by the
+// save_engravings() rewind on the flags.checkpoint path.
 async function returnToReplacementLevel(pets: readonly Monster[], wasInsideTower: boolean): Promise<void> {
     requirePlayingGame(game);
     vision_reset_new_level();

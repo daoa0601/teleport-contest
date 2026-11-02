@@ -3,7 +3,7 @@ import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, MAX_OIL_IN_FLASK } from './c
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { dropObjectAtHero } from './hero_drop.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { makePlural } from './objnam.js';

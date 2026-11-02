@@ -15,7 +15,7 @@ import { holdingMonsterName } from './hero_expulsion.js';
 import { inventoryItemDescription } from './invent.js';
 import { objectMonsterName, ownedObjectAction, observeObjectForNaming, definiteObjectAction, } from './objnam.js';
 import { possessiveName } from './hacklib.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';
 import { dropRingIntoSink } from './ring_sink.js';
 import { hitFloorWithObject } from './dothrow.js';

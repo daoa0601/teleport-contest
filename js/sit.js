@@ -10,7 +10,7 @@ import { game, requireInitializedGame } from './gstate.js';
 import { waterDamageObject, triggerHeroTrap } from './trap.js';
 import { throneSitEffect } from './throne.js';
 import { spendHeroNutrition } from './eat.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { stack_object } from './floor_object.js';
 import { dropObjectAtHero } from './hero_drop.js';

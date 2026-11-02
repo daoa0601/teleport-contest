@@ -33,7 +33,7 @@ import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { surfaceName } from './terrain_name.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade } from './object_properties.js';

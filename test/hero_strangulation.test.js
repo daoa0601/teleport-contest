@@ -82,6 +82,24 @@ void test('a headless cloud can wear the amulet without being strangled', async 
     await wearSetupAmulet(await addInventoryObject(AMULET_OF_STRANGULATION));
     assert.equal(heroIsStrangled(), false);
 });
+void test('polymorphing into a vulnerable body discovers the amulet and starts strangulation', async () => {
+    await freshObjectRoom({ flags: { debug: true } });
+    requireFixtureGame(game);
+    installPolymorphedHero('fog cloud');
+    const amulet = await addInventoryObject(AMULET_OF_STRANGULATION, { typeKnown: false });
+    await wearSetupAmulet(amulet);
+    // Wearing it on a headless body neither strangles nor discovers it
+    // (C do_wear.c:Amulet_on() only calls makeknown() for a strangleable
+    // body).
+    assert.equal(heroIsStrangled(), false);
+    assert.equal(game._knownObjectTypes?.has(AMULET_OF_STRANGULATION), false);
+    pushKeys('polyself\ngoblin\n                ');
+    await rhack('#'.charCodeAt(0));
+    // C polyself.c:check_strangling(TRUE) restarts the grip and runs
+    // makeknown(AMULET_OF_STRANGULATION), so '\' would now list it.
+    assert.equal(game.u.strangledTurns, 6);
+    assert.ok(game._knownObjectTypes?.has(AMULET_OF_STRANGULATION));
+});
 void test('a vampire is strangled despite not needing to breathe', async () => {
     await freshObjectRoom();
     requireFixtureGame(game);

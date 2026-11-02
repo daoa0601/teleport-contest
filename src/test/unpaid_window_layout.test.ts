@@ -50,3 +50,43 @@ void test('the unpaid-items window measures putstr lines and pagers natively', a
     assert.equal(firstText, 14);
     assert.match(content[content.length - 1] ?? '', /--More--/);
 });
+
+// C invent.c:3687-3688 dounpaid() calls reassign() before filling the
+// window whenever inventory letters rotate (!fixinv), so scrambled letters
+// are renumbered consecutively from 'a' for the listing.
+void test('the unpaid window renumbers rotating inventory letters', async () => {
+    await freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14 });
+    requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({
+        left: 9, right: 13, top: 9, bottom: 11, keeperX: 12, keeperY: 10,
+        doorX: 9, doorY: 10, shopType: SHOPBASE,
+    });
+    const boots = await knownObject(ELVEN_BOOTS, { dknown: true, unpaid: true });
+    const food = await knownObject(FOOD_RATION, { dknown: true, unpaid: true });
+    shopkeeper.eshk.bill = [
+        { bo_id: boots.o_id, bquan: 1, useup: false, price: 100 },
+        { bo_id: food.o_id, bquan: 1, useup: false, price: 23 },
+    ];
+    await addInventoryItem(boots);
+    await addInventoryItem(food);
+    shopkeeper.eshk.billct = 2;
+    game.flags.fixinv = false;
+    boots.invlet = 'z';
+    food.invlet = 'c';
+    const input = resetInputState();
+    let rows: string[] = [];
+    input.beforeRead = () => {
+        rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join(''));
+        return Promise.resolve();
+    };
+    input.feed('u');
+    await answerPrompts(rhack('I'.charCodeAt(0)), input, [
+        { prompt: /--More--/, keys: ' ' },
+    ]);
+    const lines = rows.join('\n');
+    assert.match(lines, /a - an uncursed \+0 pair of elven boots\s+100 zorkmids/);
+    assert.match(lines, /b - an uncursed food ration\s+23 zorkmids/);
+    assert.doesNotMatch(lines, /z - /);
+    assert.equal(boots.invlet, 'a');
+    assert.equal(food.invlet, 'b');
+});

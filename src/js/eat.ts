@@ -28,7 +28,7 @@ import { addExperience, checkExperienceLevel, gainExperienceLevel } from './expe
 import { explode } from './explosion.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { stack_object } from './floor_object.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { isEdibleFood, selectFoodToEat } from './food_selection.js';
 import type { FoodSelection } from './food_selection.js';
 import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.js';

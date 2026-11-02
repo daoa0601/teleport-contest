@@ -57,7 +57,6 @@ src/js/familiar.ts	dog.c
 src/js/floor_naming.ts	do_name.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
-src/js/floor_reach.ts	engrave.c
 src/js/fruit.ts	objnam.c
 src/js/genocide.ts	read.c
 src/js/glob.ts	mkobj.c
