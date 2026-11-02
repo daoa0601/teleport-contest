@@ -248,9 +248,9 @@ export function killGenocidedMonster(monster: Monster, state: GameState): Promis
 }
 
 // C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
+// carried objects, creates no corpse or experience, and sterilizes eggs.
 // C mon.c:kill_eggs(): the sterile-egg pass stops hatch timers of every
 // egg whose species was genocided, across all object lists at once.
-// carried objects, creates no corpse or experience, and sterilizes eggs.
 export async function killGenocidedMonsters(state: GameState = game): Promise<GenocideRemovalResult> {
     if (state !== game)
         throw new Error('genocide removal requires the live game state');
@@ -1239,7 +1239,8 @@ interface HidingActor {
 interface HidingPlace { undetected: boolean; cover: GameObject | null; water: boolean }
 
 // C mon.c:restrap(): an unwatched hider hides again (mimics take a new
-// disguise); one rn2(3) probe, and the hero's own square never qualifies.
+// disguise) after one rn2(3) probe; a hider the hero can sense stays
+// visible while next to the hero.
 export async function attemptMonsterRestrap(
     monster: Monster, state: GameState = game,
     { random = rn2, calls }: { random?: RandomBelow; calls?: MonsterCallLog } = {},
@@ -4083,9 +4084,9 @@ export async function normalizeMonsterShape(
 }
 
 // C mon.c:restartcham(). Cancellation still forbids changing form; a sleeping
-// C mon.c:m_restartcham(): each shapechanger resumes its innate form
-// unless cancelled; sleeping mimics redraw their disguise.
 // mimic regains its ordinary disguise once protection stops suppressing it.
+// C mon.c:m_restartcham(): the iter_mons callback — each shapechanger
+// resumes its innate form unless cancelled.
 export async function restartMonsterShapechanging(state: GameState = game): Promise<void> {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {

@@ -251,8 +251,8 @@ async function dropSaddle(monster, state) {
     await removeObjectFromMonsterInventory(monster, saddle, state);
     await landFloorObject(saddle, monster.mx, monster.my, { state });
 }
-// C mon.c:mimic_hit_msg() for the extra-healing branch: an object mimic
-// hit by healing magic seems a more vivid color than before.
+// C mon.c:mimic_hit_msg() for healing and extra healing alike: an object
+// mimic hit by either spell seems a more vivid color than before.
 async function healMonsterWithMagic(monster, spell, state) {
     const extra = spell.otyp === SPE_EXTRA_HEALING;
     const amount = d(6, extra ? 8 : 4);
