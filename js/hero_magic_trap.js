@@ -22,6 +22,9 @@ import { applyRemoveCurseSpell } from './read.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { tameMonster } from './dog.js';
 const M2_NEUTER = 0x00040000;
+// C trap.c:domagictrap(): the hero's magic-trap outcomes — the 1-in-2
+// monster-summoning flash and roar, or the fate table for blindness,
+// invisibility, paralysis, and the rest.
 export async function triggerHeroMagicTrapEffect() {
     requirePlayingGame(game);
     const currentLevel = game.u.uz;

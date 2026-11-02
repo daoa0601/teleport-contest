@@ -2,6 +2,9 @@
 import { game } from './gstate.js';
 const ENTRYMAX = 100; // sysopt.entrymax (config.h ENTRYMAX) in the pinned build
 export const SCORE_RECORD_STORAGE_KEY = 'teleport-contest:record:v1';
+// C topten.c:readentry(): parse the saved record list; one malformed
+// entry ends it. C topten.c:discardexcess(): the ENTRYMAX cap applied
+// while reading.
 export function loadScoreRecords(state = game) {
     let raw;
     try {
@@ -51,6 +54,7 @@ function readNativeFieldWidths(record) {
         death: record.death.slice(0, DEATH_WIDTH),
     };
 }
+// C topten.c:writeentry(): serialize the record list back to storage.
 export function saveScoreRecords(records, state = game) {
     const value = JSON.stringify(records);
     try {

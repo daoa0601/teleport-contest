@@ -37,6 +37,8 @@ import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { deleteFloorTrap, resetHeroTrap } from './trap.js';
 
+// C do.c:danger_uprops(): petrifying, sliming, strangling, or sick —
+// waiting or searching through one is refused.
 function dangerousHeroProperties() {
     const u = game.u;
     return !!(u.stoned || (u.stonedTurns ?? 0) > 0

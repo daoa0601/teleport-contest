@@ -115,6 +115,8 @@ export function recordAchievement(state, achievement) {
     }
     return true;
 }
+// C insight.c:achieve_rank(): a rank index to achievement number, negated
+// when female so the chronicle reports gender-specific ranks.
 export function rankAchievement(rank, female = false) {
     if (!Number.isInteger(rank) || rank < 1 || rank > 8)
         return 0;

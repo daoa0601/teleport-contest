@@ -1,5 +1,7 @@
 // C role.c:plnamesuffix(). Name tokens override rc-file character choices.
 import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
+// C role.c:plnamesuffix(): split a dash-suffixed name into character
+// facets; commas become spaces for the record file.
 export function parseCharacterName(raw) {
     const [name = '', ...tokens] = raw.split('-');
     const result = {

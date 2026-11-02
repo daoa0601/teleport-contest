@@ -50,6 +50,10 @@ function bearTrapCanCatch(monster: Monster, state: GameState) {
     );
 }
 
+// C trap.c:trapeffect_bear_trap(): the monster branch — big enough, solid
+// and grounded monsters are caught and take the d(2,4) bite unless they
+// wear iron shoes (C trap.c:wearing_iron_shoes()); evaders only reveal a
+// forced trap.
 export function beginMonsterBearTrap(
     monster: Monster,
     trap: Trap,

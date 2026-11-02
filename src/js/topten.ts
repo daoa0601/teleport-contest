@@ -73,6 +73,8 @@ export async function nameObjectFromTopten(object: GameObject | null | undefined
     return object;
 }
 
+// C topten.c:classmon(): the record's role letters to a player-monster
+// form.
 async function roleMonster(code: string, state: GameState): Promise<number> {
     const role = roles.find(candidate => code.slice(0, 3) === candidate.filecode);
     // roles.js stores player-monster offsets rather than absolute species.

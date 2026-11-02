@@ -1,5 +1,6 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
 src/js/achievements.ts	insight.c
+src/js/anti_magic_trap.ts	trap.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
 src/js/attrib.ts	attrib.c
@@ -7,6 +8,7 @@ src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
 src/js/barehand_combat.ts	uhitm.c
+src/js/bear_trap.ts	trap.c
 src/js/bones_admission.ts	bones.c
 src/js/bones_death.ts	bones.c
 src/js/bones_monster.ts	bones.c
@@ -16,6 +18,8 @@ src/js/bulk_takeoff.ts	do_wear.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
+src/js/character_name.ts	role.c
+src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
 src/js/confused_loot.ts	pickup.c
@@ -32,6 +36,7 @@ src/js/dogmove.ts	dogmove.c
 src/js/dokick.ts	dokick.c
 src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
+src/js/drop_menu.ts	do.c
 src/js/dungeon.ts	dungeon.c
 src/js/dungeon_feature.ts	pickup.c
 src/js/eat.ts	eat.c
@@ -74,11 +79,13 @@ src/js/hero_hurtle.ts	dothrow.c
 src/js/hero_inventory.ts	invent.c
 src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
+src/js/hero_magic_trap.ts	trap.c
 src/js/hero_melee.ts	uhitm.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_natural_damage.ts	uhitm.c
 src/js/hero_natural_theft.ts	uhitm.c
 src/js/hero_object_contact.ts	uhitm.c
+src/js/hero_polymorph_trap.ts	trap.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
@@ -101,6 +108,7 @@ src/js/jsmain.ts	wintty.c
 src/js/just_picked.ts	pickup.c
 src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
+src/js/landmine_trap.ts	trap.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/levitation_drop.ts	artifact.c
 src/js/lift_object.ts	pickup.c
@@ -108,6 +116,7 @@ src/js/lock.ts	lock.c
 src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/selection.ts	botl.c
 src/js/makemon.ts	makemon.c
+src/js/map_object_description.ts	pager.c
 src/js/maze_terrain.ts	mkmaze.c
 src/js/mcastu.ts	mcastu.c
 src/js/menu_coloring.ts	windows.c
@@ -133,10 +142,12 @@ src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
 src/js/pick_axe.ts	mon.c
 src/js/pickup.ts	pickup.c
+src/js/pickup_location.ts	hack.c
 src/js/player_name.ts	do_name.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
 src/js/poison.ts	attrib.c
+src/js/polymorph_trap.ts	trap.c
 src/js/posix_regex.ts	cmd.c
 src/js/potion.ts	potion.c
 src/js/priest.ts	priest.c
@@ -153,11 +164,17 @@ src/js/rect.ts	rect.c
 src/js/revival_species.ts	read.c
 src/js/ring_sink.ts	do.c
 src/js/rng.ts	rnd.c
+src/js/rock_trap.ts	trap.c
+src/js/roles.ts	role.c
+src/js/rolling_boulder.ts	trap.c
 src/js/rumor.ts	rumors.c
+src/js/rust_trap.ts	trap.c
 src/js/scatter.ts	explode.c
+src/js/score_records.ts	topten.c
 src/js/shknam.ts	shknam.c
 src/js/sight_change.ts	zap.c
 src/js/skills.ts	weapon.c
+src/js/sleep_gas_trap.ts	trap.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
@@ -165,9 +182,11 @@ src/js/special_location.ts	sp_lev.c
 src/js/special_spellbooks.ts	spell.c
 src/js/spell.ts	spell.c
 src/js/spellbook_study.ts	spell.c
+src/js/squeaky_board_trap.ts	trap.c
 src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
+src/js/takeoff_menu.ts	do_wear.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c
@@ -185,6 +204,7 @@ src/js/two_weapon.ts	wield.c
 src/js/uhitm.ts	uhitm.c
 src/js/undead_turning.ts	zap.c
 src/js/vault.ts	vault.c
+src/js/vibrating_square_trap.ts	trap.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
 src/js/wield.ts	wield.c

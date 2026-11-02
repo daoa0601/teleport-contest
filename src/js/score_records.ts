@@ -25,6 +25,9 @@ export interface ScoreRecord {
     death: string;
 }
 
+// C topten.c:readentry(): parse the saved record list; one malformed
+// entry ends it. C topten.c:discardexcess(): the ENTRYMAX cap applied
+// while reading.
 export function loadScoreRecords(state: GameState = game): ScoreRecord[] {
     let raw: string | null;
     try {
@@ -71,6 +74,7 @@ function readNativeFieldWidths(record: ScoreRecord): ScoreRecord {
     };
 }
 
+// C topten.c:writeentry(): serialize the record list back to storage.
 export function saveScoreRecords(records: readonly ScoreRecord[], state: GameState = game): boolean {
     const value = JSON.stringify(records);
     try {

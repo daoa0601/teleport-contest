@@ -29,7 +29,12 @@ export const RACE_SELECTION_RULES = {
     gnome: { aligns: ['neutral'] },
     orc: { aligns: ['chaotic'] },
 };
-// role.c:root_plselection_prompt() and build_plselection_prompt().
+// C role.c:root_plselection_prompt() and build_plselection_prompt().
+// C role.c:promptsep(): the comma-and joining of the facets still to pick.
+// C role.c:role_gendercount(): genderCount, the role's permitted genders.
+// C role.c:race_alignmentcount(): the race's align list length decides
+// whether alignment is still askable. C role.c:validrole(): the count's
+// bounds guard is the role table lookup itself.
 export function characterSelectionQuestion(choices, random, filters) {
     const { role, race, gender, alignment } = choices;
     const description = [];
@@ -87,6 +92,9 @@ export function characterSelectionQuestion(choices, random, filters) {
         prompt += ` ${last}`;
     return `${prompt} for you? [ynaq]`;
 }
+// C role.c:validrace(), validgend(), validalign(): the allow-mask
+// conjunction is table membership here (IndexOkT bounds are the typed
+// lookups).
 // Native ok_race(), ok_gend(), and ok_align() check only the constraints
 // belonging to that facet. An incompatible alignment must not erase a
 // valid gender or prevent the user from choosing a race first.

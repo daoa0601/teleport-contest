@@ -63,6 +63,8 @@ export async function nameObjectFromTopten(object, { state = game, rollOne = rnd
     object.oextra.oname = record.name.slice(0, 10);
     return object;
 }
+// C topten.c:classmon(): the record's role letters to a player-monster
+// form.
 async function roleMonster(code, state) {
     const role = roles.find(candidate => code.slice(0, 3) === candidate.filecode);
     // roles.js stores player-monster offsets rather than absolute species.

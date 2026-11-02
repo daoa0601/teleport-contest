@@ -20,6 +20,9 @@ import { monsterResistsEffect, poly_obj } from './zap.js';
 import { heroLocomotion } from './hack.js';
 const IRON = 11;
 const WAND_CLASS = 12;
+// C trap.c:trapeffect_poly_trap(): the hero branch — the trigger message
+// with the steed's lead-in, the form change or its reversal, the worn-gear
+// consequences, and the steed's own C trap.c:steedintrap() polymorph.
 export async function triggerHeroPolymorphTrap(trap, viaSitting) {
     requirePlayingGame(game);
     await seeTrap(trap);

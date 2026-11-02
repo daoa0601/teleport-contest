@@ -25,6 +25,7 @@ type FilterChoice = { facet: 'role'; value: RoleKey }
     | { facet: 'gender'; value: GenderName }
     | { facet: 'alignment'; value: AlignmentName };
 
+// C role.c:reset_role_filtering(): the empty filter state.
 export function createCharacterFilters(): CharacterFilters {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
@@ -47,6 +48,7 @@ export function setCharacterFilter(filters: CharacterFilters, value: string): bo
     return false;
 }
 
+// C role.c:clearrolefilter(): clear one facet's filter mask.
 export function clearCharacterFilter(filters: CharacterFilters, facet: CharacterFacet): void {
     switch (facet) {
     case 'role': filters.roles.clear(); break;
@@ -85,6 +87,11 @@ export function characterAlignmentAllowed(filters: CharacterFilters, choices: Ch
         !filters.alignments.has(candidate.name) && validCharacterAlignment(role, race, candidate));
 }
 
+// C role.c:reset_role_filtering(): the reset choice clears every facet
+// mask (C role.c:clearrolefilter() is the per-facet clear of a toggle);
+// C role.c:gotrolefilter(): its title reflects the masks.
+// C role.c:setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
+// setup_algnmenu(): the four filter-reset loops below.
 export async function editCharacterFilters(filters: CharacterFilters): Promise<'cancelled' | 'empty' | 'filtered'> {
     const window = tty_create_nhwindow<FilterChoice>(NHW_MENU);
     try {

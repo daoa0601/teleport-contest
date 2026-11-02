@@ -824,6 +824,9 @@ function capitalizeScoreCause(value) {
     const text = String(value || '');
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
+// C topten.c:outentry(): compose one score line — rank, points, the
+// name-role-race-gender-align column, and the death sentence with its
+// ascension, escape, and plane variants.
 function scoreEntryText(record, rank) {
     const rankText = rank ? String(rank).padStart(3) : '   ';
     const points = String(record.points || 0).padStart(10);
@@ -869,6 +872,9 @@ function scoreEntryText(record, rank) {
             .replace('; the ', ', the ')}.`;
     return line;
 }
+// C topten.c:outentry(): wrap a long score line at column 70, avoiding a
+// break inside " [max", and pad the hero's own rows so the bold attribute
+// covers the full width — topten_print_bold()'s ATR_BOLD row.
 function wrappedScoreEntryLines(record, rank, bold) {
     const wrapColumn = 70;
     const hp = record.hp <= 0 ? '-' : String(record.hp);
@@ -901,6 +907,9 @@ function wrappedScoreEntryLines(record, rank, bold) {
     lines.push(line);
     return lines;
 }
+// C topten.c:outheader(): the column header line; C topten.c:prscore()'s
+// top/around/own windowing is the loop over the records below.
+// C topten.c:topten_print(): each row is one text line of the menu.
 function scoreListLines(current, update, stopPrinting) {
     const lines = [{ text: '' }];
     if (update.previous) {

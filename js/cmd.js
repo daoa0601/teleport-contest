@@ -907,6 +907,12 @@ async function monsterPreventsStairTravel(up) {
 }
 // Stair traversal shared by up and down: mark the stairway traversed, then
 // hand the destination to goto_level().
+// C do.c:dodown() and C do.c:doup(): the '<' and '>' commands whose shared
+// body this is; each still starts with set_move_cmd(). C hack.c:u_rooted():
+// the "You are rooted" refusal. C trap.c:uteetering_at_seen_pit() and
+// C trap.c:uescaped_shaft(): the seen pit and shaft underfoot take the
+// plunge before the stairway is required; C hack.c:is_pool_or_lava(): the
+// hider's drop-to-liquid message.
 // C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
 // including prev_level()'s escape ending from dungeon 0 level 1.
 export async function travelStairs(up) {

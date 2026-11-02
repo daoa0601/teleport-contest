@@ -12,6 +12,8 @@ import { monsterName } from './do_name.js';
 function possessive(subject) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
+// C trap.c:trapeffect_vibrating_square(): the monster branch — the hero
+// sees or hears the ground vibrate under the monster, near or far.
 export function beginMonsterVibratingSquare(monster, trap, state = game) {
     const visibility = monsterTrapVisibility(monster, state);
     return {

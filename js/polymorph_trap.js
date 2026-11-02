@@ -28,6 +28,10 @@ async function transformWornIronShoes(monster, shoes, state) {
     applyMonsterEquipmentProperties(monster, replacement, true);
     return replacement;
 }
+// C trap.c:trapeffect_poly_trap(): the monster branch — worn iron shoes
+// are transformed first (C trap.c:wearing_iron_shoes() is
+// monsterWornIronShoes), magic resistance shields, and the form change is
+// staged with its possessive message.
 export async function applyMonsterPolymorphTrap(monster, trap, state = game, { random = rn2 } = {}) {
     const shoes = monsterWornIronShoes(monster);
     if (shoes) {

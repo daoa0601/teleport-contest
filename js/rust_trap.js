@@ -53,6 +53,8 @@ async function presentRustTrap(monster, event, state, publish) {
         await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
     }
 }
+// C trap.c:trapeffect_rust_trap(): the monster branch — the rust or water
+// jet over the monster's armor, or the iron-golem victim's fall.
 export async function beginMonsterRustTrap(monster, trap, state = game, { random = rn2 } = {}) {
     const event = {
         ...await applyMonsterRustTrap(monster, state, { roll: random }),

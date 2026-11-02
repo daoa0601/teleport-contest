@@ -731,6 +731,8 @@ export const genders: Gender[] = [
     { name: 'female', value: 1 },
 ];
 
+// C role.c:str2role(): resolve a role by case-insensitive prefix, in
+// native table order.
 export function findRole(name: unknown): Role | null | undefined {
     if (typeof name !== 'string' || !name) return null;
     const lc = name.toLowerCase();
@@ -750,6 +752,7 @@ export function randomCharacterOption(option: string | null): boolean {
     return text === '*' || text === '@' || 'random'.startsWith(text);
 }
 
+// C role.c:str2race(): resolve a race by name or adjective prefix.
 export function findRace(name: unknown): Race | null | undefined {
     if (typeof name !== 'string' || !name) return null;
     const lc = name.toLowerCase();
@@ -757,12 +760,14 @@ export function findRace(name: unknown): Race | null | undefined {
         || r.adj.toLowerCase().startsWith(lc));
 }
 
+// C role.c:str2align(): resolve an alignment by name prefix.
 export function findAlignment(name: unknown): Alignment | null | undefined {
     if (typeof name !== 'string' || !name) return null;
     const lc = name.toLowerCase();
     return aligns.find(a => a.name.startsWith(lc));
 }
 
+// C role.c:str2gend(): resolve a gender by name prefix.
 export function findGender(name: unknown): Gender | null | undefined {
     if (typeof name !== 'string' || !name) return null;
     const lc = name.toLowerCase();

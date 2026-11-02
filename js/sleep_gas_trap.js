@@ -6,6 +6,8 @@ import { putMonsterToSleep } from './mhitm.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterName } from './do_name.js';
+// C trap.c:trapeffect_slp_gas_trap(): the monster branch — susceptible
+// monsters fall asleep and are seen to do so.
 export async function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible = !monsterResistsSleep(monster) &&

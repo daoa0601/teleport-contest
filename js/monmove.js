@@ -1697,6 +1697,8 @@ async function runCovetousHarassTactics(monster, state, random, calls) {
     await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
 // C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
+// C trap.c:count_traps(): existingWebs is count_traps(WEB), the web count
+// that lowers the spinning probability.
 async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls) {
     if (![94, 96].includes(monster?.mnum) ||
         monster.mcanmove === 0 ||
