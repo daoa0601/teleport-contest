@@ -837,6 +837,10 @@ export async function dealWithMonsterOvercrowding(monster: Monster, state = game
     }
 }
 
+// The victim scan of C mon.c:elemental_clog(): prefer a foreign elemental,
+// then a home one, weakest, other, pet. C mon.c:ok_to_obliterate() keeps
+// the Wizard, riders, temple/shop/vault keepers, the hero's anchor and
+// steed, and amulet carriers off the list.
 function overcrowdingVictim(arriving: Monster, state: PlayingGameState) {
     let foreignElemental = null, homeElemental = null;
     let weakest = null, other = null, pet = null;

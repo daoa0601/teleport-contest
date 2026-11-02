@@ -31,6 +31,8 @@ function admitsChoice(classification) {
 // choices force the prompt, and any carried letter may still be typed.
 // The returned count has not been split off; callers which need native
 // split_otmp behavior use chooseInventoryObject().
+// C invent.c:getobj_hands_txt(): callers pass the hands entry's wording
+// (fingers, fingertip, gloved/bare hands, empty quiver) as handsText.
 export async function getobj(word, classify, { forcePrompt = false, allowCount = false, hands = GETOBJ_EXCLUDE, handsText = 'your hands' } = {}) {
     const queued = takeQueuedInventorySelection(classify, allowCount, hands);
     if (queued)

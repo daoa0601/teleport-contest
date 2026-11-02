@@ -211,6 +211,8 @@ async function categoryChoices(objects: readonly GameObject[]): Promise<MultiSel
             value: { matches: object => bucCategory(object) === category, filter: 'buc' },
         });
     }
+    // C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
+    // of the previous pickup.
     const justPicked = objects.filter(object => object.pickup_prev);
     const onePicked = justPicked.length === 1 ? justPicked[0] : null;
     if (onePicked) {
@@ -435,6 +437,8 @@ export async function loseMagicBagItem(object: GameObject, held: boolean, state:
     return loss;
 }
 
+// C pickup.c:boh_loss(): a cursed bag of holding sometimes tosses a
+// carried item; pickup.c:is_boh_item_gone() is the 1-in-13 roll.
 async function loseCursedBagContents(container: GameObject, state: GameState): Promise<number> {
     if (container.otyp !== BAG_OF_HOLDING || !container.cursed
         || !container.contents?.length) return 0;
@@ -742,6 +746,8 @@ async function lootTraditionally(container: GameObject, putIn: boolean, resetPic
     }
 }
 
+// C pickup.c:menu_loot() with put_in=FALSE: category menu, then object
+// menu, then one transfer per selected stack.
 async function takeSelectedObjects(container: GameObject, resetPicked: boolean, retry: ObjectClassSelection | null = null): Promise<ContainerTransferBatch> {
     game._pickupEncumbrance = 0;
     if (!container.contents?.length) return { results: [], spentTime: false };
@@ -778,6 +784,8 @@ async function takeSelectedObjects(container: GameObject, resetPicked: boolean, 
         ? results.some(result => result.moved) : selected.length > 0 };
 }
 
+// C pickup.c:menu_loot() with put_in=TRUE (and the stash-one path, whose
+// getobj filter is pickup.c:stash_ok() inlined below).
 async function putSelectedObjects(container: GameObject, stashOne = false, retry: ObjectClassSelection | null = null): Promise<ContainerTransferBatch> {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
     if (!stashOne && menuStyle === MENU_TRADITIONAL && !retry)
@@ -847,6 +855,8 @@ function actionKeys() {
         : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
 }
 
+// C pickup.c:in_or_out_menu(): the "Do what with <container>?" menu with
+// look/out/in/both/reversed/stash/next/quit choices.
 async function chooseAction(container: GameObject, usedTime: boolean, moreContainers: boolean): Promise<string> {
     const keys = actionKeys();
     const hasContents = !!container.contents?.length;
@@ -906,6 +916,8 @@ export async function useContainer(container: GameObject, {
     }
 }
 
+// C pickup.c:loot_mon()/loot_cont() driver; the '?' help text is
+// pickup.c:explain_container_prompt() inlined below.
 async function useContainerActions(container: GameObject, {
     held = false,
     moreContainers = false,

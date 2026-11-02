@@ -100,6 +100,8 @@ function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
 }
 
 // C mkmaze.c:migr_booty_item().
+// C mkobj.c:mksobj_migr_to_species(): the object enters migration flagged
+// for orc-infested target species.
 async function createStolenItem(type: number, gang: string, state: PlayingGameState): Promise<void> {
     const object = await mksobj(type, true, false);
     object.where = 'migrating';

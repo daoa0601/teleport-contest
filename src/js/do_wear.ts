@@ -519,6 +519,7 @@ type EquipmentAction = 'wear' | 'put on' | 'take off' | 'remove';
 // C do_wear.c:remove_ok().
 // C do_wear.c:wear_ok().
 // C do_wear.c:takeoff_ok().
+// C invent.c:taking_off(): the 'T' and 'R' phrasings both mean removing.
 export function equipmentClassification(
     object: GameObject, action: EquipmentAction, itemAction = false, state: GameState = game,
 ): InventoryClassification {

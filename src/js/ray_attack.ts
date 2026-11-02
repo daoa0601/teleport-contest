@@ -214,6 +214,9 @@ export async function hitMonsterWithRay(monster: Monster, nativeType: number, di
 // monstersForgetHeroResistance all live along the hit paths; the hero hit
 // anchors its line like pline_dir(xytodir(-dx, -dy)) through
 // set_msg_dir(xyToDirection()).
+// C zap.c:buzz() and zap.c:ubuzz(): the monster/hero entry wrappers that
+// call dobuzz() with the caller's position, direction and physical=TRUE;
+// the origin/monster-vs-hero dispatch lives in this function's options.
 
 export async function castNativeRay(nativeType: number, dice: number, direction: string | undefined, {
     state = game, sourceMonster = null, sourceObject = null,

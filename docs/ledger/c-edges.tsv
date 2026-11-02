@@ -20,6 +20,9 @@ acurrstr	acurr
 add_damage	shop_keeper
 add_menu	get_menu_coloring
 add_room	do_room_or_subroom
+addinv_core0	picked_container
+addinv_core0	setuqwep
+addinv_core0	update_inventory
 adj_pit_checks	closed_door
 adj_pit_checks	isok
 adjattrib	acurr
@@ -396,6 +399,7 @@ dig	trapname
 dig	unblock_point
 dig_check	is_pool_or_lava
 dig_check	stairway_at
+dig_typ	closed_door
 dig_typ	isok
 dig_typ	pick_can_reach
 dig_up_grave	adjalign
@@ -711,6 +715,7 @@ dogenocided	list_genocided
 doidtrap	getdir
 doidtrap	glyph_at
 doidtrap	trapname
+doinvbill	xprname
 doinvoke	arti_invoke
 doinvoke	getobj
 dojump	jump
@@ -929,7 +934,9 @@ doturn	nomul
 doturn	spelleffects
 dotwoweapon	acurr
 dotwoweapon	rnd
+dotypeinv	yn_function
 double_punch	rn2
+dounpaid	xprname
 dountrap	untrap
 dovanquished	list_vanquished
 doversion	doextversion
@@ -1058,6 +1065,16 @@ e_jumps	unconscious
 e_missed	automiss
 e_missed	rnd
 e_missed	unconscious
+eataccessory	adjattrib
+eataccessory	bounded_increase
+eataccessory	d
+eataccessory	float_up
+eataccessory	newsym
+eataccessory	rehumanize
+eataccessory	rn2
+eataccessory	rnd
+eataccessory	see_monsters
+eataccessory	set_mimic_blocking
 eatcorpse	food_xname
 eatcorpse	losehp
 eatcorpse	make_sick
@@ -1071,6 +1088,7 @@ eatcorpse	violated_vegetarian
 eatfood	do_reset_eat
 eatmdone	newsym
 eatmupdate	newsym
+eatspecial	exercise
 edibility_prompts	yn_function
 egg_type_from_parent	rn2
 emergency_disrobe	near_capacity
@@ -1323,6 +1341,8 @@ give_spell	rnd_class
 give_spell	spell_skilltype
 give_to_nearby_mon	isok
 give_to_nearby_mon	rn2
+givit	d
+givit	see_monsters
 glibr	cmdq_clear
 glibr	setuswapwep
 glibr	setuwep
@@ -1444,6 +1464,10 @@ in_trouble	worst_cursed_item
 in_your_sanctuary	findpriest
 in_your_sanctuary	in_rooms
 induced_align	rn2
+inherits	addupbill
+inherits	currency
+inherits	dist2
+inherits	rn2
 ini_inv	ini_inv_adjust_obj
 ini_inv	trquan
 ini_inv_adjust_obj	rn2
@@ -1496,6 +1520,7 @@ invoke_healing	nothing_special
 invoke_storm_spell	spell_skilltype
 invoke_storm_spell	spelleffects
 invoke_untrap	untrap
+is_boh_item_gone	rn2
 is_drawbridge_wall	isok
 is_ice	isok
 is_innate	innately
@@ -1698,6 +1723,9 @@ losexp	done
 losexp	rehumanize
 m_balks_at_approaching	dist2
 m_cure_self	d
+m_detach	dismount_steed
+m_detach	mon_leaving_level
+m_detach	thiefdead
 m_dowear_type	vision_recalc
 m_initgrp	makemon
 m_initgrp	rnd
@@ -1706,6 +1734,13 @@ m_initthrow	weight
 m_lined_up	linedup
 m_lined_up	rn2
 m_lose_armor	newsym
+m_respond_shrieker	aggravate
+m_respond_shrieker	level_difficulty
+m_respond_shrieker	makemon
+m_respond_shrieker	rn2
+m_restartcham	newsym
+m_restartcham	pm_to_cham
+m_restartcham	set_mimic_sym
 m_search_items	clear_path
 m_search_items	costly_spot
 m_search_items	distmin
@@ -1821,6 +1856,10 @@ mattackm	rnd
 mattackm	unconscious
 maybe_adjust_hero_bubble	rn2
 maybe_cannibal	rn2
+maybe_destroy_item	exercise
+maybe_destroy_item	losehp
+maybe_destroy_item	rn2
+maybe_destroy_item	rnd
 maybe_do_tutorial	docrt
 maybe_do_tutorial	vision_recalc
 maybe_explode_trap	d
@@ -1925,6 +1964,7 @@ melt_ice	is_pool
 melt_ice	newsym
 melt_ice	spoteffects
 melt_ice	vision_recalc
+menu_loot	in_container
 mfind0	exercise
 mfind0	map_invisible
 mfind0	newsym
@@ -2255,11 +2295,14 @@ nh_timeout	spoteffects
 nh_timeout	unconscious
 nh_timeout	vomiting_dialogue
 nh_timeout	you_unwere
+noisy_shop	wake_nearto
 nomul	cmdq_clear
 nomul	end_running
 noncoalignment	rn2
 noveltitle	rn2
 obj_meld	rn2
+obj_nexto_xy	isok
+obj_nexto_xy	rn2
 obj_no_longer_held	rn2
 obj_typename	Japanese_item_name
 obstructed	map_invisible
@@ -2305,6 +2348,7 @@ openone	newsym
 openone	open_drawbridge
 openone	openholdingtrap
 openone	wake_nearto
+opentin	consume_tin
 out_container	costly_spot
 out_container	fatal_corpse_mistake
 out_container	lift_object
@@ -2338,6 +2382,8 @@ passiveum	hliquid
 passiveum	rehumanize
 passiveum	rn2
 passiveum	shieldeff
+pay_billed_items	bot
+pay_billed_items	yn_function
 pay_for_damage	adjalign
 pay_for_damage	check_credit
 pay_for_damage	currency
@@ -2462,7 +2508,15 @@ picklock	exercise
 picklock	lock_action
 picklock	newsym
 picklock	rn2
+pickup	check_here
+pickup	describe_decor
+pickup	is_lava
+pickup	is_pool
+pickup	newsym_force
+pickup	nomul
+pickup	unconscious
 pickup_prinv	near_capacity
+pickvampshape	rn2
 pit_flow	liquid_flow
 place_branch	find_branch_room
 place_branch	mkportal
@@ -2674,6 +2728,8 @@ reset_needed_visuals	reglyph_darkroom
 reset_occupations	reset_pick
 reset_utrap	float_up
 responsive_mon_at	isok
+restrap	rn2
+restrap	set_mimic_sym
 resurrect	makemon
 resurrect	rn2
 retouch_equipment	clear_bypasses
@@ -2694,6 +2750,7 @@ reward_untrap	rn2
 reward_untrap	rnl
 rhack	cmdq_clear
 rhack	domove
+rider_corpse_revival	exercise
 rloc_to_core	check_special_room
 rloc_to_core	costly_spot
 rloc_to_core	dist2
@@ -2712,6 +2769,7 @@ rnd_hallublast	rn2
 rnd_otyp_by_namedesc	rn2
 rnd_otyp_by_wpnskill	rn2
 rnd_rect	rn2
+rnd_treefruit_at	rn2
 rndcolor	rn2
 rndcurse	rn2
 rndcurse	rnd
@@ -2839,6 +2897,9 @@ seffect_taming	maybe_tame
 seffect_teleportation	level_tele
 seffect_teleportation	scrolltele
 sel_set_ter	set_levltyp_lit
+select_off	cursed
+select_off	surface
+select_off	welded
 selection_do_ellipse	selection_setpoint
 selection_do_gradient	line_dist_coord
 selection_do_gradient	rn2
@@ -2902,6 +2963,7 @@ set_mimic_sym	get_shop_item
 set_mimic_sym	in_town
 set_mimic_sym	rn2
 set_mimic_sym	rndmonnum
+set_repo_loc	costly_adjacent
 set_trap	in_rooms
 set_trap	maketrap
 set_trap	rnl
@@ -2929,6 +2991,7 @@ shk_fixes_damage	find_damage
 shk_owns	costly_spot
 shk_owns	shop_keeper
 shkveg	rnd
+shop_object	costly_spot
 shopdig	adjalign
 shopdig	dist2
 shopdig	shop_keeper
@@ -2947,6 +3010,7 @@ show_mon_or_warn	unmap_object
 show_transient_light	flush_screen
 show_transient_light	vision_recalc
 shrine_pos	rn2
+shrinking_glob_gone	maybe_unhide_at
 shuffle	rn2
 shuffle_all	shuffle
 sickness_dialogue	exercise
@@ -3098,6 +3162,7 @@ teleds	vision_recalc
 teleport_sink	newsym
 teleport_sink	rn2
 teleport_sink	rnd
+temp_givit	rn2
 temple_priest_sound	rn2
 test_move	closed_door
 test_move	doorless_door
@@ -3384,6 +3449,10 @@ use_unicorn_horn	vomit
 ustatusline	piousness
 ustatusline	visible_region_at
 valid_cloud_pos	isok
+vamprises	closed_door
+vamprises	newsym
+vamprises	recalc_block_point
+vamprises	unconscious
 vary_init_attr	rn2
 view_from	left_side
 view_from	right_side
@@ -3427,6 +3496,8 @@ water_damage	isok
 water_damage	rn2
 water_damage	rnd
 water_damage_chain	water_damage
+water_friction	isok
+water_friction	rn2
 water_has_kelp	rn2
 water_turbulence	isok
 water_turbulence	near_capacity

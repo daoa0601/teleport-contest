@@ -25,7 +25,11 @@ import { objectWeight } from './mkobj.js';
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }
+// C mkobj.c:obj_nexto_xy(): the next mergable glob on this square or an
+// adjacent one (obj_nexto() is the same scan at the glob's own square).
 function nearbyMergableGlob(glob, x, y, state, random) {
+    // The same-type pile scan of C invent.c:sobj_at() inlined: the
+    // mergable() test itself finds the candidate.
     const findAt = (nx, ny) => (state.level?.objects?.[nx]?.[ny] || [])
         .find(object => object !== glob && mergable(object, glob, state));
     const onSameSquare = findAt(x, y);
@@ -145,10 +149,13 @@ function objectLocation(object, state) {
     }
     return null;
 }
+// C mkobj.c:item_on_ice(): the outermost container decides whether a glob
+// sits on ice or is buried beneath it.
 function globIceState(glob, state) {
     const outer = outermostContainer(glob, state);
     if (!outer || !['floor', 'buried'].includes(outer.where))
         return 'none';
+    // C mkobj.c get_obj_location(): the outermost container's own square.
     if (!isIceAt(outer.ox, outer.oy, state))
         return 'none';
     return outer.where === 'buried' ? 'buried' : 'on-ice';
@@ -187,9 +194,12 @@ function clearHeroEquipment(object, state) {
     object.wielded = false;
     object.alternate = false;
     object.ready = false;
+    // C stop_occupation(): a worn glob vanishing interrupts the occupation.
     if (removed)
         state._occupation = null;
 }
+// C mkobj.c:shrinking_glob_gone(): a glob that shrank away to nothing
+// unwields/unwears itself and is removed from wherever it lives.
 async function deleteGlob(glob, state) {
     const where = glob.where;
     const x = glob.ox, y = glob.oy;

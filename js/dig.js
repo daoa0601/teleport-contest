@@ -100,6 +100,7 @@ function monsterAt(x, y, state) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y) || null;
 }
+// C invent.c:sobj_at(): the first object of a type in a floor pile.
 function objectAt(x, y, otyp, state) {
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;

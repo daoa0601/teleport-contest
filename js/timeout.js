@@ -494,6 +494,8 @@ export function stopObjectTimers(object, state) {
     if (burn)
         cleanupObjectBurn(object, burn.deadline, state);
 }
+// The port's whole-object graph: every list that C shk.c:find_oid()
+// searches by o_id, walked once so callers can inline their o_on() scan.
 export function objectsInTimerGraph(state = game) {
     const objects = [];
     const seen = new Set();

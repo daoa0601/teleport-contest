@@ -94,6 +94,8 @@ function monsterReconstitutesAfterLifeSaving(monster: Monster): boolean {
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
 
+// C mon.c:lifesaved_monster(): an amulet of life saving revives a dying
+// monster; genocided species still fail after the medallion crumbles.
 // The caller supplies any credited kill line. The amulet is consumed and the
 // monster is restored before any caller can remove it from the level.
 export async function lifeSaveMonster(
@@ -114,6 +116,7 @@ export async function lifeSaveMonster(
         const alreadyKnown = game._knownObjectTypes instanceof Set
             && game._knownObjectTypes.has(amulet.otyp);
         if (!alreadyKnown) await exerciseAttribute(A_WIS, true);
+        // C discover_object(): the amulet's type becomes known.
         recordObjectEncounter(amulet.otyp);
         recordObjectKnowledge(amulet.otyp);
         if (canSeeMonster(monster)) {
@@ -147,6 +150,7 @@ export async function lifeSaveMonster(
             publish: continueLine, repaint, state: game,
         });
     }
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
     monster.mhpmax = Math.max(
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );
@@ -267,6 +271,8 @@ async function smashDoorUnderVampire(
         messageShown: !!message || showDeath, completedDeath: trap.death };
 }
 
+// C mon.c:vamprises(): a killed shapeshifted vampire reverts to its base
+// form and rises instead of dying, smashing a closed door in the way.
 async function reviveShiftedVampire(
     monster: Monster, {
         visible, spotted, disintegrated, state, publish,
@@ -288,6 +294,7 @@ async function reviveShiftedVampire(
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
     monster.mhpmax = Math.max(
         monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
     );

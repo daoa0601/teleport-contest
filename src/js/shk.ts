@@ -1614,6 +1614,8 @@ function clearNoChargeObject(
 
 // C shk.c setpaid(): either you paid or left the shop or the shopkeeper
 // died.  All pending transactions are settled.
+// C shk.c:clear_unpaid() walks each object list and clears the unpaid bit
+// per object; the loops below inline it with clearUnpaidObject().
 export function setPaidShopkeeper(keeper: Shopkeeper | null, state: GameState = game): void {
     requireLiveGame(state);
     for (const object of state.inventory || [])
@@ -1763,7 +1765,9 @@ export async function makeShopkeeperHappy(
     await makeShoppersHappy({ state, silentKops });
 }
 
-// C shk.c:make_happy_shoppers()/kops_gone(), mon.c:pacify_guards().
+// C shk.c:make_happy_shoppers()/kops_gone(), mon.c:pacify_guards(); its
+// iter_mons callback mon.c:pacify_guard() is the watch loop below, and the
+// angry-keeper test is mon.c:angry_shk_exists() inlined.
 export async function makeShoppersHappy(
     { state = game, silentKops = false }: { state?: GameState; silentKops?: boolean } = {},
 ): Promise<void> {
@@ -1786,6 +1790,8 @@ export async function makeShoppersHappy(
 }
 
 // C shk.c hot_pursuit(): the shared anger transaction for unpaid debts.
+// C shk.c:clear_no_charge_pets(): the pet-inventory pass of the same
+// networking sweep is inlined below.
 export function hotPursuitShopkeeper(
     monster: Monster | null | undefined, state: GameState = game,
 ): void {
@@ -2745,6 +2751,8 @@ interface ShopSettlementOptions {
     random?: (limit: number) => number;
 }
 
+// C shk.c:paybill(): after dying or quitting, shopkeepers on the level
+// inherit the hero's possessions, prioritized by residency and debt.
 export async function settleShopkeepersOnExit(
     outcome: ShopExitOutcome,
     { silent = false, publish = plineWithContinuation, random = rn2 }: ShopSettlementOptions = {},
@@ -2823,6 +2831,8 @@ interface InheritanceOptions {
     random: (limit: number) => number;
 }
 
+// C shk.c:inherits(): one shopkeeper looks at the dead hero's corpse and
+// takes the inventory, the owed gold, or nothing at all.
 async function inheritHeroInventory(
     keeper: Shopkeeper, count: number, options: InheritanceOptions,
 ): Promise<boolean> {
@@ -2888,6 +2898,8 @@ async function inheritHeroInventory(
     return completeShopSettlement(keeper, taken);
 }
 
+// C shk.c:rouse_shk() wakes the keeper, then home_shk() returns it to the
+// shop if it has wandered.
 async function returnShopkeeperHome(keeper: Shopkeeper): Promise<void> {
     requireShopGame(game);
     if (monsterIsHelpless(keeper)) {
@@ -2898,6 +2910,8 @@ async function returnShopkeeperHome(keeper: Shopkeeper): Promise<void> {
     if (!shopkeeperInOwnShop(keeper)) await homeShopkeeper(keeper, game);
 }
 
+// C shk.c:set_repo_loc(): where the repossessed inventory will be dropped
+// after disclosure; the first shopkeeper to claim it wins.
 function completeShopSettlement(keeper: Shopkeeper, taken: boolean): boolean {
     setPaidShopkeeper(keeper);
     if (taken && !game._shopRepossession?.shopkeeper) {
@@ -2930,6 +2944,8 @@ function shopkeeperIsLocal(keeper: Shopkeeper): boolean {
     return !!heroLevel && level.dnum === heroLevel.dnum && level.dlevel === heroLevel.dlevel;
 }
 
+// C shk.c:shk_names_obj(): the shopkeeper names what was bought or sold,
+// partly identifying ordinary merchandise in the process.
 export async function nameShopTransaction(keeper: Shopkeeper, object: GameObject,
     describe: (name: string) => string,
     { publish, state }: { publish: MessagePublisher; state: GameState }): Promise<void> {
@@ -2950,8 +2966,11 @@ export async function nameShopTransaction(keeper: Shopkeeper, object: GameObject
     }
 }
 
+// C shk.c:shop_object(): chatting while standing on shop goods has the
+// keeper quote their prices instead of other conversation.
 export async function quoteShopGoods(): Promise<boolean> {
     if (heroIsBlind() || heroIsDeaf()) return false;
+    // C in_rooms()/shop_keeper() inlined: costlySpot() holds the resident.
     const spot = costlySpot(game.u.ux, game.u.uy);
     if (!spot || !spot.resident.mpeaceful || shopkeeperIsMuted(spot.resident)) return false;
     const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== 12) ?? [];
@@ -3484,6 +3503,8 @@ export async function minimumShopPurchase(resident: Monster, state: GameState = 
 
 // Contents share one entry for their outermost container. Used portions stay
 // separate, so they can be paid before buying the remaining contained goods.
+// C shk.c:make_itemized_bill(): the alternate bill hiding container
+// contents behind one entry, split by used-up portion.
 // C shk.c:sortbill_cmp().
 // C shk.c:bp_to_obj().
 export async function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): Promise<ShopBillItem[]> {
@@ -3525,6 +3546,8 @@ export async function itemizedShopBill(resident: Monster | null | undefined, sta
         || right.price - left.price || left.billIndex - right.billIndex);
 }
 
+// C shk.c:buy_container(): pay for a container and its contents together;
+// partly used stacks are rejected before the group price is checked.
 export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     state: GameState = game, { itemize = false }: { itemize?: boolean } = {}
 ): Promise<'paid' | 'skip' | 'stop' | 'broke'> {
@@ -3554,6 +3577,7 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     }
     const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
     for (const object of purchases) {
+        // C shk.c:bp_to_obj(): the bill entry's object, by o_id.
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
         if (entry && item.kind !== 'used' && object.quan < entry.bquan) {
             await rejectPartlyUsedPurchase(resident, object, entry, state);
@@ -3783,6 +3807,8 @@ function removeBillEntry(resident: BilledShopkeeper, entry: ShopBillEntry): void
 // C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
 // An empty bill takes a turn when the keeper can respond. A payment menu
 // takes no time until a debt or billed item is paid.
+// C shk.c:pay_billed_items(): the gold/credit checks and the per-item
+// purchase loop over the itemized bill are inlined in this command.
 export async function dopay(): Promise<void> {
     setMulti(0);
     const stashedGold = hiddenGold(game, true) > 0;

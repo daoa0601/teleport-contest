@@ -20,7 +20,8 @@ import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js
 import { OBJECT_TIMER_KIND } from './const.js';
 
 
-// Corpse rot and revival take twice as long while the body is on ice.
+// C mkobj.c:obj_timer_checks(): a corpse placed on (or removed from) ice
+// has its rot/revive timer doubled or halved and its age adjusted.
 export function updateCorpseIceTimer(
     body: GameObject | null | undefined, x: number, y: number,
     isOnIce: boolean, state: GameState = game,
