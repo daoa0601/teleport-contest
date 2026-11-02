@@ -793,7 +793,7 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (pending?.object === object) {
         cancelDonning(state);
     }
-    // C pray.c:change_luck(-1): the fedora's luck refund at its bounds.
+    // C attrib.c:change_luck(-1): the fedora's luck refund at its bounds.
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
     if (object.otyp === CORNUTHAUM && !cancelledDon) {
@@ -1769,8 +1769,8 @@ async function applyAmuletOnEffects(
     } else if (object.otyp === AMULET_OF_STRANGULATION) {
         if (startAmuletStrangulation(state)) message = 'It constricts your throat!';
     } else if (OBJECT_PROPERTY[object.otyp] === 'magicalBreathing' && wasInGas) {
-    // C regions.c:region_danger(): the caller captured the gas state while
-    // the amulet was off (heroIsInDangerousRegion).
+        // C region.c:region_danger(): the caller captured the gas state
+        // while the amulet was off (heroIsInDangerousRegion).
         learnObjectType(object.otyp, state);
         message = 'You are no longer bothered by the poison gas.';
     } else if (OBJECT_PROPERTY[object.otyp] === 'flying' && state.u.flying && !wasFlying) {
@@ -1809,7 +1809,7 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
             : rank[before] !== rank[after] ? rank[after]
                 : `${state.flags.female ? 'female' : 'male'} ${rank[after]}`;
         recordGameLogEvent(`transformed into ${withIndefiniteArticle(title)}`, { state, flags: LL_MINORAC });
-        // C livelog_newform(): the transformed-into chronicle line.
+        // C polyself.c:livelog_newform(): the transformed-into chronicle line.
     }
     await plineWithContinuation('The amulet disintegrates!');
     if (!changed && object.dknown) await tryCallObjectType(object, state);

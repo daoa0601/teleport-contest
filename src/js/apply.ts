@@ -534,7 +534,7 @@ async function summonPets(object: GameObject, state: GameState) {
         if (state.program_state.gameover) return;
         if (pet.mhp <= 0)
             state.u.uluck = Math.max(LUCKMIN, (state.u.uluck || 0) - 1);
-            // C pray.c:change_luck(-1): a summoned pet dying in a trap.
+            // C attrib.c:change_luck(-1): a summoned pet dying in a trap.
         if (state._lastPlineKind !== PLNMSG_enum) {
             noticed.trapped++;
             continue;
