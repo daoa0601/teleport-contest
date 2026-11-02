@@ -1,10 +1,6 @@
 // hacklib.js — Utility functions.
 // C ref: hacklib.c, dungeon.c helpers
 import { game } from './gstate.js';
-import { COLNO, ROWNO } from './const.js';
-export function isok(x, y) {
-    return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
-}
 export function distmin(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }

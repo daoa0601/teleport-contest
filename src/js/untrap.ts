@@ -1,4 +1,4 @@
-import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
+import { trapName, deleteTrap, convertTrapToObject, trapAt } from './trap.js';
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 
@@ -171,11 +171,6 @@ function monsterAt(state: GameState, x: number, y: number): Monster | null {
         && monster.mx === x && monster.my === y) || null;
 }
 
-// C trap.c:t_at().
-function trapAt(state: GameState, x: number, y: number): Trap | null {
-    return state.level?.traps?.find(trap =>
-        trap.tx === x && trap.ty === y) || null;
-}
 
 function boxesAt(state: GameState, x: number, y: number): GameObject[] {
     return (state.level?.objects?.[x]?.[y] || []).filter(object =>
@@ -276,7 +271,7 @@ export async function untrap({
     }
 
     const here = x === state.u.ux && y === state.u.uy;
-    let trap = trapAt(state, x, y);
+    let trap: Trap | null | undefined = trapAt(state, x, y);
     if (trap && !trap.tseen) trap = null;
     // C untrap() chooses once, including attempts which never name the trap.
     const description = trap ? trapName(trap.ttyp, { state }) : '';

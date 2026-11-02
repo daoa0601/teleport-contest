@@ -48,14 +48,15 @@ import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
+import { stairwayAt } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { abusePet } from './dog.js';
-import { makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
+import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { invWeight, weightCapacity, objectWeight } from './weight.js';
 import { specialContactDamage } from './contact_damage.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -814,14 +815,6 @@ export interface KickObjectOptions {
     rollOne?: typeof rnd;
     captureFlight?: ProjectileFlightCapture | null;
 }
-function trapAt(state: GameState, x: number, y: number) {
-    return state.level?.traps?.find(trap =>
-        trap.tx === x && trap.ty === y) || null;
-}
-function closedDoor(location: MapLocation | null | undefined) {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
-}
 function quantity(object: GameObject) {
     return object.quan ?? object.quantity ?? 1;
 }
@@ -850,7 +843,8 @@ function kickRange(
     const nextX = object.ox + dx;
     const nextY = object.oy + dy;
     const next = state.level?.at?.(nextX, nextY);
-    if (!isok(nextX, nextY) || !next || !ZAP_POS(next.typ) || closedDoor(next))
+    if (!isok(nextX, nextY) || !next || !ZAP_POS(next.typ)
+        || closedDoor(state, nextX, nextY))
         range = 1;
     return { range, slide };
 }
@@ -903,9 +897,10 @@ export async function kickFloorObject(x: number, y: number, {
         : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
     const source = state.level?.at(x, y);
     const heroSquare = state.level?.at(state.u.ux, state.u.uy);
-    if (source && (IS_OBSTRUCTED(source.typ) || closedDoor(source))) {
+    if (source && (IS_OBSTRUCTED(source.typ) || closedDoor(state, x, y))) {
         const stuck = !martial && random(20) > currentAttribute(A_DEX, state)
-            || heroSquare && (IS_OBSTRUCTED(heroSquare.typ) || closedDoor(heroSquare));
+            || heroSquare && (IS_OBSTRUCTED(heroSquare.typ)
+                || closedDoor(state, state.u.ux, state.u.uy));
         const subject = heroIsBlind(state) ? 'It'
             : `The ${objectCombatName(object, { state })}`;
         const plural = !heroIsBlind(state) && objectNameIsPlural(object, state);
@@ -1078,12 +1073,6 @@ function sameLevel(first: DungeonLocation | null | undefined, second: DungeonLoc
     return !!first && !!second
         && first.dnum === second.dnum
         && first.dlevel === second.dlevel;
-}
-function stairwayAt(state: PlayingGameState, x: number, y: number): Stairway | null {
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (stair.sx === x && stair.sy === y) return stair;
-    }
-    return null;
 }
 function levelBelow(state: PlayingGameState): DungeonLocation {
     const current = state.u?.uz || { dnum: 0, dlevel: 1 };

@@ -2,6 +2,7 @@
 // C mkmaze.c:stolen_booty(), migr_booty_item(), shiny_orc_stuff(), migrate_orc();
 // do_name.c:rndorcname()/christen_orc(), dokick.c:deliver_obj_to_mon().
 import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from './const.js';
+import { upstart } from './hacklib.js';
 import { addFruit } from './fruit.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makemonAt } from './makemon.js';
@@ -43,7 +44,7 @@ export async function createOrcRaid() {
     await createStolenItem(rn2(2) ? LONG_SWORD : SILVER_SABER, gang, state);
     const captain = await makemonAt(PM_ORC_CAPTAIN, 0, 0, MM_NONAME);
     if (captain) {
-        setMonsterGivenName(captain, capitalized(gang));
+        setMonsterGivenName(captain, upstart(gang));
         captain.mpeaceful = 0;
         setMonsterMalign(captain, state);
         await giveShinyLoot(captain, state);
@@ -85,12 +86,9 @@ function randomOrcName() {
     }
     return name;
 }
-function capitalized(value) {
-    return value.charAt(0).toUpperCase() + value.slice(1);
-}
 function nameOrc(monster, gang, suffix = '') {
-    const name = capitalized(randomOrcName());
-    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${capitalized(gang)}`);
+    const name = upstart(randomOrcName());
+    setMonsterGivenName(monster, gang === null ? name + suffix : `${name} of ${upstart(gang)}`);
 }
 // C mkmaze.c:migr_booty_item().
 async function createStolenItem(type, gang, state) {

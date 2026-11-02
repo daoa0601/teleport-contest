@@ -8,6 +8,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { heroIsHallucinating } from './senses.js';
+import { heroCanSeeInvisible } from './mcastu.js';
 import { nomul } from './hack.js';
 import { heroHasFreeAction } from './do_wear.js';
 
@@ -53,10 +54,6 @@ export function heroGazeAttack(state = game) {
 
 
 
-function heroCanSeeInvisible(state: GameState) {
-    return !!(state.u?.seeInvisible
-        || (state.u?.seeInvisibleTurns ?? 0) > 0);
-}
 
 function heroIsConfused(state: GameState) {
     return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);

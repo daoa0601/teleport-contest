@@ -25,7 +25,7 @@ import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION, monsterHasNoLimbs, MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './hero_species.js';
 import { monsterName } from './do_name.js';
-import { possessiveName, depth, distmin, dist2, pointsOnline } from './hacklib.js';
+import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
 import { hiddenGold } from './vault.js';
 
@@ -55,7 +55,7 @@ import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
-import { performMonsterTurn } from './monmove.js';
+import { closedDoor, performMonsterTurn } from './monmove.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './do_wear.js';
@@ -96,7 +96,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { moveMonsterNextToHero } from './teleport.js';
-import { deleteTrap, trapName } from './trap.js';
+import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { maybeResetPick } from './lock.js';
@@ -1547,10 +1547,6 @@ function monsterAt(state: ShopGameState, x: number, y: number): Monster | null {
     return monsterAtPosition(state.level, x, y);
 }
 
-function trapAt(state: GameState, x: number, y: number): Trap | null {
-    return (state.level?.traps || []).find(trap =>
-        trap.tx === x && trap.ty === y) || null;
-}
 
 function objectsAt(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
@@ -2314,11 +2310,6 @@ function removeTrap(trap: Trap, state: ShopGameState): void {
     if (caught?.mtrapped) caught.mtrapped = 0;
 }
 
-function closedDoor(state: ShopGameState, x: number, y: number): boolean {
-    const location = state.level.at(x, y);
-    return location?.typ === DOOR
-        && !!(location.doormask & (D_CLOSED | D_LOCKED));
-}
 
 const LITTER_UPDATE = 0x01;
 
@@ -3042,18 +3033,15 @@ export async function quoteShopGoods(): Promise<boolean> {
         await showDisclosureOverlay(['Fine goods for sale:', '', ...quotes.map(item => item.line)],
             { restoreUnderlay: true });
     } else if (!quote.cost) {
-        await plineWithContinuation(`"${capitalize(quote.line)}!"`);
+        await plineWithContinuation(`"${upstart(quote.line)}!"`);
     } else {
         const name = `${quote.contentsOnly ? 'the contents of ' : ''}${await objectDescription(quote.object)}`;
-        await plineWithContinuation(`"${capitalize(name)}, price ${quote.cost} ${currency(quote.cost)}${quote.each}${
+        await plineWithContinuation(`"${upstart(name)}, price ${quote.cost} ${currency(quote.cost)}${quote.each}${
             quote.contentsOnly ? '.' : embellish(quote.object, quote.cost)}"`);
     }
     return true;
 }
 
-function capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 // C shk.c:shk_embellish().
 function embellish(object: GameObject, cost: number): string {

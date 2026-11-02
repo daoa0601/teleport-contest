@@ -14,7 +14,7 @@ import { possessiveName } from './hacklib.js';
 import { makePetWary } from './dog.js';
 import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampire, } from './monster_data.js';
 import { changeMonsterForm } from './mon.js';
-import { triggerMonsterDoorTrap } from './monmove.js';
+import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { rn2, rnd } from './rng.js';
@@ -132,16 +132,9 @@ function vampireRiseAction(monster, disintegrated, unaware, state) {
     const description = `${unaware ? 'you dream that ' : ''}${oldSubject} ${unaware ? '' : 'suddenly '}${action} and rises as`;
     return description.charAt(0).toUpperCase() + description.slice(1);
 }
-function closedDoorAt(state, x, y) {
-    const location = state.level?.at?.(x, y);
-    if (location?.typ !== DOOR)
-        return null;
-    return (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)
-        ? location : null;
-}
 async function smashDoorUnderVampire(monster, x, y, { visible, spotted, unaware, state, publish, rollOne, random, }) {
-    const door = closedDoorAt(state, x, y);
-    if (!door) {
+    const door = state.level?.at?.(x, y);
+    if (!door || !closedDoor(state, x, y)) {
         return { monster, survived: true, messageShown: false, completedDeath: null };
     }
     const trapped = !!((door.doormask ?? 0) & D_TRAPPED);

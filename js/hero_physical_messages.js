@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
+import { ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { HEAVY_IRON_BALL, OBJECT_SUBTYPE, TOWEL } from './object_data.js';
 import { verbForSubject } from './objnam.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
@@ -81,7 +81,7 @@ export async function showHeroHarmlessStoneHit(monster, object, { state = game, 
 export async function showHeroPhysicalSilver(monster, { state = game, publish = plineWithContinuation, originalSpecies, savedObjectName, silverObject, silverRings, }) {
     const whom = searedTarget(monster, originalSpecies, state);
     if (!canSpotMonster(monster)) {
-        await publish(`${capitalize(whom)} is seared!`);
+        await publish(`${upstart(whom)} is seared!`);
     }
     else if (silverRings === 1) {
         await publish(`Your silver ring sears ${whom}!`);
@@ -100,7 +100,7 @@ export async function showHeroPhysicalSilver(monster, { state = game, publish = 
 export async function showHeroPhysicalLight(monster, { state = game, publish = plineWithContinuation, originalSpecies, savedObjectName, }) {
     const whom = searedTarget(monster, originalSpecies, state);
     if (!canSpotMonster(monster))
-        await publish(`${capitalize(whom)} is seared!`);
+        await publish(`${upstart(whom)} is seared!`);
     else if (savedObjectName)
         await publish(`${possessiveName(savedObjectName)} radiance penetrates deep into ${whom}!`);
     else
@@ -133,13 +133,5 @@ function searedTarget(monster, originalSpecies, state) {
 }
 function damagePunctuation(damage) {
     return damage < 0 ? '?' : damage <= 4 ? '.' : '!';
-}
-function ordinalSuffix(index) {
-    if (index % 100 >= 11 && index % 100 <= 13)
-        return 'th';
-    return index % 10 === 1 ? 'st' : index % 10 === 2 ? 'nd' : index % 10 === 3 ? 'rd' : 'th';
-}
-function capitalize(text) {
-    return text.charAt(0).toUpperCase() + text.slice(1);
 }
 //# sourceMappingURL=hero_physical_messages.js.map

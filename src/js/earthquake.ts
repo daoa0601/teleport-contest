@@ -36,7 +36,7 @@ import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
-import { monsterSelfTouch, waterDamageChain } from './trap.js';
+import { monsterSelfTouch, trapAt, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';
@@ -56,10 +56,6 @@ function monsterAt(x: number, y: number) {
     return game.level ? monsterAtPosition(game.level, x, y) : null;
 }
 
-function trapAt(x: number, y: number) {
-    return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y)
-        || null;
-}
 
 function boulderAt(x: number, y: number) {
     return game.level?.objects?.[x]?.[y]?.find(
@@ -372,7 +368,7 @@ export async function createEarthquake(requestedForce: number) {
     requirePlayingGame(game);
     const force = Math.max(1, Math.min(13, requestedForce));
     const hadPitBeforeEarthquake = is_pit(
-        trapAt(game.u.ux, game.u.uy)?.ttyp ?? 0,
+        trapAt(game, game.u.ux, game.u.uy)?.ttyp ?? 0,
     );
     let changed = 0;
     const startX = Math.max(1, (game.u?.ux || 1) - force * 2);

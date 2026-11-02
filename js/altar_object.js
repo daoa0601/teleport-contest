@@ -1,6 +1,7 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 import { displayColorName } from './display.js';
+import { upstart } from './hacklib.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
@@ -14,9 +15,6 @@ async function objectDescription(object, state) {
     return state === game
         ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
-}
-function capitalize(value) {
-    return value.charAt(0).toUpperCase() + value.slice(1);
 }
 function rememberBlessingOrCurse(object) {
     object.bknown = true;
@@ -49,7 +47,7 @@ export async function landObjectOnAltar(object, { state = game, monsterMoving = 
             rememberBlessingOrCurse(object);
     }
     else {
-        await publish(`${capitalize(description)} ${plural ? 'land' : 'lands'} on the altar.`);
+        await publish(`${upstart(description)} ${plural ? 'land' : 'lands'} on the altar.`);
         if (!coins)
             rememberBlessingOrCurse(object);
     }

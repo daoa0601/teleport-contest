@@ -136,6 +136,7 @@ def luck_partitions(front):
 LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
 ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
+CONST = 'js/const.js'
 HACKLIB = 'js/hacklib.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
@@ -205,10 +206,10 @@ def coordinate_domain(s, names):
 
 SPECS += [
     Spec('isok', 'isok', 'isok', [('x', INT), ('y', INT)],
-         require_counterexamples=True, js_file=HACKLIB,
+         require_counterexamples=True, js_file=CONST,
          pre=lambda s: coordinate_domain(s, ('x', 'y')),
          probes=[('x narrows to coordxy', lambda s: [s['x'] == 65537, s['y'] == 0])],
-         mutants=[(HACKLIB, 'return x >= 1 && x <= COLNO - 1',
+         mutants=[(CONST, 'return x >= 1 && x <= COLNO - 1',
                    'return x >= 0 && x <= COLNO - 1')]),
     Spec('online2', 'online2', 'pointsOnline', [(name, INT) for name in ('x0', 'y0', 'x1', 'y1')],
          require_counterexamples=True, js_file=HACKLIB,

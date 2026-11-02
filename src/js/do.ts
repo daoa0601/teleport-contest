@@ -4,6 +4,7 @@
 
 import { heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
 import { game, requireLiveGame } from './gstate.js';
+import { monsterIsHelpless } from './mondata.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
@@ -32,10 +33,6 @@ function monsterHasActiveAttack(monster: Monster): boolean {
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
 }
 
-function monsterIsHelpless(monster: Monster): boolean {
-    return !!(monster.msleeping
-        || !monster.mcanmove || (monster?.mfrozen ?? 0) > 0);
-}
 
 // C hack.c:monster_nearby().  This is the shared threat predicate used by
 // both safe waiting and safe searching; it is intentionally stricter than

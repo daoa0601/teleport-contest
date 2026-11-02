@@ -27,6 +27,7 @@ import { getLine } from './query.js';
 import { rn1 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import type { DeathHandler } from './end.js';
+import { upstart } from './hacklib.js';
 import type { HeroGenocideCause } from './hero_genocide.js';
 import type { MonsterVital } from './monster_types.js';
 
@@ -142,7 +143,7 @@ export async function doClassGenocide({
                 feltDead = true;
             }
         } else if (!doomed && speciesWasGenocided(species)) {
-            await plineWithContinuation(`${capitalize(plural)} are already nonexistent.`);
+            await plineWithContinuation(`${upstart(plural)} are already nonexistent.`);
         } else if (!doomed && canAnnounceImmuneSpecies(species)) {
             const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
             const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ) && species !== PM_HIGH_CLERIC;
@@ -349,6 +350,3 @@ function canAnnounceImmuneSpecies(species: number): boolean {
         && (species !== PM_NINJA || role.key === 'samurai');
 }
 
-function capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}

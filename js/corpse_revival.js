@@ -23,6 +23,7 @@ import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance } from './mon.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
+import { upstart } from './hacklib.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue, deleteObject } from './shk.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
@@ -106,18 +107,11 @@ function zombieCanDig(x, y, state) {
     const location = state.level?.at(x, y);
     return !!location && [ROOM, CORR, GRAVE].includes(location.typ);
 }
-// C hacklib.c:upstart().
-function upstart(text) {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
-function corpseName(corpse) {
-    return corpseObjectName(corpse, { singular: true,
-        adjective: corpse.oeaten ? 'bite-covered' : '' });
-}
 function revivalMessage(corpse, monster, location, originalWhere, wasWielded, state) {
     if (originalWhere === 'inventory') {
         return wasWielded
-            ? `The ${corpseName(corpse)} writhes out of your grasp!`
+            ? `The ${corpseObjectName(corpse, { singular: true,
+                adjective: corpse.oeaten ? 'bite-covered' : '' })} writhes out of your grasp!`
             : 'You feel squirming in your backpack!';
     }
     if (originalWhere === 'floor') {
@@ -126,7 +120,8 @@ function revivalMessage(corpse, monster, location, originalWhere, wasWielded, st
             return null;
         // C do.c:revive_corpse() uses The(cname), which keeps one article.
         if (!canSeeMonster(monster))
-            return `${capitalizedDefiniteName(corpseName(corpse), state)} disappears!`;
+            return `${capitalizedDefiniteName(corpseObjectName(corpse, { singular: true,
+                adjective: corpse.oeaten ? 'bite-covered' : '' }), state)} disappears!`;
         const effects = new Map([
             [311, ' in a whirl of spectral skulls'],
             [312, ' in a churning pillar of flies'],
@@ -142,7 +137,8 @@ function revivalMessage(corpse, monster, location, originalWhere, wasWielded, st
         const carrier = location.monsterCarrier;
         if (carrier && canSeeMonster(carrier)) {
             const result = canSpotMonster(monster) ? 'revives' : 'disappears';
-            return `Startled, ${monsterName(carrier, { state })} drops ${withIndefiniteArticle(corpseName(corpse))} as it ${result}!`;
+            return `Startled, ${monsterName(carrier, { state })} drops ${withIndefiniteArticle(corpseObjectName(corpse, { singular: true,
+                adjective: corpse.oeaten ? 'bite-covered' : '' }))} as it ${result}!`;
         }
         return canSpotMonster(monster)
             ? `${monsterName(monster, { state, capitalized: true, adjective: corpse.oeaten ? 'bite-covered' : '' })} suddenly appears!` : null;

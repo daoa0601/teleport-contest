@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
+import { ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { HEAVY_IRON_BALL, OBJECT_SUBTYPE, TOWEL } from './object_data.js';
 import { verbForSubject } from './objnam.js';
 
@@ -138,7 +138,7 @@ export async function showHeroPhysicalSilver(monster: Monster, {
 }: PhysicalSilverOptions): Promise<void> {
     const whom = searedTarget(monster, originalSpecies, state);
     if (!canSpotMonster(monster)) {
-        await publish(`${capitalize(whom)} is seared!`);
+        await publish(`${upstart(whom)} is seared!`);
     } else if (silverRings === 1) {
         await publish(`Your silver ring sears ${whom}!`);
     } else if (silverRings === 2) {
@@ -154,7 +154,7 @@ export async function showHeroPhysicalLight(monster: Monster, {
     state = game, publish = plineWithContinuation, originalSpecies, savedObjectName,
 }: PhysicalSearingOptions): Promise<void> {
     const whom = searedTarget(monster, originalSpecies, state);
-    if (!canSpotMonster(monster)) await publish(`${capitalize(whom)} is seared!`);
+    if (!canSpotMonster(monster)) await publish(`${upstart(whom)} is seared!`);
     else if (savedObjectName)
         await publish(`${possessiveName(savedObjectName)} radiance penetrates deep into ${whom}!`);
     else await publish(`The light sears ${whom}!`);
@@ -194,11 +194,3 @@ function damagePunctuation(damage: number): string {
     return damage < 0 ? '?' : damage <= 4 ? '.' : '!';
 }
 
-function ordinalSuffix(index: number): string {
-    if (index % 100 >= 11 && index % 100 <= 13) return 'th';
-    return index % 10 === 1 ? 'st' : index % 10 === 2 ? 'nd' : index % 10 === 3 ? 'rd' : 'th';
-}
-
-function capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}

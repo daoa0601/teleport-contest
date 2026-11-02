@@ -198,6 +198,15 @@ function stairway_find_special_dir(up) {
             return s;
     return null;
 }
+// C stairs.c:stairway_at(). Walks the per-game stairway chain; callers that
+// only need the square test wrap this in a truthiness check (On_stairs()).
+export function stairwayAt(state, x, y) {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y)
+            return stair;
+    }
+    return null;
+}
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also

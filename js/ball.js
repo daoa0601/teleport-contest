@@ -23,6 +23,7 @@ import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon 
 import { rangedTargetHitBonus } from './dothrow.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit, } from './const.js';
+import { dist2, distmin } from './hacklib.js';
 import { nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -245,14 +246,6 @@ export async function restoreBallAndChainPlacement(pin, state = game, publish = 
     state.u.bglyph = state.u.cglyph = rememberedGlyphAt(x, y, state);
     await newsym(x, y);
     state._ballChainRestriction = 0;
-}
-function dist2(x1, y1, x2, y2) {
-    const dx = x1 - x2;
-    const dy = y1 - y2;
-    return dx * dx + dy * dy;
-}
-function distmin(x1, y1, x2, y2) {
-    return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
 function carried(object, state = game) {
     return !!object && (object.where === 'inventory' || state.inventory.includes(object));

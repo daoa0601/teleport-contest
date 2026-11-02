@@ -2,6 +2,7 @@
 // C ref: do.c doaltarobj().
 
 import { displayColorName } from './display.js';
+import { upstart } from './hacklib.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
@@ -32,9 +33,6 @@ async function objectDescription(object: GameObject, state: GameState): Promise<
         : simpleObjectNameWithArticle(object, state);
 }
 
-function capitalize(value: string): string {
-    return value.charAt(0).toUpperCase() + value.slice(1);
-}
 
 function rememberBlessingOrCurse(object: GameObject): void {
     object.bknown = true;
@@ -76,7 +74,7 @@ export async function landObjectOnAltar(
         } ${plural ? 'hit' : 'hits'} the altar.`);
         if (!hallucinating) rememberBlessingOrCurse(object);
     } else {
-        await publish(`${capitalize(description)} ${
+        await publish(`${upstart(description)} ${
             plural ? 'land' : 'lands'
         } on the altar.`);
         if (!coins) rememberBlessingOrCurse(object);

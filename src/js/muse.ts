@@ -53,7 +53,7 @@ import {
 import { monsterName, monsterReflexiveAction } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterObjectPronoun, monsterSubjectPronoun } from './mondata.js';
-import { dist2, distmin, depth, ledgerNo } from './hacklib.js';
+import { dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, cls, displayColorName, displaySelf, docrt, flashGlyphAt,
@@ -2308,7 +2308,7 @@ export async function tryMonsterUnslime(monster: Monster, {
         visible ||= canSeeMonster(monster);
         if (visible) {
             if (!heroIsUnaware(state)) observeObject(oil, state);
-            const subject = sawLighting ? capitalize(monsterSubjectPronoun(monster, { state }))
+            const subject = sawLighting ? upstart(monsterSubjectPronoun(monster, { state }))
                 : monsterName(monster, { state, capitalized: true });
             await publish(`${subject} quaffs a burning ${minimalObjectName(oil, state)}`);
             learnObjectType(POT_OIL, state);
@@ -2436,7 +2436,3 @@ function splitOilPotion(oil: GameObject, state: GameState): GameObject {
     return single;
 }
 
-// C hacklib.c:upstart(), inline for muse_unslime()'s oil pronoun.
-function capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}

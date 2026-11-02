@@ -60,7 +60,7 @@ import {
 } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks } from './hack.js';
-import { depth, dist2, possessiveName } from './hacklib.js';
+import { depth, dist2, possessiveName, upstart } from './hacklib.js';
 import { loseHeroHp } from './hero_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { expelHero } from './hero_expulsion.js';
@@ -75,13 +75,13 @@ import { gotoLevel } from './level_change.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { objectMaterial } from './o_init.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
-import { canDigDown, deleteFloorTrap, maketrap } from './mklev.js';
+import { canDigDown, deleteFloorTrap, maketrap, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject } from './mkobj.js';
 import {
-    angerWatchGuards, maybeUnhideAt, resolveMonsterLiquid,
+    angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid,
     wakeMonstersNearWithMessages,
 } from './mon.js';
-import { triggerMonsterDoorTrap } from './monmove.js';
+import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import {
     MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
     monsterDigests, monsterIsWhirly, monsterTypeName, requireMonsterData,
@@ -129,7 +129,7 @@ import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { stopLevelTimer } from './timeout.js';
 import {
     convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap,
-    seeTrap, trapName, triggerImmediateMonsterTrap, waterDamageChain,
+    seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain,
 } from './trap.js';
 import {
     cansee, monsterHasLineOfSightToHero, unblock_point,
@@ -170,10 +170,6 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
-function trapAt(x: number, y: number, state: GameState): Trap | null {
-    return state.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y) || null;
-}
 
 function monsterAt(x: number, y: number, state: GameState): Monster | null {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
@@ -186,21 +182,16 @@ function objectAt(x: number, y: number, otyp: number, state: GameState): GameObj
         .find(object => object.otyp === otyp) || null;
 }
 
-// C monmove.c:closed_door(): DOOR terrain with a closed or locked mask.
-function closedDoor(location: MapLocation | null | undefined): boolean {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
-}
 
 // C dig.c pick_can_reach(): whether a pick can reach a statue or boulder
 // that sits in (or beside) a pit.
 function pickCanReach(tool: GameObject, x: number, y: number, state: GameState): boolean {
-    const trap = trapAt(x, y, state);
+    const trap = trapAt(state, x, y);
     const targetInPit = !!(trap && is_pit(trap.ttyp) && trap.tseen);
 
     if ((state.u.utrap ?? 0) > 0 && state.u.utraptype === TT_PIT) {
         if (targetInPit)
-            return pitsAreConjoined(trap, trapAt(state.u.ux, state.u.uy, state));
+            return pitsAreConjoined(trap, trapAt(state, state.u.ux, state.u.uy));
         return isBimanualObject(tool);
     }
     if (isBimanualObject(tool) || heroIsFlying(state)) return true;
@@ -219,14 +210,14 @@ export function diggingTarget(tool: GameObject | null | undefined, x: number, y:
     const typ = location.typ;
 
     if (isAxe(tool))
-        return closedDoor(location) ? DIGTYP_DOOR
+        return closedDoor(state, x, y) ? DIGTYP_DOOR
             : IS_TREE(typ) ? DIGTYP_TREE
                 : DIGTYP_UNDIGGABLE;
     return objectAt(x, y, STATUE, state) && pickCanReach(tool, x, y, state)
         ? DIGTYP_STATUE
         : objectAt(x, y, BOULDER, state) && pickCanReach(tool, x, y, state)
             ? DIGTYP_BOULDER
-            : closedDoor(location) ? DIGTYP_DOOR
+            : closedDoor(state, x, y) ? DIGTYP_DOOR
                 : IS_TREE(typ) ? DIGTYP_UNDIGGABLE
                     : IS_OBSTRUCTED(typ)
                       && (!level.flags?.arboreal || IS_WALL(typ))
@@ -335,7 +326,7 @@ async function mkcavepos(x: number, y: number, dist: number, waslit: boolean, ro
     if (!location) return;
     if (rockit) {
         if (IS_OBSTRUCTED(location.typ)) return;
-        if (trapAt(x, y, state)) return;
+        if (trapAt(state, x, y)) return;
         const monster = monsterAt(x, y, state);
         if (monster && !(requireMonsterData(MONSTER_FLAGS1, monster.mnum) & M1_WALLWALK)) {
             // C rloc(mtmp, RLOC_NOMSG): relocate without a message.
@@ -574,7 +565,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
     if (state.urace?.name === 'dwarf') digging.effort *= 2;
 
     if (digging.down) {
-        const trap = trapAt(dpx, dpy, state);
+        const trap = trapAt(state, dpx, dpy);
 
         if (digging.effort > 250 || trap?.ttyp === HOLE) {
             await digHole({ state });
@@ -716,7 +707,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             digtxt = 'You break through a secret door!';
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;
-        } else if (closedDoor(location)) {
+        } else if (closedDoor(state, dpx, dpy)) {
             digtxt = `You break through the door with your ${
                 simpleObjectName(uwep, state)
             }.`;
@@ -827,9 +818,6 @@ function verbose(state: GameState): boolean {
     return state.flags?.verbose !== false;
 }
 
-function capitalized(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 function alignmentWord(alignment: number): string {
     if (alignment > 0) return 'lawful';
@@ -843,28 +831,17 @@ function liquidName(typ: number, state: GameState = game): string {
     return displayLiquidName(typ === LAVAPOOL ? 'lava' : 'water', state);
 }
 
-function monsterSubject(monster: Monster, state: GameState = game): string {
-    return monsterName(monster, { state, capitalized: true });
-}
-
-// C hack.h On_stairs(): the stairway chain, which survives terrain wishes.
-function stairwayAt(x: number, y: number, state: GameState): Stairway | null {
-    for (let stair = state.stairs; stair; stair = stair.next) {
-        if (stair.sx === x && stair.sy === y) return stair;
-    }
-    return null;
-}
 
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
 export function digCheck(madeBy: DiggingActor, x: number, y: number, state: GameState = game) {
     const location = state.level?.at?.(x, y);
     if (!location) return DIGCHECK_FAIL_TOOHARD;
-    const trap = trapAt(x, y, state);
+    const trap = trapAt(state, x, y);
 
     // C tests On_stairs(x, y), i.e. the stairway structure, not levl.typ:
     // a debug terrain wish can overwrite the displayed terrain while the
     // stairway itself remains, and digging must still refuse there.
-    const stair = stairwayAt(x, y, state);
+    const stair = stairwayAt(state, x, y);
     if (stair) {
         return stair.isladder ? DIGCHECK_FAIL_ONLADDER : DIGCHECK_FAIL_ONSTAIRS;
     } else if (IS_THRONE(location.typ) && madeBy !== 'object') {
@@ -989,7 +966,7 @@ export async function digHole({
         if (!isok(digX, digY)) return false;
     }
 
-    const trap = trapAt(digX, digY, state);
+    const trap = trapAt(state, digX, digY);
     const location = requireGameLevel(state).requireAt(digX, digY);
     const digCheckResult = digCheck('you', digX, digY, state);
     const nohole = digCheckResult === DIGCHECK_FAIL_CANTDIG
@@ -1056,7 +1033,7 @@ export async function digHole({
         } else {
             location.drawbridgemask = ((location.drawbridgemask ?? 0) & ~DB_UNDER)
                 | (liquid === LAVAPOOL ? DB_LAVA : DB_MOAT);
-            await liquidFlow(digX, digY, liquid, trap,
+            await liquidFlow(digX, digY, liquid, trap ?? null,
                 'As you dig, the hole fills with %s!', { state });
             retval = true;
         }
@@ -1070,7 +1047,7 @@ export async function digHole({
         if (liquid !== ROOM) {
             if (!await furnitureHandled(digX, digY, true, state)) {
                 location.typ = liquid;
-                await liquidFlow(digX, digY, liquid, trap,
+                await liquidFlow(digX, digY, liquid, trap ?? null,
                     'As you dig, the hole fills with %s!', { state });
             }
             retval = true;
@@ -1174,7 +1151,7 @@ export async function digActualHole(
                 `The ${surfaceType} crumbles into ${withIndefiniteArticle(trapWord)}.`);
         } else {
             await plineWithContinuation(
-                `${capitalized(withIndefiniteArticle(trapWord))} appears `
+                `${upstart(withIndefiniteArticle(trapWord))} appears `
                 + `in the ${surfaceType}.`);
         }
     }
@@ -1226,7 +1203,7 @@ export async function digActualHole(
             } else if (victim !== madeBy) {
                 const fall = await triggerImmediateMonsterTrap(victim, state);
                 await finishImmediateMonsterTrap(fall, state, {
-                    describeMonster: monster => monsterSubject(monster, state),
+                    describeMonster: monster => monsterName(monster, { state, capitalized: true }),
                 });
             }
         }
@@ -1577,7 +1554,7 @@ export async function zapDigWithObject(
     if (dx === undefined || dy === undefined) throw new Error('Digging requires a selected direction.');
     const maze = level.flags.is_maze_lev && !Is_earthlevel(hero.uz);
     const ownPit = hero.utrap && hero.utraptype === TT_PIT
-        ? trapAt(hero.ux, hero.uy, state) : null;
+        ? trapAt(state, hero.ux, hero.uy) : null;
     const direction = xdir.findIndex((offsetX, index) => index < 8
         && offsetX === dx && ydir[index] === dy);
     let x = hero.ux + dx, y = hero.uy + dy;
@@ -1599,7 +1576,7 @@ export async function zapDigWithObject(
 
             // C trap.c:conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
-                let adjacentPit = trapAt(x, y, state);
+                let adjacentPit = trapAt(state, x, y);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
                     if (!adjacentPit || !is_pit(adjacentPit.ttyp)) {
                         const rejection = adjacentPitRejection(x, y, state);
@@ -1607,7 +1584,7 @@ export async function zapDigWithObject(
                             await digHole({ pitOnly: true, byMagic: true,
                                 coordinate: { x, y }, state });
                             if (state.program_state.gameover) return;
-                            adjacentPit = trapAt(x, y, state);
+                            adjacentPit = trapAt(state, x, y);
                         } else if (rejection) {
                             await plineWithContinuation(rejection);
                         }
@@ -1620,7 +1597,7 @@ export async function zapDigWithObject(
                         flowingPit = { x: x - dx, y: y - dy };
                     break;
                 }
-            } else if (closedDoor(location) || location.typ === SDOOR) {
+            } else if (closedDoor(state, x, y) || location.typ === SDOOR) {
                 if (roomsAt(level, x, y, SHOPBASE).length) {
                     addShopDamage(x, y, SHOP_DOOR_COST, state);
                     shopDoor = true;
@@ -1683,7 +1660,7 @@ export async function zapDigWithObject(
     }
 
     if (flowingPit && isok(flowingPit.x, flowingPit.y)) {
-        const trap = trapAt(flowingPit.x, flowingPit.y, state);
+        const trap = trapAt(state, flowingPit.x, flowingPit.y);
         if (trap && is_pit(trap.ttyp)) {
             const liquid = liquidForHole(trap.tx, trap.ty, state, { fillIfAny: true });
             if (liquid !== ROOM) await floodConnectedPits(trap, liquid, state);
@@ -1713,7 +1690,7 @@ async function digVertically(state: GameState, direction: number): Promise<void>
     const hero = state.u;
     if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)
         || state.underwater || hero.uinwater) return;
-    const stairs = stairwayAt(hero.ux, hero.uy, state);
+    const stairs = stairwayAt(state, hero.ux, hero.uy);
     if (direction > 0 && !stairs) {
         await watchDigging(hero.ux, hero.uy, { state });
         await digHole({ byMagic: true, state });
@@ -1748,12 +1725,12 @@ function adjacentPitRejection(x: number, y: number, state: GameState): string | 
     // This also clears door locks, ice underlay, and nondiggable rock flags.
     clearTerrainFlags(location);
     if (isPoolAt(x, y, state) || isLavaAt(x, y, state)) return '';
-    if (closedDoor(location) || type === SDOOR || IS_WALL(type))
+    if (closedDoor(state, x, y) || type === SDOOR || IS_WALL(type))
         return 'The foundation is too hard to dig through from this angle.';
     if (IS_TREE(type)) return "The tree's roots glow then fade.";
     if (type === IRONBARS) return 'The bars go much deeper than your pit.';
     if (type === SINK) return 'A tangled mass of plumbing remains below the sink.';
-    const stairs = stairwayAt(x, y, state);
+    const stairs = stairwayAt(state, x, y);
     // C stairs.c:On_ladder().
     if (stairs?.isladder) return 'The ladder is unaffected.';
     // C stairs.c:On_stairs() names the stairs as the supporting structure;
@@ -1781,7 +1758,7 @@ async function floodConnectedPits(trap: Trap | null | undefined, liquid: number,
             const dx = xdir[direction], dy = ydir[direction];
             if (dx === undefined || dy === undefined)
                 throw new RangeError(`Invalid connected pit direction ${direction}`);
-            await floodConnectedPits(trapAt(x + dx, y + dy, state), liquid, state);
+            await floodConnectedPits(trapAt(state, x + dx, y + dy), liquid, state);
             if (state.program_state.gameover) return;
         }
     }

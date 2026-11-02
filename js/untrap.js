@@ -1,4 +1,4 @@
-import { trapName, deleteTrap, convertTrapToObject } from './trap.js';
+import { trapName, deleteTrap, convertTrapToObject, trapAt } from './trap.js';
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 import { formatFeltMessage } from './hero_speech.js';
@@ -85,10 +85,6 @@ function monsterAt(state, x, y) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
-}
-// C trap.c:t_at().
-function trapAt(state, x, y) {
-    return state.level?.traps?.find(trap => trap.tx === x && trap.ty === y) || null;
 }
 function boxesAt(state, x, y) {
     return (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);

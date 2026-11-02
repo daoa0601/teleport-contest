@@ -1,9 +1,9 @@
 // mkmap.js - cave-style map generation.
 // C ref: mkmap.c.
-import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, SDOOR, SHARED, STONE, TREE, } from './const.js';
+import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, SDOOR, SHARED, STONE, TREE, isok, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
-import { depth, isok } from './hacklib.js';
+import { depth } from './hacklib.js';
 import { dig_corridor, wallifyMap } from './sp_lev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
