@@ -1,6 +1,7 @@
 // dig.c owner: hero and monster digging, terrain changes, burial, and
 // wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
 // digging_watch/buried_object/hole (pure move, no behavior change).
+import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { objectIsHardHelmet } from './armor.js';
@@ -69,9 +70,6 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { clearHeroTrap, setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { delobj } from './invent.js';
-import {
-    leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash,
-} from './leash_apply.js';
 import { gotoLevel } from './level_change.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { objectMaterial } from './o_init.js';
@@ -118,7 +116,7 @@ import {
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { monsterHasMapPosition } from './steed.js';
-import { bringLeashedFollowers, randomMonsterRelocation } from './teleport.js';
+import { randomMonsterRelocation } from './teleport.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import {

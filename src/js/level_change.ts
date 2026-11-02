@@ -44,7 +44,8 @@ import { dungeonBuildsUp, initOverviewRecord, level_difficulty,
     specialPrototypeAt, insideWizardTower, levelIsWizardTower,
     wizardTowerLevelAt } from './dungeon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely, bringLeashedFollowers } from './teleport.js';
+import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely } from './teleport.js';
+import { bringLeashedFollowers } from './apply.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_NAME } from './monster_data.js';

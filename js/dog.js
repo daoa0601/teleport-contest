@@ -10,7 +10,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './ambient_sounds.js';
-import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './leash_apply.js';
+import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './apply.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';

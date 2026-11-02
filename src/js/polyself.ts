@@ -77,7 +77,7 @@ import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js
 import { nameToMonster, resolveMonsterClass } from './mondata.js';
 import { counterWereSpecies, isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';

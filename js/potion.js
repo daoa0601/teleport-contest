@@ -2376,4 +2376,13 @@ export async function finishStrangeFeeling(source, { state = game, } = {}) {
         await consumeInventoryItem(source, state);
     return { known: false, consumed: !!source, heroDied: !!state.program_state.gameover };
 }
+// C potion.c:make_glib().
+export function setSlipperyHands(turns, state = game) {
+    // Native make_glib() redraws when the old and requested states agree.
+    // Timeout expiry calls it after clearing the old timer.
+    if (!!state.u.glib === (turns > 0))
+        state.context.botl = true;
+    state.u.glibTurns = Math.max(0, Math.min(TIMEOUT, turns));
+    state.u.glib = state.u.glibTurns > 0;
+}
 //# sourceMappingURL=potion.js.map

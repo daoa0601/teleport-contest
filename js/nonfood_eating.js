@@ -17,7 +17,7 @@ import { makeStunned } from './hero_mental_status.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { currentHungerState, gainHeroNutrition } from './hunger.js';
 import { chewIronBars } from './iron_bars_meal.js';
-import { releaseObjectLeash } from './leash_apply.js';
+import { releaseObjectLeash } from './apply.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { FLINT, LEASH, OBJECT_NAMES, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './o_init.js';

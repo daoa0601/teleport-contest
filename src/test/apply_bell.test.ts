@@ -5,7 +5,7 @@ import { addTrap } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vision_reset, vision_recalc } from '../js/vision.js';
-import { useBell } from '../js/apply_bell.js';
+import { useBell } from '../js/apply.js';
 import { removeHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { nomul } from '../js/hack.js';

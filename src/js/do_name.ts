@@ -35,7 +35,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
 import { playerName } from './player_name.js';
-import { heroBeautyDescription } from './mirror.js';
+import { heroBeautyDescription } from './apply.js';
 import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid,
     monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName,

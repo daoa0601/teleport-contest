@@ -7,7 +7,7 @@ import { clearMessageWindow } from '../js/tty_topline.js';
 import { docrt } from '../js/display.js';
 import { updateStatusLines } from '../js/botl.js';
 import { game } from '../js/gstate.js';
-import { jumpHero } from '../js/jumping.js';
+import { jumpHero } from '../js/apply.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { runSegment } from '../js/jsmain.js';
 import { resetInputState } from '../js/input.js';

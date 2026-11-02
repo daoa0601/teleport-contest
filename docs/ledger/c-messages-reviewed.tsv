@@ -2,8 +2,8 @@
 # Keys and piece escapes match c-messages.tsv. A shared key covers every native literal with that file, owner and longest fixed piece.
 # Composed reasons start with src/js/FILE.ts:FUNCTION (preferred) or :LINE; every such location is checked.
 apply.c	do_break_wand	self by breaking a wand	composed	src/js/apply.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
-apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
-apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
+apply.c	flip_through_book	ink in this spellbook is	composed	src/js/apply.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
+apply.c	use_leash	from inside.	composed	src/js/apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
 artifact.c	artifact_hit	blade drains your	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 artifact.c	artifact_hit	blade draws the	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 cfgfiles.c	config_erradd	config_error_add:	dead	The prefix needs !config_error_ready and !window_inited together. Recorder startup parses files and NETHACKOPTIONS inside config_error_init() frames; interactive option errors run after window initialization.

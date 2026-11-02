@@ -20,7 +20,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { invault } from '../js/vault.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { moveMonsterNextToHero } from '../js/teleport.js';
-import { useWhistle } from '../js/whistle.js';
+import { useWhistle } from '../js/apply.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

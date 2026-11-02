@@ -10,7 +10,7 @@ import { speakArtifact } from '../js/artifacts.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { howMonsterSeen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
-import { useMirror } from '../js/mirror.js';
+import { useMirror } from '../js/apply.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, MIRROR, RIN_FREE_ACTION, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';

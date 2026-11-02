@@ -65,7 +65,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { dropHeroInventoryForBones } from './bones_death.js';
 import { recordGameLogEvent } from './gamelog.js';
-import { releaseAllMonsterLeashes, releaseObjectLeash } from './leash_apply.js';
+import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
 import { SPBOOK_CLASS } from './mklev.js';
 
@@ -1563,9 +1563,6 @@ function distu(state: GameState, x: number, y: number): number {
     return dist2(x, y, state.u.ux, state.u.uy);
 }
 
-function umDist(state: GameState, x: number, y: number, n: number): boolean {
-    return Math.abs(state.u.ux - x) > n || Math.abs(state.u.uy - y) > n;
-}
 
 // C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
 function mNext2u(monster: Monster, state: GameState): boolean {

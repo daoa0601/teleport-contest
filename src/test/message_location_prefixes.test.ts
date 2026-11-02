@@ -14,7 +14,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { vision_recalc } from '../js/vision.js';
-import { jumpHero } from '../js/jumping.js';
+import { jumpHero } from '../js/apply.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';

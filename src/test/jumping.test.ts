@@ -10,7 +10,7 @@ import {
 } from '../js/const.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { glyphAt, newsym } from '../js/display.js';
-import { jumpHero } from '../js/jumping.js';
+import { jumpHero } from '../js/apply.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, STATUE } from '../js/object_data.js';

@@ -42,7 +42,7 @@ import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, costlySpot } from './shk.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { wieldTool } from './wield_tool.js';
 
 interface TinOptions { state?: GameState; }
