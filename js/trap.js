@@ -5204,6 +5204,8 @@ export function heroTeetersAtPit(state, trap) {
 export function heroEscapedShaft(trap) {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
+// C trap.c:uescaped_shaft() keeps this module's ownership line; the port
+// itself is heroEscapedShaft above.
 // C engrave.c:can_reach_floor(): the shared floor-reach test; heroCanReachFloor()
 // below is the boolean wrapper, and pickup_checks() calls this directly.
 export function floorReachProblem(state = game, { checkPit = false } = {}) {
