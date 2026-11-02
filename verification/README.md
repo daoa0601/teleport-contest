@@ -517,17 +517,20 @@ for failure diagnostics. They run with:
 cd verification/equivalence && uv run --locked ../test_ledgers.py
 ```
 
-`.github/workflows/equivalence.yml` runs the fast job on every pull request,
+`.github/workflows/equivalence.yml` runs `equivalence` and
+`equivalence-callsites` in parallel on every pull request,
 on pushes to `daoa/recovery-architecture` and `main`, nightly at 02:17 UTC, and
-on `workflow_dispatch`. The separate `slow-equivalence` job runs after it only
-on schedule or manual dispatch, using `--slow-only` with the same ledger.
-Both jobs use `ubuntu-latest`, install clang and prepare the recorder-patched
-C sources and Lua headers with `linux-minimal` / `LUA_USE_POSIX`. Each job
-compiles the TypeScript before proving emitted JavaScript. The fast job also
-runs executor, target-selection, analyzer and ledger tests, the generator
-cross-check and both call-site gates. The slow job retains a separate proof
-report and runtime. Hosted Actions results have not been observed for this
-change.
+on `workflow_dispatch`. The separate `slow-equivalence` job runs after
+`equivalence` only on schedule or manual dispatch, using `--slow-only` with
+the same ledger. All three jobs use `ubuntu-latest`. The proof jobs install
+clang and prepare the recorder-patched C sources and Lua headers with
+`linux-minimal` / `LUA_USE_POSIX`; call-site analysis needs no C build. Each job
+compiles the TypeScript before checking emitted JavaScript. `equivalence` runs
+executor, target-selection and ledger tests, the generator cross-check and fast
+proofs with their probes and mutants. `equivalence-callsites` runs analyzer
+tests, the caller-domain ledger check and invalid-domain mutants. Each job has
+a 30-minute timeout and its own report, runtime measurement and artifact.
+The separate `difftest` job builds and tests the native differential harness.
 
 Clang reads system headers through `hack.h`; those headers remain part of the
 C input. A local Ubuntu 24.04 arm64 container using glibc headers proved

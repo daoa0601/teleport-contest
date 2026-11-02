@@ -858,16 +858,20 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
 
 ## Staged plan
 
-1. **CI (fast/slow jobs implemented; local commands passed).** The Ubuntu
-   fast job runs on pull requests, branch pushes, schedule and manual dispatch
+1. **CI (parallel fast-proof and call-site jobs; separate slow proofs).** The
+   Ubuntu `equivalence` and `equivalence-callsites` jobs run in parallel on pull
+   requests, branch pushes, schedule and manual dispatch. `equivalence` runs
    with `--skip-slow --check-ledger`. A separate slow job runs nightly at
    02:17 UTC or on `workflow_dispatch`, after the fast job, with
    `--slow-only --check-ledger`. Both validate all ledger metadata, including
    runtime markers, before proving their selected claims. Missing fast claims
    cannot be hidden by the selector. Partial runs cannot write the ledger.
-   Both jobs prepare recorder-patched C/Lua headers using Linux build rules and
-   compile the port. The fast job runs all verification test commands and
-   call-site gates. Hosted results are not yet observed for this change.
+   All three jobs compile the port. The proof jobs also prepare recorder-patched
+   C/Lua headers using Linux build rules. `equivalence` runs executor,
+   target-selection and ledger tests plus the generator cross-check.
+   `equivalence-callsites` runs analyzer
+   tests, the caller-domain ledger check and invalid-domain mutants. Each job
+   keeps its 30-minute timeout, runtime summary and separate artifact.
    Local Ubuntu 24.04 arm64/glibc proofs passed for `acurr:all` (6.1 s) and
    `abon:forms` (49.5 s), including probes and mutants. This exercises Linux
    headers and assertion expansion; hosted runners may have different clang
