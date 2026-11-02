@@ -5,7 +5,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import type { MessagePublisher } from './pline.js';
+import { set_msg_xy, type MessagePublisher } from './pline.js';
 import { changeMonsterForm } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
 import { monsterHasMagicResistance, monsterWornIronShoes } from './anti_magic_trap.js';
@@ -146,6 +146,9 @@ export async function finishMonsterPolymorphTrap(
         // after an actual shape change, so it stays hidden here.
         await shieldeff(event.monster.mx, event.monster.my, state);
         if (event.seeSquare) {
+            // mon.c:shieldeff_mon() reports through pline_mon(), which
+            // anchors the message at the monster's square.
+            set_msg_xy(event.monster.mx, event.monster.my);
             await publish(`${monsterName(event.monster, { state, capitalized: true })} resists!`);
         }
         event.finished = true;
