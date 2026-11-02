@@ -67,6 +67,20 @@ function luaTimerArrayEntry(table, entry) {
         throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
     return luaToInteger(converted);
 }
+// C sp_lev.c:create_des_coder(): this session owns the per-level coder
+// state — SpLev_Map becomes mappedCells, the nested room and container
+// stacks become the context and containers arrays, update_croom() the
+// context switch after each room operation, spo_endroom() the context
+// restore in those finally blocks, spo_pop_container() the containers.pop()
+// in invokeObjectContents(), spo_end_moninvent() the initializeMonsterArmor()
+// after a monster inventory callback, and l_push_wid_hei_table() the
+// width/height table given to a map contents callback. The operation
+// properties below port the matching lspo_* callbacks: message
+// (lspo_message()), region's selection form (lspo_region() with
+// sel_set_lit()), grave (lspo_grave()), gas_cloud (lspo_gas_cloud()),
+// teleport_region (lspo_teleport_region()), levregion (lspo_levregion()),
+// random_corridors (lspo_random_corridors()), mineralize
+// (lspo_mineralize()) and wallify (lspo_wallify()).
 function createLuaLevelSession() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
@@ -423,6 +437,9 @@ function createLuaLevelSession() {
     };
     return {
         bindings,
+        // C sp_lev.c:sp_level_coder_init(): fresh flip flags, an empty
+        // SpLev_Map, and the level's base flags; reset_xystart_size() is
+        // the wholeLevel rectangle.
         beginLevel(nextActive, { special = true } = {}) {
             active = nextActive;
             context = wholeLevel;
@@ -457,6 +474,10 @@ function createLuaLevelSession() {
         roomFailed() {
             return roomFailed;
         },
+        // C sp_lev.c:lspo_finalize_level(): door linking, boundary removal,
+        // way-out checks, map cleanup, wallification, random flips, the
+        // feature census and solidification — load_special()'s tail shares
+        // this sequence.
         async finishSpecialLevel() {
             linkSpecialLevelDoors();
             removeSpecialLevelBoundaries(mappedCells);
@@ -476,6 +497,7 @@ function createLuaLevelSession() {
         },
     };
 }
+// C sp_lev.c:load_special(): run the level's Lua script, then finalize.
 export async function generateLuaSpecialLevel(active) {
     const session = createLuaLevelSession();
     session.beginLevel(active);

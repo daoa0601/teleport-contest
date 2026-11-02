@@ -19,6 +19,8 @@ export function removeSpecialLevelBoundaries(mappedCells, state = game) {
         }
     }
 }
+// C sp_lev.c:map_cleanup(): boulders, most traps and engravings on liquid
+// are removed without settling, messages or destruction rolls.
 export async function cleanupSpecialLevelMap(state = game) {
     const level = requireGameLevel(state);
     for (let x = 0; x < COLNO; x++) {

@@ -614,6 +614,9 @@ export async function generateSokobanLevel2(active: ActiveSpecialLevel): Promise
     await generateSokobanLevel(active);
 }
 
+// Fill the maze rectangle with the wall-and-pillar lattice level_init uses.
+// C sp_lev.c:lvlfill_maze_grid(): stone everywhere in corridor mazes, and
+// a (y < 2 || odd x, odd y) lattice otherwise.
 export function fillSpecialMazeGrid(filling = HWALL): void {
     const level = requireGameLevel();
     const mazeXMax = (COLNO - 1) & ~1;
