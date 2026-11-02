@@ -8,12 +8,12 @@ proof. The six original targets remain available through the same runner.
 
 | Input target | Recorder entry | Emitted JavaScript entry |
 |---|---|---|
-| `mksobj` | `mkobj.c:mksobj` | `mklev.js:mksobj` |
-| `mkobj` | `mkobj.c:mkobj` | `mklev.js:mkobj` |
-| `rnd_class` | `objnam.c:rnd_class` | `mklev.js:rndClass` |
-| `rndmonst` | `makemon.c:rndmonst` | `mklev.js:rndmonstAdj(0, 0)` |
-| `mkclass` | `makemon.c:mkclass_aligned` | `mklev.js:mkclassAligned` |
-| `makemon_inventory` | `makemon.c:makemon`, including `m_initweap` and `m_initinv` | `mklev.js:makemonAt` |
+| `mksobj` | `mkobj.c:mksobj` | `mkobj.js:mksobj` |
+| `mkobj` | `mkobj.c:mkobj` | `mkobj.js:mkobj` |
+| `rnd_class` | `objnam.c:rnd_class` | `objnam.js:rndClass` |
+| `rndmonst` | `makemon.c:rndmonst` | `makemon.js:rndmonstAdj(0, 0)` |
+| `mkclass` | `makemon.c:mkclass_aligned` | `makemon.js:mkclassAligned` |
+| `makemon_inventory` | `makemon.c:makemon`, including `m_initweap` and `m_initinv` | `makemon.js:makemonAt` |
 
 `mkclass` with alignment `-128` exercises ordinary `mkclass` semantics; the
 other three alignments exercise `mkclass_aligned`. The port folds weapons and
@@ -27,6 +27,20 @@ The inventory projection also calls `teleport.c:noteleport_level` and emitted
 current teleport restriction directly.
 
 ## Run
+
+CI runs this harness as a sibling `difftest` job in
+`.github/workflows/equivalence.yml`, with a separate 30-minute timeout. Its source preparation builds Lua,
+`util/makedefs` and generated `dat/bogusmon`; linking also needs ncurses headers
+and libraries.
+For the same locked environment locally:
+
+```sh
+cd verification/difftest
+export NETHACK_RECORDER=/path/to/nethack-c/recorder
+uv run --locked run.py --build
+uv run --locked python -m pytest -q
+```
+
 
 From the worktree root, with the configured recorder available read-only:
 
