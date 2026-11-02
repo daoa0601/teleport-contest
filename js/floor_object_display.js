@@ -21,7 +21,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { heroIsBlind } from './senses.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap.js';
-import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse, } from './stoning.js';
+import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse } from './stoning.js';
 export async function readFloorEngraving(x, y) {
     const read = await readEngravingAt(x, y, plineWithContinuation);
     // engrave.c:read_engr_at() only calls nomul(0) for a real run

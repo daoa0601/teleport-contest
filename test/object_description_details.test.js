@@ -4,7 +4,7 @@ import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, MV_KN
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn, endObjectBurn } from '../js/light.js';
+import { beginObjectBurn, endObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, EGG, FIGURINE, FOOD_RATION, LEASH, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NUTRITION, OIL_LAMP, POT_OIL, TALLOW_CANDLE, UNICORN_HORN, WAN_FIRE, WAX_CANDLE, } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

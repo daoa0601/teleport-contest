@@ -12,7 +12,7 @@ import {
 import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hack.js';
-import { heroIsSick } from '../js/hero_illness.js';
+import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/trap.js';
@@ -26,7 +26,7 @@ import {
     OBJECT_NAMES, SHIELD_OF_REFLECTION,
 } from '../js/object_data.js';
 import { roles, races } from '../js/roles.js';
-import { heroIsSliming, startHeroSliming } from '../js/slime.js';
+import { heroIsSliming, startHeroSliming } from '../js/potion.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc } from '../js/vision.js';

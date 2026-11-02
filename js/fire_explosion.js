@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { explode } from './explosion.js';
 import { game } from './gstate.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 // Extinguish before the blast so death and bones cannot retain its light.

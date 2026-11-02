@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { revealAggravatingMonster } from '../js/muse.js';

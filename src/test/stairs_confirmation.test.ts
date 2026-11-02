@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { advanceLevitationTimeout } from '../js/levitation_timeout.js';
+import { advanceLevitationTimeout } from '../js/timeout.js';
 import { ORCISH_DAGGER, POT_LEVITATION } from '../js/object_data.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

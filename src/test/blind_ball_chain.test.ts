@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { BC_BALL, BC_CHAIN, PIT, SLP_GAS_TRAP } from '../js/const.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { heroIsUnaware } from '../js/hero_sleep.js';
+import { heroIsUnaware } from '../js/senses.js';
 import { initRng } from '../js/rng.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { docrt, feel_location } from '../js/display.js';

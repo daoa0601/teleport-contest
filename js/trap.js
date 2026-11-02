@@ -5,7 +5,8 @@ import { delobj, consumeObjectCharge } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, killerObjectName, bareArtifactOrPlainName } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, objectClassForType, recordObjectKnowledge } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
-import { endObjectBurn, beginObjectBurn, LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
+import { endObjectBurn, beginObjectBurn } from './timeout.js';
+import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
@@ -94,7 +95,7 @@ import { CLR_GREEN } from './terminal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
 import { stopHeroOccupation } from './occupation.js';
-import { putHeroToSleep } from './hero_sleep.js';
+import { putHeroToSleep } from './timeout.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
@@ -106,7 +107,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { setHeroGrip } from './hero_grip.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
-import { heroIsSliming } from './slime.js';
+import { heroIsSliming } from './potion.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export async function seeTrap(trap, state = game) {
     if (trap.tseen)

@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_IDENTIFY, TALLOW_CANDLE } from '../js/object_data.js';
-import { startHeroSliming } from '../js/slime.js';
+import { startHeroSliming } from '../js/potion.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

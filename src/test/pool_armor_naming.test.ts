@@ -7,7 +7,7 @@ import { NO_MINVENT, RUST_TRAP, W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR, OIL_LAMP, MAGIC_LAMP } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

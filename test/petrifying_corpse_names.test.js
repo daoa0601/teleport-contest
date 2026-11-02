@@ -4,7 +4,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { feelPetrifyingCorpse, selfTouchPetrifyingWeapons, snatchPetrifyingCorpse, touchPetrifyingCorpse, } from '../js/stoning.js';
+import { feelPetrifyingCorpse, selfTouchPetrifyingWeapons, snatchPetrifyingCorpse, touchPetrifyingCorpse } from '../js/stoning.js';
 import { corpseObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

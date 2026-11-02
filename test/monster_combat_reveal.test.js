@@ -6,7 +6,7 @@ import { clearMessageWindow, moreUntilDismissed } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW } from '../js/monster_attack_types.js';
 import { canSeeMonsterCombat, prepareMonsterCombatContact, revealMonsterCombatDefender, showMonsterCombatMiss, } from '../js/mhitm.js';

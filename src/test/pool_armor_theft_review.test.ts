@@ -13,7 +13,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState, pushKey, pushKeys } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';

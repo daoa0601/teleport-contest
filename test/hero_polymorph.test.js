@@ -8,7 +8,7 @@ import { A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB, } from '
 import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hack.js';
-import { heroIsSick } from '../js/hero_illness.js';
+import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/trap.js';
@@ -19,7 +19,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from '../js/object_data.js';
 import { roles, races } from '../js/roles.js';
-import { heroIsSliming, startHeroSliming } from '../js/slime.js';
+import { heroIsSliming, startHeroSliming } from '../js/potion.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc } from '../js/vision.js';

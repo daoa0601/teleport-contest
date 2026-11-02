@@ -5,7 +5,8 @@ import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 import { displayColorName, randomDisplayMonsterName } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn, objectLightRadius } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
+import { objectLightRadius } from '../js/light.js';
 import { GOLD_DRAGON_SCALE_MAIL, OIL_LAMP, SCR_LIGHT, WAX_CANDLE } from '../js/object_data.js';
 import { withIndefiniteArticle } from '../js/objnam.js';
 

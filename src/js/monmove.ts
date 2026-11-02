@@ -37,7 +37,7 @@ import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopk
 import { monsterAlignmentType, inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { splitObjectStack, mksobj } from './mkobj.js';
 import { tryCallObjectType } from './do.js';

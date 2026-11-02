@@ -8,7 +8,7 @@ import {
     W_ARMH,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

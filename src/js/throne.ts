@@ -36,7 +36,7 @@ import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { makePlural, verbForSubject } from './objnam.js';
 
 
-import { cureHeroSickness } from './hero_illness.js';
+import { cureHeroSickness } from './potion.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './hero_legs.js';
 import { takeHeroGold } from './hero_gold.js';

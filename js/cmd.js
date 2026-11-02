@@ -18,7 +18,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { resetOccupations } from './occupation_reset.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
-import { wizTimeoutQueue } from './timeout_queue.js';
+import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
 import { clearMessageWindow } from './tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';

@@ -7,7 +7,7 @@ import { placeObject } from '../floor_object.js';
 import { game } from '../gstate.js';
 import { removeHeroEquipment } from '../hero_equipment.js';
 import { finishInventoryRemoval } from '../hero_inventory.js';
-import { cleanupObjectBurn } from '../light.js';
+import { cleanupObjectBurn } from '../timeout.js';
 import { mkobj, mksobj, addObjectToContainer, unlinkObject } from '../mkobj.js';
 import { MONSTER_NAME } from '../monster_data.js';
 import { ARROW, CORPSE, EGG, FIGURINE, STATUE, TIN, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_COLOR, OBJECT_COST, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_INITIAL_KNOWN, OBJECT_LARGE_DAMAGE, OBJECT_MAGIC, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_MERGE, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_NUTRITION, OBJECT_PROB, OBJECT_PROPERTY_ID, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_WEIGHT, } from '../object_data.js';

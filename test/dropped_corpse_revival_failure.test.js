@@ -9,7 +9,7 @@ import { LARGE_BOX } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { objectTimers, scheduleObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { addInventoryObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a troll unable to revive in a dropped locked box makes the hero feel less hassled', async () => {

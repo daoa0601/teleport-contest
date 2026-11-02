@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { canSeeMonster, glyphAt } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { cleanupTransientLight, showTransientLight } from '../js/transient_light.js';

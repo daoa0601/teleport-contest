@@ -12,7 +12,7 @@ import { BEARTRAP, BELL_OF_OPENING, BOULDER, GOLD_PIECE } from '../js/object_dat
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { levelTimers } from '../js/timeout.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';

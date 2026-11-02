@@ -63,7 +63,7 @@ import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind } from './senses.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';

@@ -7,7 +7,7 @@ import { setPropertyTimeout } from '../js/properties.js';
 import { scheduleObjectTimer } from '../js/timeout.js';
 import { EGG } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { startHeroSliming } from '../js/slime.js';
+import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { vision_recalc } from '../js/vision.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, OBJECT_TIMER_KIND } from '../js/const.js';

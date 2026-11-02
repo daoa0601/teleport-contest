@@ -7,7 +7,7 @@ import { GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
 import { scheduleObjectTimer, stopObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { addShopObjectToBill, billForObject } from '../js/shk.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

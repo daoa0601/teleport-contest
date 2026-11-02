@@ -508,10 +508,10 @@ src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6"
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
 src/js/hero_hit_aftermath.ts	finishHeroHitAftermath	random	"[""2""]"	constant
 src/js/hero_hurtle.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
-src/js/hero_illness.ts	advanceHeroSickness	random	"[""100""]"	constant
-src/js/hero_illness.ts	sicknessDialogue	rn2	"[""4""]"	constant
-src/js/hero_illness.ts	vomitingDialogue	rollDice	"[""2"", ""4""]"	constant
-src/js/hero_illness.ts	vomitingDialogue	rollDice	"[""2"", ""4""]"	constant
+src/js/timeout.ts	advanceHeroSickness	random	"[""100""]"	constant
+src/js/timeout.ts	sicknessDialogue	rn2	"[""4""]"	constant
+src/js/timeout.ts	vomitingDialogue	rollDice	"[""2"", ""4""]"	constant
+src/js/timeout.ts	vomitingDialogue	rollDice	"[""2"", ""4""]"	constant
 src/js/hero_invisibility.ts	applyPotionLikeInvisibility	random	"[""hasInternalInvisibility(state) ? 15 : 30""]"	constant
 src/js/hero_invisibility.ts	applyPotionLikeInvisibility	rollDice	"[""6 - 3 * blessing"", ""100""]"	constant
 src/js/hero_invisibility.ts	zapHeroInvisible	random	"[""15""]"	constant
@@ -588,7 +588,7 @@ src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""100""]"	constant
 src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""25""]"	constant
 src/js/hero_self_zap.ts	zapHeroWithObject	rnd	"[""50""]"	constant
 src/js/hack.ts	confirmHeroStep	rnd	"[""TRAPNUM - 1""]"	constant
-src/js/hero_strangulation.ts	strangulationDialogue	rn2	"[""50""]"	constant
+src/js/timeout.ts	strangulationDialogue	rn2	"[""50""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	random	"[""3""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""20""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""25""]"	constant
@@ -2234,13 +2234,13 @@ src/js/apply.ts	useStethoscope	rn2	"[""2""]"	constant
 src/js/apply.ts	useStethoscope	rn2	"[""game.urole.key === 'healer' ? 10 : 3""]"	constant
 src/js/stoning.ts	applyMonsterStoningAttack	random	"[""10""]"	constant
 src/js/stoning.ts	applyMonsterStoningAttack	random	"[""3""]"	constant
-src/js/storms.ts	doStorms	rn1	"[""20"", ""30""]"	constant
-src/js/storms.ts	doStorms	rn2	"[""3""]"	constant
-src/js/storms.ts	doStorms	rn2	"[""3""]"	constant
-src/js/storms.ts	doStorms	rn2	"[""8""]"	constant
-src/js/storms.ts	doStorms	rn2	"[""ROWNO""]"	constant
-src/js/storms.ts	doStorms	rnd	"[""64""]"	constant
-src/js/storms.ts	doStorms	rnd	"[""COLNO - 1""]"	constant
+src/js/timeout.ts	doStorms	rn1	"[""20"", ""30""]"	constant
+src/js/timeout.ts	doStorms	rn2	"[""3""]"	constant
+src/js/timeout.ts	doStorms	rn2	"[""3""]"	constant
+src/js/timeout.ts	doStorms	rn2	"[""8""]"	constant
+src/js/timeout.ts	doStorms	rn2	"[""ROWNO""]"	constant
+src/js/timeout.ts	doStorms	rnd	"[""64""]"	constant
+src/js/timeout.ts	doStorms	rnd	"[""COLNO - 1""]"	constant
 src/js/swallowed_throw.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
 src/js/swallowed_throw.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
 src/js/swallowed_throw.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
@@ -2292,7 +2292,7 @@ src/js/thrown_object.ts	flyPhysicalObject	random	"[""5""]"	constant
 src/js/thrown_object.ts	prepareHeroThrownTarget	random	"[""10""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""3""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""quarter""]"	guarded
-src/js/timeout_body.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
+src/js/timeout.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
 src/js/eat.ts	consumeSpinach	rnd	"[""200""]"	constant
 src/js/eat.ts	consumeSpinach	rnd	"[""400""]"	constant
 src/js/eat.ts	consumeTin	rn1	"[""11"", ""5""]"	constant

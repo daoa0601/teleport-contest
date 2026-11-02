@@ -53,7 +53,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
 import { drainHeroWeaponSkills } from './skills.js';
-import { burnAwayHeroSlime } from './slime.js';
+import { burnAwayHeroSlime } from './timeout.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';

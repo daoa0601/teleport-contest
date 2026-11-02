@@ -5,7 +5,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { OIL_LAMP } from '../js/object_data.js';
 import { waterDamageObject } from '../js/trap.js';
 import { cansee, vision_recalc } from '../js/vision.js';

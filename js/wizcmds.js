@@ -48,7 +48,7 @@ import { objectTypeKnown, setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { flipSpecialLevel, flipSpecialLevelRandom } from './sp_lev.js';
 import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands } from './potion.js';
-import { startHeroVomiting } from './hero_illness.js';
+import { startHeroVomiting } from './potion.js';
 import { propertyIsActive, propertyTimeout, refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';

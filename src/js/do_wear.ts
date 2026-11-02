@@ -54,7 +54,8 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel } from './dungeon.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties } from './artifacts.js';
-import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
+import { beginObjectBurn, endObjectBurn } from './timeout.js';
+import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
@@ -69,11 +70,11 @@ import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { tryCallObjectType } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex } from './exper.js';
-import { clearHeroSliming, heroIsSliming } from './slime.js';
+import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { heroIsInDangerousRegion } from './regions.js';
-import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
-import { clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation } from './hero_strangulation.js';
+import { heroCanBeStrangled } from './polyself.js';
 import { canLetGo } from './hero_inventory.js';
+import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { weaponDescription } from './weapon.js';
 
@@ -1627,6 +1628,27 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
     if (puttingOn)
         await removeHeroArmor(delayed.object, state, { cancelledDon: true, deferArmorClass: true });
     return true;
+}
+
+// C do_wear.c:Amulet_on()/Amulet_off(): the amulet of strangulation's
+// timed grip on the hero, and the Strangled predicate that reads it.
+export function heroIsStrangled(state = game) {
+    return !!state.u.strangled || (state.u.strangledTurns ?? 0) > 0;
+}
+
+export function startAmuletStrangulation(state = game) {
+    if (!heroCanBeStrangled(state) || heroIsStrangled(state)) return false;
+    learnObjectType(AMULET_OF_STRANGULATION, state);
+    state.u.strangledTurns = 6;
+    state.context.botl = true;
+    refreshProperty('strangled', state);
+    return true;
+}
+
+export function clearHeroStrangulation(state = game) {
+    if (heroIsStrangled(state)) state.context.botl = true;
+    state.u.strangledTurns = 0;
+    refreshProperty('strangled', state);
 }
 
 // Rings and amulets worn by the hero.

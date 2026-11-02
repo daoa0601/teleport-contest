@@ -7,7 +7,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { meltIce } from '../js/ice.js';
 import { pushKeys } from '../js/input.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';

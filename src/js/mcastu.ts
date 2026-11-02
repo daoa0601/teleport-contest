@@ -17,7 +17,7 @@ import { castMonsterSpellRay } from './breath_ray.js';
 import { displayRayName } from './ray_name.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
-import { clearHeroSliming } from './slime.js';
+import { clearHeroSliming } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
@@ -41,7 +41,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibilit
 import { monsterName as canonicalMonsterName } from './do_name.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { heroIsInvisible } from './hero_invisibility.js';

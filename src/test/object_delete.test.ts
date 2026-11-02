@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pline } from '../js/pline.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { cansee } from '../js/vision.js';
 import { delobj } from '../js/invent.js';
 import { placeCreatedObject } from '../js/floor_object.js';

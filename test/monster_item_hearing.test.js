@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { prepareMonsterItemUse, presentMonsterQuaff, useMonsterDefensiveItem } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { BUGLE, POT_HEALING } from '../js/object_data.js';

@@ -12,7 +12,8 @@ import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import { verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
+import { heroNeckName } from './body_parts.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
@@ -21,9 +22,9 @@ import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePac
 import { AD_ACID, AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import { races } from './roles.js';
 import { reassessStatusFields } from './botl.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { heroHasFreeAction, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff } from './do_wear.js';
+import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { setMimicBlocking } from './hero_seeing.js';
@@ -53,17 +54,18 @@ import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
+import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
 import { isFlimsyObject } from './object_properties.js';
-import { grantIntrinsicProperty, refreshMovementProperties, revokeIntrinsicProperty } from './properties.js';
+import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius } from './light.js';
+import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
+import { endObjectBurn, learnEggType } from './timeout.js';
 import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, resolveMonsterClass, speciesCanBlow } from './mondata.js';
 import { getLine, promptYesNo, yn_function } from './query.js';
-import { cureHeroSickness, heroIsSick } from './hero_illness.js';
+import { cureHeroSickness, heroIsSick } from './potion.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
@@ -73,10 +75,8 @@ import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster } from './mon.js';
-import { learnEggType } from './invent.js';
 import { expelHero } from './hero_expulsion.js';
-import { restartAmuletStrangulation, stopStrangulationInImmuneForm } from './hero_strangulation.js';
-import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown } from './slime.js';
+import { clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
@@ -425,6 +425,54 @@ export function heroLikesLava(state = game) {
         return false;
     return hero.umonnum === PM_FIRE_ELEMENTAL
         || hero.umonnum === PM_SALAMANDER;
+}
+// C mondata.h:flaming()/noncorporeal()/slimeproof(), for the hero's current
+// form; the monster-side ports live in monster_data.js.
+export function heroIsFlaming(state = game) {
+    const form = heroMonsterForm(state);
+    return form !== null && FLAMING_SPECIES.has(form);
+}
+export function heroIsNoncorporeal(state = game) {
+    const form = heroMonsterForm(state);
+    return form !== null && MONSTER_SYMBOL[form] === S_GHOST;
+}
+export function heroIsGreenSlime(state = game) {
+    return heroMonsterForm(state) === PM_GREEN_SLIME;
+}
+export function heroIsSlimeproof(state = game) {
+    return heroIsGreenSlime(state)
+        || heroIsFlaming(state)
+        || heroIsNoncorporeal(state);
+}
+// C mondata.c:can_be_strangled(): headless bodies have no neck to squeeze,
+// and a mindless body that does not breathe is not strangled by pressure.
+export function heroCanBeStrangled(state = game) {
+    if (heroHasNoHead(state))
+        return false;
+    const form = state.u.umonnum;
+    const flags = form === undefined ? 0 : (MONSTER_FLAGS1[form] ?? 0);
+    const mindless = !!(flags & 0x00010000);
+    return !mindless || !heroIsBreathless(state);
+}
+// C polyself.c:check_strangling(), turning the amulet's grip off and on.
+export async function stopStrangulationInImmuneForm(state = game, publish = plineWithContinuation) {
+    if (!heroIsStrangled(state) || heroCanBeStrangled(state))
+        return;
+    clearHeroStrangulation(state);
+    await publish('You are no longer being strangled.');
+}
+export async function restartAmuletStrangulation(state = game, publish = plineWithContinuation) {
+    const amulet = state.uamul || state.u.uamul;
+    if (amulet?.otyp !== AMULET_OF_STRANGULATION || !heroCanBeStrangled(state))
+        return;
+    const wasStrangled = heroIsStrangled(state);
+    state.u.strangledTurns = 6;
+    state.context.botl = true;
+    refreshProperty('strangled', state);
+    const action = wasStrangled ? 'still constricts' : 'begins constricting';
+    const name = simpleObjectName(amulet, state);
+    await publish(`Your ${name} ${action} your ${heroNeckName(state)}!`);
+    learnObjectType(AMULET_OF_STRANGULATION, state);
 }
 function speciesEntry(table, species) {
     const value = table[species];

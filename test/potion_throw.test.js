@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ALCHEMY_SMOCK, AMULET_OF_LIFE_SAVING, CHAIN_MAIL, CORPSE, DAGGER, IRON_CHAIN, LARGE_BOX, POT_ACID, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_GAIN_LEVEL, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SPEED, SADDLE, POT_WATER, YELLOW_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

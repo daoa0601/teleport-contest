@@ -28,9 +28,7 @@ import { heroIsBlind } from './senses.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap.js';
 
-import {
-    feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse,
-} from './stoning.js';
+import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse } from './stoning.js';
 
 export async function readFloorEngraving(x: number, y: number): Promise<void> {
     const read = await readEngravingAt(x, y, plineWithContinuation);

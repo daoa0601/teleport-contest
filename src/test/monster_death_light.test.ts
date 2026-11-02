@@ -6,7 +6,7 @@ import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER, OIL_LAMP } from '../js/object_data.js';

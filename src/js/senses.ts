@@ -4,10 +4,20 @@
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { game } from './gstate.js';
-import { TIMEOUT } from './const.js';
+import { FAINTED, TIMEOUT } from './const.js';
+import { heroHasInvoluntaryDelay } from './cmd.js';
+import { heroIsUnconscious } from './trap.js';
 import { LENSES } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
+
+
+// C youprop.h:Unaware — gm.multi < 0 && (unconscious() || is_fainted()),
+// using the current involuntary-delay representation.
+export function heroIsUnaware(state = game) {
+    return heroHasInvoluntaryDelay(state)
+        && (heroIsUnconscious(state) || state.u?.uhs === FAINTED);
+}
 
 const EYES_OF_THE_OVERWORLD = 'The Eyes of the Overworld';
 

@@ -4,10 +4,7 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { InventoryAction } from './invent.js';
 import type { InventorySection, MenuLabel, PageLocalMultiSelectSection } from './windows.js';
-import {
-    inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail,
-    selectInventoryObject,
-} from './invent.js';
+import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';

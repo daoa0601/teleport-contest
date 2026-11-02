@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DB_FLOOR, DB_ICE, DB_MOAT, DB_WEST, DRAWBRIDGE_UP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { BRASS_LANTERN, POT_WATER } from '../js/object_data.js';
 import { waterDamageObject } from '../js/trap.js';

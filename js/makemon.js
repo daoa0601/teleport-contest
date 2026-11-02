@@ -18,7 +18,7 @@ import { hatchableEggSpecies } from './egg_species.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { nextIdent } from './ident.js';
-import { beginObjectBurn } from './light.js';
+import { beginObjectBurn } from './timeout.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, addCreatedObjectToContainer } from './mkobj.js';
 import { occupied } from './mkroom.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';

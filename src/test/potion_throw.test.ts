@@ -17,7 +17,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ALCHEMY_SMOCK, AMULET_OF_LIFE_SAVING, CHAIN_MAIL, CORPSE, DAGGER,

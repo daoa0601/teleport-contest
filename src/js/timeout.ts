@@ -1,59 +1,646 @@
-// C timeout.c:nh_timeout() — the once-per-turn countdown allmain.c calls
-// between glibr() and run_regions(). Luck creeps toward its baseline, the
-// fatal-condition dialogues warn, every timed intrinsic counts down in the
-// prop.h enum order with its expiry effect at the point C prints it, and
-// run_timers() fires due object timers last.
+// C timeout.c — the once-per-turn countdown allmain.c calls between glibr()
+// and run_regions(), the fatal-condition dialogues, every timed intrinsic
+// expiring in prop.h order, fall_asleep(), the egg/figurine/burn object
+// timers, slip_or_trip(), do_storms(), the saveable timer queue, and
+// wiz_timeout_queue(). Folded here from slime.js, hero_illness.js,
+// hero_sleep.js, hero_strangulation.js, levitation_timeout.js,
+// timeout_queue.js, timeout_warnings.js, storms.js, timer_effects.js,
+// timeout_luck.js, and timeout_body.js.
 
-import { runDueTimers } from './timer_effects.js';
-import { recoverTimedLuck } from './timeout_luck.js';
-import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
-import { breathingDialogue, wallPassageDialogue, finishBreathingTimeout, finishWallPassageTimeout } from './timeout_warnings.js';
-import { levitationDialogue, advanceLevitationTimeout, advanceFlyingTimeout } from './levitation_timeout.js';
-import { formatFeltMessage } from './hero_speech.js';
-import { makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands } from './potion.js';
+import { castMonsterSpellRay } from './breath_ray.js';
+import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
+import type { CorpseRevivalTimerEvent } from './corpse_revival.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import {
+    clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming,
+    heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf,
+    setSlipperyHands,
+} from './potion.js';
+import { clearHeroStrangulation } from './do_wear.js';
+import {
+    corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName,
+    observeObjectForNaming, withIndefiniteArticle,
+} from './objnam.js';
 import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
-import { requireInitializedGame, game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
+import type { Hero } from './hero_types.js';
 import type { PropertyName } from './property_types.js';
-import { nomul, invWeight } from './hack.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging } from './mon.js';
+import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
+import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
 import { deferredDecor } from './dungeon_feature.js';
-import { rnd, rn2 } from './rng.js';
-import { propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, setPropertyTimeout } from './properties.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { d, rnd, rn1, rn2 } from './rng.js';
+import {
+    hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty,
+    propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty,
+    removeIntrinsicProperty, setPropertyTimeout,
+} from './properties.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { healHeroLegs } from './hero_legs.js';
-import { putHeroToSleep, heroIsUnaware } from './hero_sleep.js';
-import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue } from './hero_illness.js';
-import { advanceHeroSliming, heroIsSliming, slimeDialogue } from './slime.js';
-import { isPoolAt, isIceAt } from './dbridge.js';
-import { A_DEX, DISMOUNT_FELL, PLNMSG_ONE_ITEM_HERE, W_SADDLE, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
-import { observeObjectForNaming, objectDescription, withIndefiniteArticle, makePlural, corpseName, killerObjectName } from './objnam.js';
-import { ROCK, CORPSE } from './object_data.js';
-import { heroFootName, heroHandName } from './body_parts.js';
-import { heroResistsStoning, advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, touchPetrifies } from './stoning.js';
+import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';
+import {
+    ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON,
+    G_GENOD, GENOCIDED, I_SPECIAL, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LEVEL_TIMER_KIND,
+    M_AP_MONSTER, MV_KNOWS_EGG, NO_KILLER_PREFIX, OBJECT_TIMER_KIND, PLNMSG_OK_DONT_DIE,
+    PLNMSG_ONE_ITEM_HERE, POISONING, ROWNO, SICK_ALL, SICK_NONVOMITABLE, STONING, TIMEOUT,
+    TURNED_SLIME, W_SADDLE,
+} from './const.js';
+import {
+    AMULET_OF_STRANGULATION, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, FEDORA,
+    GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL,
+    ROCK, TALLOW_CANDLE, WAX_CANDLE,
+} from './object_data.js';
+import { confersLuck } from './hero_inventory.js';
+import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
+import { isWereMonster, revertHeroWereForm } from './were.js';
+import { heroFootName, heroHandName, heroNeckName } from './body_parts.js';
+import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { monsterName } from './do_name.js';
 import { dismountHero } from './steed.js';
-import { currentAttribute } from './attrib.js';
-import { heroSpecies, polymonHero } from './polyself.js';
+import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
+import {
+    extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime,
+    heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm,
+} from './polyself.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
-import { MONSTER_NAME } from './monster_data.js';
-import { newsym, randomDisplayMonsterName, see_monsters } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import type { DeathHandler } from './end.js';
+import {
+    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_NAME,
+    PM_GREEN_SLIME, requireMonsterData,
+} from './monster_data.js';
+import { canSpotMonster, displayColorName, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
+import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
-import { cleanupObjectBurn } from './light.js';
-import { eatingDangerousCorpse } from './eat.js';
+import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
+import { eatingDangerousCorpse, openingTinMaySaveHero, spendHeroNutrition, vomitHero } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { heroIsUnconscious, resolveImmediatePetrification } from './trap.js';
+import {
+    captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification,
+} from './trap.js';
+import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
+import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
+import { runClaimedGlobTimer, finishGlobTimer } from './glob.js';
+import { meltIce } from './ice.js';
+import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
+import { objectWeight } from './mkobj.js';
+import { useUpInventoryStack } from './hero_inventory.js';
+import { carriedObjectOwner, deleteObject } from './shk.js';
+import { possessiveName } from './hacklib.js';
+import { getObjectLocation } from './zap.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { cansee } from './vision.js';
+import { heroIsSurroundedByRock } from './pray.js';
+import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
+import { showDisclosureOverlay } from './windows.js';
+import { surfaceName } from './terrain_name.js';
+import { heroCannotVomit, nameToMonster } from './mondata.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
+
+interface PetrificationAdvanceResult {
+    active: boolean;
+    died: boolean;
+    turns?: number;
+}
+
+function petrificationMessage(turns: number, state: GameState): string | null {
+    if (turns === 5) return 'You are slowing down.';
+    if (turns === 4) {
+        return heroHasNoLimbs(state)
+            ? 'Your extremities are stiffening.'
+            : 'Your limbs are stiffening.';
+    }
+    if (turns === 3) {
+        return heroHasNoLimbs(state)
+            ? 'Your extremities have turned to stone.'
+            : 'Your limbs have turned to stone.';
+    }
+    if (turns === 2) return 'You have turned to stone.';
+    return turns === 1 ? 'You are a statue.' : null;
+}
+
+// C timeout.c:stoned_dialogue().
+export async function petrificationDialogue({
+    state = game,
+    publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    const hero = state.u;
+    const turns = hero.stonedTurns ?? 0;
+    if (turns <= 0) return;
+
+    const message = petrificationMessage(turns, state);
+    if (message) await publish(message, { urgent: true });
+
+    if (turns === 5) {
+        removeHeroSpeed(state);
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
+    } else if (turns === 4) {
+        if (!openingTinMaySaveHero('stoned', state)) await stopHeroOccupation(state, publish);
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
+    } else if (turns === 3) {
+        await stopHeroOccupation(state, publish);
+        nomul(-3, state);
+        state._helplessReason = 'getting stoned';
+        state._helplessDoneMessage = 'You can move again.';
+        if (!hero.usteed)
+            await healHeroLegs(state, { cause: 'petrification', publish });
+    } else if (turns === 2) {
+        if (hero.deafTurns !== undefined && hero.deafTurns > 0 && hero.deafTurns < 5)
+            hero.deafTurns = 5;
+        cureHeroVomiting(state);
+        clearHeroSliming(state);
+    }
+    await exerciseAttribute(A_DEX, false, state);
+}
+
+function vomitingMessage(state: GameState, nextTurns: number) {
+    if (nextTurns === 14) return 'You are feeling mildly nauseated.';
+    if (nextTurns === 11) {
+        return propertyIsActive('confusion', state)
+            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
+    }
+    if (nextTurns === 8) {
+        return propertyIsActive('stunned', state)
+            ? "You can't think straight."
+            : "You can't seem to think straight.";
+    }
+    if (nextTurns === 5) return 'You feel incredibly sick.';
+    if (nextTurns === 2) {
+        if (heroCannotVomit(state)) return 'You gag uncontrollably.';
+        return heroIsHallucinating(state)
+            ? 'You are about to hurl!' : 'You are about to vomit.';
+    }
+    return null;
+}
+
+// C timeout.c:vomiting_dialogue().
+export async function vomitingDialogue({
+    state = game,
+    publish = pline,
+    rollDice = d,
+}: { state?: GameState; publish?: MessagePublisher; rollDice?: typeof d } = {}) {
+    requirePlayingGame(state);
+    const hero = state.u;
+    if (!heroIsVomiting(state)) return { active: false, vomited: false };
+
+    // Untimed nausea has no countdown stage; only timeout 1 triggers vomiting.
+    const nextTurns = (hero.vomitingTurns ?? 0) - 1;
+    if (nextTurns === 6) {
+        await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
+        // stop_occupation finishes an already swallowed last bite before
+        // abandoning the meal, including that food's digestion effects.
+        if (!openingTinMaySaveHero('vomiting', state)) await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
+    }
+    if (nextTurns === 6 || nextTurns === 9) {
+        await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
+    }
+
+    const message = vomitingMessage(state, nextTurns);
+    if (message) await publish(message);
+
+    let vomited = false;
+    if (nextTurns === 0) {
+        await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
+        if (!heroCannotVomit(state)) {
+            await spendHeroNutrition(20, { state });
+            if (state.program_state.gameover)
+                return { active: false, vomited: false, turns: nextTurns, died: true };
+            if (hero.uhs < FAINTING) {
+                await publish(heroIsHallucinating(state)
+                    ? 'You hurl chunks!' : 'You vomit!');
+            }
+        }
+        await vomitHero({ state, publish });
+        vomited = true;
+    }
+
+    await exerciseAttribute(A_CON, false, state);
+    return { active: heroIsVomiting(state), vomited, turns: nextTurns };
+}
+
+const CHOKING_MESSAGES = [
+    'You find it hard to breathe.',
+    "You're gasping for air.",
+    'You can no longer breathe.',
+    "You're turning %s.",
+    'You suffocate.',
+];
+const CONSTRICTION_MESSAGES = [
+    'Your %s is becoming constricted.',
+    'Your blood is having trouble reaching your brain.',
+    'The pressure on your %s increases.',
+    'Your consciousness is fading.',
+    'You suffocate.',
+];
+
+// C timeout.c:choke_dialogue().
+export async function strangulationDialogue({
+    state = game,
+    publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    const hero = state.u;
+    const turns = hero.strangledTurns || 0;
+    if (turns <= 0) return;
+
+    if (turns <= 5) {
+        const index = 5 - turns;
+        const constriction = CONSTRICTION_MESSAGES[index];
+        const choking = CHOKING_MESSAGES[index];
+        if (constriction === undefined || choking === undefined)
+            throw new RangeError(`Invalid strangulation countdown: ${turns}`);
+        if (heroIsBreathless(state) || rn2(50) === 0) {
+            await publish(constriction.replace(
+                '%s', heroNeckName(state),
+            ), { urgent: true });
+        } else {
+            let message = choking;
+            if (message.includes('%s'))
+                message = message.replace('%s', displayColorName('blue', state));
+            await publish(message, { urgent: true });
+            await stopHeroOccupation(state, publish);
+        }
+    }
+    await exerciseAttribute(A_STR, false, state);
+}
+
+function sicknessMessage(hero: Hero) {
+    const turns = hero.sickTurns ?? 0;
+    if (turns % 2 === 0) return null;
+    const stage = Math.trunc(turns / 2);
+    const noun = ((hero.sickType ?? 0) & SICK_NONVOMITABLE)
+        ? 'illness' : 'sickness';
+    if (stage === 3) return `Your ${noun} feels worse.`;
+    if (stage === 2) return `Your ${noun} is severe.`;
+    return stage === 1 ? "You are at Death's door." : null;
+}
+
+// C timeout.c:sickness_dialogue().
+export async function sicknessDialogue({
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    if (!heroIsSick(state)) return;
+    let message = sicknessMessage(state.u);
+    if (message === "You are at Death's door." && heroIsHallucinating(state)) {
+        // C mhe() uses the core RNG for hallucinated pronouns.
+        const invitation = ['He is', 'She is', 'It is', 'They are'][rn2(4)];
+        if (!invitation) throw new Error('Sickness dialogue chose no pronoun');
+        message += `  ${invitation} inviting you in.`;
+    }
+    if (message) await publish(message, { urgent: true });
+    await exerciseAttribute(A_CON, false, state);
+}
+
+export type LevitationTimeoutResult =
+    | { active: false; expired: false; flyingBypassed: false }
+    | { active: true; expired: false; flyingBypassed: false; turns: number }
+    | { active: false; expired: true; flyingBypassed: boolean; landed: 0 | 1 };
+
+export type FlyingTimeoutResult =
+    | { active: false; expired: false; landed: false }
+    | { active: true; expired: false; landed: false; turns: number }
+    | { active: false; expired: true; landed: boolean };
+
+const LEVITATION_TEXTS = [
+    'You float slightly lower.',
+    'You wobble unsteadily %s the %s.',
+];
+
+// C timeout.c:352-378.  Message only; the timeout itself is not touched.
+// Extrinsic levitation (worn ring or boots, invoked artifact, or the
+// mid-drop carried source) suppresses the dialogue entirely, as does
+// inaccessible terrain which is not pool or lava.
+export async function levitationDialogue(
+    state: GameState = game,
+    { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},
+): Promise<string | null> {
+    const hero = state.u;
+    const turns = hero.levitationTurns ?? 0;
+    // -1 because the last message comes via float_down()
+    const index = Math.floor((turns - 1) / 2);
+
+    if (hasWornProperty('levitation', state)
+        || hasInvokedProperty('levitation', state)
+        || hasCarriedProperty('levitation', null, state))
+        return null;
+
+    const terrain = requireGameLevel(state).requireAt(hero.ux, hero.uy);
+    const poolOrLava = isPoolOrLavaAt(hero.ux, hero.uy, state);
+    if (!ACCESSIBLE(terrain.typ) && !poolOrLava)
+        return null;
+
+    if (turns % 2 === 1 && index > 0 && index <= LEVITATION_TEXTS.length) {
+        const template = LEVITATION_TEXTS[LEVITATION_TEXTS.length - index];
+        if (!template) throw new Error(`No levitation message for ${turns} turns remaining`);
+        let message: string;
+        if (template.includes('%')) {
+            // C uses urgent_pline() for the danger warning.
+            const danger = poolOrLava && !Is_waterlevel(hero.uz);
+            message = template
+                .replace('%s', danger ? 'over' : 'in')
+                .replace('%s', danger
+                    ? surfaceName(hero.ux, hero.uy, state) : 'air');
+        } else {
+            message = template;
+        }
+        await publish(message, { urgent: template.includes('%') });
+        await stopHeroOccupation(state, publish);
+        return message;
+    }
+    return null;
+}
+
+interface SlimeAdvanceOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    repaint?: (x: number, y: number) => unknown;
+    randomMonsterName?: () => string;
+    transform?: (species: number) => unknown;
+    die?: DeathHandler;
+}
+
+interface SlimeAdvanceResult {
+    active: boolean;
+    died: boolean;
+    turns?: number;
+    message?: string | null;
+    transformed?: boolean;
+    genocided?: boolean;
+}
+
+function slimeMessage(turns: number, state: GameState, randomMonsterName: () => string): string | null {
+    if (turns === 9) {
+        return heroIsBlind(state)
+            ? null : `You are turning a little ${displayColorName('green', state)}.`;
+    }
+    if (turns === 7) {
+        return heroHasNoLimbs(state)
+            ? 'Your extremities are getting oozy.'
+            : 'Your limbs are getting oozy.';
+    }
+    if (turns === 5) return 'Your skin begins to peel away.';
+    if (turns !== 3 && turns !== 1) return null;
+    const hallucinating = heroIsHallucinating(state);
+    const form = hallucinating ? randomMonsterName() : 'green slime';
+    return turns === 3
+        ? `You are turning into ${withIndefiniteArticle(form)}.`
+        : `You have become ${withIndefiniteArticle(form)}.`;
+}
+
+function removeHeroSpeed(state: GameState): void {
+    setPropertyTimeout('fast', 0, state);
+    removeIntrinsicProperty('fast', state);
+}
+
+function cancelHeroPetrification(state: GameState): void {
+    const hero = state.u;
+    if (hero.stoned || (hero.stonedTurns ?? 0) > 0) state.context.botl = true;
+    hero.stonedTurns = 0;
+    hero.stoned = false;
+    delete hero.stoneKiller;
+    delete hero.stoneKillerFormat;
+}
+
+export async function slimeDialogue({
+    state = game,
+    publish = plineWithContinuation,
+    repaint = () => {},
+    randomMonsterName = randomDisplayMonsterName,
+}: SlimeAdvanceOptions = {}): Promise<void> {
+    const hero = state.u;
+    const turns = hero.slimedTurns ?? 0;
+    if (turns <= 0) return;
+
+    if (turns === 1) {
+        hero.m_ap_type = M_AP_MONSTER;
+        hero.mappearance = PM_GREEN_SLIME;
+        await repaint(hero.ux, hero.uy);
+    }
+
+    const message = slimeMessage(turns, state, randomMonsterName);
+    if (message) await publish(message, { urgent: true });
+
+    const stage = Math.trunc(turns / 2);
+    if (stage === 3) {
+        removeHeroSpeed(state);
+        if (!openingTinMaySaveHero('slimed', state)) await stopHeroOccupation(state, publish);
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
+    } else if (stage === 2
+        && hero.deafTurns !== undefined && hero.deafTurns > 0
+        && hero.deafTurns < 5) {
+        hero.deafTurns = 5;
+    } else if (stage === 1) {
+        cancelHeroPetrification(state);
+    }
+    await exerciseAttribute(A_DEX, false, state);
+}
+
+// C timeout.c:burn_away_slime(), through make_slimed(0, message).
+export async function burnAwayHeroSlime({
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<boolean> {
+    if (!heroIsSliming(state)) return false;
+    state.context.botl = true;
+    state.u.slimedTurns = 0;
+    state.u.slimed = false;
+    await publish('The slime that covers you is burned away!');
+    clearHeroSliming(state);
+    return true;
+}
+
+// C timeout.c:nh_timeout() runs the Slimed countdown out with a bare
+// decrement, so the status line keeps "Slime" until something else
+// requests a redraw.
+export function dropHeroSliming(hero: GameState['u']): void {
+    hero.slimedTurns = 0;
+    hero.slimed = false;
+    delete hero.slimeKiller;
+    if (hero.m_ap_type === M_AP_MONSTER
+        && hero.mappearance === PM_GREEN_SLIME) {
+        hero.m_ap_type = 0;
+        hero.mappearance = 0;
+    }
+}
+
+// C timeout.c:slimed_to_death().
+export async function advanceHeroSliming({
+    state = game, publish = plineWithContinuation, transform, die,
+}: SlimeAdvanceOptions = {}): Promise<SlimeAdvanceResult> {
+    const hero = state.u;
+    const turns = hero.slimedTurns ?? 0;
+    if (turns <= 0) return { active: false, died: false };
+    hero.slimedTurns = turns - 1;
+    if (hero.slimedTurns > 0) {
+        hero.slimed = true;
+        return { active: true, died: false, turns: hero.slimedTurns };
+    }
+
+    if (heroIsGreenSlime(state)) {
+        dropHeroSliming(hero);
+        return { active: false, died: false };
+    }
+
+    const killer = hero.slimeKiller || 'turned into green slime';
+    const deathCause = hero.slimeKiller ? null : 'turned into green slime';
+    dropHeroSliming(hero);
+    if (typeof transform !== 'function' || typeof die !== 'function') {
+        throw new TypeError(
+            'the final slime turn requires transform and death functions',
+        );
+    }
+    const vitals = state.mvitals?.[PM_GREEN_SLIME];
+    if (!vitals) throw new Error('Slime transformation requires initialized monster vitals.');
+    const originalFlags = vitals.mvflags;
+    // Slime infection completes even after genocide. Life saving then
+    // encounters the genocided body, as in C slimed_to_death().
+    vitals.mvflags &= ~G_GENOD;
+    // polymon() does not do polyself()'s light bookkeeping.
+    extinguishHeroFormLight(state);
+    try {
+        await transform(PM_GREEN_SLIME);
+    } finally {
+        vitals.mvflags = originalFlags;
+    }
+    // C done_timeout() sets I_SPECIAL after polymon() cures the timeout.
+    // Keep the fatal condition visible through done() and final disclosure.
+    hero.slimed = true;
+    const died = await die({
+        killer,
+        deathCause,
+        deathVerb: 'turned into slime',
+        deathLineShown: true,
+        deathType: TURNED_SLIME,
+    });
+    if (died) return { active: false, died: true, transformed: true };
+    clearHeroSliming(state);
+
+    const genocided = !!(
+        (state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD
+    );
+    if (!genocided) {
+        return { active: false, died: false, transformed: true };
+    }
+
+    await publish(state._lastPlineKind === PLNMSG_OK_DONT_DIE
+        ? 'Yes, you do.  Green slime has been genocided...'
+        : 'Unfortunately, green slime has been genocided...', { urgent: true });
+    const genocidedDeath = await die({
+        killer: 'slimicide',
+        deathVerb: 'were genocided',
+        deathLineShown: true,
+        deathType: GENOCIDED,
+    });
+    return {
+        active: false,
+        died: genocidedDeath,
+        transformed: true,
+        genocided: true,
+    };
+}
+
+// C timeout.c:phaze_dialogue().
+export async function wallPassageDialogue(state = game): Promise<void> {
+    const turns = propertyTimeout('passesWalls', state);
+    if (hasIntrinsicProperty('passesWalls', null, state)
+        || hasWornProperty('passesWalls', state)
+        || hasCarriedProperty('passesWalls', null, state)
+        || hasInvokedProperty('passesWalls', state)) return;
+    if (turns === 5) await plineWithContinuation('You start to feel bloated.');
+    else if (turns === 3) await plineWithContinuation('You are feeling rather flabby.');
+}
+
+// C timeout.c:region_dialogue().
+export async function breathingDialogue(state = game): Promise<void> {
+    const turns = propertyTimeout('magicalBreathing', state);
+    if (turns !== 5 && turns !== 3) return;
+    // C temporarily masks only the timed source to ask whether the warning
+    // is still relevant to this body and the region it currently occupies.
+    setPropertyTimeout('magicalBreathing', 0, state);
+    let danger: boolean;
+    try {
+        danger = !heroIsBreathless(state) && heroIsInDangerousRegion(state);
+    } finally {
+        setPropertyTimeout('magicalBreathing', turns, state);
+    }
+    if (danger) await plineWithContinuation(turns === 5
+        ? 'You seem to have some trouble breathing.' : 'The air here seems foul.');
+}
+
+// C timeout.c:done_timeout() ORs I_SPECIAL into a fatal intrinsic after its
+// timer has counted down; the port keeps that condition's flag set at zero.
+export function expiredFatally(active: boolean | undefined, turns: number | undefined): boolean {
+    return !!active && !turns;
+}
+
+// C timeout.c:nh_timeout(): luck creeps toward its baseline before the
+// prayer invulnerability guard.
+export function recoverTimedLuck(state = game): void {
+    let baseline = state.flags.moonphase === FULL_MOON ? 1 : 0;
+    if (state.flags.friday13) baseline--;
+    if (state.quest_status?.killed_leader) baseline -= 4;
+    if (state.urole?.key === 'archeologist'
+        && (state.uarmh ?? state.u.uarmh)?.otyp === FEDORA) baseline++;
+
+    const hero = state.u;
+    const luck = hero.uluck ?? 0;
+    const interval = hero.uhave?.amulet || hero.ugangr ? 300 : 600;
+    if (luck === baseline || state.moves % interval !== 0) return;
+
+    // attrib.c:stone_luck(): count quantities, including luck artifacts.
+    // Uncursed items count for possession but do not favor either timeout.
+    let allStones = 0;
+    let blessedAndCursed = 0;
+    let luckstone = false;
+    for (const object of state.inventory) {
+        if (!confersLuck(object, state)) continue;
+        const quantity = object.quan;
+        allStones += object.cursed ? -quantity : quantity;
+        if (object.cursed) blessedAndCursed -= quantity;
+        else if (object.blessed) blessedAndCursed += quantity;
+        if (object.otyp === LUCKSTONE) luckstone = true;
+    }
+    const noStone = !luckstone && allStones === 0;
+    if (luck > baseline && (noStone || blessedAndCursed < 0)) hero.uluck = luck - 1;
+    else if (luck < baseline && (noStone || blessedAndCursed > 0)) hero.uluck = luck + 1;
+}
+
+// C timeout.c:nh_timeout(): the polymorph, creamed, and galloping counters
+// between the dialogues and the property loop.
+export async function advanceBodyTimeouts(state = game): Promise<void> {
+    const hero = state.u;
+    if (hero.mtimedone !== undefined && hero.mtimedone > 0 && --hero.mtimedone === 0) {
+        if (hero.umonnum === undefined) throw new Error('Timed polymorph has no species');
+        if (heroIsUnchanging(state)) {
+            hero.mtimedone = rnd(100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1);
+        } else if (isWereMonster({ mnum: hero.umonnum })) {
+            await revertHeroWereForm({ state });
+        } else {
+            await returnHeroToHumanForm(state);
+        }
+    }
+    if ((hero.ucreamed ?? 0) > 0) hero.ucreamed = (hero.ucreamed ?? 0) - 1;
+}
+
+// C timeout.c:nh_timeout(): the steed's gallop counter.
+export async function advanceGallopingTimeout(state = game): Promise<void> {
+    const hero = state.u;
+    if ((hero.ugallop ?? 0) <= 0) return;
+    hero.ugallop = (hero.ugallop ?? 0) - 1;
+    if (hero.ugallop === 0 && hero.usteed)
+        await plineWithContinuation(`${monsterName(hero.usteed, { state, capitalized: true })} stops galloping.`);
+}
 
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
 // properties have no dedicated recovery action; their source projection still
@@ -104,6 +691,221 @@ async function finishFumblingTimeout(fumbled: boolean, publish: MessagePublisher
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
     // C timeout.c: a decor message deferred past the trip catches up here.
     if (game.iflags.deferDecor) await deferredDecor(false);
+}
+
+export async function advanceHeroVomiting({
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}) {
+    const hero = state.u;
+    const turns = hero.vomitingTurns ?? 0;
+    if (turns <= 0) return { active: heroIsVomiting(state), turns: 0 };
+    const nextTurns = turns - 1;
+    hero.vomitingTurns = nextTurns;
+    hero.vomiting = propertyIsActive('vomiting', state);
+    if (nextTurns === 0) {
+        state.context.botl = true;
+        if (hero.vomiting && !heroIsUnaware(state))
+            await publish(formatFeltMessage('much less nauseated now.', state));
+    }
+    return { active: hero.vomiting, turns: nextTurns };
+}
+
+export async function advanceHeroSickness({
+    state = game,
+    publish = pline,
+    die = finishHeroDeath,
+    random = rn2,
+}: {
+    state?: GameState;
+    publish?: MessagePublisher;
+    die?: DeathHandler;
+    random?: typeof rn2;
+} = {}) {
+    const hero = state.u;
+    if (!heroIsSick(state)) return { active: false, died: false };
+
+    hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
+    if (hero.sickTurns > 0)
+        return { active: true, died: false, turns: hero.sickTurns };
+    // nh_timeout() has already decremented Sick to zero without marking the
+    // status line; only an earlier pending refresh shows the change.
+    hero.sick = false;
+
+    const canRecover = !((hero.sickType ?? 0) & SICK_NONVOMITABLE)
+        && random(100) < currentAttribute(A_CON, state);
+    if (canRecover) {
+        await publish('You have recovered from your illness.');
+        hero.sickType = 0;
+        delete hero.sickCause;
+        await exerciseAttribute(A_CON, false, state);
+        const change = adjustAttribute(A_CON, -1, state);
+        if (change.changed && state._moveloopStarted) await reportHeroEncumbrance(state);
+        return { active: false, died: false, recovered: true, turns: 0 };
+    }
+
+    await publish('You die from your illness.', { urgent: true });
+    let killer = hero.sickCause || 'illness';
+    const species = nameToMonster(killer);
+    const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+    const unique = species >= 0 && !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+    // nh_timeout() resolves personal and unique monster names when the
+    // delayed illness becomes fatal, before formatkiller() adds an article.
+    if (unique && !personal) killer = definiteName(killer);
+    // done_timeout() marks Sick with I_SPECIAL while done() runs.
+    hero.sick = true;
+    const died = await die({
+        killer,
+        deathCause: `poisoned by ${personal || unique || killer === '#wizintrinsic'
+            ? killer : withIndefiniteArticle(killer)}`,
+        deathLineShown: true,
+        deathType: POISONING,
+    });
+    cureHeroSickness(state);
+    return { active: false, died: !!died, recovered: false, turns: 0 };
+}
+
+export async function advanceHeroPetrification({
+    state = game, die = finishHeroDeath,
+}: { state?: GameState; die?: DeathHandler } = {}): Promise<PetrificationAdvanceResult> {
+    const hero = state.u;
+    const turns = hero.stonedTurns ?? 0;
+    if (turns <= 0) return { active: false, died: false };
+    hero.stonedTurns = turns - 1;
+    if (hero.stonedTurns > 0)
+        return { active: true, died: false, turns: hero.stonedTurns };
+
+    const killer = hero.stoneKiller || 'petrification';
+    const died = await die({
+        killer,
+        deathCause: petrificationDeathCause(state),
+        deathVerb: 'turned to stone',
+        deathLineShown: true,
+        deathType: STONING,
+    });
+    clearHeroPetrification(state);
+    return { active: false, died: !!died, turns: 0 };
+}
+
+// Reading the stored petrification killer and its prefix format back for
+// the death report (C end.c:find_delayed_killer()).
+function petrificationDeathCause(state: GameState): string {
+    const name = state.u.stoneKiller;
+    if (!name) return 'killed by petrification';
+    const format = state.u.stoneKillerFormat;
+    if (format === undefined) throw new Error('Petrification requires its delayed killer format.');
+    if (format === NO_KILLER_PREFIX) return name;
+    return `petrified by ${format === KILLED_BY_AN ? withIndefiniteArticle(name) : name}`;
+}
+
+export async function advanceHeroStrangulation({
+    state = game, publish = plineWithContinuation, die = finishHeroDeath,
+}: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}) {
+    const hero = state.u;
+    const turns = hero.strangledTurns ?? 0;
+    if (turns <= 0) return { died: false };
+    hero.strangledTurns = turns - 1;
+    if (hero.strangledTurns > 0) return { died: false };
+
+    // C done_timeout() keeps the condition visible during death disclosure.
+    hero.strangled = true;
+    const died = await die({
+        killer: hero.uburied ? 'suffocation' : 'strangulation',
+        killerFormat: KILLED_BY,
+        deathType: DIED,
+        // C's timeout death path calls done() directly; only losehp()
+        // prints a "You die..." line before the disclosure.
+        deathLineShown: true,
+    });
+    clearHeroStrangulation(state);
+    const amulet = state.uamul || hero.uamul;
+    if (!died && amulet?.otyp === AMULET_OF_STRANGULATION) {
+        await publish('Your amulet vanishes!');
+        await deleteObject(amulet, state);
+    }
+    return { died };
+}
+
+// C timeout.c:670-672 countdown plus the LEVITATION expiry case 794-804.
+// `previous` is captured before the decrement so float_down reports the
+// pre-expiry movement state.
+export async function advanceLevitationTimeout(
+    state: GameState = game,
+): Promise<LevitationTimeoutResult> {
+    // Expiry lands the hero through the live float-down owner.
+    requireLiveGame(state);
+    const hero = state.u;
+    const turns = hero.levitationTurns ?? 0;
+    if (turns <= 0)
+        return { active: false, expired: false, flyingBypassed: false };
+
+    const previous = captureLevitationState(state);
+    hero.levitationTurns = turns - 1;
+    // C macros read live state after the countdown; keep the projected
+    // hero fields in step before any expiry work.
+    refreshProperty('levitation', state);
+    if (hero.levitationTurns > 0)
+        return { active: true, expired: false, flyingBypassed: false,
+            turns: hero.levitationTurns };
+
+    // Timed Flying expiring on the same turn would make float_down report
+    // "stopped levitating and are now flying"; end it early to skip that
+    // false takeover.  Assumes levitation is handled before flying
+    // (timeout.c:795-802).
+    let flyingBypassed = false;
+    if ((hero.flyingTurns ?? 0) === 1) {
+        hero.flyingTurns = 0;
+        flyingBypassed = true;
+        refreshProperty('flying', state);
+    }
+    const landed = await floatHeroDown(I_SPECIAL | TIMEOUT, 0, state,
+        previous);
+    return { active: false, expired: true, flyingBypassed, landed };
+}
+
+// C timeout.c:805-812.  was_flying is read at entry, matching the pre-loop
+// capture when allmain runs this after advanceLevitationTimeout in C
+// property order: the levitation path's only Flying change this turn is the
+// flyingTurns === 1 bypass, which never reaches the expiry below.
+export async function advanceFlyingTimeout(
+    state: GameState = game,
+    { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},
+): Promise<FlyingTimeoutResult> {
+    // Flight expiry publishes the landing and runs spot effects on the
+    // live world.
+    requireLiveGame(state);
+    const hero = state.u;
+    const turns = hero.flyingTurns ?? 0;
+    if (turns <= 0) return { active: false, expired: false, landed: false };
+
+    const wasFlying = propertyIsActive('flying', state);
+    hero.flyingTurns = turns - 1;
+    // C macros read live state after the countdown; keep the projected
+    // hero fields in step before the landing checks.
+    refreshProperty('flying', state);
+    if (hero.flyingTurns > 0)
+        return { active: true, expired: false, landed: false,
+            turns: hero.flyingTurns };
+
+    if (wasFlying && !propertyIsActive('flying', state)) {
+        state.context.botl = true;
+        await publish('You land.');
+        await applyHeroLocationEffects(publish);
+        return { active: false, expired: true, landed: true };
+    }
+    return { active: false, expired: true, landed: false };
+}
+
+export async function finishWallPassageTimeout(state = game): Promise<void> {
+    if (propertyIsActive('passesWalls', state)) return;
+    await plineWithContinuation(heroIsSurroundedByRock(state)
+        ? formatFeltMessage('hemmed in again.', state)
+        : `You're back to your ${heroIsPolymorphed(state) ? 'unusual' : 'normal'} self again.`);
+}
+
+export async function finishBreathingTimeout(state = game): Promise<void> {
+    if (!heroIsBreathless(state) && heroIsInDangerousRegion(state))
+        await plineWithContinuation(state.u.poisonResistance
+            ? 'You cough.' : 'You cough and spit blood!');
 }
 
 // C timeout.c:588-948 nh_timeout().
@@ -391,6 +1193,34 @@ export async function nhTimeout(): Promise<void> {
     await runDueTimers();
 }
 
+// C timeout.c:fall_asleep().
+export async function putHeroToSleep(turns: number, {
+    state = game,
+    doneMessage = 'You wake up.',
+    publish = plineWithContinuation as MessagePublisher,
+} = {}) {
+    const hero = state.u;
+    // fall_asleep() begins with stop_occupation(), which reports the
+    // interrupted activity.
+    await stopHeroOccupation(state, publish);
+    const duration = Math.max(0, turns);
+    // nomul() refuses to shorten an existing involuntary delay. fall_asleep()
+    // still installs its sleep marker and recovery message afterward.
+    nomul(-duration, state);
+    state._helplessReason = 'sleeping';
+    state._helplessDoneMessage = doneMessage;
+    hero.usleep = state.moves || 1;
+    return state._helplessTurns;
+}
+
+export function learnEggType(mnum: number, state: GameState) {
+    const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+    if (!Array.isArray(state.mvitals)) state.mvitals = [];
+    const vital = state.mvitals[adult]
+        || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
+    vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
+}
+
 // Saveable object and level-position timer ordering (folded from
 // object_timers.js into its C owner).
 // C ref: timeout.c start_timer()/insert_timer()/run_timers().
@@ -632,6 +1462,28 @@ function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
     return outer.where === 'minvent' && !!outer.ocarry
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
+
+// C timeout.c:obj_is_local(): a light is global when its outermost owner is
+// the hero or a migrating carrier, and level-local otherwise.
+export function lightObjectIsGlobal(object: GameObject): boolean {
+    let outermost = object;
+    while (outermost.where === 'contained' && outermost.container)
+        outermost = outermost.container;
+    switch (outermost.where) {
+        case 'inventory':
+        case 'migrating':
+            return true;
+        case 'minvent':
+            return !outermost.ocarry || outermost.ocarry.mx === 0;
+        case 'buried':
+        case 'contained':
+        case 'floor':
+        case 'free':
+        case 'gone':
+        case 'onbill':
+            return false;
+    }
+}
 // save_timers() writes queue order; restore_timers() calls insert_timer()
 // for each saved entry. Equal-time entries reverse within each batch.
 function restoreTimerBatch(timers: readonly (ObjectTimer | LevelTimer)[], state: GameState): void {
@@ -786,4 +1638,543 @@ export async function slipOrTrip(publish: MessagePublisher = plineWithContinuati
     if (!message) throw new Error('Fumbling chose no message');
     await publish(message);
     if (steed) await dismountHero(DISMOUNT_FELL, { announce: publish });
+}
+
+export interface BurnTimerResult {
+    object: GameObject;
+    threshold: number;
+    overdue: boolean;
+    destroyed?: boolean;
+}
+
+
+// C timeout.c:see_lamp_flicker().
+// C timeout.c:lantern_message().
+async function announceLampBurn(
+    object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
+    state: GameState, owner: string,
+): Promise<void> {
+    const floor = object.where === 'floor';
+    const lantern = object.otyp === BRASS_LANTERN;
+    if (threshold === 0) {
+        if (visible || byTouch) await plineWithContinuation(lantern
+            ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
+            : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
+        return;
+    }
+    if (!visible || ![150, 100, 50, 25].includes(threshold)) return;
+    if (lantern) {
+        await plineWithContinuation(floor ? formatSeenMessage('a lantern getting dim.', state)
+            : object.where === 'inventory' ? 'Your lantern is getting dim.'
+                : `${burnOwner(object, state)} lantern is getting dim.`);
+        if (object.where === 'inventory' && heroIsHallucinating(state))
+            await plineWithContinuation('Batteries have not been invented yet.');
+    } else if (threshold === 25) await plineWithContinuation(floor
+        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
+        : `${burnName(object, state)} seems about to go out.`);
+    else await plineWithContinuation(floor
+        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`, state)
+        : `${burnName(object, state)} flickers${threshold === 50 ? ' considerably' : ''}.`);
+}
+
+async function announceCandleBurn(
+    object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
+    state: GameState, ownership: string,
+): Promise<void> {
+    const menorah = object.otyp === CANDELABRUM_OF_INVOCATION;
+    const many = menorah ? object.spe > 1 : (object.quan ?? object.quantity ?? 1) > 1;
+    const floor = object.where === 'floor';
+    const candle = `${menorah ? "candelabrum's " : ''}candle`;
+    const owner = floor ? formatSeenMessage(`${menorah ? 'a ' : many ? 'some ' : 'a '}`, state) : `${ownership} `;
+    if (threshold === 75 && visible) {
+        await plineWithContinuation(`${owner}${candle}${many ? 's' : ''}${floor ? '' : many ? ' are' : ' is'} getting short.`);
+    } else if (threshold === 15 && visible) {
+        await plineWithContinuation(`${owner}${candle}${many ? "s'" : "'s"} flame${many ? 's' : ''} flicker${floor || many ? '' : 's'} low!`);
+    } else if (threshold === 0 && (visible || byTouch)) {
+        if (menorah) await plineWithContinuation(floor
+            ? formatSeenMessage(`a candelabrum's flame${many ? 's' : ''} die.`, state)
+            : `${ownership} candelabrum's flame${many ? 's die' : ' dies'}.`);
+        else {
+            const name = objectName(object, state);
+            await plineWithContinuation(floor
+                ? formatSeenMessage(`${many ? `some ${makePlural(name)}` : withIndefiniteArticle(name)} consumed!`, state)
+                : `${burnName(object, state)} ${many ? 'are' : 'is'} consumed!`);
+            if (heroIsHallucinating(state)) await plineWithContinuation(many ? 'They shriek!' : 'It shrieks!');
+            else if (!heroIsBlind(state)) await plineWithContinuation(many ? 'Their flames die.' : 'Its flame dies.');
+        }
+    }
+}
+
+// C timeout.c:burn_object(). The claimed timer is already removed. Messages
+// may pause before expiry removes equipment or bills; a late level timer
+// catches up silently without replaying warnings from the absent hero.
+export async function runClaimedObjectBurnTimer(
+    claimed: DueObjectTimer | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
+): Promise<BurnTimerResult | null> {
+    const object = claimed?.object;
+    const timeout = claimed?.timer?.deadline;
+    if (!object || !TIMED_LIGHT_TYPES.has(object.otyp) || !object.lamplit
+        || typeof timeout !== 'number' || !Number.isFinite(timeout)) return null;
+    if (timeout !== currentTurn) {
+        const elapsed = currentTurn - timeout;
+        if (elapsed >= (object.age ?? 0)) {
+            object.age = 0;
+            const destroyed = await finishBurnedObject(object, state, { overdue: true });
+            return { object, threshold: 0, overdue: true, destroyed };
+        }
+        object.age -= elapsed;
+        beginObjectBurn(object, state, currentTurn);
+        return { object, threshold: object.age, overdue: true };
+    }
+    const threshold = object.age ?? 0;
+    const location = getObjectLocation(object, state);
+    const visible = !heroIsBlind(state) && !!location && cansee(location.x, location.y);
+    const owner = location ? burnOwner(object, state) : '';
+    const byTouch = object.where === 'inventory' && object.otyp !== BRASS_LANTERN;
+    if (object.otyp === POT_OIL) {
+        if (visible) await plineWithContinuation(object.where === 'floor'
+            ? formatSeenMessage('a burning potion of oil go out.', state) : `${owner} potion of oil has burnt away.`);
+    } else if (CANDLE_TYPES.has(object.otyp))
+        await announceCandleBurn(object, threshold, visible, byTouch, state, owner);
+    else await announceLampBurn(object, threshold, visible, byTouch, state, owner);
+    const destroyed = threshold === 0 || object.otyp === POT_OIL
+        ? await finishBurnedObject(object, state) : false;
+    if (!destroyed && threshold > 0) beginObjectBurn(object, state, currentTurn);
+    if (visible && location && threshold === 0
+        && (object.otyp === POT_OIL || object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE))
+        await newsym(location.x, location.y);
+    return { object, threshold, overdue: false, destroyed };
+}
+
+function burnOwner(object: GameObject, state: GameState) {
+    if (object.where === 'inventory') {
+        const owner = carriedObjectOwner(object, state);
+        return owner.charAt(0).toUpperCase() + owner.slice(1);
+    }
+    const carrier = object.ocarry || requireGameLevel(state).monsters.find(monster =>
+        (monster.minvent || monster.inventory || []).includes(object));
+    // C shk.c:mon_owns(): s_suffix(y_monnam(obj->ocarry)), so a pet's item
+    // reads "Your saddled pony's".
+    return carrier ? possessiveName(monsterName(carrier, { article: 'your', capitalized: true, state })) : 'The';
+}
+
+function burnName(object: GameObject, state: GameState) {
+    const count = object.quan ?? object.quantity ?? 1;
+    const name = objectName(object, state);
+    return `${burnOwner(object, state)} ${count > 1 ? makePlural(name) : name}`;
+}
+
+async function finishBurnedObject(object: GameObject, state: GameState, { overdue = false } = {}) {
+    extinguishTimedLight(object, state);
+    if (object.otyp === CANDELABRUM_OF_INVOCATION) {
+        object.spe = 0;
+        object.owt = objectWeight(object);
+        return false;
+    }
+    if (object.otyp !== POT_OIL && object.otyp !== TALLOW_CANDLE && object.otyp !== WAX_CANDLE)
+        return false;
+    const floor = object.where === 'floor' && { x: object.ox, y: object.oy };
+    if (!overdue && object.where === 'inventory') await useUpInventoryStack(object, state);
+    else {
+        if (object.where === 'migrating') object.owornmask = 0;
+        await deleteObject(object, state);
+    }
+    if (floor && (overdue || object.otyp !== POT_OIL))
+        await maybeUnhideAt(floor.x, floor.y, state);
+    return true;
+}
+
+function extinguishTimedLight(object: GameObject, state: GameState) {
+    object.lamplit = false;
+    delete object._litSeq;
+    stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+    state.vision_full_recalc = 1;
+}
+
+function lampBurnTurns(age: number): number {
+    if (age > 150) return age - 150;
+    if (age > 100) return age - 100;
+    if (age > 50) return age - 50;
+    if (age > 25) return age - 25;
+    return age;
+}
+
+function candleBurnTurns(age: number): number {
+    if (age > 75) return age - 75;
+    if (age > 15) return age - 15;
+    return age;
+}
+
+function objectBurnTurns(object: GameObject) {
+    if (object.otyp === POT_OIL) {
+        const age = object.age ?? 0;
+        return object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
+    }
+    if (CANDLE_TYPES.has(object.otyp))
+        return candleBurnTurns(object.age ?? 0);
+    return lampBurnTurns(object.age ?? 0);
+}
+
+// C timeout.c:begin_burn() stores only the fuel remaining after the next warning
+// breakpoint; the timer owns the intervening turns.  Keeping both fields is
+// what lets save/restore and an overdue callback reconstruct source state.
+export function beginObjectBurn(
+    object: GameObject | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
+) {
+    if (!object
+        || (!LIGHT_TYPES.has(object.otyp) && !artifactEmitsLight(object))) {
+        return false;
+    }
+    const alreadyLit = !!object.lamplit;
+    if (artifactEmitsLight(object)) {
+        object.lamplit = true;
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
+            state.vision_full_recalc = 1;
+        }
+        return true;
+    }
+    if (object.otyp === MAGIC_LAMP) {
+        if ((object.spe ?? 0) <= 0) return false;
+        object.lamplit = true;
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
+            state.vision_full_recalc = 1;
+        }
+        return true;
+    }
+    if (object.otyp === CANDELABRUM_OF_INVOCATION
+        && (object.spe ?? 0) <= 0) return false;
+    if ((object.age ?? 0) <= 0) return false;
+    const turns = objectBurnTurns(object);
+    const timer = scheduleObjectTimer(
+        object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state,
+    );
+    object.lamplit = !!timer;
+    if (!timer) return false;
+    object.age -= turns;
+    if (!alreadyLit) {
+        registerObjectLightSource(object, state);
+        state.vision_full_recalc = 1;
+    }
+    return true;
+}
+
+// C timeout.c:end_burn(), timer_attached TRUE, reaches cleanup_burn() through stop_timer().
+// The object's stored age excludes the turns owned by its active timer, so a
+// manual switch-off must restore the still-unspent portion before darkening
+// the source.  Natural expiry has already claimed its timer and deliberately
+// uses extinguishTimedLight() below instead.
+export function endObjectBurn(
+    object: GameObject | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
+) {
+    if (!object?.lamplit)
+        return false;
+    if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)
+        || object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES) {
+        object.lamplit = false;
+        delete object._litSeq;
+        state.vision_full_recalc = 1;
+        return true;
+    }
+    const timer = stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
+    if (!timer || !Number.isFinite(timer.deadline)) return false;
+    return cleanupObjectBurn(object, timer.deadline, state, currentTurn);
+}
+
+// C timeout.c:cleanup_burn(), also called when Lua stops a burning object's timer.
+export function cleanupObjectBurn(
+    object: GameObject, deadline: number, state: GameState = game,
+    currentTurn = state.moves ?? 0,
+): boolean {
+    if (!object.lamplit) return false;
+    object.age = (object.age ?? 0) + deadline - currentTurn;
+    object.lamplit = false;
+    delete object._litSeq;
+    state.vision_full_recalc = 1;
+    return true;
+}
+
+const DIRECTIONS: readonly (readonly [number, number, string])[] = [
+    [-1, -1, 'y'], [0, -1, 'k'], [1, -1, 'u'], [-1, 0, 'h'],
+    [1, 0, 'l'], [-1, 1, 'b'], [0, 1, 'j'], [1, 1, 'n'],
+];
+
+// C timeout.c:do_storms(), after ambient sounds and before hunger.
+export async function doStorms(state = game): Promise<void> {
+    requirePlayingGame(state);
+    const level = state.level;
+    if (!level.flags.stormy || rn2(8) !== 0) return;
+
+    for (let strike = rnd(64); strike <= 64; strike *= 2) {
+        let count = 0;
+        let x: number, y: number;
+        do {
+            x = rnd(COLNO - 1);
+            y = rn2(ROWNO);
+        } while (++count < 100 && level.requireAt(x, y).typ !== CLOUD);
+        if (count >= 100) continue;
+        const dx = rn2(3) - 1, dy = rn2(3) - 1;
+        if (dx === 0 && dy === 0) continue;
+        const direction = DIRECTIONS.find(([xdir, ydir]) => xdir === dx && ydir === dy)?.[2];
+        if (!direction) throw new Error(`Storm chose invalid direction ${dx},${dy}`);
+        await castMonsterSpellRay(direction, x, y, [AT_MAGC, AD_ELEC, 8, 6], { state });
+        if (state.program_state.gameover) return;
+    }
+
+    if (level.requireAt(state.u.ux, state.u.uy).typ !== CLOUD) {
+        const message = formatHeardMessage('a rumbling noise.', state);
+        if (message) await plineWithContinuation(message);
+        return;
+    }
+    await plineWithContinuation('Kaboom!!!  Boom!!  Boom!!');
+    setPropertyTimeout('deaf', propertyTimeout('deaf', state) + rn1(20, 30), state);
+    state.context.botl = true;
+    if (state.u.invulnerable) return;
+    await stopHeroOccupation(state);
+    nomul(-3, state);
+    state._helplessReason = 'hiding from thunderstorm';
+    delete state._helplessDoneMessage;
+}
+
+interface TimedProperty {
+    readonly name: string;
+    readonly property: PropertyName;
+}
+
+// timeout.c:propertynames[], C order. Hallucination resistance is listed
+// here (unlike the #wizintrinsic table, which omits Grayswandir's property).
+const PROPERTY_NAMES: readonly TimedProperty[] = [
+    { name: 'invulnerable', property: 'invulnerable' },
+    { name: 'petrifying', property: 'stoned' },
+    { name: 'becoming slime', property: 'slimed' },
+    { name: 'strangling', property: 'strangled' },
+    { name: 'fatally sick', property: 'sick' },
+    { name: 'stunned', property: 'stunned' },
+    { name: 'confused', property: 'confusion' },
+    { name: 'hallucinating', property: 'hallucination' },
+    { name: 'blinded', property: 'blinded' },
+    { name: 'deafness', property: 'deaf' },
+    { name: 'vomiting', property: 'vomiting' },
+    { name: 'slippery fingers', property: 'glib' },
+    { name: 'wounded legs', property: 'woundedLegs' },
+    { name: 'sleepy', property: 'sleepy' },
+    { name: 'teleporting', property: 'teleportation' },
+    { name: 'polymorphing', property: 'polymorph' },
+    { name: 'levitating', property: 'levitation' },
+    { name: 'very fast', property: 'fast' },
+    { name: 'clairvoyant', property: 'clairvoyant' },
+    { name: 'monster detection', property: 'detectMonsters' },
+    { name: 'see invisible', property: 'seeInvisible' },
+    { name: 'invisible', property: 'invisible' },
+    { name: 'acid resistance', property: 'acidResistance' },
+    { name: 'stoning resistance', property: 'stoneResistance' },
+    { name: 'displaced', property: 'displaced' },
+    { name: 'pass thru walls', property: 'passesWalls' },
+    { name: 'magical breathing', property: 'magicalBreathing' },
+    { name: 'water walking', property: 'waterWalking' },
+    { name: 'fire resistance', property: 'fireResistance' },
+    // Entries from here on only obtain timeouts through #wizintrinsic.
+    { name: 'cold resistance', property: 'coldResistance' },
+    { name: 'sleep resistance', property: 'sleepResistance' },
+    { name: 'disintegration resistance', property: 'disintegrationResistance' },
+    { name: 'shock resistance', property: 'shockResistance' },
+    { name: 'poison resistance', property: 'poisonResistance' },
+    { name: 'drain resistance', property: 'drainResistance' },
+    { name: 'sickness resistance', property: 'sicknessResistance' },
+    { name: 'magic resistance', property: 'antimagic' },
+    { name: 'hallucination resistance', property: 'hallucinationResistance' },
+    { name: 'light-induced blindness resistance', property: 'blindResistance' },
+    { name: 'fumbling', property: 'fumbling' },
+    { name: 'voracious hunger', property: 'hunger' },
+    { name: 'telepathic', property: 'telepathy' },
+    { name: 'warning', property: 'warning' },
+    { name: 'warn: monster type or class', property: 'warnOfMonster' },
+    { name: 'warn: undead', property: 'warnUndead' },
+    { name: 'searching', property: 'searching' },
+    { name: 'infravision', property: 'infravision' },
+    { name: 'adorned (+/- Cha)', property: 'adorned' },
+    { name: 'stealthy', property: 'stealth' },
+    { name: 'monster aggravation', property: 'aggravateMonster' },
+    { name: 'conflict', property: 'conflict' },
+    { name: 'jumping', property: 'jumping' },
+    { name: 'teleport control', property: 'teleportControl' },
+    { name: 'flying', property: 'flying' },
+    { name: 'swimming', property: 'swimming' },
+    { name: 'slow digestion', property: 'slowDigestion' },
+    { name: 'half spell damage', property: 'halfSpellDamage' },
+    { name: 'half physical damage', property: 'halfPhysicalDamage' },
+    { name: 'HP regeneration', property: 'regeneration' },
+    { name: 'energy regeneration', property: 'energyRegeneration' },
+    { name: 'extra protection', property: 'protection' },
+    { name: 'protection from shape changers', property: 'protectionFromShapeChangers' },
+    { name: 'polymorph control', property: 'polymorphControl' },
+    { name: 'unchanging', property: 'unchanging' },
+    { name: 'reflecting', property: 'reflection' },
+    { name: 'free action', property: 'freeAction' },
+    { name: 'fixed abilities', property: 'sustainAbility' },
+    { name: 'life will be saved', property: 'lifeSaving' },
+];
+
+const WIZINTRINSIC_ONLY_INDEX = PROPERTY_NAMES.findIndex(
+    entry => entry.property === 'coldResistance');
+
+const TIMER_FUNC_NAMES: Record<ObjectTimerKind | 'melt-ice-away', string> = {
+    [OBJECT_TIMER_KIND.ROT_ORGANIC]: 'rot_organic',
+    [OBJECT_TIMER_KIND.ROT_CORPSE]: 'rot_corpse',
+    [OBJECT_TIMER_KIND.REVIVE_MON]: 'revive_mon',
+    [OBJECT_TIMER_KIND.ZOMBIFY_MON]: 'zombify_mon',
+    [OBJECT_TIMER_KIND.BURN_OBJECT]: 'burn_object',
+    [OBJECT_TIMER_KIND.HATCH_EGG]: 'hatch_egg',
+    [OBJECT_TIMER_KIND.FIG_TRANSFORM]: 'fig_transform',
+    [OBJECT_TIMER_KIND.SHRINK_GLOB]: 'shrink_glob',
+    'melt-ice-away': 'melt_ice_away',
+};
+
+// timeout.c:print_queue(). C shows fmt_ptr() of the timer argument: the
+// packed (x << 16 | y) spot coordinate for level timers and the object
+// address for object timers. Object addresses belong to the native heap, so
+// the port shows the object's stable id in the same 0x-prefixed shape.
+function timerQueueLines(state: GameState): string[] {
+    const timers = queuedTimers(state);
+    if (!timers.length) return [' <empty>'];
+    const rows = ['timeout  id   kind   call'];
+    for (const entry of timers) {
+        const funcName = TIMER_FUNC_NAMES[entry.timer.kind];
+        if (!funcName) throw new Error(`No timer callback name for ${entry.timer.kind}`);
+        const argument = 'object' in entry
+            ? `0x${entry.object.o_id.toString(16)}`
+            : `0x${((entry.position.x << 16) | entry.position.y).toString(16)}`;
+        rows.push(` ${String(entry.timer.deadline).padStart(4)}   `
+            + `${String(entry.timer.id).padStart(4)}  `
+            + `${'object' in entry ? 'object' : 'level'}`.padEnd(6)
+            + ` ${funcName}(${argument})`);
+    }
+    return rows;
+}
+
+function timedPropertyLines(state: GameState): string[] {
+    const timed = PROPERTY_NAMES
+        .map((entry, index) => ({ ...entry, index, timeout: propertyTimeout(entry.property, state) }))
+        .filter(entry => entry.timeout > 0);
+    if (!timed.length) return ['No timed properties.'];
+    const longest = Math.max(...timed.map(entry => entry.name.length));
+    const lines = ['Timed properties:', ''];
+    let markerPending = true;
+    for (const entry of timed) {
+        if (markerPending && entry.index >= WIZINTRINSIC_ONLY_INDEX) {
+            lines.push(' -- settable via #wizintrinsic only --');
+            markerPending = false;
+        }
+        lines.push(` ${entry.name.padEnd(longest)} ${String(entry.timeout).padStart(4)}`);
+    }
+    return lines;
+}
+
+// C timeout.c:wiz_timeout_queue() — the #timeout debug listing: current time,
+// the timer queue, every timed intrinsic, and the hero/level counters that
+// share this status surface.
+export async function wizTimeoutQueue(): Promise<void> {
+    const state = requireInitializedGame();
+    const lines: string[] = [
+        `Current time = ${state.moves ?? 0}.`,
+        '',
+        'Active timeout queue:',
+        '',
+        ...timerQueueLines(state),
+        '',
+        ...timedPropertyLines(state),
+    ];
+    const hero = state.u;
+    if (hero.uswldtim) {
+        lines.push('', `Swallow countdown is ${hero.uswldtim}.`);
+    }
+    if (hero.uinvault) {
+        lines.push('', `Vault counter is ${hero.uinvault}.`);
+    }
+    lines.push(...visibleRegionLines(state));
+    const stasisUntil = requireGameLevel(state).flags.stasis_until;
+    if (stasisUntil !== undefined && stasisUntil >= (state.moves ?? 0)) {
+        const turns = stasisUntil - (state.moves ?? 0);
+        lines.push('', `Level is no-teleport for ${turns + 1} ${turns > 0 ? 'turns' : 'more turn'}.`);
+    }
+    // C builds the listing with putstr in an NHW_MENU window, which tty
+    // paints over the live map at a corner offset and dismisses by
+    // restoring it; the disclosure overlay owns that geometry.
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    state._pending_message = '';
+    state._retained_message = '';
+    state.context.move = 0;
+}
+
+// C timeout.c:run_timers().
+export async function runDueTimers(): Promise<void> {
+    while (!game.program_state?.gameover) {
+        const timer = claimNextDueObjectTimer(game, game.moves);
+        if (!timer) return;
+        await runObjectTimer(timer, game.moves);
+    }
+}
+
+// The caller has removed this timer from the queue. Its callback may add or
+// cancel timers, so the next due timer must be selected after it finishes.
+export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: number) {
+    if (claimed.object === null) {
+        const wasMonsterMoving = game.context.mon_moving;
+        game.context.mon_moving = true;
+        try {
+            const { x, y } = claimed.position;
+            return await meltIce(x, y, { message: 'Some ice melts away.' });
+        } finally {
+            game.context.mon_moving = wasMonsterMoving;
+        }
+    }
+    const kind = claimed.timer.kind;
+    if (kind === OBJECT_TIMER_KIND.BURN_OBJECT)
+        return runClaimedObjectBurnTimer(claimed, game, currentTurn);
+    if (kind === OBJECT_TIMER_KIND.HATCH_EGG) {
+        const event = await runClaimedEggHatchTimer(claimed, game, currentTurn);
+        if (event?.message) await plineWithContinuation(event.message);
+        if (event?.followupMessage) await plineWithContinuation(event.followupMessage);
+        return finishEggHatchTimer(event, game, currentTurn);
+    }
+    if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
+        const event = await runClaimedGlobTimer(claimed, game, currentTurn);
+        if (event?.message) await plineWithContinuation(event.message);
+        return finishGlobTimer(event, game, currentTurn);
+    }
+    if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
+        const event = await runClaimedFigurineTimer(claimed, game, currentTurn);
+        for (const message of event?.waterMessages || []) await plineWithContinuation(message);
+        if (event?.message) await plineWithContinuation(event.message);
+        return await finishFigurineTimer(event, game);
+    }
+    if (kind === OBJECT_TIMER_KIND.REVIVE_MON || kind === OBJECT_TIMER_KIND.ZOMBIFY_MON) {
+        const event = await runClaimedCorpseRevivalTimer(claimed, game, currentTurn);
+        for (const message of event?.messages || []) await plineWithContinuation(message);
+        if (event?.buried) await announceBuriedRevival(event);
+        return await finishBuriedZombieTimer(event, game);
+    }
+    const event = await runClaimedObjectRotTimer(claimed, game);
+    if (kind === OBJECT_TIMER_KIND.ROT_ORGANIC && event && 'where' in event && event.where === 'floor')
+        await newsym(event.x, event.y);
+    return event;
+}
+
+async function announceBuriedRevival(event: CorpseRevivalTimerEvent): Promise<void> {
+    if (event.kind !== 'revived' || !event.monster) return;
+    const { monster, trap } = event;
+    if (cansee(monster.mx, monster.my)) {
+        let subject = 'Something';
+        if (canSpotMonster(monster))
+            subject = monsterName(monster, { article: 'a', capitalized: true });
+        if (trap) trap.tseen = true;
+        await plineWithContinuation(`${subject} claws itself out of the ground!`);
+        await newsym(monster.mx, monster.my);
+    } else {
+        const dx = monster.mx - game.u.ux;
+        const dy = monster.my - game.u.uy;
+        if (!(game.u.deaf || game.deaf) && dx * dx + dy * dy < 25)
+            await plineWithContinuation('You hear scratching noises.');
+    }
 }

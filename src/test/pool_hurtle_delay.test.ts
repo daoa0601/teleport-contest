@@ -8,7 +8,7 @@ import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { POOL, ROOM, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { GOLD_PIECE, SPEED_BOOTS } from '../js/object_data.js';

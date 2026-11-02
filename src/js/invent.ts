@@ -64,7 +64,8 @@ import { armorSimpleName, armorSlotFor } from './do_wear.js';
 
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
 import { announceGlobMerge } from './glob.js';
-import { endObjectBurn, objectShedsLight } from './light.js';
+import { endObjectBurn, learnEggType } from './timeout.js';
+import { objectShedsLight } from './light.js';
 import { assertCreatedObject } from './do.js';
 import { isReviver } from './corpse_species.js';
 import { stopObjectTimers } from './timeout.js';
@@ -139,13 +140,6 @@ export function objectNeedsFullIdentification(object: GameObject | null | undefi
         objectIsVulnerableToErosion(object, kind));
 }
 
-export function learnEggType(mnum: number, state: GameState) {
-    const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
-    if (!Array.isArray(state.mvitals)) state.mvitals = [];
-    const vital = state.mvitals[adult]
-        || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
-    vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
-}
 
 export function fullyIdentifyObject(object: GameObject, state: GameState = game) {
     const realObjectType = object.otyp >= FIRST_OBJECT;

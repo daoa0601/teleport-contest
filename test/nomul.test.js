@@ -4,7 +4,7 @@ import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { stopDonning } from '../js/do_wear.js';
 import { nomul } from '../js/hack.js';
 import { game } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { SPEED_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';

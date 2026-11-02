@@ -18,7 +18,7 @@ import { GOLD_PIECE, LEATHER_ARMOR, OIL_LAMP, RIN_PROTECTION, SHORT_SWORD, SPE_F
 import { recordObjectCall } from '../js/do_name.js';
 
 import { objectTimers } from '../js/timeout.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { discardTutorialState } from '../js/tutorial_state.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';

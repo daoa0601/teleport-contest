@@ -52,7 +52,8 @@ import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMons
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
 import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay } from './mcastu.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal, heroIsSliming, startHeroSliming } from './slime.js';
+import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
+import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems } from './trap.js';
 import { selectAttack } from './attack_selection.js';
@@ -81,7 +82,7 @@ import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, mo
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';

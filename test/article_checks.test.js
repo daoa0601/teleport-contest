@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { slimeDialogue, startHeroSliming } from '../js/slime.js';
+import { slimeDialogue } from '../js/timeout.js';
+import { startHeroSliming } from '../js/potion.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
 // C timeout.c slime_dialogue() names the hallucinated form with an(), so
 // just_an()'s long-'u' and 'wun' exceptions apply to random monster names.

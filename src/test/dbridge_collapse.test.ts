@@ -4,7 +4,7 @@ import { DBWALL, DB_FLOOR, DB_NORTH, DRAWBRIDGE_UP, NO_MINVENT } from '../js/con
 import { destroyDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';

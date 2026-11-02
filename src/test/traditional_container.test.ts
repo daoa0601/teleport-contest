@@ -9,7 +9,7 @@ import { fullyIdentifyObject } from '../js/invent.js';
 import { ARROW, CLUB, FOOD_RATION, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
 
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';

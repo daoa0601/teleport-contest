@@ -29,7 +29,8 @@ import { artifactById, speakArtifact, artifactEmitsLight, setWornArtifactPropert
 import { rn2 } from './rng.js';
 import type { GameState } from './game_state.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { lightWieldedArtifact, endObjectBurn, equipmentLightMessage } from './light.js';
+import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';

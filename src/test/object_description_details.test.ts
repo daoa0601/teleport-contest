@@ -8,7 +8,7 @@ import {
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn, endObjectBurn } from '../js/light.js';
+import { beginObjectBurn, endObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, EGG, FIGURINE, FOOD_RATION,

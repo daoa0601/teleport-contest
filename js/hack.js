@@ -18,7 +18,8 @@ import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
 import { placeObject, stack_object, updateIceObjectTimersAt, remove_object } from './floor_object.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
+import { putHeroToSleep } from './timeout.js';
 import { resetHeroFaint, getHungry, spendHeroNutrition } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
@@ -43,7 +44,7 @@ import { goodPosition, heroTeleportRestricted, findNearbyMonsterPosition } from 
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import { levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './dungeon.js';
-import { clearHeroSliming, heroIsSliming } from './slime.js';
+import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
 import { iceDescriptionAt } from './dungeon_feature.js';

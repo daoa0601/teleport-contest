@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { breakFloorObject } from '../js/dothrow.js';
 import { EGG, POT_OIL } from '../js/object_data.js';

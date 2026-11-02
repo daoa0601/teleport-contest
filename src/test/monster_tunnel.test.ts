@@ -9,7 +9,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { digMonsterTunnel } from '../js/dig.js';
 import type { AlignmentValue } from '../js/roles.js';
 import {

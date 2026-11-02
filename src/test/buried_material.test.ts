@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { WAN_CANCELLATION } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

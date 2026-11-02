@@ -4,7 +4,7 @@
 import { W_ARMH } from './const.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './polyself.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';

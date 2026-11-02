@@ -20,7 +20,8 @@ import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
-import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
+import { beginObjectBurn, endObjectBurn } from './timeout.js';
+import { equipmentLightDescription } from './light.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK,
     MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData,

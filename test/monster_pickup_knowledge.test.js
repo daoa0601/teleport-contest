@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { canSeeMonster, canSenseMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { fullyIdentifyObject, inventoryItemDescription, } from '../js/invent.js';
+import { fullyIdentifyObject, inventoryItemDescription } from '../js/invent.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { GLOB_OF_BLACK_PUDDING, OBJECT_NAMES, SADDLE, SHIELD_OF_REFLECTION, WAN_WISHING, } from '../js/object_data.js';
 import { knownObject, uninitializedObject } from './support/game-objects.js';

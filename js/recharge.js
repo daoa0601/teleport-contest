@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_NAMES, objectDirection, OIL_LAMP, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';

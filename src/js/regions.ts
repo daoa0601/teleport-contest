@@ -296,6 +296,28 @@ export function visibleRegionAt(state: GameState, x: number, y: number): GasClou
         && region.ttl !== -2 && regionContains(region, x, y)) || null;
 }
 
+// C region.c:visible_region_summary().
+export function visibleRegionLines(state: GameState): string[] {
+    const visible = requireGameLevel(state).regions
+        .filter(region => region.visible && region.ttl !== -2);
+    if (!visible.length) return [];
+    const separator = state.iflags.menu_tab_sep ? '\t' : '  ';
+    const lines = ['', 'Visible regions'];
+    for (const region of visible) {
+        const type = region.damage
+            ? `poison gas (${region.damage})` : 'vapor';
+        const xs = region.cells.map(cell => cell.x);
+        const ys = region.cells.map(cell => cell.y);
+        const left = Math.min(...xs);
+        const right = Math.max(...xs);
+        const top = Math.min(...ys);
+        const bottom = Math.max(...ys);
+        lines.push(`${String(region.ttl + 1).padStart(5)}${separator}${type.padEnd(16)}`
+            + `${separator}@[${left},${top}..${right},${bottom}]`);
+    }
+    return lines;
+}
+
 // C region.c:region_danger(), used when deciding whether prayer can help.
 export function heroIsInDangerousRegion(state: GameState = game): boolean {
     if (heroIsBreathless(state) || state.u.poisonResistance

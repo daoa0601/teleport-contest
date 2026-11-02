@@ -18,7 +18,7 @@ import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, POT_ACID
 import { applyPotionBodyEffect } from '../js/potion.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { heroIsHallucinating } from '../js/senses.js';
-import { startHeroSliming } from '../js/slime.js';
+import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { setHeroLycanthropy } from '../js/were.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

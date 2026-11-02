@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { doeat, vomitHero, fixHeroPetrification } from '../js/eat.js';
 import { game } from '../js/gstate.js';
-import { cureHeroSickness } from '../js/hero_illness.js';
+import { cureHeroSickness } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { makeConfused, makeStunned } from '../js/potion.js';

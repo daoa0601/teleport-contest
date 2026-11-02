@@ -20,7 +20,7 @@ import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -11,7 +11,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { resolveHeroCombatEngulf } from '../js/hero_combat_engulf.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { beginMealMimicry } from '../js/eat.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 import { SPEED_BOOTS } from '../js/object_data.js';

@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 const M1_NOHEAD = 0x00008000;
 const MS_SILENT = 0;
 const MS_BUZZ = 10;

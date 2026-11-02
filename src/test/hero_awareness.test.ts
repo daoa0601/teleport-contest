@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { getHungry } from '../js/eat.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { POT_BLINDNESS, POT_BOOZE, POT_PARALYSIS } from '../js/object_data.js';
 import { applySupportedPotionVapor } from '../js/potion.js';
 import { heroCanControlPolymorph, polymonHero } from '../js/polyself.js';

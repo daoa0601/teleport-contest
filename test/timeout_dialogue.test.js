@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { sicknessDialogue } from '../js/hero_illness.js';
+import { sicknessDialogue } from '../js/timeout.js';
 import { SICK_NONVOMITABLE } from '../js/const.js';
 import { setPropertyTimeout } from '../js/properties.js';
-import { slimeDialogue } from '../js/slime.js';
+import { slimeDialogue } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
 import { BLINDFOLD } from '../js/object_data.js';

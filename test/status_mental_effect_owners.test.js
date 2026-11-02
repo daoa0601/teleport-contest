@@ -5,7 +5,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';

@@ -19,7 +19,7 @@ import { finishHeroDeath } from './end.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import {
     BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE,
     CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN,

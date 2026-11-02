@@ -3,7 +3,7 @@ import test from 'node:test';
 import { DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PANICLOG, PIT, POOL, STONE, W_AMUL, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mhitm.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';
