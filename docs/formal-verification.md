@@ -68,7 +68,7 @@ split `rnl` row use this batch's complete runs.
 | `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.4 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
 | `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.9 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude partitions | 257 partitions of ≤13×18 | 168.2 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude intervals | 17 intervals of ≤13×18 | 15.3 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.4 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
 | `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.5 s |
@@ -181,23 +181,24 @@ in about a second (a query dump confirmed the branch and the integration
 base construct identical `rnl` queries, so the port edits were not the
 cause). Retrying between incomplete configurations only moved the failing
 seed around, so `specs.luck_partitions` instead reduces the query complexity
-by splitting the domain exhaustively by the magnitude of the luck sum. Both
+by splitting the domain exhaustively into luck-sum magnitude intervals. Both
 fields are `schar`, so `u.uluck + u.moreluck` lies in [-256, 254] and every
-value belongs to exactly one of 257 magnitude partitions. Fixing the magnitude
-fixes the `rn2(37 + abs(adjustment))` modulus within each branch for small or
-large `x`. The initial `RND(x)` draw still has symbolic modulus `x` over
-`1..INT_MAX-256`, so the partition queries remain nonlinear. The split removes
-one symbolic divisor, without guaranteeing that z3 will decide every query.
-The domain, outputs, stream positions and log entries are unchanged, and
-every partition must be satisfiable. The split claim takes 168.2 s over 257
-partitions (each at most 13 C x 18 JS paths, most fewer). Probes and mutants
-still short-circuit on the first failing partition with concrete witnesses. A
-regression test sweeps seeds 0 through 20 over seven selected partitions
-(magnitudes 0, 1, 2, 3, 4, 5 and 13), requiring each sampled query to prove.
-All 21 seeds passed with a worst sweep-set time of 14.0 s, and the full claim
-also proves at seed 10. These runs provide stability evidence for the tested
-partitions and seeds, not a guarantee for all partitions or solver seeds.
-`queries.py` is back to a single default solver configuration.
+value belongs to exactly one of 17 intervals `[0,15], [16,31], ..., {256}`.
+Each interval keeps the `rn2(37 + abs(adjustment))` divisor within a
+16-value window and, for `x <= 15`, the `(abs(luck) + 1) / 3` adjustment
+within six values; the initial `RND(x)` draw keeps its symbolic modulus `x`,
+so the queries remain nonlinear but small, and every seed tried decides them
+quickly. One magnitude per partition (257 partitions) is equally decisive
+but took 168.2 s locally and 319.7 s on the CI runner, timing out the
+30-minute job; the interval split proves the claim in 15.3 s locally. The
+domain, outputs, stream positions and log entries are unchanged, and every
+partition must be satisfiable. Probes and mutants still short-circuit on the
+first failing interval with concrete witnesses. A regression test sweeps
+seeds 0 through 20 over selected intervals (0-15, 16-31, 128-143 and 256);
+all 21 seeds proved, with a worst whole-scheme time of 18.8 s per seed when
+all 17 intervals run. These runs are stability evidence for the tested seeds,
+not a guarantee for every solver seed. `queries.py` is back to a single
+default solver configuration.
 
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.

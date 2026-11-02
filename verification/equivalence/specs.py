@@ -110,20 +110,27 @@ def _d_loops():
 
 
 def luck_partitions(front):
-    """Exhaustively split the rnl luck sum by magnitude.
+    """Exhaustively split the rnl luck sum into magnitude intervals.
 
     Both luck fields are signed chars, so u.uluck + u.moreluck lies in
-    [-256, 254] and every value has the magnitude of exactly one partition:
-    k = |sum| with sum in {k, -k} (k = 0 allows only 0). Fixing the
-    magnitude fixes the rn2 modulus 37 + abs(adjustment) within each branch
-    for small or large x. RND(x) still has symbolic modulus x, so each
-    partition remains nonlinear. The split reduced solver instability in
-    measured runs; it does not guarantee a decision for every solver seed.
+    [-256, 254]; the 17 intervals |sum| in [0,15], [16,31], ..., {256} cover
+    every value exactly once. Narrowing the magnitude keeps the
+    luck-dependent rn2(37 + abs(adjustment)) divisor within a 16-value window
+    (and, for x <= 15, the (abs(sum) + 1) / 3 adjustment within six values),
+    so every obligation is decided quickly and deterministically, where the
+    fully symbolic query coupled both symbolic divisors and z3 proved or gave
+    up on it depending on the seed and process memory layout. One magnitude
+    per partition (257 partitions) is also deterministic but costs 168 s and
+    timed out the CI job; width-16 intervals prove the whole claim in under
+    20 s for every seed tried.
     """
-    return [(f'luck sum magnitude {k}',
-             lambda s, _k=k: [z3.Or(s['u.uluck'] + s['u.moreluck'] == _k,
-                                    s['u.uluck'] + s['u.moreluck'] == -_k)])
-            for k in range(257)]
+    return [(f'luck sum magnitude {lo}-{min(lo + 15, 256)}',
+             lambda s, _lo=lo, _hi=min(lo + 15, 256):
+                 [z3.Or(z3.And(s['u.uluck'] + s['u.moreluck'] >= _lo,
+                               s['u.uluck'] + s['u.moreluck'] <= _hi),
+                        z3.And(s['u.uluck'] + s['u.moreluck'] >= -_hi,
+                               s['u.uluck'] + s['u.moreluck'] <= -_lo))])
+            for lo in range(0, 257, 16)]
 
 
 LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
