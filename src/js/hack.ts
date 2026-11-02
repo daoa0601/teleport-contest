@@ -31,7 +31,7 @@ import {
 import { placeObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { resetHeroFaint } from './hunger.js';
+import { resetHeroFaint } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { loseHeroHp } from './hero_damage.js';

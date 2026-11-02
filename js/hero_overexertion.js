@@ -5,7 +5,7 @@ import { A_CON, Upolyd } from './const.js';
 import { pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
-import { getHungry } from './hunger.js';
+import { getHungry } from './eat.js';
 import { HVY_ENCUMBER, nearCapacity } from './weight.js';
 function heroIsHelpless(state) {
     return (state.multi ?? 0) < 0

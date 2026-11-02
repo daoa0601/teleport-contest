@@ -1,8 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doeat } from '../js/eat.js';
-import { checkFoodEdibility } from '../js/food_edibility.js';
+import { doeat, checkFoodEdibility } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
 import { APPLE } from '../js/object_data.js';

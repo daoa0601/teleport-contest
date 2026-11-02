@@ -168,7 +168,6 @@ import {
     heroIsVomiting,
     startHeroSickness,
     startHeroVomiting,
-    vomitHero,
 } from './hero_illness.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -193,7 +192,7 @@ import { heroStatusLine } from './hero_status.js';
 import { freeHeroFromBuriedBall, triggerHeroTrap } from './hero_traps.js';
 import { requireInitializedHero } from './hero_types.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition, vomitHero } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand } from './immediate_zap.js';
 import { monsterStatusLine } from './insight.js';
 import {
@@ -430,7 +429,7 @@ import { isAccessibleAt } from './monmove.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterInAir } from './mon.js';
 import { objectTimers, stopLevelTimer, stopObjectTimer } from './timeout.js';
-import { setTinVariety, useTinOpener } from './tin.js';
+import { setTinVariety, useTinOpener } from './eat.js';
 import {
     deleteTrap,
     feelTrap,

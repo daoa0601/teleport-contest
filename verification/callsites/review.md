@@ -137,9 +137,9 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 |---|---|---|
 | `src/js/allmain.ts:1057` finishInitialTurnMaintenanceAfterRegions | invariant | `allmain.c:176 moveloop_core` |
 | `src/js/anti_magic_trap.ts:127` triggerHeroAntiMagicTrap | constant | `trap.c:2322 trapeffect_anti_magic` |
-| `src/js/corpse_intrinsics.ts:81` chooseCorpseIntrinsic | guarded | `eat.c:1338 corpse_intrinsic` |
-| `src/js/corpse_intrinsics.ts:102` shouldGiveIntrinsic | guarded | `eat.c:960 should_givit` |
-| `src/js/corpse_intrinsics.ts:108` shouldGiveTemporaryResistance | guarded | `eat.c:991 temp_givit` |
+| `src/js/eat.ts:1103` chooseCorpseIntrinsic | guarded | `eat.c:1338 corpse_intrinsic` |
+| `src/js/eat.ts:852` shouldGiveIntrinsic | guarded | `eat.c:960 should_givit` |
+| `src/js/eat.ts:863` shouldGiveTemporaryResistance | guarded | `eat.c:991 temp_givit` |
 | `src/js/dungeon.ts:602` placeLevels | guarded | `dungeon.c:665 place_level` |
 | `src/js/engrave.ts:164` wipeoutText | guarded | `engrave.c:119 wipeout_text` |
 | `src/js/hero_form_combat.ts:331` performHeroEngulf | guarded | `uhitm.c:5423 hmonas` |

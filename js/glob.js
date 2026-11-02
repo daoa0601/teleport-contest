@@ -20,6 +20,7 @@ import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity, objectWeight, } from './weight.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
+import { activelyEatingGlob } from './eat.js';
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }
@@ -210,11 +211,6 @@ async function deleteGlob(glob, state) {
     if (reconcileObjectDeletionBill(glob, null, state) === 'retained')
         return;
     deallocateObject(glob, state);
-}
-// C eat.c:eating_glob(). True while this glob is the meal in progress.
-function activelyEatingGlob(glob, state) {
-    return state._occupation?.key === 'eat-food'
-        && state.context.victual?.piece === glob;
 }
 // shrink_glob() asks xname to include partly eaten food before reducing its mass.
 function shrinkingGlobName(glob, state) {

@@ -13,7 +13,7 @@ import { d, rn1, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { regainHearingAfterHelplessness } from './hunger.js';
+import { regainHearingAfterHelplessness } from './eat.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';

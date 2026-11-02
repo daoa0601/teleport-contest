@@ -16,7 +16,7 @@ import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import type { HeroTrapOptions } from './hero_traps.js';
 import type { ThroneOptions } from './throne.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition } from './eat.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { stack_object } from './floor_object.js';
