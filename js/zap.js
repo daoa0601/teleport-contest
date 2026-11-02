@@ -1022,7 +1022,12 @@ export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun 
             // delfloortrap() releases a trapped hero through
             // reset_utrap(TRUE), which may report flight.
             await deleteFloorTrap(web, state);
-            await newsym(x, y);
+            // C zap.c:5170-5171: an unseen square is not refreshed after
+            // the web burns; the burst message and newsym() share the
+            // see_it gate, so a sensed monster there keeps its drawn
+            // appearance (no fresh hallucinated glyph from the display RNG).
+            if (visible)
+                await newsym(x, y);
         }
     }
     if (kind === RAY_FIRE && isIceAt(x, y, state)) {
