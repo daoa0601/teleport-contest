@@ -21,9 +21,12 @@ import { objectQuantity } from '../js/mkobj.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { moveVaultGuard } from '../js/vault.js';
-import { addInventoryObject, floorObject, uninitializedObject, untimedCorpse } from './support/game-objects.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { beginObjectBurn } from '../js/light.js';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
+import { addInventoryObject, artifactObject, floorObject, uninitializedObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -162,6 +165,24 @@ void test('non-food eating consumes one weapon from a stack and clears its tempo
     assert.equal(game.context.victual, null);
     assert.equal(game._occupation, null);
     assert.equal(game.u.uconduct?.food, 1);
+});
+
+void test('eating a wielded shining Sunsword reports that its light stops', async () => {
+    await eatingRoom('xorn');
+    requirePlayingGame(game);
+    game.u.ualign.type = 1;
+    const sword = await artifactObject('Sunsword');
+    await addInventoryItem(sword);
+    await setPrimaryWeapon(sword);
+    await beginObjectBurn(sword);
+    installPagerInput(resetInputState(), { expected: /is delicious|stops shining/, limit: 3 });
+
+    const result = await handleFoodAdmission(sword);
+
+    assert.equal(result.spentTime, true);
+    assert.equal(game.uwep, null);
+    assert.equal(sword.where, 'gone');
+    assert.match(game._lastPlineMessage ?? '', /Sunsword stops shining/);
 });
 
 void test('non-food eating rejects worn armor before consuming it', async () => {

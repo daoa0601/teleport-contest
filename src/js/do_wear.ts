@@ -19,7 +19,7 @@ import { finishHeroHelplessness } from './allmain.js';
 import type { GameObject } from './object_types.js';
 import { monsterIsHumanoid, MONSTER_NAME } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL } from './object_data.js';
-import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL } from './const.js';
+import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS } from './const.js';
 import { isBimanualObject, isSword } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName } from './body_parts.js';
 import type { PlayingGameState, GameState } from './game_state.js';
@@ -367,9 +367,11 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
         return;
     }
 
-    // C accessory_or_armor_on(): armor leaves any held slot before setworn.
-    // Cursed armor does not weld to the hand.
-    await releaseWeaponSlots(object, game);
+    // C accessory_or_armor_on(): "if the armor is wielded, release it for
+    // wearing (won't be welded even if cursed; that only happens for
+    // weapons/weptools)" — via remove_worn_item().
+    if ((object.owornmask ?? 0) & W_WEAPONS)
+        await removeWornHeroItem(object, game, { unchainBall: false });
     wearHeroArmor(object, game);
     // C do_wear.c installs the slot with setworn() now, but allmain.c does
     // not run find_ac() until the command's monster/global time has passed.
@@ -892,7 +894,9 @@ async function losePetrificationProtection(armor: GameObject, state: GameState, 
             + `while wielding ${killerObjectName(weapon, state)}`;
         const result = await resolveImmediatePetrification({ killer, state });
         if (result.died) return;
-        if (!heroResistsStoning(state)) await releaseWeaponSlots(weapon, state);
+        if (!heroResistsStoning(state))
+            // C wielding_corpse() unwields via remove_worn_item(obj, FALSE).
+            await removeWornHeroItem(weapon, state, { unchainBall: false });
     }
 }
 

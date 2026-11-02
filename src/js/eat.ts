@@ -15,7 +15,7 @@ import { extrinsicPropertyMask, intrinsicPropertyMask } from './attribute_proven
 import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';
-import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti } from './cmd.js';
+import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation } from './cmd.js';
 import {
     ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY,
     FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY,
@@ -144,11 +144,10 @@ import { attrcurse } from './throne.js';
 import { setSlipperyHands } from './potion.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { addInventoryItem } from './u_init.js';
-import { findVaultGuard } from './vault.js';
-import { monsterHasLineOfSightToHero } from './vision.js';
+import { vaultGdWatching } from './vault.js';
 
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
-import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
+import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone } from './wield.js';
 import { wieldTool } from './wield_tool.js';
 import {
     loseHeroHp,
@@ -1940,18 +1939,15 @@ function extrinsicProperty(property: PropertyName, state: GameState): boolean {
 
 // C eat.c:eatspecial().
 async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: PlayingGameState) {
-    state._occupation = { key: 'eat-food', text: 'eating non-food' };
+    // C lesshungry() wants an occupation to handle choke messages correctly.
+    setOccupation({ key: 'eat-food', text: 'eating non-food' }, state);
     await gainHeroNutrition(meal.nmod, { state });
     state._occupation = null;
     state.context.victual = null;
     if (state.program_state.gameover) return;
     if (object.oclass === COIN_CLASS) {
         await consumeFoodObject(object, { all: true, state });
-        const guard = await findVaultGuard(state);
-        if (guard?.mx && guard.mcansee && monsterHasLineOfSightToHero(guard, state)) {
-            if (!guard._egd) throw new Error('A vault guard has no guard state');
-            guard._egd.witness = GD_EATGOLD;
-        }
+        await vaultGdWatching(GD_EATGOLD, state);
         return;
     }
     if (objectMaterial(object, state) === PAPER) {
@@ -1972,7 +1968,13 @@ async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: P
         await pline('Yabba-dabba delicious!');
         await exerciseAttribute(A_CON, true, state);
     }
-    if (objectQuantity(object) === 1) await releaseWeaponSlots(object, state);
+    // C eatspecial() unwields one-by-one only while a single item is left.
+    if (object === (state.uwep || state.u?.uwep) && objectQuantity(object) === 1)
+        await uwepgone(state);
+    if (object === (state.uquiver || state.u?.uquiver) && objectQuantity(object) === 1)
+        await uqwepgone(state);
+    if (object === (state.uswapwep || state.u?.uswapwep) && objectQuantity(object) === 1)
+        await uswapwepgone(state);
     const chain = object === state.uchain;
     if (object === state.uball || chain) await unpunishHero(state);
     if (!chain) await consumeFoodObject(object, { state });

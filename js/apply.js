@@ -2740,7 +2740,9 @@ async function putJellyBack(use) {
     }
 }
 async function consumeJelly(jelly) {
-    await releaseWeaponSlots(jelly);
+    // C apply.c:use_royal_jelly() clears slots through setnotworn(), which
+    // does not arm the bare-hands notice.
+    await releaseWeaponSlots(jelly, game, { keepUnweapon: true });
     jelly.owornmask = 0;
     jelly.worn = false;
     await deleteObject(jelly);

@@ -60,7 +60,7 @@ import { requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { CORPSE } from './object_data.js';
 import { corpseName, killerObjectName } from './objnam.js';
-import { releaseWeaponSlots } from './wield.js';
+import { removeWornHeroItem } from './hero_equipment.js';
 import { invWeight } from './hack.js';
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
 // properties have no dedicated recovery action; their source projection still
@@ -697,7 +697,8 @@ async function touchWieldedCorpseAfterResistanceExpires(state) {
         if (result.died)
             return;
         if (!state.u.stoneResistance)
-            await releaseWeaponSlots(object, state);
+            // C wielding_corpse() unwields via remove_worn_item(obj, FALSE).
+            await removeWornHeroItem(object, state, { unchainBall: false });
     }
 }
 // C timeout.c:slip_or_trip().  Fumbling arrival message, ice slides, and

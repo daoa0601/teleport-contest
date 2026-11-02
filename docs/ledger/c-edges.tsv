@@ -1035,6 +1035,8 @@ drop_boulder_on_player	wake_nearto
 drop_throw	ship_object
 drop_throw	should_mulch_missile
 drop_upon_death	rn2
+drop_weapon	uswapwepgone
+drop_weapon	uwepgone
 drown	d
 drown	dismount_steed
 drown	done
@@ -1089,6 +1091,11 @@ eatfood	do_reset_eat
 eatmdone	newsym
 eatmupdate	newsym
 eatspecial	exercise
+eatspecial	set_occupation
+eatspecial	uqwepgone
+eatspecial	uswapwepgone
+eatspecial	uwepgone
+eatspecial	vault_gd_watching
 edibility_prompts	yn_function
 egg_type_from_parent	rn2
 emergency_disrobe	near_capacity
@@ -1419,12 +1426,14 @@ hitum_cleave	rnd
 hitum_cleave	unmap_invisible
 hmon_hitmon_barehands	rnd
 hmon_hitmon_jousting	d
+hmon_hitmon_jousting	uwepgone
 hmon_hitmon_poison	adjalign
 hmon_hitmon_poison	permapoisoned
 hmon_hitmon_poison	rn2
 hmon_hitmon_poison	rnd
 hmon_hitmon_weapon_ranged	rnd
 hmon_hitmon_weapon_ranged	rnl
+hmon_hitmon_weapon_ranged	uwepgone
 hold_potion	near_capacity
 hole_destination	rn2
 home_shk	mnearto
@@ -2187,6 +2196,7 @@ moveloop_preamble	pickup
 moveloop_preamble	rnd
 moveloop_preamble	see_monsters
 moveloop_preamble	set_wear
+moverock	moverock_done
 movobj	maybe_unhide_at
 movobj	newsym
 mreadmsg	map_invisible
@@ -2970,6 +2980,7 @@ set_trap	rnl
 set_trap	trapname
 set_ulycn	set_uasmon
 set_wounded_legs	encumber_msg
+setnotworn	set_artifact_intrinsic
 setup_waterlevel	rn2
 setworn	set_artifact_intrinsic
 shared_with_room	isok

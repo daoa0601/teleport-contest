@@ -11,7 +11,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
-import { losePrimaryWeapon, releaseWeaponSlots } from './wield.js';
+import { releaseWeaponSlots, uqwepgone, uswapwepgone, uwepgone } from './wield.js';
 import { unpunishHero } from './punishment.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
@@ -60,8 +60,13 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
             await removeEyewear(object, { state });
             if (state.program_state?.gameover) return;
         }
+        // C steal.c:remove_worn_item() W_WEAPONS branch.
         if (state.uwep === object || state.u?.uwep === object)
-            await losePrimaryWeapon(state);
+            await uwepgone(state);
+        if (state.uswapwep === object || state.u?.uswapwep === object)
+            await uswapwepgone(state);
+        if (state.uquiver === object || state.u?.uquiver === object)
+            await uqwepgone(state);
         await removeHeroEquipment(object, state);
         if (unchainBall && ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)))
             await unpunishHero(state);

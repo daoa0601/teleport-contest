@@ -31,6 +31,7 @@ import { wizBury } from './dig.js';
 import { wizTimeoutQueue } from './timeout_queue.js';
 import { wizardTeleportCommand } from './teleport.js';
 import type { GameState } from './game_state.js';
+import type { HeroOccupation } from './occupation_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
@@ -318,6 +319,12 @@ function prepareTimedCommand(binding: CommandBinding): void {
     if (text && !game._occupation && game.multi) {
         game._occupation = { key: 'command', text, binding };
     }
+}
+
+// C cmd.c:set_occupation(). Installs the resumable occupation and its
+// progress text; xtime is modelled by the occupation's own key.
+export function setOccupation(occupation: HeroOccupation, g: GameState = game): void {
+    g._occupation = occupation;
 }
 
 async function redrawCommand(): Promise<void> {
