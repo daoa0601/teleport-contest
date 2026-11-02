@@ -33,6 +33,8 @@ function monsterReconstitutesAfterLifeSaving(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
+// C mon.c:lifesaved_monster(): an amulet of life saving revives a dying
+// monster; genocided species still fail after the medallion crumbles.
 // The caller supplies any credited kill line. The amulet is consumed and the
 // monster is restored before any caller can remove it from the level.
 export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCursor = false, genocided = false, continueLine = plineWithContinuation, line = pline, repaint = newsym, } = {}) {
@@ -46,6 +48,7 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
             && game._knownObjectTypes.has(amulet.otyp);
         if (!alreadyKnown)
             await exerciseAttribute(A_WIS, true);
+        // C discover_object(): the amulet's type becomes known.
         recordObjectEncounter(amulet.otyp);
         recordObjectKnowledge(amulet.otyp);
         if (canSeeMonster(monster)) {
@@ -79,6 +82,7 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
             publish: continueLine, repaint, state: game,
         });
     }
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
     monster.mhp = monster.mhpmax;
     if (genocided) {
@@ -183,6 +187,8 @@ async function smashDoorUnderVampire(monster, x, y, { visible, spotted, unaware,
     return { monster, survived: !trap.killed,
         messageShown: !!message || showDeath, completedDeath: trap.death };
 }
+// C mon.c:vamprises(): a killed shapeshifted vampire reverts to its base
+// form and rises instead of dying, smashing a closed door in the way.
 async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, state, publish, random, rollOne, }) {
     const baseMnum = typeof monster.cham === 'number' && Number.isInteger(monster.cham)
         ? monster.cham : NON_PM;
@@ -198,6 +204,7 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
     monster.mhp = monster.mhpmax;
     if (state.u?.ustuck === monster) {

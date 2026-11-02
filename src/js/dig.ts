@@ -184,6 +184,7 @@ function monsterAt(x: number, y: number, state: GameState): Monster | null {
     ) || null;
 }
 
+// C invent.c:sobj_at(): the first object of a type in a floor pile.
 function objectAt(x: number, y: number, otyp: number, state: GameState): GameObject | null {
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;

@@ -330,6 +330,8 @@ async function identifyAndDescribe(object: GameObject) {
 
 // C invent.c:identify_pack()/menu_identify(). Each selection is identified
 // and described before another menu opens, so resumed input sees the result.
+// C invent.c:count_unidentified() is the candidate count and the
+// already-identified shortcut.
 export async function identifyPack(idLimit: number, learningIdentify = false): Promise<GameObject[]> {
     let candidates = (game.inventory || []).filter(objectNeedsFullIdentification);
     if (!candidates.length) {
@@ -808,6 +810,8 @@ export function identifyObjectForDisclosure(item: GameObject, identifyTinContent
     if (item.oclass === 13 && canonicalName) item.name = canonicalName;
 }
 
+// C invent.c:display_pickinv(): the getobj inventory menu, including the
+// "Not carrying anything" shortcut and the hands entry when allowed.
 export async function selectInventoryObject({
     letters, includeGold = true, title = null, extraChoice = null,
     pickMode = PICK_ONE, headingAttr, menuOptions = [],
@@ -820,6 +824,8 @@ export async function selectInventoryObject({
         await pline('Not carrying anything.');
         return { key: 0, count: null };
     }
+    // C invent.c:reassign() refreshes rotating letters; the wizard-mode
+    // override_ID display runs identify_pack()/count_unidentified() first.
     if (game.flags.fixinv === false) reassignInventoryLetters();
     const wizardIdentification = game.flags.debug && game.iflags.override_ID;
     // Native counts '-' as a filter letter as well as an extra hands entry,
@@ -981,6 +987,8 @@ async function readInventorySplitCount(): Promise<number | null> {
 }
 
 // C ref: invent.c:doorganize()/doorganize_core().
+// C invent.c:adjust_ok()/adjust_gold_ok(): the getobj filters that make
+// every lettered object selectable (gold only after confirmation).
 export async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
     const inventory = (game.inventory || [])
         .filter((object: GameObject): object is GameObject & { invlet: string } =>

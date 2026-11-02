@@ -92,6 +92,9 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
     return hit.damage;
 }
 // C zap.c:dobuzz(): the wand/spell/breath ray engine. traceRay() drives the
+// C zap.c:buzz() and zap.c:ubuzz(): the monster/hero entry wrappers that
+// call dobuzz() with the caller's position, direction and physical=TRUE;
+// the origin/monster-vs-hero dispatch lives in this function's options.
 // beam through ray.ts runRay() (the tmp_at() beam display, the closed_door()
 // and ZAP_POS obstacle tests, and bounce_dir() as rayBounceDirection);
 // zap_hit() is rayHitsMonster()/rayHitsHero() (ray.ts); zhitm() is

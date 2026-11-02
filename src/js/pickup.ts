@@ -218,6 +218,8 @@ async function reassessHeroCover(source: PickupSource): Promise<void> {
         await hideHeroUnder(game);
 }
 
+// C pickup.c:pickup(); its autopick() pass over the square's objects runs
+// before the pickup menu.
 export async function autopickupAtHero(): Promise<void> {
     if (heroIsUnaware(game)) {
         game._prevDecorType = STONE;
@@ -345,6 +347,8 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
     return { attempted };
 }
 
+// C pickup.c:query_objlist() for the pickup menu; its n_or_more() filter
+// (count >= reference) is the quantity filter below.
 async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number,
     { autoSelect = true, feelCockatrice = !count, groupByClass = game.flags.sortpack !== false } = {},
 ): Promise<CountedSelection<GameObject>[]> {
@@ -614,6 +618,8 @@ async function prepareScareScrollPickup(object: GameObject, requested: number, t
     return { decision: 'consumed' };
 }
 
+// C pickup.c:rider_corpse_revival(): touching (or telekinetically grabbing)
+// a Rider corpse revives it and dents wisdom.
 async function reviveRiderCorpse(corpse: GameObject, remotely: boolean): Promise<boolean> {
     if (!isRider(corpse.corpsenm)) return false;
     await pline(`At your ${remotely ? 'attempted acquisition' : 'touch'}, the corpse suddenly moves...`);
@@ -721,6 +727,8 @@ interface LootCommandInput {
     chooseDirection: (prompt: string, error: string | null, x: number, y: number) => Promise<(Position & { dz: number }) | null>;
 }
 
+// C pickup.c:doloot_core()'s dispatch: container_at() tests the square for
+// lootable containers, and u_handsy() is the no-hands refusal above.
 export async function lootCommand(input: LootCommandInput): Promise<void> {
     game.context.move = 0;
     if (exceedsActionCapacity(game)) {
@@ -748,6 +756,7 @@ export async function lootCommand(input: LootCommandInput): Promise<void> {
     const target = await input.chooseDirection('Loot in what direction?', 'Invalid loot location', x, y);
     if (!target) return;
     const underfoot = target.x === x && target.y === y;
+    // C pickup.c:container_at(): any container at the spot admits looting.
     const containers = (requireGameLevel().objects[target.x]?.[target.y] ?? []).some(isContainer);
     if (underfoot && containers) { await lootFloorContainers(x, y, input.unlockContainer); return; }
     if (target.dz < 0) {
@@ -897,9 +906,13 @@ async function containerDescription(object: GameObject): Promise<string> {
 // choose_tip_container_menu() below), then the carried-object prompt, then
 // the spillage cases in tipOrdinaryObject().
 
+// C pickup.c:tip_ok(): containers and a known horn of plenty are
+// suggested; gold excluded; anything else merely selectable. The floor
+// count is container_at(x, y, TRUE).
 export async function tipCommand(): Promise<void> {
     game.context.move = 0;
     const { ux: x, uy: y } = game.u;
+    // C pickup.c:container_at(x, y, TRUE): the count decides the tip menu.
     const containers = (requireGameLevel().objects[x]?.[y] ?? []).filter(isContainer);
     const considerFloor = !game.iflags.menu_requested
         || game.flags.menu_style === MENU_TRADITIONAL && containers.length > 1;
@@ -936,6 +949,8 @@ export async function tipCommand(): Promise<void> {
             }
         }
     }
+    // C pickup.c:tip_ok(): containers and a known horn of plenty are
+    // suggested; gold excluded; anything else merely selectable.
     const object = await chooseInventoryObject('tip', object => {
         if (object.oclass === 12) return GETOBJ_EXCLUDE;
         return isContainer(object) || object.otyp === HORN_OF_PLENTY
@@ -980,12 +995,15 @@ async function tipOrdinaryObject(object: GameObject): Promise<void> {
 
 // C pickup.c:tipcontainer_gettarget(). The destination menu; tip to floor
 // needs no hands, container-to-container needs a free one.
+// C pickup.c:u_handsy() is the hands test for the container choice.
 async function tipDestination(source: GameObject): Promise<{ cancelled: boolean; target: GameObject | null }> {
     const items: MultiSelectItem<GameObject | null>[] = [{
         key: '-', text: 'on the floor', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
     }, { selectable: false, text: '' }];
     const targets = game.inventory.filter(object => object !== source && isContainer(object)
         && !(object.otyp === BAG_OF_TRICKS && object.dknown && objectTypeKnown(object)));
+    // C pickup.c:u_handsy(): no hands at all, or no free one, blocks a
+    // container-to-container tip.
     const hands = targets.length === 0 || (!heroHasNoHands(game) && heroHasFreeHand(game));
     if (!hands) await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
         : `You have no free ${heroHandName()}.`);
@@ -1144,6 +1162,8 @@ export interface ObjectClassSelection {
 }
 
 // C pickup.c:query_classes().
+// C pickup.c:count_categories() is the distinct-class count; invent.c
+// count_buc() (with the priest's free identification) is the statuses set.
 export async function queryObjectClasses(
     action: 'pick up' | 'take out' | 'put in', objects: readonly GameObject[],
 ): Promise<ObjectClassSelection | null> {

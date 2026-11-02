@@ -828,6 +828,8 @@ export async function createToptenObject(type: number, x: number, y: number): Pr
 export function saveMonsterTraits(monster: Monster): SavedMonsterTraits;
 export function saveMonsterTraits(monster: null | undefined): null;
 export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null;
+// C mkobj.c:save_mtraits(): copy the dying monster's state into the
+// corpse's stored traits, dropping live pointers and pet/shop copies kept.
 export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null {
     if (!monster) return null;
     if (monster.ispriest) forgetTempleEntry(monster);

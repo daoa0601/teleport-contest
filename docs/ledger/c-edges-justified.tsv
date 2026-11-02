@@ -1966,3 +1966,21 @@ let_to_name	alloc	n/a	memory allocation for the letter buffer
 mon_overrides_region	dist2	inlined	dx*dx+dy*dy <= range*(range+1) is distu (display.ts monsterOverridesMapRegion)
 openone	dist2	inlined	dx*dx+dy*dy < 3 is distu (detect.ts openit)
 shrink_worm	toss_wsegs	inlined	wormSegments.pop plus newsym of the tip; occupancy derives from the segment list (worm.ts removeWormTailTip)
+addinv_core0	reset_justpicked	inlined	the loot_reset_justpicked batch flag runs clearJustPicked() at the loot seam instead (container.ts)
+display_pickinv	inv_cnt	inlined	menu letter taken from invlet directly (invent.ts selectInventoryObject)
+display_pickinv	let_to_name	inlined	line text composed from invlet and object description (invent.ts selectInventoryObject)
+display_pickinv	xprname	inlined	priced/unpriced lines composed inline (invent.ts selectInventoryObject, inventory_reports.ts pricedInventoryLine)
+display_pickinv	prepare_perminvent	n/a	perm_invent window plumbing
+display_pickinv	update_inventory	n/a	perm_invent window plumbing
+display_pickinv	rn2_on_display_rng	n/a	display RNG plumbing
+dotypeinv	def_char_to_objclass	inlined	the class symbol table became direct class letters (inventory_reports.ts typeInventory)
+getobj_hands_txt	fingers_or_gloves	inlined	caller supplies the text: fingers(false) at the grease prompt (apply.ts)
+mon_animal_list	alloc	n/a	memory allocation for the animal list; rebuilt per call (mon.ts chameleonAnimals)
+vamprises	set_msg_xy	n/a	door-smash lines anchor through formatHeardMessage/formatSeenMessage (mondeath.ts smashDoorUnderVampire)
+autopick	alloc	n/a	memory allocation for the pick list; JS array (pickup.ts autopickupAtHero)
+menu_loot	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (container.ts)
+angry_shk_exists	next_shkp	inlined	array iteration over shopkeepers replaces the list walker (shk.ts makeShoppersHappy)
+make_itemized_bill	alloc	n/a	memory allocation for the alternate bill; JS array (shk.ts itemizedShopBill)
+pay_billed_items	update_inventory	n/a	perm_invent window plumbing
+set_repo_loc	sgn	inlined	Math.sign (shk.ts completeShopSettlement)
+boxlock_invent	update_inventory	n/a	perm_invent window plumbing

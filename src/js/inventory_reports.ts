@@ -207,12 +207,18 @@ function beatitude(object: GameObject): Buc {
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
+// C invent.c:find_unpaid() and count_unpaid(): the recursive unpaid walk
+// over carried objects and container contents.
 function unpaidObjects(objects: readonly GameObject[]): GameObject[] {
     return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
 }
 
 // C pickup.c:count_justpicked().
 // C pickup.c:find_justpicked().
+// C invent.c:dotypeinv(): the 'I' type filter. ckvalidcat() and ckunpaid()
+// are the category filters, tally_BUCX() the beatitude statuses,
+// wearing_armor() the armor-class admission, and this_type_only() the
+// single-class selection — all inlined below.
 async function typeInventory(): Promise<InventoryAction | null> {
     const bill = usedUpBill();
     if (!game.inventory.length && !bill.length) {
@@ -337,12 +343,15 @@ async function inventoryCategoryMenu(classes: readonly number[], unpaid: boolean
 
 interface BillLine { object: GameObject | null; quantity: number; price: number }
 
+// C shk.c:doinvbill() mode 0: collect the used-up bill lines (and the
+// debit) so 'I' can offer the 'x' extension.
 function usedUpBill(): BillLine[] {
     const keeper = currentShopResident();
     if (!keeper || !shopkeeperInOwnShop(keeper)) return [];
     const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
     const lines: BillLine[] = [];
     for (const entry of keeper.eshk.bill ?? []) {
+        // C shk.c:bp_to_obj(): the bill entry's object, by o_id.
         const object = objects.find(object => object.o_id === entry.bo_id);
         if (object && (entry.useup || object.quan < entry.bquan)) {
             const quantity = entry.useup ? entry.bquan : entry.bquan - object.quan;
@@ -353,6 +362,8 @@ function usedUpBill(): BillLine[] {
     return lines;
 }
 
+// C shk.c:doinvbill() mode 1: page through the used-up articles and their
+// total, including the leftover debit.
 async function showBill(bill: readonly BillLine[]): Promise<void> {
     const lines = ['Unpaid articles already used up:', ''];
     let total = 0;
@@ -369,6 +380,8 @@ async function showBill(bill: readonly BillLine[]): Promise<void> {
     await showTextMenuOverlay(lines, { viaPutstr: true });
 }
 
+// C invent.c:dounpaid(): list unpaid inventory (and floor/buried) items
+// with prices, from 'I u' or the unpaid inventory menu.
 async function showUnpaid(carried: readonly GameObject[], floor: number, buried: number): Promise<void> {
     const extra = floor + buried;
     const first = carried[0];

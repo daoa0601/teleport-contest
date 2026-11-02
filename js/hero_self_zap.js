@@ -291,6 +291,8 @@ export async function cancelHeroMagic(state = game) {
     else
         await returnHeroToHumanForm(state);
 }
+// C zap.c:boxlock_invent(): (un)lock every carried box with the zapped
+// wand's magic, then refresh the inventory display.
 async function affectCarriedBoxes(source, state) {
     for (const object of [...state.inventory]) {
         if (object.otyp === CHEST || object.otyp === LARGE_BOX)

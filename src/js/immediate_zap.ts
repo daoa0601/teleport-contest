@@ -47,11 +47,14 @@ const SPE_WIZARD_LOCK = OBJECT_NAMES.indexOf('wizard lock');
 const SPE_CANCELLATION = OBJECT_NAMES.indexOf('cancellation');
 const SPE_DRAIN_LIFE = OBJECT_NAMES.indexOf('drain life');
 
+// C zap.c:zapsetup(): clear obj_zapped before a wand effect runs.
 export function beginImmediateZap(state: GameState = game) {
 
     state.context.obj_zapped = false;
 }
 
+// C zap.c:zapwrapup(): report the poly-shock shudder once the effect is
+// done, then clear obj_zapped again.
 export async function finishImmediateZap(state: GameState = game) {
     if (state.context?.obj_zapped) await pline(formatFeltMessage('shuddering vibrations.', state));
     state.context.obj_zapped = false;

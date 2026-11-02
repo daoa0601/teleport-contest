@@ -269,7 +269,10 @@ function itemResistanceLines(property: PropertyName, damage: string, final: Enli
     return [`  Your items ${final ? 'were' : 'are'}${partial ? ' somewhat' : ''} protected from ${damage}${cause}.`];
 }
 
+// C zap.c:item_what(): wizard-mode source of the item-protection line,
+// naming the worn piece whose extrinsic protects the inventory.
 function itemResistanceCause(property: PropertyName): string {
+    // C zap.c:adtyp_to_prop() already applied: callers pass the property.
     const sources = game.u._propertySources?.[property]?.worn ?? [];
     for (const slot of ['uarmc', 'uarm', 'uarmu', 'uarmh', 'uarmg', 'uarmf', 'uarms'] as const) {
         const object = game[slot];

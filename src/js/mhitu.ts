@@ -2626,6 +2626,8 @@ interface SeductionContext {
     who: string;
 }
 
+// C mhitu.c:doseduce(). The leap-day gloves joke inlines invent.c
+// u_carried_gloves(): worn gloves, else the first carried pair.
 export async function resolveHeroSeduction(
     monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
     publish: MessagePublisher, random: typeof rn2, rollOne: typeof rnd,

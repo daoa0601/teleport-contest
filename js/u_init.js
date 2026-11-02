@@ -1030,6 +1030,8 @@ export async function addInventoryItem(raw, presentation = null, observe = true)
 export async function addInventoryItemBefore(raw, next) {
     return await addInventoryItemCore(raw, null, true, next);
 }
+// C invent.c:addinv_core0(): merge with a carried stack, or take a letter
+// and slot into the fixed-letter order; reinsertion keeps its predecessor.
 async function addInventoryItemCore(raw, presentation, observe, next) {
     const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);

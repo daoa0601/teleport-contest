@@ -154,6 +154,8 @@ export function findDrawbridgeAt(x: number, y: number, state = game): Drawbridge
     return bridgeLocation ? { x: bridge.x, y: bridge.y, location: bridgeLocation } : null;
 }
 
+// The closing drawbridge destroys the pile at a square; C invent.c
+// delallobj() is this whole-pile deletion.
 async function destroyObjectsAt(x: number, y: number, state: GameState): Promise<void> {
     for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
         if (object.where === 'gone') continue;

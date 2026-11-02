@@ -1113,6 +1113,8 @@ export async function addInventoryItemBefore(raw: GameObject, next: GameObject |
     return await addInventoryItemCore(raw, null, true, next);
 }
 
+// C invent.c:addinv_core0(): merge with a carried stack, or take a letter
+// and slot into the fixed-letter order; reinsertion keeps its predecessor.
 async function addInventoryItemCore(
     raw: GameObject, presentation: ItemPresentation | null, observe: boolean,
     next: GameObject | null,

@@ -464,6 +464,7 @@ export function isBeingTakenOff(object, state = game) {
 // C do_wear.c:remove_ok().
 // C do_wear.c:wear_ok().
 // C do_wear.c:takeoff_ok().
+// C invent.c:taking_off(): the 'T' and 'R' phrasings both mean removing.
 export function equipmentClassification(object, action, itemAction = false, state = game) {
     const removing = action === 'take off' || action === 'remove';
     const accessory = action === 'put on' || action === 'remove';

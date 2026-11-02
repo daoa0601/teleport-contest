@@ -2353,6 +2353,8 @@ export async function heroSlipsFromWrapping(monster, attack, state, publish, ran
 // C mhitu.c:doseduce() and mayberem(); entered from uhitm.c:mhitm_ad_ssex()'s
 // hero branch and sounds.c chat with a cancelled seducer.
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
+// C mhitu.c:doseduce(). The leap-day gloves joke inlines invent.c
+// u_carried_gloves(): worn gloves, else the first carried pair.
 export async function resolveHeroSeduction(monster, attack, state, publish, random, rollOne, { allowCancelledSeducer = false } = {}) {
     if (monster.mcan) {
         // C sounds.c:MS_SEDUCE calls doseduce() without a cancellation gate,

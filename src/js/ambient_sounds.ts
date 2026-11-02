@@ -66,6 +66,8 @@ const M2_MERC = 0x00000200;
 const S_ANT = 1;
 const MS_ANIMAL = 17;
 
+// C sounds.c:dosounds(): periodic ambient noise. The shop branch's
+// wake_nearto() over an 11-square radius is C shk.c:noisy_shop() inlined.
 export async function dosounds(state: PlayingGameState = requireInitializedGame()): Promise<void> {
     if (heroIsDeaf(state) || state.flags.acoustics === false
         || state.u.uswallow || state.u.uinwater || state.u.underwater || state.underwater) return;
@@ -907,6 +909,7 @@ function vampireReply(monster: Monster, state: PlayingGameState): string {
     return `I vill come after ${withIndefiniteArticle(target)} without regret!`;
 }
 
+// Death's reply; invent.c:u_have_novel() is the tribute-novel lookup.
 function deathReply(state: PlayingGameState): MonsterReply {
     const book = state.context.deathNotice ? undefined : state.inventory.find(object => object.otyp === SPE_NOVEL);
     if (book) {

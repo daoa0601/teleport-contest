@@ -262,6 +262,8 @@ async function dropSaddle(monster: Monster, state: PlayingGameState) {
     await landFloorObject(saddle, monster.mx, monster.my, { state });
 }
 
+// C mon.c:mimic_hit_msg() for the extra-healing branch: an object mimic
+// hit by healing magic seems a more vivid color than before.
 async function healMonsterWithMagic(monster: Monster, spell: GameObject, state: PlayingGameState) {
     const extra = spell.otyp === SPE_EXTRA_HEALING;
     const amount = d(6, extra ? 8 : 4);
@@ -341,6 +343,8 @@ async function shieldMonster(monster: Monster, state: PlayingGameState) {
         await pline(`${monsterName(monster, { capitalized: true })} resists!`);
 }
 
+// C zap.c stone-to-flesh on a monster: mkobj.c stone_object_type() and
+// stone_furniture_type() decide which mimicked shapes revert to a mimic.
 async function fleshMonster(monster: Monster, state: PlayingGameState) {
     if (MONSTER_SYMBOL[monster.mnum] === 55) {
         const name = monsterName(monster, { capitalized: true });

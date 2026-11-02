@@ -278,6 +278,8 @@ async function finishWandUse(wand: GameObject | null) {
 }
 
 // C zap.c:dozap(). Selection/charges surround the shared effect transaction.
+// C zap.c:zap_ok(): the getobj filter suggesting wands and excluding the
+// rest is inlined in the chooseInventoryObject() call below.
 export async function dozap(): Promise<void> {
     requirePlayingGame(game);
     if (heroHasNoHands(game)) {
@@ -1209,6 +1211,10 @@ function destroyable(object: GameObject, damageType: InventoryDamageType | null 
     return false;
 }
 
+// C zap.c:u_adtyp_resistance_obj(): worn or wielded resistance gives 99%
+// inventory protection, a dwarvish cloak 90% against heat and cold.
+// C zap.c:adtyp_to_prop() is the damage-type-to-property map, and
+// zap.c:inventory_resistance_check() is the rn2(100) roll at the caller.
 function protectionChance(state: GameState, damageType: InventoryDamageType) {
     const hero = state.u;
     const properties: Record<InventoryDamageType, PropertyName> = {
@@ -1298,6 +1304,8 @@ function destroyedItemKiller(object: GameObject, damageType: InventoryDamageType
     return count === 1 ? killer : makePlural(killer);
 }
 
+// C zap.c:maybe_destroy_item(): one stack of a carrier's inventory meets
+// elemental damage; the hero branch loses the HP here, monsters return it.
 async function destroyChosenItem(object: GameObject, damageType: InventoryDamageType, {
     state, publish, random, rollOne, die,
 }: ChosenItemDamageOptions): Promise<MagicDamageResult> {

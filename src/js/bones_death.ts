@@ -147,6 +147,8 @@ async function addMummyWrapping(monster: Monster): Promise<void> {
     );
 }
 
+// The dead hero leaves C mkobj.c:mk_named_object()'s named corpse or
+// statue; mkobj.c:obj_attach_mid() ties the ghost's id to it.
 export async function createBonesFromDeath(
     deathCause: string, promptDeathQuestion: (question: string) => Promise<string>, when?: number,
 ): Promise<boolean> {
@@ -208,6 +210,7 @@ export async function createBonesFromDeath(
 
     if (arise === LEAVESTATUE) {
         const form = game.u?.umonnum ?? game.urace?.mnum ?? PM_HUMAN;
+        // C mkobj.c:mk_named_object(): corpse or statue named after the hero.
         const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
         statue.oname = game.plname || 'player';
         await dropHeroInventoryForBones(x, y, { container: statue });
@@ -244,6 +247,7 @@ export async function createBonesFromDeath(
     setMonsterGivenName(ghost, game.plname || 'player');
     completeBonesMonster(ghost, game);
     if (corpse) {
+        // C mkobj.c:obj_attach_mid(): the ghost's id rides on the corpse.
         corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
     game._bonesSaved = saveBonesLevel(deathCause, when);

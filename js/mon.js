@@ -180,6 +180,8 @@ export function killGenocidedMonster(monster, state) {
     return finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true });
 }
 // C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
+// C mon.c:kill_eggs(): the sterile-egg pass stops hatch timers of every
+// egg whose species was genocided, across all object lists at once.
 // carried objects, creates no corpse or experience, and sterilizes eggs.
 export async function killGenocidedMonsters(state = game) {
     if (state !== game)
@@ -211,6 +213,8 @@ export async function killGenocidedMonsters(state = game) {
     }
     const sterileEggs = [];
     for (const object of objectsInTimerGraph(state)) {
+        // C mon.c:dead_species(): the egg's species (or its grown form)
+        // was genocided.
         if (object.otyp !== EGG || !eggSpeciesWasGenocided(object, state))
             continue;
         stopObjectTimer(object, OBJECT_TIMER_KIND.HATCH_EGG);
@@ -893,6 +897,8 @@ function monsterCannotSqueezeThrough(monster, state) {
 }
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
+// C mon.c:monlineu(): the NOTONL test compares against the monster's
+// believed hero position (mux/muy) through pointsOnline().
 export async function mfndpos(monster, state, flags = monAllowFlags(monster, state)) {
     requirePerceivedHero(monster);
     const positions = [];
@@ -1076,6 +1082,8 @@ export async function mfndpos(monster, state, flags = monAllowFlags(monster, sta
 const M1_FLY = 0x1;
 const M1_CONCEAL = 0x80, M1_HIDE = 0x100, M1_NOLIMBS = 0x6000;
 const S_EYE = 5, S_MIMIC = 13, S_LIGHT = 25;
+// C mon.c:restrap(): an unwatched hider hides again (mimics take a new
+// disguise); one rn2(3) probe, and the hero's own square never qualifies.
 export async function attemptMonsterRestrap(monster, state = game, { random = rn2, calls } = {}) {
     requireLiveGame(state);
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
@@ -1086,6 +1094,7 @@ export async function attemptMonsterRestrap(monster, state = game, { random = rn
     if (random(3) !== 0 || state.u.ustuck === monster)
         return false;
     const level = requireGameLevel(state);
+    // C t_at(): the trap on this square, if any.
     const trap = level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my);
     if (monster.mtrapped && trap && !is_pit(trap.ttyp))
         return false;
@@ -1093,6 +1102,7 @@ export async function attemptMonsterRestrap(monster, state = game, { random = rn
     const ceilingHider = !!((flags & M1_CLING) && !mimic) || !!(flags & M1_FLY);
     if (ceilingHider && !levelHasCeiling(state))
         return false;
+    // C dist2() as the m_next2u() adjacency test.
     const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
     if (canSenseMonster(monster) && adjacent)
         return false;
@@ -2654,6 +2664,8 @@ export async function returnDeadKop(monster, state = game, rollOne = rnd) {
     }
     return makemonAt(monster.mnum, 0, 0, 0);
 }
+// C mon.c:m_detach(): unlink the dying monster from leash, light, worm
+// body, shop and quest bookkeeping before the level forgets it.
 // Native mondead() after recovery has failed. Kill credit and remains belong
 // to the caller; map, inventory, and population cleanup share this owner.
 export async function detachDeadMonster(monster, state, random, publish, rollOne = rnd) {
@@ -2935,6 +2947,8 @@ export async function restoreShapechanger(monster, publish) {
     await newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
 }
+// C mon.c:set_mon_min_mhpmax(): raise the floor of max HP to m_lev+1 (or
+// the given minimum) and refill current HP to it.
 function restoreRevertedMonsterHealth(monster) {
     monster.mcanmove = 1;
     monster.mfrozen = 0;
@@ -3110,6 +3124,8 @@ export async function respondMedusa(monster, options = {}) {
 }
 // ── C mon.c:m_respond(), shared by dochug() and immediate monster magic.
 // C mon.c:m_respond(), shared by dochug() and immediate monster magic.
+// C mon.c:m_respond_shrieker(): shriek when the hero stands next to the
+// fungus; 1/10 summons a purple worm, then aggravate monsters.
 export async function respondToImmediateMagic(monster, state = game, { random = rn2, publish = pline, ...gazeOptions } = {}) {
     requirePlayingGame(state);
     const distance = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
@@ -3269,6 +3285,8 @@ function selectChameleonForm(monster) {
     }
     return null;
 }
+// C mon.c:mon_animal_list(): the animal species a chameleon can become;
+// rebuilt per call instead of cached in ga.animal_list.
 function chameleonAnimals() {
     return Array.from({ length: SPECIAL_PM }, (_, mnum) => mnum)
         .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
@@ -3314,6 +3332,8 @@ export function shapechangerGender(baseMnum, targetMnum, female) {
         || baseMnum === PM_VLAD_THE_IMPALER;
     return toggle && !(vampireShape || vampireBase) ? !female : female;
 }
+// C mon.c:pickvampshape(): wolf/fog-cloud/bat form choice for vampires,
+// keeping Vlad's specials and shunning lowercase shapes on Rogue level.
 function pickVampireShape(monster) {
     const baseMnum = monster.cham;
     if (baseMnum === undefined || baseMnum < 0)
@@ -3324,6 +3344,7 @@ function pickVampireShape(monster) {
         && monsterCarriesSpecialObject(monster);
     if (!keepsSpecialObject) {
         const wolfChance = baseMnum === PM_VLAD_THE_IMPALER ? 3 : 10;
+        // C is_pool_or_lava(): no walking shape that drowns or burns.
         if ((baseMnum === PM_VAMPIRE_LEADER || baseMnum === PM_VLAD_THE_IMPALER)
             && !rn2(wolfChance) && !uppercaseOnly
             && !isPoolAt(monster.mx, monster.my)
@@ -3552,6 +3573,8 @@ export async function normalizeMonsterShape(monster, state = game, publish = pli
     return { changed: true, heroDied: false };
 }
 // C mon.c:restartcham(). Cancellation still forbids changing form; a sleeping
+// C mon.c:m_restartcham(): each shapechanger resumes its innate form
+// unless cancelled; sleeping mimics redraw their disguise.
 // mimic regains its ordinary disguise once protection stops suppressing it.
 export async function restartMonsterShapechanging(state = game) {
     requireLiveGame(state);
@@ -3987,6 +4010,8 @@ function heroSmellsAttractiveToOrcs(state) {
         return !!((MONSTER_FLAGS2[form] ?? 0) & M2_ORC);
     return state.urace?.name === 'orc';
 }
+// C mon.c:usmellmon(): species- and class-specific smells for monsters
+// the hero senses but cannot see; smell is no proof of danger.
 export async function smellUnseenMonster(mnum, state = game, publish = plineWithContinuation) {
     if (!Number.isInteger(mnum) || MONSTER_NAME[mnum] === undefined)
         return false;

@@ -843,6 +843,8 @@ export async function createToptenObject(type, x, y) {
     }
     return object;
 }
+// C mkobj.c:save_mtraits(): copy the dying monster's state into the
+// corpse's stored traits, dropping live pointers and pet/shop copies kept.
 export function saveMonsterTraits(monster) {
     if (!monster)
         return null;

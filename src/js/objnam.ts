@@ -2137,6 +2137,9 @@ function wishedGender(species: number | null, parsed: ParsedWish): number {
     return rn2(2) ? CORPSTAT_MALE : CORPSTAT_FEMALE;
 }
 
+// C mon.c:genus() with mode 1: quest guardians name their role's class
+// monster; other species keep their identity. Only the mode-1 callers
+// (corpse wishes, guardian speech) exist in the game.
 function guardianGenus(species: number): number {
     const guardians: ReadonlyMap<string, string> = new Map([
         ['student', 'archeologist'], ['chieftain', 'barbarian'], ['neanderthal', 'cave dweller'],

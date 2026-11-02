@@ -1,4 +1,6 @@
 // C do_wear.c:doddoremarm(), select_off(), take_off(), do_takeoff().
+// C invent.c:carrying_stoning_corpse(): taking off gloves while carrying a
+// petrifying corpse asks for confirmation, inlined in select_off().
 import { removeHeroAccessory } from './do_wear.js';
 
 import { armorOffMessage, armorSimpleName, removeHeroArmor } from './do_wear.js';
@@ -149,6 +151,8 @@ async function offMessage(object: GameObject, state: GameState): Promise<void> {
     if (message) await pline(message);
 }
 
+// C do_wear.c:select_off(); invent.c:carrying_stoning_corpse() is the
+// petrifying-corpse check that guards taking gloves off.
 export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
     const weapon = takeoffSlotObject('uwep');
     const gloves = takeoffSlotObject('uarmg');
