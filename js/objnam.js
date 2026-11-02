@@ -1244,6 +1244,15 @@ export function rndClass(first, last) {
     }
     return last;
 }
+// C objnam.c:readobjnam_init(): the zeroed _readobjnam_data became this
+// ParsedWish literal, current fruit included.
+// C objnam.c:readobjnam_preparse(): the leading qualifier words — count,
+// enchantment, BUC, erosion, and the rest.
+// C objnam.c:readobjnam_postparse1(): the noun suffixes — " named ",
+// " called " (with its class ranges), " labeled ", and " of spinach".
+// The C postparse1() tails — def_char_to_objclass(), tin_variety_txt(),
+// weight(), trapname(), rnd_otyp_by_namedesc(), and wishymatch() — run in
+// the lookup owners below (lookupWishType/searchWishNames).
 export function parseWishText(text) {
     const original = text.trim().replace(/\s+/g, ' ');
     const parsed = {
@@ -1550,6 +1559,9 @@ function recordWishSpecies(parsed, match) {
     if (match.overridesGender || parsed.gender === null || match.gender !== 2)
         parsed.gender = match.gender;
 }
+// C objnam.c:readobjnam_parse_charges(): the trailing "(x:y)" charges and
+// recharge clause, with the mis-parenthesized reset and the spe/rechrg
+// caps.
 function parseWishCharges(text, parsed) {
     const index = text.lastIndexOf('(');
     if (text.length <= 1 || index < 0)
@@ -1743,6 +1755,8 @@ function parseWishClass(search, state) {
     return null;
 }
 // C postparse2 is also the armor retry target, even with a class selected.
+// C objnam.c:readobjnam_postparse2(): the class ranges, " stone"/" gem",
+// and the "glass" family before a general name search.
 function parseWishRange(parsed, search) {
     const range = ranges.find(([range]) => range === search.name.toLowerCase());
     if (range)
@@ -1770,6 +1784,10 @@ function parseWishRange(parsed, search) {
     }
     return null;
 }
+// C objnam.c:readobjnam_postparse3(): the name search — real gem names,
+// tin, description matches over actual/description/called/original,
+// Japanese items, and the " mail" armor retry.
+// digit() is the numeric prefix test the charges reader already applied.
 function searchWishNames(parsed, search, state) {
     for (;;) {
         if (!search.oclass && search.actual) {
@@ -2450,6 +2468,9 @@ function replaceWithMatchingCase(text, start, replacement) {
 function caseLike(source, replacement) {
     return replaceWithMatchingCase(source, 0, replacement);
 }
+// C objnam.c:badman(): the *man/*men exception tables that pluralize with
+// -s instead of swapping man and men; the singular direction lives in the
+// no-man prefixes inside makeSingular().
 function badManPlural(text) {
     const lower = text.toLowerCase();
     return NO_MEN_PREFIXES.some(prefix => {

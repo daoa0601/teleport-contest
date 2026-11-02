@@ -456,6 +456,10 @@ function discoveredRelics() {
     }
     return lines;
 }
+// The discovered-artifact rows of the #discoveries list.
+// C artifact.c:disp_artifact_discoveries(): each identified artifact with
+// its alignment (align_str(), unaligned printed as "non-aligned") and
+// simple type name; artiname() is the record's name field.
 function discoveredArtifacts() {
     return (game._artifactDiscoveries ?? []).map(id => {
         const artifact = artifactById(id);

@@ -1376,6 +1376,9 @@ function fixupDeath(how) {
         game._helplessReason = 'fainted';
     }
 }
+// C end.c:done2(): the #quit command — the tutorial switch-back prompt,
+// the paranoid "Really quit without saving?" refusal that clears the
+// question and any pending multi, and the QUIT hand-off below.
 export async function doquit() {
     const abandonTutorial = !!game._tutorialActive
         && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n', { menuable: true }) === 'y';
@@ -1496,6 +1499,14 @@ function objectBaseValue(type) {
         throw new RangeError(`No base value for object type ${type}`);
     return value;
 }
+// The final-disclosure inventory walk.
+// C end.c:get_valuables(): amulets and non-artifact gems, glass merged
+// into one slot, recursing through containers.
+// C end.c:sort_valuables(): most copies first within each of gems and
+// amulets (the listing prints the gems before the amulets).
+// C end.c:artifact_score(): the counting pass — artifacts and the three
+// invocation items add five-halves their value as points; artiname() is
+// the artifact's own name from the record.
 function collectFinalPossessions() {
     const artifacts = [];
     const valuables = new Map();
@@ -1536,6 +1547,8 @@ function collectFinalPossessions() {
         points += count * objectBaseValue(type);
     return { points, artifacts, valuables: groups, quantumCat };
 }
+// C end.c:artifact_score(): the listing pass — identify each artifact or
+// invocation item and report its value and points.
 async function finalPossessionLines(possessions) {
     const lines = possessions.artifacts.map(({ object, value, points, name }) => {
         recordObjectKnowledge(object.otyp);

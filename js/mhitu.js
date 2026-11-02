@@ -3099,6 +3099,8 @@ export function magicNegation(defender, state = game) {
             const worn = !!((object.owornmask ?? 0)
                 & (W_ARMOR | W_ACCESSORY | (weapon ? W_WEP : 0)));
             const artifact = artifactById(object.oartifact, state);
+            // C artifact.c:protects(): a worn protection item, a carried
+            // SPFX_PROTECT artifact, or a worn artifact with that spfx.
             protection = (worn && OBJECT_PROPERTY[object.otyp] === 'protection')
                 || !!artifact?.carriedFlags.includes('SPFX_PROTECT')
                 || (worn && !!artifact?.flags.includes('SPFX_PROTECT'));

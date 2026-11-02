@@ -361,6 +361,8 @@ function corpseSpeciesName(object) {
         throw new Error('Petrifying contact requires a corpse or egg species.');
     return requireMonsterData(MONSTER_NAME, object.corpsenm);
 }
+// C end.c:find_delayed_killer(): reading the stored petrification killer
+// and its prefix format back for the death report.
 function petrificationDeathCause(state) {
     const name = state.u.stoneKiller;
     if (!name)

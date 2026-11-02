@@ -89,6 +89,8 @@ function reachMessage(state: GameState, trap: Trap | null): string {
     return `You cannot reach the ${surface}.`;
 }
 
+// C hack.c:pickup_checks(): the pre-menu refusals — swallowed, on water or
+// lava, empty squares, and an unreachable floor.
 export function pickupLocationProblem({
     state = game,
     objects,

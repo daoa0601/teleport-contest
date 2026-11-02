@@ -498,6 +498,9 @@ async function blowMagicWhistle(object: GameObject, state: GameState) {
     await summonPets(object, state);
 }
 
+// C apply.c:magic_whistled(): relocate every pet next to the hero, free
+// trapped ones from filled pits, and summarize the shifts, appearances,
+// disappearances, and trapped outcomes; stasis suppresses it.
 async function summonPets(object: GameObject, state: GameState) {
     requirePlayingGame(state);
     const level = state.level;
@@ -531,6 +534,7 @@ async function summonPets(object: GameObject, state: GameState) {
         if (state.program_state.gameover) return;
         if (pet.mhp <= 0)
             state.u.uluck = Math.max(LUCKMIN, (state.u.uluck || 0) - 1);
+            // C pray.c:change_luck(-1): a summoned pet dying in a trap.
         if (state._lastPlineKind !== PLNMSG_enum) {
             noticed.trapped++;
             continue;
@@ -649,6 +653,8 @@ export function releaseAllMonsterLeashes(state: GameState = game): number {
     return attachedLeashes.length;
 }
 
+// C apply.c:use_leash(): prompt for the adjacent creature; the two-pet
+// cap counts C apply.c:number_leashed()'s attached leashes inline.
 export async function useLeash(leash: GameObject): Promise<boolean> {
     const hero = game.u;
     if (hero.uswallow) {
@@ -687,6 +693,8 @@ export async function useLeash(leash: GameObject): Promise<boolean> {
     return true;
 }
 
+// C apply.c:use_leash_core(): the attach/remove switch for one creature —
+// unseen targets, non-pets, unfit bodies, cursed refusals.
 async function useLeashOnMonster(leash: GameObject, monster: Monster, x: number, y: number, spotted: boolean) {
     const level = requireGameLevel();
     const name = () => monsterName(monster, { capitalized: true });
@@ -789,6 +797,8 @@ async function moveLeashedMonsterNextToHero(monster: Monster, state: GameState, 
 }
 
 // C apply.c:next_to_u(), used before stairs, falls, and teleportation.
+// C apply.c:mleashed_next2u(): each leashed pet relocates beside the hero
+// or its leash goes slack; a cursed leash still blocks the follower.
 export async function bringLeashedFollowers(state = game, random = rn2) {
     for (const monster of [...(state.level?.monsters || [])].reverse()) {
         if (!monster?.mleashed || (monster.mhp ?? 1) <= 0) continue;
@@ -798,6 +808,7 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
         const leash = leashAttachedToMonster(monster, state);
         if (!leash || leash.cursed) return false;
         releaseMonsterLeash(monster, state);
+        // C apply.c:number_leashed(): a/the from the remaining leash count.
         const leashedCount = requireGameLevel(state).monsters.filter(candidate =>
             candidate.mleashed).length;
         await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
@@ -1462,6 +1473,13 @@ function jumpResult(spentTime: boolean, state: GameState): JumpResult {
     return { spentTime, heroDied: !!state.program_state.gameover };
 }
 
+// C apply.c:is_valid_jump_pos(): the range, sight, doorway-diagonal, and
+// walk-path checks, reported as the refusal message.
+// C apply.c:check_jump(): the per-cell walk-path test — walls, closed
+// doors, door alignment on the trajectory, and boulders non-throwers
+// cannot clear.
+// dist2()/distu() is the squared dx*dx+dy*dy; closed_door() is the
+// D_CLOSED|D_LOCKED mask; sobj_at() is the pile scan for the boulder.
 function jumpRestriction(x: number, y: number, magic: number, state: PlayingGameState): string | null {
     const hero = state.u;
     const dx = x - hero.ux, dy = y - hero.uy;
@@ -1592,6 +1610,12 @@ async function escapeJumpTrap(target: Position, state: PlayingGameState): Promis
     return true;
 }
 
+// C apply.c:jump(): the shared physical/spell jump owner, from the spell
+// hand-off and admission checks to the landing effects.
+// C apply.c:get_valid_jump_position(): the landing predicate, used both to
+// accept the cursor and to build the highlights below.
+// C apply.c:display_jump_positions(): the S_goodpos beam over every valid
+// landing, rendered by prepareMapPositionHighlights().
 export async function jumpHero(magic = 0, { state = game }: { state?: GameState } = {}): Promise<JumpResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -2442,6 +2466,8 @@ function obstacleDescription(glyph: GlyphMetadata | null, x: number, y: number, 
     return 'an unknown obstacle';
 }
 
+// C apply.c:display_polearm_positions(): the S_goodpos highlights over the
+// reachable spots, rendered while the cursor selects the strike.
 async function choosePolearmTarget(
     start: Position,
     state: GameState,
@@ -2537,6 +2563,8 @@ export async function usePolearm(
         if (await checkHeroAttackOverexertion()) return { spentTime: true };
         rememberPolearmTarget(monster, state);
 
+        // C apply.c:snickersnee_used_dist_attk(): the wielded Snickersnee
+        // already spent its distant strike this turn.
         if (
             isArtifactSnickersnee(object) &&
             state.context?.snickersneeTurn === (state.moves ?? 0)
@@ -2888,6 +2916,8 @@ async function damageHero(state: GameState) {
 }
 
 // C apply.c:can_grapple_location().
+// C apply.c:display_grapple_positions(): the S_goodpos highlights over the
+// hook's range while the cursor selects the target.
 async function chooseGrappleTarget(hook: GameObject, state: GameState) {
     await syncPline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
@@ -3042,6 +3072,13 @@ const affectsObjects = new Set([
     WAN_STRIKING, WAN_CANCELLATION, WAN_POLYMORPH, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
 ]);
 
+// C apply.c:do_break_wand(): the confirmation, the wrested charges, and
+// the scatter loop with its typing damage and shop billing.
+// C apply.c:broken_wand_explode(): the typed explosion, makeknown, and
+// current-wand discard at the wand's own square.
+// C apply.c:maybe_dunk_boulders(): after each blast, boulders left on
+// water or lava sink before the scatter continues.
+// sobj_at() is the pile scan for the next boulder on the liquid square.
 export async function breakWand(wand: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

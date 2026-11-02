@@ -783,6 +783,9 @@ function monsterDigCapabilities(monster, flags) {
     treeOk = inventory.some((object) => object?.otyp === AXE || (object?.otyp === BATTLE_AXE && !hasShield));
     return { rockOk, treeOk };
 }
+// Diggability of a location for monster tunnelling.
+// C hack.c:may_dig(): stone walls and trees flagged W_NONDIGGABLE
+// cannot be dug through.
 export function monsterMayDigLocation(loc) {
     if (!loc)
         return false;

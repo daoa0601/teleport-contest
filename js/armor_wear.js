@@ -40,6 +40,8 @@ export function armorWearDecision(object, state = game) {
     if (slot === 'uarm' && state.uarmc)
         return refuse(`You cannot wear armor over a ${armorSimpleName(state.uarmc, state)}.`);
     const worn = state[slot];
+    // C do_wear.c:already_wearing(): "You are already wearing that!" for
+    // re-worn armor, and the simple name of the occupied slot's piece.
     if (worn) {
         const name = slot === 'uarm' ? 'some armor'
             : slot === 'uarmg' ? 'gloves' : slot === 'uarmf' ? 'boots'

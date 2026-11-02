@@ -40,6 +40,9 @@ async function announceWorn(object) {
     if (message)
         await pline(message);
 }
+// C do_wear.c:already_wearing2(): the "can't wear X because you're wearing
+// Y there already" refusal for occupied eyewear, plus the towel's face
+// message from the same branch of accessory_or_armor_on().
 async function announceOccupiedSlot(object, worn) {
     if (worn.otyp === TOWEL) {
         await pline('Your face is already covered by a towel.');
@@ -60,6 +63,9 @@ async function announceOccupiedSlot(object, worn) {
 export function isEyewear(object) {
     return !!object && [BLINDFOLD, LENSES, TOWEL].includes(object.otyp);
 }
+// C do_wear.c:Blindf_on(): setworn() runs here, not in the caller — the
+// on_msg(), the blindness transition, and the punished ball-and-chain
+// notice all follow the slot change.
 export async function wearEyewear(object, { checkHead = true } = {}) {
     if (!object || !isEyewear(object))
         return false;
@@ -95,6 +101,10 @@ export async function wearEyewear(object, { checkHead = true } = {}) {
         await toggleBlindness(game);
     return true;
 }
+// C do_wear.c:Blindf_off(): clear the eyewear slot, then report the
+// blindness transition — "still cannot see", the gulp check for regaining
+// sight, and the ball-and-chain notice when newly blinded.
+// setworn(0) is unequipEyewear() below.
 export async function removeEyewear(object = null, { state = game, publish = plineWithContinuation, } = {}) {
     const noOffMessage = !object;
     const worn = state.ublindf || state.u.ublindf;

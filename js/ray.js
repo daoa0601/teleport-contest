@@ -91,6 +91,9 @@ export function heroReflectsRay(state = game) {
     return !!(state.u?.reflection
         || heroReflectionSource(state));
 }
+// C artifact.c:arti_reflects(): a monster gets reflection from an
+// artifact — the wielded/worn SPFX_REFLECT bit, or a carried cspfx one
+// (no current artifact carries reflection).
 function weaponReflects(object, state) {
     if (!object)
         return false;

@@ -5113,6 +5113,8 @@ export function heroEscapedShaft(trap) {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
 // C trap.c:uescaped_shaft().
+// C engrave.c:can_reach_floor(): the shared floor-reach test; heroCanReachFloor()
+// below is the boolean wrapper, and pickup_checks() calls this directly.
 export function floorReachProblem(state = game, { checkPit = false } = {}) {
     const hero = state.u;
     if (hero.uswallow)

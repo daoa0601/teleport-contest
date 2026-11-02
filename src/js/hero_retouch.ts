@@ -64,6 +64,8 @@ const SILVER = 14;
 // Nested passes share C's bypass marks until the outer pass finishes.
 const activeChecks = new WeakSet<GameState>();
 
+// C artifact.c:retouch_equipment(): the post-change pass over items in
+// use, with the bypass marks shared across nested checks.
 export async function retouchEquipment(dropFlag = 0, {
     state = game, publish = plineWithContinuation, die = finishHeroDeath,
 }: RetouchOptions = {}): Promise<{ died: boolean }> {
@@ -139,6 +141,9 @@ function inUse(object: GameObject, artifact: Artifact | null, state: GameState):
         || artifactInvokeIsActive(artifact, state);
 }
 
+// C artifact.c:untouchable(): the per-item test — worn, active tool,
+// carried effect, or invoked artifact triggers retouch_object(), and a
+// rejected invocation is reversed.
 async function checkItem(object: GameObject | null, dropRejected: boolean, context: RetouchContext): Promise<HeroRetouchResult> {
     const { state, publish, die } = context;
     if (!object) return { died: false, rejected: false };
@@ -156,6 +161,9 @@ async function checkItem(object: GameObject | null, dropRejected: boolean, conte
 
 // Explicit handling (apply, wield, invoke) also checks carried items which
 // are not currently equipped. retouch_equipment() keeps its in-use filter.
+// C artifact.c:retouch_object(): the touch test for one object — the
+// invocation-position bell exception, the blast and bane damage, unwearing,
+// and the optional drop.
 export async function retouchHeroObject(object: GameObject, {
     dropRejected = false, state = game,
     publish = plineWithContinuation, die = finishHeroDeath,

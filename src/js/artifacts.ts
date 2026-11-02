@@ -457,6 +457,11 @@ export async function createArtifactGift(
     return finishArtifactGeneration(object, artifact, true, state);
 }
 
+// C artifact.c:defends(): the artifact's own defn field resists this
+// damage type.  C also converts dragon scale mail to scales by color here;
+// that table lives with the dragon-armor property map in do_wear.ts and
+// mondata.c:defended().
+// get_artifact() is the caller's artifactById().
 function defendedByArtifact(
     artifact: Artifact | null | undefined,
     damageType: ArtifactDefenseQuery,
@@ -464,6 +469,8 @@ function defendedByArtifact(
     return artifact?.defense === damageType;
 }
 
+// C artifact.c:defends_when_carried(): the artifact's cary field resists
+// this damage type while merely carried.
 function carriedArtifactDefends(
     inventory: readonly GameObject[] | undefined,
     damageType: ArtifactDefenseQuery,
@@ -1561,6 +1568,11 @@ async function nothingSpecial(
     }
 }
 
+// C artifact.c:arti_invoke_cost_pw(): fling-poison and blinding-ray invoke
+// powers cost a level-5 spell's power; nothing else can be paid with Pw.
+// C artifact.c:arti_invoke_cost(): a tired artifact demands power or
+// ignores the hero for another 3d10 turns after this attempt.
+// get_artifact() is the caller's artifactById().
 async function beginInvocation(
     object: GameObject,
     artifact: Artifact,

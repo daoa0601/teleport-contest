@@ -1183,6 +1183,10 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
 }
 
+// The context-sensitive inventory item actions.  The '-' secondary-weapon
+// branch is C do_wear.c:remarm_swapwep(): reset a pending 'A', unwield
+// uswapwep, and report; it spends a turn only when the weapon left or its
+// curse was revealed.
 async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
     const letter = item.invlet;
     if (!letter || !game.inventory.includes(item)) {
