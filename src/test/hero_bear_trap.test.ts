@@ -99,7 +99,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS, LOW_BOOTS] as const) {
         await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const boots = await addInventoryObject(type);
-        wearHeroArmor(boots);
+        await wearHeroArmor(boots);
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
         const dexterity = currentAttribute(A_DEX);
         pushKeys(' '.repeat(100));

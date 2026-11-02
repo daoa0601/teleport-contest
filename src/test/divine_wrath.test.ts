@@ -96,7 +96,7 @@ void test('divine disintegration removes exposed armor but preserves armor grant
     const suit = await addInventoryObject(BLACK_DRAGON_SCALE_MAIL);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
     for (const armor of [shield, suit, cloak] as const) {
-        wearHeroArmor(armor);
+        await wearHeroArmor(armor);
         await applyArmorOnEffects(armor);
     }
     const health = game.u.uhp;
@@ -151,7 +151,7 @@ for (const armorType of [SHIELD_OF_DRAIN_RESISTANCE, BLACK_DRAGON_SCALE_MAIL] as
         await freshObjectRoom({ hero: { ulevel: 4, ugangr: 1, uluck: 0 } });
         requireFixtureGame(game);
         const armor = await addInventoryObject(armorType);
-        wearHeroArmor(armor);
+        await wearHeroArmor(armor);
         await applyArmorOnEffects(armor);
         const wisdom = currentAttribute(A_WIS);
         pushKeys(' '.repeat(100));

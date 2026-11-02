@@ -173,7 +173,7 @@ void test('a cursed levitation potion bruises the hero against the ceiling', asy
 void test('a hard helmet blunts the cursed levitation ceiling impact', async () => {
     await freshObjectRoom({ gameplaySeed: 79n, hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(ORCISH_HELM));
+    await wearHeroArmor(await addInventoryObject(ORCISH_HELM));
 
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { cursed: true }),
         { publish: collector().publish });
@@ -188,7 +188,7 @@ void test('a soft hat and half physical damage blunt the ceiling impact further'
         hero: { uhp: 40, uhpmax: 40, halfPhysicalDamage: true },
     });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(FEDORA));
+    await wearHeroArmor(await addInventoryObject(FEDORA));
 
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { cursed: true }),
         { publish: collector().publish });

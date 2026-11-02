@@ -767,7 +767,7 @@ void test('a shield of drain resistance blocks level loss from an actual wraith 
     game.u.uhp = game.u.uhpmax = 100;
     game.u.uexp = 5;
     const shield = await addInventoryObject(SHIELD_OF_DRAIN_RESISTANCE);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     await applyArmorOnEffects(shield);
     const wraith = await createMonsterAt('wraith', 11, 10, NO_MINVENT);
     wraith.mpeaceful = false;

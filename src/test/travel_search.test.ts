@@ -41,7 +41,7 @@ for (const flight of flightProperties) {
 void test('travel takes the direct water route with identified water-walking boots', async () => {
     const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = POOL;
-    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
+    await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
     game._travelTarget = { x: 14, y: 10 };
 
     await rhack(31);

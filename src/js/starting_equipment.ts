@@ -31,7 +31,7 @@ export async function useStartingItem(item: GameObject, state: GameState): Promi
         if (slot && !state[slot] && !state.u[slot]
             && !(slot === 'uarms' && weapon && isBimanualObject(weapon))) {
             if (slot === 'uarms') setTwoWeaponCombat(false, state);
-            wearHeroArmor(item, state);
+            await wearHeroArmor(item, state);
         }
     }
 

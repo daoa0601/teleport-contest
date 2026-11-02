@@ -160,7 +160,7 @@ void test('Grayswandir masks a black-light dose which appears after unwielding',
 void test('evaporating the hero pool during a fiery explosion drops a water walker into the new pit', async () => {
     const { input } = explosionRoom();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
+    await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
 
     await explodeNextTurn('flaming sphere', input);
@@ -315,7 +315,7 @@ for (const lifeSaved of [false, true] as const) {
 void test('fatal pit damage from evaporated water stops later fire damage to the floor pile', async () => {
     const { input, messages } = explosionRoom();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
+    await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const paper = await floorObject(SCR_BLANK_PAPER, game.u.ux, game.u.uy, { quantity: 64 });
     initRng(1n);
@@ -332,7 +332,7 @@ void test('fatal pit damage from evaporated water stops later fire damage to the
 void test('life saving after an evaporated-pool fall allows the floor fire and blast to finish', async () => {
     const { input } = explosionRoom();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
+    await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS));
     await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const paper = await floorObject(SCR_BLANK_PAPER, game.u.ux, game.u.uy, { quantity: 64 });

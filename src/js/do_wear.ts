@@ -36,7 +36,8 @@ import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killer
 import { inventoryItemDescription, consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
 import { canSelectOff } from './bulk_takeoff.js';
-import { isWeldedPrimary, releaseWeaponSlots, setPrimaryWeapon, setSecondaryWeapon } from './wield.js';
+import { isWeldedPrimary, setPrimaryWeapon, setSecondaryWeapon } from './wield.js';
+import { setworn } from './worn.js';
 import { yn_function } from './query.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import type { InventoryClassification } from './inventory_prompt.js';
@@ -372,7 +373,7 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
     // weapons/weptools)" — via remove_worn_item().
     if ((object.owornmask ?? 0) & W_WEAPONS)
         await removeWornHeroItem(object, game, { unchainBall: false });
-    wearHeroArmor(object, game);
+    await wearHeroArmor(object, game);
     // C do_wear.c installs the slot with setworn() now, but allmain.c does
     // not run find_ac() until the command's monster/global time has passed.
     // Mark that once-per-input boundary; identification and Armor_on()
@@ -751,13 +752,16 @@ export function applyWornArmorProperty(object: GameObject, state: GameState = ga
     return property;
 }
 
-export function wearHeroArmor(object: GameObject, state: GameState = game): ArmorSlot | null {
+// Armor-slot installation.  The Type_on() callbacks run later (afternmv in
+// C); this step is the setworn() call that accessory_or_armor_on() and the
+// polymorph paths perform, plus the pre-captures Armor_on() needs.
+export async function wearHeroArmor(
+    object: GameObject, state: GameState = game,
+): Promise<ArmorSlot | null> {
     const slot = armorSlotFor(object?.otyp);
     if (!slot) return null;
     const hero = state.u;
-    const previous = equippedObject(state, slot);
-    if (previous && previous !== object) cancelSlotTakeoff(slot, state);
-    // setworn() installs physical properties immediately. The later *_on()
+    // setworn() installs physical properties immediately.  The later *_on()
     // callback needs the sources that existed before that installation.
     if (object.otyp === LEVITATION_BOOTS)
         object._levitationBeforeWear = captureLevitationState(state);
@@ -770,17 +774,7 @@ export function wearHeroArmor(object: GameObject, state: GameState = game): Armo
         hero.veryFastFromArmor = true;
         hero.veryFast = true;
     }
-    state[slot] = object;
-    if (state.u) state.u[slot] = object;
-    object.worn = true;
-    object.wornSlot = slot;
-    object.owornmask = (object.owornmask ?? 0) | ARMOR_MASKS[slot];
-    applyWornArmorProperty(object, state);
-    if (object.otyp === MUMMY_WRAPPING) refreshProperty('invisible', state);
-    if (object.otyp === CORNUTHAUM) {
-        state.u.clairvoyanceBlocked = state.urole?.key !== 'wizard';
-        refreshProperty('clairvoyant', state);
-    }
+    await setworn(object, ARMOR_MASKS[slot], state);
     return slot;
 }
 
@@ -915,11 +909,19 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
     if (equippedObject(state, slot) === object && !cancelledDon)
         adjustArmorAttributeBonus(object, -objectEnchantment(object), state);
     const wasShining = object.lamplit && artifactEmitsLight(object);
-    if (state[slot] === object) state[slot] = null;
-    if (state.u?.[slot] === object) state.u[slot] = null;
-    object.worn = false;
-    object.wornSlot = null;
-    object.owornmask = (object.owornmask ?? 0) & ~ARMOR_MASKS[slot];
+    if (embeddedSkin) {
+        // C polyself.c:skinback() unwrites the save/restore hack directly
+        // (uarm = uskin; uskin = 0; owornmask &= ~I_SPECIAL): no setworn().
+        if (state[slot] === object) state[slot] = null;
+        if (state.u?.[slot] === object) state.u[slot] = null;
+        object.worn = false;
+        object.wornSlot = null;
+        object.owornmask = (object.owornmask ?? 0) & ~ARMOR_MASKS[slot];
+    } else {
+        // C do_wear.c Armor_off()/Boots_off()/... clear the slot through
+        // setworn((struct obj *) 0, mask), cancel_doff() included.
+        await setworn(null, ARMOR_MASKS[slot], state);
+    }
     if (wasShining && !artifactEmitsLight(object)) {
         endObjectBurn(object, state);
         if (!heroIsBlind(state))
@@ -1650,16 +1652,11 @@ export async function wearHeroAccessory(
     const wasSeeingInvisible = propertyIsActive('seeInvisible', state);
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
-    await releaseWeaponSlots(object, state);
-    const previous = state[slot] || state.u[slot];
-    if (previous && previous !== object) cancelSlotTakeoff(slot, state);
-    state[slot] = object;
-    state.u[slot] = object;
-    object.worn = true;
-    object.wornSlot = position.label;
-    object.owornmask = (object.owornmask ?? 0) | position.mask;
-    if (property) grantWornProperty(property, object, slot, state);
-    setWornArtifactProperties(object, slot, true, state);
+    // C accessory_or_armor_on() installs rings and amulets with setworn(obj,
+    // mask) and does not release weapon slots: a wielded or quivered ring
+    // keeps its weapon slot while worn.  Ring_on()/Amulet_on() feedback
+    // follows below.
+    await setworn(object, position.mask, state);
     if (slot !== 'uamul') changeRingBonus(object, 1, state);
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
     if (property === 'warning') await see_monsters();
@@ -1769,7 +1766,7 @@ export async function removeHeroAccessory(
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
-    const property = clearHeroAccessory(object, state);
+    const property = await clearHeroAccessory(object, state);
     if (property === 'warning') await see_monsters();
     if (property === 'seeInvisible') {
         if (!propertyIsActive('seeInvisible', state)) await refreshInvisibleMonsters({ state });
@@ -1813,7 +1810,7 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
     const guarding = object.otyp === AMULET_OF_GUARDING;
     // C Amulet_off() calculates guarding AC while the amulet is still worn.
     if (guarding) findArmorClass(state);
-    const property = clearHeroAccessory(object, state);
+    const property = await clearHeroAccessory(object, state);
     if (guarding) state._armorClassDirty = true;
     if (object.otyp === AMULET_OF_RESTFUL_SLEEP && !hasIntrinsicProperty('sleepy', null, state)
         && !state.u._propertySources?.sleepy?.worn.length
@@ -1854,28 +1851,20 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
 }
 
 // C setworn/setnotworn: remove the source without running Ring_off().
-export function clearHeroAccessory(
+export async function clearHeroAccessory(
     object: GameObject, state: GameState = game,
     { deferArmorClass = false }: { deferArmorClass?: boolean } = {},
-): PropertyName | null {
+): Promise<PropertyName | null> {
     const position = ACCESSORY_SLOTS.find(({ slot }) =>
         state[slot] === object || state.u[slot] === object);
     if (!position) return null;
     const { slot } = position;
-    cancelSlotTakeoff(slot, state);
-    state[slot] = null;
-    state.u[slot] = null;
-    object.worn = false;
-    object.wornSlot = null;
-    object.owornmask = (object.owornmask ?? 0) & ~position.mask;
+    // C do_wear.c Ring_off_or_gone(): gone items take setnotworn(obj) and
+    // voluntary removal setworn(0, obj->owornmask); both paths share the
+    // slot work below.  The extrinsic removal and the monstunseesu() notice
+    // are setworn()'s.
+    await setworn(null, position.mask, state);
     const property = OBJECT_PROPERTY[object.otyp];
-    if (property) {
-        removeWornProperty(property, object, slot, state);
-        // C worn.c setworn()/setnotworn(): an oc_oprop item leaving its slot
-        // makes observing monsters forget the hero's remembered resistance.
-        monstersForgetHeroResistance(seenResistanceForProperty(property), state);
-    }
-    setWornArtifactProperties(object, slot, false, state);
     if (slot !== 'uamul') changeRingBonus(object, -1, state, deferArmorClass);
     if (object.otyp === AMULET_OF_STRANGULATION && heroIsStrangled(state)) {
         clearHeroStrangulation(state);

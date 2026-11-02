@@ -17,7 +17,7 @@ for (const [type, form, expected] of [
     void test(`polymorph describes the garment that a ${form} body sheds or pierces`, async () => {
         await freshObjectRoom({ flags: { debug: true } });
         const garment = await addInventoryObject(type, { oname: 'Traveler' });
-        wearHeroArmor(garment);
+        await wearHeroArmor(garment);
         const input = resetInputState();
         const messages: string[] = [];
         input.beforeRead = () => { messages.push(game._pending_message); };
@@ -50,7 +50,7 @@ void test('horns knock off an unfinished cloth hat rather than piercing it', asy
 void test('polymorph cancels dressing before the dropped-hat message waits for input', async () => {
     await freshObjectRoom({ role: 'wizard', flags: { debug: true } });
     const robe = await addInventoryObject(ROBE);
-    wearHeroArmor(robe);
+    await wearHeroArmor(robe);
     const hat = await addInventoryObject(CORNUTHAUM);
     pushKeys(hat.invlet);
     await rhack('W'.charCodeAt(0));

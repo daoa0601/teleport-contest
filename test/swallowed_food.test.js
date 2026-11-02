@@ -77,7 +77,7 @@ void test('food rejected by a busy engulfer lands at the impact square after exp
 void test('a thrown cockatrice corpse petrifies an animal engulfer without entering its statue', async () => {
     const engulfer = await swallowedBy('purple worm');
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     const input = resetInputState();
     installPagerInput(input, { expected: /^The purple worm turns to stone\.$/, limit: 1 });
@@ -95,7 +95,7 @@ void test('a thrown cockatrice corpse petrifies an animal engulfer without enter
 void test('life saving keeps the animal engulfer alive and retains the thrown corpse', async () => {
     const engulfer = await swallowedBy('purple worm');
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const amulet = await equipMonsterObject(engulfer, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     const input = resetInputState();
@@ -112,7 +112,7 @@ void test('life saving keeps the animal engulfer alive and retains the thrown co
 });
 void test('a non-animal engulfer retains a petrifying corpse without turning to stone', async () => {
     const engulfer = await swallowedBy('energy vortex');
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     await throwInventoryObject(corpse);
     assert.equal(game.u.uswallow, 1);

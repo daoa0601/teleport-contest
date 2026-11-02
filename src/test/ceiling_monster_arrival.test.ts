@@ -23,7 +23,7 @@ for (const protection of ['none', 'helmet', 'armor class', 'tame']) {
         else piercer.mpeaceful = 0;
         piercer.mundetected = 1;
         piercer.msleeping = 1;
-        if (protection === 'helmet') wearHeroArmor(await addInventoryObject(ORCISH_HELM));
+        if (protection === 'helmet') await wearHeroArmor(await addInventoryObject(ORCISH_HELM));
         pushKeys(' '.repeat(10));
         const health = game.u.uhp;
 

@@ -243,7 +243,7 @@ void test('a visored helmet protects the hero from venom blindness', async () =>
     const { spit } = await spitRoom('cobra', 'jackal', true);
     assert.ok(game.objectDescriptions);
     game.objectDescriptions[HELMET] = 'visored helmet';
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(HELMET));
     const result = await spit();
     assert.equal(result.nativeResult, M_ATTK_HIT);
     assert.equal(game.u.blindTurns ?? 0, 0);

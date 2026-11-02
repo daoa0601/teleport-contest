@@ -22,10 +22,10 @@ void test('ARM_BONUS uses complete source a_ac metadata, enchantment, and erosio
 void test('find_ac rebuilds all equipment and protection sources from live state', async () => {
     await freshObjectRoom({ hero: { ublessed: 2, uspellprot: 1 } });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(RING_MAIL, { spe: 1 }));
-    wearHeroArmor(await addInventoryObject(ROBE, { spe: 0 }));
-    wearHeroArmor(await addInventoryObject(SMALL_SHIELD, { spe: 0 }));
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES, { spe: 0 }));
+    await wearHeroArmor(await addInventoryObject(RING_MAIL, { spe: 1 }));
+    await wearHeroArmor(await addInventoryObject(ROBE, { spe: 0 }));
+    await wearHeroArmor(await addInventoryObject(SMALL_SHIELD, { spe: 0 }));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES, { spe: 0 }));
     await wearHeroAccessory(await addInventoryObject(RIN_PROTECTION, { spe: 2 }), 'uleft');
     await wearHeroAccessory(await addInventoryObject(AMULET_OF_GUARDING), 'uamul');
     grantIntrinsicProperty('protection', 'outside');

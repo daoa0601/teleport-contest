@@ -18,7 +18,7 @@ for (const breath of [true, false]) {
         await freshObjectRoom({ flags: { explore: true } });
         requirePlayingGame(game);
         const cloak = breath ? await addInventoryObject(CLOAK_OF_DISPLACEMENT) : null;
-        if (cloak) wearHeroArmor(cloak);
+        if (cloak) await wearHeroArmor(cloak);
         const input = resetInputState();
         const messages: string[] = [];
         input.display = { async readKey() {

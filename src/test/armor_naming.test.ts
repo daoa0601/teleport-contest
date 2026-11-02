@@ -21,7 +21,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS]) {
     void test(`bear protection names a single pair of ${OBJECT_NAMES[type]}`, async () => {
         await freshObjectRoom();
         requirePlayingGame(game);
-        wearHeroArmor(await addInventoryObject(type));
+        await wearHeroArmor(await addInventoryObject(type));
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
         pushKeys(' '.repeat(60));
         initRng(1n);
@@ -87,7 +87,7 @@ for (const blind of [false, true]) {
             dknown: false,
             oname: 'Buster',
         });
-        wearHeroArmor(boots);
+        await wearHeroArmor(boots);
         if (!blind) setHeroBlindnessTurns(0);
         assert.equal(boots.dknown, false);
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);

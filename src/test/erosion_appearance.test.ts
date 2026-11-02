@@ -66,7 +66,7 @@ for (const armor of [DWARVISH_CLOAK, YELLOW_DRAGON_SCALES]) {
     const kind = armor === DWARVISH_CLOAK ? 'burn' : 'corrosion';
     void test(`inventory protection against ${kind} leaves unseen gloves unobserved`, async () => {
         await freshObjectRoom();
-        wearHeroArmor(await addInventoryObject(armor));
+        await wearHeroArmor(await addInventoryObject(armor));
         const gloves = await addInventoryObject(
             kind === 'burn' ? LEATHER_GLOVES : GAUNTLETS_OF_POWER,
             { dknown: false, typeKnown: false, observed: false },
@@ -90,7 +90,7 @@ for (const firstProtectionFails of [false, true]) {
     const protection = firstProtectionFails ? 'the later corrosion check' : 'the initial acid check';
     void test(`acid damage leaves unseen gloves unobserved when armor passes ${protection}`, async () => {
         await freshObjectRoom();
-        wearHeroArmor(await addInventoryObject(YELLOW_DRAGON_SCALES));
+        await wearHeroArmor(await addInventoryObject(YELLOW_DRAGON_SCALES));
         const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, {
             dknown: false, typeKnown: false, observed: false,
         });
@@ -114,7 +114,7 @@ for (const firstProtectionFails of [false, true]) {
 
 void test('gloves become observed when fire gets past a dwarvish cloak', async () => {
     await freshObjectRoom();
-    wearHeroArmor(await addInventoryObject(DWARVISH_CLOAK));
+    await wearHeroArmor(await addInventoryObject(DWARVISH_CLOAK));
     const gloves = await addInventoryObject(LEATHER_GLOVES, {
         dknown: false, typeKnown: false, observed: false,
     });

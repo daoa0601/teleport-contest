@@ -18,8 +18,8 @@ void test('optional equipment fields describe an unarmed naked humanoid', async 
 void test('optional equipment fields shorten weapons and show armor slots and protection', async () => {
     await freshObjectRoom({ flags: { weaponstatus: true, armorstatus: true }, hero: { uhs: 1 } });
     game.uwep = await addInventoryObject(TWO_HANDED_SWORD);
-    wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
-    wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
+    await wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
+    await wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
     await bot();
     assert.match(status(), /2H-Sword GC\+/);
 });

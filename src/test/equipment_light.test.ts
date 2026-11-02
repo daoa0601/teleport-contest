@@ -60,7 +60,7 @@ void test('gold dragon mail lights the dungeon while worn and moves with the her
     const armor = await addInventoryObject(GOLD_MAIL);
     assert.equal(cansee(13, 10), false);
 
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     await applyArmorOnEffects(armor);
     await vision_recalc(0);
     assert.equal(cansee(13, 10), true);
@@ -179,7 +179,7 @@ void test('hero death extinguishes equipment light but leaves a dropped lamp bur
     await darkRoom();
     requireFixtureGame(game);
     const armor = await addInventoryObject(GOLD_MAIL);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     await applyArmorOnEffects(armor);
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
     await setPrimaryWeapon(sword);

@@ -17,7 +17,7 @@ import { requireScreenRow } from './support/screen.js';
 void test('sliming announces the new body before breaking the cloak clasp', async () => {
     await freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(LEATHER_CLOAK));
+    await wearHeroArmor(await addInventoryObject(LEATHER_CLOAK));
     const input = resetInputState();
     installPagerInput(input, { expected: /slime|cloak|command/, limit: 12 });
     const messages = [];

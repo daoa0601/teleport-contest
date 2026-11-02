@@ -201,7 +201,7 @@ void test('a lost coin waits for flip prose to be dismissed before leaving the p
 void test('wearing gloves still names fingers when a coin slips', async () => {
     await freshObjectRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
 
     await flipCoin(purse);
@@ -212,7 +212,7 @@ void test('wearing gloves still names fingers when a coin slips', async () => {
 void test('worn gauntlets of fumbling cause a coin to slip without low Dexterity', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_FUMBLING));
+    await wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_FUMBLING));
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 50 });
 
     await flipCoin(purse);

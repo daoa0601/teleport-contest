@@ -18,7 +18,7 @@ void test('ring mail can cancel a grid bug bite after its single base damage rol
     await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     findArmorClass();
     const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     bug.m_lev = 30;

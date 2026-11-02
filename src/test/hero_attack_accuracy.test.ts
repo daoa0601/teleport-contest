@@ -83,7 +83,7 @@ void test('Monk armor penalty and empty-hand bonus end when the hero changes for
     await freshObjectRoom({ role: 'monk' });
     const target = await defender();
     const unarmored = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: true });
-    wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
+    await wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
     const armored = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: false });
     installPolymorphedHero('minotaur');
     const changed = await findHeroMeleeHitThreshold(target, AT_BITE, null, { firstAttack: false });

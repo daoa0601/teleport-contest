@@ -312,10 +312,10 @@ void test('metal armor penalizes casting and a robe over it halves the suit pena
     const spell = await learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10 });
     requirePlayingGame(game);
     const unarmored = percentSuccess(spell);
-    wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
+    await wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
     const armored = percentSuccess(spell);
 
-    wearHeroArmor(await addInventoryObject(ROBE));
+    await wearHeroArmor(await addInventoryObject(ROBE));
 
     assert.ok(armored < percentSuccess(spell));
     assert.ok(percentSuccess(spell) < unarmored);
@@ -328,10 +328,10 @@ void test('a heavy shield is worse than a small shield and a quarterstaff helps 
     await setPrimaryWeapon(await addInventoryObject(QUARTERSTAFF));
     assert.ok(percentSuccess(spell) > unarmed);
     await setPrimaryWeapon(null);
-    wearHeroArmor(await addInventoryObject(SMALL_SHIELD));
+    await wearHeroArmor(await addInventoryObject(SMALL_SHIELD));
     const smallShield = percentSuccess(spell);
 
-    wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
+    await wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
 
     assert.ok(percentSuccess(spell) < smallShield);
 });
@@ -348,8 +348,8 @@ void test('Knight clerical casting ignores metal suit and helmet penalties', asy
     const attackChance = percentSuccess(attack);
     assert.ok(clericalChance > 0);
 
-    wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
+    await wearHeroArmor(await addInventoryObject(HELMET));
 
     assert.equal(percentSuccess(clerical), clericalChance);
     assert.ok(percentSuccess(attack) < attackChance);
@@ -368,7 +368,7 @@ void test('percent success matches the native role and armor tables exactly', as
     await learnSpell(spellType('magic missile'), { level: 1 });
     requirePlayingGame(game);
     assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 100);
-    wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
+    await wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
     // The Wizard's special spell keeps splcaster at 1+3-4 = 0 despite the
     // shield and halves the heavy-shield chance: 119/2*20/15.
     assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 78);
@@ -387,13 +387,13 @@ void test('percent success matches the native role and armor tables exactly', as
     await learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10, wisdom: 10 });
     requirePlayingGame(game);
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 94);
-    wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
+    await wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
     // splcaster 1+10: 75*9/15 - 11.
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 34);
-    wearHeroArmor(await addInventoryObject(ROBE));
+    await wearHeroArmor(await addInventoryObject(ROBE));
     // A robe over the mail halves the suit penalty: splcaster 6.
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 64);
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(HELMET));
     // A metal helmet adds +4 on top of the robe-adjusted suit: splcaster 10.
     assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 40);
 });

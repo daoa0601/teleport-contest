@@ -82,7 +82,7 @@ void test('haste through speed boots renews energy instead of announcing a new a
     await freshObjectRoom();
     requirePlayingGame(game);
     const boots = await addInventoryObject(SPEED_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await applyArmorOnEffects(boots);
     resetInputState().feed(' '); // Haste feedback follows wearing effects.
     await applyPotionSpell(await source(SPE_HASTE_SELF));
@@ -221,7 +221,7 @@ void test('a spell cannot pass through worn mummy wrapping', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING);
-    wearHeroArmor(wrapping);
+    await wearHeroArmor(wrapping);
     await applyArmorOnEffects(wrapping);
     await applyPotionSpell(await source(SPE_INVISIBILITY));
     assert.ok(!game.u.invisibleTurns);
@@ -297,7 +297,7 @@ void test('removing the actual mummy wrapping lets the next invisibility spell w
     await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING);
-    wearHeroArmor(wrapping);
+    await wearHeroArmor(wrapping);
     await applyArmorOnEffects(wrapping);
     const spell = await source(SPE_INVISIBILITY);
     await applyPotionSpell(spell);

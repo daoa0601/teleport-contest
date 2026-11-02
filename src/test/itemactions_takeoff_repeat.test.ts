@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('repeating the item-actions takeoff reports nothing worn', async () => {
     await freshObjectRoom();
     const cloak = await addInventoryObject(ELVEN_CLOAK);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const input = resetInputState();
     const menu = rhack('i'.charCodeAt(0));
     try {

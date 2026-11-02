@@ -105,7 +105,7 @@ void test('hurtling into water allows input without finishing removal of boots',
     assert.ok(level);
     level.requireAt(11, 10).typ = POOL;
     const boots = await addInventoryObject(SPEED_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     installPagerInput(input, { expected: /./, limit: 20 });
     input.feed(`T${boots.invlet}`);
     await moveloop_core();
@@ -124,7 +124,7 @@ for (const action of ['wear', 'remove']) {
         level.requireAt(11, 10).typ = POOL;
         const boots = await addInventoryObject(SPEED_BOOTS, { known: false, typeKnown: false });
         if (action === 'remove')
-            wearHeroArmor(boots);
+            await wearHeroArmor(boots);
         installPagerInput(input, { expected: /./, limit: 20 });
         input.feed(`${action === 'wear' ? 'W' : 'T'}${boots.invlet}`);
         await moveloop_core();

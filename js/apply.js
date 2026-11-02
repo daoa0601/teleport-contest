@@ -126,7 +126,8 @@ import { summonVaultGuardSoon } from './vault.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { dryTowel } from './weapon.js';
 import { wieldTool } from './wield_tool.js';
-import { doswapweapon, releaseWeaponSlots } from './wield.js';
+import { doswapweapon } from './wield.js';
+import { setnotworn } from './worn.js';
 import { showPagedPickOneMenu, snapshotMenuUnderlay } from './windows.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { adjustMonsterSpeed } from './worn.js';
@@ -2671,7 +2672,7 @@ function splitOnePie(stack) {
 async function deletePie(pie) {
     // C apply.c:use_cream_pie() clears the wield slot via setnotworn(),
     // which does not arm the "begin bashing" bare-hands notice.
-    await releaseWeaponSlots(pie, game, { keepUnweapon: true });
+    await setnotworn(pie, game);
     await chargeAlteredUnpaidObject(pie, 'splatter');
     unlinkObject(pie, game);
     await delobj(pie, game);
@@ -2742,7 +2743,7 @@ async function putJellyBack(use) {
 async function consumeJelly(jelly) {
     // C apply.c:use_royal_jelly() clears slots through setnotworn(), which
     // does not arm the bare-hands notice.
-    await releaseWeaponSlots(jelly, game, { keepUnweapon: true });
+    await setnotworn(jelly, game);
     jelly.owornmask = 0;
     jelly.worn = false;
     await deleteObject(jelly);

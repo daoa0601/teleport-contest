@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('gold dragon armor reports its light dimming on merge and brightening on return', async () => {
     await freshObjectRoom({ flags: { debug: true } });
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { blessed: true });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     beginObjectBurn(armor);
     const input = resetInputState();
     const messages: string[] = [];

@@ -97,7 +97,7 @@ void test('a shade stops a multi-kick sequence at the first harmless contact', a
 void test('blessed boots hurt a shade without adding their enchantment to a natural kick', async () => {
     const { monster } = await kickRoom('monk', 'shade');
     const boots = await addInventoryObject(IRON_SHOES, { blessed: true, spe: 20 });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
 
     const messages = await kickEast(/shade/);
 
@@ -133,7 +133,7 @@ void test('a floating eye can stop the second natural kick through paralysis', a
 void test('natural kick contact uses the boots to protect against petrification', async () => {
     const { monster } = await kickRoom('monk', 'cockatrice');
     const boots = await addInventoryObject(IRON_SHOES);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
 
     const messages = await kickEast(/cockatrice/);
 
@@ -172,7 +172,7 @@ for (const form of [null, 'minotaur']) {
 void test('a form without kick slots still reaches ordinary kicking through the command', async () => {
     const { monster } = await kickRoom('minotaur');
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('high boots'), { spe: 10 });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
 
     const messages = await kickEast(/hill giant/);
 

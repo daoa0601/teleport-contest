@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory, removeHeroAccessory } from '../js/do_wear.js';
-
 import { wearHeroArmor } from '../js/do_wear.js';
+
 
 import { I_SPECIAL, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -24,7 +25,7 @@ void test('taking off worn resistance armor clears what watching monsters rememb
     watcher.seen_resistance = M_SEEN_FIRE | M_SEEN_COLD;
     blindSpot.seen_resistance = M_SEEN_FIRE | M_SEEN_COLD;
     const mail = await addInventoryObject(RED_DRAGON_SCALE_MAIL);
-    wearHeroArmor(mail);
+    await wearHeroArmor(mail);
 
     await removeWornHeroItem(mail);
 
@@ -44,6 +45,22 @@ void test('removing a resistance ring clears only that remembered resistance', a
     assert.equal(watcher.seen_resistance, M_SEEN_FIRE);
 });
 
+// C worn.c:setworn(): the weapon slot runs the same monstunseesu_prop()
+// bookkeeping as armor when a wielded oc_oprop item is unwielded, even
+// though wielding a non-weapon never granted the extrinsic (the
+// WEAPON_CLASS/is_weptool/mask!=W_WEP guard on install).
+void test('unwielding a wielded resistance ring clears what watching monsters remember', async () => {
+    await freshObjectRoom();
+    const watcher = await createMonsterAt('soldier', 12, 10);
+    watcher.seen_resistance = M_SEEN_ELEC | M_SEEN_FIRE;
+    const ring = await addInventoryObject(RIN_SHOCK_RESISTANCE);
+    await setPrimaryWeapon(ring);
+
+    await setPrimaryWeapon(null);
+
+    assert.equal(watcher.seen_resistance, M_SEEN_FIRE);
+});
+
 // Embedded dragon skin never passes through setworn()'s slot loop, so losing
 // it must not notify anyone (C polyself.c handles it with pointer moves).
 void test('embedded dragon skin leaving the hero keeps monster memories intact', async () => {
@@ -51,7 +68,7 @@ void test('embedded dragon skin leaving the hero keeps monster memories intact',
     const watcher = await createMonsterAt('soldier', 12, 10);
     watcher.seen_resistance = M_SEEN_FIRE;
     const scales = await addInventoryObject(RED_DRAGON_SCALES);
-    wearHeroArmor(scales);
+    await wearHeroArmor(scales);
     game.uarm = null;
     game.u.uarm = null;
     game.uskin = scales;

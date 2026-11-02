@@ -359,7 +359,7 @@ void test('losing a shield during polymorph also loses its reflection', async ()
     await freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
     requireFixtureGame(game);
     const shield = await addInventoryObject(SHIELD_OF_REFLECTION);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     assert.equal(game.u.reflection, true);
     pushKeys('polyself\nfog cloud\n        ');
 
@@ -438,7 +438,7 @@ void test('a cloud slips out of its suit, cloak, and shirt', async () => {
     const garments = [];
     for (const type of [LEATHER_ARMOR, CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT] as const)
         garments.push(await addInventoryObject(type));
-    for (const garment of garments) wearHeroArmor(garment);
+    for (const garment of garments) await wearHeroArmor(garment);
     pushKeys('polyself\nfog cloud\n                        ');
 
     await rhack('#'.charCodeAt(0));

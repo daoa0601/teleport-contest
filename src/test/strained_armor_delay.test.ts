@@ -15,7 +15,7 @@ void test('Strained boots removal finishes after two world turns while the hero 
     const input = freshTurnRoom({ flags: { runmode: 'walk' } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('low boots'));
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await addInventoryObject(ROCK, { quan: 120 });
     assert.equal(nearCapacity(game), 3, 'the load must leave the hero Strained');
     game._encumbranceLevel = 3;

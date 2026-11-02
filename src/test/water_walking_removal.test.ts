@@ -16,7 +16,7 @@ void test('removing water-walking boots over water immediately submerges the her
     const level = await freshObjectRoom();
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false });
     const towel = await addInventoryObject(TOWEL, { spe: 0 });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     grantIntrinsicProperty('magicalBreathing', 'outside');
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     pushKeys(' '.repeat(20));
@@ -33,7 +33,7 @@ void test('removing water-walking boots over water immediately submerges the her
 void test('removing water-walking boots over lava immediately burns and traps a fire-resistant hero', async () => {
     const level = await freshObjectRoom();
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false, oerodeproof: true });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     grantIntrinsicProperty('fireResistance', 'outside');
     level.requireAt(game.u.ux, game.u.uy).typ = LAVAPOOL;
     pushKeys(' '.repeat(20));
@@ -53,7 +53,7 @@ for (const protection of ['levitation', 'flying', 'ceiling', 'cancelled dressing
         const level = await freshObjectRoom();
         const boots = await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown: false });
         const towel = await addInventoryObject(TOWEL, { spe: 0 });
-        wearHeroArmor(boots);
+        await wearHeroArmor(boots);
         if (protection === 'levitation' || protection === 'flying')
             grantIntrinsicProperty(protection, 'outside');
         if (protection === 'ceiling') {

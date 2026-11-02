@@ -77,7 +77,7 @@ void test('a negated cold claw keeps its hit line, avoids harm and deals no dama
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     findArmorClass();
     const troll = await createMonsterAt('ice troll', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     troll.mux = game.u.ux;

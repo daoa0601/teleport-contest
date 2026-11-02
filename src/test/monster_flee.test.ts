@@ -360,7 +360,7 @@ void test('glowing gold dragon scales are named as the source of gremlin fear', 
     requirePlayingGame(game);
     const gremlin = await createMonsterAt('gremlin', 11, 10);
     const scales = await addInventoryObject(GOLD_DRAGON_SCALES);
-    wearHeroArmor(scales);
+    await wearHeroArmor(scales);
     pushKeys(' '.repeat(100));
     await applyArmorOnEffects(scales);
     assert.equal(Boolean(scales.lamplit), true);
@@ -376,7 +376,7 @@ void test('gremlin prose prefers Sunsword when armor supplies the actual light',
     requirePlayingGame(game);
     endObjectBurn(sword);
     const scales = await addInventoryObject(GOLD_DRAGON_SCALES);
-    wearHeroArmor(scales);
+    await wearHeroArmor(scales);
     await applyArmorOnEffects(scales);
     assert.equal(Boolean(scales.lamplit), true);
     game.u.deafTurns = 20;

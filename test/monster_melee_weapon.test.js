@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('weapon poison weakens the hero despite armor magic cancellation', async () => {
     await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
+    await wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
     findArmorClass();
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.mpeaceful = false;
@@ -41,7 +41,7 @@ void test('weapon enchantment helps a monster hit an armored hero', async () => 
     for (const spe of [0, 8]) {
         await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
-        wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('plate mail')));
+        await wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('plate mail')));
         findArmorClass();
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         goblin.mpeaceful = false;

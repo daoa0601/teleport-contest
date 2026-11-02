@@ -91,7 +91,7 @@ void test('fire resistance blocks Fire Brand accuracy against the hero', async (
     const rollOne = (range: number) => range;
     const unprotectedAccuracy = weaponHitBonus(sword, game.u, { rollOne });
 
-    wearHeroArmor(await addInventoryObject(RED_DRAGON_SCALE_MAIL));
+    await wearHeroArmor(await addInventoryObject(RED_DRAGON_SCALE_MAIL));
     const protectedAccuracy = weaponHitBonus(sword, game.u, { rollOne });
 
     assert.equal(unprotectedAccuracy - protectedAccuracy, 5);

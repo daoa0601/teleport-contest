@@ -57,7 +57,7 @@ void test('R removes the only accessory even when armor is also worn', async () 
     await freshObjectRoom();
     requireFixtureGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await wearSetupAmulet(amulet);
     pushKeys('        ');

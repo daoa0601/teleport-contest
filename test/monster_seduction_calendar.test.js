@@ -22,7 +22,7 @@ for (const datetime of ['20000229000000', '20000301000000']) {
             observed: false, dknown: false, bknown: false, typeKnown: false,
         });
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const succubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         succubus.female = true;
         const attack = { kind: 'hero-attack', attackType: AT_BITE,

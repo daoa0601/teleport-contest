@@ -193,7 +193,7 @@ void test('falling can force contact with a wielded cockatrice corpse through gl
     freshConnectedLevels();
     requirePlayingGame(game);
     game.u.fumbling = true;
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const corpse = await addInventoryItem(await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')));

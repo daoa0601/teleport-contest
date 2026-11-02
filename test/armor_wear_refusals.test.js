@@ -16,7 +16,7 @@ for (const command of ['W', 'P']) {
         await freshObjectRoom();
         const cloak = await addInventoryObject(LEATHER_CLOAK);
         const spare = await addInventoryObject(OBJECT_NAMES.indexOf('robe'));
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         pushKeys(`${spare.invlet} `);
         await rhack(command.charCodeAt(0));
         assert.equal(game._pending_message, 'You are already wearing a cloak.');
@@ -30,7 +30,7 @@ for (const command of ['W', 'P']) {
         await freshObjectRoom();
         const reflection = await addInventoryObject(SHIELD_OF_REFLECTION);
         const spare = await addInventoryObject(SMALL_SHIELD);
-        wearHeroArmor(reflection);
+        await wearHeroArmor(reflection);
         pushKeys(`${spare.invlet} `);
         await rhack(command.charCodeAt(0));
         assert.equal(game._pending_message, 'You are already wearing a shield.');
@@ -72,7 +72,7 @@ void test('puton refuses a ring behind cursed gloves and spends only the discove
     await freshObjectRoom();
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { cursed: true, bknown: false });
     const ring = await addInventoryObject(RIN_PROTECTION);
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     pushKeys(`${ring.invlet}l`);
     await rhack('P'.charCodeAt(0));
     assert.equal(game._pending_message, 'You cannot remove your gloves to put on the ring.');

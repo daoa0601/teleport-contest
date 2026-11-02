@@ -77,7 +77,7 @@ void test('a nurse leaves a naked unarmed hero alone but attacks after armor is 
     const { give, select, state } = await offensiveRoom({ species: 'nurse' });
     const wand = await give(WAN_STRIKING);
     assert.equal(select(), null);
-    wearHeroArmor(await addInventoryObject(LEATHER_ARMOR), state);
+    await wearHeroArmor(await addInventoryObject(LEATHER_ARMOR), state);
     assert.equal(select()?.object, wand);
 });
 for (const deathFirst of [false, true]) {

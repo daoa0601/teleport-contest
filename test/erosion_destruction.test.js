@@ -18,7 +18,7 @@ void test('burning away worn levitation boots lands the hero in the pit below', 
     game.level.traps.push({ tx: 10, ty: 10, ttyp: PIT, tseen: false, once: false, launch: { x: 0, y: 0 } });
     const boots = await addInventoryObject(LEVITATION_BOOTS, { oeroded: 3 });
     pushKeys('                ');
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await applyArmorOnEffects(boots);
     assert.equal(game.u.levitating, true);
     await erodeObject(boots, 'burn', { destroy: true });

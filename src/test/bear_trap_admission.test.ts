@@ -21,7 +21,7 @@ for (const admission of ['ordinary', 'forceTrap', 'failedUntrap', 'forceBungle',
         requirePlayingGame(game);
         if (admission === 'fumbling') {
             const boots = await addInventoryObject(FUMBLE_BOOTS);
-            wearHeroArmor(boots);
+            await wearHeroArmor(boots);
             await applyArmorOnEffects(boots);
             assert.equal(game.u.fumbling, true);
         }
@@ -58,7 +58,7 @@ for (const [airborne, forced, sitting] of [
         pushKeys(' '.repeat(80));
         if (airborne === 'levitation') {
             const boots = await addInventoryObject(LEVITATION_BOOTS);
-            wearHeroArmor(boots);
+            await wearHeroArmor(boots);
             await applyArmorOnEffects(boots);
             assert.equal(game.u.levitating, true);
         } else {
@@ -84,7 +84,7 @@ void test('hallucinated bear-trap feedback can use the current female role name'
     requirePlayingGame(game);
     pushKeys(' '.repeat(80));
     const boots = await addInventoryObject(LEVITATION_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await applyArmorOnEffects(boots);
     const trap = addTrap(game.level, BEAR_TRAP, 10, 10, { tseen: true });
     initRng(51n);

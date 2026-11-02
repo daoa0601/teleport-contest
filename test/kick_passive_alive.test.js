@@ -24,7 +24,7 @@ async function kickIntoTrap(species, hitPoints, seed, trapType = ROCKTRAP) {
         },
     });
     const boots = await addInventoryObject(IRON_SHOES, { spe: 0 });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     monster.mpeaceful = false;
     monster.msleeping = 0;

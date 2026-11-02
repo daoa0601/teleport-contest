@@ -254,7 +254,7 @@ void test('a stalker first grants timed invisibility, then permanent invisibilit
 void test('mummy wrapping prevents a second stalker from granting permanent invisibility', async () => {
     await room();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
+    await wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
     await eatAfter('stalker');
     await eatAfter('stalker');
     assert.equal(hasIntrinsicProperty('invisible', 'outside'), false);
@@ -345,7 +345,7 @@ void test('a displacer beast grants a temporary effect which expires', async () 
 void test('displacement from worn armor survives a corpse timeout', async () => {
     await room();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(CLOAK_OF_DISPLACEMENT));
+    await wearHeroArmor(await addInventoryObject(CLOAK_OF_DISPLACEMENT));
     game.u.displacedTurns = 1;
     await advanceDisplacementTimeout();
     assert.equal(game.u.displaced, true);

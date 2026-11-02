@@ -27,7 +27,7 @@ for (const condition of ['visible', 'invisible', 'wrapped', 'blind watch']) {
         watchman.msleeping = 0;
         watchman.mcansee = condition === 'blind watch' ? 0 : 1;
         if (condition === 'wrapped')
-            wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
+            await wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;

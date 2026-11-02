@@ -41,7 +41,7 @@ void test('mimic recovery after a water wakeup cannot finish an old boots remova
     const input = freshTurnRoom();
     requirePlayingGame(game);
     const boots = await addInventoryObject(SPEED_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await applyArmorOnEffects(boots);
     let messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
@@ -68,7 +68,7 @@ for (const command of ['W', 'T']) {
         const input = freshTurnRoom();
         const boots = await addInventoryObject(SPEED_BOOTS, { known: false });
         if (command === 'T') {
-            wearHeroArmor(boots);
+            await wearHeroArmor(boots);
             await applyArmorOnEffects(boots);
         }
         const messages = [];

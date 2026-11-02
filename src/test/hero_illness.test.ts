@@ -211,7 +211,7 @@ void test('a vomiting yellow dragon breathes acid on its weapon and armor',
         const sword = await addInventoryWeapon(LONG_SWORD);
         await setPrimaryWeapon(sword);
         const mail = await addInventoryObject(CHAIN_MAIL);
-        wearHeroArmor(mail);
+        await wearHeroArmor(mail);
         const rolls = [0, 0, 1];
         const messages: string[] = [];
 

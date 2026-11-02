@@ -19,7 +19,7 @@ void test('blocked invisibility names the actual wrapping worn by the caster', a
     game.u.acurr.a[A_INT] = 18;
     await learnSpell(SPE_INVISIBILITY);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
-    wearHeroArmor(wrapping);
+    await wearHeroArmor(wrapping);
     resetInputState().feed('a');
     await rhack('Z'.charCodeAt(0));
     assert.equal(game._lastPlineMessage, 'You feel rather itchy under your mummy wrapping named Linen.');
@@ -32,7 +32,7 @@ void test('a self-directed invisibility wand also names the wrapping absorbing i
     await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
-    wearHeroArmor(wrapping);
+    await wearHeroArmor(wrapping);
     const wand = await addInventoryObject(WAN_MAKE_INVISIBLE, { spe: 2 });
     resetInputState().feed(`${wand.invlet}.`);
     await rhack('z'.charCodeAt(0));
@@ -46,7 +46,7 @@ for (const source of ['spell', 'wand']) {
     void test(`a sleeping hero dreams of the named wrapping absorbing an invisibility ${source}`, async () => {
         await freshObjectRoom();
         const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
-        wearHeroArmor(wrapping);
+        await wearHeroArmor(wrapping);
         await putHeroToSleep(5);
         if (source === 'spell')
             await applyPotionLikeInvisibility({ spell: true });

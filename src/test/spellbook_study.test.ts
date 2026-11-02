@@ -68,7 +68,7 @@ void test('worn gloves absorb spellbook contact poison and corrode', async () =>
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 4;
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER);
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     await prepareContactPoisonBook();
 
     await rhack('r'.charCodeAt(0));

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a worn armor item offers takeoff and removes the selected piece', async () => {
     await freshObjectRoom();
     const cloak = await addInventoryObject(ELVEN_CLOAK);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const input = resetInputState();
     const menu = rhack('i'.charCodeAt(0));
     try {
@@ -37,8 +37,8 @@ void test('an inventory takeoff action cannot remove a suit covered by a cloak',
     await freshObjectRoom();
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const cloak = await addInventoryObject(ELVEN_CLOAK);
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
         { prompt: /Armor/, keys: suit.invlet },

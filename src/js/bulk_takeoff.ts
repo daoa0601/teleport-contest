@@ -185,9 +185,7 @@ export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promi
             await pline(`${object.unpaid ? 'The' : 'Your'} ${armorSimpleName(object)} are too slippery to take off.`);
             return false;
         }
-        const corpse = game.inventory.find(candidate => candidate.otyp === CORPSE && touchPetrifies(candidate.corpsenm));
-        if (corpse && !await paranoidQuery(true,
-            `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`)) return false;
+        if (await betterNotTakeThatOff(object)) return false;
     }
     if (slot === 'uarmf' && game.u.utrap) {
         if (game.u.utraptype === TT_BEARTRAP) {
@@ -212,6 +210,25 @@ export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promi
     }
     if (slot === 'uquiver' || slot === 'uswapwep' && !game.u.twoweap) return true;
     return !await unremovableCurse(object, slot, game);
+}
+
+// C do_wear.c:better_not_take_that_off().  Gloves are the only barrier
+// between the hero and a carried stoning corpse, so taking them off asks
+// for confirmation; refusing leaves the gloves on.
+async function betterNotTakeThatOff(object: GameObject, state: GameState = game): Promise<boolean> {
+    // C invent.c:carrying_stoning_corpse(): the first inventory corpse that
+    // petrifies on touch.
+    const corpse = state.inventory.find(candidate =>
+        candidate.otyp === CORPSE && touchPetrifies(candidate.corpsenm));
+    if (!corpse) return false;
+    // C pickup.c:u_safe_from_fatal_corpse(corpse, st_corpse | st_petrifies):
+    // both tests already hold of carrying_stoning_corpse(), so this corpse
+    // is never safe to touch bare-handed.  Stone resistance is deliberately
+    // not factored in: losing it later, without the gloves on, could prove
+    // dangerous.
+    if (corpse.otyp !== CORPSE || !touchPetrifies(corpse.corpsenm)) return false;
+    return !await paranoidQuery(true,
+        `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
 }
 
 function weaponNoun(object: GameObject | null): string {

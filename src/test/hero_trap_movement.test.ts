@@ -240,7 +240,7 @@ void test('a rust trap can rust the helmet worn by the hero', async () => {
     const helmet = await addInventoryObject(ORCISH_HELM, {
         invlet: 'a', oeroded: 0,
     });
-    wearHeroArmor(helmet);
+    await wearHeroArmor(helmet);
     const trap = addTrap(level, RUST_TRAP, 11, 10, { tseen: false });
     initRng(1n);
 
@@ -257,7 +257,7 @@ void test('enchanted iron shoes absorb an anti-magic field', async () => {
     });
     requireFixtureGame(game);
     const shoes = await addInventoryObject(IRON_SHOES, { spe: 1 });
-    wearHeroArmor(shoes);
+    await wearHeroArmor(shoes);
     const trap = addTrap(level, ANTI_MAGIC, 11, 10, { tseen: false });
 
     await rhack('l'.charCodeAt(0));

@@ -29,7 +29,7 @@ for (const grip of ['new hold', 'failed hold', 'greased cloak', 'cancelled hold'
         const cloak = grip === 'greased cloak'
             ? await addInventoryObject(LEATHER_CLOAK, { greased: true }) : null;
         if (cloak)
-            wearHeroArmor(cloak);
+            await wearHeroArmor(cloak);
         const messages = [];
         const input = resetInputState();
         installPagerInput(input, { expected: /couatl|grease/, limit: 8 });
@@ -72,7 +72,7 @@ for (const { name, blind, greased, typeKnown, appearanceKnown } of [
         const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('oilskin cloak'), {
             observed: false, dknown: false, greased, typeKnown,
         });
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         game.u.blindTurns = blind ? 10 : 0;
         const input = resetInputState();
         installPagerInput(input, { expected: /couatl|It|grease/, limit: 8 });

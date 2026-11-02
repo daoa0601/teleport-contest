@@ -122,7 +122,7 @@ void test('worn amulets, eyewear, and saddles carry the worn annotation', async 
 void test('slippery hands annotate worn gloves', async () => {
     await freshObjectRoom();
     const gloves = await addInventoryObject(LEATHER_GLOVES);
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     setSlipperyHands(12);
     // Native strncat() appends past the parenthesis it meant to replace.
     assert.match(await inventoryItemDescription(gloves), /\(being worn\); slippery\)$/);
@@ -137,7 +137,7 @@ void test('armor being put on is described as being donned', async () => {
 void test('armor being taken off is described as being doffed', async () => {
     await freshObjectRoom();
     const armor = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     pushKey(armor.invlet);
     await rhack('T'.charCodeAt(0));
     assert.match(await inventoryItemDescription(armor), /\(being doffed\)$/);
@@ -145,7 +145,7 @@ void test('armor being taken off is described as being doffed', async () => {
 void test('dragon scales merged by polymorph are described as embedded in the hero\'s skin', async () => {
     await freshObjectRoom();
     const scales = await addInventoryObject(GRAY_DRAGON_SCALES);
-    wearHeroArmor(scales);
+    await wearHeroArmor(scales);
     const input = resetInputState();
     installPagerInput(input, { expected: /merge|turn into|feel/, limit: 5 });
     await polymorphHero();
@@ -155,7 +155,7 @@ void test('dragon scales merged by polymorph are described as embedded in the he
 void test('worn luminous armor shows its light only while the hero can see', async () => {
     await freshObjectRoom();
     const scales = await addInventoryObject(GOLD_DRAGON_SCALES, { blessed: false, cursed: false });
-    wearHeroArmor(scales);
+    await wearHeroArmor(scales);
     beginObjectBurn(scales);
     assert.match(await inventoryItemDescription(scales), /\(being worn, brightly lit\)$/);
     setHeroBlindnessTurns(10);

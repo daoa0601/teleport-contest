@@ -16,7 +16,7 @@ for (const wornResistance of [false, true]) {
         const level = await freshObjectRoom({ hero: { fireResistance: true } });
         requirePlayingGame(game);
         const armor = await addInventoryObject(LEATHER_ARMOR, { oeroded: 0 });
-        wearHeroArmor(armor);
+        await wearHeroArmor(armor);
         if (wornResistance)
             await wearHeroAccessory(await addInventoryObject(RIN_FIRE_RESISTANCE), 'uleft');
         addTrap(level, FIRE_TRAP, 11, 10);

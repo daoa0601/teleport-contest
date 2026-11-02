@@ -16,7 +16,7 @@ void test('a helmet dropped by polymorph in a corridor falls to the ground', asy
     const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = CORR;
     const helmet = await addInventoryObject(HELMET);
-    wearHeroArmor(helmet);
+    await wearHeroArmor(helmet);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => {

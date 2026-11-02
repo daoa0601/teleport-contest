@@ -1,4 +1,7 @@
 # caller	callee — C call edges the port counterpart reaches (static-gaps.mjs edges)
+Armor_off	setworn
+Blindf_off	setworn
+Boots_off	setworn
 Cloak_off	newsym
 Finish_digestion	cpostfx
 H2Opotion_dip	water_damage
@@ -12,9 +15,12 @@ Mb_hit	rn2
 Mb_hit	rnd
 Mb_hit	shieldeff
 RND	isaac64_next_uint64
+Shield_off	setworn
+Shirt_off	setworn
 Sting_effects	glow_strength
 able_to_loot	hliquid
 abon	acurr
+accessory_or_armor_on	setworn
 accessory_or_armor_on	yn_function
 acurrstr	acurr
 add_damage	shop_keeper
@@ -137,6 +143,7 @@ bounce_dir	rn2
 bounded_increase	rn2
 bounded_increase	rnd
 break_armor	exercise
+break_armor	setworn
 break_armor	surface
 breaksink	newsym
 build_room	create_room
@@ -514,6 +521,7 @@ do_break_wand	recalc_block_point
 do_break_wand	release_hold
 do_break_wand	rn2
 do_break_wand	rnd
+do_break_wand	setnotworn
 do_class_genocide	done
 do_class_genocide	kill_genocided_monsters
 do_class_genocide	list_genocided
@@ -1485,6 +1493,7 @@ ini_inv_adjust_obj	trquan
 ini_inv_use_obj	setuqwep
 ini_inv_use_obj	setuswapwep
 ini_inv_use_obj	setuwep
+ini_inv_use_obj	setworn
 init_fill	rn2
 init_fill	rnd
 init_objects	rn2
@@ -1681,6 +1690,7 @@ list_vanquished	set_vanq_order
 litstate_rnd	rn2
 litstate_rnd	rnd
 litter	rnd
+litter	setnotworn
 litter_getpos	inside_shop
 litter_getpos	isok
 litter_newsyms	newsym
@@ -1869,6 +1879,7 @@ maybe_destroy_item	exercise
 maybe_destroy_item	losehp
 maybe_destroy_item	rn2
 maybe_destroy_item	rnd
+maybe_destroy_item	setnotworn
 maybe_do_tutorial	docrt
 maybe_do_tutorial	vision_recalc
 maybe_explode_trap	d
@@ -2611,6 +2622,7 @@ postmov	rn2
 postmov	swallowed
 postmov	u_on_newpos
 postmov	vision_recalc
+pot_acid_damage	setnotworn
 potion_dip	H2Opotion_dip
 potion_dip	d
 potion_dip	exercise
@@ -2880,6 +2892,7 @@ seffect_earth	sokoban_guilt
 seffect_enchant_armor	exercise
 seffect_enchant_armor	rn2
 seffect_enchant_armor	rnd
+seffect_enchant_armor	setworn
 seffect_enchant_armor	strange_feeling
 seffect_enchant_weapon	chwepon
 seffect_enchant_weapon	rn2
@@ -2907,6 +2920,7 @@ seffect_taming	maybe_tame
 seffect_teleportation	level_tele
 seffect_teleportation	scrolltele
 sel_set_ter	set_levltyp_lit
+select_off	better_not_take_that_off
 select_off	cursed
 select_off	surface
 select_off	welded
@@ -2959,6 +2973,7 @@ selection_size_description	selection_is_irregular
 sense_trap	rn2
 sense_trap	rnd
 set_artifact_intrinsic	get_artifact
+set_artifact_intrinsic	make_hallucinated
 set_artifact_intrinsic	see_monsters
 set_bc	bc_order
 set_bc	newsym
@@ -2980,8 +2995,13 @@ set_trap	rnl
 set_trap	trapname
 set_ulycn	set_uasmon
 set_wounded_legs	encumber_msg
+setnotworn	monstunseesu
 setnotworn	set_artifact_intrinsic
 setup_waterlevel	rn2
+setuqwep	setworn
+setuswapwep	setworn
+setuwep	setworn
+setworn	monstunseesu
 setworn	set_artifact_intrinsic
 shared_with_room	isok
 shieldeff	flush_screen
@@ -3005,6 +3025,7 @@ shkveg	rnd
 shop_object	costly_spot
 shopdig	adjalign
 shopdig	dist2
+shopdig	setnotworn
 shopdig	shop_keeper
 shopdig	um_dist
 shopper_financial_report	currency
@@ -3384,6 +3405,7 @@ untrap_prob	rn2
 unturn_you	make_stunned
 unturn_you	rnd
 update_lastseentyp	cmap_to_type
+uqwepgone	setworn
 use_bell	findit
 use_bell	makemon
 use_bell	mkclass
@@ -3399,6 +3421,7 @@ use_candle	weight
 use_candle	yn_function
 use_cream_pie	make_blinded
 use_cream_pie	rnd
+use_cream_pie	setnotworn
 use_figurine	getdir
 use_figurine	make_familiar
 use_figurine	map_invisible
@@ -3426,6 +3449,7 @@ use_mirror	nomul
 use_mirror	rn2
 use_mirror	rnd
 use_mirror	surface
+use_royal_jelly	setnotworn
 use_stethoscope	feel_newsym
 use_stethoscope	getdir
 use_stethoscope	isok
@@ -3459,6 +3483,8 @@ use_unicorn_horn	rn2
 use_unicorn_horn	vomit
 ustatusline	piousness
 ustatusline	visible_region_at
+uswapwepgone	setworn
+uwepgone	setworn
 valid_cloud_pos	isok
 vamprises	closed_door
 vamprises	newsym

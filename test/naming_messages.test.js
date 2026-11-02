@@ -223,7 +223,7 @@ void test('an invisible but seen sleeper keeps its invisibility adjective', asyn
 void test('putting on luminous armor retains the suit personal name', async () => {
     await freshObjectRoom();
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { oextra: { oname: 'Dawn' } });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const messages = await applyArmorOnEffects(armor);
     assert.ok(messages.some(text => text.startsWith('Your gold dragon scale mail named Dawn begins to shine ')), messages.join('\n'));
 });

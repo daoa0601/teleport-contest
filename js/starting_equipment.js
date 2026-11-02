@@ -16,7 +16,7 @@ export async function useStartingItem(item, state) {
             && !(slot === 'uarms' && weapon && isBimanualObject(weapon))) {
             if (slot === 'uarms')
                 setTwoWeaponCombat(false, state);
-            wearHeroArmor(item, state);
+            await wearHeroArmor(item, state);
         }
     }
     if (item.oclass === WEAPON_CLASS || isWeaponTool(item)

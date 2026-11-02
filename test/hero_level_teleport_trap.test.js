@@ -31,7 +31,7 @@ void test('taking off levitation boots completes trap travel before the next com
     game.u.umovement = 12;
     destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
     const boots = await addInventoryObject(LEVITATION_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     grantIntrinsicProperty('teleportControl', 'outside');
     addTrap(source, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
@@ -90,7 +90,7 @@ for (const laterMonster of [false, true]) {
         nymph.m_lev = 30;
         nymph.movement = 12;
         const boots = await addInventoryObject(LEVITATION_BOOTS);
-        wearHeroArmor(boots);
+        await wearHeroArmor(boots);
         addTrap(source, LEVEL_TELEP, 10, 10);
         const input = resetInputState();
         input.feed('.');
@@ -181,7 +181,7 @@ void test('choosing the current level after seduced boots removal stops later mo
         monster.movement = 12;
     }
     const boots = await addInventoryObject(LEVITATION_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     const trap = addTrap(source, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
     input.feed('.');

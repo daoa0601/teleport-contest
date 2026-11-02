@@ -95,7 +95,7 @@ void test('a cancelled Medusa gazes once before her ordinary attacks', async () 
 void test('a reflected Medusa gaze makes her statue before she can attack', async () => {
     const { runTurn, messages } = gazeRoom(/Medusa|reflect|more experienced|welcome/i);
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
+    await wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
     findArmorClass();
     const medusa = await createMonsterAt('Medusa', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     medusa.msleeping = 0;
@@ -115,7 +115,7 @@ void test('an underwater reflection does not petrify Medusa', async () => {
     const { runTurn, messages } = gazeRoom(/Medusa|reflected|water|bubbles|amulet|rust|back on solid ground/i);
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(OBJECT_NAMES.indexOf('amulet of magical breathing')), 'uamul');
-    wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
+    await wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
     findArmorClass();
     const medusa = await createMonsterAt('Medusa', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     medusa.msleeping = 0;
@@ -150,7 +150,7 @@ void test('an Archon gaze does not announce new stun for an already stunned bat 
 void test('Medusa is announced killed before her medallion saves her', async () => {
     const { runTurn, messages } = gazeRoom(/Medusa|reflect|medallion|But wait|stone/i);
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
+    await wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
     findArmorClass();
     const medusa = await createMonsterAt('Medusa', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const amulet = await knownObject(OBJECT_NAMES.indexOf('amulet of life saving'));

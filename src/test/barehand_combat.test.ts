@@ -83,7 +83,7 @@ void test('blessed gloves hurt a shade without training or applying barehand ski
     const shade = await arena('shade', 'monk');
     requirePlayingGame(game);
     const gloves = await addInventoryObject(LEATHER_GLOVES, { blessed: true, bknown: false });
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     const practice = barehandSkill().advance;
     const hit = prepareHeroBarehandContact(shade);
     assert.ok(hit.damage >= 1 && hit.damage <= 4, `Blessed contact damage was ${hit.damage}`);
@@ -95,7 +95,7 @@ void test('ordinary gloves cover silver rings and make a shade immune to the pun
     const shade = await arena();
     requirePlayingGame(game);
     await silverRing('uright');
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
     await rhack('l'.charCodeAt(0));
     assert.equal(shade.mhp, 200);
 });
@@ -216,7 +216,7 @@ void test('a shield prevents a second barehand strike even at expert skill', asy
     const target = await arena('giant');
     requirePlayingGame(game);
     installHeroWeaponSkills({ [P_BARE_HANDED_COMBAT]: P_EXPERT });
-    wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('small shield')));
+    await wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('small shield')));
     for (let seed = 1; seed <= 8; seed++) {
         target.mhp = 200;
         initRng(BigInt(seed));
@@ -232,7 +232,7 @@ void test('silver and blessed armor still harm a vampire in another form', async
     await silverRing('uright');
     const silver = specialContactDamage(game.u, target, W_RINGR);
     assert.ok(silver.damage >= 1 && silver.damage <= 20);
-    wearHeroArmor(await addInventoryObject(LEATHER_GLOVES, { blessed: true }));
+    await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES, { blessed: true }));
     const blessed = specialContactDamage(game.u, target, W_ARMG);
     assert.ok(blessed.damage >= 1 && blessed.damage <= 4);
 });
@@ -240,10 +240,10 @@ void test('silver and blessed armor still harm a vampire in another form', async
 void test('contact uses the outermost selected armor and does not add hidden layers', async () => {
     const shade = await arena();
     requirePlayingGame(game);
-    wearHeroArmor(
+    await wearHeroArmor(
         await addInventoryObject(OBJECT_NAMES.indexOf('Hawaiian shirt'), { blessed: true }),
     );
-    wearHeroArmor(await addInventoryObject(ROBE));
+    await wearHeroArmor(await addInventoryObject(ROBE));
     const hidden = specialContactDamage(game.u, shade, W_ARMC | W_ARM | W_ARMU);
     const exposed = specialContactDamage(game.u, shade, W_ARMU);
     assert.equal(hidden.damage, 0);

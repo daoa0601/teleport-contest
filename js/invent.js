@@ -1557,7 +1557,7 @@ function comparisonNeedsMessage(survivor, incoming, state) {
         && comparisonDiscovers(survivor, incoming, state);
 }
 // C merged() prelude, completed before either kind of display can yield.
-function prepareStackMerge(survivor, incoming, state) {
+async function prepareStackMerge(survivor, incoming, state) {
     const discovered = comparisonDiscovers(survivor, incoming, state);
     if (!survivor.globby) {
         const firstQuantity = survivor.quan ?? survivor.quantity ?? 1;
@@ -1596,7 +1596,7 @@ function prepareStackMerge(survivor, incoming, state) {
         survivor.rknown = true;
     if (!!survivor.bknown !== !!incoming.bknown)
         survivor.bknown = true;
-    mergeHeroWeaponSlots(survivor, incoming, state);
+    await mergeHeroWeaponSlots(survivor, incoming, state);
     if (incoming.bypass)
         survivor.bypass = true;
     return discovered;
@@ -1611,7 +1611,7 @@ export async function mergeCreatedObjectStacks(survivor, incoming, state = game)
         return null;
     if (incoming.globby || comparisonNeedsMessage(survivor, incoming, state))
         throw new Error('stack merge with display effects must be awaited');
-    prepareStackMerge(survivor, incoming, state);
+    await prepareStackMerge(survivor, incoming, state);
     await deleteObject(incoming, state, { mergeInto: survivor });
     return survivor;
 }
@@ -1619,7 +1619,7 @@ export async function mergeObjectStacks(survivor, incoming, state = game) {
     requireLiveGame(state);
     if (!survivor || !incoming || !mergable(survivor, incoming, state))
         return null;
-    const discovered = prepareStackMerge(survivor, incoming, state);
+    const discovered = await prepareStackMerge(survivor, incoming, state);
     if (incoming.globby) {
         await announceGlobMerge(survivor, incoming, state);
         return await absorbGlob(survivor, incoming, state);
