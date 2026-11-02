@@ -6,8 +6,8 @@ import { drawbridgeUnderlyingType } from './dbridge.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
-import { roomsAt } from './room.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
+import { roomsAt } from './hack.js';
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
 // changes terrain, even when that caller will not print it.
 export function waterbodyName(x, y, state = game) {

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { doquit } from '../js/end.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { resetInputState } from '../js/input.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { LARGE_BOX, POT_HEALING, SACK, TIN, WAN_FIRE } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { loseHeroHp } from '../js/hack.js';
 
 async function endingRoom(disclose: string) {
     await freshObjectRoom({ flags: { bones: false, disclose, tombstone: false } });

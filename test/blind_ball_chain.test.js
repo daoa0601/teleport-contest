@@ -14,7 +14,6 @@ import { placeBallAndChain, setBallAndChainFelt } from '../js/ball.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { moveObject } from '../js/floor_object.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -23,6 +22,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { moveObject } from '../js/hack.js';
 async function blindPunishedHero() {
     await freshObjectRoom();
     requirePlayingGame(game);

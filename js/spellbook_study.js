@@ -11,7 +11,6 @@ import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { shieldeff } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
@@ -35,6 +34,7 @@ import { createMemorizedSpell, currentSpellKnowledge } from './spell.js';
 import { teleportHero } from './teleport.js';
 import { rndcurse } from './throne.js';
 import { aggravateMonsters } from './wizard.js';
+import { loseHeroHp } from './hack.js';
 const MAX_SPELLS = 52;
 const MAX_STUDIES = 3;
 export async function studyBook(book, { state = game } = {}) {

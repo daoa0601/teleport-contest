@@ -43,7 +43,6 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
 import { retouchEquipment } from './hero_retouch.js';
-import { damageHeroFromMonster } from './hero_damage.js';
 import { igniteItems } from './light.js';
 import { applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, grantMonsterCorpseIntrinsic, grantMonsterIntrinsic, healMonster, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, finishMonsterPetrification, monsterSubject, turnGolemToStone, } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
@@ -113,6 +112,7 @@ import { artifactDamageBonus, artifactEmitsLight, artifactStrikesShade } from '.
 import { P_AXE, W_ARMG, WT_IRON_BALL_INCR } from './const.js';
 import { CREAM_PIE, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
+import { damageHeroFromMonster } from './mhitu.js';
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster) {
     const species = MONSTER_NAME[monster.mnum];

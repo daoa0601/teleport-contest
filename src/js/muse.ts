@@ -110,7 +110,7 @@ import {
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { monsterCanCarryObject } from './mon.js';
-import { objectWeight } from './weight.js';
+
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
 import { inventoryItemDescription } from './invent.js';
@@ -122,14 +122,14 @@ import { makeBlinded } from './sight_change.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
 
-import { loseHeroHp } from './hero_damage.js';
+
 import { hitObjectWithWand } from './immediate_zap.js';
 import { revealMonsterAppearance } from './mon.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { roomsAt } from './room.js';
+
 import { heroHasHalfSpellDamage } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
@@ -177,6 +177,8 @@ import {
 } from './mondata.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { monsterResistsEffect } from './zap.js';
+import { objectWeight } from './mkobj.js';
+import { loseHeroHp, roomsAt } from './hack.js';
 
 // ---------------------------------------------------------------------------
 // Shared muse.c constants.

@@ -6,10 +6,11 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { setPropertyTimeout } from '../js/properties.js';
-import { switchHeroTerrain } from '../js/terrain_movement.js';
+
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { switchHeroTerrain } from '../js/hack.js';
 
 function bridgeRoom(open = false) {
     const level = freshGameplayRoom();

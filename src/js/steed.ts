@@ -1,6 +1,6 @@
 import { trapName } from './trap.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { heroLocomotion } from './hero_locomotion.js';
+
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 
@@ -61,16 +61,16 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { nearCapacity, SLT_ENCUMBER } from './weight.js';
+
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './mondata.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects,
 } from './hack.js';
-import { heroCouldMoveOntoBoulder } from './boulder_push.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+
+
 import { adjustHeroAlignment } from './alignment.js';
 import { commandResultCancelled } from './cmd.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';
@@ -80,6 +80,14 @@ import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 
 import { surfaceName } from './terrain_name.js';
 import { heroCanOoze } from './monmove.js';
+import {
+    heroLocomotion,
+    loseHeroHp,
+    nearCapacity,
+    SLT_ENCUMBER,
+    heroCouldMoveOntoBoulder,
+    finishDestinationSpotEffects,
+} from './hack.js';
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

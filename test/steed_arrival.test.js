@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DISMOUNT_KNOCKED, STONE, VIBRATING_SQUARE } from '../js/const.js';
-import { moveObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
@@ -12,6 +11,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { moveObject } from '../js/hack.js';
 async function ridingRoom() {
     await freshObjectRoom({
         role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100 },

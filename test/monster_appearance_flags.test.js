@@ -10,11 +10,11 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AD_COLD, AT_BREA } from '../js/monster_attack_types.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { checkSpecialRoom } from '../js/shk.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { cancelMonster } from '../js/zap.js';
+import { checkSpecialRoom } from '../js/hack.js';
 async function knownMonsterDisguise() {
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_MONSTER | M_AP_F_DKNOWN;

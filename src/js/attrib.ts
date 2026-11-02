@@ -9,7 +9,7 @@ import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
@@ -19,6 +19,7 @@ import { DUNCE_CAP, GAUNTLETS_OF_POWER } from './object_data.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, LUCKMAX, LUCKMIN, Upolyd,
 } from './const.js';
+import { loseHeroHp } from './hack.js';
 
 export type AttributeIndex = 0 | 1 | 2 | 3 | 4 | 5;
 

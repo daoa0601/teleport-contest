@@ -5,7 +5,6 @@ import { A_CON, A_STR } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
@@ -17,6 +16,7 @@ import { verbForSubject, withIndefiniteArticle, objectDescription } from './objn
 import { definiteName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;

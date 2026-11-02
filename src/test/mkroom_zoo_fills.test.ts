@@ -13,13 +13,14 @@ import type { GameMap } from '../js/game.js';
 import { isRoom } from '../js/map_types.js';
 import type { Room } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
-import { insideRoom } from '../js/room.js';
+
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { createDungeon } from './support/topology.js';
+import { insideRoom } from '../js/mkroom.js';
 
 // C defsym.h monster class numbers used by morguemon()'s output families.
 const S_VAMPIRE = 48, S_ZOMBIE = 52, S_WRAITH = 49, S_GHOST = 54, S_DEMON = 56;

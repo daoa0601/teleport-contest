@@ -19,7 +19,6 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { beginObjectBurn } from '../js/light.js';
 import { objectTimers } from '../js/timeout.js';
 import { objectMaterial } from '../js/o_init.js';
-import { objectWeight } from '../js/weight.js';
 import { addShopObjectToBill, objectTypeKnown, itemizedShopBill } from '../js/shk.js';
 import { addInventoryObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -28,6 +27,7 @@ import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/regions.js';
 import { startHeroSliming, heroIsSliming } from '../js/slime.js';
 import { heroPolyGender, setHeroSpecies } from '../js/hero_species.js';
+import { objectWeight } from '../js/mkobj.js';
 const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
 void test('explicit transformation preserves a wielded stack and its inventory letter', async () => {
     await freshObjectRoom();

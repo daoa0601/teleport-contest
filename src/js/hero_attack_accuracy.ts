@@ -17,7 +17,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { rn2 } from './rng.js';
 import { weaponSkillHitBonus } from './skills.js';
 import { weaponHitBonus } from './weapon.js';
-import { nearCapacity } from './weight.js';
+
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { AttackTuple, RandomBelow } from './monster_action_types.js';
@@ -26,6 +26,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { wakeAttackedMonster } from './mon.js';
 import { adjustedMonsterLevel } from './makemon.js';
+import { nearCapacity } from './hack.js';
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;

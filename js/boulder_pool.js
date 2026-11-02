@@ -7,7 +7,6 @@ import { displayLiquidName, docrt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { loseHeroHp } from './hero_damage.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
@@ -21,11 +20,11 @@ import { verbForSubject } from './objnam.js';
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { switchHeroTerrain } from './terrain_movement.js';
 import { waterbodyName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterInAir } from './mon.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
+import { loseHeroHp, switchHeroTerrain } from './hack.js';
 export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publish = plineWithContinuation, random = rn2, pushing = false, } = {}) {
     requireLiveGame(state);
     if (!boulder || boulder.otyp !== BOULDER) {

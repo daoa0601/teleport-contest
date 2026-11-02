@@ -6,7 +6,7 @@ import { invokeArtifactPower } from '../js/artifacts.js';
 import { LANDMINE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import { freeInventoryObject } from '../js/hero_inventory.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
@@ -20,6 +20,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 void test('consuming the last item after game over deletes its actual inventory identity', async () => {
     await freshObjectRoom();

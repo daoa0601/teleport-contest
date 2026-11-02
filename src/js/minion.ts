@@ -25,11 +25,12 @@ import { monsterName } from './do_name.js';
 import { currency } from './currency.js';
 import { getLine } from './query.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { detachHeroGold } from './hero_gold.js';
 import type { MinionData } from './monster_types.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isWereMonster, summonWereAttackHelp } from './were.js';
+import { heroGoldAmount } from './hack.js';
 
 const S_DEMON = 56;
 const M2_DEMON = 0x00000100;

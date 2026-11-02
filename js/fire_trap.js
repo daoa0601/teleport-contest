@@ -12,7 +12,6 @@ import { plineWithContinuation } from './pline.js';
 import { shieldeff } from './display.js';
 import { loseHeroExperience } from './exper.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
@@ -27,6 +26,7 @@ import { burnArmorByFire, burnHeroArmorByFire, finishMonsterTrapDeath, monsterTr
 import { surfaceName } from './terrain_name.js';
 import { burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasFireResistance, } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 const PM_STRAW_GOLEM = 249;
 const PM_PAPER_GOLEM = 250;
 const PM_LEATHER_GOLEM = 253;

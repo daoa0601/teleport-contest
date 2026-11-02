@@ -5,7 +5,6 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, CRYSKNIFE, DAGGER, HORN_OF_PLENTY, SACK, WAN_CANCELLATION, WORM_TOOTH } from '../js/object_data.js';
-import { objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -13,6 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { planInput } from './support/planned-input.js';
+import { objectWeight } from '../js/mkobj.js';
 void test('the inventory tip action spills a carried sack while ignoring a floor container', async (t) => {
     const level = await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { initialize: false, cknown: true });

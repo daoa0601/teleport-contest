@@ -72,10 +72,10 @@ import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { insideRoom, roomForIndex, roomsAt } from './room.js';
+
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom } from './mkroom.js';
 import { beginObjectBurn } from './light.js';
-import { objectWeight } from './weight.js';
+
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionMatch } from './selvar.js';
 import {
@@ -96,6 +96,9 @@ import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
 import { makeSpecialDrawbridge } from './dbridge.js';
 import { monsterHasStoneResistance, monsterPolymorphsWhenStoned, setMonsterSpecies } from './mondata.js';
+import { insideRoom } from './mkroom.js';
+import { roomForIndex, roomsAt } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 export async function fillVault(room: Room | null | undefined): Promise<void> {
     if (!room) return;

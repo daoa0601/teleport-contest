@@ -15,7 +15,6 @@ import { addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
-import { roomForIndex } from './room.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './steed.js';
 import { CmapSymbol } from './glyph_numbers.js';
@@ -24,6 +23,7 @@ import { heroIsBlind } from './senses.js';
 import { heroFootName } from './body_parts.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
+import { roomForIndex } from './hack.js';
 const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
 const DUNGEON_FLAG_BITS = {
     town: TOWN, hellish: HELLISH, mazelike: MAZELIKE,

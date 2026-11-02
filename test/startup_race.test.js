@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
 import { CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_RING_MAIL, ORCISH_SHIELD, ORCISH_SHORT_SWORD, ORCISH_SPEAR, TOUCHSTONE, URUK_HAI_SHIELD, WAN_WISHING, } from '../js/object_data.js';
 import { races, roles } from '../js/roles.js';
 import { uInitInventoryAttrs } from '../js/u_init.js';
 import { completeHeroStartup } from './support/startup.js';
+import { heroGoldAmount } from '../js/hack.js';
 const FOOD_CLASS = 7;
 async function start(roleKey, raceName, { explore = false, seed = 123n } = {}) {
     return await completeHeroStartup({

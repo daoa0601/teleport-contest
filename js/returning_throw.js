@@ -7,7 +7,6 @@ import { flush_screen, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './hero_drop.js';
 import { makePlural } from './objnam.js';
@@ -21,6 +20,7 @@ import { captureThrownObjectFlight } from './thrown_object.js';
 import { addInventoryItemBefore } from './u_init.js';
 import { cansee } from './vision.js';
 import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './wield.js';
+import { loseHeroHp } from './hack.js';
 export function isAutoReturningThrow(object, weaponMask, state) {
     return object.otyp === BOOMERANG || !!(weaponMask & W_WEP)
         && (object.otyp === AKLYS || artifactById(object.oartifact, state)?.name === 'Mjollnir'

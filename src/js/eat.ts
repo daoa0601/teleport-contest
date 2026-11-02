@@ -56,7 +56,7 @@ import { nomul } from './hack.js';
 import { possessiveName } from './hacklib.js';
 import { heroAcidBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import { hasNonArtifactConflict } from './hero_conflict.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { gainCorpseDisplacement } from './hero_displacement.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -77,7 +77,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { meltIce } from './ice.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { chewIronBars } from './iron_bars_meal.js';
+
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';
@@ -133,7 +133,7 @@ import { drinkPotion } from './quaff.js';
 import { paranoidQuery, promptYesNo, promptYesNoQuit } from './query.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumor.js';
-import { stopRun } from './runmode.js';
+
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
     SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition,
@@ -150,10 +150,18 @@ import { flushPendingTopline } from './tty_topline.js';
 import { addInventoryItem } from './u_init.js';
 import { findVaultGuard } from './vault.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
-import { exceedsActionCapacity, nearCapacity, objectWeight } from './weight.js';
+
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
 import { wieldTool } from './wield_tool.js';
+import {
+    loseHeroHp,
+    chewIronBars,
+    stopRun,
+    exceedsActionCapacity,
+    nearCapacity,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 const M2_ELF = 0x00000010, M2_DWARF = 0x00000020, M2_ORC = 0x00000080;
 

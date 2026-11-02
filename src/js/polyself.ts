@@ -63,7 +63,7 @@ import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, self
 import { changeHeroSex, heroFormSticks, heroHasNoHead, heroPolyGender, setHeroSpecies, heroLikesLava } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
 import { isBeingTakenOff } from './do_wear.js';
@@ -81,6 +81,7 @@ import { applyHeroLocationEffects } from './hack.js';
 import { restartAmuletStrangulation, stopStrangulationInImmuneForm } from './hero_strangulation.js';
 import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown } from './slime.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
+import { loseHeroHp, roundDiv } from './hack.js';
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
 const M1_CLING = 0x00000010;
@@ -922,10 +923,6 @@ function canDropPolymorphWeapon(object: GameObject) {
     return !(object.otyp === LEASH && object.leashmon);
 }
 
-function roundDiv(numerator: number, denominator: number) {
-    const magnitude = Math.trunc((Math.abs(numerator) + Math.trunc(denominator / 2)) / denominator);
-    return Math.sign(numerator) * magnitude;
-}
 
 function humanAttributeArrays() {
     requirePlayingGame(game);

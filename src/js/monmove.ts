@@ -17,7 +17,7 @@ import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN,
 import { M_SEEN_REFL, A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit, Is_rogue_level, DISMOUNT_THROWN, LEVEL_TELEP, RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, ACCESSIBLE, DRAWBRIDGE_UP, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL } from './const.js';
 import { watchDigging } from './dig.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import { monsterHasNoAttacks, monsterHasNoLimbs, monsterIsAmorphous, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsMindFlayer, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAnimal, monsterIsCovetous, monsterIsMindless, monsterIsNoncorporeal, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, MONSTER_HAS_WEAPON_ATTACK, speciesEatsCorpses, MONSTER_SOUND, MONSTER_DIFFICULTY } from './monster_data.js';
@@ -102,7 +102,7 @@ import { beginMonsterSqueakyBoard, finishMonsterSqueakyBoard } from './squeaky_b
 import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from './vibrating_square_trap.js';
 import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymorph_trap.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
-import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
+import { heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { plineWithContinuation } from './pline.js';
 import { placeCreatedObject, placeObjectSynchronously, stack_object } from './floor_object.js';
@@ -118,7 +118,7 @@ import { retouchEquipment } from './hero_retouch.js';
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { moveVaultGuard } from './vault.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { inTown, roomsAt } from './room.js';
+
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies } from './stoning.js';
 import { monsterReflectsRay } from './ray.js';
@@ -141,6 +141,12 @@ import { stopHeroOccupation } from './occupation.js';
 import { diggingTimeToHole } from './dig.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
 import { migrateMonsterOffLevel } from './dog.js';
+import {
+    loseHeroHp,
+    heroGoldAmount,
+    inTown,
+    roomsAt,
+} from './hack.js';
 // Monster movement-ration state, movement, and combat.
 // C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
 // monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().

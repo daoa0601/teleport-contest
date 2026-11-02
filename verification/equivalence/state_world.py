@@ -425,7 +425,7 @@ def inventory_state(world, front, modules):
     capacity = z3.Int('weight_cap()')
     world.pre.extend([capacity >= 1, capacity <= MAX_CARR_CAP])
     world.c_calls['weight_cap'] = [([], CVal(capacity, (32, True)))]
-    world.js_calls[('js/weight.js', 'weightCapacity')] = [([V('obj', 'game')], V('num', capacity))]
+    world.js_calls[('js/hack.js', 'weightCapacity')] = [([V('obj', 'game')], V('num', capacity))]
     world.c_globals['gw.wc'] = CVal(z3.IntVal(0), (32, True))
     world.c_globals['invent'] = CArray(
         tuple(CState(f'invent[{i}]') for i in range(MAX_CHAIN + 1)))

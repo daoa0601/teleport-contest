@@ -12,7 +12,8 @@ import { MONSTER_NAME } from './monster_data.js';
 import { EGG, ROCK } from './object_data.js';
 import { stopAllObjectTimers } from './timeout.js';
 import { d } from './rng.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
+
 
 const GEM_CLASS = 13;
 const MAX_EGG_HATCH_TIME = 200;

@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { races } from '../js/roles.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { loseHeroHp } from '../js/hack.js';
 void test('a Wizard gets low health warnings at most once every fifty turns', async () => {
     freshGameplayRoom({ role: 'wizard', hero: { uhp: 10, uhpmax: 100 } });
     requirePlayingGame(game);

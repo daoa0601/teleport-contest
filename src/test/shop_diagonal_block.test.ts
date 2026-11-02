@@ -5,11 +5,12 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE } from '../js/object_data.js';
-import { updateHeroRoomMembership } from '../js/room.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 
 for (const direction of ['exit', 'entry'] as const) {
     void test(`a keeper blocks diagonal ${direction} through a broken entrance on a level of shops`, async () => {

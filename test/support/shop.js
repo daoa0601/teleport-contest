@@ -6,9 +6,8 @@ import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { cls } from '../../js/display.js';
 import { pushKey } from '../../js/input.js';
-import { roomsAt } from '../../js/room.js';
-import { checkSpecialRoom } from '../../js/shk.js';
 import { createMonsterAt } from './monsters.js';
+import { roomsAt, checkSpecialRoom } from '../../js/hack.js';
 const PM_SHOPKEEPER = 271;
 export async function createStaffedShop({ left = 8, right = 14, top = 8, bottom = 12, keeperX = 11, keeperY = 10, doorX = left, doorY = keeperY, shopType = SHOPBASE, bill = [], } = {}) {
     requirePlayingGame(game);

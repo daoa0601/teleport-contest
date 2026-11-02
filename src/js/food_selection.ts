@@ -32,10 +32,11 @@ import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 
 import { deleteTrap } from './trap.js';
-import { exceedsActionCapacity } from './weight.js';
+
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { exceedsActionCapacity } from './hack.js';
 
 const FOOD_CLASS = 7, COIN_CLASS = 12;
 const IRON = 11, MITHRIL = 17, WOOD = 8, LIQUID = 1, PLASTIC = 18;

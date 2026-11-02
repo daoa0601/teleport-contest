@@ -4,7 +4,7 @@
 
 import { isIceAt } from './dbridge.js';
 
-import { newsym } from './display.js';
+
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -18,7 +18,7 @@ import { objectQuantity, splitObjectStack } from './mkobj.js';
 
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { OBJECT_TIMER_KIND } from './const.js';
-import { maybeUnhideAt } from './mon.js';
+
 
 // Corpse rot and revival take twice as long while the body is on ice.
 export function updateCorpseIceTimer(
@@ -185,24 +185,6 @@ export function remove_object<T extends GameObject | null | undefined>(
     return object;
 }
 
-// C hack.c:825-833 movobj().  Unlink the object from its floor pile,
-// re-evaluate hiding at the vacated square, and relink at the destination.
-// remove_object() leaves ox/oy intact, exactly like C, so the old square is
-// still readable after the unlink.
-export async function moveObject<T extends GameObject | null | undefined>(
-    object: T, x: number, y: number, state: GameState = game,
-): Promise<T> {
-    requireLiveGame(state);
-    if (!object || !state.level) return object;
-    const oldX = object.ox;
-    const oldY = object.oy;
-    remove_object(object, state);
-    await maybeUnhideAt(oldX, oldY, state);
-    await newsym(oldX, oldY);
-    await placeObject(object, x, y, state);
-    await newsym(x, y);
-    return object;
-}
 
 export function detachFloorObjectUnit(object: GameObject, state: GameState): GameObject {
     const quantity = objectQuantity(object);

@@ -10,7 +10,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { APPLE, CHEST, CLUB, DAGGER, POT_HEALING, SACK, } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { objectTimers } from '../js/timeout.js';
-import { objectWeight } from '../js/weight.js';
 import { shopObjectUnitCost } from '../js/shk.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject, corpseObject, } from './support/game-objects.js';
@@ -18,6 +17,7 @@ import { freshGameplayRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
+import { objectWeight } from '../js/mkobj.js';
 void test('a blade can break while prying a chest lock', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);

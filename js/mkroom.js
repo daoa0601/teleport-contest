@@ -11,14 +11,12 @@ import { CmapSymbol } from './glyph_numbers.js';
 import { AIR, ALTAR, AM_SHRINE, ANTHOLE, ANY_SHOP, ANY_TYPE, BARRACKS, BEEHIVE, BLCORNER, BRCORNER, CLOUD, COCKNEST, CORR, COURT, CROSSWALL, LEPREHALL, DBWALL, DOOR, DRAWBRIDGE_DOWN, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS, IS_DOOR, IS_FURNITURE, IS_ROOM, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, MM_ASLEEP, MM_NOGRP, MORGUE, OROOM, POOL, ROOM, ROOMOFFSET, SHOPBASE, SDOOR, SINK, SPACE_POS, STAIRS, STONE, SWAMP, TEMPLE, TDWALL, THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, ZOO, isok, Align2amask, In_endgame, A_NONE, G_GONE, } from './const.js';
 import { CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE, } from './object_data.js';
 import { RANDOM_SHOP_TYPES } from './shknam.js';
-import { insideRoom } from './room.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';
 import { createToptenObject, mkgold, mkobj, mkobj_at, mksobj, mksobj_at, } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterAtPosition } from './steed.js';
-import { objectWeight } from './weight.js';
 import { deleteEngravingAt } from './engrave.js';
 import { normalDemon } from './minion.js';
 import { impossible } from './diagnostics.js';
@@ -27,6 +25,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
 import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, make_grave, topologize, } from './mklev.js';
 import { isRoom } from './map_types.js';
+import { objectWeight } from './mkobj.js';
 // Species constants (normally from monst.js, not in contest template)
 const PM_GNOME_RULER = 168;
 const PM_GIANT_EEL = 319;
@@ -737,5 +736,19 @@ export async function fillBeehiveRoom(croom) {
         }
     }
     level.flags.has_beehive = true;
+}
+// C mkroom.c:inside_room().  Rectangular rooms include their one-cell
+// perimeter; irregular rooms use the encoded map identity and exclude edge
+// cells whose rectangular bounds do not describe their actual shape.
+export function insideRoom(level, room, x, y) {
+    if (!room || !Number.isInteger(x) || !Number.isInteger(y))
+        return false;
+    if (room.irregular) {
+        const loc = level?.at?.(x, y);
+        return !!loc && !loc.edge
+            && loc.roomno === (room.roomnoidx ?? -1) + ROOMOFFSET;
+    }
+    return x >= room.lx - 1 && x <= room.hx + 1
+        && y >= room.ly - 1 && y <= room.hy + 1;
 }
 //# sourceMappingURL=mkroom.js.map

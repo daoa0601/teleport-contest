@@ -10,7 +10,6 @@ import { heroIsInvisible } from '../js/hero_invisibility.js';
 import { grantHeroSeeInvisible } from '../js/hero_seeing.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { resetInputState } from '../js/input.js';
-import { objectWeight } from '../js/weight.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 import { POT_FRUIT_JUICE, POT_HEALING, POT_INVISIBILITY, POT_MONSTER_DETECTION, POT_OIL, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SPEED, RIN_INVISIBILITY, } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
@@ -22,6 +21,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
+import { objectWeight } from '../js/mkobj.js';
 async function potion(type, overrides = {}) {
     const object = await addInventoryObject(type, { initialize: false, ...overrides });
     assert.ok(game.objectDescriptions);

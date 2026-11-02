@@ -10,7 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { CHEST, CRYSKNIFE, DAGGER, GOLD_PIECE, LARGE_BOX, OBJECT_NAMES, SACK, WORM_TOOTH, WAN_DIGGING, } from '../js/object_data.js';
 import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
-import { addShopObjectToBill, billedPickupQuote, chargeAlteredUnpaidObject, checkSpecialRoom, getCostOfShopItem, settleThrownShopObject, splitObjectBill, } from '../js/shk.js';
+import { addShopObjectToBill, billedPickupQuote, chargeAlteredUnpaidObject, getCostOfShopItem, settleThrownShopObject, splitObjectBill } from '../js/shk.js';
 import { splitObjectStack } from '../js/mkobj.js';
 import { mergeObjectStacks } from '../js/invent.js';
 import { pickupAtHero } from '../js/pickup.js';
@@ -18,6 +18,7 @@ import { floorObject, knownObject, uninitializedObject, } from './support/game-o
 import { placeCreatedObject, placeObject, } from '../js/floor_object.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { checkSpecialRoom } from '../js/hack.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 async function staffedShop(t, answers = [], { shoptype = SHOPBASE, keeperX = 12, keeperY = 10 } = {}) {
     await freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14, role: 'caveman',

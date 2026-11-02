@@ -10,8 +10,9 @@ import {
 } from '../js/object_data.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
-import { objectWeight } from '../js/weight.js';
+
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 
 // C mkobj.c:mksobj_init() TOOL_CLASS branches for candles, lamps, and the
 // charged tools, plus the figurine species draw.

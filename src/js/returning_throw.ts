@@ -7,7 +7,7 @@ import { flush_screen, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { addObjectToMonsterInventory } from './steal.js';
 import { dropObjectAtHero } from './hero_drop.js';
 import { makePlural } from './objnam.js';
@@ -27,6 +27,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { monsterProjectileDisplay } from './mthrowu.js';
+import { loseHeroHp } from './hack.js';
 
 export function isAutoReturningThrow(object: GameObject, weaponMask: number, state: GameState): boolean {
     return object.otyp === BOOMERANG || !!(weaponMask & W_WEP)

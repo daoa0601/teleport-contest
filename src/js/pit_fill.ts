@@ -11,7 +11,7 @@ import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -27,6 +27,7 @@ import { heroIsBlind } from './senses.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
+import { loseHeroHp } from './hack.js';
 
 const M1_WALLWALK = 0x08;
 const M2_ROCKTHROW = 0x08000000;

@@ -2,11 +2,11 @@
 import { delobj } from './invent.js';
 import { splitObjectStack } from './mkobj.js';
 import { addShopObjectToBill, costlySpot, stolenValue } from './shk.js';
-import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { hideHeroUnder } from './mon.js';
+import { roomsAt } from './hack.js';
 export async function useUpFloorObject(object, count, { state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

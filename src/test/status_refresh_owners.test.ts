@@ -13,7 +13,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, ROCK, SPE_HASTE_SELF } from '../js/object_data.js';
 import { getLine } from '../js/query.js';
-import { captureRunmodeDelay } from '../js/runmode.js';
+
 import { castSpell } from '../js/spell.js';
 import { Terminal } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -22,6 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { learnSpell } from './support/spells.js';
+import { captureRunmodeDelay } from '../js/hack.js';
 
 for (const load of [
     { description: 'low stamina', rocks: 120, message: "You don't have enough stamina to move." },

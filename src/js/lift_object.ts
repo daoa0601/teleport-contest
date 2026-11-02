@@ -4,7 +4,7 @@
 import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { heroGoldAmount } from './hero_gold.js';
+
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import {
@@ -20,12 +20,19 @@ import {
 } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { promptYesNoQuit } from './query.js';
-import {
-    calcCapacity, invWeight, MOD_ENCUMBER, nearCapacity, objectWeight,
-    pickupLoadPrefix, weightCapacity,
-} from './weight.js';
+
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import {
+    heroGoldAmount,
+    calcCapacity,
+    invWeight,
+    MOD_ENCUMBER,
+    nearCapacity,
+    weightCapacity,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
+import { pickupLoadPrefix } from './pickup.js';
 
 export interface LiftOptions {
     object: GameObject;

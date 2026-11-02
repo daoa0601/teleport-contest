@@ -14,9 +14,9 @@ import { setMonsterMalign } from './makemon.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { LARGE_BOX } from './object_data.js';
 import { deleteObject } from './shk.js';
-import { objectWeight } from './weight.js';
 import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
+import { objectWeight } from './mkobj.js';
 const HOUSECAT = MONSTER_NAME.indexOf('housecat');
 const CAT_NAME = "Schroedinger's Cat";
 export function isQuantumBox(object) {

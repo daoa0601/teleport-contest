@@ -11,7 +11,7 @@ import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
-import { heroGoldAmount } from './hero_gold.js';
+
 import { heroSpecies } from './hero_species.js';
 import { resetHeroFaint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';
@@ -28,6 +28,7 @@ import { cansee } from './vision.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
+import { heroGoldAmount } from './hack.js';
 
 const M2_DEMON = 0x00000100;
 const M2_PRINCE = 0x00000800;

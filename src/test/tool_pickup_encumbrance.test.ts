@@ -6,11 +6,12 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DART, ROCK, SACK } from '../js/object_data.js';
 import { pickupFloorObject } from '../js/pickup.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('consecutive remote pickups report an unchanged burden only once', async () => {
     await freshObjectRoom();

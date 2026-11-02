@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { POOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { moveObject } from '../js/floor_object.js';
 import { resetInputState } from '../js/input.js';
 import { unlinkObject } from '../js/mkobj.js';
 import { punishHero } from '../js/punishment.js';
@@ -12,6 +11,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { moveObject } from '../js/hack.js';
 // C ball.c:drag_ball() case 8: the hero ends two squares diagonally from the
 // ball, so the chain is seated at the midpoint between them without dragging
 // the ball and without costing extra time.

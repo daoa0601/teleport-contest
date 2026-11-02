@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { continueRun } from '../js/hack.js';
 import { D_BROKEN, D_ISOPEN, D_NODOOR, DOOR, FOUNTAIN } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { startRun } from '../js/runmode.js';
+
 import { freshObjectRoom } from './support/object-room.js';
+import { startRun } from '../js/cmd.js';
 
 // C hack.c:lookaround() skips open doorways when context.run is 8,
 // even if context.travel is no longer set.

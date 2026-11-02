@@ -4,7 +4,7 @@
 import { clearMessageWindow, flushPendingTopline, renderKeyPrompt } from './tty_topline.js';
 import { flush_screen } from './display.js';
 import { pline, setTopline } from './pline.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { CLICK_1, CLICK_2, COLNO, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, ROWNO, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
 import { readchar, takeCommandKey, takeCommandResponse } from './input.js';
@@ -20,6 +20,7 @@ import { keyText } from './prevmsg.js';
 import { controlKeyHintLines } from './cmd.js';
 import { clearCannedCommands } from './cmd.js';
 import { impossible } from './diagnostics.js';
+import { shouldShowGetposTip, showGetposTip } from './hack.js';
 
 export interface DirectionSelection {
     key: string;

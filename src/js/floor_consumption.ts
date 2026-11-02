@@ -3,7 +3,7 @@ import { delobj } from './invent.js';
 import { splitObjectStack } from './mkobj.js';
 
 import { addShopObjectToBill, costlySpot, stolenValue } from './shk.js';
-import { roomsAt } from './room.js';
+
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
@@ -12,6 +12,7 @@ import { hideHeroUnder } from './mon.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
+import { roomsAt } from './hack.js';
 
 interface FloorConsumptionOptions { state?: GameState; publish?: MessagePublisher }
 

@@ -13,7 +13,6 @@ import type { Advancement, AttributeValues, RoleKey } from './roles.js';
 import { useStartingItem } from './starting_equipment.js';
 import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
 import { artifactById } from './artifacts.js';
-import { initializeHeroRoomMembership } from './room.js';
 import {
     prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack,
 } from './hero_inventory.js';
@@ -64,7 +63,7 @@ import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
 import { hiddenGold } from './vault.js';
 
 import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
-import { invWeight, objectWeight } from './weight.js';
+
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 
@@ -75,6 +74,8 @@ import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.j
 
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { newMonsterHitPoints } from './makemon.js';
+import { invWeight } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 interface InitialInventoryEntry {
     typ: number;
@@ -524,6 +525,18 @@ export function initializeHeroSpecies(state: GameState = game): void {
     setHeroSpecies(hero.umonster, state);
 }
 
+// C u_init.c/u_init_misc() and hack.c:move_update().
+export function initializeHeroRoomMembership(state: Pick<GameState, 'u' | '_emptyShops'>): void {
+    const hero = state.u;
+    hero.urooms = [];
+    hero.urooms0 = [];
+    hero.uentered = [];
+    hero.ushops = [];
+    hero.ushops0 = [];
+    hero.ushops_entered = [];
+    hero.ushops_left = [];
+    state._emptyShops = [];
+}
 // The caller supplies the handedness roll from pre-level initialization.
 export function uInitMisc(handednessRoll: number): void {
     const g = game;

@@ -13,7 +13,7 @@ import { makePlural } from './objnam.js';
 import { promptYesNo } from './query.js';
 import { rn2 } from './rng.js';
 import { strikeSteed } from './steed.js';
-import { nearCapacity, SLT_ENCUMBER } from './weight.js';
+import { nearCapacity, SLT_ENCUMBER } from './hack.js';
 export async function admitHeroKick() {
     requirePlayingGame(game);
     const hero = game.u;

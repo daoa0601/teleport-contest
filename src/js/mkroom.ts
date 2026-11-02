@@ -20,11 +20,12 @@ import {
     THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER,
     ZOO, isok, Align2amask, In_endgame, A_NONE, G_GONE,
 } from './const.js';
+import type { RoomMap } from './map_types.js';
 import {
     CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE,
 } from './object_data.js';
 import { RANDOM_SHOP_TYPES } from './shknam.js';
-import { insideRoom } from './room.js';
+
 import { level_difficulty, inducedAlignment } from './dungeon.js';
 import { makemon, mkclass } from './makemon.js';
 import {
@@ -33,7 +34,7 @@ import {
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterAtPosition } from './steed.js';
-import { objectWeight } from './weight.js';
+
 import { deleteEngravingAt } from './engrave.js';
 import { normalDemon } from './minion.js';
 import { impossible } from './diagnostics.js';
@@ -47,6 +48,7 @@ import {
 import type { GameState } from './game_state.js';
 import type { Position, Rectangle, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
+import { objectWeight } from './mkobj.js';
 
 // Species constants (normally from monst.js, not in contest template)
 const PM_GNOME_RULER = 168;
@@ -744,3 +746,16 @@ export async function fillBeehiveRoom(croom: Room): Promise<void> {
     level.flags.has_beehive = true;
 }
 
+// C mkroom.c:inside_room().  Rectangular rooms include their one-cell
+// perimeter; irregular rooms use the encoded map identity and exclude edge
+// cells whose rectangular bounds do not describe their actual shape.
+export function insideRoom(level: RoomMap | null | undefined, room: Room | null | undefined, x: number, y: number): boolean {
+    if (!room || !Number.isInteger(x) || !Number.isInteger(y)) return false;
+    if (room.irregular) {
+        const loc = level?.at?.(x, y);
+        return !!loc && !loc.edge
+            && loc.roomno === (room.roomnoidx ?? -1) + ROOMOFFSET;
+    }
+    return x >= room.lx - 1 && x <= room.hx + 1
+        && y >= room.ly - 1 && y <= room.hy + 1;
+}

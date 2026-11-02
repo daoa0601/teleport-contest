@@ -301,19 +301,6 @@ export function wipeHeroEngraving(count: number, state: GameState = game): boole
     return wipeEngravingAt(state.u.ux, state.u.uy, count, false, state.level);
 }
 
-// C's function-call argument is evaluated before wipeEngravingAt() discovers
-// nowipeout.  Lua tutorial engravings therefore still own rnd(5) when an
-// explicit movement leaves or enters one, despite degrade=false.
-// C hack.c:maybe_smudge_engr().
-export function maybeSmudgeEngravings(x1: number, y1: number, x2: number, y2: number): void {
-    if (!heroCanReachFloor(game, { checkPit: true })) return;
-    const departure = engravingAt(x1, y1);
-    if (departure && departure.engr_type !== HEADSTONE) wipeEngravingAt(x1, y1, rnd(5), false);
-    const arrival = engravingAt(x2, y2);
-    if ((x2 !== x1 || y2 !== y1) && arrival && arrival.engr_type !== HEADSTONE) {
-        wipeEngravingAt(x2, y2, rnd(5), false);
-    }
-}
 
 // C engrave.c:rloc_engr(). Engravings need an ordinary, unoccupied floor.
 export async function relocateEngraving(engraving: Engraving, state: PlayingGameState) {

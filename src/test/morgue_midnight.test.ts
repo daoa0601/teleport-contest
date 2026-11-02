@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MORGUE, OROOM, ROOMOFFSET } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { checkSpecialRoom } from '../js/shk.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 import type { Room } from '../js/map_types.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 // C hack.c:check_special_room() MORGUE case consults calendar.c:midnight(),
 // which is the localtime()-normalized hour of getnow(), not the fixed

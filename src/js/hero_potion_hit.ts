@@ -5,7 +5,7 @@ import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { tryCallObjectType } from './do.js';
 
 import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
@@ -21,6 +21,7 @@ import { cansee } from './vision.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { loseHeroHp } from './hack.js';
 
 const POTION_CLASS = 8;
 

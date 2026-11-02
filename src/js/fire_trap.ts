@@ -22,7 +22,7 @@ import { plineWithContinuation } from './pline.js';
 import { shieldeff } from './display.js';
 import { loseHeroExperience } from './exper.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { burnAwayHeroSlime } from './hack.js';
 import { dist2 } from './hacklib.js';
 import { meltIce } from './ice.js';
@@ -40,6 +40,7 @@ import { burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory }
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasFireResistance,
 } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 export interface MonsterFireTrapEvent {
     kind: 'fire-trap';

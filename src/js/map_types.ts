@@ -281,3 +281,6 @@ export interface CachedLevelState {
 export type FloorObjects = Array<Array<GameObject[] | null | undefined> | null | undefined>;
 
 export type { LevelTimer };
+
+// C mkroom.h: rooms[] and subrooms[] share one encoded index space.
+export type RoomMap = Pick<GameMap, 'rooms' | 'subrooms' | 'at' | 'flags'>;

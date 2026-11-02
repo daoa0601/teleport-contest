@@ -15,7 +15,6 @@ import { displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import { delobj } from './invent.js';
@@ -28,6 +27,7 @@ import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteO
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory, getObjectLocation } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 const BLIND_GAS = [
     'humid', 'odorless', 'pungent', 'chilling', 'acrid', 'biting',
 ];

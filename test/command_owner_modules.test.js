@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { showEncyclopediaInformation } from '../js/pager.js';
 import { FOUNTAIN, HWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -14,6 +14,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { kickDirection, runExtendedCommand } from './support/commands.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 function messageLog() {
     return [...game._messageHistory, game._toplines, game._pending_message].join('\n');
 }

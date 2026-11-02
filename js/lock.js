@@ -19,7 +19,6 @@ import { findDrawbridgeAt } from './dbridge.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { roomsAt } from './room.js';
 import { heroPassesWalls } from './hero_species.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { isContainer } from './container.js';
@@ -55,6 +54,7 @@ import { formatHeardMessage } from './hero_speech.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
 import { impossible } from './diagnostics.js';
+import { roomsAt } from './hack.js';
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
 const WEAPON_CLASS = 2;

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkcorpstat, mksobj, set_corpsenm } from '../js/mkobj.js';
 import { CANDY_BAR, CORPSE, KELP_FROND, LOADSTONE, LUCKSTONE, ROCK, SPE_NOVEL, STATUE, TIN, } from '../js/object_data.js';
 import { MONSTER_BODY_META, MONSTER_NAME } from '../js/monster_data.js';
-import { objectWeight } from '../js/weight.js';
 import { objectTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_HUMAN = MONSTER_NAME.indexOf('human');
 // C mkobj.c:mksobj_init() FOOD_CLASS and GEM_CLASS branches for the rarely

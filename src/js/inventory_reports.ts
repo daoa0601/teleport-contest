@@ -25,7 +25,7 @@ import { possessiveName } from './hacklib.js';
 import { distantObjectName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 
 import { currency } from './currency.js';
-import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
+import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
 
 import { currentShopResident, shopkeeperInOwnShop, unpaidObjectCost, reportShopFinances } from './shk.js';
@@ -37,6 +37,7 @@ import {
 import { LEASH } from './object_data.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterIsHumanoid } from './monster_data.js';
+import { heroGoldAmount } from './hack.js';
 
 type InventoryReport = 'gold' | 'weapon' | 'armor' | 'rings' | 'amulet' | 'tools' | 'inuse' | 'type';
 type Buc = 'B' | 'U' | 'C' | 'X';

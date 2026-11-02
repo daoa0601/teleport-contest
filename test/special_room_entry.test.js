@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANTHOLE, BARRACKS, BEEHIVE, COURT, MAXNROFROOMS, MORGUE, OROOM, ROOMOFFSET, SWAMP, THRONE, ZOO, } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { checkSpecialRoom } from '../js/shk.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { checkSpecialRoom } from '../js/hack.js';
 for (const entry of [
     { type: ANTHOLE, message: 'You enter an anthole!' },
     { type: ZOO, message: "Welcome to David's treasure zoo!" },

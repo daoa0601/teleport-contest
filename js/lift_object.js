@@ -3,7 +3,6 @@
 import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { heroGoldAmount } from './hero_gold.js';
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { BAG_OF_HOLDING, BOULDER, GOLD_PIECE, LOADSTONE, SCR_SCARE_MONSTER, } from './object_data.js';
@@ -12,7 +11,9 @@ import { objectQuantity } from './mkobj.js';
 import { definiteName, objectCombatName, wishedObjectPresentation, observeObjectForNaming, } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { promptYesNoQuit } from './query.js';
-import { calcCapacity, invWeight, MOD_ENCUMBER, nearCapacity, objectWeight, pickupLoadPrefix, weightCapacity, } from './weight.js';
+import { heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, nearCapacity, weightCapacity, } from './hack.js';
+import { objectWeight } from './mkobj.js';
+import { pickupLoadPrefix } from './pickup.js';
 const COIN_CLASS = 12;
 const INVENTORY_SLOT_COUNT = 52;
 const M2_ROCKTHROW = 0x08000000;

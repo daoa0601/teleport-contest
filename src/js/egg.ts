@@ -67,8 +67,9 @@ import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import { tameMonster } from './dog.js';
+import { objectWeight } from './mkobj.js';
 
 const G_UNIQ = 0x1000;
 const M1_FLY = 0x00000001;

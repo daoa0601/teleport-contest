@@ -1,4 +1,4 @@
-import { nearCapacity } from '../js/weight.js';
+
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +7,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { THRONE } from '../js/const.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import { resetInputState } from '../js/input.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
@@ -15,6 +15,7 @@ import { initRng } from '../js/rng.js';
 import { throneSitEffect } from '../js/throne.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity, heroGoldAmount } from '../js/hack.js';
 
 void test('a throne takes readied gold but leaves gold inside a carried bag', async () => {
     await freshObjectRoom({ flags: { debug: true } });

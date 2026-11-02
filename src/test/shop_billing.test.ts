@@ -16,8 +16,12 @@ import {
 } from '../js/object_data.js';
 import { unlinkObject, addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
 import {
-    addShopObjectToBill, billedPickupQuote, chargeAlteredUnpaidObject, checkSpecialRoom,
-    getCostOfShopItem, settleThrownShopObject, splitObjectBill,
+    addShopObjectToBill,
+    billedPickupQuote,
+    chargeAlteredUnpaidObject,
+    getCostOfShopItem,
+    settleThrownShopObject,
+    splitObjectBill
 } from '../js/shk.js';
 import { splitObjectStack } from '../js/mkobj.js';
 import { mergeObjectStacks } from '../js/invent.js';
@@ -32,6 +36,7 @@ import {
 } from '../js/floor_object.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 

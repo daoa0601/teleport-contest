@@ -5,12 +5,12 @@ import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
 import { MSLOW } from '../js/const.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { RUBY, SACK } from '../js/object_data.js';
 import { hasIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { capturedScreen, screenText } from './support/screen.js';
+import { heroGoldAmount } from '../js/hack.js';
 async function playRecipe(name, { seed = 13, gender = 'male', observe, stopWhen } = {}) {
     const plan = makeRecipe(name, { seed, datetime: '20000110090000',
         character: { role: 'wizard', race: 'human', gender, align: 'neutral' } });

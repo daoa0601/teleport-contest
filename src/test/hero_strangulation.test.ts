@@ -12,13 +12,14 @@ import { rhack } from '../js/cmd.js';
 import { _statusLine2 } from '../js/botl.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { heroIsStrangled } from '../js/hero_strangulation.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_STRANGULATION, LEATHER_ARMOR } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { loseHeroHp } from '../js/hack.js';
 
 async function wearSetupAmulet(amulet: GameObject) {
     pushKeys(' ');

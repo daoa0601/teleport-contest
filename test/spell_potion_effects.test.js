@@ -14,7 +14,6 @@ import { resetInputState } from '../js/input.js';
 import { LONG_SWORD, MUMMY_WRAPPING, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, SPEED_BOOTS, } from '../js/object_data.js';
 import { levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from '../js/properties.js';
 import { heroDetectsMonsters } from '../js/senses.js';
-import { switchHeroTerrain } from '../js/terrain_movement.js';
 import { castSpell } from '../js/spell.js';
 import { applyPotionSpell } from '../js/spell.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -23,6 +22,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { switchHeroTerrain } from '../js/hack.js';
 async function source(type, properties = {}) {
     return addInventoryObject(type, { initialize: false, ...properties });
 }

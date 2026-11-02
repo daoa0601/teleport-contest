@@ -23,8 +23,8 @@ const changes = {
         'if (false) {'],
     stasis: ['teleport_rules.js', '&& stasisUntil >= (state?.moves ?? 1);',
         '&& stasisUntil > (state?.moves ?? 1);'],
-    weight: ['weight.js', 'return base * quantity(object);', 'return base * quantity(object) + 1;'],
-    capacity: ['weight.js', 'return inventoryWeight(state) - weightCapacity(state);',
+    weight: ['mkobj.js', 'return base * quantity(object);', 'return base * quantity(object) + 1;'],
+    capacity: ['hack.js', 'return inventoryWeight(state) - weightCapacity(state);',
         'return inventoryWeight(state) - weightCapacity(state) + 1;'],
     damage: ['weapon.js', 'return applyErosion(object, damage);',
         'return applyErosion(object, damage) + 1;'],
@@ -110,7 +110,8 @@ const { setHeroSpecies } = await import('../../js/hero_species.js');
 const stateModule = await import('../../js/gstate.js');
 const { initRng, enableRngLog, getRngLog } = await import('../../js/rng.js');
 const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
-const weight = await import('../../js/weight.js');
+const mkobjWeight = await import('../../js/mkobj.js');
+const hackWeight = await import('../../js/hack.js');
 const { rollPhysicalWeaponDamage } = await import('../../js/weapon.js');
 const { findHeroMeleeHitThreshold } = await import('../../js/hero_attack_accuracy.js');
 const { wearHeroAccessory } = await import('../../js/do_wear.js');
@@ -231,10 +232,10 @@ async function runCase(input) {
     enableRngLog();
     let result, armorPenalty = 0;
     switch (input.target) {
-    case 0: result = weight.objectWeight(object); break;
-    case 1: result = weight.invWeight(game); break;
-    case 2: result = weight.calcCapacity(game, input.extra); break;
-    case 3: result = weight.nearCapacity(game); break;
+    case 0: result = mkobjWeight.objectWeight(object); break;
+    case 1: result = hackWeight.invWeight(game); break;
+    case 2: result = hackWeight.calcCapacity(game, input.extra); break;
+    case 3: result = hackWeight.nearCapacity(game); break;
     case 4: result = rollPhysicalWeaponDamage(object, monster); break;
     case 5: {
         const hit = await findHeroMeleeHitThreshold(monster, input.method,

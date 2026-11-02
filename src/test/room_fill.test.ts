@@ -16,11 +16,12 @@ import {
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
+
 import { floorObjects } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createRoom } from './support/topology.js';
+import { objectWeight } from '../js/mkobj.js';
 function roomState({ seed, depth = 1, amulet = false, rogue = false }: { seed: number; depth?: number; amulet?: boolean; rogue?: boolean }) {
     freshGame({
         hero: {

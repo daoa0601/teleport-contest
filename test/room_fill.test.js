@@ -9,11 +9,11 @@ import { level_difficulty } from '../js/dungeon.js';
 import { CHEST, DART, LARGE_BOX, LUMP_OF_ROYAL_JELLY, } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { objectWeight } from '../js/weight.js';
 import { floorObjects } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createRoom } from './support/topology.js';
+import { objectWeight } from '../js/mkobj.js';
 function roomState({ seed, depth = 1, amulet = false, rogue = false }) {
     freshGame({
         hero: {

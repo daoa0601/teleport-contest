@@ -3,13 +3,14 @@ import test from 'node:test';
 import { STONING } from '../js/const.js';
 import { doquit } from '../js/end.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/end.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { loseHeroHp } from '../js/hack.js';
 
 async function endingRoom() {
     await freshObjectRoom({ flags: { bones: false, disclose: 'none', tombstone: false } });

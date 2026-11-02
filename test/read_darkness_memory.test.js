@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newsym } from '../js/display.js';
-import { moveObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_LIGHT } from '../js/object_data.js';
@@ -10,6 +9,7 @@ import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { moveObject } from '../js/hack.js';
 void test('darkness forgets a punishment ball and chain which are no longer visible', async () => {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

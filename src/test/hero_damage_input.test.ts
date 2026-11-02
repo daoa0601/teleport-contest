@@ -7,7 +7,7 @@ import { flush_screen } from '../js/display.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -19,6 +19,7 @@ import { initRng } from '../js/rng.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { loseHeroHp } from '../js/hack.js';
 
 function visibleScreen(): string {
     return requireGameDisplay().grid

@@ -11,12 +11,18 @@ import { finishEnvironmentalMonsterDeath, killGenocidedMonster, removeMonsterFro
 import { buryObject } from '../js/dig.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
-import { addShopObjectToBill, checkSpecialRoom, addShopDamage, itemizedShopBill, deleteObject } from '../js/shk.js';
+import {
+    addShopObjectToBill,
+    addShopDamage,
+    itemizedShopBill,
+    deleteObject
+} from '../js/shk.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { migrateMonsterOffLevel } from '../js/dog.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 async function enterAt(x: number, y: number) {
     requirePlayingGame(game);

@@ -19,7 +19,7 @@ import { FOOD_RATION, HORN_OF_PLENTY, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOO
 import { objectName, observeObjectForNaming } from './objnam.js';
 import { rn2 } from './rng.js';
 import { addShopObjectToBill } from './shk.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
 export async function useHornOfPlenty(horn, { tipping = false, target = null, } = {}) {
     requirePlayingGame(game);
     if (horn.spe < 1) {

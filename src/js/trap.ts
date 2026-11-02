@@ -76,7 +76,7 @@ import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { clearPitConnections } from './pit_connections.js';
 import { experienceRankIndex } from './exper.js';
 import { mksobj } from './mkobj.js';
-import { objectWeight } from './weight.js';
+
 import { buryObject } from './dig.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { monsterAtPosition } from './steed.js';
@@ -87,6 +87,7 @@ import { rewardMonsterRescue } from './untrap.js';
 import { heroSpecies } from './hero_species.js';
 import { hasCarriedProperty, hasWornProperty } from './properties.js';
 import { ordinalSuffix, possessiveName } from './hacklib.js';
+import { objectWeight } from './mkobj.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH

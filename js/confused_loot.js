@@ -15,8 +15,8 @@ import { courtMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
-import { objectWeight } from './weight.js';
 import { rn2, rnd } from './rng.js';
+import { objectWeight } from './mkobj.js';
 export async function reverseLoot() {
     if (!rn2(3)) {
         let remaining = game.inventory.length;

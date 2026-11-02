@@ -16,7 +16,7 @@ import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { touchArtifactByHero } from './artifacts.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { triggerChestTrap } from './chest_trap.js';
 import { nomul } from './hack.js';
 import { game } from './gstate.js';
@@ -63,7 +63,7 @@ import { paranoidYesNoQuit, promptChoice, tty_yn_function } from './query.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
-import { objectWeight } from './weight.js';
+
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
 import {
@@ -79,6 +79,8 @@ import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL,
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { CountedSelection, MenuUnderlay, MultiSelectItem, MultiSelectSection, SelectableMenuItem } from './windows.js';
+import { loseHeroHp } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 type ObjectMatcher = (object: GameObject) => boolean;
 interface ContainerCategory {

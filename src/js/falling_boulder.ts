@@ -12,7 +12,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { ScrollEffectOptions } from './read.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -31,9 +31,11 @@ import { inventoryItemDescription } from './invent.js';
 import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn1 } from './rng.js';
 import { cansee } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { finishEnvironmentalMonsterDeath, wakeMonster } from './mon.js';
+import { loseHeroHp } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 interface FallingBoulderOptions extends Pick<ScrollEffectOptions,
     'state' | 'finishHeroDeath' | 'finishMonsterKill'> {

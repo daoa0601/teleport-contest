@@ -8,10 +8,8 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
-import { loseHeroHp } from './hero_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHatesSilver } from './hero_species.js';
-import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
 import { BELL_OF_OPENING, LEASH } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { uncurseObjectState } from './mkobj.js';
@@ -25,6 +23,7 @@ import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, o
 import { propertyIsActive } from './properties.js';
 import { bypassObject, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { surfaceName } from './terrain_name.js';
+import { loseHeroHp, heroIsOnStairs, isInvocationPosition } from './hack.js';
 const TOOL_CLASS = 6;
 const SILVER = 14;
 // Losing a form while handling an item can enter this routine again.

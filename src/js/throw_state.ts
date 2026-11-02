@@ -11,9 +11,9 @@ import type { MessagePublisher } from './pline.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
 import { definiteObjectAction, objectName } from './objnam.js';
-import {
-    calcCapacity, objectWeight, SLT_ENCUMBER,
-} from './weight.js';
+import { calcCapacity, SLT_ENCUMBER } from './hack.js';
+import { objectWeight } from './mkobj.js';
+
 
 export interface ThrowStateOptions {
     state?: GameState;

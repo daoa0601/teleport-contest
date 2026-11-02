@@ -4,7 +4,7 @@ import { visibleCommandKey } from './cmd.js';
 import { glyphAt, randomBogusMonsterName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { withMapObject } from './map_object_description.js';
 import { roguePlayerName } from './do_name.js';
 import { callObjectType, objectTypeIsCallable } from './do_name.js';
@@ -13,6 +13,7 @@ import { heroFormHidesUnderObjects } from './polyself.js';
 import { rankOf } from './quest_pager.js';
 import { rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
+import { showGetposTip } from './hack.js';
 // C do_name.c:namefloorobj().
 export async function nameFloorObject() {
     requirePlayingGame(game);

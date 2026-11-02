@@ -5,13 +5,12 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { nomul } from '../js/hack.js';
 import { scoreDeathCause } from '../js/end.js';
-import { checkHeroAttackOverexertion } from '../js/hero_overexertion.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { nearCapacity } from '../js/weight.js';
 import { freshGame } from './support/game-state.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { checkHeroAttackOverexertion, nearCapacity } from '../js/hack.js';
 async function burdenHero(hero = {}) {
     freshGame({
         hero,

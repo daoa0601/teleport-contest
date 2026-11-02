@@ -13,7 +13,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { resolveHeroCombatEngulf } from './hero_combat_engulf.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
-import { damageHeroFromMonster } from './hero_damage.js';
+
 import { releaseHeroGrip } from './hero_expulsion.js';
 import {
     heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact,
@@ -45,6 +45,7 @@ import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { wakeAttackedMonster } from './mon.js';
+import { damageHeroFromMonster } from './mhitu.js';
 
 const S_KOBOLD = 11;
 const S_ORC = 15;

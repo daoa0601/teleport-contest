@@ -6,10 +6,10 @@ import { resetInputState } from '../js/input.js';
 import { placeHeroOnLevel } from '../js/hero_location.js';
 import { LARGE_BOX, ROCK } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
-import { startRun } from '../js/runmode.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { startRun } from '../js/cmd.js';
 function topRow() {
     return requireGameDisplay(game).grid[0]?.map(cell => cell.ch).join('') ?? '';
 }

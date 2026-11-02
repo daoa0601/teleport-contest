@@ -13,12 +13,13 @@ import { game } from '../js/gstate.js';
 import { healHeroLegs, woundHeroLegs } from '../js/hero_legs.js';
 import { FOOD_RATION, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { startHeroPetrification } from '../js/stoning.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('wounding both legs lowers temporary Dexterity once and reduces carrying capacity', async () => {
     await freshObjectRoom();

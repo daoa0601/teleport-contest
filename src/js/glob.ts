@@ -23,9 +23,7 @@ import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './tim
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import {
-    nearCapacity, objectWeight,
-} from './weight.js';
+
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimer } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -34,6 +32,8 @@ import type { MessagePublisher } from './pline.js';
 import type { DueObjectTimer } from './timeout.js';
 import { ownedObjectName, objectTypeName } from './objnam.js';
 import { activelyEatingGlob } from './eat.js';
+import { nearCapacity } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 type RandomBelow = (limit: number) => number;
 interface GlobMergeOptions {

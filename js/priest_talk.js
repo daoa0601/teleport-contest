@@ -5,7 +5,6 @@ import { A_WIS } from './const.js';
 import { currency } from './currency.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { heroGoldAmount, monsterGoldAmount } from './hero_gold.js';
 import { offerGoldToMonster } from './minion.js';
 import { monsterAlignmentType } from './priest.js';
 import { monsterName } from './do_name.js';
@@ -15,6 +14,7 @@ import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, propertyTimeout,
 import { rn1, rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { moneyToHero } from './shk.js';
+import { heroGoldAmount, monsterGoldAmount } from './hack.js';
 export async function talkToPriest(priest, state) {
     const coaligned = state.u.ualign.type === monsterAlignmentType(priest);
     const strayed = state.u.ualign.record < 0;

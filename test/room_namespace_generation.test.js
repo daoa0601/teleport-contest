@@ -3,8 +3,8 @@ import test from 'node:test';
 import { MAXNROFROOMS, ROOMOFFSET } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
-import { roomForIndex, roomsAt } from '../js/room.js';
 import { roomBindings } from './support/themed-room-bindings.js';
+import { roomForIndex, roomsAt } from '../js/hack.js';
 void test('generated subrooms start after the ordinary room array sentinel', async (t) => {
     const lua = await roomBindings(t);
     await lua.executeAsync(`

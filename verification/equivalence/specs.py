@@ -146,7 +146,7 @@ HACKLIB = 'js/hacklib.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
 JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
-            'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js')
+            'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js')
 
 SPECS = [
     Spec('rn2', 'rn2', 'rn2', [('x', INT)], pre=lambda s: [s['x'] >= 1],
@@ -236,6 +236,7 @@ CONST = 'js/const.js'
 WEAPON_DAMAGE = 'js/weapon.js'
 HIT_BONUS = 'js/hero_attack_accuracy.js'
 POLYSELF = 'js/polyself.js'
+HACK = 'js/hack.js'
 
 
 def int_argument(s, name):
@@ -271,10 +272,10 @@ SPECS += [
          probes=[('level outside C int', lambda s: [s['xlev'] == 2 ** 32 + 1])],
          mutants=[(EXPER, 'Math.trunc((level + 2) / 4)', 'Math.trunc((level + 1) / 4)')]),
     Spec('rounddiv', 'rounddiv', 'roundDiv', [('x', LONG), ('y', INT)],
-         js_file=POLYSELF,
+         js_file=HACK,
          pre=lambda s: [s['x'] >= -10 ** 8, s['x'] <= 10 ** 8, s['y'] >= 1, s['y'] <= 10 ** 6],
          probes=[('negative denominator', lambda s: [s['x'] == 2, s['y'] == -3])],
-         mutants=[(POLYSELF, 'Math.trunc(denominator / 2)', 'Math.trunc(denominator / 3)')]),
+         mutants=[(HACK, 'Math.trunc(denominator / 2)', 'Math.trunc(denominator / 3)')]),
     Spec('Align2amask', 'align_to_mask', 'Align2amask', [('alignment', INT)],
          js_file=CONST,
          pre=lambda s: [z3.Or(*(s['alignment'] == v for v in (-128, -1, 0, 1)))],

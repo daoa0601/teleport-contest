@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
 import { setHeroTrap } from '../js/hero_traps.js';
 import { punishHero } from '../js/punishment.js';
-import { moveObject, placeObjectSynchronously, remove_object } from '../js/floor_object.js';
+import { placeObjectSynchronously, remove_object } from '../js/floor_object.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { feel_location } from '../js/display.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
@@ -19,6 +19,7 @@ import { vision_recalc } from '../js/vision.js';
 import { initRng } from '../js/rng.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { moveObject } from '../js/hack.js';
 
 // Real punishment ownership: punishHero creates the ball and chain and
 // places them; repositioning uses the shared floor owners only.

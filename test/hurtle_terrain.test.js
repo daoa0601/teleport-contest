@@ -6,11 +6,11 @@ import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { switchHeroTerrain } from '../js/terrain_movement.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { switchHeroTerrain } from '../js/hack.js';
 for (const property of ['levitation', 'flying']) {
     for (const terrain of [STONE, DOOR, LAVAWALL]) {
         const name = terrain === STONE ? 'solid rock' : terrain === DOOR ? 'a closed door' : 'a lava wall';

@@ -8,9 +8,10 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, ROCK } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('shrinking out of a cloak announces the new load only once', async () => {
     await freshObjectRoom();

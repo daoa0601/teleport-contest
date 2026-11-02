@@ -7,7 +7,6 @@ import assert from 'node:assert/strict';
 import { ROOM } from '../js/const.js';
 import { decodeScreen } from '../frozen/screen-decode.mjs';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
 import { currentConductLines, finalConductLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import { FLINT, FOOD_RATION, POT_WATER, SACK, SPE_FORCE_BOLT, SPE_HEALING, SPE_PROTECTION, TOUCHSTONE, WAN_WISHING, } from '../js/object_data.js';
@@ -15,6 +14,7 @@ import { parseNethackrc } from '../js/options.js';
 import { roles } from '../js/roles.js';
 import { makedog } from '../js/u_init.js';
 import { completeHeroStartup, prepareHeroStartup, } from './support/startup.js';
+import { heroGoldAmount } from '../js/hack.js';
 async function start(roleKey, raceName = 'human', flags = { pauper: true }) {
     const state = await completeHeroStartup({ role: roleKey, race: raceName, flags });
     requireStartingKnowledge(state);

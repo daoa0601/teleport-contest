@@ -17,11 +17,12 @@ import {
     SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { objectWeight } from './weight.js';
+
 import { randomTypeByDescription } from './objnam.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { migrateMonsterOffLevel } from './dog.js';
+import { objectWeight } from './mkobj.js';
 
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');

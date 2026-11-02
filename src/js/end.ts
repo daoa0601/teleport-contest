@@ -48,7 +48,7 @@ import { deepestLevelReached, depth, upstart } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './vault.js';
 
-import { heroGoldAmount } from './hero_gold.js';
+
 import { restoreHeroNutrition } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import {
@@ -77,6 +77,7 @@ import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './monmove.js';
+import { heroGoldAmount } from './hack.js';
 
 
 export interface DeathDamage {

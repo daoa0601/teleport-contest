@@ -4,7 +4,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { flipCoin } from '../js/apply.js';
 import { A_DEX, HOLE, NO_MINVENT } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import { resetInputState } from '../js/input.js';
 import { GAUNTLETS_OF_FUMBLING, GOLD_PIECE, LEATHER_GLOVES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -13,6 +13,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 for (const [seed, face] of [
     [1n, 'heads'],

@@ -11,7 +11,6 @@ import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from 
 import { grantPrayerFavor } from '../js/pray.js';
 import { magicNegation } from '../js/mhitu.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LONG_SWORD, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -36,6 +35,7 @@ import { syncBlindness } from '../js/senses.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { saveMonsterTraits } from '../js/mkobj.js';
+import { loseHeroHp } from '../js/hack.js';
 async function prayerRoom({ hero = {}, flags = {}, ...room } = {}) {
     await freshObjectRoom({
         ...room,

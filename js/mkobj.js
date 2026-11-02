@@ -21,7 +21,8 @@ import { forgetTempleEntry } from './priest.js';
 import { copyPetData, copyShopkeeperData, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
-import { objectWeight } from './weight.js';
+import { OBJECT_WEIGHT, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION } from './object_data.js';
+import { LARGEST_INT } from './const.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
 import { objectProb } from './o_init.js';
@@ -1367,5 +1368,76 @@ export async function placeTreeFruit(x, y, state = game, random = rn2) {
         throw new RangeError('Tree fruit selection is outside the fruit table.');
     const fruit = await mksobj(fruitType, true, false);
     placeCreatedObject(fruit, x, y, state);
+}
+const WEIGHTED_CONTENT_TYPES = new Set([
+    LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, STATUE,
+]);
+export function quantity(object) {
+    return object?.quan ?? object?.quantity ?? 1;
+}
+export function objectWeight(object) {
+    if (!object)
+        return 0;
+    // C stores a stack's complete weight in owt.  Several early JS object
+    // constructors still leave owt at the one-item metadata value after
+    // changing quan, so reconstruct ordinary stack weight from the table.
+    const base = requireObjectData(OBJECT_WEIGHT, object.otyp);
+    const count = quantity(object);
+    if (count < 1)
+        return 0;
+    const species = object.corpsenm;
+    const uneatenNutrition = object.oeaten ?? 0;
+    // A top-level coin stack is treated specially by inv_weight(), but coin
+    // inside a container reaches mkobj.c:weight() and therefore weighs at
+    // least one unit even below 50 pieces.
+    if (object.oclass === 12)
+        return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
+    // C mkobj.c:weight(): globs keep quantity one while absorption and
+    // SHRINK_GLOB mutate their complete weight directly in owt.  This check
+    // precedes partly-eaten food scaling because oeaten is also glob mass.
+    if (object.globby)
+        return object.owt ?? base ?? 0;
+    if (object.otyp === CORPSE && species !== undefined
+        && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
+        const [bodyWeight = 0, nutrition = 0] = MONSTER_BODY_META[species] || [];
+        const fullWeight = Math.min(LARGEST_INT, bodyWeight * count);
+        if (uneatenNutrition > 0) {
+            return Math.max(1, nutrition > 0
+                ? Math.trunc(fullWeight * Math.min(uneatenNutrition, nutrition) / nutrition)
+                : 0);
+        }
+        return fullWeight;
+    }
+    // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
+    // remaining nutrition per item, including stacks of partly eaten wishes.
+    if (object.oclass === 7 && uneatenNutrition > 0 && base > 0) {
+        const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
+        if (fullNutrition > 0) {
+            return Math.max(1, Math.trunc(base * count * Math.min(uneatenNutrition, fullNutrition) / fullNutrition));
+        }
+    }
+    if (WEIGHTED_CONTENT_TYPES.has(object.otyp)) {
+        let ownWeight = base || object.owt || 0;
+        if (object.otyp === STATUE && species !== undefined
+            && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
+            const bodyWeight = MONSTER_BODY_META[species]?.[0] ?? 0;
+            const size = MONSTER_SIZE[species] ?? 0;
+            ownWeight = Math.max(Math.trunc(3 * bodyWeight / 2), (2 * size + 1) * 100) * quantity(object);
+        }
+        let contentsWeight = (object.contents || []).reduce((total, content) => total + objectWeight(content), 0);
+        if (object.otyp === BAG_OF_HOLDING) {
+            contentsWeight = object.cursed ? contentsWeight * 2
+                : object.blessed ? Math.trunc((contentsWeight + 3) / 4)
+                    : Math.trunc((contentsWeight + 1) / 2);
+        }
+        return ownWeight + contentsWeight;
+    }
+    if (object.otyp === HEAVY_IRON_BALL && object.owt)
+        return object.owt;
+    if (object.otyp === CANDELABRUM_OF_INVOCATION && object.spe)
+        return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
+    if (base > 0)
+        return base * quantity(object);
+    return Math.trunc((count + 1) / 2);
 }
 //# sourceMappingURL=mkobj.js.map

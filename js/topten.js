@@ -10,7 +10,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { roles } from './roles.js';
 import { rn2, rnd } from './rng.js';
 import { loadScoreRecords } from './score_records.js';
-import { objectWeight } from './weight.js';
+import { objectWeight } from './mkobj.js';
 const FIRST_PLAYER_MONSTER = MONSTER_NAME.indexOf('archeologist');
 const LAST_PLAYER_MONSTER = MONSTER_NAME.indexOf('wizard');
 const TOP_NAME_RANK = 10; // sysopt.tt_oname_maxrank in the pinned build

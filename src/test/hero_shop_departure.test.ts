@@ -14,11 +14,12 @@ import { mkstairs } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { linkObjectToMonsterInventory, unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { CHEST, DAGGER } from '../js/object_data.js';
-import { addShopObjectToBill, checkSpecialRoom, leaveHeroShop } from '../js/shk.js';
+import { addShopObjectToBill, leaveHeroShop } from '../js/shk.js';
 import { knownObject, floorObject, addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 const kopNames = ['Keystone Kop', 'Kop Sergeant', 'Kop Lieutenant', 'Kop Kaptain'];
 const isKop = (monster: Monster) => kopNames.includes(MONSTER_NAME[monster.mnum] ?? '');

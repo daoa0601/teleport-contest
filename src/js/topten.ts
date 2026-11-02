@@ -11,11 +11,12 @@ import { setMonsterGivenName } from './do_name.js';
 import { roles } from './roles.js';
 import { rn2, rnd } from './rng.js';
 import { loadScoreRecords } from './score_records.js';
-import { objectWeight } from './weight.js';
+
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { ScoreRecord } from './score_records.js';
+import { objectWeight } from './mkobj.js';
 
 interface ToptenOptions {
     state?: GameState;

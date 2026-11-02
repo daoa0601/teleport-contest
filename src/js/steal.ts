@@ -53,12 +53,12 @@ import { heroHasConflict } from './hero_conflict.js';
 import { dist2 } from './hacklib.js';
 import { randomMonsterRelocation, relocateObjectRandomly } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { roomsAt } from './room.js';
+
 import { openHoldingTrap } from './trap.js';
 import { armorSimpleName, stopDonning } from './do_wear.js';
 
 import { removeHeroEquipment } from './hero_equipment.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { detachHeroGold } from './hero_gold.js';
 import { isWeldedPrimary } from './wield.js';
 import { isBeingTakenOff } from './do_wear.js';
 
@@ -88,6 +88,7 @@ import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { makeMonsterFlee } from './monmove.js';
+import { roomsAt, heroGoldAmount } from './hack.js';
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster: Monster, state: GameState): string {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });

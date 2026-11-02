@@ -26,13 +26,14 @@ import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { floatHeroUp } from '../js/terrain_movement.js';
 import { runObjectTimer } from '../js/timer_effects.js';
 import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { fireQuiveredGold } from './support/gold-arena.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('the first drop-side load check starts from an unencumbered baseline', async () => {
     await freshObjectRoom();

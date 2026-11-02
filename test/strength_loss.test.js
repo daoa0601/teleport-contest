@@ -1,4 +1,3 @@
-import { nearCapacity } from '../js/weight.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,6 +23,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon } from './support/topology.js';
+import { nearCapacity } from '../js/hack.js';
 for (const lifeSaving of [false, true]) {
     void test(lifeSaving
         ? 'weakening finishes its maximum-HP and strength loss after life saving'

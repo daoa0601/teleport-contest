@@ -6,10 +6,10 @@ import { glyphAt, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { startRun } from '../js/runmode.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { startRun } from '../js/cmd.js';
 void test('stopping a run leaves hallucinated floor appearances until the next input refresh', async () => {
     await freshObjectRoom({ hero: { hallucinationTurns: 20, invisible: true } });
     game._moveloopStarted = true;

@@ -13,7 +13,7 @@ import {
 } from './const.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { MapLocation, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
@@ -44,9 +44,10 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { setHeroTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';
-import { roomsAt } from './room.js';
+
 import { addShopDamage } from './shk.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+import { loseHeroHp, roomsAt, finishDestinationSpotEffects } from './hack.js';
+
 
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;

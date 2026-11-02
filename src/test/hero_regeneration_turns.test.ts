@@ -7,12 +7,13 @@ import { MOD_ENCUMBER, Upolyd } from '../js/const.js';
 import { regenerateHeroHp } from '../js/hero_regeneration.js';
 import { initRng } from '../js/rng.js';
 import { ROCK } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('landing with a stressed load still allows HP recovery for the airborne turn', async () => {
     let recovered = 0;

@@ -10,11 +10,12 @@ import { SACK } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timer_effects.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { nearCapacity } from '../js/hack.js';
 
 for (const [species, quantity, wielded, expected] of [
     ['kobold', 1, false, 'Your kobold corpse rots away.'],

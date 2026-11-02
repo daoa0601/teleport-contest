@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { heroGoldAmount } from '../js/hero_gold.js';
+
 import {
     CROSSBOW, CROSSBOW_BOLT, DWARVISH_CLOAK,
     DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
@@ -17,6 +17,7 @@ import {
 import { races, roles } from '../js/roles.js';
 import { uInitInventoryAttrs } from '../js/u_init.js';
 import { completeHeroStartup } from './support/startup.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 const FOOD_CLASS = 7;
 

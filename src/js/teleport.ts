@@ -8,20 +8,20 @@ import { updateHeroRegions, updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
-import { heroLocomotion } from './hero_locomotion.js';
+
 import { randomTeleportDepth } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
 import { clampHoleDestination } from './hole_destination.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { announceInvocationSquare } from './invocation.js';
+
 import { noticeAllMonsters, withMonsterNoticesBlocked } from './hack.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_monsters } from './display.js';
 import { vision_recalc, couldsee } from './vision.js';
@@ -34,13 +34,23 @@ import { spendHeroNutrition } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
-import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
+import {
+    costlySpot,
+    shopkeeperInOwnShop,
+    findObjectOwner,
+    onBillEntry,
+    stolenValue,
+    makeAngryShopkeeper,
+    addShopObjectToBill,
+    costlyAdjacent,
+    removeObjectAndContentsFromBill
+} from './shk.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
+
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
@@ -71,7 +81,18 @@ import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
 import { unlinkObject } from './mkobj.js';
-import { roomsAt } from './room.js';
+import {
+    shouldShowGetposTip,
+    showGetposTip,
+    heroLocomotion,
+    announceInvocationSquare,
+    checkSpecialRoom,
+    exceedsActionCapacity,
+    nearCapacity,
+    SLT_ENCUMBER,
+    roomsAt,
+} from './hack.js';
+
 
 type RandomBelow = (limit: number) => number;
 type LevelGameState = GameState & { level: GameMap };

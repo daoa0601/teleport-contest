@@ -9,13 +9,14 @@ import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { checkSpecialRoom, shopkeeperForHero } from '../js/shk.js';
+import { shopkeeperForHero } from '../js/shk.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { removeMonsterFromGame } from '../js/mon.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { checkSpecialRoom } from '../js/hack.js';
 
 async function enterAt(x: number, y: number) {
     requirePlayingGame(game);

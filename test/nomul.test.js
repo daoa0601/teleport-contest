@@ -5,12 +5,12 @@ import { stopDonning } from '../js/do_wear.js';
 import { nomul } from '../js/hack.js';
 import { game } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { startRun } from '../js/runmode.js';
 import { SPEED_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { startRun } from '../js/cmd.js';
 void test('an involuntary delay ends running and queued commands', async () => {
     await freshObjectRoom();
     startRun(1, 0);

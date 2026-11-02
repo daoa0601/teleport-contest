@@ -9,10 +9,11 @@ import { applyHeroLocationEffects } from '../js/hack.js';
 import { BOULDER } from '../js/object_data.js';
 import { grantIntrinsicProperty, refreshMovementProperties } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { floatHeroUp, resetHeroTrap, switchHeroTerrain } from '../js/terrain_movement.js';
+import { floatHeroUp, resetHeroTrap } from '../js/terrain_movement.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { switchHeroTerrain } from '../js/hack.js';
 for (const property of ['levitation', 'flying']) {
     void test(`${property} stops inside solid terrain and resumes after it opens`, async () => {
         await freshObjectRoom();

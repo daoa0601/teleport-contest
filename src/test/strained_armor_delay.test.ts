@@ -5,10 +5,11 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { nearCapacity } from '../js/hack.js';
 
 void test('Strained boots removal finishes after two world turns while the hero still awaits movement', async () => {
     const input = freshTurnRoom({ flags: { runmode: 'walk' } });

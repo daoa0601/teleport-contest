@@ -7,7 +7,8 @@ import { game } from './gstate.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
 import { definiteObjectAction, objectName } from './objnam.js';
-import { calcCapacity, objectWeight, SLT_ENCUMBER, } from './weight.js';
+import { calcCapacity, SLT_ENCUMBER } from './hack.js';
+import { objectWeight } from './mkobj.js';
 // throwit() evaluates this gate before its stamina branch. A real slip
 // rewrites the persistent direction even while engulfed, where every result
 // still contacts the same monster.

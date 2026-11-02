@@ -13,7 +13,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -41,6 +41,7 @@ import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vis
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasPoisonResistance,
 } from './mondata.js';
+import { loseHeroHp } from './hack.js';
 
 const GAS_BAD = 0;
 const GAS_MINOR = 1;

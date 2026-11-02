@@ -6,7 +6,7 @@ import { applyArmorOnEffects, armorBaseBonus, armorBonus, armorOnIdentifiesType,
 import { currentAttribute } from '../js/attrib.js';
 import { A_STR } from '../js/const.js';
 import { formatStrength } from '../js/botl.js';
-import { weightCapacity } from '../js/weight.js';
+
 import {
     AMULET_OF_GUARDING,
     CLOAK_OF_DISPLACEMENT,
@@ -25,6 +25,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { weightCapacity } from '../js/hack.js';
 
 void test('ARM_BONUS uses complete source a_ac metadata, enchantment, and erosion', () => {
     assert.equal(armorBaseBonus(CLOAK_OF_MAGIC_RESISTANCE), 1);

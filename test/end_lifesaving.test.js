@@ -4,13 +4,13 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_CON, NON_PM, TT_LAVA } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from '../js/properties.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { loseHeroHp } from '../js/hack.js';
 async function lifeSavingRoom() {
     await freshObjectRoom();
     requirePlayingGame(game);

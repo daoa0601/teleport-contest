@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOM, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount, monsterGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { hasPermanentIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -18,6 +18,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createRoom } from './support/topology.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 async function templePriest() {
     const level = await freshObjectRoom({ hero: { ulevelpeak: 1 } });
     requirePlayingGame(game);

@@ -10,13 +10,14 @@ import { GameDisplay } from '../js/game_display.js';
 import { dungeonFeatureSentenceAt } from '../js/dungeon_feature.js';
 import { game, requireGameLevel, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { heroIsOnStairs, isInvocationPosition } from '../js/invocation_position.js';
+
 import { mklev } from '../js/mklev.js';
 import { generateRandomMaze } from '../js/mkmaze.js';
 import { BOULDER, GOLD_PIECE } from '../js/object_data.js';
 import { addTrap, floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { heroIsOnStairs, isInvocationPosition } from '../js/hack.js';
 
 function prepareMaze({ seed = 173, depth = 24, hell = false } = {}) {
     freshSpecialLevel({ prototype: 'random-maze', seed, depth });

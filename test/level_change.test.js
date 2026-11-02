@@ -26,10 +26,10 @@ import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './s
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
-import { nearCapacity } from '../js/weight.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { docrt, flush_screen } from '../js/display.js';
+import { nearCapacity } from '../js/hack.js';
 void test('arrival pickup leaves load status for the next turn update', async () => {
     const { source, destination } = freshConnectedLevels();
     requirePlayingGame(game);

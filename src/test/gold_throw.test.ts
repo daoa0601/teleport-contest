@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { ICE, IRONBARS, STONE, W_ARMH, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
+import { heroGoldObject } from '../js/hero_gold.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DIAMOND, GOLD_PIECE, HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -23,6 +23,7 @@ import {
 import { freshGameplayRoom } from './support/playable-room.js';
 import { withMessagePages } from './support/planned-input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 
 const PM_SHOPKEEPER = 271;

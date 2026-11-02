@@ -23,7 +23,7 @@ import {
     hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, setPropertyTimeout,
 } from '../js/properties.js';
 import { heroDetectsMonsters } from '../js/senses.js';
-import { switchHeroTerrain } from '../js/terrain_movement.js';
+
 import { castSpell } from '../js/spell.js';
 import { applyPotionSpell } from '../js/spell.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -32,6 +32,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { switchHeroTerrain } from '../js/hack.js';
 
 async function source(type: number, properties: InventoryObjectOverrides = {}) {
     return addInventoryObject(type, { initialize: false, ...properties });

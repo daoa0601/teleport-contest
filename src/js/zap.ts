@@ -30,12 +30,12 @@ import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductio
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './dbridge.js';
 
-import { roomsAt } from './room.js';
+
 import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 
@@ -69,7 +69,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
-import { exceedsActionCapacity, objectWeight } from './weight.js';
+
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
@@ -132,6 +132,8 @@ import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './u_init.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
+import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 export interface FloorBurnOptions {
     state?: GameState;

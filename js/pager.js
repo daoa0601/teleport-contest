@@ -18,7 +18,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNo } from './query.js';
 import { commandResultCancelled, describeCommandKey, keyText, rememberCommandKey, showKeyBindings, takeRepeatCommand, visibleCommandKey, } from './cmd.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
@@ -46,6 +46,7 @@ import { HELP_FILES } from './help_files.js';
 import { showExtendedCommandList } from './extended_commands.js';
 import { option_help } from './options.js';
 import { doextversion } from './extversion.js';
+import { shouldShowGetposTip, showGetposTip } from './hack.js';
 // C refs: pager.c:do_look() (mode 0 for whatis, 1 for quick glance),
 // getpos.c:getpos(), pager.c:do_screen_description().
 // Farlook spends no game time. Ordinary look retains its cursor between

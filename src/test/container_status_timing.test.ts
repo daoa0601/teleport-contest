@@ -8,7 +8,8 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
-import { nearCapacity } from '../js/weight.js';
+import { nearCapacity } from '../js/hack.js';
+
 
 function statusRow(): string {
     return requireGameDisplay(game).grid[23]?.map(cell => cell.ch).join('') ?? '';

@@ -33,7 +33,7 @@ import type { GameObject } from './object_types.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './apply.js';
 import {
@@ -54,6 +54,7 @@ import { rn2 } from './rng.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
+import { showGetposTip } from './hack.js';
 
 // C do_name.c:docallcmd().
 // C do_name.c:name_ok().

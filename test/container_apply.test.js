@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_AMUL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/container.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -17,6 +17,7 @@ import { addInventoryObject, artifactObject, floorObject, knownObject, unopenedC
 import { freshPlayableRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { installPagerInput } from './support/pager-input.js';
+import { heroGoldAmount } from '../js/hack.js';
 async function unlockedContainer(otyp, invlet, overrides = {}) {
     const container = await addInventoryObject(otyp, {
         invlet,

@@ -8,7 +8,7 @@ import { rhack } from '../js/cmd.js';
 import { ARROW_TRAP, BEAR_TRAP, FIRE_TRAP, POOL, ROOM, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
-import { finishDestinationSpotEffects } from '../js/location_effects.js';
+
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys } from '../js/input.js';
@@ -18,6 +18,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { finishDestinationSpotEffects } from '../js/hack.js';
 
 void test('failed adjacent untrapping exposes a spider that leaves its cover', async () => {
     const level = await freshObjectRoom({ flags: { pickup: false } });

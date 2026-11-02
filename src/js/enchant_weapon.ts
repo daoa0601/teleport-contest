@@ -32,8 +32,9 @@ import {
     chargeAlteredUnpaidObject,
     objectTypeKnown, updateUnpaidObjectPrice,
 } from './shk.js';
-import { objectWeight } from './weight.js';
+
 import { willWeld } from './wield.js';
+import { objectWeight } from './mkobj.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;

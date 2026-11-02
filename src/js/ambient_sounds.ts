@@ -32,20 +32,20 @@ import { publishHeardMessage } from './hero_speech.js';
 import { searchSpecial } from './mkroom.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { priestIsInOwnTemple } from './priest.js';
-import { roomForRoomno } from './room.js';
+
 import { findVaultGuard } from './vault.js';
 
 import { rn2, rnd } from './rng.js';
 import { recorderLocalHour } from './calendar.js';
 import { currency } from './currency.js';
 import { roles } from './roles.js';
-import { stopRun } from './runmode.js';
+
 import { chatWithQuestCharacter } from './quest.js';
 import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumor.js';
 import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
-import { heroGoldAmount } from './hero_gold.js';
+
 import { monsterAlignmentType } from './priest.js';
 import { resolveHeroSeduction } from './mhitu.js';
 import { novelTitle } from './novel_titles.js';
@@ -58,6 +58,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { shopkeeperInOwnShop, quoteShopGoods, chatWithShopkeeper } from './shk.js';
 import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
+import { roomForRoomno, stopRun, heroGoldAmount } from './hack.js';
 
 const M1_FLY = 0x00000001;
 const M2_LORD_OR_PRINCE = 0x00000c00;

@@ -7,11 +7,13 @@ import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, DAGGER, HORN_OF_PLENTY, ROC
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
-import { nearCapacity, objectWeight, SLT_ENCUMBER, UNENCUMBERED } from '../js/weight.js';
+
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { nearCapacity, SLT_ENCUMBER, UNENCUMBERED } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 
 void test('tipping the discovered Eyes of the Overworld uses a plural drop verb', async () => {
     const level = freshPlayableRoom();

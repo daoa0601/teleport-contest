@@ -21,7 +21,7 @@ import { vision_note_blocker_change, cansee, couldsee, unset_seenv } from './vis
 import { setWallStateAt } from './wall_topology.js';
 import { stopLevelTimer } from './timeout.js';
 import { containedGold } from './shk.js';
-import { heroGoldAmount } from './hero_gold.js';
+
 import { resetHeroFaint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -36,7 +36,7 @@ import { simpleObjectTypeName } from './objnam.js';
 import { fractureRock } from './rock_breakage.js';
 import { rn2 } from './rng.js';
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { roomForRoomno, roomsAt } from './room.js';
+
 import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
@@ -55,6 +55,7 @@ import { currency } from './currency.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { make_grave } from './mklev.js';
 import type { MessagePublisher } from './pline.js';
+import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
 const STRANGE_OBJECT = 0;

@@ -12,7 +12,7 @@ import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, WAN_COLD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { updateHeroRoomMembership } from '../js/room.js';
+
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -20,6 +20,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 
 async function createTemple({ hitPoints = 100 } = {}) {
     const level = await freshObjectRoom({

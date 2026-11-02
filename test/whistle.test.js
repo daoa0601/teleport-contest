@@ -9,7 +9,6 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, BOULDER, LEASH, EUCALYPTUS_LEAF, MAGIC_WHISTLE, TIN_WHISTLE } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { updateHeroRoomMembership } from '../js/room.js';
 import { initRng } from '../js/rng.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -24,6 +23,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 async function petAt(name, x, y) {
     const pet = await createMonsterAt(name, x, y, NO_MINVENT);
     initializePet(pet);

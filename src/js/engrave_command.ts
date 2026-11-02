@@ -42,7 +42,7 @@ import {
     MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal,
     monsterIsVerySmall, monsterIsWhirly,
 } from './monster_data.js';
-import { exceedsActionCapacity } from './weight.js';
+
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './recharge.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
@@ -73,6 +73,7 @@ import {
     WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER,
     WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING,
 } from './object_data.js';
+import { exceedsActionCapacity } from './hack.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;

@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LOST_DROPPED, SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { updateHeroRoomMembership } from '../js/room.js';
+
 import { meldNearbyFloorGlobs, runClaimedGlobTimer } from '../js/glob.js';
 import { claimNextDueObjectTimer } from '../js/timeout.js';
 import { startGlobTimeout } from '../js/glob.js';
@@ -17,6 +17,7 @@ import { pushKeys } from '../js/input.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { updateHeroRoomMembership } from '../js/hack.js';
 
 async function glob(properties: Partial<GameObject> = {}) {
     return await knownObject(GLOB_OF_BLACK_PUDDING, properties);

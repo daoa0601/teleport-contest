@@ -17,7 +17,6 @@ import { BOULDER, CORPSE, ROCK } from '../js/object_data.js';
 import { objectTimers, scheduleLevelTimer } from '../js/timeout.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { startRun } from '../js/runmode.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
@@ -30,6 +29,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { installPagerInput } from './support/pager-input.js';
 import { angerMonster } from '../js/mon.js';
 import { publishMonsterYelp, publishMonsterGrowl } from '../js/ambient_sounds.js';
+import { startRun } from '../js/cmd.js';
 async function topline() {
     await flush_screen();
     const row = requireGameDisplay().grid[0];

@@ -6,7 +6,7 @@ import { A_CON, A_DEX, STONE, WEB, W_ARM, W_ARMC, W_SADDLE, W_WEP, } from '../js
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
@@ -15,7 +15,6 @@ import { ALCHEMY_SMOCK, AMULET_OF_LIFE_SAVING, CHAIN_MAIL, CORPSE, DAGGER, IRON_
 import { initRng } from '../js/rng.js';
 import { syncBlindness } from '../js/senses.js';
 import { installPagerInput } from './support/pager-input.js';
-import { checkSpecialRoom } from '../js/shk.js';
 import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -24,6 +23,7 @@ import { addTrap, floorObjects, } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { heroGoldAmount, checkSpecialRoom } from '../js/hack.js';
 const PM_PURPLE_WORM = 115;
 async function freshMapPotionState(distance = 2, monsterOptions = {}) {
     const attributes = [12, 12, 12, 12, 12, 12];

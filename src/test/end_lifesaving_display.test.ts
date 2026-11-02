@@ -10,12 +10,13 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
+
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { loseHeroHp } from '../js/hack.js';
 
 void test('life saving repaints the restored hit points before paging the crumble message', async () => {
     await freshObjectRoom({ role: 'barbarian' });

@@ -42,7 +42,7 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './punishment.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
-import { roomsAt } from './room.js';
+
 import {
     MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal,
     monsterIsNonliving, monsterIsVampireShifter,
@@ -69,6 +69,7 @@ import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { rangedTargetHitBonus, breakFloorObject } from './dothrow.js';
+import { roomsAt } from './hack.js';
 
 export interface ScatterOptions {
     state?: GameState;

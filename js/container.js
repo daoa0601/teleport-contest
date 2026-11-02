@@ -12,7 +12,6 @@ import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { touchArtifactByHero } from './artifacts.js';
-import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { nomul } from './hack.js';
 import { game } from './gstate.js';
@@ -42,13 +41,14 @@ import { paranoidYesNoQuit, promptChoice, tty_yn_function } from './query.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
-import { objectWeight } from './weight.js';
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot, stolenValue, sellHeroDroppedObject, setSellDisposition, warnAboutRemovedPick, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, deleteObject, } from './shk.js';
 import { currency } from './currency.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, SORTLOOT_INVLET, OBJECT_TIMER_KIND } from './const.js';
+import { loseHeroHp } from './hack.js';
+import { objectWeight } from './mkobj.js';
 export const CONTAINER_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);

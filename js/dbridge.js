@@ -19,7 +19,6 @@ import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid
 import { delobj } from './invent.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { reviveNastyAt } from './revive_nasty.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -30,7 +29,6 @@ import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './mo
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroHasWaterWalking } from './do_wear.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
 import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
@@ -38,6 +36,7 @@ import { moveHeroByTeleport } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { monsterName } from './do_name.js';
 import { monsterSubjectPronoun } from './mondata.js';
+import { reviveNastyAt, finishDestinationSpotEffects } from './hack.js';
 // C dbridge.c terrain predicates.
 // C ref: dbridge.c is_pool().
 export function isPoolAt(x, y, state = game) {

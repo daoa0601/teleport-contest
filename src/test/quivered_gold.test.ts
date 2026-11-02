@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
+import { heroGoldObject } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -18,6 +18,7 @@ import {
 import { freshGameplayRoom } from './support/playable-room.js';
 import { planInput } from './support/planned-input.js';
 import { installSwallowedHero } from './support/hero-state.js';
+import { heroGoldAmount } from '../js/hack.js';
 
 
 async function quiver(amount: number, id: number) {

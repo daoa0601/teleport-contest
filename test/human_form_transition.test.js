@@ -6,12 +6,10 @@ import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginMealMimicry } from '../js/eat.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ROCK, WAN_LIGHT } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
 import { minimalObjectName } from '../js/objnam.js';
 import { polymonHero, polymorphHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -23,6 +21,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
+import { loseHeroHp, nearCapacity } from '../js/hack.js';
 async function formTransitionRoom(debug = false) {
     await freshObjectRoom({
         gameplaySeed: 143n,

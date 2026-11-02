@@ -8,7 +8,7 @@ import { placeCreatedObject } from '../../js/floor_object.js';
 import { mksobj, set_corpsenm } from '../../js/mkobj.js';
 import { stopAllObjectTimers } from '../../js/timeout.js';
 import { addInventoryItem } from '../../js/u_init.js';
-import { objectWeight } from '../../js/weight.js';
+import { objectWeight } from '../../js/mkobj.js';
 export async function knownObject(otyp, overrides = {}) {
     const { initialize = true, typeKnown = true, ...properties } = overrides;
     const quantity = properties.quan ?? properties.quantity ?? 1;

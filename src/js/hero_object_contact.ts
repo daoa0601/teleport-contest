@@ -39,7 +39,7 @@ import { carriedObjectOwner, deleteObject } from './shk.js';
 import { touchPetrifies } from './stoning.js';
 import { releaseWeaponSlots } from './wield.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
-import { objectWeight } from './weight.js';
+
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
@@ -49,6 +49,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasStoneResistance } from './mondata.js';
+import { objectWeight } from './mkobj.js';
 
 export interface HeroObjectContactOptions {
     mode: HeroPhysicalAttackMode;

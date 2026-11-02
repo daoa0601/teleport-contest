@@ -12,7 +12,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { damageHeroFromMonster, loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
@@ -25,6 +24,8 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { damageHeroFromMonster } from '../js/mhitu.js';
+import { loseHeroHp } from '../js/hack.js';
 function answerRecoveryMessages(messages) {
     const input = resetInputState();
     let replies = 0;

@@ -6,10 +6,11 @@ import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import { level_difficulty } from './dungeon.js';
 import { plineWithContinuation } from './pline.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { makeStunned } from './hero_mental_status.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { rnd } from './rng.js';
+import { loseHeroHp } from './hack.js';
 
 interface BoobyTrapOptions {
     bodypart?: boolean;

@@ -3,6 +3,8 @@
 
 import { commandResultCancelled, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
+import { monsterStagger } from './mondata.js';
+import { heroSpecies } from './hero_species.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 
@@ -63,7 +65,7 @@ import {
     addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown,
     removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL,
 } from './shk.js';
-import { roomsAt } from './room.js';
+
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
@@ -81,7 +83,7 @@ import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
 import { surfaceName } from './terrain_name.js';
-import { exceedsActionCapacity, nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
+
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { inventoryItemDescription, consumeObjectCharge } from './invent.js';
@@ -97,7 +99,7 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 
 import { propertyIsActive } from './properties.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { rn2, rnd } from './rng.js';
 import { reverseLoot } from './confused_loot.js';
 import {
@@ -125,6 +127,13 @@ import type { Position } from './map_types.js';
 import type {
     CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem,
 } from './windows.js';
+import {
+    roomsAt,
+    exceedsActionCapacity,
+    nearCapacity,
+    loseHeroHp,
+} from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 interface PickupSource {
     x: number;
@@ -1249,4 +1258,40 @@ async function lookAtObjects(objects: readonly GameObject[]): Promise<void> {
 
 function hasUnpaidContents(object: GameObject): boolean {
     return !!object.unpaid || !!object.contents?.some(hasUnpaidContents);
+}
+// C pickup.c:encumber_msg(). The strained verb follows the hero's body.
+export function encumbranceMessage(previous: number, current: number, state: GameState): string {
+    const stagger = monsterStagger(heroSpecies(state), 'stagger');
+    if (previous < current) {
+        return [
+            '',
+            'Your movements are slowed slightly because of your load.',
+            'You rebalance your load.  Movement is difficult.',
+            `You ${stagger} under your heavy load.  Movement is very hard.`,
+            'You can barely move a handspan with this load!',
+            "You can't even move a handspan with this load!",
+        ][current] || '';
+    }
+    if (previous > current) {
+        return [
+            'Your movements are now unencumbered.',
+            'Your movements are only slowed slightly by your load.',
+            'You rebalance your load.  Movement is still difficult.',
+            `You ${stagger} under your load.  Movement is still very hard.`,
+            '',
+            '',
+        ][current] || '';
+    }
+    return '';
+}
+
+export function pickupLoadPrefix(level: number): string {
+    return [
+        '',
+        'You have a little trouble',
+        'You have trouble',
+        'You have much trouble',
+        'You have extreme difficulty',
+        'You have extreme difficulty',
+    ][level] || '';
 }

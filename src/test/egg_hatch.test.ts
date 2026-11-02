@@ -20,9 +20,10 @@ import { addCreatedInventoryItem } from '../js/u_init.js';
 import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
-import { objectWeight } from '../js/weight.js';
+
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 
 void test('known egg contents name their species without acquired egg-type knowledge', async () => {
     await freshObjectRoom();

@@ -4,14 +4,29 @@ import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 
-import { classifyStatusTerrain } from './hack.js';
+
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 
 import {
-    D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE,
-    IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel,
-    LAVAWALL, PIT, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
-    TT_LAVA, TT_PIT, TT_WEB, WEB, W_SADDLE, is_hole, is_pit,
+    DISMOUNT_FELL,
+    DISMOUNT_GENERIC,
+    HOLE,
+    IS_ROOM,
+    Is_airlevel,
+    Is_waterlevel,
+    PIT,
+    STATUE_TRAP,
+    TRAPDOOR,
+    TT_BEARTRAP,
+    TT_BURIEDBALL,
+    TT_INFLOOR,
+    TT_LAVA,
+    TT_PIT,
+    TT_WEB,
+    WEB,
+    W_SADDLE,
+    is_hole,
+    is_pit
 } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -22,12 +37,14 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import {
-    captureLevitationState, clearLevitationMasks, levitationAtWill,
-    propertyIsActive, propertyIsBlocked, refreshMovementProperties,
-    setPropertyTerrainBlocked,
+    captureLevitationState,
+    clearLevitationMasks,
+    levitationAtWill,
+    propertyIsActive,
+    refreshMovementProperties
 } from './properties.js';
 import { clearHeroTrap, triggerHeroTrap } from './hero_traps.js';
-import { moveObject } from './floor_object.js';
+
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { buriedBallNear } from './dig.js';
 import { heroLegName } from './body_parts.js';
@@ -49,12 +66,13 @@ import { heroHasWaterWalking } from './do_wear.js';
 
 import { heroIsPunished } from './ball.js';
 import { rnd } from './rng.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { canFallThrough } from './mklev.js';
+import { moveObject, loseHeroHp } from './hack.js';
 
 export async function floatHeroUp(
     state: GameState = game, previous: LevitationState | null = null,
@@ -349,44 +367,3 @@ export async function resetHeroTrap(message = true, state: GameState = game): Pr
     }
 }
 
-// hack.c:set_uinwater(). Entering or leaving water also changes terrain
-// properties and the optional terrain status, even on the same square.
-export async function setHeroInWater(inWater: boolean, state: GameState = game): Promise<void> {
-    if (!!state.u.uinwater === inWater) return;
-    state.u.uinwater = inWater ? 1 : 0;
-    await switchHeroTerrain(state);
-}
-
-// C hack.c:switch_terrain().
-export async function switchHeroTerrain(state: GameState = game): Promise<void> {
-    const wasLevitating = propertyIsActive('levitation', state);
-    const wasFlying = propertyIsActive('flying', state);
-    const hero = state.u;
-    const location = requireGameLevel(state).requireAt(hero.ux, hero.uy);
-    const blocked = IS_OBSTRUCTED(location.typ)
-        || (location.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED)))
-        || IS_WATERWALL(location.typ) || location.typ === LAVAWALL;
-    if (blocked) {
-        if (propertyIsActive('levitation', state))
-            await plineWithContinuation("You can't levitate in here.");
-        setPropertyTerrainBlocked('levitation', true, state);
-    } else if (propertyIsBlocked('levitation', state)) {
-        setPropertyTerrainBlocked('levitation', false, state);
-        if (propertyIsActive('levitation', state) || propertyIsBlocked('levitation', state))
-            await floatHeroUp(state);
-    }
-    if (blocked) {
-        if (propertyIsActive('flying', state))
-            await plineWithContinuation("You can't fly in here.");
-        setPropertyTerrainBlocked('flying', true, state);
-    } else if (propertyIsBlocked('flying', state)) {
-        setPropertyTerrainBlocked('flying', false, state);
-        refreshMovementProperties(state);
-        state.context.botl = true;
-        if (propertyIsActive('flying', state))
-            await plineWithContinuation('You start flying.');
-    }
-    if (wasLevitating !== propertyIsActive('levitation', state)
-        || wasFlying !== propertyIsActive('flying', state)) state.context.botl = true;
-    if (state.flags.terrainstatus) classifyStatusTerrain(state);
-}

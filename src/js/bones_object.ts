@@ -13,11 +13,13 @@ import {
 } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
 import { set_corpsenm, curseObjectState } from './mkobj.js';
-import { roomForRoomno } from './room.js';
+
 import { PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
 import { shopkeeperInOwnShop } from './shk.js';
-import { objectWeight } from './weight.js';
+
 import { definiteName, objectCombatName } from './objnam.js';
+import { roomForRoomno } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 const HANDED_WEAPONS = new Set([
     BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,

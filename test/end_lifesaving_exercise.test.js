@@ -3,12 +3,12 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { loseHeroHp } from '../js/hack.js';
 void test('learning the life-saving amulet does not train Wisdom above its exercise limit', async () => {
     await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);

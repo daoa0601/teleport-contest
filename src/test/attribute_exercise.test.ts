@@ -10,12 +10,13 @@ import { A_CHA, A_CON, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DUNCE_CAP, OBJECT_NAMES, ROCK } from '../js/object_data.js';
-import { nearCapacity } from '../js/weight.js';
+
 import { races } from '../js/roles.js';
 import { initRng } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { nearCapacity } from '../js/hack.js';
 
 function freshExercise(seed = 1n) {
     freshPlayableRoom({ seed });

@@ -13,10 +13,11 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { BAG_OF_HOLDING, GOLD_PIECE, SACK, SPLINT_MAIL, } from '../js/object_data.js';
 import { races, roles } from '../js/roles.js';
 import { uInitCarryAttrBoost, uInitInventoryAttrs, } from '../js/u_init.js';
-import { inventoryWeight, invWeight, objectWeight, weightCapacity, } from '../js/weight.js';
 import { freshGame } from './support/game-state.js';
 import { prepareHeroStartup } from './support/startup.js';
 import { initRng } from '../js/rng.js';
+import { inventoryWeight, invWeight, weightCapacity } from '../js/hack.js';
+import { objectWeight } from '../js/mkobj.js';
 test.beforeEach(() => {
     freshGame();
     initRng(1n);

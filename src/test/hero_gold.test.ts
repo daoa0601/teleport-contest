@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { W_QUIVER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { detachHeroGold, heroGoldAmount, heroGoldObject, monsterGoldAmount } from '../js/hero_gold.js';
+import { detachHeroGold, heroGoldObject } from '../js/hero_gold.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { mkgold } from '../js/mkobj.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
@@ -18,6 +18,7 @@ import { requireScreenRow } from './support/screen.js';
 import {
     freshGameplayRoom, freshPlayableRoom,
 } from './support/playable-room.js';
+import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';
 
 void test('picking up floor gold moves that identity into the dollar inventory slot',
     async () => {

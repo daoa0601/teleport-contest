@@ -6,17 +6,25 @@ import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
 import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
-import { setHeroGoldAmount, heroGoldAmount } from '../js/hero_gold.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
 import { buryObject } from '../js/dig.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { addShopObjectToBill, checkSpecialRoom, settleShopkeepersOnExit, setPaidShopkeeper, itemizedShopBill, buyShopBillItem, deleteObject } from '../js/shk.js';
-import { roomForRoomno } from '../js/room.js';
+import {
+    addShopObjectToBill,
+    settleShopkeepersOnExit,
+    setPaidShopkeeper,
+    itemizedShopBill,
+    buyShopBillItem,
+    deleteObject
+} from '../js/shk.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { heroGoldAmount, checkSpecialRoom, roomForRoomno } from '../js/hack.js';
 
 
 

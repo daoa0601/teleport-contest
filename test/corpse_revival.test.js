@@ -19,10 +19,10 @@ import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { objectWeight } from '../js/weight.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { objectWeight } from '../js/mkobj.js';
 function terrainAt(x, y) {
     const location = requireGameLevel().at(x, y);
     assert.ok(location, `map location ${x},${y} exists`);

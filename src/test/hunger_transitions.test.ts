@@ -27,8 +27,8 @@ import {
 } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
-import { inventoryWeight, weightCapacity } from '../js/weight.js';
-import { startRun } from '../js/runmode.js';
+
+
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { invault } from '../js/vault.js';
@@ -36,6 +36,8 @@ import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
+import { inventoryWeight, weightCapacity } from '../js/hack.js';
+import { startRun } from '../js/cmd.js';
 
 function acknowledgeMessages() {
     const input = resetInputState();

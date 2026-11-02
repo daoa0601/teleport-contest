@@ -6,9 +6,9 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { grantIntrinsicProperty, setPropertyTerrainBlocked } from '../js/properties.js';
 import { LEVITATION_BOOTS, ROCK } from '../js/object_data.js';
-import { MOD_ENCUMBER, nearCapacity, weightCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { MOD_ENCUMBER, nearCapacity, weightCapacity } from '../js/hack.js';
 void test('levitation still supports a load while the hero is stuck in the floor', async () => {
     await freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
     grantIntrinsicProperty('levitation', 'outside');

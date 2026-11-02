@@ -3,7 +3,7 @@
 
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { loseHeroHp } from './hero_damage.js';
+
 import type { MonsterDeathResult } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -37,14 +37,14 @@ import {
     GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
-import { roomForRoomno } from './room.js';
+
 import { rn2, rnd } from './rng.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType } from './o_init.js';
 
 
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
-import { objectWeight } from './weight.js';
+
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
@@ -53,6 +53,8 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { objectResistsDestruction, getObjectLocation } from './zap.js';
 import { ownedObjectAction } from './objnam.js';
 import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
+import { loseHeroHp, roomForRoomno } from './hack.js';
+import { objectWeight } from './mkobj.js';
 
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;
